@@ -1078,6 +1078,7 @@ Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data)
 
 static Scheme_Object *link_module_variable(Scheme_Object *modidx,
 					   Scheme_Object *varname,
+					   int pos,
 					   Link_Info *info)
 {
   Scheme_Object *modname;
@@ -1107,7 +1108,7 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
   }
 
   if (!SAME_OBJ(menv, info))
-    scheme_check_accessible_in_module(menv, varname, NULL);
+    varname = scheme_check_accessible_in_module(menv, varname, NULL, pos, 0);
       
   return (Scheme_Object *)scheme_global_bucket(varname, menv);
 }
@@ -1126,12 +1127,16 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
       else
 	return link_module_variable(b->home->module->modname,
 				    (Scheme_Object *)b->bucket.bucket.key,
+				    -1,
 				    info);
     }
   case scheme_module_variable_type:
     {
-      return link_module_variable(SCHEME_PTR1_VAL(expr),
-				  SCHEME_PTR2_VAL(expr),
+      Module_Variable *mv = (Module_Variable *)expr;
+
+      return link_module_variable(mv->modidx,
+				  mv->sym,
+				  mv->pos,
 				  info);
     }
   case scheme_syntax_type:
@@ -1983,8 +1988,10 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
   c = check_top(scheme_compile_stx_string, form, env);
 
   if (env->genv->module && !rec[drec].resolve_module_ids) {
-    /* Self-reference in a module; need to remember the modidx */
-    return scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, c);
+    /* Self-reference in a module; need to remember the modidx.  Don't
+       need a pos, because the symbol's gensym-ness (if any) will be
+       preserved within the module. */
+    return scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, c, -1);
   }
 
   return (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(c), env->genv);
@@ -3509,20 +3516,32 @@ Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *obj, int let_depth)
 }
 
 /* for mzc: */
-Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env,
-					       long shift, Scheme_Object *modidx)
+Scheme_Object *scheme_load_compiled_stx_string(const char *str, long len)
 {
   Scheme_Object *port, *expr;
 
-  port = scheme_make_sized_string_input_port(SCHEME_STR_VAL(str), -SCHEME_STRLEN_VAL(str));
+  port = scheme_make_sized_string_input_port(str, -len);
 
   expr = scheme_internal_read(port, NULL, 1, scheme_config);
 
-  expr = _scheme_eval_compiled(expr, env);
+  expr = _scheme_eval_compiled(expr, scheme_get_env(scheme_config));
 
   /* Unwrap syntax once; */
   expr = SCHEME_STX_VAL(expr);
 
+  return expr;
+}
+
+/* for mzc: */
+Scheme_Object *scheme_compiled_stx_symbol(Scheme_Object *stx)
+{
+  return SCHEME_STX_VAL(stx);
+}
+
+/* for mzc: */
+Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *expr, Scheme_Env *env,
+					       long shift, Scheme_Object *modidx)
+{
   /* If modidx, then last element is a module index; shift the rest. */
   if (modidx) {
     int i, len = SCHEME_VEC_SIZE(expr);

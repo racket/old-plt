@@ -315,19 +315,11 @@
 		  (set! compiler:label-number (add1 compiler:label-number)))))
       (define (compiler:get-label-number) compiler:label-number)
 
-      (define bad-chars "][#+-.*/<=>!?:$%_&~^@;^(){}|\\,~\"`' ")
-      (define bad-char-list (string->list bad-chars))
-      (define re:bad-char (regexp (string-append "[" bad-chars "]")))
+      (define re:bad-char (regexp "[][#+-.*/<=>!?:$%_&~^@;^(){}|\\,~\"`' \000-\040]"))
       (define re:starts-with-number (regexp "^[0-9]"))
 
       (define (compiler:clean-string s)
-	(let ([s (if (regexp-match re:bad-char s)
-		     (list->string
-		      (map (lambda (c) (if (memq c bad-char-list)
-					   #\_
-					   c))
-			   (string->list s)))
-		     s)])
+	(let ([s (regexp-replace* re:bad-char s "_")])
 	  (if (regexp-match re:starts-with-number s)
 	      (string-append "_" s)
 	      s)))

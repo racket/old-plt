@@ -67,6 +67,7 @@
       (define-struct mod-glob (cname   ;; a made-up name that encodes module + var
 			       modname
 			       varname 
+			       position
 			       exp-time?
 			       in-module?))
 
@@ -80,10 +81,11 @@
 	 [(varref) (compiler:add-global-varref!
 		    (zodiac:top-level-varref-module varref)
 		    (zodiac:varref-var varref)
-		    varref)]
-	 [(modname/phase varname ast)
-	  (let* ([modname (if (box? modname/phase) (unbox modname/phase) modname/phase)]
-		 [et? (and (box? modname/phase)
+		    varref
+		    (zodiac:top-level-varref-exptime? varref)
+		    (zodiac:top-level-varref-position varref))]
+	 [(modname varname ast et? position)
+	  (let* ([et? (and et?
 			   ;; Just use run-time for #%kernel, since it's the same, and
 			   ;;  the compiler generates references to #%kernel names
 			   (not (eq? '#%kernel modname)))]
@@ -113,7 +115,7 @@
 			    (lambda ()
 			      ;; vm->c function also generates a symbol constant:
 			      (let ([n (make-mod-glob (vm->c:generate-modglob-name modname varname)
-						      modname varname et?
+						      modname varname position et?
 						      (and ast (varref:has-attribute? 
 								ast
 								varref:in-module)))])
@@ -140,7 +142,8 @@
 			  (make-empty-box)
 			  (zodiac:varref-var varref)
 			  #f
-			  (box #f))]) ; slot - fresh because the variable can't be referenced from anywhere
+			  (box #f) ; slot - fresh because the variable can't be referenced from anywhere
+			  #f #f)])
 		(set-annotation! new (varref:empty-attributes))
 		new))
 	    varref))
@@ -462,7 +465,9 @@
 			  (make-empty-box)
 			  (zodiac:varref-var ast)
 			  (zodiac:top-level-varref-module ast)
-			  (zodiac:top-level-varref-slot ast))])
+			  (zodiac:top-level-varref-slot ast)
+			  (zodiac:top-level-varref-exptime? ast)
+			  (zodiac:top-level-varref-position ast))])
 	    ;; Copy attribute set:
 	    (set-annotation! new-ast (get-annotation ast))
 	    new-ast)]

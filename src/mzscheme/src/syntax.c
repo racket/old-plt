@@ -656,11 +656,10 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
     name = SCHEME_STX_CAR(var);
 
     if (rec[drec].resolve_module_ids || !env->genv->module) {
-      bucket = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name),
-						     globals);
+      bucket = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name), globals);
     } else {
       /* Create a module variable reference, so that idx is preserved: */
-      bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name);
+      bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name, -1);
     }
 
     pr = cons(bucket, scheme_null);

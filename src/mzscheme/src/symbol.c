@@ -255,16 +255,14 @@ scheme_init_symbol (Scheme_Env *env)
 }
 
 static Scheme_Object *
-make_a_symbol(const char *name, int len)
+make_a_symbol(const char *name, int len, int uninterned)
 {
   Scheme_Symbol *sym;
   
   sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len - 3);
   
   sym->type = scheme_symbol_type;
-#ifdef MZ_PRECISE_GC
-  sym->keyex = 0;
-#endif
+  sym->keyex = uninterned;
   sym->len = len;
   memcpy(sym->s, name, len);
   sym->s[len] = 0;
@@ -275,13 +273,13 @@ make_a_symbol(const char *name, int len)
 Scheme_Object *
 scheme_make_symbol(const char *name)
 {
-  return make_a_symbol(name, strlen(name));
+  return make_a_symbol(name, strlen(name), 1);
 }
 
 Scheme_Object *
 scheme_make_exact_symbol(const char *name, int len)
 {
-  return make_a_symbol(name, len);
+  return make_a_symbol(name, len, 1);
 }
 
 Scheme_Object *
@@ -300,7 +298,7 @@ scheme_intern_exact_symbol(const char *name, int len)
     *(long *)0x0 = 1;
 
   if (!sym) {
-    sym = make_a_symbol(name, len);
+    sym = make_a_symbol(name, len, 0);
     symbol_bucket(scheme_symbol_table, name, len, sym);
   }
    

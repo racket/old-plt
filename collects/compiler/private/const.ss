@@ -58,6 +58,10 @@
       (define (compiler:get-per-load-static-list) compiler:per-load-static-list)
       (define (compiler:get-per-invoke-static-list) compiler:per-invoke-static-list)
 
+      (define new-uninterned-symbols null) ; list of (cons sym pos)
+
+      (define syntax-strings null) ; list of syntax-string structs
+
       (define (const:init-tables!)
 	(set! const:symbol-table (make-hash-table))
 	(set! const:symbol-counter 0)
@@ -69,7 +73,9 @@
 	(set! compiler:static-list null)
 	(set! compiler:per-load-static-list null)
 	(set! compiler:per-invoke-static-list null)
-	(set! vector-table (make-hash-table)))
+	(set! vector-table (make-hash-table))
+	(set! new-uninterned-symbols null)
+	(set! syntax-strings null))
 
       (define (const:intern-string s)
 	(let ([sym (string->symbol s)])
@@ -121,7 +127,9 @@
 		      (make-empty-box) 
 		      var
 		      #f
-		      (box '()))]
+		      (box '())
+		      #f
+		      #f)]
 		 [def (zodiac:make-define-values-form 
 		       (zodiac:zodiac-stx code)
 		       (make-empty-box) (list sv) code)])
@@ -154,7 +162,9 @@
 			   (make-empty-box) 
 			   (string->symbol (number->string counter))
 			   #f
-			   (box '()))])
+			   (box '())
+			   #f
+			   #f)])
 		  
 		  (set-annotation! sv (varref:empty-attributes))
 		  (varref:add-attribute! sv attrib)
@@ -168,8 +178,29 @@
 	  (let-values ([(sv c) (compiler:get-special-const! ast sym varref:symbol
 							    const:symbol-table
 							    const:symbol-counter)])
-	    (set! const:symbol-counter c)
+	    (when (c . > . const:symbol-counter)
+	      (unless (eq? sym (string->symbol (symbol->string sym)))
+		(set! new-uninterned-symbols (cons
+					      (cons sym const:symbol-counter)
+					      new-uninterned-symbols)))
+	      (set! const:symbol-counter c))
 	    sv)))
+
+      (define (get-new-uninterned-symbols!)
+	(begin0
+	 new-uninterned-symbols
+	 (set! new-uninterned-symbols null)))
+
+      (define-struct syntax-string (str mi uposes ustart id))
+
+      (define (compiler:add-syntax-string! str mi uninterned-positions uninterned-start)
+	(let ([naya (make-syntax-string str mi uninterned-positions uninterned-start
+					(length syntax-strings))])
+	  (set! syntax-strings (cons naya syntax-strings))
+	  naya))
+
+      (define (const:get-syntax-strings)
+	syntax-strings)
 
       (define compiler:get-inexact-real-const!
 	(lambda (v ast)
@@ -195,7 +226,9 @@
 		     (make-empty-box) 
 		     constructor-name
 		     '#%kernel
-		     (box '()))]
+		     (box '())
+		     #f
+		     #f)]
 		 [app  (zodiac:make-app 
 			(zodiac:zodiac-stx ast)
 			(make-empty-box)
@@ -382,7 +415,9 @@
 		    (make-empty-box) 
 		    var
 		    #f
-		    (box '()))])
+		    (box '())
+		    #f
+		    #f)])
 	  (set! syntax-constants (cons (cons sv stx)
 				       syntax-constants))
 	  (set-annotation! sv (varref:empty-attributes))
@@ -409,32 +444,33 @@
       ;; element.
       (define (const:finish-syntax-constants!)
 	(unless (null? syntax-constants)
-	  (let ([s (open-output-string)]
-		[c (compile `(quote-syntax ,(list->vector 
-					     (let ([l (map cdr syntax-constants)]
-						   [mi (varref:current-invoke-module)])
-					       (if mi
-						   (append 
-						    l 
-						    (list (varref:module-invoke-context-path-index mi)))
-						   l)))))])
+	  (let* ([s (open-output-string)]
+		 [uninterned-symbol-info (get-new-uninterned-symbols!)]
+		 [c (compile `(quote-syntax ,(list->vector 
+					      (let ([l (map cdr syntax-constants)]
+						    [mi (varref:current-invoke-module)])
+						(append 
+						 l 
+						 (map car uninterned-symbol-info) ; car gets the syms
+						 (if mi
+						     (list (varref:module-invoke-context-path-index mi))
+						     null))))))])
 	    (display c s)
 	    (let ([syntax-string (get-output-string s)])
-	      (const:intern-string syntax-string)
-	      (let* ([strvar (compiler:add-const! (compiler:re-quote 
-						   (zodiac:make-zread
-						    (datum->syntax-object
-						     #f
-						     syntax-string
-						     #f)))
-						  varref:static)]
+	      (let* ([strvar (compiler:add-syntax-string! 
+			      syntax-string
+			      (varref:current-invoke-module)
+			      (map cdr uninterned-symbol-info) ; cdr gets positions
+			      (length syntax-constants))] ; starting place for symbols
 		     [vecvar (gensym 'conststxvec)]
-		     [sv (zodiac:make-top-level-varref 
+		     [sv (zodiac:make-top-level-varref
 			  #f
 			  (make-empty-box) 
 			  vecvar
 			  #f
-			  (box '()))])
+			  (box '())
+			  #f
+			  #f)])
 
 		(set-annotation! sv (varref:empty-attributes))
 		(varref:add-attribute! sv varref:static)
@@ -461,9 +497,7 @@
 			    strvar ;; <------ HACK! See "HACK!" in vm2c.ss
 			    #f))))])
 		   (if (varref:current-invoke-module)
-		       (begin
-			 (varref:add-attribute! strvar varref:module-stx-string) ;; More HACK!
-			 (wrap-module-definition def (varref:current-invoke-module)))
+		       (wrap-module-definition def (varref:current-invoke-module))
 		       def)))
 
 		;; Create construction code for each
@@ -479,7 +513,9 @@
 				 (make-empty-box) 
 				 'vector-ref
 				 '#%kernel
-				 (box '()))
+				 (box '())
+				 #f
+				 #f)
 				(list
 				 sv
 				 (compiler:re-quote

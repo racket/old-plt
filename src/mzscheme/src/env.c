@@ -1069,7 +1069,8 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
   return (Scheme_Local *)scheme_make_local(scheme_local_type, p + i);
 }
 
-Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym)
+Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym,
+					   int pos)
 {
   Scheme_Object *val;
   Scheme_Hash_Table *ht;
@@ -1091,11 +1092,16 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
   val = scheme_hash_get(ht, stxsym);
 
   if (!val) {
-    val = scheme_alloc_object();
-    val->type = scheme_module_variable_type;
+    Module_Variable *mv;
+
+    mv = MALLOC_ONE_TAGGED(Module_Variable);
+    mv->type = scheme_module_variable_type;
     
-    SCHEME_PTR1_VAL(val) = modidx;
-    SCHEME_PTR2_VAL(val) = stxsym;
+    mv->modidx = modidx;
+    mv->sym = stxsym;
+    mv->pos = pos;
+
+    val = (Scheme_Object *)mv;
 
     scheme_hash_set(ht, stxsym, val);
   }
@@ -1195,7 +1201,7 @@ Scheme_Object *
 scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 {
   Scheme_Comp_Env *frame;
-  int j = 0, p = 0;
+  int j = 0, p = 0, modpos;
   Scheme_Bucket *b;
   Scheme_Object *val, *modidx, *modname, *srcsym;
   Scheme_Env *genv;
@@ -1335,8 +1341,12 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     return val;
   }
 
-  if (modname)
-    scheme_check_accessible_in_module(genv, symbol, srcsym);
+  if (modname) {
+    Scheme_Object *pos;
+    pos = scheme_check_accessible_in_module(genv, symbol, srcsym, -1, 1);
+    modpos = SCHEME_INT_VAL(pos);
+  } else
+    modpos = -1;
 
   if (modname && (flags & SCHEME_SETTING)) {
     if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
@@ -1358,18 +1368,12 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
      idea, because it causes module instances to be preserved. */
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, kernel_symbol)) {
     /* Create a module variable reference, so that idx is preserved: */
-    return scheme_hash_module_variable(env->genv, modidx, symbol);
+    return scheme_hash_module_variable(env->genv, modidx, symbol, modpos);
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Need to return a variable reference in this case, too. */
-    val = scheme_alloc_object();
-    val->type = scheme_module_variable_type;
-
-    SCHEME_PTR1_VAL(val) = genv->module->self_modidx;
-    SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(symbol);
-
-    return val;
+    return scheme_hash_module_variable(env->genv, genv->module->self_modidx, symbol, modpos);
   }
 
   b = scheme_bucket_from_table(genv->toplevel, (char *)SCHEME_STX_SYM(symbol));
@@ -1846,12 +1850,16 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
     if (SAME_OBJ(modname, kernel_symbol))
       return (Scheme_Object *)scheme_global_bucket(varname, scheme_initial_env);
     else {
-      obj = scheme_alloc_object();
-      obj->type = scheme_module_variable_type;
-      SCHEME_PTR1_VAL(obj) = modname;
-      SCHEME_PTR2_VAL(obj) = varname;
+      Module_Variable *mv;
+      
+      mv = MALLOC_ONE_TAGGED(Module_Variable);
+      mv->type = scheme_module_variable_type;
+      
+      mv->modidx = modname;
+      mv->sym = varname;
+      mv->pos = -1;
 
-      return obj;
+      return (Scheme_Object *)mv;
     }
   }
 

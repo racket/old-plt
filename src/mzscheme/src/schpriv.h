@@ -1532,6 +1532,14 @@ typedef struct Scheme_Modix {
   Scheme_Object *shift_cache; /* vector */
 } Scheme_Modidx;
 
+typedef struct Module_Variable {
+  Scheme_Type type; /* scheme_module_variable_type */
+  MZ_HASH_KEY_EX
+  Scheme_Object *modidx;
+  Scheme_Object *sym;
+  int pos;
+} Module_Variable;
+
 void scheme_add_global_keyword(const char *name, Scheme_Object *v, Scheme_Env *env);
 void scheme_add_global_keyword_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
 void scheme_add_global_constant(const char *name, Scheme_Object *v, Scheme_Env *env);
@@ -1546,14 +1554,17 @@ Scheme_Object *scheme_module_resolve(Scheme_Object *modidx);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
 void scheme_module_force_lazy(Scheme_Env *env, int previous);
 
-void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx);
+int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *varname);
+
+Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx, 
+						 int position, int want_pos);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
 Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx, 
 				   Scheme_Object *shift_from_modidx,
 				   Scheme_Object *shift_to_modidx);
 
-Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym);
+Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym, int pos);
 
 extern Scheme_Env *scheme_initial_env;
 
@@ -1820,5 +1831,7 @@ Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2);
 Scheme_Object *scheme_copy_list(Scheme_Object *l);
 
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
+
+#define SCHEME_SYM_UNINTERNED(o) (((Scheme_Symbol *)o)->keyex & 0x1)
 
 #endif /* __mzscheme_private__ */

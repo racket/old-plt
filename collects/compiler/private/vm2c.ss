@@ -31,6 +31,9 @@
 
       (define local-vars-at-top? #f)
 
+      (define (interned? sym)
+	(eq? sym (string->symbol (symbol->string sym))))
+
       (define vm->c:indent-by 4)
       (define vm->c:indent-spaces
 	(make-string vm->c:indent-by #\space))
@@ -54,12 +57,12 @@
 			   (string->symbol (cadr path))]
 			  [else (string->symbol "MoD")]))])])
 	  (let ([name (symbol-append 'GL (compiler:gensym) mname '_ s)])
-	    name)))
+	    (string->symbol (compiler:clean-string (symbol->string name))))))
 
       (define vm->c:bucket-name
 	(lambda (mod var)
 	  ;; Shouldn't generate any new names:
-	  (mod-glob-cname (compiler:add-global-varref! mod var #f))))
+	  (mod-glob-cname (compiler:add-global-varref! mod var #f #f #f))))
 
       (define (vm->c:SYMBOLS-name)
 	(if (compiler:multi-o-constant-pool)
@@ -89,20 +92,45 @@
 			   (format "; ~a" i)))
 	      (loop (add1 i))))))
 
-      (define (vm->c:emit-symbol-list! port comma comment?)
-	(vm->c:emit-list! port comma comment? (const:get-symbol-table) (const:get-symbol-counter) symbol->string))
+      (define (vm->c:emit-symbol-list! port comma c-comment?)
+	(vm->c:emit-list! port comma c-comment? (const:get-symbol-table) (const:get-symbol-counter) 
+			  (if c-comment?
+			      symbol->string
+			      ;; Hack: wrap with parens to indicate uninterned
+			      (lambda (s)
+				((if (interned? s)
+				     values
+				     list)
+				 (symbol->string s))))))
+
+      (define (vm->c:emit-symbol-length-list! port comma c-comment?)
+	(vm->c:emit-list! port comma c-comment? (const:get-symbol-table) (const:get-symbol-counter) (lambda (s) (string-length (symbol->string s)))))
 
       (define (vm->c:emit-symbol-declarations! port)
 	(unless (zero? (const:get-symbol-counter))
 	  (unless (compiler:multi-o-constant-pool)
 	    (fprintf port "static const char *SYMBOL_STRS[~a] = {~n" (const:get-symbol-counter))
 	    (vm->c:emit-symbol-list! port "," #t)
-	    (fprintf port "}; /* end of SYMBOL_STRS */~n~n"))
+	    (fprintf port "}; /* end of SYMBOL_STRS */~n~n")
+	    (fprintf port "static const long SYMBOL_LENS[~a] = {~n" (const:get-symbol-counter))
+	    (vm->c:emit-symbol-length-list! port "," #t)
+	    (fprintf port "}; /* end of SYMBOL_LENS */~n~n"))
 
-	  (fprintf port "~aScheme_Object * ~a[~a];~n~n" 
+	  (fprintf port "~aScheme_Object * ~a[~a];~n~n"
 		   (if (compiler:multi-o-constant-pool) "" "static ")
 		   (vm->c:SYMBOLS-name)
 		   (const:get-symbol-counter))))
+
+      (define (vm->c:emit-syntax-string-declarations! port)
+	(let ([l (const:get-syntax-strings)])
+	  (unless (null? l)
+	    (fprintf port "static Scheme_Object *SS[~a];~n~n" (length l))
+	    (for-each
+	     (lambda (ss)
+	       (emit-string port
+			    (syntax-string-str ss)
+			    (format "SYNTAX_STRING_~a" (syntax-string-id ss))))
+	     l))))
 
       (define (vm->c:emit-inexact-list! port comma comment?)
 	(vm->c:emit-list! port comma comment? (const:get-inexact-table) (const:get-inexact-counter)
@@ -121,32 +149,61 @@
 	(hash-table-for-each
 	 (const:get-string-table)
 	 (lambda (sym index)
-	   (let* ([str (symbol->string sym)]
-		  [len (string-length str)])
-	     (let ([friendly (substring str 0 (min len 24))])
-	       (fprintf port
-			"/* ~a */~n"
-			(list->string (map (lambda (i)
-					     (cond
-					      [(eq? i #\/) #\_]
-					      [(<= 32 (char->integer i) 121)
-					       i]
-					      [else #\_]))
-					   (string->list friendly)))))
-	     (fprintf port "static const char STRING_~a[~a] = {" index (add1 len))
-	     (let loop ([i 0])
-	       (unless (= i len)
-		 (when (zero? (modulo i 20))
-		   (fprintf port "~n    "))
-		 (fprintf port "~a, " (char->integer (string-ref str i)))
-		 (loop (add1 i)))))
-	   (fprintf port "0 }; /* end of STRING_~a */~n~n" index))))
+	   (let* ([str (symbol->string sym)])
+	     (emit-string port str (format "STRING_~a" index))))))
+
+      (define emit-string
+	(lambda (port str name)
+	  (let* ([len (string-length str)])
+	    (let ([friendly (substring str 0 (min len 24))])
+	      (fprintf port
+		       "/* ~a */~n"
+		       (list->string (map (lambda (i)
+					    (cond
+					     [(eq? i #\/) #\_]
+					     [(<= 32 (char->integer i) 121)
+					      i]
+					     [else #\_]))
+					  (string->list friendly)))))
+	    (fprintf port "static const char ~a[~a] = {" name (add1 len))
+	    (let loop ([i 0])
+	      (unless (= i len)
+		(when (zero? (modulo i 20))
+		  (fprintf port "~n    "))
+		(fprintf port "~a, " (char->integer (string-ref str i)))
+		(loop (add1 i)))))
+	  (fprintf port "0 }; /* end of ~a */~n~n" name)))
 
       (define (vm->c:emit-symbol-definitions! port)
 	(unless (zero? (const:get-symbol-counter))
 	  (fprintf port "  int i;~n")
-	  (fprintf port "  for (i = ~a; i--; )~n    SYMBOLS[i] = scheme_intern_exact_symbol(SYMBOL_STRS[i], mzc_strlen(SYMBOL_STRS[i]));~n"
-		   (const:get-symbol-counter))))
+	  (fprintf port "  for (i = ~a; i--; )~n    SYMBOLS[i] = scheme_intern_exact_symbol(SYMBOL_STRS[i], SYMBOL_LENS[i]);~n"
+		   (const:get-symbol-counter))
+	  ;; Some symbols might be uninterned...
+	  (hash-table-for-each
+	   (const:get-symbol-table)
+	   (lambda (sym b)
+	     (unless (interned? sym)
+	       (let ([pos (zodiac:varref-var b)])
+		 (fprintf port "  SYMBOLS[~a] = scheme_make_exact_symbol(SYMBOL_STRS[~a], SYMBOL_LENS[~a]); /* uninterned */~n"
+			  pos pos pos)))))))
+
+      (define (vm->c:emit-syntax-string-definitions! port)
+	(let ([l (const:get-syntax-strings)])
+	  (unless (null? l)
+	    (for-each
+	     (lambda (ss)
+	       (let ([id (syntax-string-id ss)]
+		     [symbols (vm->c:SYMBOLS-name)])
+		 (fprintf port "  SS[~a] = scheme_load_compiled_stx_string(SYNTAX_STRING_~a, ~a);~n"
+			  id id (string-length (syntax-string-str ss)))
+		 ;; Reset uninterned symbols:
+		 (let loop ([uposes (syntax-string-uposes ss)][i (syntax-string-ustart ss)])
+		   (unless (null? uposes)
+		     (fprintf port "  ~a[~a] = scheme_compiled_stx_symbol(SCHEME_VEC_ELS(SS[~a])[~a]);~n"
+			      symbols (car uposes) id i)
+		     (loop (cdr uposes) (add1 i))))))
+	     l))))
 
       (define (vm->c:emit-inexact-definitions! port)
 	(unless (zero? (const:get-inexact-counter))
@@ -174,7 +231,7 @@
 	  (unless (set-empty? (compiler:get-primitive-refs))
 	    (fprintf port "   /* primitives referenced by the code */~n")
 	    (for-each (lambda (a)
-			(fprintf port "~aP.~a = scheme_module_bucket(~a, ~a, env)->val;~n"
+			(fprintf port "~aP.~a = scheme_module_bucket(~a, ~a, -1, env)->val;~n"
 				 vm->c:indent-spaces
 				 (vm->c:convert-symbol (vm->c:bucket-name '#%kernel a))
 				 (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f '#%kernel))
@@ -581,6 +638,7 @@
 			 (varref:module-invoke? var))
 	       (let* ([name (vm->c:convert-symbol (mod-glob-cname var))]
 		      [et? (mod-glob-exp-time? var)]
+		      [position (mod-glob-position var)]
 		      [mod (mod-glob-modname var)]
 		      [in-mod? (mod-glob-in-module? var)]
 		      [var (mod-glob-varname var)]
@@ -588,7 +646,7 @@
 				   (compiler:get-module-path-constant mod))]
 		      [mod-local (and mod (not (symbol? mod)) (not modidx))]
 		      [mod-far (and mod (or (symbol? mod) modidx))])
-		 (fprintf port "~aG~a = scheme_~a~a_bucket(~a~a~a, ~a);~n"
+		 (fprintf port "~aG~a = scheme_~a~a_bucket(~a~a~a, ~a~a~a);~n"
 			  indent 
 			  name 
 			  (if et? "exptime_" "")
@@ -606,6 +664,8 @@
 			      "")
 			  (if mod-far ", " "")
 			  (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f var))
+			  (if mod-far (or position -1) "")
+			  (if mod-far ", " "")
 			  (if (or mod-local in-mod?) "env" "SCHEME_CURRENT_ENV(pr)")))))
 	   (set->list globals))))
 
@@ -1597,11 +1657,11 @@
 		   
 		   ;; HACK! - abused constants to communicate
 		   ;;  a direct call to scheme_read_compiled_stx_string():
-		   [(zodiac:varref? (zodiac:zread-object ast))
-		    (let ([for-mod? (varref:has-attribute? (zodiac:zread-object ast)
-							   varref:module-stx-string)])
-		      (emit-expr "scheme_eval_compiled_stx_string(S.~a, SCHEME_CURRENT_ENV(pr), ~a, ~a)"
-				 (vm->c:convert-symbol (zodiac:varref-var (zodiac:zread-object ast)))
+		   [(syntax-string? (zodiac:zread-object ast))
+		    (let ([id (syntax-string-id (zodiac:zread-object ast))]
+			  [for-mod? (syntax-string-mi (zodiac:zread-object ast))])
+		      (emit-expr "scheme_eval_compiled_stx_string(SS[~a], SCHEME_CURRENT_ENV(pr), ~a, ~a)"
+				 id
 				 (if for-mod? "phase_shift" "0")
 				 (if for-mod? "self_modidx" "NULL")))]
 		   

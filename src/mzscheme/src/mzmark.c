@@ -30,6 +30,32 @@ int variable_obj_FIXUP(void *p) {
 }
 
 
+int module_var_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Module_Variable));
+}
+
+int module_var_MARK(void *p) {
+  Module_Variable *mv = (Module_Variable *)p;
+
+  gcMARK(mv->modidx);
+  gcMARK(mv->sym);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Module_Variable));
+}
+
+int module_var_FIXUP(void *p) {
+  Module_Variable *mv = (Module_Variable *)p;
+
+  gcFIXUP(mv->modidx);
+  gcFIXUP(mv->sym);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Module_Variable));
+}
+
+
 int bucket_obj_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Bucket));

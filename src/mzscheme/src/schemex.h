@@ -175,8 +175,10 @@ void (*scheme_temp_inc_mark_depth)();
 Scheme_Object *(*scheme_current_continuation_marks)(void);
 /* Internal */
 Scheme_Object *(*scheme_do_eval)(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);
-Scheme_Object *(*scheme_eval_compiled_stx_string)(Scheme_Object *str, Scheme_Env *env, 
-					       long shift, Scheme_Object *modidx);
+Scheme_Object *(*scheme_eval_compiled_stx_string)(Scheme_Object *expr, Scheme_Env *env, 
+							 long shift, Scheme_Object *modidx);
+Scheme_Object *(*scheme_load_compiled_stx_string)(const char *str, long len);
+Scheme_Object *(*scheme_compiled_stx_symbol)(Scheme_Object *stx);
 /*========================================================================*/
 /*                           memory management                            */
 /*========================================================================*/
@@ -427,9 +429,9 @@ Scheme_Object *(*scheme_make_envunbox)(Scheme_Object *value);
 Scheme_Object *(*scheme_lookup_global)(Scheme_Object *symbol, Scheme_Env *env);
 Scheme_Bucket *(*scheme_global_bucket)(Scheme_Object *symbol, Scheme_Env *env);
 Scheme_Bucket *(*scheme_global_keyword_bucket)(Scheme_Object *symbol, Scheme_Env *env);
-Scheme_Bucket *(*scheme_module_bucket)(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env);
+Scheme_Bucket *(*scheme_module_bucket)(Scheme_Object *mod, Scheme_Object *var, int pos, Scheme_Env *env);
 Scheme_Bucket *(*scheme_exptime_global_bucket)(Scheme_Object *symbol, Scheme_Env *env);
-Scheme_Bucket *(*scheme_exptime_module_bucket)(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env);
+Scheme_Bucket *(*scheme_exptime_module_bucket)(Scheme_Object *mod, Scheme_Object *var, int pos, Scheme_Env *env);
 Scheme_Object *(*scheme_builtin_value)(const char *name); /* convenience */
 void (*scheme_set_global_bucket)(char *proc, Scheme_Bucket *var, Scheme_Object *val,
 			      int set_undef);

@@ -99,6 +99,8 @@
   scheme_extension_table->scheme_current_continuation_marks = scheme_current_continuation_marks;
   scheme_extension_table->scheme_do_eval = scheme_do_eval;
   scheme_extension_table->scheme_eval_compiled_stx_string = scheme_eval_compiled_stx_string;
+  scheme_extension_table->scheme_load_compiled_stx_string = scheme_load_compiled_stx_string;
+  scheme_extension_table->scheme_compiled_stx_symbol = scheme_compiled_stx_symbol;
 #ifndef SCHEME_NO_GC
 # ifndef SCHEME_NO_GC_PROTO
   scheme_extension_table->GC_malloc = GC_malloc;

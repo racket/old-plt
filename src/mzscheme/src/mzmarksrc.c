@@ -13,6 +13,17 @@ variable_obj {
   gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home));
 }
 
+module_var {
+ mark:
+  Module_Variable *mv = (Module_Variable *)p;
+
+  gcMARK(mv->modidx);
+  gcMARK(mv->sym);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Module_Variable));
+}
+
 bucket_obj {
  mark:
   Scheme_Bucket *b = (Scheme_Bucket *)p;

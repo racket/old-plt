@@ -1949,6 +1949,17 @@ static Scheme_Object *read_compact(CPort *port,
       l = read_compact_number(port);
       v = symtab[l];
       break;
+    case CPT_UNINTERNED_SYMBOL:
+      l = read_compact_number(port);
+      s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
+      v = scheme_make_exact_symbol(s, l);
+
+      l = read_compact_number(port);
+      symtab[l] = v;
+      /* The fact that other uses of the symbol go through the table
+	 means that uninterned symbols are consistently re-created for
+	 a particular compiled expression */
+      break;
     case CPT_STRING:
       l = read_compact_number(port);
       s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
@@ -2121,16 +2132,22 @@ static Scheme_Object *read_compact(CPort *port,
 	break;
     case CPT_MODULE_VAR:
       {
+	Module_Variable *mv;
 	Scheme_Object *mod, *var;
+	int pos;
 	
 	l = read_compact_number(port); /* symtab index */
 	mod = read_compact(port, ht, symtab, 0);
 	var = read_compact(port, ht, symtab, 0);
+	pos = read_compact_number(port);
 
-	v = scheme_alloc_object();
-	v->type = scheme_module_variable_type;
-	SCHEME_PTR1_VAL(v) = mod;
-	SCHEME_PTR2_VAL(v) = var;
+	mv = MALLOC_ONE_TAGGED(Module_Variable);
+	mv->type = scheme_module_variable_type;
+	mv->modidx = mod;
+	mv->sym = var;
+	mv->pos = pos;
+
+	v = (Scheme_Object *)mv;
 	
 	symtab[l] = v;
       }

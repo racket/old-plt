@@ -137,6 +137,9 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
+void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
+		    int start, int count, int do_uninterned);
+
 #define MODCHAIN_TABLE(p) ((Scheme_Hash_Table *)(SCHEME_VEC_ELS(p)[0]))
 
 /**********************************************************************/
@@ -233,7 +236,12 @@ void scheme_init_module(Scheme_Env *env)
 						      "namespace-attach-module",
 						      2, 2),
 			     env);
-
+  scheme_add_global_constant("namespace-require/copy",
+			     scheme_make_prim_w_arity(namespace_require,
+						      "namespace-require/copy",
+						      1, 1),
+			     env);
+  
 
   scheme_add_global_constant("compiled-module-expression?",
 			     scheme_make_prim_w_arity(module_compiled_p,
@@ -581,7 +589,8 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 				       Scheme_Env *env,
 				       int get_bucket, 
 				       int exp_time, int indirect_ok,
-				       int fail_with_error)
+				       int fail_with_error,
+				       int position)
 {
   Scheme_Object *modname, *modidx;
   Scheme_Object *name, *srcname, *srcmname;
@@ -620,28 +629,47 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     
     /* Before starting, check whether the name is provided */
     count = srcm->num_provides;
-    for (i = 0; i < count; i++) {
-      if (SAME_OBJ(name, srcm->provides[i])) {
-	if (i < srcm->num_var_provides) {
-	  srcmname = (srcm->provide_srcs ? srcm->provide_srcs[i] : scheme_false);
-	  if (SCHEME_FALSEP(srcmname))
-	    srcmname = srcm->modname;
-	  else
-	    srcmname = scheme_module_resolve(srcmname);
-	  srcname = srcm->provide_src_names[i];
-	  break;
+    if (position >= 0) {
+      if (position < count) {
+	i = position;
+	if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->provides[i]))
+	    && !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->provides[i]), SCHEME_SYM_LEN(name))) {
+	  name = srcm->provides[i];
 	} else {
-	  if (fail_with_error)
-	    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
-			     "%s: name is provided as syntax: %V by module: %V",
-			     (exp_time ? "dynamic-require-for-syntax" : "dynamic-require"),
-			     name, srcm->modname);
-	  return NULL;
+	  i = count; /* not found */
+	  indirect_ok = 0; /* don't look further */
+	}
+      } else {
+	position -= srcm->num_var_provides;
+	i = count;
+      }
+    } else {
+      for (i = 0; i < count; i++) {
+	if (SAME_OBJ(name, srcm->provides[i])) {
+	  if (i < srcm->num_var_provides) {
+	    break;
+	  } else {
+	    if (fail_with_error)
+	      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+			       "%s: name is provided as syntax: %V by module: %V",
+			       (exp_time ? "dynamic-require-for-syntax" : "dynamic-require"),
+			       name, srcm->modname);
+	    return NULL;
+	  }
 	}
       }
     }
-    
-    if ((i == count) && srcm->reprovide_kernel) {
+
+    if (i < count) {
+      srcmname = (srcm->provide_srcs ? srcm->provide_srcs[i] : scheme_false);
+      if (SCHEME_FALSEP(srcmname))
+	srcmname = srcm->modname;
+      else
+	srcmname = scheme_module_resolve(srcmname);
+      srcname = srcm->provide_src_names[i];
+    }
+
+    if ((position < 0) && (i == count) && srcm->reprovide_kernel) {
       /* Check kernel. */
       srcm = kernel;
       goto try_again;
@@ -651,12 +679,23 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
       if (indirect_ok) {
 	/* Try indirect provides: */
 	srcm = m;
-	count = srcm->num_indirect_provides;
-	for (i = 0; i < count; i++) {
-	  if (SAME_OBJ(name, srcm->indirect_provides[i])) {
+	if (position >= 0) {
+	  i = position;
+	  if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->indirect_provides[i]))
+	      && !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->indirect_provides[i]), SCHEME_SYM_LEN(name))) {
+	    name = srcm->indirect_provides[i];
 	    srcname = name;
 	    srcmname = srcm->modname;
-	    break;
+	  } else
+	    i = count; /* not found */
+	} else {
+	  count = srcm->num_indirect_provides;
+	  for (i = 0; i < count; i++) {
+	    if (SAME_OBJ(name, srcm->indirect_provides[i])) {
+	      srcname = name;
+	      srcmname = srcm->modname;
+	      break;
+	    }
 	  }
 	}
       }
@@ -693,12 +732,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 0, 0, 1);
+  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 0, 0, 1, -1);
 }
 
 static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 1, 0, 1);
+  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 1, 0, 1, -1);
 }
 
 static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp)
@@ -1172,6 +1211,28 @@ static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const ch
   }
 }
 
+static void setup_accessible_table(Scheme_Module *m)
+{
+  if (!m->accessible) {
+    Scheme_Hash_Table *ht;
+    int i, count, nvp;
+
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    nvp = m->num_var_provides;
+    for (i = 0; i < nvp; i++) {
+      if (SCHEME_FALSEP(m->provide_srcs[i])) {
+	scheme_hash_set(ht, m->provide_src_names[i], scheme_make_integer(i));
+      }
+    }
+
+    count = m->num_indirect_provides;
+    for (i = 0; i < count; i++) {
+      scheme_hash_set(ht, m->indirect_provides[i], scheme_make_integer(i + nvp));
+    }
+    m->accessible = ht;
+  }
+}
+
 Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
 {
   if (name == kernel_symbol)
@@ -1180,24 +1241,94 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
     return (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), name);
 }
 
-void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx)
+Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, 
+						 Scheme_Object *stx, 
+						 int position, int want_pos)
+/* Returns the actual name when want_pos, needed in case of uninterned
+   names.  Otherwise, returns a position value on success.  */
 {
-  if (env == scheme_initial_env)
-    return;
-  if (env->module->primitive)
-    return;
+  if ((env == scheme_initial_env)
+      || (env->module->primitive)) {
+    if (want_pos)
+      return scheme_make_integer(-1);
+    else
+      return symbol;
+  }
 
-  if (scheme_hash_get(env->module->accessible, symbol))
-    return;
+  if (position >= 0) {
+    /* Check whether the symbol at `pos' matches the string part of
+       the expected symbol.  */
+    Scheme_Object *isym;
 
+    if (position < env->module->num_var_provides) {
+      if (SCHEME_FALSEP(env->module->provide_srcs[position]))
+	isym = env->module->provide_src_names[position];
+      else
+	isym = NULL;
+    } else {
+      position -= env->module->num_var_provides;
+      if (position < env->module->num_indirect_provides) {
+	isym = env->module->indirect_provides[position];
+      } else
+	isym = NULL;
+    }
+
+    if (isym) {
+      if (SAME_OBJ(isym, symbol)
+	  || (SCHEME_SYM_LEN(isym) == SCHEME_SYM_LEN(symbol)
+	      && !memcmp(SCHEME_SYM_VAL(isym), SCHEME_SYM_VAL(symbol), SCHEME_SYM_LEN(isym)))) {
+	if (want_pos)
+	  return scheme_make_integer(position);
+	else
+	  return isym;
+      } 
+    }
+    /* failure */
+  } else {
+    Scheme_Object *pos;
+
+    pos = scheme_hash_get(env->module->accessible, symbol);
+
+    if (pos) {
+      if (want_pos)
+	return pos;
+      else
+	return symbol;
+    }
+  }
+
+  /* For error, if stx is no more specific than symbol, drop symbol. */
   if (stx && SAME_OBJ(SCHEME_STX_SYM(stx), symbol)) {
     symbol = stx;
     stx = NULL;
   }
-
   scheme_wrong_syntax("compile", stx, symbol, 
-		      "variable not provided (directly or indirectly) from module: %S",
+		      "variable not provided (directly or indirectly%s) from module: %S",
+		      (position >= 0) ? " and at the expected position" : "",
 		      env->module->modname);
+  return NULL;
+}
+
+int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *varname)
+{
+  Scheme_Module *m;
+  Scheme_Object *pos;
+
+  if (modname == kernel_symbol)
+    return -1;
+
+  m = module_load(modname, env, NULL);
+  if (!m || m->primitive)
+    return -1;
+
+  setup_accessible_table(m);
+
+  pos = scheme_hash_get(m->accessible, varname);
+  
+  if (pos)
+    return SCHEME_INT_VAL(pos);
+  else
+    return -1;
 }
 
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name)
@@ -1276,24 +1407,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
     } else
       menv->module = m;
 
-    if (!m->accessible) {
-      Scheme_Hash_Table *ht;
-      int i, count;
-
-      ht = scheme_make_hash_table(SCHEME_hash_ptr);
-      count = m->num_var_provides;
-      for (i = 0; i < count; i++) {
-	if (SCHEME_FALSEP(m->provide_srcs[i])) {
-	  scheme_hash_set(ht, m->provide_src_names[i], scheme_false);
-	}
-      }
-
-      count = m->num_indirect_provides;
-      for (i = 0; i < count; i++) {
-	scheme_hash_set(ht, m->indirect_provides[i], scheme_false);
-      }
-      m->accessible = ht;
-    }
+    setup_accessible_table(m);
 
     /* Create provided global variables: */
     {
@@ -1505,24 +1619,24 @@ void scheme_finish_primitive_module(Scheme_Env *env)
   env->running = 1;
 }
 
-Scheme_Bucket *scheme_module_bucket(Scheme_Object *modname, Scheme_Object *var, Scheme_Env *env)
+Scheme_Bucket *scheme_module_bucket(Scheme_Object *modname, Scheme_Object *var, int pos, Scheme_Env *env)
 {
   Scheme_Object *a[2];
 
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 0, 1, 1);
+  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 0, 1, 1, pos);
 }
 
-Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Object *var, Scheme_Env *env)
+Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Object *var, int pos, Scheme_Env *env)
 {
   Scheme_Object *a[2];
 
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 1, 1, 1);
+  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 1, 1, 1, pos);
 }
 
 Scheme_Object *scheme_builtin_value(const char *name)
@@ -1533,14 +1647,14 @@ Scheme_Object *scheme_builtin_value(const char *name)
 
   /* Try kernel first: */
   a[0] = kernel_symbol;
-  v = _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0);
+  v = _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0, -1);
 
   if (v)
     return v;
 
   /* Maybe in MzScheme? */
   a[0] = scheme_intern_symbol("mzscheme");
-  return _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0);
+  return _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0, -1);
 }
 
 Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o)
@@ -2016,6 +2130,8 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
     }
   }
 
+  qsort_provides(exs, exns, exss, 0, nvar, 1);
+
   m->provides = exs;
   m->provide_srcs = exss;
   m->provide_src_names = exns;
@@ -2036,6 +2152,8 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
 
   m->indirect_provides = exs;
   m->num_indirect_provides = nvar;
+
+  qsort_provides(exs, NULL, NULL, 0, nvar, 1);
 
   m->self_modidx = self_modidx;
 
@@ -2877,6 +2995,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     }
 
     excount = count;
+
+    /* Sort provide array for variables: interned followed by
+       uninterned, alphabetical within each. This is important for
+       having a consistent provide arrays. */
+    qsort_provides(exs, exsns, exss, 0, exvcount, 1);
   }
 
   /* Compute indirect provides (which is everything at the top-level): */
@@ -2912,6 +3035,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     }
 
     exicount = count;
+
+    qsort_provides(exis, NULL, NULL, 0, exicount, 1);
   }
 
   if (!rec) {
@@ -3043,6 +3168,93 @@ static Scheme_Object *
 module_begin_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
   return do_module_begin(form, env, NULL, 0, depth, boundname);
+}
+
+/* Helper: */
+void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
+		    int start, int count, int do_uninterned)
+{
+  int i, j;
+  Scheme_Object *tmp_ex, *tmp_exsn, *tmp_exs, *pivot;
+
+  if (do_uninterned) {
+    /* Look for uninterned and move to end: */
+
+    for (j = count; j--; ) {
+      if (!SCHEME_SYM_UNINTERNED(exs[j]))
+	break;
+    }
+
+    for (i = start; i < j; i++) {
+      if (SCHEME_SYM_UNINTERNED(exs[i])) {
+	tmp_ex = exs[i];
+	exs[i] = exs[j];
+	exs[j] = tmp_ex;
+
+	if (exsns) {
+	  tmp_exsn = exsns[i];
+	  tmp_exs = exss[i];
+
+	  exsns[i] = exsns[j];
+	  exss[i] = exss[j];
+
+	  exsns[j] = tmp_exsn;
+	  exss[j] = tmp_exs;
+	}
+
+	j--;
+	/* Skip over uninterns already at the end: */
+	while (j) {
+	  if (!SCHEME_SYM_UNINTERNED(exs[j]))
+	    break;
+	  else
+	    j--;
+	}
+      }
+    }
+
+    /* Sort interned and uninterned separately: */
+    qsort_provides(exs, exsns, exss, 0, j + 1, 0);
+    qsort_provides(exs, exsns, exss, j + 1, count - j - 1, 0);
+  } else {
+    while (count > 1) {
+      j = start;
+      pivot = exs[j];
+      
+      for (i = 1; i < count; i++) {
+	int k = i + start;
+	if (strcmp(SCHEME_SYM_VAL(exs[k]), SCHEME_SYM_VAL(pivot)) < 0) {
+	  tmp_ex = exs[k];
+	  exs[k] = exs[j];
+	  exs[j] = tmp_ex;
+	  
+	  if (exsns) {
+	    tmp_exsn = exsns[k];
+	    tmp_exs = exss[k];
+	    
+	    exsns[k] = exsns[j];
+	    exss[k] = exss[j];
+	    
+	    exsns[j] = tmp_exsn;
+	    exss[j] = tmp_exs;
+	  }
+	  
+	  j++;
+	}
+      }
+
+      if (j == start) {
+	start++;
+	--count;
+      } else
+	break;
+    }
+
+    if (count > 1) {
+      qsort_provides(exs, exsns, exss, start, j - start, 0);
+      qsort_provides(exs, exsns, exss, j, count - (j - start), 0);
+    }
+  }
 }
 
 /**********************************************************************/

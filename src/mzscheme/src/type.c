@@ -348,7 +348,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_letrec_type, letrec);
   GC_REG_TRAV(scheme_let_one_type, let_one);
   GC_REG_TRAV(scheme_with_cont_mark_type, with_cont_mark);
-  GC_REG_TRAV(scheme_module_variable_type, twoptr_obj);
+  GC_REG_TRAV(scheme_module_variable_type, module_var);
 
   GC_REG_TRAV(_scheme_values_types_, bad_trav);
   

@@ -1028,6 +1028,7 @@
 				 (fprintf c-port "#include \"mzc.h\"~n~n")
 				 (vm->c:emit-struct-definitions! (compiler:get-structs) c-port)
 				 (vm->c:emit-symbol-declarations! c-port)
+				 (vm->c:emit-syntax-string-declarations! c-port)
 				 (vm->c:emit-inexact-declarations! c-port)
 				 (vm->c:emit-string-declarations! c-port)
 				 (vm->c:emit-prim-ref-declarations! c-port)
@@ -1043,6 +1044,10 @@
 				   (fprintf c-port "~nstatic void make_symbols()~n{~n")
 				   (vm->c:emit-symbol-definitions! c-port)
 				   (fprintf c-port "}~n"))
+
+				 (fprintf c-port "~nstatic void make_syntax_strings()~n{~n")
+				 (vm->c:emit-syntax-string-definitions! c-port)
+				 (fprintf c-port "}~n")
 				 
 				 (unless (zero? (const:get-inexact-counter))
 				   (fprintf c-port "~nstatic void make_inexacts()~n{~n")
@@ -1138,6 +1143,8 @@
 				   (unless (compiler:multi-o-constant-pool)
 				     (fprintf c-port "~amake_symbols();~n"
 					      vm->c:indent-spaces))
+				   (fprintf c-port "~amake_syntax_strings();~n"
+					    vm->c:indent-spaces)
 				   (unless (zero? (const:get-inexact-counter))
 				     (fprintf c-port "~amake_inexacts();~n"
 					      vm->c:indent-spaces))

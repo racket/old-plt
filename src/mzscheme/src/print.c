@@ -926,14 +926,20 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	l = SCHEME_INT_VAL(idx);
 	print_compact_number(p, l);
       } else if (compact) {
+	int uninterned;
+
+	uninterned = SCHEME_SYM_UNINTERNED(obj);
 	l = SCHEME_SYM_LEN(obj);
-	if (l < CPT_RANGE(SMALL_SYMBOL)) {
+	if (!uninterned && (l < CPT_RANGE(SMALL_SYMBOL))) {
 	  unsigned char s[1];
 	  s[0] = l + CPT_SMALL_SYMBOL_START;
 	  print_this_string(p, (char *)s, 0, 1);
 	} else {
-	  print_compact(p, CPT_SYMBOL);
+	  print_compact(p, (uninterned ? CPT_UNINTERNED_SYMBOL : CPT_SYMBOL));
 	  print_compact_number(p, l);
+	  /* Note: the written symbol table will preserve equivalence
+             of uninterned symbols for a single compiled
+             expression. */
 	}
 	print_this_string(p, scheme_symbol_val(obj), 0, l);
 
@@ -1269,14 +1275,18 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	l = SCHEME_INT_VAL(idx);
 	print_compact_number(p, l);
       } else {
+	Module_Variable *mv;
+
 	idx = scheme_make_integer(symtab->count);
 	scheme_hash_set(symtab, obj, idx);
 	l = SCHEME_INT_VAL(idx);
 
 	print_compact(p, CPT_MODULE_VAR);
 	print_compact_number(p, l);
-	print(SCHEME_PTR1_VAL(obj), notdisplay, 1, ht, symtab, rnht, p);
-	print(SCHEME_PTR2_VAL(obj), notdisplay, 1, ht, symtab, rnht, p);
+	mv = (Module_Variable *)obj;
+	print(mv->modidx, notdisplay, 1, ht, symtab, rnht, p);
+	print(mv->sym, notdisplay, 1, ht, symtab, rnht, p);
+	print_compact_number(p, mv->pos);
       }
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_variable_type)

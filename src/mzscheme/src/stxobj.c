@@ -47,6 +47,8 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_binding(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv);
+static Scheme_Object *module_binding_pos(int argc, Scheme_Object **argv);
+static Scheme_Object *module_trans_binding_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
 
 static Scheme_Object *barrier_symbol;
@@ -326,6 +328,17 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("identifier-transformer-binding", 
 			     scheme_make_prim_w_arity(module_trans_binding,
 						      "identifier-transformer-binding",
+						      1, 1),
+			     env);
+
+  scheme_add_global_constant("identifier-binding-export-position",
+			     scheme_make_prim_w_arity(module_binding_pos,
+						      "identifier-binding-export-position",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("identifier-transformer-binding-export-position",
+			     scheme_make_prim_w_arity(module_trans_binding_pos,
+						      "identifier-transformer-binding-export-position",
 						      1, 1),
 			     env);
 
@@ -3168,7 +3181,8 @@ static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv)
 	  : scheme_false);
 }
 
-static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **argv, int dphase)
+static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **argv, 
+					int dphase, int get_position)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *a, *m, *nom_mod, *nom_a;
@@ -3185,20 +3199,44 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
 
   if (!m)
     return scheme_false;
-  else if (SAME_OBJ(m, scheme_undefined))
-    return lexical_symbol;
-  else
-    return CONS(m, CONS(a, CONS(nom_mod, CONS(nom_a, scheme_null))));
+  else if (SAME_OBJ(m, scheme_undefined)) {
+    if (get_position)
+      return scheme_false;
+    else
+      return lexical_symbol;
+  } else {
+    if (get_position) {
+      int pos;
+
+      m = scheme_module_resolve(m);
+      pos = scheme_module_export_position(m, scheme_get_env(scheme_config), a);
+      if (pos < 0)
+	return scheme_false;
+      else
+	return scheme_make_integer(pos);
+    } else
+      return CONS(m, CONS(a, CONS(nom_mod, CONS(nom_a, scheme_null))));
+  }
 }
 
 static Scheme_Object *module_binding(int argc, Scheme_Object **argv)
 {
-  return do_module_binding("identifier-binding", argc, argv, 0);
+  return do_module_binding("identifier-binding", argc, argv, 0, 0);
 }
 
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv)
 {
-  return do_module_binding("identifier-transformer-binding", argc, argv, 1);
+  return do_module_binding("identifier-transformer-binding", argc, argv, 1, 0);
+}
+
+static Scheme_Object *module_binding_pos(int argc, Scheme_Object **argv)
+{
+  return do_module_binding("identifier-binding-export-position", argc, argv, 0, 1);
+}
+
+static Scheme_Object *module_trans_binding_pos(int argc, Scheme_Object **argv)
+{
+  return do_module_binding("identifier-transformer-binding-export-position", argc, argv, 1, 1);
 }
 
 static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)

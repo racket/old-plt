@@ -85,12 +85,12 @@
 	     names)))
 
 	(define symbol-table (make-hash-table))
-	(define (add-symbol s spos pos)
+	(define (add-symbol s spos pos uninterned?)
 	  (let ([v (hash-table-get symbol-table s (lambda () null))])
 	    (hash-table-put! symbol-table s
 			     (cons (list spos pos) v))))
 	
-					; Read in symbol info
+	;; Read in symbol info
 	(define kp-suffixes/counts
 	  (let loop ([kps kps][kpos 0])
 	    (if (null? kps)
@@ -103,7 +103,14 @@
 					  [symbols (cdadr info)])
 				      (let loop ([l symbols][p 0])
 					(unless (null? l)
-					  (add-symbol (string->symbol (car l)) kpos p)
+					  (let ([s (car l)])
+					    ;; s might be a list containing a symbol to
+					    ;; indicate that it's uninterned
+					    (add-symbol (if (string? s) 
+							    (string->symbol s)
+							    (string->uninterned-symbol (car s)))
+							kpos p
+							(pair? s)))
 					  (loop (cdr l) (add1 p))))
 				      (values suffix (length symbols))))))])
 		  (let ([rest (loop (cdr kps) 
@@ -114,7 +121,7 @@
 			rest
 			(cons (cons suffix count) rest)))))))
 
-					; Compile content of symbol table into dispatching information
+	;; Compile content of symbol table into dispatching information
 	(define symbols (hash-table-map symbol-table (lambda (key info) key)))
 	(define symbol-dispatches
 	  (apply
@@ -170,6 +177,13 @@
 	       symbols)
 	      (printf "}; /* end of SYMBOL_LENS */~n~n")
 	      
+	      (printf "static char SYMBOL_INTERNS[~a] = {~n" (length symbols))
+	      (for-each
+	       (lambda (s)
+		 (printf "  ~s,~n" (if (eq? s (string->symbol (symbol->string s))) 1 0)))
+	       symbols)
+	      (printf "}; /* end of SYMBOL_INTERNS */~n~n")
+	      
 	      (printf "static const int SYMBOL_DISPATCHES[~a] = {~n  " (length symbol-dispatches))
 	      (let loop ([l symbol-dispatches][line 0])
 		(unless (null? l)
@@ -191,9 +205,13 @@
 			  (caar l) (caar l))
 		  (loop (cdr l) (add1 p))))
 	      (printf "  for (i = j = 0; i < ~a; i++) {~n" (length symbols))
-	      (printf "    Scheme_Object * s = scheme_intern_exact_symbol(SYMBOL_STRS[i], SYMBOL_LENS[i]);~n")
-	      (printf "    int c = SYMBOL_DISPATCHES[j++];~n")
-	      (printf "    int k;~n")
+	      (printf "    Scheme_Object * s;~n")
+	      (printf "    int c, k;~n")
+	      (printf "    if (SYMBOL_INTERNS[i])~n")
+	      (printf "       s = scheme_intern_exact_symbol(SYMBOL_STRS[i], SYMBOL_LENS[i]);~n")
+	      (printf "    else~n")
+	      (printf "       s = scheme_make_exact_symbol(SYMBOL_STRS[i], SYMBOL_LENS[i]);~n")
+	      (printf "    c = SYMBOL_DISPATCHES[j++];~n")
 	      (printf "    for (k = c; k--; j += 2)~n")
 	      (printf "      symbol_tables[SYMBOL_DISPATCHES[j]][SYMBOL_DISPATCHES[j+1]] = s;~n")
 	      (printf "  }~n")

@@ -197,7 +197,10 @@
      const:make-syntax-constant
 
      const:reset-syntax-constants!
-     const:finish-syntax-constants!))
+     const:finish-syntax-constants!
+
+     (struct syntax-string (str mi uposes ustart id))
+     const:get-syntax-strings))
 
   (provide compiler:rep^)
   (define-signature compiler:rep^
@@ -243,7 +246,7 @@
      
      (struct case-info (body case-code global-vars used-vars captured-vars max-arity))
 
-     (struct mod-glob (cname modname varname exp-time? in-module?))
+     (struct mod-glob (cname modname varname position exp-time? in-module?))
      compiler:get-module-path-constant
 
      compiler:finish-syntax-constants!
@@ -417,6 +420,8 @@
      vm->c:emit-symbol-list!
      vm->c:emit-symbol-declarations!
      vm->c:emit-symbol-definitions!
+     vm->c:emit-syntax-string-declarations!
+     vm->c:emit-syntax-string-definitions!
      vm->c:emit-inexact-declarations!
      vm->c:emit-inexact-definitions!
      vm->c:emit-string-declarations!

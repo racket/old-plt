@@ -528,7 +528,7 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print)
   Scheme_Hash_Table *ht;
   int counter = 1;
 
-  ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
+  ht = scheme_hash_table(101, SCHEME_hash_ptr);
   setup_graph_table(o, ht, &counter, 
 		    for_print ? scheme_current_thread : NULL);
 
@@ -573,7 +573,7 @@ print_to_string(Scheme_Object *obj,
     cycles = -1;
 #endif
     if (cycles == -1) {
-      ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
+      ht = scheme_hash_table(101, SCHEME_hash_ptr);
       cycles = check_cycles(obj, p, ht);
     }
   }
@@ -1254,7 +1254,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       /* A quoted expression may have graph structure. We assume that
 	 this structure is local within the quoted expression. */
       
-      q_ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
+      q_ht = scheme_hash_table(101, SCHEME_hash_ptr);
       setup_graph_table(v, q_ht, &counter, p);
 
       if (compact)
@@ -1359,8 +1359,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	closed = print(v, notdisplay, 1, NULL, symtab, rnht, p);
       else {
 	/* Symtab services both symbols and module paths (modidxs) */
-	symtab = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
-	rnht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
+	symtab = scheme_hash_table(10, SCHEME_hash_ptr);
+	rnht = scheme_hash_table(10, SCHEME_hash_ptr);
 
 	/* "print" the string once to get a measurement and symtab size */
 	print_substring(v, notdisplay, 1, NULL, symtab, rnht, p, NULL, &slen);
@@ -1373,8 +1373,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_compact_number(p, slen);
 
 	/* Make symtab and rnht again to ensure the same results */
-	symtab = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
-	rnht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
+	symtab = scheme_hash_table(10, SCHEME_hash_ptr);
+	rnht = scheme_hash_table(10, SCHEME_hash_ptr);
 
 	closed = print(v, notdisplay, 1, NULL, symtab, rnht, p);
       }

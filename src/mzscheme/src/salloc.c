@@ -829,7 +829,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     tagged = tagged_while_counting;
     
     if (!no_walk)
-      smc_ht = scheme_hash_table(1000, SCHEME_hash_ptr, 0, 0);
+      smc_ht = scheme_hash_table(1000, SCHEME_hash_ptr);
     
     if (tagged) 
       GC_for_each_element(real_tagged, count_tagged, NULL);

@@ -2915,7 +2915,7 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
     int i = base->extensions->size;
     Scheme_Hash_Table *ht;
     
-    ht = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+    ht = scheme_hash_table(2, SCHEME_hash_weak_ptr);
 
     config->extensions = ht;
     
@@ -3027,7 +3027,7 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 
       if (!config->extensions) {
 	Scheme_Hash_Table *ht;
-	ht = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+	ht = scheme_hash_table(2, SCHEME_hash_weak_ptr);
 	config->extensions = ht;
       }
 

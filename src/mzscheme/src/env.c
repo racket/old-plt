@@ -415,7 +415,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
   Scheme_Object *modchain;
   Scheme_Env *env;
 
-  toplevel = scheme_hash_table(7, SCHEME_hash_ptr, 1, 0);
+  toplevel = scheme_hash_table(7, SCHEME_hash_ptr);
   toplevel->with_home = 1;
 
   if (semi > 0) {
@@ -423,7 +423,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
     modchain = NULL;
     module_registry = NULL;
   } else {
-    syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+    syntax = scheme_hash_table(7, SCHEME_hash_ptr);
     if (base) {
       modchain = base->modchain;
       module_registry = base->module_registry;
@@ -434,11 +434,11 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
       } else {
 	Scheme_Hash_Table *modules;
 
-	modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	modules = scheme_hash_table(7, SCHEME_hash_ptr);
 	modchain = scheme_make_vector(3, scheme_false);
 	SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)modules;
 
-	module_registry = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	module_registry = scheme_hash_table(7, SCHEME_hash_ptr);
       }
     }
   }
@@ -485,7 +485,7 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree
     Scheme_Object *p;
     Scheme_Hash_Table *modules;
 
-    modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+    modules = scheme_hash_table(7, SCHEME_hash_ptr);
     p = scheme_make_vector(3, scheme_false);
     SCHEME_VEC_ELS(p)[0] = (Scheme_Object *)modules;
     menv->modchain = p;
@@ -510,7 +510,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     if (SCHEME_FALSEP(modchain)) {
       Scheme_Hash_Table *next_modules;
 
-      next_modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      next_modules = scheme_hash_table(7, SCHEME_hash_ptr);
       modchain = scheme_make_vector(3, scheme_false);
       SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)next_modules;
       SCHEME_VEC_ELS(env->modchain)[1] = modchain;
@@ -528,7 +528,7 @@ Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home
   Scheme_Bucket **bs;
   int i;
 
-  r = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  r = scheme_hash_table(7, SCHEME_hash_ptr);
   if (home)
     r->with_home = 1;
 
@@ -662,7 +662,7 @@ Scheme_Hash_Table *scheme_map_constants_to_globals(void)
   ht = scheme_initial_env->toplevel;
   bs = ht->buckets;
 
-  result = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
+  result = scheme_hash_table(10, SCHEME_hash_ptr);
 
   for (i = ht->size; i--; ) {
     Scheme_Bucket *b = bs[i];
@@ -1179,7 +1179,7 @@ void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
     if (stxtoo) {
       if (!env->shadowed_syntax) {
 	Scheme_Hash_Table *ht;
-	ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	ht = scheme_hash_table(7, SCHEME_hash_ptr);
 	env->shadowed_syntax = ht;
       }
 	
@@ -1298,7 +1298,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
       return;
     } else {
       Scheme_Hash_Table *ht;
-      ht = scheme_hash_table(7, SCHEME_hash_bound_id, 0, 0);
+      ht = scheme_hash_table(7, SCHEME_hash_bound_id);
       r->ht = ht;
       for (i = 0; i < r->count; i++) {
 	key = (char *)r->syms[i];

@@ -205,8 +205,7 @@ scheme_init_symbol_table ()
 
   REGISTER_SO(scheme_symbol_table);
   
-  scheme_symbol_table = scheme_hash_table(HASH_TABLE_SIZE, 
-					  SCHEME_hash_ptr, 0, 1);
+  scheme_symbol_table = scheme_hash_table(HASH_TABLE_SIZE, SCHEME_hash_ptr);
   
   size = scheme_symbol_table->size * sizeof(Scheme_Bucket *);
 #ifdef MZ_PRECISE_GC

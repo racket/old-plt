@@ -120,8 +120,8 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
 #ifndef NO_DYNAMIC_LOAD
     REGISTER_SO(loaded_extensions);
     REGISTER_SO(fullpath_loaded_extensions);
-    loaded_extensions = scheme_hash_table(0, SCHEME_hash_ptr, 0, 0);
-    fullpath_loaded_extensions = scheme_hash_table(0, SCHEME_hash_string, 0, 0);
+    loaded_extensions = scheme_hash_table(0, SCHEME_hash_ptr);
+    fullpath_loaded_extensions = scheme_hash_table(0, SCHEME_hash_string);
 #endif
 
 #ifdef LINK_EXTENSIONS_BY_TABLE

@@ -2,19 +2,26 @@
 START type;
 
 variable_obj {
+ mark:
   Scheme_Bucket *b = (Scheme_Bucket *)p;
 
+  gcMARK(b->key);
+  gcMARK(b->val);
+  gcMARK(((Scheme_Bucket_With_Home *)b)->home);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home));
+}
+
+bucket_obj {
  mark:
+  Scheme_Bucket *b = (Scheme_Bucket *)p;
+
   gcMARK(b->key);
   gcMARK(b->val);
 
-  if (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-      gcMARK(((Scheme_Bucket_With_Home *)b)->home);
-
  size:
-  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket));
 }
 
 local_obj {

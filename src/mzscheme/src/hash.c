@@ -42,12 +42,6 @@
 #define FILL_FACTOR 2
 #endif
 
-#ifdef MZ_PRECISE_GC
-# define USE_FOREVER 0
-#else
-# define USE_FOREVER 1
-#endif
-
 long scheme_hash_primes[] = 
 {7, 31, 127, 257, 521, 1031, 2053, 4099, 8209, 16411, 
    32779, 65543, 131101, 262147, 425329, 1048583, 2097169,
@@ -101,7 +95,7 @@ static int not_stx_bound_eq(char *a, char *b)
 }
 
 Scheme_Hash_Table *
-scheme_hash_table (int size, int type, int has_const, int forever)
+scheme_hash_table (int size, int type)
 {
   Scheme_Hash_Table *table;
   size_t asize;
@@ -119,20 +113,12 @@ scheme_hash_table (int size, int type, int has_const, int forever)
   table->type = scheme_hash_table_type;
 
   asize = (size_t)table->size * sizeof(Scheme_Bucket *);
-#if USE_FOREVER
-  if (forever) {
-    table->buckets = (Scheme_Bucket **)scheme_malloc_atomic(asize);
-    memset((char *)table->buckets, 0, asize);
-  } else
-#endif
-    {
-      Scheme_Bucket **ba;
-      ba = (Scheme_Bucket **)scheme_malloc(asize);
-      table->buckets = ba;
-    }
+  {
+    Scheme_Bucket **ba;
+    ba = (Scheme_Bucket **)scheme_malloc(asize);
+    table->buckets = ba;
+  }
 
-  table->has_constants = has_const;
-  table->forever = forever;
   table->weak = (type == SCHEME_hash_weak_ptr);
 
   if (type == SCHEME_hash_string) {
@@ -248,17 +234,11 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     table->size = scheme_hash_primes[++table->step];
     
     asize = (size_t)table->size * sizeof(Scheme_Bucket *);
-#if USE_FOREVER
-    if (table->forever) {
-      table->buckets = (Scheme_Bucket **)scheme_malloc_atomic(asize);
-      memset((char *)table->buckets, 0, asize);
-    } else
-#endif
-      {
-	Scheme_Bucket **ba;
-	ba = (Scheme_Bucket **)scheme_malloc(asize);
-	table->buckets = ba;
-      }
+    {
+      Scheme_Bucket **ba;
+      ba = (Scheme_Bucket **)scheme_malloc(asize);
+      table->buckets = ba;
+    }
 
     table->count = 0;
     if (table->weak) {
@@ -280,28 +260,21 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     bucket = b;
   } else {
     size_t bsize;
+    Scheme_Type type;
 
-    if (table->with_home)
+    if (table->with_home) {
       bsize = sizeof(Scheme_Bucket_With_Home);
-#ifndef MZ_PRECISE_GC
-    else if (!table->has_constants)
+      type = scheme_variable_type;
+    } else  {
       bsize = sizeof(Scheme_Bucket);
-    else if (table->has_constants != 2)
-      bsize = sizeof(Scheme_Bucket_With_Flags);
-#endif
-    else
-      bsize = sizeof(Scheme_Bucket_With_Ref_Id);
+      type = scheme_bucket_type;
+    }
 
-#if USE_FOREVER
-    if (table->forever)
-      bucket = (Scheme_Bucket *)scheme_malloc_uncollectable_tagged(bsize);
-    else
-#endif
-      bucket = (Scheme_Bucket *)scheme_malloc_tagged(bsize);
+    bucket = (Scheme_Bucket *)scheme_malloc_tagged(bsize);
 
-    bucket->type = scheme_variable_type;
+    bucket->type = type;
 
-    if (bsize == sizeof(Scheme_Bucket_With_Home))
+    if (type == scheme_variable_type)
       ((Scheme_Bucket_With_Flags *)bucket)->flags = GLOB_HAS_HOME_PTR;
 
     if (table->weak) {
@@ -369,7 +342,7 @@ scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val,
   SCHEME_UNLOCK_MUTEX(table->mutex);
 #endif
 
-  if (table->has_constants
+  if (table->with_home
       && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
       && b->val)
     scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, key,
@@ -378,7 +351,7 @@ scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val,
 
   if (val)
     b->val = val;
-  if (constant && table->has_constants)
+  if (constant && table->with_home)
     ((Scheme_Bucket_With_Flags *)b)->flags |= GLOB_IS_CONST;
 }
 

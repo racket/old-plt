@@ -714,7 +714,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 		}
 	      } else {
 		Scheme_Hash_Table *tht;
-		tht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+		tht = scheme_hash_table(7, SCHEME_hash_ptr);
 		*ht = tht;
 	      }
 	      ph = scheme_alloc_small_object();
@@ -1842,7 +1842,7 @@ static Scheme_Object *read_compact(CPort *port,
       {
 	if (!local_rename_memory) {
 	  Scheme_Hash_Table *rht;
-	  rht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	  rht = scheme_hash_table(7, SCHEME_hash_ptr);
 	  local_rename_memory = rht;
 	}
 

@@ -145,6 +145,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_random_state_type, "<pseudo-random-generator>");
   set_name(scheme_regexp_type, "<regexp>");
   set_name(scheme_rename_table_type, "<rename-table>");
+  set_name(scheme_bucket_type, "<hash-table-bucket>");
 
   set_name(scheme_compilation_top_type, "<compiled-code>");
 
@@ -161,7 +162,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_module_type, "<module-code>");
   set_name(scheme_module_index_type, "<module-index>");
 
-  set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
 
@@ -375,6 +375,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_pair_type, cons_cell);
   GC_REG_TRAV(scheme_vector_type, vector_obj);
 
+  GC_REG_TRAV(scheme_bucket_type, bucket_obj);
+
   GC_REG_TRAV(scheme_input_port_type, input_port);
   GC_REG_TRAV(scheme_output_port_type, output_port);
   GC_REG_TRAV(scheme_eof_type, char_obj); /* small */
@@ -411,7 +413,6 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_module_type, module_val);
   GC_REG_TRAV(scheme_module_index_type, modidx_val);
 
-  GC_REG_TRAV(scheme_reserved_1_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_2_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_3_type, bad_trav);
 }

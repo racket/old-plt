@@ -1015,7 +1015,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
       Scheme_Hash_Table *ht;
       int i, count;
 
-      ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      ht = scheme_hash_table(7, SCHEME_hash_ptr);
       count = m->num_var_provides;
       for (i = 0; i < count; i++) {
 	if (SCHEME_FALSEP(m->provide_srcs[i])) {
@@ -1638,7 +1638,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   first = scheme_null;
   last = NULL;
 
-  required = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  required = scheme_hash_table(7, SCHEME_hash_ptr);
   /* Put initial requires into the table: */
   {
     int i, numvals;
@@ -1683,12 +1683,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   tables[1] = required;
   tables[2] = env->genv->syntax;
 
-  et_required = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  et_required = scheme_hash_table(7, SCHEME_hash_ptr);
   et_tables[0] = NULL;
   et_tables[1] = et_required;
   et_tables[2] = NULL;
 
-  provided = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  provided = scheme_hash_table(7, SCHEME_hash_ptr);
   reprovided = scheme_null;
 
   exp_body = scheme_null;
@@ -2637,7 +2637,7 @@ top_level_require_execute(Scheme_Object *data)
     env = env->exp_env;
   }
 
-  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  ht = scheme_hash_table(7, SCHEME_hash_ptr);
   rn = scheme_make_module_rename(for_exp, 1);
 
   (void)parse_requires(form, form, scheme_false, env, rn, 
@@ -2685,7 +2685,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
   /* If we get here, it must be a top-level require. */
 
   /* Hash table is for checking duplicate names in require list: */
-  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  ht = scheme_hash_table(7, SCHEME_hash_ptr);
 
   rn = scheme_make_module_rename(for_exp, 1);
 

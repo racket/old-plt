@@ -2,12 +2,8 @@
 #ifdef MARKS_FOR_TYPE_C
 
 int variable_obj_SIZE(void *p) {
-  Scheme_Bucket *b = (Scheme_Bucket *)p;
-
   return
-  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home));
 }
 
 int variable_obj_MARK(void *p) {
@@ -15,14 +11,10 @@ int variable_obj_MARK(void *p) {
 
   gcMARK(b->key);
   gcMARK(b->val);
-
-  if (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-      gcMARK(((Scheme_Bucket_With_Home *)b)->home);
+  gcMARK(((Scheme_Bucket_With_Home *)b)->home);
 
   return
-  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home));
 }
 
 int variable_obj_FIXUP(void *p) {
@@ -30,14 +22,36 @@ int variable_obj_FIXUP(void *p) {
 
   gcFIXUP(b->key);
   gcFIXUP(b->val);
-
-  if (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-      gcFIXUP(((Scheme_Bucket_With_Home *)b)->home);
+  gcFIXUP(((Scheme_Bucket_With_Home *)b)->home);
 
   return
-  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home));
+}
+
+
+int bucket_obj_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket));
+}
+
+int bucket_obj_MARK(void *p) {
+  Scheme_Bucket *b = (Scheme_Bucket *)p;
+
+  gcMARK(b->key);
+  gcMARK(b->val);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket));
+}
+
+int bucket_obj_FIXUP(void *p) {
+  Scheme_Bucket *b = (Scheme_Bucket *)p;
+
+  gcFIXUP(b->key);
+  gcFIXUP(b->val);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket));
 }
 
 

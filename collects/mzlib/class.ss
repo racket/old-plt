@@ -68,6 +68,7 @@
 				       (quote-syntax init-rest)
 				       (quote-syntax field)
 				       (quote-syntax init-field)
+				       (quote-syntax private)
 				       (quote-syntax public)
 				       (quote-syntax override)
 				       (quote-syntax rename)
@@ -82,7 +83,7 @@
 
 	     ;; ------ Basic syntax checks -----
 	     (for-each (lambda (stx)
-			 (syntax-case stx (init init-rest field init-field public override rename inherit)
+			 (syntax-case stx (init init-rest field init-field private public override rename inherit)
 			   [(form idp ...)
 			    (ormap (lambda (f) (module-identifier=? (syntax form) f))
 				   (list (quote-syntax init)
@@ -120,6 +121,14 @@
 				      (syntax->list (syntax (idp ...))))]
 			   [(field . rest)
 			    (bad "ill-formed field clause" stx)]
+			   [(private id ...)
+			    (for-each
+			     (lambda (id)
+			       (unless (identifier? id)
+				 (bad "private element is not an identifier" id)))
+			     (syntax->list (syntax (id ...))))]
+			   [(private . rest)
+			    (bad "ill-formed private clause" stx)]
 			   [(form idp ...)
 			    (ormap (lambda (f) (module-identifier=? (syntax form) f))
 				   (list (quote-syntax public)
@@ -194,11 +203,13 @@
 							   #f))]
 		     [plain-fields (flatten values (extract (list (quote-syntax field)) #f))]
 		     [plain-init-fields (flatten values (extract (list (quote-syntax init-field)) #f))]
+		     [privates (flatten pair (extract (list (quote-syntax private)) #f))]
 		     [publics (flatten pair (extract (list (quote-syntax public)) #f))]
 		     [overrides (flatten pair (extract (list (quote-syntax override)) #f))]
 		     [renames (flatten pair (extract (list (quote-syntax rename)) #f))]
 		     [inherits (flatten pair (extract (list (quote-syntax inherit)) #f))]
-		     [exprs (extract (list (quote-syntax public)
+		     [exprs (extract (list (quote-syntax private)
+					   (quote-syntax public)
 					   (quote-syntax override)
 					   (quote-syntax rename)
 					   (quote-syntax inherit))
@@ -222,169 +233,178 @@
 		 
 		 ;; ----- Extract method definitions; check that they look like procs -----
 		 ;;  Optionally transform them, can expand even if not transforming.
-		 (let ([local-public-names (map car (append publics overrides))]
-		       [proc-shape (lambda (name expr xforms)
-				     ;; expands an expression so we can check whether
-				     ;; it has the right form
-				     (define (expand expr)
-				       (local-expand
-					expr
-					(append
-					 (kernel-form-identifier-list
-					  (quote-syntax here))
-					 (list 
-					  this-id
-					  super-instantiate-id
-					  super-make-object-id))))
-				     ;; Checks whether the vars sequence is well-formed
-				     (define (vars-ok? vars)
-				       (or (identifier? vars)
-					   (stx-null? vars)
-					   (and (stx-pair? vars)
-						(identifier? (stx-car vars))
-						(vars-ok? (stx-cdr vars)))))
-				     ;; mk-name: constructs a method name
-				     ;; for error reporting, etc.
-				     (define (mk-name)
-				       (datum->syntax-object 
-					#f 
-					(string->symbol (format "~a method~a~a" 
-								(syntax-e name)
-								(if class-name
-								    " in "
-								    "")
-								(or class-name 
-								    ""))) 
-					#f))
-				     ;; filter: removes shadows vars, so that we
-				     ;;  don't unshadow them
-				     (define (filter xforms vars rec-name new-name)
-				       (let ([vars ;; flatten var list
-					      (let loop ([vars vars])
-						  (cond
-						   [(identifier? vars) (list vars)]
-						   [(stx-null? vars) null]
-						   [(stx-pair? vars)
-						    (cons (stx-car vars)
-							  (loop (stx-cdr vars)))]))]
-					     [base 
-					      (if rec-name
-						  (with-syntax ([old-name rec-name]
-								[new-name new-name]
-								[this-id this-id])
-						    (list 
-						     (syntax
-						      (old-name (make-direct-method-map 
-								 (quote-syntax this-id)
-								 (quote-syntax new-name))))))
-						  null)])
-					 (let loop ([xforms (syntax->list xforms)])
-					   (cond
-					    [(null? xforms) base]
-					    [(ormap (lambda (id)
-						      (bound-identifier=? id (stx-car (car xforms))))
-						    vars)
-					     (loop (cdr xforms))]
-					    [else (cons (car xforms) (loop (cdr xforms)))]))))
-				     ;; -- tranform loop starts here --
-				     (let loop ([stx expr][can-expand? #t][rec-name #f][new-name #f])
-				       (syntax-case stx (lambda case-lambda letrec-values let-values)
-					 [(lambda vars body1 body ...)
-					  (vars-ok? (syntax vars))
-					  (if xforms
-					      (with-syntax ([this-id this-id]
-							    [xforms (filter xforms (syntax vars) 
-									    rec-name new-name)]
-							    [name (mk-name)])
-						(syntax/loc stx 
-						  (let ([name
-							 (lambda (this-id . vars) 
-							   (letrec-syntax xforms
-							     body1 body ...))])
-						    name)))
-					      stx)]
-					 [(lambda . _)
-					  (bad "ill-formed lambda expression for method" stx)]
-					 [(case-lambda [vars body1 body ...] ...)
-					  (andmap vars-ok? (syntax->list (syntax (vars ...))))
-					  (if xforms
-					      (with-syntax ([this-id this-id]
-							    [(xforms ...)
-							     (map
-							      (lambda (vars)
-								(filter xforms vars
-									rec-name new-name))
-							      (syntax->list (syntax (vars ...))))]
-							    [name (mk-name)])
-						(syntax/loc stx
-						  (let ([name
-							 (case-lambda [(this-id . vars) 
-								       (letrec-syntax xforms
-									 body1 body ...)] ...)])
-						    name)))
-					      stx)]
-					 [(case-lambda . _)
-					  (bad "ill-formed case-lambda expression for method" stx)]
-					 [(let- ([(id1) expr]) id2)
-					  (and (or (module-identifier=? (syntax let-) 
-									(quote-syntax let-values))
-						   (module-identifier=? (syntax let-) 
-									(quote-syntax letrec-values)))
-					       (identifier? (syntax id1))
-					       (identifier? (syntax id2))
-					       (bound-identifier=? (syntax id1) (syntax id2)))
-					  (let* ([letrec? (module-identifier=? (syntax let-) 
-									       (quote-syntax letrec-values))]
-						 [id1 (syntax id1)]
-						 [new-id (if (and letrec? xforms)
-							     (datum->syntax-object
-							      #f
-							      (gensym (syntax-e id1))
-							      id1)
-							     id1)])
-					    (with-syntax ([proc (loop (syntax expr) 
-								      #t
-								      (and letrec? id1)
-								      new-id)]
-							  [new-id new-id])
-					      (syntax/loc stx (let- ([(new-id) proc]) new-id))))]
-					 [_else 
-					  (if can-expand?
-					      (loop (expand stx) #f rec-name new-name)
-					      (bad "bad form for method definition" stx))])))])
+		 (let* ([local-public-names (map car (append publics overrides))]
+			[local-method-names (append (map car privates) local-public-names)]
+			[proc-shape (lambda (name expr xforms)
+				      ;; expands an expression so we can check whether
+				      ;; it has the right form
+				      (define (expand expr)
+					(local-expand
+					 expr
+					 (append
+					  (kernel-form-identifier-list
+					   (quote-syntax here))
+					  (list 
+					   this-id
+					   super-instantiate-id
+					   super-make-object-id))))
+				      ;; Checks whether the vars sequence is well-formed
+				      (define (vars-ok? vars)
+					(or (identifier? vars)
+					    (stx-null? vars)
+					    (and (stx-pair? vars)
+						 (identifier? (stx-car vars))
+						 (vars-ok? (stx-cdr vars)))))
+				      ;; mk-name: constructs a method name
+				      ;; for error reporting, etc.
+				      (define (mk-name)
+					(datum->syntax-object 
+					 #f 
+					 (string->symbol (format "~a method~a~a" 
+								 (syntax-e name)
+								 (if class-name
+								     " in "
+								     "")
+								 (or class-name 
+								     ""))) 
+					 #f))
+				      ;; filter: removes shadows vars, so that we
+				      ;;  don't unshadow them
+				      (define (filter xforms vars rec-name new-name)
+					(let ([vars ;; flatten var list
+					       (let loop ([vars vars])
+						 (cond
+						  [(identifier? vars) (list vars)]
+						  [(stx-null? vars) null]
+						  [(stx-pair? vars)
+						   (cons (stx-car vars)
+							 (loop (stx-cdr vars)))]))]
+					      [base 
+					       (if rec-name
+						   (with-syntax ([old-name rec-name]
+								 [new-name new-name]
+								 [this-id this-id])
+						     (list 
+						      (syntax
+						       (old-name (make-direct-method-map 
+								  (quote-syntax this-id)
+								  (quote-syntax new-name))))))
+						   null)])
+					  (let loop ([xforms (syntax->list xforms)])
+					    (cond
+					     [(null? xforms) base]
+					     [(ormap (lambda (id)
+						       (bound-identifier=? id (stx-car (car xforms))))
+						     vars)
+					      (loop (cdr xforms))]
+					     [else (cons (car xforms) (loop (cdr xforms)))]))))
+				      ;; -- tranform loop starts here --
+				      (let loop ([stx expr][can-expand? #t][rec-name #f][new-name #f])
+					(syntax-case stx (lambda case-lambda letrec-values let-values)
+					  [(lambda vars body1 body ...)
+					   (vars-ok? (syntax vars))
+					   (if xforms
+					       (with-syntax ([this-id this-id]
+							     [xforms (filter xforms (syntax vars) 
+									     rec-name new-name)]
+							     [name (mk-name)])
+						 (syntax/loc stx 
+						   (let ([name
+							  (lambda (this-id . vars) 
+							    (letrec-syntax xforms
+							      body1 body ...))])
+						     name)))
+					       stx)]
+					  [(lambda . _)
+					   (bad "ill-formed lambda expression for method" stx)]
+					  [(case-lambda [vars body1 body ...] ...)
+					   (andmap vars-ok? (syntax->list (syntax (vars ...))))
+					   (if xforms
+					       (with-syntax ([this-id this-id]
+							     [(xforms ...)
+							      (map
+							       (lambda (vars)
+								 (filter xforms vars
+									 rec-name new-name))
+							       (syntax->list (syntax (vars ...))))]
+							     [name (mk-name)])
+						 (syntax/loc stx
+						   (let ([name
+							  (case-lambda [(this-id . vars) 
+									(letrec-syntax xforms
+									  body1 body ...)] ...)])
+						     name)))
+					       stx)]
+					  [(case-lambda . _)
+					   (bad "ill-formed case-lambda expression for method" stx)]
+					  [(let- ([(id1) expr]) id2)
+					   (and (or (module-identifier=? (syntax let-) 
+									 (quote-syntax let-values))
+						    (module-identifier=? (syntax let-) 
+									 (quote-syntax letrec-values)))
+						(identifier? (syntax id1))
+						(identifier? (syntax id2))
+						(bound-identifier=? (syntax id1) (syntax id2)))
+					   (let* ([letrec? (module-identifier=? (syntax let-) 
+										(quote-syntax letrec-values))]
+						  [id1 (syntax id1)]
+						  [new-id (if (and letrec? xforms)
+							      (datum->syntax-object
+							       #f
+							       (gensym (syntax-e id1))
+							       id1)
+							      id1)])
+					     (with-syntax ([proc (loop (syntax expr) 
+								       #t
+								       (and letrec? id1)
+								       new-id)]
+							   [new-id new-id])
+					       (syntax/loc stx (let- ([(new-id) proc]) new-id))))]
+					  [_else 
+					   (if can-expand?
+					       (loop (expand stx) #f rec-name new-name)
+					       (bad "bad form for method definition" stx))])))])
 		   ;; Do the extraction:
-		   (let-values ([(methods exprs)
-				 (let loop ([exprs exprs][ms null][es null])
+		   (let-values ([(methods private-methods exprs)
+				 (let loop ([exprs exprs][ms null][pms null][es null])
 				   (if (null? exprs)
-				       (values (reverse! ms) (reverse! es))
+				       (values (reverse! ms) (reverse! pms) (reverse! es))
 				       (syntax-case (car exprs) (define-values)
 					 [(define-values (id ...) expr)
-					  ;; ethod defn if any id in the list of publics/overrides
+					  ;; method defn if any id in the list of privates/publics/overrides
 					  (ormap (lambda (id)
 						   (unless (identifier? id)
 						     (bad "not an identifier for definition" id))
 						   (ormap (lambda (i) (bound-identifier=? i id))
-							  local-public-names))
+							  local-method-names))
 						 (syntax->list (syntax (id ...))))
 					  (let ([ids (syntax->list (syntax (id ...)))])
 					    (unless (null? (cdr ids))
 					      (bad "each method variable needs its own definition"
 						   (car exprs)))
-					    (let ([expr (proc-shape #f (syntax expr) #f)])
+					    (let ([expr (proc-shape #f (syntax expr) #f)]
+						  [public? (ormap (lambda (i) (bound-identifier=? i (car ids)))
+								  local-public-names)])
 					      (loop (cdr exprs) 
-						    (cons (cons (car ids) expr) ms)
+						    (if public?
+							(cons (cons (car ids) expr) ms)
+							ms)
+						    (if public?
+							pms
+							(cons (cons (car ids) expr) pms))
 						    es)))]
 					 [(define-values (id ...) expr)
 					  ;; Non-method defn:
 					  (andmap identifier? (syntax->list (syntax (id ...))))
-					  (loop (cdr exprs) ms (cons (car exprs) es))]
+					  (loop (cdr exprs) ms pms (cons (car exprs) es))]
 					 [(define-values . _)
 					  (bad "ill-formed definition" (car exprs))]
 					 [_else
-					  (loop (cdr exprs) ms (cons (car exprs) es))])))])
+					  (loop (cdr exprs) ms pms (cons (car exprs) es))])))])
 		     
 		     ;; ---- Extract all defined names, including field accessors and mutators ---
-		     (let ([defined-method-names (map car methods)]
+		     (let ([defined-method-names (append (map car methods)
+							 (map car private-methods))]
 			   [private-field-names (let loop ([l exprs])
 						  (if (null? l)
 						      null
@@ -417,12 +437,12 @@
 			 (when dup
 			   (bad "duplicate declared identifier" dup)))
 		       
-		       ;; -- Could still have duplicates within public/override --
-		       (let ([dup (check-duplicate-identifier local-public-names)])
+		       ;; -- Could still have duplicates within private/public/override --
+		       (let ([dup (check-duplicate-identifier local-method-names)])
 			 (when dup
 			   (bad "duplicate declared identifier" dup)))
 		       
-		       ;; -- Check that public/override are defined --
+		       ;; -- Check that private/public/override are defined --
 		       (let ([ht (make-hash-table)])
 			 (for-each
 			  (lambda (defined-name)
@@ -434,9 +454,9 @@
 			    (let ([l (hash-table-get ht (syntax-e pubovr-name) (lambda () null))])
 			      (unless (ormap (lambda (i) (bound-identifier=? i pubovr-name)) l)
 				(bad 
-				 "method not defined for public or override declaration"
+				 "method not defined for private, public, or override declaration"
 				 pubovr-name))))
-			  local-public-names))
+			  local-method-names))
 		       
 		       ;; ---- Convert expressions ----
 		       ;;  Non-method definitions to set!
@@ -497,6 +517,8 @@
 			 ;; ---- set up field and method mappings ----
 			 (with-syntax ([(rename-orig ...) (map car renames)]
 				       [(rename-temp ...) (generate-temporaries (map car renames))]
+				       [(private-name ...) (map car privates)]
+				       [(private-temp ...) (generate-temporaries (map car privates))]
 				       [(method-name ...) (append local-public-names
 								  (map car inherits))]
 				       [(method-accessor ...) (generate-temporaries
@@ -539,6 +561,10 @@
 				      [method-name
 				       (make-method-map (quote-syntax this-id)
 							(quote-syntax method-accessor))]
+				      ...
+				      [private-name
+				       (make-direct-method-map (quote-syntax this-id)
+							       (quote-syntax private-temp))]
 				      ...)))]
 				 [extra-init-mappings
 				  (with-syntax ([super-instantiate-id super-instantiate-id]
@@ -550,16 +576,17 @@
 				      [super-make-object-id super-error-map])))])
 
 			     (let ([find-method 
-				    (lambda (name)
-				      (ormap 
-				       (lambda (m)
-					 (and (bound-identifier=? (car m) name)
-					      (with-syntax ([proc (proc-shape (car m) (cdr m) mappings)]
-							    [extra-init-mappings extra-init-mappings])
-						(syntax
-						 (letrec-syntax extra-init-mappings
+				    (lambda (methods)
+				      (lambda (name)
+					(ormap 
+					 (lambda (m)
+					   (and (bound-identifier=? (car m) name)
+						(with-syntax ([proc (proc-shape (car m) (cdr m) mappings)]
+							      [extra-init-mappings extra-init-mappings])
+						  (syntax
+						   (letrec-syntax extra-init-mappings
 						     proc)))))
-				       methods))])
+					 methods)))])
 			       
 			       ;; ---- build final result ----
 			       (with-syntax ([public-names (map cdr publics)]
@@ -585,8 +612,9 @@
 									(car i)))
 								  inits)
 							     #f)]
-					     [public-methods (map find-method (map car publics))]
-					     [override-methods (map find-method (map car overrides))]
+					     [(private-method ...) (map (find-method private-methods) (map car privates))]
+					     [public-methods (map (find-method methods) (map car publics))]
+					     [override-methods (map (find-method methods) (map car overrides))]
 					     [mappings mappings]
 					     [exprs exprs]
 					     [this-id this-id]
@@ -615,23 +643,25 @@
 							     field-mutator ...
 							     rename-temp ...
 							     method-accessor ...) ; public, override, inherit
-				       (values
-					(list . public-methods)
-					(list . override-methods)
-					;; Initialization
-					(lambda (this-id super-id init-args)
-					  (letrec-syntax ([super-instantiate-id
-							   (lambda (stx)
-							     (syntax-case stx () 
+				       (letrec ([private-temp private-method]
+						...)
+					 (values
+					  (list . public-methods)
+					  (list . override-methods)
+					  ;; Initialization
+					  (lambda (this-id super-id init-args)
+					    (letrec-syntax ([super-instantiate-id
+							     (lambda (stx)
+							       (syntax-case stx () 
 								 [(_ (arg (... ...)) (kw kwarg) (... ...))
 								  (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
-					    (let ([super-make-object-id
-						   (lambda args
-						     (super-id #f args null))])
-					      (let ([plain-init-name undefined]
-						    ...)
-						(letrec-syntax mappings
-						    . exprs)))))))
+					      (let ([super-make-object-id
+						     (lambda args
+						       (super-id #f args null))])
+						(let ([plain-init-name undefined]
+						      ...)
+						  (letrec-syntax mappings
+						    . exprs))))))))
 				     #f)))))))))))))))])))
 
   (define-syntax class*
@@ -670,7 +700,7 @@
 
 			method-width   ; total number of methods
 			method-ht      ; maps public names to vector positions
-			method-ids     ; ordered list of public method names
+			method-ids     ; reverse-ordered list of public method names
 
 			methods        ; vector of methods
 			prim-flags     ; vector: #t means primitive-implemented
@@ -751,10 +781,10 @@
 
 	;; Put superclass ids in tables, with pos
 	(unless no-new-methods?
-	  (let loop ([ids super-method-ids][p 0])
+	  (let loop ([ids super-method-ids][p (sub1 (class-method-width super))])
 	    (unless (null? ids)
 	      (hash-table-put! method-ht (car ids) p)
-	      (loop (cdr ids) (add1 p)))))
+	      (loop (cdr ids) (sub1 p)))))
 	(unless no-new-fields?
 	  (let loop ([ids super-field-ids])
 	    (unless (null? ids)
@@ -835,8 +865,8 @@
 					struct:interface
 					(string->symbol (format "interface:~a" name)))
 				       make-interface)]
-		   [method-names (xappend super-method-ids public-names)]
-		   [field-names (xappend super-field-ids public-field-names)]
+		   [method-names (append (reverse public-names) super-method-ids)]
+		   [field-names (append public-field-names super-field-ids)]
 		   [super-interfaces (cons (class->interface super) interfaces)]
 		   [i (interface-make name super-interfaces method-names #f)]
 		   [methods (if no-method-changes?
@@ -1276,6 +1306,15 @@
 	       (with-syntax ([args (flatten-args (syntax args))])
 		 (syntax (let ([this obj])
 			   (apply (find-method obj 'name) obj . args))))))])))
+
+  (define-syntax send*
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ obj (meth . args) ...)
+	 (syntax/loc stx
+		     (let ([o obj])
+		       (send o meth . args)
+		       ...))])))
     
   (define (find-method object name)
     (unless (object? object)
@@ -1311,7 +1350,6 @@
     (class-field-X 'make-class-field-mutator 
 		   make-struct-field-mutator class-field-set!
 		   class name))
-
 
   (define-struct generic (applicable))
 
@@ -1350,9 +1388,13 @@
   (define-syntax send-generic
     (lambda (stx)
       (syntax-case stx ()
-	[(_ obj generic arg ...)
-	 (syntax (let ([this obj])
-		   (((generic-applicable generic) this) this arg ...)))])))
+	[(_ obj generic . args)
+	 (if (stx-list? (syntax args))
+	     (syntax (let ([this obj])
+		       (((generic-applicable generic) this) this . args)))
+	     (with-syntax ([args (flatten-args (syntax args))])
+	       (syntax (let ([this obj])
+			 (apply ((generic-applicable generic) this) this . args)))))])))
 	      
 
   ;;--------------------------------------------------------------------
@@ -1486,9 +1528,10 @@
 	   interface interface?
 	   object% object?
 	   make-object instantiate
-	   send make-class-field-accessor make-class-field-mutator
+	   send send* make-class-field-accessor make-class-field-mutator
 	   (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
+	   object-interface
 	   method-in-interface? interface->method-names class->interface
 	   exn:object? struct:exn:object make-exn:object
 	   make-primitive-class))

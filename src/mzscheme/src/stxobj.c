@@ -448,7 +448,7 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
   SCHEME_VEC_ELS(v)[0] = newname;
   if (c > 15) {
     Scheme_Hash_Table *ht;
-    ht = scheme_hash_table(c, SCHEME_hash_ptr, 0, 0);
+    ht = scheme_hash_table(c, SCHEME_hash_ptr);
     SCHEME_VEC_ELS(v)[1] = (Scheme_Object *)ht;
   } else 
     SCHEME_VEC_ELS(v)[1] = scheme_false;
@@ -485,7 +485,7 @@ Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
   mr = MALLOC_ONE_TAGGED(Module_Renames);
   mr->type = scheme_rename_table_type;
 
-  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  ht = scheme_hash_table(7, SCHEME_hash_ptr);
 
   mr->ht = ht;
   mr->phase = phase;
@@ -1464,7 +1464,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 
   if (stx->hash_code & STX_GRAPH_FLAG) {
     if (!*ht)
-      *ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      *ht = scheme_hash_table(7, SCHEME_hash_ptr);
     
     ph = (Scheme_Object *)scheme_lookup_in_table(*ht, (char *)stx);
 
@@ -2041,7 +2041,7 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
     
 #if STX_DEBUG
   if (argc == 2)
-      return scheme_syntax_to_datum(argv[0], 1, scheme_hash_table(7, SCHEME_hash_ptr, 0, 0));
+      return scheme_syntax_to_datum(argv[0], 1, scheme_hash_table(7, SCHEME_hash_ptr));
 #endif
 
 

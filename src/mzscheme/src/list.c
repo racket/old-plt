@@ -1213,8 +1213,7 @@ static Scheme_Object *do_make_hash_table(int weak)
   return (Scheme_Object *)scheme_hash_table(20, 
 					    weak
 					    ? SCHEME_hash_weak_ptr
-					    : SCHEME_hash_ptr, 
-					    0, 0);
+					    : SCHEME_hash_ptr);
 }
 
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])

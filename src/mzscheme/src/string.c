@@ -1321,7 +1321,7 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
 #endif
 
   if (!putenv_str_table)
-    putenv_str_table = scheme_hash_table(7, SCHEME_hash_string, 0, 0);
+    putenv_str_table = scheme_hash_table(7, SCHEME_hash_string);
 
   scheme_add_to_table(putenv_str_table, var, s, 0);
 

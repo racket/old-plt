@@ -1427,7 +1427,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     if (struct_type->props_ht || (struct_type->num_props + num_props > PROP_USE_HT_COUNT)) {
       Scheme_Hash_Table *ht;
 
-      ht = scheme_hash_table(struct_type->num_props + num_props, SCHEME_hash_ptr, 0, 0);
+      ht = scheme_hash_table(struct_type->num_props + num_props, SCHEME_hash_ptr);
     
       if (!struct_type->props_ht) {
 	for (i = 0; i < struct_type->num_props; i++) {

@@ -303,7 +303,7 @@ void wxSetSensitive(Widget w, Bool enabled)
 
     /* Use SCHEME_hash_weak_ptr so elements can be deleted from the table */
     wxREGGLOB(disabled_widgets);
-    disabled_widgets = scheme_hash_table(7, SCHEME_hash_weak_ptr, 0, 0);
+    disabled_widgets = scheme_hash_table(7, SCHEME_hash_weak_ptr);
 #ifdef MZ_PRECISE_GC
     disabled_widgets->make_hash_indices = widget_hash_indices;
 #endif

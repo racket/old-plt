@@ -1397,6 +1397,15 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
   one = scheme_make_bignum(1);
 
   q = scheme_make_bignum(0);
+#ifdef MZ_PRECISE_GC
+  /* Initial q will be a Small_Bignum,
+     q is passed as first argument to bignum_add,
+     and bignum_add modifies the digit array of
+     its first argument.
+     So the allocated_inline flag would be
+     wrong! */
+  q = bignum_copy(q, 1);
+#endif
   r = bignum_copy(n, 1);
   log++;
   while (log--) {

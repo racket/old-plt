@@ -1440,17 +1440,11 @@ struct entity
 
 > (entity-body #<entity-struct>)
 
-   An input port containing the body of the current entity properly
-   decoded (e.g. if body was quoted-printable encoded, then this input
-   port contains the body already quoted-printable decoded.).  If type
-   is multipart, or message, clearly this defaults to null.
-
-> (entity-close #<entity-struct>)
-
-   A thunk to close the input port provided by entity-body, above.  It
-   really is a procedure that does not receive parameters, and that
-   kills the thread spawned to handle the reading (and if necessary)
-   decoding of the body of the current MIME entity.
+   A procedure that consumes an output port and writes the message
+   body into the port, properly decoded (e.g. if body was
+   quoted-printable encoded, then this input port contains the body
+   already quoted-printable decoded.).  If type is multipart, or
+   message, clearly no characters are written to port.
 
 ==========================================================================
 _Base 64 Encoding_, _base64_
@@ -1539,14 +1533,12 @@ PROCEDURES -----------------------------------------------------------
   Consumes a string and returns its un-quoted printable representation
   as a new string.
 
-> (qp-encode-stream input) -> (values: output close-output-thunk)
+> (qp-encode-stream input output) -> void
 
   Reads characters from `input' and writes the quoted printable
-  encoded result to `output'.  Returns two values: the `output'-port,
-  and a thunk to kill the output.
+  encoded result to `output'.
 
-> (qp-decode-stream input) -> (values: output close-output-thunk)
+> (qp-decode-stream input output) -> void
 
    Reads characters from `input' and writes de un-quoted printable
-   result to `output'.  Returns two values: the `output'-port, and a
-   thunk to kill the output.
+   result to `output'.

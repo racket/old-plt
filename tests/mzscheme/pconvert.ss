@@ -176,9 +176,10 @@
      (make-same-test (unit (import) (export)) '(unit ...))
      (make-same-test (make-weak-box 12) '(make-weak-box 12))
      (make-same-test (regexp "1") '(regexp ...))
+     (make-same-test (module-path-index-join #f #f) '(module-path-index-join false false))
      (make-same-test (lambda () 0) '(lambda () ...))
      
-     (make-same-test #'(lambda (x) x) '#'(lambda (x) x)))
+     (make-same-test #'(lambda (x) x) '#'(lambda (x) x))
      
      (make-same-test xl 'xl)
      (make-same-test (letrec ([xl (lambda () 1)]) xl) '(lambda () ...))

@@ -188,9 +188,10 @@ void wxMediaEdit::_SetPosition(Bool setflash, int bias, long start, long end,
 	&& oldstart == oldend && start == end && caretOn
 	&& caretLocationX >= 0 && !flash) {
       /* Try to take a shortcut */
-      if (CaretOff()) {
+      if (caretBlinked || CaretOff()) {
 	/* Shortcut works */
 	caretLocationX = -1;
+	caretBlinked = FALSE;
 	CaretOn();
 	needRefresh = FALSE;
       }

@@ -2990,14 +2990,10 @@ void docHwndMsgLoop(LPVOID p) {
       }
     }
 
-    MsgWaitForMultipleObjects(0,NULL,FALSE,INFINITE,
-			      QS_ALLINPUT | QS_ALLPOSTMESSAGE);
-
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }
-  }
 }
 
 int cmpDwso(char *key,DOCUMENT_WINDOW_STYLE_OPTION *dwso) {
@@ -3191,23 +3187,6 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   doc->pIEventQueue = pIEventQueue;
 
   return (Scheme_Object *)doc;
-}
-
-int win_event_available(Scheme_Object *) {
-  MSG msg;
-
-  return PeekMessage(&msg,NULL,0,0,PM_NOREMOVE);
-}
-
-void win_event_wait(Scheme_Object *,void *fds) {
-  static HANDLE dummySem;
-  
-  if (dummySem == (HANDLE)0) {
-    dummySem = CreateSemaphore(NULL,0,1,NULL);
-  }
-
-  puts("f2");
-  scheme_add_fd_handle(dummySem,fds,FALSE); 
 }
 
 Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {

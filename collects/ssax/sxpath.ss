@@ -12,7 +12,7 @@
   (require "coutputs.ss")
 
   (require (lib "include.ss"))
-  (include "SXPAth-old.scm"))
+  (include "SXPath-old.scm"))
 
 
   

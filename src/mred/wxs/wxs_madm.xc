@@ -28,7 +28,7 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @MACRO CHECKMENU[n.p] = if (!wxsCheckIsPopupMenu(p[POFFSET+<p>])) scheme_wrong_type(<n>, "popup-menu% object", <p>+POFFSET, n, p);
 
 #ifndef wx_mac
-#define wxRESIZE_CORNER 0
+# define wxRESIZE_CORNER 0
 #endif
 
 @BEGINSYMBOLS style > > PRED BUNDLE

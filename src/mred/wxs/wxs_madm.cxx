@@ -47,7 +47,7 @@ START_XFORM_SKIP;
 extern Bool wxsCheckIsPopupMenu(void *m);
 
 #ifndef wx_mac
-#define wxRESIZE_CORNER 0
+# define wxRESIZE_CORNER 0
 #endif
 
 static Scheme_Object *style_wxMCANVAS_NO_H_SCROLL_sym = NULL;

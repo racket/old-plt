@@ -32,7 +32,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 }
 
 #ifndef wx_mac
-#define wxRESIZE_CORNER 0
+# define wxRESIZE_CORNER 0
 #endif
 
 @BEGINSYMBOLS canvasStyle > > PRED BUNDLE

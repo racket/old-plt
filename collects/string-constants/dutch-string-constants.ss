@@ -791,8 +791,6 @@
  (mrflow-popup-menu-hide-type "Toon type niet")
  (mrflow-popup-menu-show-errors "Toon fouten")
  (mrflow-popup-menu-hide-errors "Toon fouten niet")
- (mrflow-popup-menu-tack-all-arrows "Alle pijlen vast")
- (mrflow-popup-menu-untack-all-arrows "Alle pijlen los")
  ;(mrflow-read-exception-title "Read Exception")
  ;(mrflow-read-exception "Read exception: ~a")
  ;(mrflow-syntax-exception-title "Syntax Exception")
@@ -801,6 +799,9 @@
  ;(mrflow-unknown-exception "Unknown exception: ~a")
  ;(mrflow-language-primitives-error-title "Fout in basisfuncties")
  ;(mrflow-language-primitives-error "Onjuiste bestandsnaam voor typentabel basisfuncties: ~a")
+
+ (snips-and-arrows-popup-menu-tack-all-arrows "Alle pijlen vast")
+ (snips-and-arrows-popup-menu-untack-all-arrows "Alle pijlen los")
 
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "XML Box")

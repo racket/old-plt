@@ -758,14 +758,16 @@
  (mrflow-popup-menu-hide-type "Esconder Tipo")
  (mrflow-popup-menu-show-errors "Mostrar Errores")
  (mrflow-popup-menu-show-type "Mostrar Tipo")
- (mrflow-popup-menu-tack-all-arrows "Ligar todas las Flechas")
- (mrflow-popup-menu-untack-all-arrows "Desligar todas las Flechas")
 ;(mrflow-read-exception "Leer excepción: ~a")
 ;(mrflow-read-exception-title "Leer Excepción")
 ;(mrflow-syntax-exception "Excepción de sintaxis: ~a")
 ;(mrflow-syntax-exception-title "Excepción de Sintaxis")
 ;(mrflow-unknown-exception-title "Excepción Desconocida")
 ;(mrflow-unknown-exception "Excepción Desconocida: ~a")
+
+  (snips-and-arrows-popup-menu-tack-all-arrows "Ligar todas las Flechas")
+  (snips-and-arrows-popup-menu-untack-all-arrows "Desligar todas las Flechas")
+
    (no-debugging-or-profiling "No depurando o delineando")
    (open-here-menu-item "&Abrir aquí...")
    (pretty-big-scheme "Scheme muy grande")

@@ -837,8 +837,6 @@
  (mrflow-popup-menu-hide-type "Cacher le type")
  (mrflow-popup-menu-show-errors "Montrer les erreurs")
  (mrflow-popup-menu-hide-errors "Cacher les erreurs")
- (mrflow-popup-menu-tack-all-arrows "Coller toutes les flèches")
- (mrflow-popup-menu-untack-all-arrows "Décoller toutes les flèches")
  ;(mrflow-read-exception-title "Exception lecture")
  ;(mrflow-read-exception "Exception durant la lecture : ~a")
  ;(mrflow-syntax-exception-title "Exception syntaxique")
@@ -847,6 +845,12 @@
  ;(mrflow-unknown-exception "Exception inconnue : ~a")
  ;(mrflow-language-primitives-error-title "Erreur pour les primitives du language")
  ;(mrflow-language-primitives-error "Mauvais nom de fichier pour la table des types des primitives du language : ~a")
+
+ (snips-and-arrows-popup-menu-tack-all-arrows "Coller toutes les flèches")
+ (snips-and-arrows-popup-menu-untack-all-arrows "Décoller toutes les flèches")
+ (snips-and-arrows-user-action-disallowed-title "Insertions et effacements actuellement interdits")
+ (snips-and-arrows-user-action-disallowed "Insertions et effacements sont interdits dans les editeurs qui contiennent des boîtes inserées par un outil.  Cachez toutes les boîtes avant de modifier le contenu de l'editeur.")
+ (snips-and-arrows-hide-all-snips-in-editor "Cacher les boîtes de cet editeur")
  
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Insérer une boîte XML")

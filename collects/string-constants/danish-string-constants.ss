@@ -801,8 +801,6 @@
  (mrflow-popup-menu-hide-type "Skjul type")
  (mrflow-popup-menu-show-errors "Vis fejl")
  (mrflow-popup-menu-hide-errors "Skjul fejl")
- (mrflow-popup-menu-tack-all-arrows "Tack alle pile")
- (mrflow-popup-menu-untack-all-arrows "Untack alle pile")
  (mrflow-read-exception-title "Læseundtagelse (Read Exception)")
  (mrflow-read-exception "Læseundtagelse (Read exception): ~a")
  (mrflow-syntax-exception-title "Syntaksundtagelse")
@@ -812,6 +810,9 @@
  (mrflow-language-primitives-error-title "Fejl i sprogprimitiver")
  (mrflow-language-primitives-error "Forkert filnavn for tabellen med typer for sprogets primitiver: ~a")
 
+ (snips-and-arrows-popup-menu-tack-all-arrows "Tack alle pile")
+ (snips-and-arrows-popup-menu-untack-all-arrows "Untack alle pile")
+  
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Indsæt XML-kasse")
  (xml-tool-insert-scheme-box "Indsæt Scheme-kasse")

@@ -846,8 +846,6 @@
  (mrflow-popup-menu-hide-type "Hide Type")
  (mrflow-popup-menu-show-errors "Show Errors")
  (mrflow-popup-menu-hide-errors "Hide Errors")
- (mrflow-popup-menu-tack-all-arrows "Tack All Arrows")
- (mrflow-popup-menu-untack-all-arrows "Untack All Arrows")
  ;(mrflow-read-exception-title "Read Exception")
  ;(mrflow-read-exception "Read exception: ~a")
  ;(mrflow-syntax-exception-title "Syntax Exception")
@@ -856,6 +854,12 @@
  ;(mrflow-unknown-exception "Unknown exception: ~a")
  ;(mrflow-language-primitives-error-title "Language Primitives Error")
  ;(mrflow-language-primitives-error "Wrong filename for language primitives types table: ~a")
+  
+ (snips-and-arrows-popup-menu-tack-all-arrows "Tack All Arrows")
+ (snips-and-arrows-popup-menu-untack-all-arrows "Untack All Arrows")
+ (snips-and-arrows-user-action-disallowed-title "User Insertions and Deletions Currently Disallowed")
+ (snips-and-arrows-user-action-disallowed "User insertions and deletions are disallowed in editors that contain tool-inserted snips.  Hide all snips before modifying the content of the editor.")
+ (snips-and-arrows-hide-all-snips-in-editor "Hide all snips in editor")
 
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Insert XML Box")

@@ -91,13 +91,13 @@ static void get_scanline(JSAMPROW row, int cols, int rownum, wxMemoryDC *dc)
   }
 }
 
-wxMemoryDC *create_dc(int width, int height, wxBitmap *bm)
+wxMemoryDC *create_dc(int width, int height, wxBitmap *bm, int mono)
 {
   wxMemoryDC *dc;
 
   dc = new wxMemoryDC();
   if (width >= 0)
-    bm->Create(width, height);
+    bm->Create(width, height, mono ? 1 : -1);
   dc->SelectObject(bm);
 
   if (!dc->Ok()) {
@@ -244,7 +244,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
    * In this example, we need to make an output work buffer of the right size.
    */ 
 
-  dc = create_dc(cinfo.output_width, cinfo.output_height, bm);
+  dc = create_dc(cinfo.output_width, cinfo.output_height, bm, 0);
   if (!dc) {
     /* couldn't allocate DC or select bitmap */
     return 0;
@@ -517,6 +517,29 @@ static void png_draw_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, w
   }
 }
 
+static wxColour *the_white, *the_black;
+
+static void png_draw_line1(png_bytep row, int cols, int rownum, wxMemoryDC *dc)
+{
+  int colnum, delta = 0, bit;
+
+  if (!the_white) {
+    wxREGGLOB(the_white);
+    wxREGGLOB(the_black);
+    the_white = new wxColour(255, 255, 255);
+    the_black = new wxColour(0, 0, 0);
+  }
+
+  for (colnum = 0; colnum < cols; delta++) {
+    for (bit = 128; (colnum < cols) && bit; colnum++, bit = bit >> 1) {
+      if (row[delta] & bit)
+	dc->SetPixel(colnum, rownum, the_white);
+      else
+	dc->SetPixel(colnum, rownum, the_black);
+    }
+  }
+}
+
 static void png_get_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, wxMemoryDC *mdc)
 {
   int colnum, delta, r, g, b;
@@ -543,13 +566,37 @@ static void png_get_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, wx
   }
 }
 
+static void png_get_line1(png_bytep row, int cols, int rownum, wxMemoryDC *dc)
+{
+  int colnum, delta, bit, r, g, b, bits;
 
-int wx_read_png(char *file_name, wxBitmap *bm, int w_mask)
+  if (!the_color) {
+    wxREGGLOB(the_color);
+    the_color = new wxColour(0, 0, 0);
+  }
+
+  for (colnum = 0, delta = 0; colnum < cols; delta++) {
+    bits = 0;
+    for (bit = 128; (colnum < cols) && bit; colnum++, bit = bit >> 1) {
+      dc->GetPixel(colnum, rownum, the_color);
+      r = the_color->Red();
+      g = the_color->Green();
+      b = the_color->Blue();
+      if ((r == 255) && (g == 255) && (b == 255)) 
+	bits |= bit;
+    }
+    row[delta] = bits;
+  }
+}
+
+/**********************************************************************/
+
+int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 {
    png_structp png_ptr;
    png_infop info_ptr;
    png_uint_32 width, height;
-   int bit_depth, color_type, interlace_type;
+   int bit_depth, color_type, interlace_type, is_mono = 0;
    unsigned int number_passes, pass, y;
    FILE *fp;
    png_bytep *rows;
@@ -610,19 +657,27 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask)
    png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
 		&interlace_type, int_p_NULL, int_p_NULL);
 
-   /* Normalize formal of returned rows: */
-   if (color_type == PNG_COLOR_TYPE_PALETTE)
-     png_set_palette_to_rgb(png_ptr);
-   if (color_type == PNG_COLOR_TYPE_GRAY ||
-       color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-     png_set_gray_to_rgb(png_ptr);
-   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-     png_set_tRNS_to_alpha(png_ptr);
-   if (bit_depth == 16)
-     png_set_strip_16(png_ptr);
+   if ((bit_depth == 1)
+       && (color_type == PNG_COLOR_TYPE_GRAY)
+       && !png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
+     /* Special handling for monochrome so that we don't use 32x
+	the necessary memory. */
+     is_mono = 1;
+   } else {
+     /* Normalize formal of returned rows: */
+     if (color_type == PNG_COLOR_TYPE_PALETTE)
+       png_set_palette_to_rgb(png_ptr);
+     if (color_type == PNG_COLOR_TYPE_GRAY ||
+	 color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+       png_set_gray_to_rgb(png_ptr);
+     if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+       png_set_tRNS_to_alpha(png_ptr);
+     if (bit_depth == 16)
+       png_set_strip_16(png_ptr);
 
-   /* Expand grayscale images to the full 8 bits from 1, 2, or 4 bits/pixel */
-   png_set_gray_1_2_4_to_8(png_ptr);
+     /* Expand grayscale images to the full 8 bits from 1, 2, or 4 bits/pixel */
+     png_set_gray_1_2_4_to_8(png_ptr);
+   }
 
    /* Set the background color to draw transparent and alpha images over.
     * It is possible to set the red, green, and blue components directly
@@ -630,26 +685,40 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask)
     * even if the PNG file supplies a background, you are not required to
     * use it - you should use the (solid) application background if it has one.
     */
-   if (!w_mask) {
+   if (!w_mask && !is_mono) {
      png_color_16 *image_background;
 
-     if (png_get_bKGD(png_ptr, info_ptr, &image_background))
+     if (!bg && png_get_bKGD(png_ptr, info_ptr, &image_background))
        png_set_background(png_ptr, image_background,
 			  PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
      else {
        png_color_16 my_background;
        
-       my_background.red = 0xffff;
-       my_background.green = 0xffff;
-       my_background.blue = 0xffff;
-       my_background.gray = 0xffff;
+       if (bg) {
+	 int g;
+	 my_background.red = bg->Red();
+	 my_background.green = bg->Green();
+	 my_background.blue = bg->Blue();
+	 my_background.red = (my_background.red << 8) | my_background.red;
+	 my_background.green = (my_background.green << 8) | my_background.green;
+	 my_background.blue = (my_background.blue << 8) | my_background.blue;
+	 g = (((int)my_background.red) 
+	      + ((int)my_background.green)
+	      + ((int)my_background.blue)) / 3;
+	 my_background.gray = g;
+       } else {
+	 my_background.red = 0xffff;
+	 my_background.green = 0xffff;
+	 my_background.blue = 0xffff;
+	 my_background.gray = 0xffff;
+       }
 
        png_set_background(png_ptr, &my_background,
 			  PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
      }
    }
 
-   if (w_mask) {
+   if (w_mask && !is_mono) {
      /* Add filler (or alpha) byte (before/after each RGB triplet) */
      if (w_mask > 1) {
        /* Keep alphas */
@@ -680,15 +749,15 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask)
      rows[y] = (png_bytep)(new WXGC_ATOMIC char[png_get_rowbytes(png_ptr, info_ptr)]);
    }
 
-   dc = create_dc(width, height, bm);
-   if (w_mask) {
+   dc = create_dc(width, height, bm, is_mono);
+   if (w_mask && !is_mono) {
      mbm = new wxBitmap(width, height, ((w_mask > 1) ? 0 : 1));
      if (mbm->Ok())
-       mdc = create_dc(-1, -1, mbm);
+       mdc = create_dc(-1, -1, mbm, 1);
      else
        mdc = NULL;
    }
-   if (!dc || (w_mask && !mdc)) {
+   if (!dc || (w_mask && !is_mono && !mdc)) {
      if (dc)
        dc->SelectObject(NULL);
      png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
@@ -700,8 +769,14 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask)
      png_read_rows(png_ptr, rows, NULL, height);
    }
 
-   for (y = 0; y < height; y++) {
-     png_draw_line(rows[y], width, y, dc, mdc);
+   if (is_mono) {
+     for (y = 0; y < height; y++) {
+       png_draw_line1(rows[y], width, y, dc);
+     }
+   } else {
+     for (y = 0; y < height; y++) {
+       png_draw_line(rows[y], width, y, dc, mdc);
+     }
    }
 
    /* read rest of file, and get additional chunks in info_ptr - REQUIRED */
@@ -793,9 +868,14 @@ int wx_write_png(char *file_name, wxBitmap *bm)
    mbm = bm->GetMask();
    if (mbm && mbm->Ok() && (mbm->GetWidth() == width) &&  (mbm->GetHeight() == height))
      color_type = PNG_COLOR_TYPE_RGB_ALPHA;
-    else {
+   else {
      color_type = PNG_COLOR_TYPE_RGB;
      mbm = NULL;
+   }
+
+   if ((bm->GetDepth() == 1) && !mbm) {
+     bit_depth = 1;
+     color_type = PNG_COLOR_TYPE_GRAY;
    }
 
    /* Set the image information here.  Width and height are up to 2^31,
@@ -828,8 +908,14 @@ int wx_write_png(char *file_name, wxBitmap *bm)
    else
      mdc = NULL;
 
-   for (y = 0; y < height; y++) {
-     png_get_line(rows[y], width, y, dc, mdc);
+   if (bit_depth == 1) {
+     for (y = 0; y < height; y++) {
+       png_get_line1(rows[y], width, y, dc);
+     }
+   } else {
+     for (y = 0; y < height; y++) {
+       png_get_line(rows[y], width, y, dc, mdc);
+     }
    }
 
    png_write_image(png_ptr, rows);

@@ -31,7 +31,7 @@ static Bool IsColor(wxBitmap *bm)
 
 @CREATOR (string////string,rint[1|10000],rint[1|10000]); : : /STRINGENOUGH// <> datastring
 @CREATOR (rint[1|10000],rint[1|10000],bool=0); : : <> width/height
-@CREATOR (pathname////string,SYM[bitmapType]=0); : : //USEALLFUEL[realobj->Ok()] <> pathname
+@CREATOR (pathname////string,SYM[bitmapType]=0,wxColour^=NULL); : : //USEALLFUEL[realobj->Ok()] <> pathname
 
 @ "get-depth" : int GetDepth();
 @ "get-height" : int GetHeight();
@@ -39,7 +39,7 @@ static Bool IsColor(wxBitmap *bm)
 @ "ok?" : bool Ok();
 @ m "is-color?" : bool IsColor();
 
-@ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0);  : : //USEALLFUEL[r]
+@ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0,wxColour^=NULL);  : : //USEALLFUEL[r]
 @ "save-file" : bool SaveFile(wpathname,SYM[saveBitmapType]);  : : //USEALLFUEL[1]
 
 @ "get-loaded-mask" : wxBitmap! GetMask()

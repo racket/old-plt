@@ -49,7 +49,7 @@ public:
 #if USE_XPM
     wxBitmap(char **data, wxItem *anItem = NULL);
 #endif
-    wxBitmap(char *name, long flags = wxBITMAP_DEFAULT);
+    wxBitmap(char *name, long flags = wxBITMAP_DEFAULT, wxColour *bg = NULL);
     ~wxBitmap(void);
     // create and destroy
     Bool Create(int width, int height, int depth = -1);
@@ -65,7 +65,7 @@ public:
     void SetColourMap(wxColourMap *new_cmap)
         { cmap = (new_cmap ? new_cmap : wxAPP_COLOURMAP); }
     // load and save bitmap
-    Bool LoadFile(char *name, long flags = wxBITMAP_DEFAULT);
+    Bool LoadFile(char *name, long flags = wxBITMAP_DEFAULT, wxColour *bg = NULL);
     Bool SaveFile(char *name, int type, wxColourMap *cmap = NULL);
     // X representation
     virtual Bool  Ok(void) { return (Xbitmap != NULL); }

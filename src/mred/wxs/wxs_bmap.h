@@ -1,6 +1,8 @@
 #ifndef WXS_SETUP_ONLY
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
+extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
+extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxBitmap(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

@@ -44,7 +44,7 @@
 extern int read_JPEG_file(char * filename, wxBitmap *bm);
 extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
 
-extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask);
+extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg);
 extern int wx_write_png(char *file_name, wxBitmap *bm);
 
 // hints for what to free in wxBitmap::Destroy()
@@ -111,7 +111,7 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
 }
 
 // create bitmap from file
-wxBitmap::wxBitmap(char *bitmap_file, long flags)
+wxBitmap::wxBitmap(char *bitmap_file, long flags, wxColour *bg)
 {
     __type = wxTYPE_BITMAP;
 
@@ -119,7 +119,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
     cmap    = wxAPP_COLOURMAP;
 
     // use load method
-    (void)LoadFile(bitmap_file, flags);
+    (void)LoadFile(bitmap_file, flags, bg);
 
     WXGC_IGNORE(this, selectedTo);
 }
@@ -299,7 +299,7 @@ void wxBitmap::Destroy(void)
 extern int wxsGetImageType(char *);
 
 // load bitmaps
-Bool wxBitmap::LoadFile(char *fname, long flags)
+Bool wxBitmap::LoadFile(char *fname, long flags, wxColour *bg)
 {
   int getMask;
 
@@ -343,7 +343,7 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
     }
   }
   else if (flags & wxBITMAP_TYPE_PNG) {
-    if (!wx_read_png(fname, this, getMask)) {
+    if (!wx_read_png(fname, this, getMask, bg)) {
       Destroy();
     }
   }

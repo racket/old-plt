@@ -2,7 +2,7 @@
 
 (module info (lib "infotab.ss" "setup")
   (define name "MysterX")
-  (define help-desk-message "Mz/Mr: (require (lib \"mysterx.ss\" \"mysterx\")")
+  (define help-desk-message "Mz/Mr: (require (lib \"mysterx.ss\" \"mysterx\"))")
   (define blurb
     (list
      "MysterX is an extension that lets you use Scheme to script "

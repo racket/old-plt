@@ -202,8 +202,9 @@
 				       (send e set-value val)
 				       (send t enable val))
 				     (when val
-				       (unless (equal? val (send t get-value))
-					 (send t set-value (val->str val)))))))
+				       (let ([sval (val->str val)])
+					 (unless (equal? sval (send t get-value))
+					   (send t set-value sval)))))))
 
   (define (check-unsaved-pref?)
     (and (andmap (lambda (a)

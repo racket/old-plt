@@ -1,6 +1,6 @@
 
-The _Virtual Card Library_
---------------------------
+The _Virtual Playing Cards Library_
+-----------------------------------
 
 Load the virtual card library with
    (require-library "cards.ss" "games" "cards")

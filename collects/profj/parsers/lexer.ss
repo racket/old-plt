@@ -8,11 +8,12 @@
   
   (require (lib "lex.ss" "parser-tools"))
 
+  (provide (all-defined-except get-token-name))
   (define-struct test-case (test))
   (define-struct interact-case (box))
-  (provide (struct test-case (test)) (struct interact-case (box)))
+  ;(provide (struct test-case (test)) (struct interact-case (box)))
   
-  (provide Operators Separators EmptyLiterals Keywords java-vals special-toks get-token get-syntax-token)
+  ;(provide Operators Separators EmptyLiterals Keywords java-vals special-toks get-token get-syntax-token)
   
   (define-empty-tokens Operators
     (PIPE OR OREQUAL

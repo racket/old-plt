@@ -2441,7 +2441,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
     scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);
 
-  TCP_INIT("tcp-accept?");
+  TCP_INIT("tcp-accept");
 
   listener = argv[0];
 

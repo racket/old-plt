@@ -1614,7 +1614,9 @@ char *scheme_extract_indentation_suggestions(Scheme_Object *indentation)
   long suspicious_quote = 0;
   char *suspicions = "";
 
-  while (SCHEME_PAIRP(indentation) && !suspicious_quote) {
+  /* search back through indentation records to find the
+     first suspicious quote */
+  while (SCHEME_PAIRP(indentation)) {
     Scheme_Indent *indt;
     indt = (Scheme_Indent *)SCHEME_CAR(indentation);
     indentation = SCHEME_CDR(indentation);

@@ -181,6 +181,8 @@
 #define scheme_make_vector (scheme_extension_table->scheme_make_vector)
 #define scheme_make_integer_value (scheme_extension_table->scheme_make_integer_value)
 #define scheme_make_integer_value_from_unsigned (scheme_extension_table->scheme_make_integer_value_from_unsigned)
+#define scheme_make_integer_value_from_long_long (scheme_extension_table->scheme_make_integer_value_from_long_long)
+#define scheme_make_integer_value_from_unsigned_long_long (scheme_extension_table->scheme_make_integer_value_from_unsigned_long_long)
 #define scheme_make_double (scheme_extension_table->scheme_make_double)
 #ifdef MZ_USE_SINGLE_FLOATS
 #define scheme_make_float (scheme_extension_table->scheme_make_float)

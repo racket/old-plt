@@ -1,7 +1,7 @@
 ;; sigs.ss for mysterx collection
 
 (define-signature mysterx:mysterx^
-  (mx-document%
+  (mx-browser%
    com-invoke
    com-set-property!
    com-get-property
@@ -58,14 +58,21 @@
    com-object?	
    com-register-object
    com-release-object
-   make-document
+   make-browser
+   browser-show
+   navigate
+   go-back
+   go-forward
+   register-navigate-handler
+   unregister-navigate-handler
+   current-document	
    document?
    document-insert-html
    document-append-html
    document-replace-html
    document-find-element
+   document-find-element-by-id-or-name
    document-objects
-   document-show
    element-insert-html
    element-append-html
    element-insert-text

@@ -1447,7 +1447,7 @@
 	   (sequence (super-init))))
 
 
-  (define mx-document%
+  (define mx-browser%
     (class object%
 
 	   ((label "MysterX")
@@ -1458,7 +1458,7 @@
 	    (style-options null))
 
 	   (private
-	    [doc (mxprims:make-document label width height x y style-options)]
+	    [browser (mxprims:make-browser label width height x y style-options)]
 	    [thread-sem (make-semaphore 1)]   ; protects *handler-threads*
 	    [thread-wait (lambda () (semaphore-wait thread-sem))]
 	    [thread-post (lambda () (semaphore-post thread-sem))]
@@ -1468,7 +1468,7 @@
 	    [handler-table (make-hash-table)]
 	    [handler-thread #f]
 	    [block-until-event 
-	     (lambda () (mxprims:block-until-event doc))]
+	     (lambda () (mxprims:block-until-event browser))]
 	    [make-event-key 
 	     (lambda (tag id) ; string x string -> symbol
 	       (let ([new-tag (string-copy tag)]
@@ -1481,31 +1481,29 @@
 	   (public
 	    [show 
 	     (lambda (b) 
-	       (mxprims:document-show doc b))]
-	    [find-element
-	     (lambda (tag id)
-	       (make-object mx-element% doc (mxprims:document-find-element doc tag id)))]
-	    [objects
+	       (mxprims:browser-show browser b))]
+	    [navigate
+	     (lambda (url)
+	       (mxprims:navigate browser url))]
+	    [go-back
+	     (lambda ()
+	       (mxprims:go-back browser))]
+	    [go-forward
+	     (lambda ()
+	       (mxprims:go-forward browser))]
+	    [current-document 
 	     (lambda () 
-	       (mxprims:document-objects doc))]
-	    [insert-html 
-	     (lambda (html-string)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:document-insert-html doc html-string))
-		html-post))]
-	    [append-html 
-	     (lambda (html-string)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:document-append-html doc html-string))
-		html-post))]
-	    [replace-html 
-	     (lambda (html-string)
-	       (dynamic-wind
-		html-wait
-		(lambda () (mxprims:document-replace-html doc html-string))
-		html-post))]
+	       (make-object mx-document% 
+			    (mxprims:current-document browser)))]
+	    [register-navigate-handler
+	     (lambda (f)
+	       (mxprims:register-navigate-handler
+		browser
+		(lambda (_ boxed-url)
+		  (f (unbox boxed-url)))))]
+	    [unregister-navigate-handler
+	     (lambda ()
+	       (mxprims:unregister-navigate-handler browser))] 
 	    [register-event-handler
 	     (lambda (elt fn)
 	       (dynamic-wind
@@ -1527,26 +1525,6 @@
 		    (let ([key (make-event-key tag id)])
 		      (hash-table-remove! handler-table key))))
 		handler-post))]
-	    [insert-object 
-	     (opt-lambda (object width height [size 'pixels])
-	       (dynamic-wind 
-		html-wait
-		(lambda ()
-		  (mxprims:document-insert-html 
-		   doc 
-		   (coclass->html object width height size))
-		  (car (mxprims:document-objects doc)))
-		html-post))]
-	    [append-object 
-	     (opt-lambda (object width height [size 'pixels])
-	       (dynamic-wind
-		html-wait
-		(lambda ()
-		  (mxprims:document-append-html 
-		   doc 
-		   (coclass->html object width height size))
-		  (car (mzlib:last-pair (mxprims:document-objects doc))))
-		html-post))]
 	    [handle-events 
 	     (lambda ()
 	       (dynamic-wind
@@ -1566,7 +1544,7 @@
 						    (lambda (e) 
 						      (printf "~a~n" (exn-message e))
 						      (loop))])
-						    (mxprims:get-event doc))]
+						    (mxprims:get-event browser))]
 						[event (make-object mx-event% prim-event)]
 						[tag (send event tag)]
 						[id (send event id)]
@@ -1588,6 +1566,62 @@
 		  (set! handler-thread #f))
 		thread-post))])
 
+	   (sequence 
+	     (super-init))))  
+
+  (define mx-document%	
+    (class object% (doc)
+	   (public
+	    [find-element
+	     (lambda (tag id)
+	       (make-object mx-element% doc 
+			    (mxprims:document-find-element doc tag id)))]
+	    [find-element-by-id-or-name
+	     (lambda (id)
+	       (make-object 
+		mx-element% doc 
+		(mxprims:document-find-element-by-id-or-name doc id)))]
+	    [objects
+	     (lambda () 
+	       (mxprims:document-objects doc))]
+	    [insert-html 
+	     (lambda (html-string)
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:document-insert-html doc html-string))
+		html-post))]
+	    [append-html 
+	     (lambda (html-string)
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:document-append-html doc html-string))
+		html-post))]
+	    [replace-html 
+	     (lambda (html-string)
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:document-replace-html doc html-string))
+		html-post))]
+	    [insert-object 
+	     (opt-lambda (object width height [size 'pixels])
+	       (dynamic-wind 
+		html-wait
+		(lambda ()
+		  (mxprims:document-insert-html 
+		   doc 
+		   (coclass->html object width height size))
+		  (car (mxprims:document-objects doc)))
+		html-post))]
+	    [append-object 
+	     (opt-lambda (object width height [size 'pixels])
+	       (dynamic-wind
+		html-wait
+		(lambda ()
+		  (mxprims:document-append-html 
+		   doc 
+		   (coclass->html object width height size))
+		  (car (mzlib:last-pair (mxprims:document-objects doc))))
+		html-post))])
 	   (sequence 
 	     (super-init))))
 	     

@@ -65,32 +65,67 @@ _MysterX_
  may find using these procedures useful in
  creating HTML strings for use by MysterX.
 
+ Browsers
+ --------
+
+ A MysterX application consists of one or more
+ browsers, which are instances of the class
+ mx-browser%.
+
+> current-document :: (send an-mx-browser current-document)
+
+ Returns the current document in the browser, an instance
+ of mx-document%.
+
+> show :: (send an-mx-browser show b)
+
+  If `b' is #f, the browser window is hidden.
+  Otherwise, the window is shown.
+
+> register-navigate-handler :: (send an-mx-browser register-navigate-handler f)
+
+  Registers an handler `f', a procedure that
+  takes a string, that is called when the 
+  browser completes navigating to a URL.
+  The string passed to the handler contains the
+  new URL.
+
+> unregister-navigate-handler :: (send an-mx-browser unregister-navigate-handler)
+
+  Removes the navigate handler registered for 
+  the browser, if any.
+
+> register-event-handler :: (send an-mx-browser register-event-handler an-mx-element f)
+
+  Registers an event handler `f', a procedure that
+  takes an <mx-event>, for the HTML element
+  `an-mx-element'. `f' may have any output type,
+  though its result is discarded.
+  
+> unregister-event-handler :: (send an-mx-browser unregister-event-handler an-mx-element)
+
+  Unregisters an event handler for an HTML element
+  in the browser.
+
+> handle-events :: (send an-mx-browser handle-events)
+
+  Handles events using the registered event
+  handlers.  The event handlers are called in a
+  thread separate from the main MzScheme REPL.
+
+> stop-handling-events :: (send an-mx-browser stop-handling-events)
+
+  Kills the thread currently handling events for
+  the browser.
+
  Documents
  ---------
 
- A MysterX application consists of one or more
- documents, which are instances of the class
+ A browser contains one document at a time.  If 
+ hyperlinks are clicked, or the navigation methods
+ (navigate, go-forward, go-back) are used, the 
+ document changes.  A document is an instance of
  mx-document%.
-
-> mx-document% :: (make-object mx-document% label width height x y style-list)
-
-  Creates an instance of a MysterX document.
-  `label' is a string for the document caption,
-  with default "MysterX".  `width', `height', `x',
-  and `y' give the size and placement of the
-  document on the desktop, with defaults provided
-  by Windows if omitted.  `style-list' may contain
-  any of the symbols 'iconize, 'maximize,
-  'no-caption, 'no-system-menu, and
-  'no-thick-border.
-
-  Methods
-  -------
-
-> show :: (send an-mx-document show b)
-
-  If `b' is #f, the document window is hidden.
-  Otherwise, the window is shown.
 
 > insert-html :: (send an-mx-document insert-html html)
 
@@ -112,29 +147,6 @@ _MysterX_
   Returns a list of COM objects, including ActiveX
   controls, that occur in the document.  The order
   of the objects is the same as in the document.
-
-> register-event-handler :: (send an-mx-document register-event-handler an-mx-element f)
-
-  Registers an event handler `f', a procedure that
-  takes an <mx-event>, for the HTML element
-  `an-mx-element'. `f' may have any output type,
-  though its result is discarded.
-  
-> unregister-event-handler :: (send an-mx-document unregister-event-handler an-mx-element)
-
-  Unregisters an event handler for an HTML element
-  in the document.
-
-> handle-events :: (send an-mx-document handle-events)
-
-  Handles events using the registered event
-  handlers.  The event handlers are called in a
-  thread separate from the main MzScheme REPL.
-
-> stop-handling-events :: (send an-mx-document stop-handling-events)
-
-  Kills the thread currently handling events for
-  the document.
 
 > insert-object :: (send an-mx-document insert-object coclass width height [size])
 
@@ -163,9 +175,17 @@ _MysterX_
 > find-element :: (send an-mx-document find-element tag id)
 
   Returns an instance of mx-element%, an object
-  which encapsulates an HTML element.  `tag' is a
+  that encapsulates an HTML element.  `tag' is a
   string naming an HTML tag, and `id' is a string
   naming the id attribute of the HTML element.
+
+> find-element-by-id-or-name :: (send an-mx-document find-element-by-id-or-name id)
+
+  Returns an instance of mx-element%, an object
+  that encapsulates an HTML element.  `id' is a string
+  naming either the id or name attribute of the HTML element.
+  If more than one element has the given id or name, the results
+  are unspecified.
 
   HTML events
   -----------

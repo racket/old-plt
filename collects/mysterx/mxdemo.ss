@@ -4,8 +4,10 @@
 
 (require-library "mysterx.ss" "mysterx")
 
-; the document with the calendar
-(define caldoc (make-object mx-document% "Demo or die!" 350 400 100 100 '()))
+; the browser with the calendar
+
+(define calwb (make-object mx-browser% "Demo or die!" 350 400 100 100 '()))
+(define caldoc (send calwb current-document))
 
 (send caldoc insert-html 
 	(string-append	
@@ -20,7 +22,8 @@
 (define cal (car (send caldoc objects)))
 
 ; the control panel document 
-(define ctrldoc (make-object mx-document% "Control Panel" 180 350 600 300 '()))
+(define ctrlwb (make-object mx-browser% "Control Panel" 180 350 600 300 '()))
+(define ctrldoc (send ctrlwb current-document))
 
 (send ctrldoc insert-html 
 	(string-append	
@@ -162,7 +165,7 @@
     ("Last-year" ,last-year-handler)
     ("Next-year" ,next-year-handler)))
 
-(send ctrldoc register-event-handler 
+(send ctrlwb register-event-handler 
   (send ctrldoc find-element "CAPTION" "Caption")
 	(lambda (ev)
 	  (when (send ev keypress?)
@@ -170,13 +173,13 @@
 
 (for-each
  (lambda (sym-handler)
-   (send ctrldoc register-event-handler 
+   (send ctrlwb register-event-handler 
 	(send ctrldoc find-element 
 	              "BUTTON"              ; tag
                       (car sym-handler))    ; id
 	(cadr sym-handler)))                ; handler
  button-handlers)
 
-(send ctrldoc handle-events)
+(send ctrlwb handle-events)
 
 			       

@@ -50,7 +50,7 @@ enum {
   scheme_null_type,
   scheme_pair_type,
   scheme_vector_type,
-  scheme_closure_type,
+  scheme_reserved_2_type,
   scheme_input_port_type,   /* 40 */
   scheme_output_port_type,
   scheme_eof_type,

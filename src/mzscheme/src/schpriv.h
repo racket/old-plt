@@ -393,10 +393,40 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o);
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
 
+int scheme_stx_list_length(Scheme_Object *list);
+int scheme_stx_proper_list_length(Scheme_Object *list);
+
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx);
 Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
 
 #define SCHEME_STX_VAL(s) ((Scheme_Stx *)s)->val
+
+#if 0
+
+/* Not quite ready for syntax objects, yet. */
+#define SCHEME_STX_PAIRP(o) SCHEME_PAIRP(o)
+#define SCHEME_STX_SYMBOLP(o) SCHEME_SYMBOLP(o)
+#define SCHEME_STX_NULLP(o) SCHEME_NULLP(o)
+
+#define SCHEME_STX_CAR(o) SCHEME_CAR(o)
+#define SCHEME_STX_CDR(o) SCHEME_CDR(o)
+#define SCHEME_STX_CDDR(o) SCHEME_CDDR(o)
+#define SCHEME_STX_CADR(o) SCHEME_CADR(o)
+#define SCHEME_STX_SYM(o) o
+
+#else
+
+#define SCHEME_STX_PAIRP(o) (SCHEME_PAIRP(o) || (SCHEME_STXP(o) && SCHEME_PAIRP(SCHEME_STX_VAL(o))))
+#define SCHEME_STX_SYMBOLP(o) (SCHEME_SYMBOLP(o) || (SCHEME_STXP(o) && SCHEME_SYMBOLP(SCHEME_STX_VAL(o))))
+#define SCHEME_STX_NULLP(o) SCHEME_NULLP(o)
+
+#define SCHEME_STX_CAR(o) (SCHEME_PAIRP(o) ? SCHEME_CAR(o) : SCHEME_CAR(scheme_stx_content(o)))
+#define SCHEME_STX_CDR(o) (SCHEME_PAIRP(o) ? SCHEME_CDR(o) : SCHEME_CDR(scheme_stx_content(o)))
+#define SCHEME_STX_CDDR(o) (SCHEME_PAIRP(o) ? SCHEME_STX_CDR(SCHEME_CDR(o)) : SCHEME_STX_CDR(SCHEME_CDR(scheme_stx_content(o))))
+#define SCHEME_STX_CADR(o) (SCHEME_PAIRP(o) ? SCHEME_STX_CAR(SCHEME_CDR(o)) : SCHEME_STX_CAR(SCHEME_CDR(scheme_stx_content(o))))
+#define SCHEME_STX_SYM(o) (SCHEME_STXP(o) ? SCHEME_STX_VAL(o) : o)
+
+#endif
 
 /*========================================================================*/
 /*                   syntax run-time structures                           */

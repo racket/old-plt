@@ -642,8 +642,10 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
   if (fcount) {
     for (slot_num = 0; slot_num < fcount; slot_num++) {
       if (field_symbols) {
-	Scheme_Object *fn = SCHEME_CAR(field_symbols);
-	field_symbols = SCHEME_CDR(field_symbols);
+	Scheme_Object *fn = SCHEME_STX_CAR(field_symbols);
+	field_symbols = SCHEME_STX_CDR(field_symbols);
+
+	fn = SCHEME_STX_SYM(fn);
 
 	field_name = scheme_symbol_val(fn);
 	fnlen = SCHEME_SYM_LEN(fn);
@@ -675,7 +677,7 @@ Scheme_Object **scheme_make_struct_names(Scheme_Object *base,
 					 int flags, int *count_out)
 {
   int len;
-  len = field_symbols ? scheme_list_length(field_symbols) : 0;
+  len = field_symbols ? scheme_stx_list_length(field_symbols) : 0;
 
   return _make_struct_names(scheme_symbol_val(base),
 			    SCHEME_SYM_LEN(base),
@@ -808,29 +810,29 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
   Scheme_Object *base_symbol, *field_symbols, *l, *form, *parent_expr;
   int count;
 
-  form = SCHEME_CDR(forms);
-  if (!SCHEME_PAIRP(form))
+  form = SCHEME_STX_CDR(forms);
+  if (!SCHEME_STX_PAIRP(form))
     scheme_wrong_syntax("struct", form, forms, NULL);
-  base_symbol = SCHEME_CAR (form);
-  form = SCHEME_CDR(form);
-  if (!SCHEME_PAIRP(form))
+  base_symbol = SCHEME_STX_CAR(form);
+  form = SCHEME_STX_CDR(form);
+  if (!SCHEME_STX_PAIRP(form))
     scheme_wrong_syntax("struct", form, forms, NULL);
-  field_symbols = SCHEME_CAR (form);
-  form = SCHEME_CDR(form);
-  if (!SCHEME_NULLP(form))
+  field_symbols = SCHEME_STX_CAR(form);
+  form = SCHEME_STX_CDR(form);
+  if (!SCHEME_STX_NULLP(form))
     scheme_wrong_syntax("struct", form, forms, NULL);
 
-  if (SCHEME_PAIRP(base_symbol)) {
-    parent_expr = SCHEME_CDR(base_symbol);
-    base_symbol = SCHEME_CAR(base_symbol);
-    if (!SCHEME_PAIRP(parent_expr) || !SCHEME_NULLP(SCHEME_CDR(parent_expr))) {
+  if (SCHEME_STX_PAIRP(base_symbol)) {
+    parent_expr = SCHEME_STX_CDR(base_symbol);
+    base_symbol = SCHEME_STX_CAR(base_symbol);
+    if (!SCHEME_STX_PAIRP(parent_expr) || !SCHEME_STX_NULLP(SCHEME_STX_CDR(parent_expr))) {
       scheme_wrong_syntax("struct", parent_expr, forms, "improper name-parent expression");
       return NULL;
     }
     if (in_rec)
-      parent_expr = scheme_compile_expr(SCHEME_CAR(parent_expr), env, in_rec, drec);
+      parent_expr = scheme_compile_expr(SCHEME_STX_CAR(parent_expr), env, in_rec, drec);
     else
-      parent_expr = scheme_expand_expr(SCHEME_CAR(parent_expr), env, depth);
+      parent_expr = scheme_expand_expr(SCHEME_STX_CAR(parent_expr), env, depth);
   } else {
     parent_expr = NULL;
 
@@ -838,14 +840,14 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
       in_rec[drec].max_let_depth = 0;
   }
 
-  if (!SCHEME_SYMBOLP(base_symbol))
+  if (!SCHEME_STX_SYMBOLP(base_symbol))
     scheme_wrong_syntax("struct", base_symbol, form, "struct name must be an identifier");
   
   if (in_rec) {
     info = MALLOC_ONE_TAGGED(Struct_Info);
     info->type = scheme_struct_info_type;
     
-    info->name = base_symbol;
+    info->name = SCHEME_STX_SYM(base_symbol);
     info->fields = field_symbols;
     info->parent_type_expr = parent_expr ? parent_expr : scheme_null;
   } else
@@ -853,14 +855,14 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
 
   count = 0;
   l = field_symbols;
-  while (!SCHEME_NULLP(l)) {
+  while (!SCHEME_STX_NULLP(l)) {
     count++;
-    if (!SCHEME_PAIRP(l))
+    if (!SCHEME_STX_PAIRP(l))
       scheme_wrong_syntax("struct", l, form, "badly formed field list");
-    if (!SCHEME_SYMBOLP(SCHEME_CAR(l)))
-      scheme_wrong_syntax("struct", SCHEME_CAR(l), 
+    if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l)))
+      scheme_wrong_syntax("struct", SCHEME_STX_CAR(l), 
 			  form, "field name must be an identifier");
-    l = SCHEME_CDR(l);
+    l = SCHEME_STX_CDR(l);
   }
 
   if (in_rec) {
@@ -869,14 +871,15 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
 
     return scheme_make_syntax_compile(struct_link, (Scheme_Object *)info);
   } else {
-    Scheme_Object *base;
+    Scheme_Object *base, *result;
     base = (parent_expr 
 	    ? cons(base_symbol,
 		   cons(parent_expr, scheme_null))
 	    : base_symbol);
-    return cons(struct_symbol,
-		cons(base,
-		     cons(field_symbols, scheme_null)));
+    return scheme_datum_to_syntax(cons(struct_symbol,
+				       cons(base,
+					    cons(field_symbols, scheme_null))),
+				  forms);
   }
 }
 

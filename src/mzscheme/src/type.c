@@ -102,7 +102,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_void_type, "<void>");
   set_name(scheme_prim_type, "<primitive>");
   set_name(scheme_closed_prim_type, "<primitive-closure>");
-  set_name(scheme_closure_type, "<closure-form>");
   set_name(scheme_linked_closure_type, "<procedure>");
   set_name(scheme_cont_type, "<continuation>");
   set_name(scheme_tail_call_waiting_type, "<tail-call-waiting>");
@@ -169,6 +168,7 @@ scheme_init_type (Scheme_Env *env)
   
   set_name(scheme_stx_type, "<syntax>");
 
+  set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_5_type, "<reserved5>");
 
   set_name(_scheme_values_types_, "<resurrected>");

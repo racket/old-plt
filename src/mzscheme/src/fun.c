@@ -496,22 +496,6 @@ scheme_make_closed_prim(Scheme_Closed_Prim *fun, void *data)
 }
 
 Scheme_Object *
-scheme_make_closure (Scheme_Env *env, Scheme_Object *code)
-{
-  Scheme_Object *closure;
-
-  closure = scheme_alloc_stubborn_object();
-
-  closure->type = scheme_closure_type;
-  SCHEME_CLOS_ENV(closure) = env;
-  SCHEME_CLOS_CODE(closure) = code;
-
-  scheme_end_stubborn_change((void *)closure);
-
-  return closure;
-}
-
-Scheme_Object *
 scheme_make_linked_closure(Scheme_Process *p, 
 			   Scheme_Object *linked_code, int close)
 {

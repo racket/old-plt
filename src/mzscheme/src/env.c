@@ -890,16 +890,20 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
   if (!where)
     where = "";
 
-  if (!SCHEME_SYMBOLP(id))
+  if (!SCHEME_STX_SYMBOLP(id))
     scheme_wrong_syntax(formname, form ? id : NULL, 
 			form ? form : id, 
 			"not an identifier%s", where);
+
+  /* Check for misuse of a keyword: */
 
   root = scheme_min_env(env);
   if (root->no_keywords & 0x1)
     return;
 
   globals = get_globals(root);
+
+  id = SCHEME_STX_SYM(id);
 
   if (scheme_lookup_in_table(globals, (char *)id)) {
     b = scheme_bucket_from_table(globals, (char *)id);
@@ -1033,17 +1037,17 @@ scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flag
   Scheme_Comp_Env *frame;
   int len, i, count;
   
-  len = scheme_list_length(vals);
+  len = scheme_stx_list_length(vals);
   count = len;
 
   frame = scheme_new_compilation_frame(count, flags, env);
 
   for (i = 0; i < len ; i++) {
-    if (SCHEME_SYMBOLP(vals))
+    if (SCHEME_STX_SYMBOLP(vals))
       frame->values[i] = vals;
     else {
-      frame->values[i] = SCHEME_CAR (vals);
-      vals = SCHEME_CDR (vals);
+      frame->values[i] = SCHEME_STX_CAR(vals);
+      vals = SCHEME_STX_CDR(vals);
     }
   }
   
@@ -1160,14 +1164,14 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     for (i = frame->num_bindings; i--; ) {
       while (c && (c->before > i)) {
-	if (SAME_OBJ(symbol, c->name)) {
+	if (scheme_stx_bound_eq(symbol, c->name)) {
 	  val = c->val;
 	  goto found_const;
 	}
 	c = c->next;
       }
 
-      if (SAME_OBJ(symbol, frame->values[i])) {
+      if (scheme_stx_bound_eq(symbol, frame->values[i])) {
 	if ((flags & SCHEME_SETTING) && (COMPILE_DATA(frame)->use[i] & NOT_SETTABLE))
 	  scheme_wrong_syntax("set!", NULL, symbol,
 			      "imported/inherited variable cannot be mutated");
@@ -1180,7 +1184,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     }
 
     while (c) {
-      if (SAME_OBJ(symbol, c->name)) {
+      if (scheme_stx_bound_eq(symbol, c->name)) {
 	val = c->val;
 	goto found_const;
       }
@@ -1191,7 +1195,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   }
 
   globals = get_globals(scheme_min_env(env));
-  b = scheme_bucket_from_table(globals, (char *)symbol);
+  b = scheme_bucket_from_table(globals, (char *)SCHEME_STX_SYM(symbol));
   if ((flags & SCHEME_ELIM_CONST) && b && b->val 
       && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
       && !(flags & SCHEME_GLOB_ALWAYS_REFERENCE))

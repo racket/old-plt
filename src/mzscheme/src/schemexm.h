@@ -159,7 +159,6 @@
 #define scheme_make_noneternal_prim_w_arity (scheme_extension_table->scheme_make_noneternal_prim_w_arity)
 #define scheme_make_closed_prim_w_arity (scheme_extension_table->scheme_make_closed_prim_w_arity)
 #define scheme_make_folding_closed_prim (scheme_extension_table->scheme_make_folding_closed_prim)
-#define scheme_make_closure (scheme_extension_table->scheme_make_closure)
 #define scheme_make_pair (scheme_extension_table->scheme_make_pair)
 #define scheme_make_string (scheme_extension_table->scheme_make_string)
 #define scheme_make_sized_string (scheme_extension_table->scheme_make_sized_string)

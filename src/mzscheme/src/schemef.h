@@ -311,7 +311,6 @@ Scheme_Object *scheme_make_folding_closed_prim(Scheme_Closed_Prim *prim,
 					       short mina, short maxa,
 					       short functional);
 
-Scheme_Object *scheme_make_closure(Scheme_Env *env, Scheme_Object *code);
 Scheme_Object *scheme_make_pair(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *scheme_make_string(const char *chars);
 Scheme_Object *scheme_make_sized_string(char *chars, long len, int copy);

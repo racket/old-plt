@@ -184,6 +184,9 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
 {
+  if (!a || !b)
+    return (a == b);
+
   if (SCHEME_STXP(a))
     a = SCHEME_STX_VAL(a);
   if (SCHEME_STXP(b))
@@ -194,12 +197,72 @@ int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b)
 {
+  if (!a || !b)
+    return (a == b);
+
   if (SCHEME_STXP(a))
     a = SCHEME_STX_VAL(a);
   if (SCHEME_STXP(b))
     b = SCHEME_STX_VAL(b);
 
   return SAME_OBJ(a, b);
+}
+
+int scheme_stx_list_length(Scheme_Object *list)
+{
+  int len;
+
+  len = 0;
+  while (!SCHEME_NULLP(list)) {
+    len++;
+    if (SCHEME_STXP(list))
+      list = SCHEME_STX_VAL(list);
+    if (SCHEME_PAIRP(list))
+      list = SCHEME_CDR(list);
+    else
+      list = scheme_null;
+  }
+
+  return len;
+}
+
+int scheme_stx_proper_list_length(Scheme_Object *list)
+{
+  int len;
+  Scheme_Object *turtle;
+
+  if (SCHEME_STXP(list))
+    list = SCHEME_STX_VAL(list);
+
+  len = 0;
+  turtle = list;
+  while (SCHEME_PAIRP(list)) {
+    len++;
+
+    list = SCHEME_CDR(list);
+    if (SCHEME_STXP(list))
+      list = SCHEME_STX_VAL(list);
+
+    if (!SCHEME_PAIRP(list))
+      break;
+    len++;
+    list = SCHEME_CDR(list);
+    if (SCHEME_STXP(list))
+      list = SCHEME_STX_VAL(list);
+
+    if (SAME_OBJ(turtle, list))
+      break;
+
+    turtle = SCHEME_CDR(turtle);
+    if (SCHEME_STXP(turtle))
+      list = SCHEME_STX_VAL(turtle);
+
+  }
+  
+  if (SCHEME_NULLP(list))
+    return len;
+
+  return -1;
 }
 
 /*========================================================================*/

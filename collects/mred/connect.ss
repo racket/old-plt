@@ -44,7 +44,15 @@
 	  (public
 	    [frame (find-my-frame parent)])
 
+	  (rename [super-show show])
+	  (public
+	    [shown #f]
+	    [show (lambda (x)
+		    (set! shown x)
+		    (super-show x))])
+
 	  (inherit get-media)
+  
 	  (public
 	    [set-media
 	     (opt-lambda (media [redraw? #t])

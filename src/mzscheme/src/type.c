@@ -122,6 +122,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_string_type, "<string>");
   set_name(scheme_struct_property_type, "<struct-property>");
   set_name(scheme_structure_type, "<struct>");
+  set_name(scheme_proc_struct_type, "<struct>");
   set_name(scheme_symbol_type, "<symbol>");
   set_name(scheme_syntax_compiler_type, "<syntax-compiler>");
   set_name(scheme_macro_type, "<macro>");

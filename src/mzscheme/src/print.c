@@ -79,7 +79,7 @@ static Scheme_Hash_Table *global_constants_ht;
    (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) \
     || (qk(p->quick_print_box, 1) && SCHEME_BOXP(obj)) \
     || (qk(p->quick_print_struct  \
-	   && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type) \
+	   && SCHEME_STRUCTP(obj) \
 	   && PRINTABLE_STRUCT(obj, p), 0)))
 #define ssQUICK(x, isbox) x
 #define ssQUICKp(x, isbox) (p ? x : isbox)
@@ -330,7 +330,8 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
       || (p->quick_print_box && SCHEME_BOXP(obj))
       || SCHEME_VECTORP(obj)
       || (p->quick_print_struct 
-	  && SAME_TYPE(t, scheme_structure_type)
+	  && (SAME_TYPE(t, scheme_structure_type)
+	      || SAME_TYPE(t, scheme_proc_struct_type))
 	  && PRINTABLE_STRUCT(obj, p))) {
     if (scheme_hash_get(ht, obj))
       return 1;
@@ -355,7 +356,9 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
 	return 1;
       }
     }
-  } else if (SAME_TYPE(t, scheme_structure_type)) { /* got here => printable */
+  } else if (SAME_TYPE(t, scheme_structure_type)
+	     || SAME_TYPE(t, scheme_proc_struct_type)) {
+    /* got here => printable */
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
@@ -417,7 +420,8 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Thread *p)
     }
     obj->type = t;
   } else if (p->quick_print_struct 
-	     && SAME_TYPE(t, scheme_structure_type)
+	     && (SAME_TYPE(t, scheme_structure_type)
+		 || SAME_TYPE(t, scheme_proc_struct_type))
 	     && PRINTABLE_STRUCT(obj, p)) {
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
@@ -511,7 +515,7 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     for (i = 0; i < len; i++) {
       setup_graph_table(SCHEME_VEC_ELS(obj)[i], ht, counter, p);
     }
-  } else if (p && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) { /* got here => printable */
+  } else if (p && SCHEME_STRUCTP(obj)) { /* got here => printable */
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
@@ -1050,12 +1054,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     {
       print_compact(p, CPT_VOID);
     }
-  else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type))
+  else if (SCHEME_STRUCTP(obj))
     {
       if (compact)
 	cannot_print(p, notdisplay, obj, ht);
       else {
-	Scheme_Object *name = SCHEME_STRUCT_NAME_SYM(obj);
 	int pb;
 
 	pb = p->quick_print_struct && PRINTABLE_STRUCT(obj, p);
@@ -1064,21 +1067,34 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  obj = scheme_struct_to_vector(obj, NULL, p->quick_inspector);
 	  closed = print(obj, notdisplay, compact, ht, symtab, rnht, p);
 	} else {
-	  print_this_string(p, "#<struct:", 0, 9);
-	  {
-	    int l;
-	    const char *s;
-	    
-	    s = scheme_symbol_name_and_size(name, &l, 
-					    (p->quick_print_struct
-					     ? SCHEME_SNF_FOR_TS
-					     : (p->quick_can_read_pipe_quote 
-						? SCHEME_SNF_PIPE_QUOTE
-						: SCHEME_SNF_NO_PIPE_QUOTE)));
-	    print_this_string(p, s, 0, l);
+	  Scheme_Object *src;
+
+	  if (SCHEME_PROC_STRUCTP(obj)) {
+	    /* Name by procedure? */
+	    src = scheme_proc_struct_name_source(obj);
+	  } else
+	    src = obj;
+
+	  if (SAME_OBJ(src, obj)) {
+	    print_this_string(p, "#<struct:", 0, 9);
+	    {
+	      int l;
+	      const char *s;
+	      Scheme_Object *name = SCHEME_STRUCT_NAME_SYM(obj);
+	      
+	      s = scheme_symbol_name_and_size(name, &l, 
+					      (p->quick_print_struct
+					       ? SCHEME_SNF_FOR_TS
+					       : (p->quick_can_read_pipe_quote 
+						  ? SCHEME_SNF_PIPE_QUOTE
+						  : SCHEME_SNF_NO_PIPE_QUOTE)));
+	      print_this_string(p, s, 0, l);
+	    }
+	    PRINTADDRESS(p, obj);
+	    print_this_string(p, ">", 0, 1);
+	  } else {
+	    closed = print(src, notdisplay, compact, ht, symtab, rnht, p);
 	  }
-	  PRINTADDRESS(p, obj);
-	  print_this_string(p, ">", 0, 1);
 	}
       }
 

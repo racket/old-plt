@@ -3389,7 +3389,7 @@ int mark_struct_val_MARK(void *p) {
   int i;
 
   gcMARK( s->stype);
-
+  
   for(i = num_slots; i--; )
     gcMARK(s->slots[i]);
 
@@ -3405,7 +3405,7 @@ int mark_struct_val_FIXUP(void *p) {
   int i;
 
   gcFIXUP_TYPED_NOW(Scheme_Struct_Type *, s->stype);
-
+  
   for(i = num_slots; i--; )
     gcFIXUP(s->slots[i]);
 
@@ -3439,6 +3439,7 @@ int mark_struct_type_val_MARK(void *p) {
   gcMARK(t->mutator);
   gcMARK(t->uninit_val);
   gcMARK(t->props);
+  gcMARK(t->proc_attr);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -3458,6 +3459,7 @@ int mark_struct_type_val_FIXUP(void *p) {
   gcFIXUP(t->mutator);
   gcFIXUP(t->uninit_val);
   gcFIXUP(t->props);
+  gcFIXUP(t->proc_attr);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)

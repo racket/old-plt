@@ -2623,15 +2623,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
        (Otherwise, they'll be zeroed.) One way to make things safe for
        GC is to let rands have the buffer and create a new one. */
 
-    if (SCHEME_INTP(obj)) {
-      UPDATE_THREAD_RSPTR();
-      if (rands == p->tail_buffer)
-	make_tail_buffer_safe();
-      scheme_wrong_rator(obj, num_rands, rands);
-      return NULL; /* doesn't get here */
-    }
-
-    type = _SCHEME_TYPE(obj);
+    type = SCHEME_TYPE(obj);
 
     if (type == scheme_prim_type) {
       GC_CAN_IGNORE Scheme_Primitive_Proc *prim;
@@ -2999,6 +2991,45 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       p->cjs.u.val = value;
       p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)obj;
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);
+    } else if (type == scheme_proc_struct_type) {
+      int is_method;
+
+      UPDATE_THREAD_RSPTR_FOR_ERROR(); /* in case */
+
+      v = obj;
+      obj = scheme_extract_struct_procedure(obj, num_rands, rands, &is_method);
+      if (is_method) {
+	/* Have to add an extra argument to the front of rands */
+	if ((rands == RUNSTACK) && (RUNSTACK != RUNSTACK_START)){
+	  /* Common case: we can just push self onto the front: */
+	  rands = PUSH_RUNSTACK(p, RUNSTACK, 1);
+	  rands[0] = v;
+	} else {
+	  int i;
+	  Scheme_Object **a;
+
+	  if (p->tail_buffer && (num_rands < p->tail_buffer_size)) {
+	    /* Use tail-call buffer. Shift in such a way that this works if
+	       rands == p->tail_buffer */
+	    a = p->tail_buffer;
+	  } else {
+	    /* Uncommon general case --- allocate an array */
+	    UPDATE_THREAD_RSPTR_FOR_GC();
+	    a = MALLOC_N(Scheme_Object *, num_rands + 1);
+	  }
+
+	  for (i = num_rands; i--; ) {
+	    a[i + 1] = rands[i];
+	  }
+	  a[0] = v;
+	  rands = a;
+	}
+	num_rands++;
+      }
+
+      DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(); if (rands == p->tail_buffer) make_tail_buffer_safe(););
+
+      goto apply_top;
     } else {
       UPDATE_THREAD_RSPTR_FOR_ERROR();
       if (rands == p->tail_buffer)

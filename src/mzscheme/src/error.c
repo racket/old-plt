@@ -722,6 +722,18 @@ static char *make_arity_expect_string(const char *name, int namelen,
   xminc = minc - (is_method ? 1 : 0);
   xmaxc = maxc - (is_method ? 1 : 0);
 
+  if ((minc == -1) && SCHEME_PROC_STRUCTP((Scheme_Object *)name)) {
+    /* If the arity is something simple, we'll make a good error
+       message. Otherwise, we'll just use the "no matching case"
+       version. */
+    Scheme_Object *arity;
+    arity = scheme_arity((Scheme_Object *)name);
+    if (SCHEME_INTP(arity)) {
+      xminc = xmaxc = minc = maxc = SCHEME_INT_VAL(arity);
+      name = scheme_get_proc_name((Scheme_Object *)name, &namelen, 1);
+    }
+  }
+
   if (minc < 0) {
     const char *n;
     int nlen;
@@ -781,6 +793,7 @@ static char *make_arity_expect_string(const char *name, int namelen,
 
 void scheme_wrong_count_m(const char *name, int minc, int maxc, 
 			  int argc, Scheme_Object **argv, int is_method)
+     /* minc == -1 => name is really a case-lambda or proc-struct */
 {
   Scheme_Object *arity; 
   Scheme_Object *v;
@@ -800,15 +813,17 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
 
   if (minc == -1) {
     /* Check for is_method in case-lambda */
-    Scheme_Case_Lambda *cl = (Scheme_Case_Lambda *)name;
-    if (cl->count) {
-      Scheme_Closure_Compilation_Data *data;
-      data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(cl->array[0]);
-      if (data->flags & CLOS_IS_METHOD)
+    if (SCHEME_CLOSUREP((Scheme_Object *)name)) {
+      Scheme_Case_Lambda *cl = (Scheme_Case_Lambda *)name;
+      if (cl->count) {
+	Scheme_Closure_Compilation_Data *data;
+	data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(cl->array[0]);
+	if (data->flags & CLOS_IS_METHOD)
+	  is_method = 1;
+      } else if (cl->name && SCHEME_BOXP(cl->name)) {
+	/* See note in schpriv.h about the IS_METHOD hack */
 	is_method = 1;
-    } else if (cl->name && SCHEME_BOXP(cl->name)) {
-      /* See note in schpriv.h about the IS_METHOD hack */
-      is_method = 1;
+      }
     }
   }
 
@@ -1979,7 +1994,7 @@ def_exn_handler(int argc, Scheme_Object *argv[])
   char *s;
   int len = -1;
 
-  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)
+  if (SCHEME_STRUCTP(argv[0])
       && scheme_is_struct_instance(exn_table[MZEXN].type, argv[0])) {
     Scheme_Object *str = ((Scheme_Structure *)argv[0])->slots[0];
     if (SCHEME_STRINGP(str)) {
@@ -2004,7 +2019,7 @@ def_exn_handler(int argc, Scheme_Object *argv[])
 
 Scheme_Object *scheme_special_comment_width(Scheme_Object *o)
 {
-  if (SAME_TYPE(SCHEME_TYPE(o), scheme_structure_type)
+  if (SCHEME_STRUCTP(o)
       && scheme_is_struct_instance(exn_table[MZEXN_SPECIAL_COMMENT].type, o))
     return ((Scheme_Structure *)o)->slots[2];
   else
@@ -2057,7 +2072,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
  if (scheme_current_thread->error_invoked) {
    char *s;
    long slen = -1;
-   if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
+   if (SCHEME_STRUCTP(arg)
        && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
      Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
      if (SCHEME_STRINGP(str)) {
@@ -2083,7 +2098,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 
    buffer = init_buf(&len, &blen);
 
-   if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
+   if (SCHEME_STRUCTP(arg)
        && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
      Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
      raisetype = "exception raised";

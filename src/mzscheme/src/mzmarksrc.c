@@ -1359,7 +1359,7 @@ mark_struct_val {
   int i;
 
   gcFIXUP_TYPED_NOW(Scheme_Struct_Type *, s->stype);
-
+  
   for(i = num_slots; i--; )
     gcMARK(s->slots[i]);
 
@@ -1382,6 +1382,7 @@ mark_struct_type_val {
   gcMARK(t->mutator);
   gcMARK(t->uninit_val);
   gcMARK(t->props);
+  gcMARK(t->proc_attr);
 
  size:
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)

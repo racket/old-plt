@@ -358,7 +358,7 @@ int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
 int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos);
 
 typedef struct Scheme_Struct_Type {
-  Scheme_Type type;
+  Scheme_Type type; /* scheme_structure_type or scheme_proc_struct_type */
   MZ_HASH_KEY_EX
   short num_slots, num_islots;
   short name_pos;
@@ -372,6 +372,8 @@ typedef struct Scheme_Struct_Type {
 
   Scheme_Object **props; /* normally an array of pair of (property, value) pairs */
   int num_props; /* < 0 => props is really a hash table */
+
+  Scheme_Object *proc_attr; /* int (position) or proc, only for proc_struct */
 
   struct Scheme_Struct_Type *parent_types[1];
 } Scheme_Struct_Type;
@@ -398,6 +400,10 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   int num_fields);
 
 Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown_val, Scheme_Object *insp);
+
+Scheme_Object *scheme_extract_struct_procedure(Scheme_Object *obj, int num_rands, Scheme_Object **rands, int *is_method);
+
+Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a);
 
 #define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
 

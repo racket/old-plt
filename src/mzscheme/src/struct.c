@@ -161,8 +161,8 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_global_constant("make-struct-type", 
 			    scheme_make_prim_w_arity2(make_struct_type,
 						      "make-struct-type",
-						      4, 7,
-						      4, 4),
+						      4, 8,
+						      5, 5),
 			    env);
 
   scheme_add_global_constant("make-struct-type-property", 
@@ -347,12 +347,12 @@ static Scheme_Object *prop_pred(Scheme_Object *prop, int argc, Scheme_Object **a
 {
   Scheme_Struct_Type *stype;
 
-  if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
+  if (SCHEME_STRUCTP(args[0]))
     stype = ((Scheme_Structure *)args[0])->stype;
   else if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_struct_type_type))
     stype = (Scheme_Struct_Type *)args[0];
   else
-      return scheme_false;
+    return scheme_false;
 
   if (stype->num_props < 0) {
     if (scheme_hash_get((Scheme_Hash_Table *)stype->props, prop))
@@ -372,7 +372,7 @@ static Scheme_Object *prop_accessor(Scheme_Object *prop, int argc, Scheme_Object
 {
   Scheme_Struct_Type *stype;
 
-  if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
+  if (SCHEME_STRUCTP(args[0]))
     stype = ((Scheme_Structure *)args[0])->stype;
   else if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_struct_type_type))
     stype = (Scheme_Struct_Type *)args[0];
@@ -531,7 +531,7 @@ scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **arg
     scheme_malloc_tagged(sizeof(Scheme_Structure) 
 			 + ((c - 1) * sizeof(Scheme_Object *)));
   
-  inst->type = scheme_structure_type;
+  inst->type = (stype->proc_attr ? scheme_proc_struct_type : scheme_structure_type);
   inst->stype = stype;
 
   j = c;
@@ -562,7 +562,7 @@ scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **arg
 
 static Scheme_Object *struct_pred(Scheme_Struct_Type *stype, int argc, Scheme_Object **args)
 {
-  if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)
+  if (SCHEME_STRUCTP(args[0])
       && STRUCT_TYPEP(stype, ((Scheme_Structure *)args[0])))
     return scheme_true;
   else
@@ -630,7 +630,7 @@ static Scheme_Object *struct_getter(Struct_Proc_Info *i, int argc, Scheme_Object
 
   inst = (Scheme_Structure *)args[0];
 
-  if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)) {
+  if (!SCHEME_STRUCTP(args[0])) {
     scheme_wrong_type(i->func_name, 
 		      type_name_string(i->struct_type->name), 
 		      0, argc, args);
@@ -657,17 +657,21 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
   int pos;
   Scheme_Object *v;
 
-  if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
+  if (!SCHEME_STRUCTP(args[0])) {
     scheme_wrong_type(i->func_name, 
 		      type_name_string(i->struct_type->name), 
 		      0, argc, args);
+    return NULL;
+  }
 	
   inst = (Scheme_Structure *)args[0];
-  if (!STRUCT_TYPEP(i->struct_type, inst))
+  if (!STRUCT_TYPEP(i->struct_type, inst)) {
     wrong_struct_type(i->func_name, 
 		      i->struct_type->name, 
 		      SCHEME_STRUCT_NAME_SYM(inst),
 		      0, argc, args);
+    return NULL;
+  }
 	
   if (argc == 3) {
     pos = parse_pos(NULL, i, args, argc);
@@ -675,6 +679,17 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
   } else {
     pos = i->field;
     v = args[1];
+  }
+
+  {
+    Scheme_Object *a;
+    a = i->struct_type->proc_attr ;
+    if (a && SCHEME_INTP(a) && (SCHEME_INT_VAL(a) == pos)) {
+      scheme_arg_mismatch(i->func_name, 
+			  "cannot modify value of procedure-determining field in structure: ", 
+			  args[0]);
+      return NULL;
+    }
   }
 
   inst->slots[pos] = v;
@@ -685,7 +700,7 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
 static Scheme_Object *
 struct_p(int argc, Scheme_Object *argv[])
 {
-  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)) {
+  if (SCHEME_STRUCTP(argv[0])) {
     Scheme_Object *insp;
     insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
     if (scheme_inspector_sees_part(argv[0], insp, -1))
@@ -710,7 +725,7 @@ static Scheme_Object *struct_info(int argc, Scheme_Object *argv[])
   int p;
   Scheme_Object *insp, *a[2];
 
-  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)) {
+  if (SCHEME_STRUCTP(argv[0])) {
     s = (Scheme_Structure *)argv[0];
 
     insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
@@ -859,7 +874,7 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 
 static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
 {
-  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)) {
+  if (!SCHEME_STRUCTP(argv[0])) {
     char *tn, *s;
     int l;
     Scheme_Object *v;
@@ -1489,7 +1504,8 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 					int num_fields,
 					int num_uninit_fields,
 					Scheme_Object *uninit_val,
-					Scheme_Object *props)
+					Scheme_Object *props,
+					Scheme_Object *proc_attr)
 {
   Scheme_Struct_Type *struct_type, *parent_type;
   int j, depth;
@@ -1523,6 +1539,8 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
   }
   struct_type->num_slots = num_fields + num_uninit_fields + (parent_type ? parent_type->num_slots : 0);
   struct_type->num_islots = num_fields + (parent_type ? parent_type->num_islots : 0);
+  if (parent_type)
+    struct_type->proc_attr = parent_type->proc_attr;
 
   /* Check for integer overflow or total more than 32768: */
   if ((num_fields < 0) || (num_uninit_fields < 0)
@@ -1631,6 +1649,29 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     uninit_val = scheme_false;
   struct_type->uninit_val = uninit_val;
 
+  if (proc_attr) {
+    if (SCHEME_INTP(proc_attr) || SCHEME_BIGNUMP(proc_attr)) {
+      long pos;
+
+      if (SCHEME_INTP(proc_attr))
+	pos = SCHEME_INT_VAL(proc_attr);
+      else
+	pos = struct_type->num_slots; /* too big */
+
+      if (pos >= (struct_type->num_slots - (parent_type ? parent_type->num_slots : 0))) {
+	scheme_arg_mismatch("make-struct-type", "index for procedure is too large", proc_attr);
+	return NULL;
+      }
+
+      if (parent_type) {
+	pos += parent_type->num_slots;
+	proc_attr = scheme_make_integer(pos);
+      }
+    }
+
+    struct_type->proc_attr = proc_attr;
+  }
+
   return (Scheme_Object *)struct_type;
 }
 
@@ -1644,7 +1685,7 @@ Scheme_Object *scheme_make_struct_type(Scheme_Object *base,
   return _make_struct_type(base, NULL, 0,
 			   parent, inspector, 
 			   num_fields, num_uninit,
-			   uninit_val, properties);
+			   uninit_val, properties, NULL);
 }
 
 Scheme_Object *scheme_make_struct_type_from_string(const char *base,
@@ -1653,7 +1694,7 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 {
   return _make_struct_type(NULL, base, strlen(base),
 			   parent, scheme_false, 
-			   num_fields, 0, NULL, NULL);
+			   num_fields, 0, NULL, NULL, NULL);
 }
 
 static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
@@ -1662,6 +1703,7 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
   Scheme_Object *props = scheme_null, *l, *a, **r;
   Scheme_Object *inspector = NULL, **names, *uninit_val;
   Scheme_Struct_Type *type;
+  Scheme_Object *proc_attr = NULL;
 
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("make-struct-type", "symbol", 0, argc, argv);
@@ -1714,6 +1756,21 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 	  
 	  inspector = argv[6];
 	}
+
+	if (argc > 7) {
+	  if (!SCHEME_FALSEP(argv[7])) {
+	    proc_attr = argv[7];
+	    
+	    if (!((SCHEME_INTP(proc_attr) && (SCHEME_INT_VAL(proc_attr) >= 0))
+		  || (SCHEME_BIGNUMP(proc_attr) && SCHEME_BIGPOS(proc_attr))
+		  || SCHEME_PROCP(proc_attr))) {
+	      scheme_wrong_type("make-struct-type", 
+				"exact non-negative integer, procedure, or #f",
+				7, argc, argv);
+	      return NULL;
+	    }
+	  }
+	}
       }
     }
   } else
@@ -1729,7 +1786,8 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 						 SCHEME_FALSEP(argv[1]) ? NULL : argv[1],
 						 inspector,
 						 initc, uninitc,
-						 uninit_val, props);
+						 uninit_val, props,
+						 proc_attr);
 
   names = scheme_make_struct_names(argv[0],
 				   NULL,
@@ -1740,6 +1798,41 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 
   return scheme_values(i, r);
 }
+
+/*========================================================================*/
+/*                           procedure struct                             */
+/*========================================================================*/
+
+Scheme_Object *scheme_extract_struct_procedure(Scheme_Object *obj, int num_rands, Scheme_Object **rands, int *is_method)
+{
+  Scheme_Struct_Type *stype;
+  Scheme_Object *a, *proc;
+
+  stype = ((Scheme_Structure *)obj)->stype;
+  a = stype->proc_attr;
+
+  if (SCHEME_INTP(a)) {
+    *is_method = 0;
+    proc = ((Scheme_Structure *)obj)->slots[SCHEME_INT_VAL(a)];
+  } else {
+    *is_method = 1;
+    proc = a;
+  }
+
+  if (rands) {
+    /* rands is non-NULL => do arity check */
+    if (!SCHEME_PROCP(proc)
+	|| !scheme_check_proc_arity(NULL, num_rands, -1, 0, &obj)) {
+      scheme_wrong_count_m((char *)obj,
+			   -1 /* means "name argument is really a proc struct" */, 0,
+			   num_rands, rands, 0 /* methodness internally handled */);
+      return NULL;
+    }
+  }
+
+  return proc;
+}
+
 
 /**********************************************************************/
 
@@ -1753,6 +1846,7 @@ START_XFORM_SKIP;
 static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_structure_type, mark_struct_val);
+  GC_REG_TRAV(scheme_proc_struct_type, mark_struct_val);
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
   GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 

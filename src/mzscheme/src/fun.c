@@ -1261,6 +1261,9 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
 {
   Scheme_Type type;
   short mina, maxa;
+  int drop = 0;
+
+ top:
 
   type = SCHEME_TYPE(p);
   if (type == scheme_prim_type) {
@@ -1275,16 +1278,37 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
       int count = -maxa, i;
 
       if (a == -1) {
-	Scheme_Object *arity, *a;
+	Scheme_Object *arity, *a, *last = NULL;
 
 	arity = scheme_alloc_list(count);
 	
-	for (i = 0, a = arity; i < count; i++, a = SCHEME_CDR(a)) {
+	for (i = 0, a = arity; i < count; i++) {
 	  Scheme_Object *av;
-	  av = scheme_make_arity(cases[2 * i], cases[(2 * i) + 1]);
-	  SCHEME_CAR(a) = av;
+	  int mn, mx;
+	  mn = cases[2 * i];
+	  mx = cases[(2 * i) + 1];
+
+	  if (mn >= drop) {
+	    mn -= drop;
+	    if (mx > 0)
+	      mx -= drop;
+
+	    av = scheme_make_arity(mn, mx);
+
+	    SCHEME_CAR(a) = av;
+	    last = a;
+	    a = SCHEME_CDR(a);
+	  }
 	}
 
+	/* If drop > 0, might have found no matches */
+	if (!SCHEME_NULLP(a)) {
+	  if (last)
+	    SCHEME_CDR(last) = scheme_null;
+	  else
+	    arity = scheme_null;
+	}
+	
 	return arity;
       }
 
@@ -1296,6 +1320,8 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
 
 	return scheme_false;
       }
+
+      a += drop;
 
       for (i = 0; i < count; i++) {
 	int na, xa;
@@ -1331,22 +1357,37 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
       } 
 
       if (a >= 0) {
-	if (a >= mina && (maxa < 0 || a <= maxa))
+	if ((a + drop) >= mina && (maxa < 0 || (a + drop) <= maxa))
 	  return scheme_true;
       } else if (a == -2) {
 	if (maxa < 0)
 	  return scheme_true;
       } else {
-	v = scheme_make_pair(scheme_make_arity(mina, maxa), scheme_null);
-	if (!last)
-	  first = v;
-	else
-	  SCHEME_CDR(last) = v;
-	last = v;
+	if (mina >= drop) {
+	  mina -= drop;
+	  if (maxa > 0)
+	    maxa -= drop;
+
+	  v = scheme_make_pair(scheme_make_arity(mina, maxa), scheme_null);
+	  if (!last)
+	    first = v;
+	  else
+	    SCHEME_CDR(last) = v;
+	  last = v;
+	}
       }
     }
 
     return first;
+  } else if (type == scheme_proc_struct_type) {
+    int is_method;
+    p = scheme_extract_struct_procedure(p, -1, NULL, &is_method);
+    if (!SCHEME_PROCP(p))
+      return scheme_null;
+    if (is_method)
+      drop++;
+    SCHEME_USE_FUEL(1);
+    goto top;
   } else {
     Scheme_Closure_Compilation_Data *data;
 
@@ -1358,11 +1399,21 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
     }
   }
 
-  if (a == -1)
+  if (a == -1) {
+    if (mina < drop)
+      return scheme_null;
+    else
+      mina -= drop;
+    if (maxa > 0)
+      maxa -= drop;
+
     return scheme_make_arity(mina, maxa);
+  }
 
   if (a == -2)
     return (maxa < 0) ? scheme_true : scheme_false;
+
+  a += drop;
 
   if (a < mina || (maxa >= 0 && a > maxa))
     return scheme_false;
@@ -1442,6 +1493,25 @@ static Scheme_Object *primitive_closure_p(int argc, Scheme_Object *argv[])
   return isprim ? scheme_true : scheme_false;
 }
 
+Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a)
+{
+  Scheme_Object *b;
+
+  while (SCHEME_PROC_STRUCTP(a)) {
+    /* Either use struct name, or extract proc, depending
+       whether it's method-style */
+    int is_method;
+    b = scheme_extract_struct_procedure(a, -1, NULL, &is_method);
+    if (!is_method && SCHEME_PROCP(b)) {
+      a = b;
+      SCHEME_USE_FUEL(1);
+    } else
+      break;
+  } 
+
+  return a;
+}
+
 const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 {
   Scheme_Type type;
@@ -1450,6 +1520,8 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 
   if (!len)
     len = &dummy;
+
+ top:
 
   type = SCHEME_TYPE(p);
   if (type == scheme_prim_type) {
@@ -1476,6 +1548,24 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
       s = scheme_symbol_val(n);
     } else
       return NULL;
+  } else if (type == scheme_proc_struct_type) {
+    /* Assert: the request is for an error. */
+    Scheme_Object *other;
+    other = scheme_proc_struct_name_source(p);
+    if (SAME_OBJ(other, p)) {
+      Scheme_Object *sym;
+      sym = SCHEME_STRUCT_NAME_SYM(p);
+      *len = SCHEME_SYM_LEN(sym);
+      s = (char *)scheme_malloc_atomic((*len) + 8);
+      memcpy(s, "struct ", 7);
+      memcpy(s + 7, scheme_symbol_val(sym), *len);
+      *len += 7;
+      s[*len] = 0;
+      return s;
+    } else {
+      p = other;
+      goto top;
+    }
   } else {
     Scheme_Closure_Compilation_Data *data;
 
@@ -1529,22 +1619,27 @@ static Scheme_Object *primitive_result_arity(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *object_name(int argc, Scheme_Object **argv)
 {
-  if (SCHEME_PROCP(argv[0])) {
+  Scheme_Object *a = argv[0];
+
+  if (SCHEME_PROC_STRUCTP(a))
+    a = scheme_proc_struct_name_source(a);
+
+  if (SCHEME_STRUCTP(a)) {
+    return SCHEME_STRUCT_NAME_SYM(a);
+  } else if (SCHEME_PROCP(a)) {
     const char *s;
     int len;
 
-    s = scheme_get_proc_name(argv[0], &len, 0);
+    s = scheme_get_proc_name(a, &len, 0);
     if (s) 
       return scheme_intern_exact_symbol(s, len);
-  } else if (SCHEME_STRUCTP(argv[0])) {
-    return SCHEME_STRUCT_NAME_SYM(argv[0]);
-  } else if (SCHEME_STRUCT_TYPEP(argv[0])) {
-    return ((Scheme_Struct_Type *)argv[0])->name;
-  } else if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)) {
-    return ((Scheme_Struct_Property *)argv[0])->name;
-  } if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_regexp_type)) {
+  } else if (SCHEME_STRUCT_TYPEP(a)) {
+    return ((Scheme_Struct_Type *)a)->name;
+  } else if (SAME_TYPE(SCHEME_TYPE(a), scheme_struct_property_type)) {
+    return ((Scheme_Struct_Property *)a)->name;
+  } if (SAME_TYPE(SCHEME_TYPE(a), scheme_regexp_type)) {
     Scheme_Object *s;
-    s = scheme_regexp_source(argv[0]);
+    s = scheme_regexp_source(a);
     if (s)
       return s;
   }

@@ -607,6 +607,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_box_type, hash_general);
   PROC(scheme_thread_type, hash_general);
   PROC(scheme_structure_type, hash_general);
+  PROC(scheme_proc_struct_type, hash_general);
   PROC(scheme_cont_mark_set_type, hash_general);
   PROC(scheme_sema_type, hash_general);
   PROC(scheme_hash_table_type, hash_general);
@@ -749,7 +750,8 @@ long scheme_equal_hash_key(Scheme_Object *o)
     }
     
     return k;
-  } else  if (t == scheme_structure_type) {
+  } else if ((t == scheme_structure_type)
+	     || (t == scheme_proc_struct_type)) {
     Scheme_Object *insp;
     insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
     if (scheme_inspector_sees_part(o, insp, -2)) {
@@ -829,7 +831,8 @@ long scheme_equal_hash_key2(Scheme_Object *o)
     }
     
     return k;
-  } else  if (t == scheme_structure_type)  {
+  } else if ((t == scheme_structure_type)
+	     || (t == scheme_proc_struct_type)) {
     Scheme_Object *insp;
     insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
     if (scheme_inspector_sees_part(o, insp, -2)) {

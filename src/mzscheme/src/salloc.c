@@ -1573,6 +1573,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
     }
     break;
+  case scheme_proc_struct_type:
   case scheme_structure_type:
     {
       Scheme_Object **slots = ((Scheme_Structure *)root)->slots;

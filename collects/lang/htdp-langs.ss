@@ -327,17 +327,11 @@ not to forget: teachpakcs
                                             (when rep
                                               (send rep display-results results))))])
                            (syntax 
-                            (let ([already-exited? #f])
-                              (dynamic-wind
-                               void
-                               (lambda ()
-                                 (call-with-values
-                                  (lambda () body)
-                                  (lambda results
-                                    (unless already-exited?
-                                      (print-results results)))))
-                               (lambda ()
-                                 (set! already-exited? #t))))))])
+                            (call-with-values
+                             (lambda () body)
+                             (lambda results
+                               (unless already-exited?
+                                 (print-results results))))))])
                     (cons new-exp (loop (cdr bodies) ids)))]))])))
       
       ;; filter-ids : syntax[list] -> listof syntax

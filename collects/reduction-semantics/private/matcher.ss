@@ -320,102 +320,105 @@ abstract out the `hole and `(hole name) patterns.
     (let ([clang-ht (compiled-lang-ht clang)]
           [across-ht (compiled-lang-across-ht clang)])
       (let loop ([pattern pattern])
-        (memoize2
-         (match pattern
-           [`any
-            (lambda (exp hole-paths)
-              (list (make-bindings null)))]
-           [`number 
-            (lambda (exp hole-paths)
-              (and (number? exp) (list (make-bindings null))))]
-           [`string
-            (lambda (exp hole-paths)
-              (and (string? exp) (list (make-bindings null))))]
-           [`variable 
-            (lambda (exp hole-paths)
-              (and (symbol? exp) (list (make-bindings null))))]
-           [`(variable-except ,@(vars ...))
-            (lambda (exp hole-paths)
-              (and (symbol? exp)
-                   (not (memq exp vars))
-                   (list (make-bindings null))))]
-           [`hole (match-hole #f)]
-           [`(hole ,hole-id) (match-hole hole-id)]
-           [(? string?) 
-            (lambda (exp hole-paths)
-              (and (string? exp)
-                   (string=? exp pattern)
-                   (list (make-bindings null))))]
-           [(? symbol?) 
-            (cond
-              [(hash-table-get clang-ht pattern (lambda () #f))
+        (consult-compiled-pattern-cache
+         pattern
+         (lambda ()
+           (memoize2
+            (match pattern
+              [`any
+                (lambda (exp hole-paths)
+                  (list (make-bindings null)))]
+              [`number 
+                (lambda (exp hole-paths)
+                  (and (number? exp) (list (make-bindings null))))]
+              [`string
+                (lambda (exp hole-paths)
+                  (and (string? exp) (list (make-bindings null))))]
+              [`variable 
+                (lambda (exp hole-paths)
+                  (and (symbol? exp) (list (make-bindings null))))]
+              [`(variable-except ,@(vars ...))
+                (lambda (exp hole-paths)
+                  (and (symbol? exp)
+                       (not (memq exp vars))
+                       (list (make-bindings null))))]
+              [`hole (match-hole #f)]
+              [`(hole ,hole-id) (match-hole hole-id)]
+              [(? string?) 
                (lambda (exp hole-paths)
-                 (match-nt clang-ht pattern exp hole-paths))]
-              [(has-underscore? pattern)
-               (let ([before (split-underscore pattern)])
-                 (unless (or (hash-table-get clang-ht before (lambda () #f))
-                             (memq before underscore-allowed))
-                   (error 'compile-pattern "stuff before underscore is illegal in ~s" pattern))
-                 (loop `(name ,pattern ,before)))]
-              [else
-               (lambda (exp hole-paths)
-                 (and (eq? exp pattern)
-                      (list (make-bindings null))))])]
-           [`(cross ,(and pre-id (? symbol?)))
-            (let ([id (if prefix-cross?
-                          (symbol-append pre-id '- pre-id)
-                          pre-id)])
-              (cond
-                [(hash-table-get across-ht id (lambda () #f))
+                 (and (string? exp)
+                      (string=? exp pattern)
+                      (list (make-bindings null))))]
+              [(? symbol?) 
+               (cond
+                 [(hash-table-get clang-ht pattern (lambda () #f))
+                  (lambda (exp hole-paths)
+                    (match-nt clang-ht pattern exp hole-paths))]
+                 [(has-underscore? pattern)
+                  (let ([before (split-underscore pattern)])
+                    (unless (or (hash-table-get clang-ht before (lambda () #f))
+                                (memq before underscore-allowed))
+                      (error 'compile-pattern "stuff before underscore is illegal in ~s" pattern))
+                    (loop `(name ,pattern ,before)))]
+                 [else
+                  (lambda (exp hole-paths)
+                    (and (eq? exp pattern)
+                         (list (make-bindings null))))])]
+              [`(cross ,(and pre-id (? symbol?)))
+                (let ([id (if prefix-cross?
+                              (symbol-append pre-id '- pre-id)
+                              pre-id)])
+                  (cond
+                    [(hash-table-get across-ht id (lambda () #f))
+                     (lambda (exp hole-paths)
+                       (match-nt across-ht id exp hole-paths))]
+                    [else
+                     (error 'compile-pattern "unknown cross reference ~a" id)]))]
+              [`(name ,name ,pat)
+                (let ([match-pat (loop pat)])
+                  (lambda (exp hole-paths)
+                    (let ([matches (match-pat exp hole-paths)])
+                      (and matches 
+                           (map (lambda (bindings)
+                                  (make-bindings (cons (make-rib name exp)
+                                                       (bindings-table bindings))))
+                                matches)))))]
+              [`(in-hole ,context ,contractum) (loop `(in-hole* hole ,context ,contractum))]
+              [`(in-hole* ,this-hole-name ,context ,contractum) 
+                (let ([match-context (loop context)]
+                      [match-contractum (loop contractum)])
+                  (match-in-hole context contractum exp match-context match-contractum this-hole-name #t #f))]
+              [`(in-hole+ ,context ,contractum) 
+                (let ([match-context (loop context)]
+                      [match-contractum (loop contractum)])
+                  (match-in-hole context contractum exp match-context match-contractum 'hole+ #f #f))]
+              [`(in-named-hole ,hole-id ,this-hole-name ,context ,contractum) 
+                (let ([match-context (loop context)]
+                      [match-contractum (loop contractum)])
+                  (match-in-hole context contractum exp match-context match-contractum this-hole-name #t hole-id))]
+              [`(in-named-hole+ ,hole-id ,context ,contractum) 
+                (let ([match-context (loop context)]
+                      [match-contractum (loop contractum)])
+                  (match-in-hole context contractum exp match-context match-contractum 'hole+ #f hole-id))]
+              [`(side-condition ,pat ,condition)
+                (let ([match-pat (loop pat)])
+                  (lambda (exp hole-paths)
+                    (let ([matches (match-pat exp hole-paths)])
+                      (and matches
+                           (let ([filtered (filter condition matches)])
+                             (if (null? filtered)
+                                 #f
+                                 filtered))))))]
+              [(? list?)
+               (let ([rewritten (rewrite-ellipses pattern loop)])
                  (lambda (exp hole-paths)
-                   (match-nt across-ht id exp hole-paths))]
-                [else
-                 (error 'compile-pattern "unknown cross reference ~a" id)]))]
-           [`(name ,name ,pat)
-            (let ([match-pat (loop pat)])
-              (lambda (exp hole-paths)
-                (let ([matches (match-pat exp hole-paths)])
-                  (and matches 
-                       (map (lambda (bindings)
-                              (make-bindings (cons (make-rib name exp)
-                                                   (bindings-table bindings))))
-                            matches)))))]
-           [`(in-hole ,context ,contractum) (loop `(in-hole* hole ,context ,contractum))]
-           [`(in-hole* ,this-hole-name ,context ,contractum) 
-            (let ([match-context (loop context)]
-                  [match-contractum (loop contractum)])
-              (match-in-hole context contractum exp match-context match-contractum this-hole-name #t #f))]
-           [`(in-hole+ ,context ,contractum) 
-            (let ([match-context (loop context)]
-                  [match-contractum (loop contractum)])
-              (match-in-hole context contractum exp match-context match-contractum 'hole+ #f #f))]
-           [`(in-named-hole ,hole-id ,this-hole-name ,context ,contractum) 
-            (let ([match-context (loop context)]
-                  [match-contractum (loop contractum)])
-              (match-in-hole context contractum exp match-context match-contractum this-hole-name #t hole-id))]
-           [`(in-named-hole+ ,hole-id ,context ,contractum) 
-            (let ([match-context (loop context)]
-                  [match-contractum (loop contractum)])
-              (match-in-hole context contractum exp match-context match-contractum 'hole+ #f hole-id))]
-           [`(side-condition ,pat ,condition)
-            (let ([match-pat (loop pat)])
-              (lambda (exp hole-paths)
-                (let ([matches (match-pat exp hole-paths)])
-                  (and matches
-                       (let ([filtered (filter condition matches)])
-                         (if (null? filtered)
-                             #f
-                             filtered))))))]
-           [(? list?)
-            (let ([rewritten (rewrite-ellipses pattern loop)])
-              (lambda (exp hole-paths)
-                (match-list rewritten exp hole-paths)))]
-           [(? procedure?)
-            pattern]
-           [else 
-            (lambda (exp hole-paths)
-              (and (eq? pattern exp)
-                   (list (make-bindings null))))])))))
+                   (match-list rewritten exp hole-paths)))]
+              [(? procedure?)
+               pattern]
+              [else 
+               (lambda (exp hole-paths)
+                 (and (eq? pattern exp)
+                      (list (make-bindings null))))])))))))
 
   ;; split-underscore : symbol -> symbol
   ;; returns the text before the underscore in a symbol (as a symbol)
@@ -458,6 +461,19 @@ abstract out the `hole and `(hole name) patterns.
 	    (set! ht (make-hash-table 'equal)))
           (hash-table-get ht key compute/cache)))))
 
+  ;; compiled-pattern-cache : hash-table[sexp[pattern] -o> compiled-pattern]
+  (define compiled-pattern-cache (make-hash-table 'equal))
+  
+  ;; consult-compiled-pattern-cache : sexp[pattern] (-> compiled-pattern) -> compiled-pattern
+  (define (consult-compiled-pattern-cache pattern calc)
+    (hash-table-get 
+     compiled-pattern-cache
+     pattern
+     (lambda ()
+       (let ([res (calc)])
+         (hash-table-put! compiled-pattern-cache pattern res)
+         res))))
+  
   ;; match-hole : (union #f symbol) -> compiled-pattern
   (define (match-hole hole-id)
     (lambda (exp hole-paths)

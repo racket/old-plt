@@ -12,6 +12,8 @@
 
 (reference-library "sparams.ss" "backward")
 
+(require-library "sbasig.ss" "mrspidey")
+
 (reference-relative-library "sig.ss")
 
 (define-signature compiler:library^
@@ -129,6 +131,8 @@
   (static-error
    dynamic-error
    internal-error
+   analysis-error
+   analysis-internal-error
    
    compiler:empty-annotation
    make-empty-box

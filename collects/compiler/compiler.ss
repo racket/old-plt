@@ -5,6 +5,7 @@
 	 mzlib:function^
 	 mzlib:pretty-print^
 	 mzlib:file^
+	 mzlib:string^
 	 mzlib:compile^
 	 dynext:compile^
 	 dynext:link^
@@ -33,6 +34,7 @@
        (import (FUNCTION : mzlib:function^)
 	       (PRETTY-PRINT : mzlib:pretty-print^)
 	       (FILE : mzlib:file^)
+	       (STRING : mzlib:string^)
 	       (COMPILE : dynext:compile^)
 	       (LINK : dynext:link^)
 	       (DFILE : dynext:file^)
@@ -40,6 +42,7 @@
        (link [COMPILER : compiler:inner^ (u FUNCTION
 					    PRETTY-PRINT
 					    FILE
+					    STRING
 					    COMPILE
 					    LINK
 					    DFILE
@@ -49,6 +52,7 @@
       mzlib:function^
       mzlib:pretty-print^
       mzlib:file^
+      mzlib:string^
       dynext:compile^
       dynext:link^
       dynext:file^

@@ -57,6 +57,10 @@
   (zodiac-error-template call-compiler:fatal-error "(elaboration) "))
 (define dynamic-error
   (zodiac-error-template call-compiler:fatal-error "(parser dynamic) "))
+(define analysis-error
+  (zodiac-error-template call-compiler:fatal-error "(MrSpidey) "))
+(define analysis-internal-error
+  (zodiac-error-template call-compiler:fatal-error "(MrSpidey internal) "))
     
 
 ;;----------------------------------------------------------------------------
@@ -167,8 +171,9 @@
 (define zodiac:print-start!
   (lambda (port ast)
     (let ([bad (lambda () (fprintf port " [?,?]: "))])
-      (if (and ast (zodiac:zodiac? ast))
-	  (let* ([start (zodiac:zodiac-start ast)]
+      (if (and ast (or (zodiac:zodiac? ast) (zodiac:location? ast)))
+	  (let* ([start (or (and (zodiac:location? ast) ast)
+			    (zodiac:zodiac-start ast))]
 		 [good (lambda ()
 			 (fprintf port " ~a[~a,~a]: "
 				  (if (equal? (main-source-file) (zodiac:location-file start))

@@ -13,7 +13,8 @@
 	 compiler:const^
 	 compiler:rep^
 	 compiler:driver^
-	 mzlib:function^)
+	 mzlib:function^
+	 (mrspidey : mrspidey:sba^))
 
 (define compiler:global-symbols (make-hash-table))
 (define compiler:add-global-varref!
@@ -310,10 +311,23 @@
 	       [(zodiac:bound-varref? ast)
 		
 		; check to see if it's known.  If so, just return it.
-		
-		(let* ([binding (compiler:bound-varref->binding ast)]
+
+		(let* ([zbinding (zodiac:bound-varref-binding ast)]
+		       [binding (compiler:bound-varref->binding ast)]
 		       [known? (binding-known? binding)]
 		       [val (binding-val binding)])
+		  
+		  ; While we're at it, make sure MrSpidey and mzc agree on the
+		  ; mutability of variables.
+		  '(when (compiler:option:use-mrspidey)
+		    (unless (eq? (mrspidey:binding-mutated zbinding)
+				 (binding-mutable? binding))
+		      (compiler:internal-error
+		       ast
+		       (format "mutable according to MrSpidey: ~a; mutable according to mzc: ~a"
+			       (mrspidey:binding-mutated zbinding)
+			       (binding-mutable? binding)))))
+
 		  (if (and (compiler:option:propagate-constants)
 			   known? 
 			   (can-propagate-constant? val)
@@ -412,6 +426,11 @@
 	      (when (compiler:option:debug)
 		(zodiac:print-start! debug:port ast)
 		(newline debug:port))
+
+	      (let* ([ftype (mrspidey:parsed-ftype ast)])
+		(when ftype
+		  (printf "Type for ~a: ~a~n" ast (mrspidey:FlowType->SDL ftype))))
+
 	      (cond
 		
 		;;-----------------------------------------------------------------

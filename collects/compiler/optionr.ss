@@ -6,6 +6,7 @@
  compiler:option^
  (import)
 
+ (define use-mrspidey (make-parameter #f))
  (define propagate-constants (make-parameter #t))
  (define assume-primitives (make-parameter #f))
  (define stupid (make-parameter #f))

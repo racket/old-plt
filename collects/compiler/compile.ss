@@ -7,6 +7,7 @@
 (require-library "functio.ss")
 (require-library "pretty.ss")
 (require-library "file.ss")
+(require-library "string.ss")
 (require-library "compile.ss")
 
 (reference-library "compile.ss" "dynext")
@@ -22,6 +23,7 @@
 		      mzlib:function^
 		      mzlib:pretty-print^
 		      mzlib:file^
+		      mzlib:string^
 		      mzlib:compile^
 		      dynext:compile^
 		      dynext:link^

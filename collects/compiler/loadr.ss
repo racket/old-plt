@@ -4,6 +4,7 @@
  (import (FUNCTION : mzlib:function^)
 	 (PRETTY-PRINT : mzlib:pretty-print^)
 	 (FILE : mzlib:file^)
+	 (STRING : mzlib:string^)
 	 (COMPILE : dynext:compile^)
 	 (LINK : dynext:link^)
 	 (DFILE : dynext:file^)
@@ -21,6 +22,20 @@
 			      CSTRUCTS
 			      DRIVER
 			      FUNCTION)]
+  [INTERACTION : mrspidey:interaction^
+	       ((reference-relative-library-unit/sig "mrspidey.ss")
+		OPTIONS
+		ZODIAC
+		ZLAYER
+		DRIVER)]
+  [MRSPIDEY : mrspidey:sba^
+	    ((reference-library-unit/sig "sba.ss" "mrspidey")
+	     INTERACTION 
+	     (FUNCTION : mrspidey:mzlib:function^)
+	     PRETTY-PRINT 
+	     FILE
+	     STRING 
+	     ZODIAC)]
   [LIBRARY : compiler:library^ ((reference-relative-library-unit/sig "library.ss")
 				ZODIAC
 				FUNCTION)]
@@ -65,7 +80,8 @@
 				CONST
 				REP
 				DRIVER
-				FUNCTION)]
+				FUNCTION
+				MRSPIDEY)]
   [CLOSURE : compiler:closure^ ((reference-relative-library-unit/sig "closure.ss")
 				OPTIONS
 				LIBRARY
@@ -157,6 +173,8 @@
 			      COMPILE
 			      LINK
 			      DFILE
-			      FUNCTION)])
+			      FUNCTION
+			      PRETTY-PRINT
+			      MRSPIDEY)])
  (export (open (DRIVER : compiler:inner^))))
 

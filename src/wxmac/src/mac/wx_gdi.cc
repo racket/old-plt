@@ -441,6 +441,9 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   if ((bw > w) || (bh > h))
     return;
 
+  if ((hotSpotX > w) || (hotSpotY > h)) 
+    return;
+
 /* Make read-only DCs for reading bits from the bitmaps: */
   if (!temp_mdc) {
     wxREGGLOB(temp_mdc);
@@ -473,7 +476,7 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   cMacCustomCursor = new Cursor;
 
   /* Init arrays */
-  for (i = 0; i < 16; i++) {
+  for (i = 0; i < h; i++) {
     cMacCustomCursor->data[i] = 0;
     cMacCustomCursor->mask[i] = 0;
   }
@@ -519,6 +522,7 @@ wxCursor::wxCursor(int cursor_type)
 {
   __type = wxTYPE_CURSOR;
   cMacCursor = NULL;
+  cMacCustomCursor = NULL;
 
   switch (cursor_type)
   {

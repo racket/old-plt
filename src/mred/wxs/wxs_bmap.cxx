@@ -138,6 +138,7 @@ static Bool IsColor(wxBitmap *bm)
 
 
 
+
 class os_wxBitmap : public wxBitmap {
  public:
 
@@ -146,7 +147,7 @@ class os_wxBitmap : public wxBitmap {
   os_wxBitmap CONSTRUCTOR_ARGS((int x0, int x1, Bool x2 = 0));
 #endif
 #ifndef MZ_PRECISE_GC
-  os_wxBitmap CONSTRUCTOR_ARGS((pathname x0, int x1 = 0));
+  os_wxBitmap CONSTRUCTOR_ARGS((pathname x0, int x1 = 0, class wxColour* x2 = NULL));
 #endif
   ~os_wxBitmap();
 #ifdef MZ_PRECISE_GC
@@ -179,8 +180,8 @@ CONSTRUCTOR_INIT(: wxBitmap(x0, x1, x2))
 #endif
 
 #ifndef MZ_PRECISE_GC
-os_wxBitmap::os_wxBitmap CONSTRUCTOR_ARGS((pathname x0, int x1))
-CONSTRUCTOR_INIT(: wxBitmap(x0, x1))
+os_wxBitmap::os_wxBitmap CONSTRUCTOR_ARGS((pathname x0, int x1, class wxColour* x2))
+CONSTRUCTOR_INIT(: wxBitmap(x0, x1, x2))
 {
 }
 #endif
@@ -188,6 +189,48 @@ CONSTRUCTOR_INIT(: wxBitmap(x0, x1))
 os_wxBitmap::~os_wxBitmap()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+static Scheme_Object *os_wxBitmapSetTransparent(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxBitmap_class, "set-transparent-color in bitmap%", n, p);
+  class wxColour* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-transparent-color in bitmap%", 0));
+
+  
+  WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->SetTransparent(x0));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxBitmapGetTransparent(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxColour* r;
+  objscheme_check_valid(os_wxBitmap_class, "get-transparent-color in bitmap%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->GetTransparent());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
 static Scheme_Object *os_wxBitmapSaveFile(int n,  Scheme_Object *p[])
@@ -404,25 +447,31 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
   } else  {
     pathname x0 INIT_NULLED_OUT;
     int x1;
+    class wxColour* x2 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
     VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x2);
 
     
-    if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (pathname case)", POFFSET+1, POFFSET+2, n, p, 1));
+    if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (pathname case)", POFFSET+1, POFFSET+3, n, p, 1));
     x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "initialization in bitmap% (pathname case)"));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "initialization in bitmap% (pathname case)"));
     } else
       x1 = 0;
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+2], "initialization in bitmap% (pathname case)", 0));
+    } else
+      x2 = NULL;
 
     
-    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1)));
+    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1));
+    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
 #endif
     realobj->__gc_external = (void *)p[0];
     if (realobj->Ok()) WITH_VAR_STACK(scheme_thread_block(0.0));
@@ -442,8 +491,10 @@ void objscheme_setup_wxBitmap(Scheme_Env *env)
 
   wxREGGLOB(os_wxBitmap_class);
 
-  os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", (Scheme_Method_Prim *)os_wxBitmap_ConstructScheme, 7));
+  os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", (Scheme_Method_Prim *)os_wxBitmap_ConstructScheme, 9));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "set-transparent-color" " method", (Scheme_Method_Prim *)os_wxBitmapSetTransparent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-transparent-color" " method", (Scheme_Method_Prim *)os_wxBitmapGetTransparent, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file" " method", (Scheme_Method_Prim *)os_wxBitmapSaveFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "load-file" " method", (Scheme_Method_Prim *)os_wxBitmapLoadFile, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "is-color?" " method", (Scheme_Method_Prim *)os_wxBitmapIsColor, 0, 0));

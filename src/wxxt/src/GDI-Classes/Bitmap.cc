@@ -107,12 +107,14 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
 }
 
 // create bitmap from file
-wxBitmap::wxBitmap(char *bitmap_file, long flags)
+wxBitmap::wxBitmap(char *bitmap_file, long flags, wxColour *trans)
 {
     __type = wxTYPE_BITMAP;
 
     Xbitmap = NULL;
     cmap    = wxAPP_COLOURMAP;
+
+    SetTransparent(trans);
 
     // use load method
     (void)LoadFile(bitmap_file, flags);
@@ -501,6 +503,20 @@ void  wxBitmap::GetHotSpot(int *x, int *y)
     else         { *x = *y = 0; }
 }
 void* wxBitmap::GetHandle(void) { return (Xbitmap ? &(Xbitmap->x_pixmap) : NULL); }
+
+
+void wxBitmap::SetTransparent(int r, int g, int b)
+{
+  wxColour *t;
+  t = new wxColour(r, g, b);
+  t->Lock(1);
+  transparent = t;
+}
+
+void wxBitmap::SetTransparent(wxColour *c)
+{
+  SetTransparent(c->Red(), c->Green(), c->Blue());
+}
 
 //-----------------------------------------------------------------------------
 // wxCursor

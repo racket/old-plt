@@ -1453,7 +1453,7 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 
       {
 	wxBitmap *nbm;
-	nbm = new wxBitmap(fn, type);
+	nbm = new wxBitmap(fn, type, (wxColour *)NULL);
 	bm = nbm;
       }
 

@@ -132,6 +132,8 @@ wxImage::wxImage(void)
 
   imap = ctrlmap = gmap = 0;
 
+  transparent = 0;
+
   /*****************************************************/
   /*** X Resource Initialization                     ***/
   /*****************************************************/
@@ -710,6 +712,11 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
     // bitmap->SetOk(TRUE);
 
     delete tempImage;
+
+    if (tempImage->transparent)
+      bitmap->SetTransparent(tempImage->tred,
+			     tempImage->tgreen,
+			     tempImage->tblue);
 
     if (cmap)
       *cmap = tempColourMap;

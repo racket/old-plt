@@ -103,10 +103,10 @@ static Scheme_Object *read_box(Scheme_Object *port, Scheme_Object *stxsrc,
 			       Scheme_Object *indentation);
 static Scheme_Object *read_compiled(Scheme_Object *port,
 				    Scheme_Hash_Table **ht);
-static Scheme_Object *unexpected_closer(int ch,
-					Scheme_Object *port, Scheme_Object *stxsrc,
-					long line, long col, long pos,
-					Scheme_Object *indentation);
+static void unexpected_closer(int ch,
+			      Scheme_Object *port, Scheme_Object *stxsrc,
+			      long line, long col, long pos,
+			      Scheme_Object *indentation);
 static void pop_indentation(Scheme_Object *indentation);
 
 static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc);
@@ -1091,7 +1091,7 @@ read_list(Scheme_Object *port,
 	if (indt->suspicious_line) {
 	  suggestion = scheme_malloc_atomic(100);
 	  sprintf(suggestion, 
-		  "; indentation suggests a missing '%c' before line %d",
+		  "; indentation suggests a missing '%c' before line %ld",
 		  indt->suspicious_closer,
 		  indt->suspicious_line);
 	} 
@@ -1837,10 +1837,10 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
   return ch;
 }
 
-static Scheme_Object *unexpected_closer(int ch,
-					Scheme_Object *port, Scheme_Object *stxsrc,
-					long line, long col, long pos,
-					Scheme_Object *indentation)
+static void unexpected_closer(int ch,
+			      Scheme_Object *port, Scheme_Object *stxsrc,
+			      long line, long col, long pos,
+			      Scheme_Object *indentation)
 {
   char *suggestion = "", *found = "unexpected";
 
@@ -1876,7 +1876,7 @@ static Scheme_Object *unexpected_closer(int ch,
 
     if (indt->multiline) {
       sprintf(found,
-	      "%s '%c' to close '%c' on line %d, found instead",
+	      "%s '%c' to close '%c' on line %ld, found instead",
 	      missing,
 	      indt->closer,
 	      opener,
@@ -1892,7 +1892,7 @@ static Scheme_Object *unexpected_closer(int ch,
     if (indt->suspicious_line) {
       suggestion = scheme_malloc_atomic(100);
       sprintf(suggestion, 
-	      "; indentation suggests a missing '%c' before line %d",
+	      "; indentation suggests a missing '%c' before line %ld",
 	      indt->suspicious_closer,
 	      indt->suspicious_line);
     }

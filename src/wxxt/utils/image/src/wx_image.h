@@ -105,6 +105,8 @@ class wxImage: public wxObject
 
   byte           rorg[256],gorg[256],borg[256];  /* ORIGINAL colormap */
 
+  int            transparent, tred, tgreen, tblue;
+
 
   XImage        *theImage;     /* X version of epic */
 

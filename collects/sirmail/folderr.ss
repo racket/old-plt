@@ -91,7 +91,7 @@
                 (set! mailbox-name m))]
             (super-instantiate ()))))
       
-      ;; mailbox-folder = (make-deep-folder (union #f string)
+      ;; mailbox-folder = (make-deep-folder (union #f bytes)
       ;;                                    (union #f string)
       ;;                                    bool
       ;;                                    nested-mailbox-folder)
@@ -131,7 +131,7 @@
       ;; read-mailbox-folder : -> mailbox-folder
       (define (read-mailbox-folder)
         (let ([default
-               (make-deep-folder (ROOT-MAILBOX-FOR-LIST)
+               (make-deep-folder (string->bytes/utf-8 (ROOT-MAILBOX-FOR-LIST))
                                  (ROOT-MAILBOX-FOR-LIST)
                                  #f ;; arbitrary
                                  null)])

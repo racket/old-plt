@@ -413,7 +413,7 @@
                    (let ((record
                           (make-class-record 
                            cname
-                           (check-class-modifiers 'full modifiers)
+                           (check-class-modifiers level (def-kind class) modifiers)
                            #t
                            (append f (filter class-specific-field? (class-record-fields super-record)))
                            (append m (filter (lambda (meth)
@@ -932,9 +932,9 @@
   ;-----------------------------------------------------------------------------------
   ;Code to check modifiers
   
-  ;check-class-modifiers: (list modifier) symbol -> (list symbol)
-  (define (check-class-modifiers level mods)
-    (when (and (valid-class-mods? level mods)
+  ;check-class-modifiers: symbol symbol (list modifier) -> (list symbol)
+  (define (check-class-modifiers level kind mods)
+    (when (and ((valid-class-mods? kind) level mods)
                (not (final-and-abstract? mods))
                (not (duplicate-mods? mods)))
       (map modifier-kind mods)))
@@ -975,10 +975,16 @@
                     (tester level (cdr mods))))))
       tester))
 
-  ;valid-*-mods?: symbol (list modifier) -> bool
-  (define valid-class-mods?
-    (make-valid-mods (lambda (x) '(public abstract final strictfp))
-                     (lambda (x) 'invalid-class)))
+  ;valid-*-mods?: symbol -> (symbol (list modifier) -> bool)
+  (define (valid-class-mods? kind)
+    (make-valid-mods 
+     (lambda (level)
+       (case kind
+         ((top) '(public abstract final strictfp))
+         ((member) '(public private protected abstract final static))
+         ((anon) '())
+         ((statement) '(public private protected abstract final))))
+     (lambda (x) 'invalid-class)))
   (define valid-interface-mods?
     (make-valid-mods (lambda (x) '(public abstract strictfp))
                      (lambda (x) 'invalid-iface)))

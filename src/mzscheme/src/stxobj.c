@@ -387,8 +387,8 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   }
 
   if (!oe)
-    oe= scheme_make_pair(scheme_make_pair(origin_symbol, origin),
-			 scheme_null);
+    oe = scheme_make_pair(scheme_make_pair(origin_symbol, origin),
+			  scheme_null);
 
   /* Merge ne and oe (ne takes precedence). */
   

@@ -1634,8 +1634,10 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	    scheme_wrong_syntax("compile", NULL, form, "bad syntax");
 	    return NULL;
 	  }
-	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type))
+	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
+	  name = form;
 	  goto macro;
+	}
 	
 	if (rec) {
 	  scheme_compile_rec_done_local(rec, drec);
@@ -1742,6 +1744,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  return f(form, env, depth, boundname);
 	}
       } else {
+	name = stx;
 	goto macro;
       }
     }
@@ -1759,7 +1762,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   if (!rec && !depth)
     return form; /* We've gone as deep as requested */
 
-  form = compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
+  form = compile_expand_macro_app(name, var, form, env, rec, drec, depth, boundname);
   if (rec)
     goto top;
   else {

@@ -10,6 +10,27 @@
 	   (struct n (field1 field2))
 	   (rename n m)))
 
+(require n)
+(test 'n 'required-n n)
+(test 'n 'required-n m)
+
+(test 'n-field1 object-name n-field1)
+(test 'n-field2 object-name n-field2)
+(test 'set-n-field1! object-name set-n-field1!)
+(test 'set-n-field2! object-name set-n-field2!)
+(test 'n? object-name n?)
+(test 7 n-field1 (make-n 7 8))
+(test 8 n-field2 (make-n 7 8))
+(define an-n (make-n 7 8))
+(test (void) set-n-field1! an-n 12)
+(test (void) set-n-field2! an-n 13)
+(test 12 n-field1 an-n)
+(test 13 n-field2 an-n)
+
+(syntax-test #'(set! n 10))
+(syntax-test #'(set! m 10))
+(syntax-test #'(set! make-n 10))
+
 (syntax-test #'(module))
 (syntax-test #'(module m))
 (syntax-test #'(module 5 mzscheme))
@@ -36,6 +57,7 @@
 (syntax-test #'(module m mzscheme (define x 10) (provide "bad")))
 (syntax-test #'(module m mzscheme (define x 10) (provide not-here)))
 (syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide x x)))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide x z)))
 (syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide x y x)))
 (syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (rename))))
 (syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (rename x))))
@@ -86,15 +108,15 @@
 (syntax-test #'(module m mzscheme (require (rename n . n))))
 (syntax-test #'(module m mzscheme (require (rename n n))))
 (syntax-test #'(module m mzscheme (require (rename n n . m))))
+(syntax-test #'(module m mzscheme (require (rename n 1 m))))
+(syntax-test #'(module m mzscheme (require (rename n n 1))))
+(syntax-test #'(module m mzscheme (require (rename n n not-there))))
+(syntax-test #'(module m mzscheme (require (rename n n m extra))))
 
 (syntax-test #'(module m mzscheme (define car 5)))
 (syntax-test #'(module m mzscheme (define x 6) (define x 5)))
 (syntax-test #'(module m mzscheme (define x 10) (define-syntax x 10)))
 (syntax-test #'(module m mzscheme (define-syntax x 10) (define x 10)))
-
-(syntax-test #'(module m mzscheme (provide x)))
-(syntax-test #'(module m mzscheme (define x 10) (provide x x)))
-(syntax-test #'(module m mzscheme (define x 10) (provide x y)))
 
 ;; Cyclic re-def of n:
 (syntax-test #'(module n n 10))

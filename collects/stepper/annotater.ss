@@ -644,7 +644,8 @@
 		(print-struct #t)
 		(e:internal-error
 		 expr
-		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))])))
+                 "stepper:annotate/inner: unknown object to annotate, ~a~n"
+                 expr)])))
          
          (define (annotate/top-level expr)
            (let-values ([(annotated dont-care)

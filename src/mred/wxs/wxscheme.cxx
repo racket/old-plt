@@ -1992,7 +1992,7 @@ int wxGetPreference(const char *name, char *res, long len)
 
     /*************** Windows ***************/
 
-#ifdef wx_win
+#ifdef wx_msw
     home = win_find_home();
 
     l = strlen(home);

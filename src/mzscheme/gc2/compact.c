@@ -20,9 +20,11 @@
 #define GROW_ADDITION 500000
 
 #define GENERATIONS 1
+
 /* Platform-specific disablers (`and'ed with GENERATIONS): */
 #define OS_X_GENERATIONS 0
-#define WIN32_GENERATIONS 0
+#define WIN32_GENERATIONS 1
+
 
 #ifdef NO_GC_SIGNALS
 # undef GENERATIONS
@@ -49,11 +51,9 @@
    within Windows callbacks. Perhaps in the future we can fix all
    callbacks to insert an appropriate wrapper. For now, we use
    AddVectoredExceptionHandler, but that's only available starting
-   with XP, so we make generations easy to disable. */
-#  if GENERATIONS
-    /* Make AddVectoredExceptionHandler available: */
-#   define _WIN32_WINNT 0x0500
-#  endif
+   with XP. We detect the presence of AddVectoredExceptionHandler
+   dynamically (and disable generations if it's not present), but we
+   also make generations easy to disable entirely above. */
 # endif
 #endif
 
@@ -344,6 +344,7 @@ static long on_free_list;
 #endif
 
 #if GENERATIONS
+static int generations_available = 1;
 static long num_seg_faults;
 #endif
 
@@ -1434,10 +1435,12 @@ static void init_all_mpages(int young)
 	
     if (!is_old && !(page->flags & MFLAG_MODIFIED)) {
 #if GENERATIONS
-      if (page->flags & MFLAG_BIGBLOCK)
-	protect_pages((void *)p, page->u.size, 1);
-      else
-	protect_pages((void *)p, MPAGE_SIZE, 1);
+      if (generations_available) {
+	if (page->flags & MFLAG_BIGBLOCK)
+	  protect_pages((void *)p, page->u.size, 1);
+	else
+	  protect_pages((void *)p, MPAGE_SIZE, 1);
+      }
 #endif
       page->flags |= MFLAG_MODIFIED;
     }
@@ -1496,10 +1499,12 @@ static void init_all_mpages(int young)
 
       if (!(page->flags & MFLAG_MODIFIED)) {
 #if GENERATIONS
-	if (page->flags & MFLAG_BIGBLOCK)
-	  protect_pages((void *)p, page->u.size, 1);
-	else
-	  protect_pages((void *)p, MPAGE_SIZE, 1);
+	if (generations_available) {
+	  if (page->flags & MFLAG_BIGBLOCK)
+	    protect_pages((void *)p, page->u.size, 1);
+	  else
+	    protect_pages((void *)p, MPAGE_SIZE, 1);
+	}
 #endif
 	page->flags |= MFLAG_MODIFIED;
       }
@@ -3087,18 +3092,20 @@ void protect_old_mpages()
 #if GENERATIONS
   MPage *page;
 
-  for (page = first; page; page = page->next) {
-    if (page->age && (page->type != MTYPE_ATOMIC)) {
-      void *p;
+  if (generations_available) {
+    for (page = first; page; page = page->next) {
+      if (page->age && (page->type != MTYPE_ATOMIC)) {
+	void *p;
       
-      if (page->flags & MFLAG_MODIFIED) {
-	page->flags -= MFLAG_MODIFIED;
+	if (page->flags & MFLAG_MODIFIED) {
+	  page->flags -= MFLAG_MODIFIED;
       
-	p = page->block_start;
-	if (page->flags & MFLAG_BIGBLOCK)
-	  protect_pages((void *)p, page->u.size, 0);
-	else 
-	  protect_pages((void *)p, MPAGE_SIZE, 0);
+	  p = page->block_start;
+	  if (page->flags & MFLAG_BIGBLOCK)
+	    protect_pages((void *)p, page->u.size, 0);
+	  else 
+	    protect_pages((void *)p, MPAGE_SIZE, 0);
+	}
       }
     }
   }
@@ -3534,7 +3541,20 @@ static void init(void)
     }
 # endif
 # ifdef NEED_SIGWIN
-    AddVectoredExceptionHandler(TRUE, fault_handler);
+    {
+      HMODULE hm;
+      PVOID (*aveh)(ULONG, PVECTORED_EXCEPTION_HANDLER);
+
+      hm = LoadLibrary("kernel32.dll");
+      if (hm)
+	aveh = (PVOID (*)(ULONG, PVECTORED_EXCEPTION_HANDLER))GetProcAddress(hm, "AddVectoredExceptionHandler");
+      else
+	aveh = NULL;
+      if (aveh)
+	aveh(TRUE, fault_handler);
+      else
+	generations_available = 0;
+    }
 # endif
 #endif
   }
@@ -3672,6 +3692,9 @@ static void gcollect(int full)
 
 #if !GENERATIONS
   young = 15;
+#else
+  if (!generations_available)
+    young = 15;
 #endif
 
 #if USE_FREELIST && (COMPACTING == SELECTIVELY_COMPACT)

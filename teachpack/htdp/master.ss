@@ -1,10 +1,11 @@
-(require-library "error.ss" "htdp")
+(module master mzscheme
+  
+  (require (lib "error.ss" "htdp")
+	   (lib "class.ss")
+	   (lib "mred.ss" "mred"))
 
-(define-signature masterS (master))
+  (provide master)
 
-(define masterU
-  (unit/sig masterS (import errorS plt:userspace^)
-    
     #| ------------------------------------------------------------------------
     The Basic Constants |#
 
@@ -83,7 +84,7 @@
     Some additional functionality |#
 
     (define colored-button%
-      (class button% (color:str parent call-back [width BUT-SIZE][hight BUT-SIZE])
+      (class100 button% (color:str parent call-back [width BUT-SIZE][hight BUT-SIZE])
 	(private
 	  (make-colored-bm
 	    (lambda (color:str)
@@ -181,11 +182,4 @@
     ;; ------------------------------------------------------------------------
     ;; Student Contribution
 
-    (define check-guess #f)))
-
-(compound-unit/sig
-  (import (PLT : plt:userspace^))
-  (link
-    (ERR  : errorS (errorU))
-    (DRAW : masterS (masterU ERR PLT)))
-  (export (open DRAW)))
+    (define check-guess #f))

@@ -1,10 +1,12 @@
-(require-library "error.ss" "htdp")
-(require-library "draw.ss" "htdp")
+(module rectangle mzscheme
+  (require (lib "error.ss" "htdp")
+	   (lib "draw-sig.ss" "htdp")
+	   (lib "big-draw.ss" "htdp"))
 
-(define-signature rectangleS (show))
+  (provide show)
 
-(define rectangleU
-  (unit/sig rectangleS (import errorS bigDrawS plt:userspace^)
+  ;; do we really need this? Can't they load draw as well instead?
+  (provide-signature-elements draw^)
 
     ;; show : rectangle -> #t
     (define (show rect)
@@ -41,11 +43,4 @@
     (define (draw-square y x c)
       (draw-solid-rect (make-posn y x) LENGTH-SQUARE LENGTH-SQUARE c))
     
-    (define LENGTH-SQUARE 10)))
-
-(compound-unit/sig (import (PLT : plt:userspace^))
-  (link
-    [ERR   : errorS (errorU)]
-    [DRAW  : bigDrawS  (bigDrawU ERR PLT)]
-    [RECT  : rectangleS (rectangleU ERR DRAW PLT)])
-  (export (open (DRAW : drawS)) (open RECT)))
+    (define LENGTH-SQUARE 10))

@@ -1,10 +1,12 @@
-(require-library "error.ss" "htdp")
-(require-library "pingp-sig.ss" "htdp")
-(require-library "draw.ss" "htdp")
+(module pingp mzscheme
+  
+  (require "error.ss"
+	   "pingp-sig.ss"
+	   "draw-sig.ss"
+	   "big-draw.ss")
 
-(define pingpU
-  (unit/sig pingpS
-    (import errorS bigDrawS plt:userspace^)
+  (provide-signature-elements pingp^)
+  (provide-signature-elements draw^)
 
     ;; Exported Functions
     ;; ------------------
@@ -276,12 +278,4 @@
 	       (- EAST (+ PAD_WIDTH PAD_DIST_WALL))
 	       (- (quotient SOUTH 2) (quotient PAD_LENGTH 2))))))
 
-    ))
-
-
-(compound-unit/sig (import (PLT : plt:userspace^))
-  (link
-    [ERR   : errorS (errorU)]   
-    [DRAW  : bigDrawS  (bigDrawU ERR PLT)]
-    [PINGP : pingpS (pingpU ERR DRAW PLT)])
-  (export (open (DRAW : drawS)) (open PINGP)))
+    )

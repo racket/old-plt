@@ -10,7 +10,9 @@
 
   ;; reload : module-spec exact-positive-integer -> void
   ;; reloads the module or anything it depends on, if
-  ;; it has changed.
+  ;; it has changed since `timestamp'. The values of
+  ;; `timestamp' are expected to be those you might
+  ;; get from current-seconds or file-or-directory-modify-seconds.
   (define (reload spec timestamp)
     (reload/cache spec timestamp (get/create-cache))
     (dynamic-require spec #f)

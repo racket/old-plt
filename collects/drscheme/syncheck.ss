@@ -748,8 +748,7 @@
                            (syncheck:clear-highlighting)
                            (report-error (car sexp) (cdr sexp)))]
                         [(eof-object? sexp)
-                         ;(custodian-shutdown-all (run-in-expansion-thread current-custodian))
-                         ]
+                         (custodian-shutdown-all (run-in-expansion-thread current-custodian))]
                         [else
                          (let-values ([(new-binders
                                         pre-new-varrefs

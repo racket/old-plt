@@ -290,11 +290,15 @@ void scheme_collect_garbage(void);
 /*                             hash tables                                */
 /*========================================================================*/
 
-Scheme_Hash_Table *scheme_hash_table(int size_hint, int type);
-void scheme_add_to_table(Scheme_Hash_Table *table, const char *key, void *val, int);
-void scheme_change_in_table(Scheme_Hash_Table *table, const char *key, void *new_val);
-void *scheme_lookup_in_table(Scheme_Hash_Table *table, const char *key);
-Scheme_Bucket *scheme_bucket_from_table(Scheme_Hash_Table *table, const char *key);
+Scheme_Bucket_Table *scheme_make_bucket_table(int size_hint, int type);
+void scheme_add_to_table(Scheme_Bucket_Table *table, const char *key, void *val, int);
+void scheme_change_in_table(Scheme_Bucket_Table *table, const char *key, void *new_val);
+void *scheme_lookup_in_table(Scheme_Bucket_Table *table, const char *key);
+Scheme_Bucket *scheme_bucket_from_table(Scheme_Bucket_Table *table, const char *key);
+
+Scheme_Hash_Table *scheme_make_hash_table(int type);
+void scheme_hash_set(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object *val);
+Scheme_Object *scheme_hash_get(Scheme_Hash_Table *table, Scheme_Object *key);
 
 /*========================================================================*/
 /*                   basic Scheme value constructors                      */

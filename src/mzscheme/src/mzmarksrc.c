@@ -557,10 +557,21 @@ hash_table_val {
  mark:
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p;
 
-  gcMARK(ht->buckets);
+  gcMARK(ht->keys);
+  gcMARK(ht->vals);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
+}
+
+bucket_table_val {
+ mark:
+  Scheme_Bucket_Table *ht = (Scheme_Bucket_Table *)p;
+
+  gcMARK(ht->buckets);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_Table));
 }
 
 namespace_val {

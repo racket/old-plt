@@ -301,24 +301,17 @@ void wxSetSensitive(Widget w, Bool enabled)
     if (enabled)
       return;
 
-    /* Use SCHEME_hash_weak_ptr so elements can be deleted from the table */
     wxREGGLOB(disabled_widgets);
-    disabled_widgets = scheme_hash_table(7, SCHEME_hash_weak_ptr);
+    disabled_widgets = scheme_make_hash_table(SCHEME_hash_ptr);
 #ifdef MZ_PRECISE_GC
     disabled_widgets->make_hash_indices = widget_hash_indices;
 #endif
   }
 
   if (enabled) {
-    if (scheme_lookup_in_table(disabled_widgets, (const char *)w)) {
-      /* Removes from hash table: */
-      scheme_change_in_table(disabled_widgets, (const char *)w, NULL);
-    }
+    scheme_hash_set(disabled_widgets, (Scheme_Object *)w, NULL);
   } else {
-    Scheme_Bucket *b;
-
-    b = scheme_bucket_from_table(disabled_widgets, (const char *)w);
-    b->val = (void *)0x1;
+    scheme_hash_set(disabled_widgets, (Scheme_Object *)w, (Scheme_Object *)0x1);
   }
 }
 
@@ -393,7 +386,7 @@ void MrEdDispatchEvent(XEvent *event)
 	if (XtIsSubclass(widget, transientShellWidgetClass)
 	    || XtIsSubclass(widget, topLevelShellWidgetClass)) {
 	  
-	  if (scheme_lookup_in_table(disabled_widgets, (const char *)widget)) {
+	  if (scheme_hash_get(disabled_widgets, (Scheme_Object *)widget)) {
 #if 0
 	    printf("disabled: %lx from %lx\n", widget, ow);
 #endif

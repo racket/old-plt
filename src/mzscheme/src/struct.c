@@ -352,7 +352,7 @@ static Scheme_Object *prop_pred(Scheme_Object *prop, int argc, Scheme_Object **a
       return scheme_false;
 
   if (stype->num_props < 0) {
-    if (scheme_lookup_in_table((Scheme_Hash_Table *)stype->props, (char *)prop))
+    if (scheme_hash_get((Scheme_Hash_Table *)stype->props, prop))
       return scheme_true;
   } else {
     int i;
@@ -379,7 +379,7 @@ static Scheme_Object *prop_accessor(Scheme_Object *prop, int argc, Scheme_Object
   if (stype) {
     if (stype->num_props < 0) {
       Scheme_Object *v;
-      v = (Scheme_Object *)scheme_lookup_in_table((Scheme_Hash_Table *)stype->props, (char *)prop);
+      v = (Scheme_Object *)scheme_hash_get((Scheme_Hash_Table *)stype->props, prop);
       if (v)
 	return v;
     } else {
@@ -1431,21 +1431,20 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     if ((struct_type->num_props < 0) || (struct_type->num_props + num_props > PROP_USE_HT_COUNT)) {
       Scheme_Hash_Table *ht;
 
-      ht = scheme_hash_table(num_props, SCHEME_hash_ptr);
+      ht = scheme_make_hash_table(SCHEME_hash_ptr);
     
       if (struct_type->num_props >= 0) {
 	for (i = 0; i < struct_type->num_props; i++) {
-	  scheme_add_to_table(ht, 
-			      (char *)SCHEME_CAR(struct_type->props[i]), 
-			      SCHEME_CDR(struct_type->props[i]), 0);
+	  scheme_hash_set(ht, 
+			  SCHEME_CAR(struct_type->props[i]), 
+			  SCHEME_CDR(struct_type->props[i]));
 	}
       } else {
 	/* Duplicate hash table: */
-	Scheme_Bucket **bs;
-	bs = ((Scheme_Hash_Table *)struct_type->props)->buckets;
-	for (i =  ((Scheme_Hash_Table *)struct_type->props)->count; i--; ) {
-	  if (bs[i] && bs[i]->key) {
-	    scheme_add_to_table(ht, bs[i]->key, bs[i]->val, 0);
+	Scheme_Hash_Table *oht = (Scheme_Hash_Table *)struct_type->props;
+	for (i =  oht->count; i--; ) {
+	  if (oht->vals[i]) {
+	    scheme_hash_set(ht, oht->keys[i], oht->vals[i]);
 	  }
 	}
       }
@@ -1453,11 +1452,11 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
       /* Add new props: */
       for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	a = SCHEME_CAR(l);
-	if (scheme_lookup_in_table(ht, (char *)SCHEME_CAR(a))) {
+	if (scheme_hash_get(ht, SCHEME_CAR(a))) {
 	  /* Property is already in the superstruct_type */
 	  break;
 	}
-	scheme_add_to_table(ht, (char *)SCHEME_CAR(a), SCHEME_CDR(a), 0);
+	scheme_hash_set(ht, SCHEME_CAR(a), SCHEME_CDR(a));
       }
 
       struct_type->props = (Scheme_Object **)ht;

@@ -2951,9 +2951,9 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
   if (base->extensions) {
     Scheme_Bucket **bs = base->extensions->buckets;
     int i = base->extensions->size;
-    Scheme_Hash_Table *ht;
+    Scheme_Bucket_Table *ht;
     
-    ht = scheme_hash_table(2, SCHEME_hash_weak_ptr);
+    ht = scheme_make_bucket_table(2, SCHEME_hash_weak_ptr);
 
     config->extensions = ht;
     
@@ -3064,8 +3064,8 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
       Scheme_Bucket *b;
 
       if (!config->extensions) {
-	Scheme_Hash_Table *ht;
-	ht = scheme_hash_table(2, SCHEME_hash_weak_ptr);
+	Scheme_Bucket_Table *ht;
+	ht = scheme_make_bucket_table(2, SCHEME_hash_weak_ptr);
 	config->extensions = ht;
       }
 

@@ -1320,7 +1320,8 @@ int hash_table_val_SIZE(void *p) {
 int hash_table_val_MARK(void *p) {
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p;
 
-  gcMARK(ht->buckets);
+  gcMARK(ht->keys);
+  gcMARK(ht->vals);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
@@ -1329,10 +1330,35 @@ int hash_table_val_MARK(void *p) {
 int hash_table_val_FIXUP(void *p) {
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p;
 
-  gcFIXUP(ht->buckets);
+  gcFIXUP(ht->keys);
+  gcFIXUP(ht->vals);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
+}
+
+
+int bucket_table_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_Table));
+}
+
+int bucket_table_val_MARK(void *p) {
+  Scheme_Bucket_Table *ht = (Scheme_Bucket_Table *)p;
+
+  gcMARK(ht->buckets);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_Table));
+}
+
+int bucket_table_val_FIXUP(void *p) {
+  Scheme_Bucket_Table *ht = (Scheme_Bucket_Table *)p;
+
+  gcFIXUP(ht->buckets);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_Table));
 }
 
 

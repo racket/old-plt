@@ -129,6 +129,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_escaping_cont_type, "<escape-continuation>");
   set_name(scheme_sema_type, "<semaphore>");
   set_name(scheme_hash_table_type, "<hash-table>");
+  set_name(scheme_bucket_table_type, "<hash-table>");
   set_name(scheme_case_closure_type, "<procedure>");
   set_name(scheme_generic_data_type, "<generic-data>");
   set_name(scheme_multiple_values_type, "<multiple-values>");
@@ -162,7 +163,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_module_type, "<module-code>");
   set_name(scheme_module_index_type, "<module-path-index>");
 
-  set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -391,6 +391,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);
   GC_REG_TRAV(scheme_sema_type, sema_val);
   GC_REG_TRAV(scheme_hash_table_type, hash_table_val);
+  GC_REG_TRAV(scheme_bucket_table_type, bucket_table_val);
   GC_REG_TRAV(scheme_namespace_type, namespace_val);
   GC_REG_TRAV(scheme_random_state_type, random_state_val);
   
@@ -413,7 +414,6 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_module_type, module_val);
   GC_REG_TRAV(scheme_module_index_type, modidx_val);
 
-  GC_REG_TRAV(scheme_reserved_2_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_3_type, bad_trav);
 }
 

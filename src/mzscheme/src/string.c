@@ -1269,7 +1269,7 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
   s = getenv(SCHEME_STR_VAL(argv[0]));
 #else
   if (putenv_str_table) {
-    s = (char *)scheme_lookup_in_table(putenv_str_table, SCHEME_STR_VAL(argv[0]));
+    s = (char *)scheme_hash_get(putenv_str_table, (Scheme_Object *)SCHEME_STR_VAL(argv[0]));
     /* If found, skip over the `=' in the table: */
     if (s)
       s += SCHEME_STRTAG_VAL(argv[0]) + 1;
@@ -1316,7 +1316,7 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
     
     /* Free old, if in table: */
     if (putenv_str_table) {
-      ss = (char *)scheme_lookup_in_table(putenv_str_table, var);
+      ss = (char *)scheme_hash_get(putenv_str_table, (Scheme_Object *)var);
       if (ss)
 	free(ss);
     }
@@ -1324,9 +1324,9 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
 #endif
 
   if (!putenv_str_table)
-    putenv_str_table = scheme_hash_table(7, SCHEME_hash_string);
+    putenv_str_table = scheme_make_hash_table(SCHEME_hash_string);
 
-  scheme_add_to_table(putenv_str_table, var, s, 0);
+  scheme_hash_set(putenv_str_table, (Scheme_Object *)var, (Scheme_Object *)s);
 
   SCHEME_RELEASE_LOCK();
 

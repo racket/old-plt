@@ -302,7 +302,6 @@ static Scheme_Object *check_cycle_k(void)
 static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table *ht)
 {
   Scheme_Type t;
-  Scheme_Bucket *b;
 
   t = SCHEME_TYPE(obj);
 
@@ -334,10 +333,9 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
       || (p->quick_print_struct 
 	  && SAME_TYPE(t, scheme_structure_type)
 	  && PRINTABLE_STRUCT(obj, p))) {
-    b = scheme_bucket_from_table(ht, (const char *)obj);
-    if (b->val)
+    if (scheme_hash_get(ht, obj))
       return 1;
-    b->val = (void *)1;    
+    scheme_hash_set(ht, obj, (Scheme_Object *)0x1);
   } else 
     return 0;
 
@@ -368,7 +366,7 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
     }
   }
 
-  b->val = NULL;
+  scheme_hash_set(ht, obj, NULL);
 
   return 0;
 }
@@ -470,16 +468,16 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
 			      int *counter, Scheme_Thread *p)
 {
   if (HAS_SUBSTRUCT(obj, ssQUICKp)) {
-    Scheme_Bucket *b;
+    Scheme_Object *v;
 
-    b = scheme_bucket_from_table(ht, (const char *)obj);
+    v = scheme_hash_get(ht, obj);
 
-    if (!b->val)
-      b->val = (void *)1;
+    if (!v)
+      scheme_hash_set(ht, obj, (Scheme_Object *)0x1);
     else {
-      if ((long)b->val == 1) {
+      if ((long)v == 1) {
 	*counter += 2;
-	b->val = (void *)(long)*counter;
+	scheme_hash_set(ht, obj, (Scheme_Object *)(long)*counter);
       }
       return;
     }
@@ -528,7 +526,7 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print)
   Scheme_Hash_Table *ht;
   int counter = 1;
 
-  ht = scheme_hash_table(101, SCHEME_hash_ptr);
+  ht = scheme_make_hash_table(SCHEME_hash_ptr);
   setup_graph_table(o, ht, &counter, 
 		    for_print ? scheme_current_thread : NULL);
 
@@ -573,7 +571,7 @@ print_to_string(Scheme_Object *obj,
     cycles = -1;
 #endif
     if (cycles == -1) {
-      ht = scheme_hash_table(101, SCHEME_hash_ptr);
+      ht = scheme_make_hash_table(SCHEME_hash_ptr);
       cycles = check_cycles(obj, p, ht);
     }
   }
@@ -876,7 +874,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 		  || SCHEME_EOFP(obj))) {
     /* Check whether this is a global constant */
     Scheme_Object *val;
-    val = scheme_lookup_in_table(global_constants_ht, (const char *)obj);
+    val = scheme_hash_get(global_constants_ht, obj);
     if (val) {
       /* val is a scheme_variable_type object, instead of something else */
       obj = val;
@@ -884,21 +882,22 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   }
 
   if (ht && HAS_SUBSTRUCT(obj, ssQUICK)) {
-    Scheme_Bucket *b;
-    b = scheme_bucket_or_null_from_table(ht, (const char *)obj, 0);
+    long val;
     
-    if (b) {
-      if ((long)b->val != 1) {
+    val = (long)scheme_hash_get(ht, obj);
+    
+    if (val) {
+      if (val != 1) {
 	if (compact) {
 	  print_escaped(p, notdisplay, obj, ht);
 	  return 1;
 	} else {
-	  if ((long)b->val > 0) {
-	    sprintf(quick_buffer, "#%ld=", (((long)b->val) - 3) >> 1);
+	  if (val > 0) {
+	    sprintf(quick_buffer, "#%ld=", (val - 3) >> 1);
 	    print_this_string(p, quick_buffer, -1);
-	    b->val = (void *)(-(long)b->val);
+	    scheme_hash_set(ht, obj, (Scheme_Object *)(-val));
 	  } else {
-	    sprintf(quick_buffer, "#%ld#", ((-(long)b->val) - 3) >> 1);
+	    sprintf(quick_buffer, "#%ld#", ((-val) - 3) >> 1);
 	    print_this_string(p, quick_buffer, -1);
 	    return 0;
 	  }
@@ -913,7 +912,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       Scheme_Object *idx;
 
       if (compact)
-	idx = scheme_lookup_in_table(symtab, (char *)obj);
+	idx = scheme_hash_get(symtab, obj);
       else
 	idx = NULL;
 
@@ -934,7 +933,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_this_string(p, scheme_symbol_val(obj), l);
 
 	idx = scheme_make_integer(symtab->count);
-	scheme_add_to_table(symtab, (char *)obj, idx, 0);
+	scheme_hash_set(symtab, obj, idx);
 	
 	l = SCHEME_INT_VAL(idx);
 	print_compact_number(p, l);
@@ -1189,14 +1188,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       int l;
       Scheme_Object *idx;
 
-      idx = scheme_lookup_in_table(symtab, (char *)obj);
+      idx = scheme_hash_get(symtab, obj);
       if (idx) {
 	print_compact(p, CPT_SYMREF);
 	l = SCHEME_INT_VAL(idx);
 	print_compact_number(p, l);
       } else {
 	idx = scheme_make_integer(symtab->count);
-	scheme_add_to_table(symtab, (char *)obj, idx, 0);	
+	scheme_hash_set(symtab, obj, idx);	
 	l = SCHEME_INT_VAL(idx);
 
 	print_compact(p, CPT_MODULE_INDEX);
@@ -1210,14 +1209,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       int l;
       Scheme_Object *idx;
 
-      idx = scheme_lookup_in_table(symtab, (char *)obj);
+      idx = scheme_hash_get(symtab, obj);
       if (idx) {
 	print_compact(p, CPT_SYMREF);
 	l = SCHEME_INT_VAL(idx);
 	print_compact_number(p, l);
       } else {
 	idx = scheme_make_integer(symtab->count);
-	scheme_add_to_table(symtab, (char *)obj, idx, 0);	
+	scheme_hash_set(symtab, obj, idx);
 	l = SCHEME_INT_VAL(idx);
 
 	print_compact(p, CPT_MODULE_VAR);
@@ -1282,7 +1281,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       /* A quoted expression may have graph structure. We assume that
 	 this structure is local within the quoted expression. */
       
-      q_ht = scheme_hash_table(101, SCHEME_hash_ptr);
+      q_ht = scheme_make_hash_table(SCHEME_hash_ptr);
       setup_graph_table(v, q_ht, &counter, p);
 
       if (compact)
@@ -1387,8 +1386,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	closed = print(v, notdisplay, 1, NULL, symtab, rnht, p);
       else {
 	/* Symtab services both symbols and module paths (modidxs) */
-	symtab = scheme_hash_table(10, SCHEME_hash_ptr);
-	rnht = scheme_hash_table(10, SCHEME_hash_ptr);
+	symtab = scheme_make_hash_table(SCHEME_hash_ptr);
+	rnht = scheme_make_hash_table(SCHEME_hash_ptr);
 
 	/* "print" the string once to get a measurement and symtab size */
 	print_substring(v, notdisplay, 1, NULL, symtab, rnht, p, NULL, &slen);
@@ -1401,8 +1400,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_compact_number(p, slen);
 
 	/* Make symtab and rnht again to ensure the same results */
-	symtab = scheme_hash_table(10, SCHEME_hash_ptr);
-	rnht = scheme_hash_table(10, SCHEME_hash_ptr);
+	symtab = scheme_make_hash_table(SCHEME_hash_ptr);
+	rnht = scheme_make_hash_table(SCHEME_hash_ptr);
 
 	closed = print(v, notdisplay, 1, NULL, symtab, rnht, p);
       }
@@ -1492,7 +1491,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
     pr = pair;
     while (SCHEME_PAIRP(pr)) {
       if (ht)
-	if ((long)scheme_lookup_in_table(ht, (const char *)pr) != 1) {
+	if ((long)scheme_hash_get(ht, pr) != 1) {
 	  c = -1;
 	  break;
 	}
@@ -1527,7 +1526,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
   cdr = SCHEME_CDR (pair);
   while (SCHEME_PAIRP(cdr)) {
     if (ht && !super_compact) {
-      if ((long)scheme_lookup_in_table(ht, (const char *)cdr) != 1) {
+      if ((long)scheme_hash_get(ht, cdr) != 1) {
 	/* This needs a tag */
 	if (!compact)
 	  print_this_string(p, " . ", 3);

@@ -2069,17 +2069,24 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
       if (!SCHEME_STX_PAIRP(vars))
 	scheme_wrong_syntax(formname, vars, form, NULL);
 
-      first = multi ? let_values_symbol : let_symbol;
-      first = scheme_datum_to_syntax(first, form, scheme_sys_wraps(origenv), 0, 0);
-      last = multi ? let_star_values_symbol : let_star_symbol;
-      last = scheme_datum_to_syntax(last, form, scheme_sys_wraps(origenv), 0, 0);
-
       a = SCHEME_STX_CAR(vars);
       vr = SCHEME_STX_CDR(vars);
+      
+      first = multi ? let_values_symbol : let_symbol;
+      first = scheme_datum_to_syntax(first, form, scheme_sys_wraps(origenv), 0, 0);
+
+      if (SCHEME_STX_NULLP(vr)) {
+	/* Don't create redundant empty let form */
+      } else {
+	last = multi ? let_star_values_symbol : let_star_symbol;
+	last = scheme_datum_to_syntax(last, form, scheme_sys_wraps(origenv), 0, 0);
+	body = icons(icons(last, icons(vr, body)),
+		     scheme_null);
+      }
+      
       body = icons(first,
 		   icons(icons(a, scheme_null),
-			 icons(icons(last, icons(vr, body)),
-			       scheme_null)));
+			 body));
     } else {
       first = scheme_datum_to_syntax(let_values_symbol, form, scheme_sys_wraps(origenv), 0, 0);
       body = icons(first, icons(scheme_null, body));

@@ -2983,8 +2983,8 @@ int main(int argc, char *argv[])
 
   /* Set stack base and turn off auto-finding of static variables ---
      unless this is MacOS, where wxWindows doesn't currently register
-     its static variables, --- or Windows, where it's called in
-     wxWindows. */
+     its static variables, --- or Windows, where scheme_set_stack_base
+     is called by wxWindows. */
 #ifndef wx_msw
 # ifndef MACOS_FIND_STACK_BOUNDS
   scheme_set_stack_base(stack_start, 1);

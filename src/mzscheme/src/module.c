@@ -68,7 +68,7 @@ static Scheme_Object *read_module(Scheme_Object *obj);
 
 static void eval_defmacro(Scheme_Object *names, int count,
 			  Scheme_Object *expr, Scheme_Comp_Env *env,
-			  int let_depth, Scheme_Hash_Table *syntax);
+			  int let_depth, Scheme_Bucket_Table *syntax);
 
 #define cons scheme_make_pair
 
@@ -97,7 +97,7 @@ static Scheme_Object *top_stx;
 static int num_initial_modules;
 static Scheme_Object **initial_modules;
 static Scheme_Object *initial_renames;
-static Scheme_Hash_Table *initial_toplevel;
+static Scheme_Bucket_Table *initial_toplevel;
 
 typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname, 
 			   Scheme_Object *modname, Scheme_Object *srcname, 
@@ -231,7 +231,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   /* When this function is called, the initial namespace has all the
      primitive bindings for syntax and procedures. This function fills
      in the module wrapper for #%kernel. */
-  Scheme_Hash_Table *ht;
+  Scheme_Bucket_Table *ht;
   int i, j, count, syntax_start = 0;
   Scheme_Bucket **bs;
   Scheme_Object **exs, *w, *rn;
@@ -386,17 +386,15 @@ void scheme_save_initial_module_set(Scheme_Env *env)
 /* Can be called multiple times! */
 {
   int i, c, count;
-  Scheme_Bucket **bs, *b;
+  Scheme_Hash_Table *ht;
 	
-  bs = env->module_registry->buckets;
-  c = env->module_registry->size;
+  ht = env->module_registry;
+  c = ht->size;
 
   count = 0;
   for (i = 0; i < c; i++) {
-    b = bs[i];
-    if (b && b->val) {
+    if (ht->vals[i])
       count++;
-    }
   }
 
   num_initial_modules = count;
@@ -408,10 +406,9 @@ void scheme_save_initial_module_set(Scheme_Env *env)
 
   count = 0;
   for (i = 0; i < c; i++) {
-    b = bs[i];
-    if (b && b->val) {
-      initial_modules[count++] = (Scheme_Object *)b->key;
-      initial_modules[count++] = (Scheme_Object *)b->val;
+    if (ht->vals[i]) {
+      initial_modules[count++] = ht->keys[i];
+      initial_modules[count++] = ht->vals[i];
       initial_modules[count++] = NULL;
     }
   }
@@ -420,7 +417,7 @@ void scheme_save_initial_module_set(Scheme_Env *env)
   for (i = 0; i < num_initial_modules; i++) {
     Scheme_Module *m = (Scheme_Module *)initial_modules[(i * 3) + 1];
     start_module(m, env, 0, m->modname);
-    initial_modules[(i * 3) + 2] = scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (char *)m->modname);
+    initial_modules[(i * 3) + 2] = scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
   }
 
   /* Clone renames: */
@@ -443,14 +440,12 @@ void scheme_install_initial_module_set(Scheme_Env *env)
 
   /* Copy over module declarations and instances: */
   for (i = 0; i < num_initial_modules; i++) {
-    scheme_add_to_table(env->module_registry, 
-			(char *)initial_modules[i * 3],
-			(void *)initial_modules[(i * 3) + 1],
-			0);
-    scheme_add_to_table(MODCHAIN_TABLE(env->modchain),
-			(char *)initial_modules[i * 3],
-			(void *)initial_modules[(i * 3) + 2],
-			0);
+    scheme_hash_set(env->module_registry, 
+		    initial_modules[i * 3],
+		    initial_modules[(i * 3) + 1]);
+    scheme_hash_set(MODCHAIN_TABLE(env->modchain),
+		    initial_modules[i * 3],
+		    initial_modules[(i * 3) + 2]);
   }
 
   /* Copy renamings: */
@@ -463,7 +458,7 @@ void scheme_install_initial_module_set(Scheme_Env *env)
 
   /* Copy toplevel: */
   {
-    Scheme_Hash_Table *tl;
+    Scheme_Bucket_Table *tl;
     tl = scheme_clone_toplevel(initial_toplevel, env);
     env->toplevel = tl;
   }
@@ -710,8 +705,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
   /* Check whether todo, or anything it needs, is already declared incompatibly: */
   while (!SCHEME_NULLP(todo)) {
-    checked = scheme_hash_table(7, SCHEME_hash_ptr);
-    next_checked = scheme_hash_table(7, SCHEME_hash_ptr);
+    checked = scheme_make_hash_table(SCHEME_hash_ptr);
+    next_checked = scheme_make_hash_table(SCHEME_hash_ptr);
 
     while (!SCHEME_NULLP(todo)) {
       name = SCHEME_CAR(todo);
@@ -719,7 +714,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
       todo = SCHEME_CDR(todo);
 
       if (!SAME_OBJ(name, kernel_symbol)) {
-	menv = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(from_modchain), (const char *)name);
+	menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(from_modchain), name);
 
 	if (!menv) {
 	  /* Assert: name == argv[1] */
@@ -729,14 +724,14 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	}
 
 	if (SCHEME_TRUEP(to_modchain)) {
-	  menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_modchain), (char *)name);
+	  menv2 = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(to_modchain), name);
 	  if (menv2) {
 	    if (!SAME_OBJ(menv->toplevel, menv2->toplevel))
 	      m2 = menv2->module;
 	    else
 	      m2 = NULL;
 	  } else {
-	    m2 = (Scheme_Module *)scheme_lookup_in_table(to_env->module_registry, (char *)name);
+	    m2 = (Scheme_Module *)scheme_hash_get(to_env->module_registry, name);
 	  }
 	  
 	  if (m2)
@@ -752,9 +747,9 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	  l = menv->module->requires;
 	  while (!SCHEME_NULLP(l)) {
 	    name = scheme_module_resolve(SCHEME_CAR(l));
-	    if (!scheme_lookup_in_table(checked, (const char *)name)) {
+	    if (!scheme_hash_get(checked, name)) {
 	      todo = scheme_make_pair(name, todo);
-	      scheme_add_to_table(checked, (const char *)name, scheme_true, 0);
+	      scheme_hash_set(checked, name, scheme_true);
 	    }
 	    l = SCHEME_CDR(l);
 	  }
@@ -775,9 +770,9 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	  l = menv->module->et_requires;
 	  while (!SCHEME_NULLP(l)) {
 	    name = scheme_module_resolve(SCHEME_CAR(l));
-	    if (!scheme_lookup_in_table(next_checked, (const char *)name)) {
+	    if (!scheme_hash_get(next_checked, name)) {
 	      next_phase_todo = scheme_make_pair(name, next_phase_todo);
-	      scheme_add_to_table(next_checked, (const char *)name, scheme_true, 0);
+	      scheme_hash_set(next_checked, name, scheme_true);
 	    }
 	    l = SCHEME_CDR(l);
 	  }
@@ -807,15 +802,15 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
       todo = SCHEME_CDR(todo);
 
       if (!SAME_OBJ(name, kernel_symbol)) {
-	menv = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(from_modchain), (const char *)name);
+	menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(from_modchain), name);
       
-	menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_modchain), (char *)name);
+	menv2 = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(to_modchain), name);
 	if (!menv2) {
 	  /* Clone menv for the new namespace: */
 	  menv2 = scheme_clone_module_env(menv, to_env, to_modchain);
 
-	  scheme_add_to_table(MODCHAIN_TABLE(to_modchain), (char *)name, menv2, 0);
-	  scheme_add_to_table(to_env->module_registry, (char *)name, menv2->module, 0);
+	  scheme_hash_set(MODCHAIN_TABLE(to_modchain), name, (Scheme_Object *)menv2);
+	  scheme_hash_set(to_env->module_registry, name, (Scheme_Object *)menv2->module);
 
 	  /* Push name onto notify list: */
 	  notifies = scheme_make_pair(name, notifies);
@@ -1021,7 +1016,7 @@ Scheme_Module *scheme_module_load(Scheme_Object *name, Scheme_Env *env)
   else {
     Scheme_Module *m;
 
-    m = (Scheme_Module *)scheme_lookup_in_table(env->module_registry, (const char *)name);
+    m = (Scheme_Module *)scheme_hash_get(env->module_registry, name);
 
     if (!m) {
       scheme_wrong_syntax("require", NULL, name, "unknown module");
@@ -1037,7 +1032,7 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
   if (name == kernel_symbol)
     return scheme_initial_env;
   else
-    return scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (const char *)name);
+    return (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), name);
 }
 
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx)
@@ -1047,7 +1042,7 @@ void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, S
   if (env->module->primitive)
     return;
 
-  if (scheme_lookup_in_table(env->module->accessible, (const char *)symbol))
+  if (scheme_hash_get(env->module->accessible, symbol))
     return;
 
   if (stx && SAME_OBJ(SCHEME_STX_SYM(stx), symbol)) {
@@ -1066,11 +1061,9 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
     return scheme_lookup_in_table(scheme_initial_env->syntax, (char *)name);
   else {
     Scheme_Env *menv;
-    Scheme_Hash_Table *ht;
     Scheme_Object *val;
 
-    menv = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), 
-						(const char *)modname);
+    menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), modname);
     
     if (!menv)
       return NULL;
@@ -1078,8 +1071,7 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
     if (menv->lazy_syntax)
       finish_expstart_module(menv, env);
 
-    ht = menv->syntax;
-    val = scheme_lookup_in_table(ht, (char *)name);
+    val = scheme_lookup_in_table(menv->syntax, (char *)name);
 
     return val;
   }
@@ -1088,7 +1080,6 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
 void scheme_module_force_lazy(Scheme_Env *env, int previous)
 {
   Scheme_Hash_Table *mht;
-  Scheme_Bucket **mbs;
   int mi;
 
   if (previous)
@@ -1096,13 +1087,10 @@ void scheme_module_force_lazy(Scheme_Env *env, int previous)
   else
     mht = MODCHAIN_TABLE(env->modchain);
   
-  mbs = mht->buckets;
-  
   for (mi = mht->size; mi--; ) {
-    Scheme_Bucket *mb = mbs[mi];
-    if (mb && mb->val) {
+    if (mht->vals[mi]) {
       /* Check this module for lazy syntax. */
-      Scheme_Env *menv = (Scheme_Env *)mb->val;
+      Scheme_Env *menv = (Scheme_Env *)mht->vals[mi];
 
       if (menv->lazy_syntax)
 	finish_expstart_module(menv, env);
@@ -1120,23 +1108,23 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
     return;
 
   if (!restart) {
-    menv = scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (const char *)m->modname);
+    menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
     if (menv)
       return;
   }
 
   if (m->primitive) {
-    menv = scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (const char *)m->modname);
+    menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
     if (!menv)
-      scheme_add_to_table(MODCHAIN_TABLE(env->modchain), (const char *)m->modname, m->primitive, 0);
+      scheme_hash_set(MODCHAIN_TABLE(env->modchain), m->modname, (Scheme_Object *)m->primitive);
     return;
   }
 
-  menv = scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (const char *)m->modname);
+  menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
   if (!menv || restart) {
     if (!menv) {
       menv = scheme_new_module_env(env, m, 0);
-      scheme_add_to_table(MODCHAIN_TABLE(env->modchain), (const char *)m->modname, menv, 0);
+      scheme_hash_set(MODCHAIN_TABLE(env->modchain), m->modname, (Scheme_Object *)menv);
       
       menv->phase = env->phase;
       menv->link_midx = syntax_idx;
@@ -1147,17 +1135,17 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
       Scheme_Hash_Table *ht;
       int i, count;
 
-      ht = scheme_hash_table(7, SCHEME_hash_ptr);
+      ht = scheme_make_hash_table(SCHEME_hash_ptr);
       count = m->num_var_provides;
       for (i = 0; i < count; i++) {
 	if (SCHEME_FALSEP(m->provide_srcs[i])) {
-	  scheme_add_to_table(ht, (const char *)m->provide_src_names[i], scheme_false, 0);
+	  scheme_hash_set(ht, m->provide_src_names[i], scheme_false);
 	}
       }
 
       count = m->num_indirect_provides;
       for (i = 0; i < count; i++) {
-	scheme_add_to_table(ht, (const char *)m->indirect_provides[i], scheme_false, 0);
+	scheme_hash_set(ht, m->indirect_provides[i], scheme_false);
       }
       m->accessible = ht;
     }
@@ -1200,7 +1188,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
 {
   Scheme_Object *l, *body, *e, *names;
   Scheme_Env *exp_env;
-  Scheme_Hash_Table *syntax;
+  Scheme_Bucket_Table *syntax;
   int let_depth;
 
   /* Continue a delayed expstart: */
@@ -1245,7 +1233,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
   if (m->primitive)
     return;
 
-  menv = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (const char *)m->modname);
+  menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
 
   if (restart)
     menv->running = 0;
@@ -1311,7 +1299,7 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
   m->et_requires = scheme_null;
   m->primitive = env;
 
-  scheme_add_to_table(for_env->module_registry, (const char *)m->modname, m, 0);
+  scheme_hash_set(for_env->module_registry, m->modname, (Scheme_Object *)m);
 
   return env;
 }
@@ -1319,7 +1307,7 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
 void scheme_finish_primitive_module(Scheme_Env *env)
 {
   Scheme_Module *m = env->module;
-  Scheme_Hash_Table *ht;
+  Scheme_Bucket_Table *ht;
   Scheme_Bucket **bs;
   Scheme_Object **exs;
   int i, count;
@@ -1378,7 +1366,7 @@ Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Objec
 
 static void eval_defmacro(Scheme_Object *names, int count,
 			  Scheme_Object *expr, Scheme_Comp_Env *env,
-			  int let_depth, Scheme_Hash_Table *syntax)
+			  int let_depth, Scheme_Bucket_Table *syntax)
 {
   Scheme_Object *macro, *vals, *name;
   int i, g;
@@ -1454,7 +1442,7 @@ module_execute(Scheme_Object *data)
   if ((((SCHEME_SYM_VAL(m->modname)[0] == '#')
 	&& (SCHEME_SYM_VAL(m->modname)[1] == '%'))
        || SAME_OBJ(m->modname, mzscheme_symbol))
-      && scheme_lookup_in_table(env->module_registry, (char *)m->modname)) {
+      && scheme_hash_get(env->module_registry, m->modname)) {
     scheme_arg_mismatch("module",
 			(SAME_OBJ(mzscheme_symbol, m->modname) 
 			 ? "cannot redefine special module name: " 
@@ -1462,10 +1450,10 @@ module_execute(Scheme_Object *data)
 			m->modname);
   }
 
-  scheme_add_to_table(env->module_registry, (const char *)m->modname, m, 0);
+  scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
   /* Replaced an already-running or already-syntaxing module? */
-  menv = scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (const char *)m->modname);
+  menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
   if (menv) {
     if (menv->running)
       start_module(m, env, 1, NULL);
@@ -1559,7 +1547,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   iim = scheme_module_load(_module_resolve(iidx, ii), menv); 
   expstart_module(iim, menv, 0, iidx);
 
-  if (scheme_lookup_in_table(menv->module_registry, (char *)m->modname)) {
+  if (scheme_hash_get(menv->module_registry, m->modname)) {
     /* Redefinition: cycles are possible. */
     prevent_cyclic_requires(iim, m->modname, menv);
   }
@@ -1673,12 +1661,13 @@ static void check_require_name(Scheme_Object *name, Scheme_Object *nominal_modid
 			      Scheme_Object *modidx, Scheme_Object *exname,
 			      int isval, void *tables, Scheme_Object *e)
 {
-  Scheme_Hash_Table *toplevel, *required, *syntax;
+  Scheme_Bucket_Table *toplevel, *syntax;
+  Scheme_Hash_Table *required;
   Scheme_Object *vec;
 
-  toplevel = ((Scheme_Hash_Table **)tables)[0];
+  toplevel = ((Scheme_Bucket_Table **)tables)[0];
   required = ((Scheme_Hash_Table **)tables)[1];
-  syntax = ((Scheme_Hash_Table **)tables)[2];
+  syntax = ((Scheme_Bucket_Table **)tables)[2];
   e = ((Scheme_Object **)tables)[3];
 
   /* Check that it's not yet defined: */
@@ -1689,7 +1678,7 @@ static void check_require_name(Scheme_Object *name, Scheme_Object *nominal_modid
   }
 	    
   /* Not required, or required from same module: */
-  vec = scheme_lookup_in_table(required, (const char *)name);
+  vec = scheme_hash_get(required, name);
   if (vec) {
     if (same_modidx(SCHEME_VEC_ELS(vec)[1], modidx)
 	&& SAME_OBJ(SCHEME_VEC_ELS(vec)[2], exname))
@@ -1711,7 +1700,7 @@ static void check_require_name(Scheme_Object *name, Scheme_Object *nominal_modid
   SCHEME_VEC_ELS(vec)[1] = modidx;
   SCHEME_VEC_ELS(vec)[2] = exname;
   SCHEME_VEC_ELS(vec)[3] = (isval ? scheme_true : scheme_false);
-  scheme_add_to_table(required, (const char *)name, vec, 0);
+  scheme_hash_set(required, name, vec);
 }
 
 static Scheme_Object *stx_sym(Scheme_Object *l, Scheme_Object *form)
@@ -1745,7 +1734,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* Redefining a module? */
   redef_modname = env->genv->module->modname;
-  if (!scheme_lookup_in_table(env->genv->module_registry, (char *)redef_modname))
+  if (!scheme_hash_get(env->genv->module_registry, redef_modname))
     redef_modname = NULL;
 
   /* Expand each expression in form up to `begin', `define-values', `define-syntax', 
@@ -1769,7 +1758,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   first = scheme_null;
   last = NULL;
 
-  required = scheme_hash_table(7, SCHEME_hash_ptr);
+  required = scheme_make_hash_table(SCHEME_hash_ptr);
   /* Put initial requires into the table: */
   {
     int i, numvals;
@@ -1789,7 +1778,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       SCHEME_VEC_ELS(vec)[1] = midx;
       SCHEME_VEC_ELS(vec)[2] = exsns[i];
       SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
-      scheme_add_to_table(required, (const char *)exs[i], vec, 0);
+      scheme_hash_set(required, exs[i], vec);
     }
 
     if (iim->reprovide_kernel) {
@@ -1802,7 +1791,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  SCHEME_VEC_ELS(vec)[1] = kernel_symbol;
 	  SCHEME_VEC_ELS(vec)[2] = exs[i];
 	  SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
-	  scheme_add_to_table(required, (const char *)exs[i], vec, 0);
+	  scheme_hash_set(required, exs[i], vec);
 	}
       } 
     }
@@ -1814,12 +1803,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   tables[1] = required;
   tables[2] = env->genv->syntax;
 
-  et_required = scheme_hash_table(7, SCHEME_hash_ptr);
+  et_required = scheme_make_hash_table(SCHEME_hash_ptr);
   et_tables[0] = NULL;
   et_tables[1] = et_required;
   et_tables[2] = NULL;
 
-  provided = scheme_hash_table(7, SCHEME_hash_ptr);
+  provided = scheme_make_hash_table(SCHEME_hash_ptr);
   reprovided = scheme_null;
 
   exp_body = scheme_null;
@@ -1885,7 +1874,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    }
 
 	    /* Not required: */
-	    if (scheme_lookup_in_table(required, (const char *)name)) {
+	    if (scheme_hash_get(required, name)) {
 	      scheme_wrong_syntax("module", name, e, "identifier is already imported");
 	      return NULL;
 	    }
@@ -1938,7 +1927,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    }
 
 	    /* Not required: */
-	    if (scheme_lookup_in_table(required, (const char *)name)) {
+	    if (scheme_hash_get(required, name)) {
 	      scheme_wrong_syntax("module", name, e, "identifier is already imported");
 	      return NULL;
 	    }
@@ -2065,10 +2054,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    if (SCHEME_STX_SYMBOLP(a)) {
 	      /* <id> */
 	      a = SCHEME_STX_VAL(a);
-	      if (scheme_lookup_in_table(provided, (const char *)a))
+	      if (scheme_hash_get(provided, a))
 		scheme_wrong_syntax("provide", a, form, "identifier already provided");
 	      /* Provide a: */
-	      scheme_add_to_table(provided, (const char *)a, a, 0);
+	      scheme_hash_set(provided, a, a);
 	    } else if (SCHEME_STX_PAIRP(a)) {
 	      Scheme_Object *rest;
 
@@ -2096,10 +2085,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		inm = SCHEME_STX_VAL(inm);
 		enm = SCHEME_STX_VAL(enm);
 		
-		if (scheme_lookup_in_table(provided, (const char *)enm))
+		if (scheme_hash_get(provided, enm))
 		  scheme_wrong_syntax("provide", enm, a, "identifier already provided");
 		/* Provide enm: */
-		scheme_add_to_table(provided, (const char *)enm, inm, 0);
+		scheme_hash_set(provided, enm, inm);
 	      } else if (SAME_OBJ(all_from_symbol, SCHEME_STX_VAL(fst))) {
 		/* (all-from <modname>) */
 		if (!SCHEME_STX_PAIRP(rest))
@@ -2207,7 +2196,6 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   {
     int i;
     Scheme_Object *rx;
-    Scheme_Bucket **bs, *b;
 
     reprovide_kernel = 0;
 
@@ -2230,7 +2218,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	/* Make sure excluded name was required: */
 	Scheme_Object *a;
 	a = SCHEME_STX_VAL(SCHEME_STX_CAR(l));
-	if (!scheme_lookup_in_table(required, (const char *)a)) {
+	if (!scheme_hash_get(required, a)) {
 	  /* FIXME: check source of require */
 	  a = SCHEME_STX_CAR(l);
 	  scheme_wrong_syntax("provide", a, SCHEME_CAR(SCHEME_CAR(rx)),
@@ -2240,16 +2228,14 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     }
 
     /* Walk through requires, check for re-providing: */
-    bs = required->buckets;
     for (i = required->size; i--; ) {
-      b = bs[i];
-      if (b && b->val) {
+      if (required->vals[i]) {
 	Scheme_Object *nominal_modidx, *name, *modidx, *srcname;
 
-	name = (Scheme_Object *)b->key;
-	nominal_modidx = SCHEME_VEC_ELS((Scheme_Object *)b->val)[0];
-	modidx = SCHEME_VEC_ELS((Scheme_Object *)b->val)[1];
-	srcname = SCHEME_VEC_ELS((Scheme_Object *)b->val)[2];
+	name = required->keys[i];
+	nominal_modidx = SCHEME_VEC_ELS(required->vals[i])[0];
+	modidx = SCHEME_VEC_ELS(required->vals[i])[1];
+	srcname = SCHEME_VEC_ELS(required->vals[i])[2];
 
 	for (rx = reprovided; !SCHEME_NULLP(rx); rx = SCHEME_CDR(rx)) {
 	  if (same_modidx(SCHEME_CAR(SCHEME_CAR(rx)), nominal_modidx)) {
@@ -2271,10 +2257,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	    if (SCHEME_STX_NULLP(exns)) {
 	      /* Not excluded, so provide it. */
-	      if (scheme_lookup_in_table(provided, (const char *)name))
+	      if (scheme_hash_get(provided, name))
 		scheme_wrong_syntax("provide", name, SCHEME_CAR(ree), "identifier already provided");
 	      
-	      scheme_add_to_table(provided, (const char *)name, name, 0);
+	      scheme_hash_set(provided, name, name);
 
 	      if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(name, srcname))
 		reprovide_kernel++;
@@ -2294,10 +2280,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	exclude_hint = SCHEME_STX_CAR(exclude_hint);
 	exclude_hint = SCHEME_STX_VAL(exclude_hint);
-	n = scheme_lookup_in_table(provided, (const char *)exclude_hint);
+	n = scheme_hash_get(provided, exclude_hint);
 	if (n) {
 	  /* may be a single shadowed exclusion, now bound to exclude_hint... */
-	  n = scheme_lookup_in_table(required, (const char *)n);
+	  n = scheme_hash_get(required, n);
 	  if (n && !SAME_OBJ(SCHEME_VEC_ELS(n)[1], kernel_symbol)) {
 	    /* there is a single shadowed exclusion. */
 	  } else
@@ -2316,12 +2302,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Compute all provides */
   {
     int i, count;
-    Scheme_Bucket **bs, *b;
     
-    bs = provided->buckets;
     for (count = 0, i = provided->size; i--; ) {
-      b = bs[i];
-      if (b && b->val)
+      if (provided->vals[i])
 	count++;
     }
     
@@ -2333,30 +2316,29 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     /* Do non-syntax first. */
     for (count = 0, i = provided->size; i--; ) {
-      b = bs[i];
-      if (b && b->val) {
+      if (provided->vals[i]) {
 	Scheme_Object *name, *v;
 	  
-	name = b->val;
+	name = provided->vals[i];
 
 	if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
 	  /* Defined locally */
-	  exs[count] = (Scheme_Object *)b->key;
+	  exs[count] = provided->keys[i];
 	  exsns[count] = name;
 	  exss[count] = scheme_false; /* means "self" */
 	  count++;
 	} else if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
 	  /* Skip for now. */
-	} else if ((v = scheme_lookup_in_table(required, (const char *)name))) {
+	} else if ((v = scheme_hash_get(required, name))) {
 	  /* Required */
 	  if (SCHEME_TRUEP(SCHEME_VEC_ELS(v)[3])) {
 	    /* If this is a kernel re-provide, don't provide after all. */
 	    if (reprovide_kernel
 		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
-		&& SAME_OBJ((Scheme_Object *)b->key, SCHEME_VEC_ELS(v)[2])) {
+		&& SAME_OBJ(provided->keys[i], SCHEME_VEC_ELS(v)[2])) {
 	      /* skip */
 	    } else {
-	      exs[count] = (Scheme_Object *)b->key;
+	      exs[count] = provided->keys[i];
 	      exsns[count] = SCHEME_VEC_ELS(v)[2];
 	      exss[count] = SCHEME_VEC_ELS(v)[1];
 	      count++;
@@ -2372,28 +2354,27 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     exvcount = count;
 
     for (i = provided->size; i--; ) {
-      b = bs[i];
-      if (b && b->val) {
+      if (provided->vals[i]) {
 	Scheme_Object *name, *v;
 	  
-	name = b->val;
+	name = provided->vals[i];
 
 	if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
 	  /* Defined locally */
-	  exs[count] = (Scheme_Object *)b->key;
+	  exs[count] = provided->keys[i];
 	  exsns[count] = name;
 	  exss[count] = scheme_false; /* means "self" */
 	  count++;
-	} else if ((v = scheme_lookup_in_table(required, (const char *)name))) {
+	} else if ((v = scheme_hash_get(required, name))) {
 	  /* Required */
 	  if (SCHEME_FALSEP(SCHEME_VEC_ELS(v)[3])) {
 	    /* If this is a kernel re-provide, don't provide after all. */
 	    if (reprovide_kernel
 		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
-		&& SAME_OBJ((Scheme_Object *)b->key, SCHEME_VEC_ELS(v)[2])) {
+		&& SAME_OBJ(provided->keys[i], SCHEME_VEC_ELS(v)[2])) {
 	      /* skip */
 	    } else {
-	      exs[count] = (Scheme_Object *)b->key;
+	      exs[count] = provided->keys[i];
 	      exsns[count] = SCHEME_VEC_ELS(v)[2];
 	      exss[count] = SCHEME_VEC_ELS(v)[1];
 	      count++;
@@ -2749,15 +2730,16 @@ static void check_dup_require(Scheme_Object *name, Scheme_Object *nominal_modidx
 {
   Scheme_Object *i;
 
-  i = scheme_lookup_in_table((Scheme_Hash_Table *)ht, (const char *)name);
+  if (ht) {
+    i = scheme_hash_get((Scheme_Hash_Table *)ht, name);
 
-  if (i) {
-    if (same_modidx(modidx, SCHEME_CAR(i)) && SAME_OBJ(srcname, SCHEME_CDR(i)))
-      return; /* same source */
-    scheme_wrong_syntax("require", name, e, "duplicate import identifier");
-  } else
-    scheme_add_to_table((Scheme_Hash_Table *)ht, (const char *)name, 
-			scheme_make_pair(modidx, srcname), 0);
+    if (i) {
+      if (same_modidx(modidx, SCHEME_CAR(i)) && SAME_OBJ(srcname, SCHEME_CDR(i)))
+	return; /* same source */
+      scheme_wrong_syntax("require", name, e, "duplicate import identifier");
+    } else
+      scheme_hash_set((Scheme_Hash_Table *)ht, name, scheme_make_pair(modidx, srcname));
+  }
 }
 
 static Scheme_Object *
@@ -2765,7 +2747,7 @@ top_level_require_execute(Scheme_Object *data)
 {
   Scheme_Hash_Table *ht;
   Scheme_Object *rn;
-  Scheme_Object *form = SCHEME_CDR(SCHEME_CAR(data)), *brn;
+  Scheme_Object *form = SCHEME_CDR(SCHEME_CAR(data)), *rest, *brn;
   int for_exp = (SCHEME_TRUEP(SCHEME_CAR(SCHEME_CAR(data))) ? 1 : 0);
   Scheme_Env *env = (Scheme_Env *)SCHEME_CDR(data);
 
@@ -2774,7 +2756,22 @@ top_level_require_execute(Scheme_Object *data)
     env = env->exp_env;
   }
 
-  ht = scheme_hash_table(7, SCHEME_hash_ptr);
+  /* Don't check for dups if we import from less that two sources: */
+  rest = SCHEME_STX_CDR(form);
+  if (SCHEME_STX_NULLP(rest)) {
+    rest = NULL;
+  } else if (SCHEME_STX_PAIRP(rest)) {
+    rest = SCHEME_STX_CDR(rest);
+    if (SCHEME_STX_NULLP(rest)) {
+      rest = NULL;
+    }
+  }
+
+  if (rest)
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+  else
+    ht = NULL;
+
   rn = scheme_make_module_rename(for_exp, 1);
 
   (void)parse_requires(form, form, scheme_false, env, rn, 
@@ -2822,7 +2819,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
   /* If we get here, it must be a top-level require. */
 
   /* Hash table is for checking duplicate names in require list: */
-  ht = scheme_hash_table(7, SCHEME_hash_ptr);
+  ht = scheme_make_hash_table(SCHEME_hash_ptr);
 
   rn = scheme_make_module_rename(for_exp, 1);
 

@@ -106,9 +106,15 @@ scheme_make_vector (int size, Scheme_Object *fill)
       return zero_length_vector;
   }
 
-  vec = (Scheme_Object *)scheme_malloc_fail_ok(scheme_malloc_tagged,
-					       sizeof(Scheme_Vector) 
-					       + (size - 1) * sizeof(Scheme_Object *));
+  if (size < 1024) {
+    vec = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Vector) 
+						+ (size - 1) * sizeof(Scheme_Object *));
+  } else {
+    vec = (Scheme_Object *)scheme_malloc_fail_ok(scheme_malloc_tagged,
+						 sizeof(Scheme_Vector) 
+						 + (size - 1) * sizeof(Scheme_Object *));
+  }
+
   vec->type = scheme_vector_type;
   SCHEME_VEC_SIZE(vec) = size;
 

@@ -83,9 +83,9 @@ void scheme_set_stack_base(void *base, int no_auto_statics)
 #else
   GC_stackbottom = base;
   if (no_auto_statics) {
+    GC_no_dls = 1;
     GC_init();
     GC_clear_roots();
-    GC_no_dls = 1;
     
     orig_GC_push_other_roots = GC_push_other_roots;
     GC_push_other_roots = push_roots;

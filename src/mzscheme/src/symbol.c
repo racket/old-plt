@@ -43,7 +43,7 @@ extern void (*GC_custom_finalize)(void);
 extern int GC_is_marked(void *);
 #endif
 
-Scheme_Hash_Table *scheme_symbol_table = NULL;
+Scheme_Bucket_Table *scheme_symbol_table = NULL;
 
 long scheme_max_found_symbol_name;
 
@@ -74,7 +74,7 @@ extern long scheme_hash_primes[];
 #endif
 
 /* Special hashing for symbols: */
-static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table, 
+static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table, 
 				    const char *key, int length,
 				    Scheme_Object *naya)
 {
@@ -205,7 +205,7 @@ scheme_init_symbol_table ()
 
   REGISTER_SO(scheme_symbol_table);
   
-  scheme_symbol_table = scheme_hash_table(HASH_TABLE_SIZE, SCHEME_hash_ptr);
+  scheme_symbol_table = scheme_make_bucket_table(HASH_TABLE_SIZE, SCHEME_hash_ptr);
   
   size = scheme_symbol_table->size * sizeof(Scheme_Bucket *);
 #ifdef MZ_PRECISE_GC
@@ -522,15 +522,13 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
   char buffer[100], *str;
   Scheme_Object *r;
 
-  if (argc) {
+  if (argc)
     r = argv[0];
-    if (SCHEME_BOXP(r))
-      r = SCHEME_PTR_VAL(r);
-  } else
+  else
     r = NULL;
 
   if (r && !SCHEME_SYMBOLP(r) && !SCHEME_STRINGP(r))
-    scheme_wrong_type("gensym", "symbol, string, or boxed symbol or string", 0, argc, argv);
+    scheme_wrong_type("gensym", "symbol or string", 0, argc, argv);
   
   if (r) {
     if (SCHEME_STRINGP(r))
@@ -543,11 +541,6 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
     sprintf(buffer, "g%d", gensym_counter++);
 
   r = scheme_make_symbol(buffer);
-
-  if (argc && SCHEME_BOXP(argv[0])) {
-    /* Make the symbol non-hygenic: */
-    SCHEME_SET_IMMUTABLE(r);
-  }
 
   return r;
 }

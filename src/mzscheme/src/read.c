@@ -428,7 +428,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	return read_symbol(port, stxsrc, line, col CURRENTPROCARG);
       }
     case ')': 
-      scheme_read_err(port, line, col, 0, "read: unexpected '%c'");
+      scheme_read_err(port, line, col, 0, "read: unexpected '%c'", ch);
     case '(': 
       return read_list(port, stxsrc, line, col, ')', 0, 0, ht CURRENTPROCARG);
     case '[': 
@@ -646,8 +646,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 				tagbuf);
 	    
 	      if (*ht)
-		ph = (Scheme_Object *)scheme_lookup_in_table(*ht, 
-							     (const char *)scheme_make_integer(vector_length));
+		ph = (Scheme_Object *)scheme_hash_get(*ht, scheme_make_integer(vector_length));
 	      else
 		ph = NULL;
 	      
@@ -673,7 +672,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 				 tagbuf);
 	      
 	      if (*ht) {
-		if (scheme_lookup_in_table(*ht, (const char *)scheme_make_integer(vector_length))) {
+		if (scheme_hash_get(*ht, scheme_make_integer(vector_length))) {
 		  scheme_read_err(port, line, col, 0,
 				  "read: multiple #%ld= tags",
 				  vector_length);
@@ -681,14 +680,13 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 		}
 	      } else {
 		Scheme_Hash_Table *tht;
-		tht = scheme_hash_table(7, SCHEME_hash_ptr);
+		tht = scheme_make_hash_table(SCHEME_hash_ptr);
 		*ht = tht;
 	      }
 	      ph = scheme_alloc_small_object();
 	      ph->type = scheme_placeholder_type;
 	      
-	      scheme_add_to_table(*ht, (const char *)scheme_make_integer(vector_length), 
-				  (void *)ph, 0);
+	      scheme_hash_set(*ht, scheme_make_integer(vector_length), (void *)ph);
 	      
 	      v = read_inner(port, stxsrc, ht CURRENTPROCARG);
 	      if (stxsrc)
@@ -1829,7 +1827,7 @@ static Scheme_Object *read_compact(CPort *port,
       {
 	if (!local_rename_memory) {
 	  Scheme_Hash_Table *rht;
-	  rht = scheme_hash_table(7, SCHEME_hash_ptr);
+	  rht = scheme_make_hash_table(SCHEME_hash_ptr);
 	  local_rename_memory = rht;
 	}
 

@@ -327,8 +327,8 @@ Scheme_Object *
 scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env, 
 			    int bucket_ok, int can_opt, int signal);
 
-void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b);
-Scheme_Bucket *scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int add);
+void scheme_add_bucket_to_table(Scheme_Bucket_Table *table, Scheme_Bucket *b);
+Scheme_Bucket *scheme_bucket_or_null_from_table(Scheme_Bucket_Table *table, const char *key, int add);
 
 void scheme_require_from_original_env(Scheme_Env *env, int syntax_only);
 
@@ -1466,7 +1466,7 @@ struct Scheme_Env {
 
   struct Scheme_Comp_Env *init;
   
-  Scheme_Hash_Table *syntax;
+  Scheme_Bucket_Table *syntax;
   struct Scheme_Env *exp_env;
 
   Scheme_Hash_Table *shadowed_syntax; /* top level only */
@@ -1477,7 +1477,7 @@ struct Scheme_Env {
   short running;
   short lazy_syntax;
 
-  Scheme_Hash_Table *toplevel;
+  Scheme_Bucket_Table *toplevel;
   Scheme_Object *modchain; /* Vector of:
 			       1. symbol -> env ; running modules, 
 			           shared with instances in same phase
@@ -1555,7 +1555,7 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
 extern Scheme_Env *scheme_initial_env;
 
 void scheme_install_initial_module_set(Scheme_Env *env);
-Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home);
+Scheme_Bucket_Table *scheme_clone_toplevel(Scheme_Bucket_Table *ht, Scheme_Env *home);
 
 Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Object *modchain);
 
@@ -1777,7 +1777,7 @@ typedef void (*Close_Fun_o)(struct Scheme_Output_Port *);
 /*========================================================================*/
 
 #ifdef MEMORY_COUNTING_ON
-extern Scheme_Hash_Table *scheme_symbol_table;
+extern Scheme_Bucket_Table *scheme_symbol_table;
 extern long scheme_type_table_count;
 extern long scheme_misc_count;
 

@@ -1210,10 +1210,10 @@ static Scheme_Object *set_box(int c, Scheme_Object *p[])
 
 static Scheme_Object *do_make_hash_table(int weak)
 {
-  return (Scheme_Object *)scheme_hash_table(20, 
-					    weak
-					    ? SCHEME_hash_weak_ptr
-					    : SCHEME_hash_ptr);
+  if (weak)
+    return (Scheme_Object *)scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
+  else
+    return (Scheme_Object *)scheme_make_hash_table(SCHEME_hash_ptr);
 }
 
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
@@ -1228,16 +1228,19 @@ static Scheme_Object *make_hash_table_weak(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[])
 {
-  return SCHEME_HASHTP(argv[0]) ? scheme_true : scheme_false;
+  return (SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])) ? scheme_true : scheme_false;
 }
 
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_HASHTP(argv[0]))
+  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
     scheme_wrong_type("hash-table-put!", "hash table", 0, argc, argv);
 
-  scheme_add_to_table((Scheme_Hash_Table *)argv[0], (char *)argv[1], 
-		      (void *)argv[2], 0);
+  if (SCHEME_BUCKTP(argv[0]))
+    scheme_add_to_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1], 
+			(void *)argv[2], 0);
+  else
+    scheme_hash_set((Scheme_Hash_Table *)argv[0], argv[1], argv[2]);
 
   return scheme_void;
 }
@@ -1246,10 +1249,13 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
 {
   void *v;
 
-  if (!SCHEME_HASHTP(argv[0]))
+  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
     scheme_wrong_type("hash-table-get", "hash table", 0, argc, argv);
 
-  v = scheme_lookup_in_table((Scheme_Hash_Table *)argv[0], (char *)argv[1]);
+  if (SCHEME_BUCKTP(argv[0]))
+    v = scheme_lookup_in_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1]);
+  else
+    v = scheme_hash_get((Scheme_Hash_Table *)argv[0], argv[1]);
 
   if (v)
     return (Scheme_Object *)v;
@@ -1266,10 +1272,18 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *hash_table_remove(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_HASHTP(argv[0]))
+  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
     scheme_wrong_type("hash-table-remove!", "hash table", 0, argc, argv);
 
-  scheme_change_in_table((Scheme_Hash_Table *)argv[0], (char *)argv[1], NULL);
+  if (SCHEME_BUCKTP(argv[0])) {
+    Scheme_Bucket *b;
+    b = scheme_bucket_or_null_from_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1], 0);
+    if (b) {
+      HT_EXTRACT_WEAK(b->key) = NULL;
+      b->val = NULL;
+    }
+  } else
+    scheme_hash_set((Scheme_Hash_Table *)argv[0], argv[1], NULL);
 
   return scheme_void;
 }
@@ -1280,16 +1294,13 @@ static Scheme_Object *do_map_hash_table(int argc,
 					int keep)
 {
   int i;
-  Scheme_Hash_Table *hash;
   Scheme_Object *f;
-  Scheme_Bucket *bucket;
   Scheme_Object *first, *last = NULL, *v, *p[2];
 
-  if (!SCHEME_HASHTP(argv[0]))
+  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
     scheme_wrong_type(name, "hash table", 0, argc, argv);
   scheme_check_proc_arity(name, 2, 1, argc, argv);
 
-  hash = (Scheme_Hash_Table *)argv[0];
   f = argv[1];
 
   if (keep)
@@ -1297,24 +1308,52 @@ static Scheme_Object *do_map_hash_table(int argc,
   else
     first = scheme_void;
 
-  for (i = hash->size; i--; ) {
-    bucket = hash->buckets[i];
-    if (bucket && bucket->val && bucket->key) {
-      if (hash->weak)
-	p[0] = (Scheme_Object *)HT_EXTRACT_WEAK(bucket->key);
-      else
-	p[0] = (Scheme_Object *)bucket->key;
-      p[1] = (Scheme_Object *)bucket->val;
-      if (keep) {
-	v = _scheme_apply(f, 2, p);
-	v = scheme_make_pair(v, scheme_null);
-	if (last)
-	  SCHEME_CDR(last) = v;
+  if (SCHEME_BUCKTP(argv[0])) {
+    Scheme_Bucket_Table *hash;
+    Scheme_Bucket *bucket;
+
+    hash = (Scheme_Bucket_Table *)argv[0];
+
+    for (i = hash->size; i--; ) {
+      bucket = hash->buckets[i];
+      if (bucket && bucket->val && bucket->key) {
+	if (hash->weak)
+	  p[0] = (Scheme_Object *)HT_EXTRACT_WEAK(bucket->key);
 	else
-	  first = v;
-	last = v;
-      } else
-	_scheme_apply_multi(f, 2, p);
+	  p[0] = (Scheme_Object *)bucket->key;
+	p[1] = (Scheme_Object *)bucket->val;
+	if (keep) {
+	  v = _scheme_apply(f, 2, p);
+	  v = scheme_make_pair(v, scheme_null);
+	  if (last)
+	    SCHEME_CDR(last) = v;
+	  else
+	    first = v;
+	  last = v;
+	} else
+	  _scheme_apply_multi(f, 2, p);
+      }
+    }
+  } else {
+    Scheme_Hash_Table *hash;
+
+    hash = (Scheme_Hash_Table *)argv[0];
+
+    for (i = hash->size; i--; ) {
+      if (hash->vals[i]) {
+	p[0] = hash->keys[i];
+	p[1] = hash->vals[i];
+	if (keep) {
+	  v = _scheme_apply(f, 2, p);
+	  v = scheme_make_pair(v, scheme_null);
+	  if (last)
+	    SCHEME_CDR(last) = v;
+	  else
+	    first = v;
+	  last = v;
+	} else
+	  _scheme_apply_multi(f, 2, p);
+      }
     }
   }
   

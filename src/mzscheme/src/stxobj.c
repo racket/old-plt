@@ -454,7 +454,7 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
   SCHEME_VEC_ELS(v)[0] = newname;
   if (c > 15) {
     Scheme_Hash_Table *ht;
-    ht = scheme_hash_table(c, SCHEME_hash_ptr);
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
     SCHEME_VEC_ELS(v)[1] = (Scheme_Object *)ht;
   } else 
     SCHEME_VEC_ELS(v)[1] = scheme_false;
@@ -474,10 +474,9 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
   if (!SCHEME_FALSEP(SCHEME_VEC_ELS(rnm)[1])) {
     Scheme_Hash_Table *ht;
     ht = (Scheme_Hash_Table *)SCHEME_VEC_ELS(rnm)[1];
-    if (scheme_lookup_in_table(ht, (char *)oldname))
+    if (scheme_hash_get(ht, oldname))
       pos = -1; /* -1 means multiple entries matching a name */
-    scheme_add_to_table(ht, (char *)SCHEME_STX_VAL(oldname), 
-			scheme_make_integer(pos), 0);
+    scheme_hash_set(ht, SCHEME_STX_VAL(oldname), scheme_make_integer(pos));
   }
 }
 
@@ -491,7 +490,7 @@ Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
   mr = MALLOC_ONE_TAGGED(Module_Renames);
   mr->type = scheme_rename_table_type;
 
-  ht = scheme_hash_table(7, SCHEME_hash_ptr);
+  ht = scheme_make_hash_table(SCHEME_hash_ptr);
 
   mr->ht = ht;
   mr->phase = phase;
@@ -517,14 +516,19 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname, 
 				 Scheme_Object *exname)
 {
-  scheme_add_to_table(((Module_Renames *)mrn)->ht, (const char *)localname,
-		      scheme_make_pair(modname, exname), 0);
+  Scheme_Object *elem;
+
+  if (SAME_OBJ(localname, exname))
+    elem = modname;
+  else
+    elem = scheme_make_pair(modname, exname);
+
+  scheme_hash_set(((Module_Renames *)mrn)->ht, localname, elem);
 }
 
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
 {
   Scheme_Hash_Table *ht, *hts;
-  Scheme_Bucket **bs, *b;
   int i;
 
   if (((Module_Renames *)dest)->plus_kernel)
@@ -535,11 +539,9 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
   
   /* Mappings in src overwrite mappings in dest: */
 
-  bs = hts->buckets;
   for (i = hts->size; i--; ) {
-    b = bs[i];
-    if (b && b->val) {
-      scheme_add_to_table(ht, b->key, b->val, 0);
+    if (hts->vals[i]) {
+      scheme_hash_set(ht, hts->keys[i], hts->vals[i]);
     }
   }
 }
@@ -547,12 +549,7 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
 void scheme_remove_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname)
 {
-  Scheme_Bucket *b;
-
-  b = scheme_bucket_or_null_from_table(((Module_Renames *)mrn)->ht, 
-				       (const char *)localname, 0);
-  if (b)
-    b->val = NULL;
+  scheme_hash_set(((Module_Renames *)mrn)->ht, localname, NULL);
 }
 
 /******************** wrap manipulations ********************/
@@ -860,19 +857,27 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	if (phase == mrn->phase) {
 	  Scheme_Object *rename;
 	  
-	  rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
+	  rename = scheme_hash_get(mrn->ht, SCHEME_STX_VAL(a));
 	  if (!rename && mrn->plus_kernel)
-	    rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
+	    rename = scheme_hash_get(krn->ht, SCHEME_STX_VAL(a));
 	  
 	  if (rename) {
 	    /* Match; set mresult for the case of no lexical capture: */
-	    mresult = SCHEME_CAR(rename);
+	    if (SCHEME_PAIRP(rename))
+	      mresult = SCHEME_CAR(rename);
+	    else
+	      mresult = rename;
+
 	    if (modidx_shift_from)
 	      mresult = scheme_modidx_shift(mresult,
 					    modidx_shift_from,
 					    modidx_shift_to);
-	    if (get_name)
-	      *get_name = SCHEME_CDR(rename);
+	    if (get_name) {
+	      if (SCHEME_PAIRP(rename))
+		*get_name = SCHEME_CDR(rename);
+	      else
+		*get_name = SCHEME_STX_VAL(a);
+	    }
 	  }
 	}
       }
@@ -897,8 +902,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
       /* Get index from hash table, if there is one: */
       if (!SCHEME_FALSEP(SCHEME_VEC_ELS(rename)[1])) {
 	void *pos;
-	pos = scheme_lookup_in_table((Scheme_Hash_Table *)(SCHEME_VEC_ELS(rename)[1]),
-				     (char *)SCHEME_STX_VAL(a));
+	pos = scheme_hash_get((Scheme_Hash_Table *)(SCHEME_VEC_ELS(rename)[1]), SCHEME_STX_VAL(a));
 	if (pos) {
 	  istart = SCHEME_INT_VAL(pos);
 	  if (istart < 0) {
@@ -978,13 +982,16 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 	  /* Module rename: */
 	  Scheme_Object *rename;
 	  
-	  rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
+	  rename = scheme_hash_get(mrn->ht, SCHEME_STX_VAL(a));
 	  if (!rename && mrn->plus_kernel)
-	    rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
+	    rename = scheme_hash_get(krn->ht, SCHEME_STX_VAL(a));
 	  
 	  if (rename) {
 	    /* Match: set result: */
-	    result = SCHEME_CDR(rename);
+	    if (SCHEME_PAIRP(rename))
+	      result = SCHEME_CDR(rename);
+	    else
+	      result = SCHEME_STX_VAL(a);
 	  }
 	}
       }
@@ -1299,21 +1306,18 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 			    wraps_to_datum(w, 0, 0, rns));
   }
 
-  a = scheme_lookup_in_table(rns, (const char *)w_in);
+  a = scheme_hash_get(rns, w_in);
   if (a)
     return a;
   /* We didn't find a pointer match for this wrap, but double-check
      for a wrap set that is equivalent: */
   {
     int i;
-    Scheme_Bucket **bs, *b;
-    
-    bs = rns->buckets;
+
     for (i = rns->size; i--; ) {
-      b = bs[i];
-      if (b && b->val) {
-	if (same_list((Scheme_Object *)b->key, w_in))
-	  return (Scheme_Object *)b->val;
+      if (rns->vals[i]) {
+	if (same_list(rns->keys[i], w_in))
+	  return rns->vals[i];
       }
     }
   }
@@ -1328,7 +1332,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     } else if (SCHEME_VECTORP(a)) {
       Scheme_Object *local_key;
 
-      local_key = scheme_lookup_in_table(rns, (const char *)a);
+      local_key = scheme_hash_get(rns, a);
       if (local_key) {
 	stack = scheme_make_pair(local_key, stack);
       } else {
@@ -1359,10 +1363,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	}
 
 	local_key = scheme_make_integer(rns->count);
-	scheme_add_to_table(rns, 
-			    (const char *)a, 
-			    local_key,
-			    0);
+	scheme_hash_set(rns, a, local_key);
 
 	SCHEME_VEC_ELS(vec)[1+(3 * c)] = local_key;
 	
@@ -1381,33 +1382,23 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	
 	is_in_module = 1;
 
-	local_key = scheme_lookup_in_table(rns, (const char *)mrn);
+	local_key = scheme_hash_get(rns, (Scheme_Object *)mrn);
 	if (local_key) {
 	  stack = scheme_make_pair(local_key, stack);
 	} else {
 	  /* Convert hash table to list: */
 	  int i;
-	  Scheme_Bucket **bs, *b;
 	  Scheme_Object *l = scheme_null, *v;
 	    
-	  bs = mrn->ht->buckets;
 	  for (i = mrn->ht->size; i--; ) {
-	    b = bs[i];
-	    if (b && b->val) {
-	      v = (Scheme_Object *)b->val;
-	      if (SCHEME_PAIRP(v) && SAME_OBJ(SCHEME_CDR(v), (Scheme_Object *)b->key))
-		l = scheme_make_pair(v, l);
-	      else
-		l = scheme_make_pair(scheme_make_pair((Scheme_Object *)b->key, v), 
-				     l);
+	    if (mrn->ht->vals[i]) {
+	      v = mrn->ht->vals[i];
+	      l = scheme_make_pair(scheme_make_pair(mrn->ht->keys[i], v), l);
 	    }
 	  }
 
 	  local_key = scheme_make_integer(rns->count);
-	  scheme_add_to_table(rns, 
-			      (const char *)a,
-			      local_key,
-			      0);
+	  scheme_hash_set(rns, a, local_key);
 
 	  l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
 	  if (mrn->plus_kernel)
@@ -1436,7 +1427,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 
   /* Create a key for this wrap set: */
   a = scheme_make_integer(rns->count);
-  scheme_add_to_table(rns, (const char *)w_in, a, 0);
+  scheme_hash_set(rns, w_in, a);
   
   return scheme_make_pair(a, stack);
 }
@@ -1493,9 +1484,9 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 
   if (stx->hash_code & STX_GRAPH_FLAG) {
     if (!*ht)
-      *ht = scheme_hash_table(7, SCHEME_hash_ptr);
+      *ht = scheme_make_hash_table(SCHEME_hash_ptr);
     
-    ph = (Scheme_Object *)scheme_lookup_in_table(*ht, (char *)stx);
+    ph = scheme_hash_get(*ht, (Scheme_Object *)stx);
 
     if (ph)
       return ph;
@@ -1503,7 +1494,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
       ph = scheme_alloc_small_object();
       ph->type = scheme_placeholder_type;
       
-      scheme_add_to_table(*ht, (char *)stx, (void *)ph, 0);
+      scheme_hash_set(*ht, (Scheme_Object *)stx, (Scheme_Object *)ph);
     }
   } else 
     ph = NULL;
@@ -1670,8 +1661,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
      numbers (negated fixnum marks) and symbols (interned marks) to marks */
 
   if (SCHEME_INTP(w))
-    return scheme_lookup_in_table(rns, (const char *)w);
-
+    return scheme_hash_get(rns, w);
 
   stack = scheme_null;
 
@@ -1682,7 +1672,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
     a = SCHEME_CAR(w);
     if (SCHEME_NUMBERP(a)) {
       /* Re-use rename table or env rename */
-      a = scheme_lookup_in_table(rns, (const char *)a);
+      a = scheme_hash_get(rns, a);
       if (!a) {
 	scheme_read_err(scheme_false, -1, -1, 0,
 			"read (compiled): unknown rename table index: %d",
@@ -1703,11 +1693,11 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	a = scheme_intern_symbol(scheme_number_to_string(10, a));
 
       /* Picked a mapping yet? */
-      n = scheme_lookup_in_table(rns, (const char *)a);
+      n = scheme_hash_get(rns, a);
       if (!n) {
 	/* Map marshalled mark to a new mark. */
 	n = scheme_new_mark();
-	scheme_add_to_table(rns, (const char *)a, n, 0);
+	scheme_hash_set(rns, a, n);
       }
 
       stack = scheme_make_pair(n, stack);
@@ -1740,10 +1730,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 
       local_key = SCHEME_VEC_ELS(a)[1+(3 * c)];
       
-      scheme_add_to_table(rns, 
-			  (const char *)local_key, 
-			  vec,
-			  0);
+      scheme_hash_set(rns, local_key, vec);
 
       stack = scheme_make_pair(vec, stack);
     } else if (SCHEME_PAIRP(a)) {
@@ -1779,20 +1766,13 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       for (; !SCHEME_NULLP(a) ; a = SCHEME_CDR(a)) {
 	p = SCHEME_CAR(a);
 	  
-	if (SCHEME_SYMBOLP(SCHEME_CDR(p))) {
-	  key = SCHEME_CDR(p);
-	} else {
-	  key = SCHEME_CAR(p);
-	  p = SCHEME_CDR(p);
-	}
+	key = SCHEME_CAR(p);
+	p = SCHEME_CDR(p);
 	  
-	scheme_add_to_table(mrn->ht, (const char *)key, p, 0);
+	scheme_hash_set(mrn->ht, key, p);
       }
 
-      scheme_add_to_table(rns, 
-			  (const char *)local_key, 
-			  mrn,
-			  0);
+      scheme_hash_set(rns, local_key, (Scheme_Object *)mrn);
 
       stack = scheme_make_pair((Scheme_Object *)mrn, stack);
     } else if (SCHEME_TRUEP(a)) {
@@ -1827,7 +1807,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
     w = SCHEME_CDR(w);
   }
 
-  scheme_add_to_table(rns, (const char *)wraps_key, stack, 0);
+  scheme_hash_set(rns, wraps_key, stack);
 
   return stack;
 }
@@ -1890,16 +1870,17 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 
   if (ht) {
     if (HAS_SUBSTX(o)) {
-      Scheme_Bucket *b;
-      b = scheme_bucket_from_table(ht, (const char *)o);
+      long val;
+
+      val = (long)scheme_hash_get(ht, o);
       
-      if ((long)b->val != 1) {
-	if ((long)b->val & 0x1) {
+      if (val != 1) {
+	if (val & 0x1) {
 	  ph = scheme_alloc_small_object();
 	  ph->type = scheme_placeholder_type;
-	  b->val = (void *)ph;
+	  scheme_hash_set(ht, o, (Scheme_Object *)ph);
 	} else {
-	  return (Scheme_Object *)b->val;
+	  return (Scheme_Object *)val;
 	}
       }
     }
@@ -1935,7 +1916,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 	}
 
 	if (ht && last) {
-	  if ((long)scheme_lookup_in_table(ht, (const char *)o) != 1) {
+	  if ((long)scheme_hash_get(ht, o) != 1) {
 	    /* cdr is shared. Stop here. */
 	    break;
 	  }
@@ -2069,7 +2050,7 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
     
 #if STX_DEBUG
   if (argc == 2)
-      return scheme_syntax_to_datum(argv[0], 1, scheme_hash_table(7, SCHEME_hash_ptr));
+      return scheme_syntax_to_datum(argv[0], 1, scheme_make_hash_table(SCHEME_hash_ptr));
 #endif
 
 

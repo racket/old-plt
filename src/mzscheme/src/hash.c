@@ -54,7 +54,7 @@ long scheme_hash_primes[] =
    4194319, 8388617, 16777259, 33554467, 67108879, 134217757,
    268435459, 536870923, 1073741827};
 
-typedef int (*Compare_Proc)(void*, void*);
+typedef int (*Hash_Compare_Proc)(void*, void*);
 
 static void string_hash_indices(void *_key, long *_h, long *_h2)
 {
@@ -120,9 +120,9 @@ scheme_hash_table (int size, int type, int has_const, int forever)
   if (type == SCHEME_hash_string) {
     table->make_hash_indices = string_hash_indices;
 #ifdef PALMOS_STUFF
-    table->compare = (Compare_Proc)p_strcmp;
+    table->compare = (Hash_Compare_Proc)p_strcmp;
 #else
-    table->compare = (Compare_Proc)strcmp;
+    table->compare = (Hash_Compare_Proc)strcmp;
 #endif
   }
 

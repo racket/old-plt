@@ -129,6 +129,7 @@ void scheme_init_exn(Scheme_Env *env);
 void scheme_init_debug(Scheme_Env *env);
 #ifndef NO_OBJECT_SYSTEM
 void scheme_init_object(Scheme_Env *env);
+void scheme_init_objclass(Scheme_Env *env);
 #endif
 void scheme_init_unit(Scheme_Env *env);
 void scheme_init_process(Scheme_Env *env);
@@ -1332,7 +1333,7 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, Scheme_Obj
 Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv);
 
 /*========================================================================*/
-/*                               Ports                                    */
+/*                               ports                                    */
 /*========================================================================*/
 
 typedef struct Scheme_Indexed_String {
@@ -1394,6 +1395,192 @@ typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
 typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
 typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
 typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
+
+/*========================================================================*/
+/*                             objects                                    */
+/*========================================================================*/
+
+#ifndef NO_OBJECT_SYSTEM
+
+typedef struct ClassVariable {
+  MZTAG_IF_REQUIRED
+  Scheme_Object *name;
+  short vartype;
+  short index;
+  union {
+    Scheme_Object *value;
+    struct {
+      Scheme_Closed_Prim *f;
+      short mina, maxa;
+    } prim;
+    struct {
+      Scheme_Object *name;
+    } source;
+  } u;
+  struct ClassVariable *next;
+} ClassVariable;
+
+enum {
+  pi_NOT = 0,
+  pi_NOT_OVER_CPP,
+  pi_CPP,
+  pi_COMP,
+  pi_COMP_OVER_CPP
+};
+
+typedef char slotkind;
+
+typedef struct {
+  MZTAG_IF_REQUIRED
+  Scheme_Closed_Prim *f;
+  short mina, maxa;
+  char *closed_name;
+} CMethod;
+
+typedef struct Scheme_Interface {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  short num_names, num_supers;
+  short for_class; /* 1 => impl iff subclass, 0 => normal interface */
+  Scheme_Object **names;
+  short *name_map; /* position in names => interface slot position */
+  struct Scheme_Interface **supers; /* all superinterfaces (flattened hierarchy) */
+  struct Scheme_Class *supclass;
+  short *super_offsets; /* superinterface => super's slot position offset */
+  Scheme_Object *defname;
+} Scheme_Interface;
+
+typedef struct Scheme_Class {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+
+  ClassVariable *ivars; /* Order determines order of evaluation */
+
+  union {
+    Scheme_Closed_Prim *initf;
+    struct {
+      Scheme_Instance_Init_Proc *f;
+      void *data;
+    } insti;
+  } piu;
+  short priminit;
+
+  short pos;
+  struct Scheme_Class **heritage;
+  struct Scheme_Class *superclass; /* Redundant, but useful. */
+  Scheme_Object *super_init_name;
+  Scheme_Interface *equiv_intf; /* interface implied by this class */
+
+  short num_args, num_required_args, num_arg_vars;
+  short num_ivar, num_private, num_ref;
+  short num_public, num_slots; /* num_vslots == num_public */
+  Scheme_Object **public_names;
+  short *public_map; /* position in public_names => virtual slot position */
+  short *vslot_map; /* virtual slot position => slot position or cmethod position */
+  slotkind *vslot_kind; /* virtual slot position => TYPE_CMETHOD | TYPE_IVAR */
+
+  short *ivar_map; /* ivar index => class virtual slot */
+  short *ref_map;  /* ref index => [super]class virtual slot position */
+
+  CMethod **cmethods;
+  short *cmethod_ready_level; /* class level where the cmethod originates */
+  short *cmethod_source_map; /* cmethod position => local cmethod position */
+  short contributes_cmethods;
+
+  short closure_size;
+  Scheme_Object **closure_saved;
+
+  Scheme_Object *defname;
+
+  int max_let_depth;
+
+  short num_interfaces;
+  Scheme_Interface **interfaces;
+  short **interface_maps; /* interface slot position => virtual slot position */
+} Scheme_Class;
+
+typedef struct {
+  Scheme_Type type;
+
+  ClassVariable *ivars;
+
+  short num_args, num_required_args, num_arg_vars;
+  short num_ivar, num_private, num_ref;
+  short num_cmethod;
+  Scheme_Object **ivar_names;
+  Scheme_Object **cmethod_names;
+  CMethod **cmethods;
+
+  short *closure_map;
+  short closure_size;
+
+  int max_let_depth;
+
+  Scheme_Object *super_init_name;
+  Scheme_Object *super_expr;
+
+  int num_interfaces;
+  Scheme_Object **interface_exprs;
+
+  Scheme_Object *defname;
+} Class_Data;
+
+/* Extra leading slot space needed for Scheme images of C++ objects: */
+#define EXTRA_PRIM_SLOTS 2
+
+enum {
+  varPUBLIC,
+  varOVERRIDE,
+  varPRIVATE,
+  varINHERIT,
+  varRENAME,
+  varNOTHING,
+  varINPUT
+};
+
+enum {
+  slot_TYPE_IVAR,
+  slot_TYPE_CMETHOD
+};
+
+enum {
+  generic_KIND_CLASS,
+  generic_KIND_INTERFACE,
+  generic_KIND_CINTERFACE
+};
+
+#define ispublic(c) (((c)->vartype == varPUBLIC) || ((c)->vartype == varOVERRIDE))
+#define isoverride(c) ((c)->vartype == varOVERRIDE)
+#define isreftype(vt) ((vt == varRENAME) || (vt == varINHERIT))
+#define isref(c) isreftype((c)->vartype)
+#define isprivref(c) ((c)->vartype == varRENAME)
+#define isprivate(c) ((c)->vartype == varPRIVATE)
+#define isinput(c) ((c)->vartype == varINPUT)
+
+#define SEQUALS(a, b) (scheme_hash_key(a) == scheme_hash_key(b))
+#define SLESSTHAN(a, b) (scheme_hash_key(a) < scheme_hash_key(b))
+
+#define IVAR_INT_NAME(c) (SCHEME_SYMBOLP((c)->name) ? (c)->name : SCHEME_CAR((c)->name))
+#define IVAR_EXT_NAME(c) (SCHEME_SYMBOLP((c)->name) ? (c)->name : SCHEME_CADR((c)->name))
+/* Get external, but know to be external only: */
+#define _IVAR_EXT_NAME(c) ((c)->name)
+
+typedef int (*Compare_Proc)(const void *, const void *);
+
+const char *scheme_iget_class_name(Scheme_Object *c, const char *mode);
+const char *scheme_iget_interface_name(Scheme_Object *i, const char *mode);
+void scheme_InstallHeritage(Scheme_Class *sclass, Scheme_Class *superclass);
+int scheme_CompareObjectPtrs(Scheme_Object **a, Scheme_Object **b);
+int scheme_MergeArray(int ac, Scheme_Object **ak, Scheme_Object **a, short *as,
+		      int bc, Scheme_Object **bk, Scheme_Object **b, short *bs,
+		      Scheme_Object **d, short *ds, int nodup);
+int scheme_DoFindName(int count, Scheme_Object **pub, Scheme_Object *symbol);
+void scheme_install_class_interface(Scheme_Class *sclass);
+void scheme_InitData(Class_Data *data);
+
+Scheme_Object *scheme_DefineClass_Execute(Scheme_Object *form, int already_evaled);
+
+#endif
 
 /*========================================================================*/
 /*                         memory debugging                               */

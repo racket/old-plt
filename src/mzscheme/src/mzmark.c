@@ -1517,34 +1517,6 @@ int mark_comp_info_FIXUP(void *p) {
 }
 
 
-int mark_cont_mark_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark));
-}
-
-int mark_cont_mark_MARK(void *p) {
-  Scheme_Cont_Mark *cm = (Scheme_Cont_Mark *)p;
-
-  gcMARK(cm->key);
-  gcMARK(cm->val);
-  gcMARK(cm->cached_chain);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark));
-}
-
-int mark_cont_mark_FIXUP(void *p) {
-  Scheme_Cont_Mark *cm = (Scheme_Cont_Mark *)p;
-
-  gcFIXUP(cm->key);
-  gcFIXUP(cm->val);
-  gcFIXUP(cm->cached_chain);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark));
-}
-
-
 int mark_saved_stack_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));

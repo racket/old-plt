@@ -17,6 +17,10 @@
     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+/* This file implements the MzScheme object system. See also
+   objclass.c, which implements parsing, compilation, and execution for
+   `class' expressions. */
+
 #include "schpriv.h"
 #include "schrunst.h"
 
@@ -31,9 +35,6 @@
 #ifndef FALSE
 #define FALSE 0
 #endif
-
-/* Extra leading slot space needed for Scheme images of C++ objects: */
-#define EXTRA_PRIM_SLOTS 2
 
 #define INTERFACE "interface"
 
@@ -61,105 +62,12 @@
 #define CLASS_INIT_ARITY "class-initialization-arity"
 #define NULL_CLASS "object%"
 
-#if 0
-# define OBJECT_CLASS "object-class"
-# define IVAR_IN_CLASS "ivar-in-class?"
-#endif
-
 #define SUPER_INIT "super-init"
 
-static Scheme_Object *seq_symbol;
-static Scheme_Object *pub_symbol, *ovr_symbol, *pri_symbol;
-static Scheme_Object *inh_symbol;
-static Scheme_Object *ren_symbol;
-
-static Scheme_Object *class_star_symbol;
 static Scheme_Object *interface_symbol;
 
 #define cons scheme_make_pair
   
-enum {
-  varPUBLIC,
-  varOVERRIDE,
-  varPRIVATE,
-  varINHERIT,
-  varRENAME,
-  varNOTHING,
-  varINPUT
-};
-
-enum {
-  slot_TYPE_IVAR,
-  slot_TYPE_CMETHOD
-};
-
-enum {
-  generic_KIND_CLASS,
-  generic_KIND_INTERFACE,
-  generic_KIND_CINTERFACE
-};
-
-#define ispublic(c) (((c)->vartype == varPUBLIC) || ((c)->vartype == varOVERRIDE))
-#define isoverride(c) ((c)->vartype == varOVERRIDE)
-#define isreftype(vt) ((vt == varRENAME) || (vt == varINHERIT))
-#define isref(c) isreftype((c)->vartype)
-#define isprivref(c) ((c)->vartype == varRENAME)
-#define isprivate(c) ((c)->vartype == varPRIVATE)
-#define isinput(c) ((c)->vartype == varINPUT)
-
-#define IVAR_INT_NAME(c) (SCHEME_SYMBOLP((c)->name) ? (c)->name : SCHEME_CAR((c)->name))
-#define IVAR_EXT_NAME(c) (SCHEME_SYMBOLP((c)->name) ? (c)->name : SCHEME_CADR((c)->name))
-/* Get external, but know to be external only: */
-#define _IVAR_EXT_NAME(c) ((c)->name)
-
-typedef struct ClassVariable {
-  MZTAG_IF_REQUIRED
-  Scheme_Object *name;
-  short vartype;
-  short index;
-  union {
-    Scheme_Object *value;
-    struct {
-      Scheme_Closed_Prim *f;
-      short mina, maxa;
-    } prim;
-    struct {
-      Scheme_Object *name;
-    } source;
-  } u;
-  struct ClassVariable *next;
-} ClassVariable;
-
-enum {
-  pi_NOT = 0,
-  pi_NOT_OVER_CPP,
-  pi_CPP,
-  pi_COMP,
-  pi_COMP_OVER_CPP
-};
-
-typedef struct {
-  MZTAG_IF_REQUIRED
-  Scheme_Closed_Prim *f;
-  short mina, maxa;
-  char *closed_name;
-} CMethod;
-
-typedef char slotkind;
-
-typedef struct Scheme_Interface {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  short num_names, num_supers;
-  short for_class; /* 1 => impl iff subclass, 0 => normal interface */
-  Scheme_Object **names;
-  short *name_map; /* position in names => interface slot position */
-  struct Scheme_Interface **supers; /* all superinterfaces (flattened hierarchy) */
-  struct Scheme_Class *supclass;
-  short *super_offsets; /* superinterface => super's slot position offset */
-  Scheme_Object *defname;
-} Scheme_Interface;
-
 typedef struct Interface_Data {
   Scheme_Type type;
   short num_names, num_supers;
@@ -172,81 +80,6 @@ typedef struct Scheme_Interface_Assembly {
   MZTAG_IF_REQUIRED
   Interface_Data data;
 } Scheme_Interface_Assembly;
-
-typedef struct Scheme_Class {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-
-  ClassVariable *ivars; /* Order determines order of evaluation */
-
-  union {
-    Scheme_Closed_Prim *initf;
-    struct {
-      Scheme_Instance_Init_Proc *f;
-      void *data;
-    } insti;
-  } piu;
-  short priminit;
-
-  short pos;
-  struct Scheme_Class **heritage;
-  struct Scheme_Class *superclass; /* Redundant, but useful. */
-  Scheme_Object *super_init_name;
-  Scheme_Interface *equiv_intf; /* interface implied by this class */
-
-  short num_args, num_required_args, num_arg_vars;
-  short num_ivar, num_private, num_ref;
-  short num_public, num_slots; /* num_vslots == num_public */
-  Scheme_Object **public_names;
-  short *public_map; /* position in public_names => virtual slot position */
-  short *vslot_map; /* virtual slot position => slot position or cmethod position */
-  slotkind *vslot_kind; /* virtual slot position => TYPE_CMETHOD | TYPE_IVAR */
-
-  short *ivar_map; /* ivar index => class virtual slot */
-  short *ref_map;  /* ref index => [super]class virtual slot position */
-
-  CMethod **cmethods;
-  short *cmethod_ready_level; /* class level where the cmethod originates */
-  short *cmethod_source_map; /* cmethod position => local cmethod position */
-  short contributes_cmethods;
-
-  short closure_size;
-  Scheme_Object **closure_saved;
-
-  Scheme_Object *defname;
-
-  int max_let_depth;
-
-  short num_interfaces;
-  Scheme_Interface **interfaces;
-  short **interface_maps; /* interface slot position => virtual slot position */
-} Scheme_Class;
-
-typedef struct {
-  Scheme_Type type;
-
-  ClassVariable *ivars;
-
-  short num_args, num_required_args, num_arg_vars;
-  short num_ivar, num_private, num_ref;
-  short num_cmethod;
-  Scheme_Object **ivar_names;
-  Scheme_Object **cmethod_names;
-  CMethod **cmethods;
-
-  short *closure_map;
-  short closure_size;
-
-  int max_let_depth;
-
-  Scheme_Object *super_init_name;
-  Scheme_Object *super_expr;
-
-  int num_interfaces;
-  Scheme_Object **interface_exprs;
-
-  Scheme_Object *defname;
-} Class_Data;
 
 typedef struct Scheme_Class_Assembly {
   MZTAG_IF_REQUIRED
@@ -297,10 +130,9 @@ typedef struct {
 static Scheme_Class *null_class = NULL;
 
 static Scheme_Object *MakeSuperInitPrim(Internal_Object *o, Init_Object_Rec *irec, int level);
-static int DoFindName(int count, Scheme_Object **pub, Scheme_Object *symbol);
 static short *find_implementation(Scheme_Object *c, Scheme_Object *n, int *offset);
 
-#define FindName(c, s) DoFindName(c->num_public, c->public_names, s)
+#define FindName(c, s) scheme_DoFindName(c->num_public, c->public_names, s)
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -329,9 +161,6 @@ static void register_traversers(void);
 #endif /* NO_OBJECT_SYSTEM */
 
 #if !defined(NO_OBJECT_SYSTEM) || !defined(NO_UNIT_SYSTEM)
-
-static const char *get_class_name(Scheme_Object *c, const char *mode);
-static const char *get_interface_name(Scheme_Object *i, const char *mode);
 
 DupCheckRecord *scheme_begin_dup_symbol_check(DupCheckRecord *r)
 {
@@ -413,7 +242,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
 #ifndef NO_OBJECT_SYSTEM
 
-void install_class_interface(Scheme_Class *sclass)
+void scheme_install_class_interface(Scheme_Class *sclass)
 {
   Scheme_Interface *in;
 
@@ -478,7 +307,7 @@ static Scheme_Object *NullClass(void)
     null_class->closure_size = 0;
     null_class->max_let_depth = 0;
 
-    install_class_interface(null_class);
+    scheme_install_class_interface(null_class);
   }
 
   return (Scheme_Object *)null_class;
@@ -486,7 +315,7 @@ static Scheme_Object *NullClass(void)
 
 /**********************************************************************/
 
-static int CompareObjectPtrs(Scheme_Object **a, Scheme_Object **b)
+int scheme_CompareObjectPtrs(Scheme_Object **a, Scheme_Object **b)
 {
   long ha, hb;
   
@@ -501,10 +330,7 @@ static int CompareObjectPtrs(Scheme_Object **a, Scheme_Object **b)
     return 1;
 }
 
-#define SEQUALS(a, b) (scheme_hash_key(a) == scheme_hash_key(b))
-#define SLESSTHAN(a, b) (scheme_hash_key(a) < scheme_hash_key(b))
-
-static int MergeArray(int ac, Scheme_Object **ak, Scheme_Object **a, short *as,
+int scheme_MergeArray(int ac, Scheme_Object **ak, Scheme_Object **a, short *as,
 		      int bc, Scheme_Object **bk, Scheme_Object **b, short *bs,
 		      Scheme_Object **d, short *ds, int nodup)
 {
@@ -560,410 +386,6 @@ static int MergeArray(int ac, Scheme_Object **ak, Scheme_Object **a, short *as,
 }
 
 /**********************************************************************/
-
-static ClassVariable *ReadItemList(char *what, Scheme_Object *vars, 
-				   int vartype,
-				   ClassVariable *start,
-				   ClassVariable **very_first,
-				   Scheme_Object *form)
-{
-  Scheme_Object *l, *var, *value;
-  ClassVariable *classvar;
-  int alias, seq, input, islast;
-
-  alias = isreftype(vartype);
-  seq = (vartype == varNOTHING);
-  input = (vartype == varINPUT);
-
-  for (; !SCHEME_NULLP(vars); vars = SCHEME_CDR(vars)) {
-    if (input && !SCHEME_PAIRP(vars)) {
-      islast = 1;
-      l = vars;
-    } else {
-      l = SCHEME_CAR(vars);
-      islast = 0;
-    }
-    
-    if (seq) {
-      var = seq_symbol;
-      value = l;
-    } else if (SCHEME_LISTP(l)) {
-      var = SCHEME_CAR(l);
-	
-      l = SCHEME_CDR(l);
-      if (SCHEME_NULLP(l))
-	value = NULL;
-      else
-	value = SCHEME_CAR(l);
-    } else {
-      var = l;
-      value = NULL;
-    }
-
-    if (alias && !value)
-      value = var;
-    if (islast && !value)
-      value = scheme_null;
-
-    classvar = MALLOC_ONE_RT(ClassVariable);
-#ifdef MZTAG_REQUIRED
-    classvar->type = scheme_rt_class_var;
-#endif
-    classvar->name = var;
-    classvar->vartype = vartype;
-    
-    if (alias)
-      classvar->u.source.name = value;
-    else
-      classvar->u.value = value;
-    classvar->next = NULL;
-
-    if (start)
-      start->next = classvar;
-    else
-      *very_first = classvar;
-
-    start = classvar;
-
-    if (islast)
-      break;
-  }
-
-  return start;
-}
-
-static void CompileItemList(Scheme_Object *form,
-			    ClassVariable *cvars,
-			    Scheme_Comp_Env *env, 
-			    Class_Data *data,
-			    Scheme_Compile_Info *rec,
-			    int drec)
-{
-  int alias, count;
-  ClassVariable *classvar;
-  Scheme_Compile_Info *recs;
-
-  for (count = 0, classvar = cvars; classvar; classvar = classvar->next) {
-    alias = isref(classvar);
-    if (!alias)
-      count++;
-  }
-
-  recs = MALLOC_N_RT(Scheme_Compile_Info, count);
-  scheme_init_compile_recs(rec, drec, recs, count);
-
-  for (count = 0, classvar = cvars; classvar; classvar = classvar->next) {
-    alias = isref(classvar);
-
-    if (!alias && !classvar->u.value) {
-      Scheme_Object *cv;
-      cv = scheme_compiled_void(rec[drec].can_optimize_constants);
-      classvar->u.value = cv;
-    }
-
-    scheme_check_identifier(CLASS_STAR, IVAR_INT_NAME(classvar), NULL, env, form);
-
-    if (!alias) {
-      recs[count].value_name = IVAR_EXT_NAME(classvar);
-      {
-	Scheme_Object *ce;
-	ce = scheme_compile_expr(classvar->u.value, env, recs, count);
-	classvar->u.value = ce;
-      }
-      count++;
-    }
-  }
-
-  scheme_merge_compile_recs(rec, drec, recs, count);
-}
-
-#define check_MustPair 0x1
-#define check_MustId 0x2
-#define check_BindingMustId 0x4
-#define check_CanRename 0x8
-
-static void GenCheckIvarList(Scheme_Object *clause, 
-			     Scheme_Object *naya, 
-			     int flags,
-			     Scheme_Object *form)
-{
-  Scheme_Object *l, *p, *n;
-
-  for (l = naya; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-    p = SCHEME_CAR(l);
-    if (SCHEME_SYMBOLP(p)) {
-      if (flags & check_MustPair)
-	scheme_wrong_syntax(CLASS_STAR, p, form,
-			    "%S clause must contain pairs",
-			    clause);
-    } else if (SCHEME_PAIRP(p)) {
-      Scheme_Object *pr = p;
-
-      if (flags & check_MustId) {
-	if (!(flags & check_CanRename)) {
-	  scheme_wrong_syntax(CLASS_STAR, p, form,
-			      "%S clause must contain only identifiers",
-			      clause);
-	}
-	n = p;
-	p = scheme_null;
-      } else {
-	n = SCHEME_CAR(p);
-	p = SCHEME_CDR(p);
-      }
-
-      if (!SCHEME_SYMBOLP(n)) {
-	if (flags & check_CanRename) {
-	  if (!SCHEME_PAIRP(n) || !SCHEME_PAIRP(SCHEME_CDR(n))
-	      || !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(n))))
-	    scheme_wrong_syntax(CLASS_STAR, n, form,
-				"badly formed %S clause (bad internal-external"
-				" identifier pair form)", clause);
-	  if (!SCHEME_SYMBOLP(SCHEME_CAR(n)))
-	    scheme_wrong_syntax(CLASS_STAR, SCHEME_CAR(n), form,
-				"badly formed %S clause (internal"
-				" name not an identifier)", clause);
-	  n = SCHEME_CDR(n);
-	  if (!SCHEME_SYMBOLP(SCHEME_CAR(n)))
-	    scheme_wrong_syntax(CLASS_STAR, SCHEME_CAR(n), form,
-				"badly formed %S clause (external"
-				" name not an identifier)", clause);
-	} else
-	  scheme_wrong_syntax(CLASS_STAR, n, form,
-			      "badly formed %S clause (name"
-			      " not an identifier)", clause);
-      }
-
-      if (!SCHEME_NULLP(p)) {
-	if (!SCHEME_PAIRP(p))
-	scheme_wrong_syntax(CLASS_STAR, pr, form,
-			    "badly formed %S clause (identifier"
-			    " declaration is improper)", 
-			    clause);
-	if (!SCHEME_NULLP(SCHEME_CDR(p)))
-	  scheme_wrong_syntax(CLASS_STAR, pr, form,
-			      "badly formed %S clause (identifier"
-			      " declaration not a pair)", 
-			      clause);
-	if (flags & check_BindingMustId) {
-	  n = SCHEME_CAR(p);
-	  if (!SCHEME_SYMBOLP(n))
-	    scheme_wrong_syntax(CLASS_STAR, pr, form,
-				"association "
-				"in %S clause "
-				"must be an identifier",
-				clause);
-	}
-      } else if (flags & check_MustPair)
-	scheme_wrong_syntax(CLASS_STAR, pr, form,
-			    "%S clause must contain pairs",
-			    clause);
-    } else
-      scheme_wrong_syntax(CLASS_STAR, p, form,
-			  "badly formed %S clause (declaration"
-			  " not an identifier or pair)", 
-			  clause);
-  }
-  
-  if (!SCHEME_NULLP(l))
-    scheme_wrong_syntax(CLASS_STAR, l, form,
-			"badly formed %S clause (" 
-			IMPROPER_LIST_FORM
-			" for identifiers)", 
-			clause);
-  
-}
-
-static void CheckIvarList(Scheme_Object *t, Scheme_Object *l, int flags,
-			  Scheme_Object *form)
-{
-  GenCheckIvarList(t, l, flags, form);
-}
-
-static Scheme_Object *GetNames(ClassVariable *ivar, 
-			       int pblic, int prvate, int ref,
-			       Scheme_Comp_Env *env)
-{
-  Scheme_Object *first = scheme_null, *last = NULL;
-  int offset = 0;
-
-  for (; ivar; ivar = ivar->next) {
-    if ((ispublic(ivar) && pblic)
-	|| (isref(ivar) && ref)
-	|| (isprivate(ivar) && prvate)) {
-      if (env) {
-	scheme_unsettable_variable(env, offset);
-      } else {
-	Scheme_Object *p;
-	p = cons(IVAR_INT_NAME(ivar), scheme_null);
-	
-	if (last)
-	  SCHEME_CDR(last) = p;
-	else
-	  first = p;
-	
-	last = p;
-      }
-
-      offset++;
-    }
-  }
-
-  return first;
-}
-
-static Scheme_Object *expandall(Scheme_Object *vars, Scheme_Comp_Env *env, int depth,
-				int expand_expr, Scheme_Comp_Env *first_from)
-{
-  Scheme_Object *first, *last;
-  Scheme_Object *name, *var;
-
-  name = SCHEME_CAR(vars);
-  vars = SCHEME_CDR(vars);
-
-  first = cons(name, scheme_null);
-  last = first;
-
-  if (first_from) {
-    name = SCHEME_CAR(vars);
-    vars = SCHEME_CDR(vars);
-    
-    last = cons(name, scheme_null);
-    SCHEME_CDR(first) = last;
-  }
-
-  while (!SCHEME_NULLP(vars)) {
-    var = SCHEME_CAR(vars);
-
-    if (!SCHEME_PAIRP(var)) {
-    } else {
-      Scheme_Object *rest, *name;
-    
-      name = SCHEME_CAR(var);
-      rest = SCHEME_CDR(var);
-
-      if (expand_expr)
-	rest = scheme_expand_expr(rest, env, depth);
-      
-      var = cons(name, rest);
-    }
-    
-    var = cons(var, scheme_null);
-
-    SCHEME_CDR(last) = var;
-    last = var;
-
-    vars = SCHEME_CDR(vars);
-  }
-
-  return first;
-}
-
-static short *CheckInherited(Scheme_Class *sclass, ClassVariable *item)
-{
-  short *ref_map;
-  Scheme_Class *superclass = sclass->superclass;
-
-  ref_map = MALLOC_N_ATOMIC(short, sclass->num_ref);
-
-  for (; item; item = item->next) {
-    if (isref(item) || isoverride(item)) {
-      int p;
-      Scheme_Object *name = (isoverride(item)
-			     ? IVAR_EXT_NAME(item)
-			     : item->u.source.name);
-      if ((p = FindName(superclass, name)) < 0) {
-	const char *cl, *sc;
-
-	cl = get_class_name((Scheme_Object *)sclass, " for class: ");
-	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
-
-	scheme_raise_exn(MZEXN_OBJECT,
-			 CLASS_STAR ": %s ivar not found: %S%s%s",
-			 isoverride(item) ? "overridden" : "inherited",
-			 name,
-			 sc,
-			 cl);
-      } else {
-	if (!isoverride(item))
-	  ref_map[item->index] = superclass->public_map[p];
-      }
-    } else if (ispublic(item)) {
-      Scheme_Object *name = IVAR_EXT_NAME(item);
-      if (FindName(superclass, name) >= 0) {
-	const char *cl, *sc;
-
-	cl = get_class_name((Scheme_Object *)sclass, " for class: ");
-	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
-
-	scheme_raise_exn(MZEXN_OBJECT,
-			 CLASS_STAR ": superclass already includes public ivar: %S%s%s",
-			 name,
-			 sc,
-			 cl);
-      }
-    }
-  }
-
-  return ref_map;
-}
-
-static short *MapIvars(Scheme_Class *sclass, ClassVariable *item)
-{
-  short *ivar_map;
-
-  ivar_map = MALLOC_N_ATOMIC(short, sclass->num_ivar);
-
-  for (; item; item = item->next) {
-    if (ispublic(item)) {
-      int pos;
-      pos = FindName(sclass, item->name);
-      ivar_map[item->index] = sclass->public_map[pos];
-    }
-  }
-
-  return ivar_map;
-}
-
-typedef int (*Compare_Proc)(const void *, const void *);
-
-static void EnsureNamesReady(ClassVariable *ivars, int count, Scheme_Object ***names)
-{
-  int i;
-  ClassVariable *cvar;
-
-  if (count && !*names) {
-    Scheme_Object **ns;
-    ns = MALLOC_N(Scheme_Object*, count);
-    *names = ns;
-
-    for (i = 0, cvar = ivars; cvar; cvar = cvar->next) {
-      if (ispublic(cvar))
-	(*names)[i++] = _IVAR_EXT_NAME(cvar);
-    }
-
-    qsort((char *)*names, count,
-	  sizeof(Scheme_Object *), 
-	  (Compare_Proc)CompareObjectPtrs); 
-  }
-}
-
-static void InstallHeritage(Scheme_Class *sclass, Scheme_Class *superclass)
-{
-  int i;
-
-  sclass->pos = superclass->pos + 1;
-  {
-    Scheme_Class **ca;
-    ca = MALLOC_N(Scheme_Class*, (sclass->pos + 1));
-    sclass->heritage = ca;
-  }
-  for (i = 0; i < sclass->pos; i++) {
-    sclass->heritage[i] = superclass->heritage[i];
-  }
-  sclass->heritage[sclass->pos] = sclass;
-  sclass->superclass = sclass->heritage[sclass->pos - 1];
-}
 
 static Scheme_Object *Interface_Execute(Scheme_Object *form)
 {
@@ -1065,12 +487,12 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
 	mbank[j] += count;
       }
 
-      MergeArray(num_names, mode ? nbanka : nbankb, mode ? nbanka : nbankb, NULL,
-		 count, supers[i]->names, supers[i]->names, NULL,
-		 mode ? nbankb : nbanka, NULL, 0);
-      num_names = MergeArray(num_names, mode ? nbanka : nbankb, NULL, mode ? mbanka : mbankb, 
-			     count, supers[i]->names, NULL, supers[i]->name_map,
-			     NULL, mode ? mbankb : mbanka, 0);
+      scheme_MergeArray(num_names, mode ? nbanka : nbankb, mode ? nbanka : nbankb, NULL,
+			count, supers[i]->names, supers[i]->names, NULL,
+			mode ? nbankb : nbanka, NULL, 0);
+      num_names = scheme_MergeArray(num_names, mode ? nbanka : nbankb, NULL, mode ? mbanka : mbankb, 
+				    count, supers[i]->names, NULL, supers[i]->name_map,
+				    NULL, mode ? mbankb : mbanka, 0);
 
       mode = !mode;
     }
@@ -1081,9 +503,9 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     }
 
     /* Final merge: */
-    total = MergeArray(data->num_names, data->names, NULL, NULL,
-		       num_names, nbanka, NULL, NULL,
-		       NULL, NULL, 2); /* 2 => must be disjoint */
+    total = scheme_MergeArray(data->num_names, data->names, NULL, NULL,
+			      num_names, nbanka, NULL, NULL,
+			      NULL, NULL, 2); /* 2 => must be disjoint */
     newcount = total - num_names;
 
     /* Check for variables already in supclass */
@@ -1127,12 +549,12 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
       in->name_map = sa;
     }
 
-    MergeArray(data->num_names, data->names, data->names, NULL,
-	       num_names, nbanka, nbanka, NULL,
-	       in->names, NULL, 1);
-    MergeArray(data->num_names, data->names, NULL, mbankb, 
-	       num_names, nbanka, NULL, mbanka,
-	       NULL, in->name_map, 1);
+    scheme_MergeArray(data->num_names, data->names, data->names, NULL,
+		      num_names, nbanka, nbanka, NULL,
+		      in->names, NULL, 1);
+    scheme_MergeArray(data->num_names, data->names, NULL, mbankb, 
+		      num_names, nbanka, NULL, mbanka,
+		      NULL, in->name_map, 1);
 
     /* renumber -1s to distinct new numbers (0 to newcount): */
     {
@@ -1307,7 +729,7 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Sort names: */
     qsort((char *)data->names, num_names,
 	  sizeof(Scheme_Object *), 
-	  (Compare_Proc)CompareObjectPtrs); 
+	  (Compare_Proc)scheme_CompareObjectPtrs); 
 
     recs = MALLOC_N_RT(Scheme_Compile_Info, num_supers);
     scheme_init_compile_recs(rec, drec, recs, num_supers);
@@ -1340,1028 +762,7 @@ static Scheme_Object *Interface_expand(Scheme_Object *form, Scheme_Comp_Env *env
   return Do_Interface(form, env, NULL, 0, depth);
 }
 
-
-static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_evaled)
-{
-  Scheme_Class *sclass, *superclass;
-  Class_Data *data;
-  Scheme_Interface **interfaces;
-  Scheme_Object *superobj, **temp_array, **public_names, *il;
-  int i, j, num_cmethod, newpos, num_local_interfaces, num_interfaces, num_public;
-  int num_contrib_cmethod;
-  short **imaps;
-  CMethod **tmp_cmethods;
-  short *tmp_cmethod_ready_level, *tmp_cmethod_source_map;
-
-  data = (Class_Data *)form;
-
-  if (!already_evaled)
-    superobj = _scheme_eval_compiled_expr(data->super_expr);
-  else
-    superobj = data->super_expr;
-
-  if (!SCHEME_CLASSP(superobj)) {
-    const char *symname;
-    symname = data->defname ? scheme_symbol_name(data->defname) : "";
-    scheme_raise_exn(MZEXN_OBJECT,
-		     CLASS_STAR ": superclass expression returned "
-		     "a non-class: %s%s%s",
-		     scheme_make_provided_string(superobj, 1, NULL),
-		     data->defname ? " for class: " : "",
-		     symname);
-    return NULL;
-  }
-	
-  superclass = (Scheme_Class *)superobj;
-
-  /* Build a list instead of allocating an array immediately.
-     See note in Interface_Execute(). */
-  num_local_interfaces = data->num_interfaces;
-  il = scheme_null;
-  for (i = 0; i < num_local_interfaces; i++) {
-    Scheme_Object *in;
-    in = _scheme_eval_compiled_expr(data->interface_exprs[i]);
-    if (!SCHEME_INTERFACEP(in)) {
-      const char *symname;
-      symname = data->defname ? scheme_symbol_name(data->defname) : "";
-      scheme_raise_exn(MZEXN_OBJECT,
-		       CLASS_STAR ": interface expression returned "
-		       "a non-interface: %s%s%s",
-		       scheme_make_provided_string(in, 1, NULL),
-		       data->defname ? " for class: " : "",
-		       symname);
-      return NULL;
-    }
-    il = cons(in, il);
-  }
-
-  sclass = MALLOC_ONE_TAGGED(Scheme_Class);
-  sclass->type = scheme_class_type;
-  if ((superclass->priminit == pi_CPP) 
-      || (superclass->priminit == pi_NOT_OVER_CPP)
-      || (superclass->priminit == pi_COMP_OVER_CPP))
-    sclass->priminit = pi_NOT_OVER_CPP;
-  else
-    sclass->priminit = pi_NOT;
-  sclass->defname = data->defname;
-
-  if ((superclass->priminit == pi_CPP) 
-      && !superclass->piu.initf) {
-    const char *cl;
-    cl = get_class_name((Scheme_Object *)sclass, " to create class: ");
-    scheme_raise_exn(MZEXN_OBJECT,
-		     CLASS_STAR ": can't derive from the class: %s%s", 
-		     scheme_symbol_name(superclass->defname),
-		     cl);
-  }
-  
-  InstallHeritage(sclass, superclass);
-
-  sclass->super_init_name = data->super_init_name;
-
-  num_interfaces = num_local_interfaces + superclass->num_interfaces;
-
-  if (num_interfaces) {
-    interfaces = MALLOC_N(Scheme_Interface*, num_interfaces);
-    for (i = num_local_interfaces; i--; ) {
-      Scheme_Interface *in = (Scheme_Interface *)SCHEME_CAR(il);
-      interfaces[i] = in;
-      if (!scheme_is_subclass((Scheme_Object *)superclass, (Scheme_Object *)in->supclass)) {
-	const char *inn;
-	inn = get_interface_name((Scheme_Object *)in, " for interface: ");
-	scheme_raise_exn(MZEXN_OBJECT,
-			 CLASS_STAR ": superclass doesn't satisfy implementation requirement of interface: %s%s", 
-			 scheme_symbol_name(superclass->defname),
-			 inn);
-      }
-      il = SCHEME_CDR(il);
-    }
-    for (i = superclass->num_interfaces; i--; ) {
-      interfaces[i + num_local_interfaces] = superclass->interfaces[i];
-    }
-  } else
-    interfaces = NULL;
-  sclass->num_interfaces = num_interfaces;
-  sclass->interfaces = interfaces;
-
-  /* Setup public/private */
-  sclass->ivars = data->ivars;
-  sclass->num_args = data->num_args;
-  sclass->num_required_args = data->num_required_args;
-  sclass->num_arg_vars = data->num_arg_vars;
-  sclass->num_private = data->num_private;
-  sclass->num_ref = data->num_ref;
-  sclass->num_ivar = data->num_ivar;
-
-  /* How big is the union? */
-  {
-    int pub_count;
-    pub_count = (MergeArray(data->num_ivar, data->ivar_names, NULL, NULL,
-			    superclass->num_public, superclass->public_names, NULL, NULL,
-			    NULL, NULL, 1)
-		 + MergeArray(data->num_cmethod, data->cmethod_names, NULL, NULL,
-			      superclass->num_public, superclass->public_names, NULL, NULL,
-			      NULL, NULL, 1)
-		 - superclass->num_public);
-    sclass->num_public = pub_count;
-  }
-
-  /* Make room for the union */
-  num_public = sclass->num_public;
-  temp_array = MALLOC_N(Scheme_Object*, num_public);
-  public_names = MALLOC_N(Scheme_Object*, num_public);
-  sclass->public_names = public_names;
-  
-  /* Union names: */
-  i = MergeArray(data->num_ivar, data->ivar_names, data->ivar_names, NULL,
-		 superclass->num_public, superclass->public_names, superclass->public_names, NULL,
-		 temp_array, NULL, 1);
-  MergeArray(i, temp_array, temp_array, NULL,
-	     data->num_cmethod, data->cmethod_names, data->cmethod_names, NULL,
-	     public_names, NULL, 1);
-
-  /* Map names to source: */
-  {
-    short *sa;
-    sa = MALLOC_N_ATOMIC(short, num_public);
-    sclass->public_map = sa;
-    sa = MALLOC_N_ATOMIC(short, num_public);
-    sclass->vslot_map = sa;
-  }
-  {
-    slotkind *ska;
-    ska = MALLOC_N_ATOMIC(slotkind, num_public);
-    sclass->vslot_kind = ska;
-  }
-  sclass->num_slots = ((sclass->priminit == pi_NOT_OVER_CPP) ? EXTRA_PRIM_SLOTS : 0);
-  num_cmethod = 0;
-  num_contrib_cmethod = 0;
-  newpos = superclass->num_public;
-
-  if (!data->num_cmethod) {
-    tmp_cmethods = NULL;
-    tmp_cmethod_ready_level = NULL;
-    tmp_cmethod_source_map = NULL;
-  } else {
-    /* Alloc for largest case */
-    i = data->num_cmethod + superclass->num_public;
-    tmp_cmethods = MALLOC_N(CMethod*, i);
-    tmp_cmethod_ready_level = MALLOC_N_ATOMIC(short, i);
-    tmp_cmethod_source_map = MALLOC_N_ATOMIC(short, i);
-  }
-
-  for (i = num_public; i--; ) {
-    Scheme_Object *s = public_names[i];
-    int cmpos, ipos;
-
-    cmpos = DoFindName(data->num_cmethod, data->cmethod_names, s);
-    if (cmpos < 0)
-      ipos = DoFindName(data->num_ivar, data->ivar_names, s);
-    else
-      ipos = -1;
-
-    j = DoFindName(superclass->num_public, superclass->public_names, s);
-    if (j >= 0) {
-      /* Overriding or inheriting: use superclass-determined vslot position. */
-      int vp = superclass->public_map[j];
-      sclass->public_map[i] = vp;
-      if (ipos >= 0) {
-	/* Override with ivar */
-	sclass->vslot_map[vp] = sclass->num_slots++;
-	sclass->vslot_kind[vp] = slot_TYPE_IVAR;
-      } else if (cmpos >= 0) {
-	/* Override with cmethod */
-	tmp_cmethods[num_cmethod] = data->cmethods[cmpos];
-	tmp_cmethod_ready_level[num_cmethod] = sclass->pos;
-	tmp_cmethod_source_map[num_cmethod] = num_contrib_cmethod++;
-	sclass->vslot_map[vp] = num_cmethod++;
-	sclass->vslot_kind[vp] = slot_TYPE_CMETHOD;
-      } else {
-	/* Inherit */
-	slotkind k = superclass->vslot_kind[vp];
-	sclass->vslot_kind[vp] = k;
-	if (k == slot_TYPE_CMETHOD) {
-	  /* Inherit cmethod */
-	  int cindex = superclass->vslot_map[vp];
-	  if (tmp_cmethods) {
-	    /* Adding cmethods, so re-shuffle: */
-	    tmp_cmethods[num_cmethod] = superclass->cmethods[cindex];
-	    tmp_cmethod_ready_level[num_cmethod] = superclass->cmethod_ready_level[cindex];
-	    tmp_cmethod_source_map[num_cmethod] = -1;
-	    sclass->vslot_map[vp] = num_cmethod++;
-	  } else {
-	    /* No new cmethods; using superclass's array: */
-	    sclass->vslot_map[vp] = superclass->vslot_map[vp];
-	  }
-	} else {
-	  /* Inherit ivar */
-	  sclass->vslot_map[vp] = sclass->num_slots++;
-	}
-      }
-    } else {
-      /* New vars: */
-      int vp = newpos++;
-      if (cmpos >= 0) {
-	/* New cmethod */
-	sclass->public_map[i] = vp;
-	tmp_cmethods[num_cmethod] = data->cmethods[cmpos];
-	tmp_cmethod_ready_level[num_cmethod] = sclass->pos;
-	tmp_cmethod_source_map[num_cmethod] = num_contrib_cmethod++;
-	sclass->vslot_map[vp] = num_cmethod++;
-	sclass->vslot_kind[vp] = slot_TYPE_CMETHOD;
-      } else {
-	/* New ivar */
-	sclass->public_map[i] = vp;
-	sclass->vslot_map[vp] = sclass->num_slots++;
-	sclass->vslot_kind[vp] = slot_TYPE_IVAR;
-      }
-    }
-  }
-
-  sclass->contributes_cmethods = num_contrib_cmethod;
-  if (!data->num_cmethod) {
-    /* Use superclass array: */
-    sclass->cmethods = superclass->cmethods;
-    sclass->cmethod_ready_level = superclass->cmethod_ready_level;
-    sclass->cmethod_source_map = superclass->cmethod_source_map;
-  } else if (num_cmethod) {
-    {
-      CMethod **cma;
-      cma = MALLOC_N(CMethod*, num_cmethod);
-      sclass->cmethods = cma;
-    }
-    {
-      short *sa;
-      sa = MALLOC_N_ATOMIC(short, num_cmethod);
-      sclass->cmethod_ready_level = sa;
-    }
-    if (num_contrib_cmethod) {
-      short *sa;
-      sa = MALLOC_N_ATOMIC(short, num_cmethod);
-      sclass->cmethod_source_map = sa;
-    } else
-      sclass->cmethod_source_map = NULL;
-    for (i = num_cmethod; i--; ) {
-      sclass->cmethods[i] = tmp_cmethods[i];
-      sclass->cmethod_ready_level[i] = tmp_cmethod_ready_level[i];
-      if (num_contrib_cmethod)
-	sclass->cmethod_source_map[i] = tmp_cmethod_source_map[i];
-    }
-  } else {
-    sclass->cmethods = NULL;
-    sclass->cmethod_ready_level = NULL;
-    sclass->cmethod_source_map = NULL;
-  }
-  tmp_cmethods = NULL;
-  tmp_cmethod_ready_level = NULL;
-  tmp_cmethod_source_map = NULL;
-
-  /* Map ref index to instance slot: */
-  {
-    short *sa;
-    sa = CheckInherited(sclass, sclass->ivars);
-    sclass->ref_map = sa;
-  }
-
-  /* Map public index to instance slot: */
-  {
-    short *sa;
-    sa = MapIvars(sclass, sclass->ivars);
-    sclass->ivar_map = sa;
-  }
-
-  /* Map interface name positions to class positions */
-  if (num_interfaces)
-    imaps = MALLOC_N(short*, num_interfaces);
-  else
-    imaps = NULL;
-  sclass->interface_maps = imaps;
-  for (i = 0; i < num_interfaces; i++) {
-    int j, k = 0;
-    Scheme_Interface *in = (Scheme_Interface *)interfaces[i];
-    {
-      short *sa;
-      sa = MALLOC_N_ATOMIC(short, in->num_names);
-      imaps[i] = sa;
-    }
-    for (j = 0; j < in->num_names; j++) {
-      while ((k < num_public) && SLESSTHAN(public_names[k], in->names[j])) {
-	k++;
-      }
-      if ((k >= num_public) || !SEQUALS(public_names[k], in->names[j])) {
-	const char *cl, *inn;
-	char buffer[20], *bf;
-
-	cl = get_class_name((Scheme_Object *)sclass, " by class: ");
-	inn = get_interface_name((Scheme_Object *)in, ": ");
-
-	if (num_interfaces > 1) {
-	  if (i == 0)
-	    bf = "1st ";
-	  else if (i == 1)
-	    bf = "2nd ";
-	  else if (num_interfaces == 2)
-	    bf = "3rd ";
-	  else {
-	    sprintf(buffer, "%dth ", i + 1);
-	    bf = buffer;
-	  }
-	} else
-	  bf = "";
-	
-	scheme_raise_exn(MZEXN_OBJECT,
-			 CLASS_STAR ": ivar not implemented: %S%s"
-			 " as required by the %sinterface%s",
-			 in->names[j],
-			 cl, bf, inn);
-	return NULL;
-      }
-      imaps[i][in->name_map[j]] = sclass->public_map[k];
-    }
-  }
-
-  sclass->max_let_depth = data->max_let_depth;
-
-  i = sclass->closure_size = data->closure_size;
-  if (i) {
-#ifndef RUNSTACK_IS_GLOBAL
-    Scheme_Process *p = scheme_current_process;
-#endif
-    Scheme_Object **saved, **stack;
-    short *map = data->closure_map;
-
-    saved = MALLOC_N(Scheme_Object *, i);
-    sclass->closure_saved = saved;
-    stack = MZ_RUNSTACK;
-    while (i--) {
-      saved[i] = stack[map[i]];
-    }
-  }
-
-  install_class_interface(sclass);
-
-  return (Scheme_Object *)sclass;
-}
-
-static Scheme_Object *DefineClass_Execute(Scheme_Object *form)
-{
-  return _DefineClass_Execute(form, FALSE);
-}
-
-static Scheme_Object *DefineClass_Link(Scheme_Object *form, Link_Info *info)
-{
-  Class_Data *data;
-  int i;
-  ClassVariable *ivar;
-
-  data = (Class_Data *)form;
-
-  {
-    Scheme_Object *le;
-    le = scheme_link_expr(data->super_expr, info);
-    data->super_expr = le;
-  }
-  
-  for (i = data->num_interfaces; i--; ) {
-    Scheme_Object *le;
-    le = scheme_link_expr(data->interface_exprs[i], info);
-    data->interface_exprs[i] = le;
-  }
-
-  i = data->closure_size;
-  info = scheme_link_info_extend(info, 0, 0, i);
-  while (i--) {
-    int pos = data->closure_map[i], flags, li;
-    li = scheme_link_info_lookup(info, pos, &flags);
-    data->closure_map[i] = li;
-    scheme_link_info_add_mapping(info, pos, i, flags);
-  }
-
-  i = data->num_private;
-  info = scheme_link_info_extend(info, i, i, i);
-  while (i--) {
-    scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
-  }
-
-  i = data->num_ref;
-  info = scheme_link_info_extend(info, i, i, i);
-  while (i--) {
-    scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
-  }
-
-  i = data->num_ivar;
-  info = scheme_link_info_extend(info, i, i, i);
-  while (i--) {
-    scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
-  }
-
-  i = data->num_arg_vars + 2;
-  info = scheme_link_info_extend(info, i, i, i);
-  while (i--) {
-    scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
-  }
-
-  for (ivar = data->ivars; ivar; ivar = ivar->next) {
-    switch(ivar->vartype) {
-    case varPUBLIC:
-    case varOVERRIDE:
-    case varPRIVATE:
-    case varNOTHING:
-    case varINPUT:
-      {
-	Scheme_Object *le;
-	le = scheme_link_expr(ivar->u.value, info);
-	ivar->u.value = le;
-      }
-      break;
-    case varINHERIT:
-    case varRENAME:
-      break;
-    }
-  }
-
-  return scheme_make_syntax_link(DefineClass_Execute, 
-				 (Scheme_Object *)data);
-}
-
-static void InitData(Class_Data *data)
-{
-  ClassVariable *item;
-  int pub_index = 0, ref_index = 0, priv_index = 0;
-  int input_index;
-  Scheme_Object **names;
-  
-  input_index = data->num_arg_vars;
-  for (item = data->ivars; item; item = item->next) {
-    if (SCHEME_PAIRP(item->name))
-      item->name = IVAR_EXT_NAME(item);
-
-    if (ispublic(item)) {
-      item->index = pub_index++;
-    } else if (isref(item)) {
-      item->index = ref_index++;
-    } else if (isprivate(item)) {
-      item->index = priv_index++;
-    } else if (isinput(item)) {
-      item->index = --input_index;
-    }
-  }
-
-  data->num_ivar = pub_index;
-  data->num_private = priv_index;
-  data->num_ref = ref_index;
-
-  data->num_cmethod = 0;
-  data->cmethod_names = NULL;
-  data->cmethods = NULL;
-
-  names = NULL;
-  EnsureNamesReady(data->ivars, data->num_ivar, &names);
-  data->ivar_names = names;
-}
-
-static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
-				     Scheme_Compile_Info *rec, int drec, int depth)
-{
-#define BAD_MSG ": bad syntax in class definition"
-
-  DupCheckRecord *r, *er, dcrec, erec;
-  Scheme_Object *l, *superclass, *vars, *tag;
-  Scheme_Object *superinitname, **interfaces;
-  Scheme_Object *pub, *priv, *ref, *objl;
-  ClassVariable *ivars = NULL, *next = NULL;
-  Scheme_Object *make_args, *thisname;
-  Scheme_Comp_Env *pubenv, *prienv, *refenv, *objenv, *firstenv;
-  Class_Data *data;
-  ClassVariable *item;
-  int num_args, num_required_args, num_arg_vars, num_interfaces;
-
-  dcrec.scheck_size = 0;
-  erec.scheck_size = 0;
-
-  l = SCHEME_CDR(form);
-
-  if (!SCHEME_LISTP(l))
-    scheme_wrong_syntax(CLASS_STAR, NULL, form, NULL);
-  if (SCHEME_NULLP(l))
-    scheme_wrong_syntax(CLASS_STAR_W_NAMES, NULL, form, 
-			"missing this/super-init specification");
-    
-  vars = SCHEME_CAR(l);
-  if (!SCHEME_PAIRP(vars))
-    scheme_wrong_syntax(CLASS_STAR_W_NAMES, NULL, form, 
-			"bad this/super-init specification");
-  thisname = SCHEME_CAR(vars);
-  scheme_check_identifier(CLASS_STAR_W_NAMES, thisname, NULL, env, form);
-
-  vars = SCHEME_CDR(vars);
-  if (!SCHEME_PAIRP(vars))
-    scheme_wrong_syntax(CLASS_STAR_W_NAMES, NULL, form, 
-			"bad this/super-init specification");
-  superinitname = SCHEME_CAR(vars);
-  scheme_check_identifier(CLASS_STAR_W_NAMES, superinitname, NULL, env, form);
-      
-  vars = SCHEME_CDR(vars);
-  if (!SCHEME_NULLP(vars))
-    scheme_wrong_syntax(CLASS_STAR_W_NAMES, NULL, form, 
-			"bad this/super-init specification (extra syntax after %s)",
-			scheme_symbol_name(superinitname));
-
-  l = SCHEME_CDR(l);
-
-  if (!SCHEME_LISTP(l))
-    scheme_wrong_syntax(CLASS_STAR, NULL, form, NULL);
-  if (SCHEME_NULLP(l))
-    scheme_wrong_syntax(CLASS_STAR, NULL, form, 
-			"missing superclass specification");
-  superclass = SCHEME_CAR(l);
-  
-  l = SCHEME_CDR(l);
-
-  if (!SCHEME_LISTP(l))
-    scheme_wrong_syntax(CLASS_STAR, NULL, form, NULL);
-  if (SCHEME_NULLP(l))
-    scheme_wrong_syntax(CLASS_STAR, NULL, form, 
-			"missing interfaces specification");
-
-  num_interfaces = 0;
-  {
-    Scheme_Object *il = SCHEME_CAR(l);
-
-    while (SCHEME_PAIRP(il)) {
-      num_interfaces++;
-      il = SCHEME_CDR(il);
-    }
-
-    if (!SCHEME_NULLP(il)) {
-      scheme_wrong_syntax(CLASS_STAR, il, form, 
-			  "bad interfaces specification");
-    }
-
-    if (num_interfaces) {
-      int i;
-      interfaces = MALLOC_N(Scheme_Object*, num_interfaces);
-      il = SCHEME_CAR(l);
-      for (i = 0; i < num_interfaces; i++, il = SCHEME_CDR(il)) {
-	interfaces[i] = SCHEME_CAR(il);
-      }
-    } else
-      interfaces = NULL;
-  }
-
-  l = SCHEME_CDR(l);
-
-  num_args = num_arg_vars = num_required_args = 0;
-  if (SCHEME_PAIRP(l)) {
-    int found_nonrequired = 0;
-    Scheme_Object *args = SCHEME_CAR(l);
-
-    l = SCHEME_CDR(l);
-
-    make_args = args;
-
-    while (!SCHEME_NULLP(args)) {
-      if (SCHEME_SYMBOLP(args)) {
-	args = scheme_null;
-	num_args = -1;
-      } else {
-	Scheme_Object *v;
-
-	if (!SCHEME_PAIRP(args))
-	  scheme_wrong_syntax(CLASS_STAR, args, form, 
-			      "bad syntax in argument list");
-
-	v = SCHEME_CAR(args);
-	if (SCHEME_SYMBOLP(v)) {
-	  if (found_nonrequired)
-	    scheme_wrong_syntax(CLASS_STAR, v, form, 
-				"bad syntax in argument list");
-	  num_required_args++;
-	} else {
-	  if (!SCHEME_PAIRP(v) || !SCHEME_SYMBOLP(SCHEME_CAR(v)))
-	    scheme_wrong_syntax(CLASS_STAR, v, form, 
-				"bad syntax in argument list");
-	  found_nonrequired = 1;
-	}
-	args = SCHEME_CDR(args);
-	num_args++;
-      }
-      num_arg_vars++;
-    }
-
-    next = ReadItemList("arguments", make_args, varINPUT, next, &ivars, form);
-  } else {
-    scheme_wrong_syntax(CLASS_STAR, NULL, form, 
-			"missing argument list");
-    return scheme_void;
-  }
-
-  while (1) {
-    if (!SCHEME_LISTP(l))
-      scheme_wrong_syntax(CLASS_STAR, l, form, NULL);
-
-    if (SCHEME_NULLP(l))
-      break;
-    vars = SCHEME_CAR(l);
-
-    if (!SCHEME_PAIRP(vars))
-      scheme_wrong_syntax(CLASS_STAR, vars, form, NULL);
-
-    tag = SCHEME_CAR(vars);
-    vars = SCHEME_CDR(vars);
-
-    if (SAME_OBJ(tag, seq_symbol)) {
-      Scheme_Object *ll = vars;
-      while (SCHEME_PAIRP(ll)) {
-	ll = SCHEME_CDR(ll);
-      }
-      if (!SCHEME_NULLP(ll))
-	scheme_wrong_syntax(CLASS_STAR, ll, form, 
-			    "bad syntax in sequence clause"
-			    " (" IMPROPER_LIST_FORM ")");
-      
-      next = ReadItemList("sequence", vars, varNOTHING, next, &ivars, form);
-    } else if (SAME_OBJ(tag, pub_symbol)) {
-      CheckIvarList(tag, vars, check_CanRename, form);
-      next = ReadItemList("public", vars, varPUBLIC, next, &ivars, form);
-    } else if (SAME_OBJ(tag, ovr_symbol)) {
-      CheckIvarList(tag, vars, check_CanRename, form);
-      next = ReadItemList("override", vars, varOVERRIDE, next, &ivars, form);
-    } else if (SAME_OBJ(tag, pri_symbol)) {
-      CheckIvarList(tag, vars, 0, form);
-      next = ReadItemList("private", vars, varPRIVATE, next, &ivars, form);
-    } else if (SAME_OBJ(tag, inh_symbol)) {
-      CheckIvarList(tag, vars, check_CanRename | check_MustId, form);
-      next = ReadItemList("inherit", vars, varINHERIT, next, &ivars, form);
-    } else if (SAME_OBJ(tag, ren_symbol)) {
-      CheckIvarList(tag, vars, check_MustPair | check_BindingMustId, form);
-      next = ReadItemList("rename", vars, varRENAME, next, &ivars, form);
-    } else {
-      if (SCHEME_SYMBOLP(tag))
-	scheme_wrong_syntax(CLASS_STAR, tag, form, 
-			    "bad syntax (bad clause keyword)");
-      else
-	scheme_wrong_syntax(CLASS_STAR, tag, form, 
-			    "bad syntax (clause keyword missing)");
-    } 
-
-    l = SCHEME_CDR(l);
-  }
-
-  /* Get lists of names (preserves order) */
-  pub = GetNames(ivars, 1, 0, 0, NULL);
-  priv = GetNames(ivars, 0, 1, 0, NULL);
-  ref = GetNames(ivars, 0, 0, 1, NULL);
-
-  prienv = scheme_add_compilation_frame(priv, env, SCHEME_LAMBDA_FRAME | SCHEME_AUTO_UNBOX);
-  firstenv = prienv;
-  refenv = scheme_add_compilation_frame(ref, prienv, SCHEME_AUTO_UNBOX);
-  pubenv = scheme_add_compilation_frame(pub, refenv, SCHEME_AUTO_UNBOX);
-
-  /* References are not settable: */
-  GetNames(ivars, 0, 0, 1, refenv);
-
-  /* Initialize distinct name checks with ivars: */
-  r = scheme_begin_dup_symbol_check(&dcrec);
-  er = scheme_begin_dup_symbol_check(&erec);
-  item = ivars;
-  while (item) {
-    if (item->vartype != varNOTHING) {
-      scheme_dup_symbol_check(r, CLASS_STAR, IVAR_INT_NAME(item), "internal ivar or initialization variable", form, 0);
-      if (ispublic(item))
-	scheme_dup_symbol_check(er, CLASS_STAR, IVAR_EXT_NAME(item), "external ivar", form, 0);
-    }
-    item = item->next;
-  }
-  
-  /* Add `super-init' */
-  objl = cons(superinitname, scheme_null);
-  scheme_dup_symbol_check(r, CLASS_STAR, superinitname, "internal ivar or `super-init' variable", form, 0);
-
-  /* Add `this' */
-  objl = cons(thisname, objl);
-  scheme_dup_symbol_check(r, CLASS_STAR, thisname, "internal ivar or `this' variable", form, 0);
-
-  /* Add input args (they end up in reverse order in the environment) */
-  item = ivars;
-  while (item && isinput(item)) {
-    objl = cons(item->name, objl);
-    item = item->next;
-  }
-
-  /* scheme_end_dup_symbol_check(); */
-
-  objenv = scheme_add_compilation_frame(objl, pubenv, SCHEME_AUTO_UNBOX);
-
-  if (!rec) {
-    /* Just expanding: */
-    Scheme_Object *first, *last, *il, *expanded_args;
-
-    superclass = scheme_expand_expr(superclass, env, depth);
-
-    {
-      int i;
-      for (i = 0; i < num_interfaces; i++) {
-	Scheme_Object *ei;
-	ei = scheme_expand_expr(interfaces[i], env, depth);
-	interfaces[i] = ei;
-      }
-      
-      il = scheme_null;
-      for (i = num_interfaces; i--; ) {
-	il = cons(interfaces[i], il);
-      }
-    }
-
-    l = make_args;
-    first = scheme_null;
-    last = NULL;
-    while (!SCHEME_NULLP(l)) {
-      Scheme_Object *pr;
-
-      if (SCHEME_PAIRP(l)) {
-	Scheme_Object *arg;
-
-	arg = SCHEME_CAR(l);
-	l = SCHEME_CDR(l);
-
-	if (SCHEME_PAIRP(arg)) {
-	  arg = scheme_make_pair(SCHEME_CAR(arg),
-				 scheme_expand_expr(SCHEME_CDR(arg),
-						    objenv, depth));
-	}
-	
-	pr = scheme_make_pair(arg, scheme_null);
-      } else {
-	pr = l;
-	l = scheme_null;
-      }
-
-      if (last)
-	SCHEME_CDR(last) = pr;
-      else
-	first = pr;
-      last = pr;
-    }
-    expanded_args = first;
-
-    l = SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(form)))));
-    first = scheme_null;
-    last = NULL;
-    while (!SCHEME_NULLP(l)) {
-      vars = SCHEME_CAR(l);
-
-      tag = SCHEME_CAR(vars);
-
-      if (SAME_OBJ(tag, pub_symbol) 
-	  || SAME_OBJ(tag, ovr_symbol) 
-	  || SAME_OBJ(tag, pri_symbol))
-	vars = expandall(vars, objenv, depth, 1, NULL);
-      else if (SAME_OBJ(tag, seq_symbol))
-	vars = cons(tag, scheme_expand_list(SCHEME_CDR(vars), objenv, depth));
-      else if (SAME_OBJ(tag, inh_symbol) 
-	       || SAME_OBJ(tag, ren_symbol)) {
-	vars = vars;
-      } else
-	break;
-
-      vars = cons(vars, scheme_null);
-
-      if (!last)
-	first = vars;
-      else
-	SCHEME_CDR(last) = vars;
-
-      last = vars;
-      l = SCHEME_CDR(l);
-    }
-
-    return cons(class_star_symbol, 
-		cons(cons(thisname, 
-			  cons(superinitname, scheme_null)),
-		     cons(superclass,
-			  cons(il,
-			       cons(expanded_args, first)))));
-  } else {
-    /* Compiling: */
-    Scheme_Compile_Info lam;
-    Scheme_Compile_Info *recs;
-    short dcs, *dcm;
-
-    data = MALLOC_ONE_TAGGED(Class_Data);
-    data->type = scheme_class_data_type;
-
-    data->defname = rec[drec].value_name;
-    scheme_compile_rec_done_local(rec, drec);
-
-    recs = MALLOC_N_RT(Scheme_Compile_Info, num_interfaces + 1);
-    scheme_init_compile_recs(rec, drec, recs, num_interfaces + 1);
-
-    data->super_init_name = superinitname;
-    {
-      Scheme_Object *cs;
-      cs = scheme_compile_expr(superclass, env, recs, 0);
-      data->super_expr = cs;
-    }
-    
-    {
-      int i;
-      for (i = 0; i < num_interfaces; i++) {
-	Scheme_Object *ci;
-	ci = scheme_compile_expr(interfaces[i], env, recs, i + 1);
-	interfaces[i] = ci;
-      }
-    }
-
-    data->num_interfaces = num_interfaces;
-    data->interface_exprs = interfaces;
-
-    scheme_merge_compile_recs(rec, drec, recs, num_interfaces + 1);
-
-    scheme_init_lambda_rec(rec, drec, &lam, 0);
-  
-    CompileItemList(form, ivars, objenv, data, &lam, 0);
-
-    scheme_merge_lambda_rec(rec, drec, &lam, 0);
-
-    data->ivars = ivars;
-
-    data->num_args = num_args;
-    data->num_required_args = num_required_args;
-    data->num_arg_vars = num_arg_vars;
-
-    InitData(data);
-
-    data->max_let_depth = (lam.max_let_depth
-			   + data->num_arg_vars
-			   + data->num_ivar
-			   + data->num_private
-			   + data->num_ref
-			   + 2); /* this + super-init = 2 */
-
-    scheme_env_make_closure_map(firstenv, &dcs, &dcm);
-    data->closure_size = dcs;
-    data->closure_map = dcm;
-
-    return scheme_make_syntax_compile(DefineClass_Link, 
-				      (Scheme_Object *)data);
-  }
-}
-
-static Scheme_Object *DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
-				  Scheme_Compile_Info *rec, int drec)
-{
-  return Do_DefineClass(form, env, rec, drec, 0);
-}
-
-static Scheme_Object *DefineClass_expand(Scheme_Object *form, Scheme_Comp_Env *env,
-					 int depth)
-{
-  return Do_DefineClass(form, env, NULL, 0, depth);
-}
-
-/**********************************************************************/
-
-static Scheme_Object *CV_Bundle(ClassVariable *cvar)
-{
-  Scheme_Object *l = scheme_null, *f;
-
-  while (cvar) {
-    if (isref(cvar))
-      f = cvar->u.source.name;
-    else
-      f = cvar->u.value;
-    l = cons(_IVAR_EXT_NAME(cvar),
-	     cons(scheme_make_integer(cvar->vartype),
-		  cons(f, l)));
-    cvar = cvar->next;
-  }
-
-  return l;
-}
-
-#define BAD_CCD "bad compiled class definition"
-
-static ClassVariable *CV_Unbundle(Scheme_Object *l)
-{
-  ClassVariable *cvar = NULL, *prev;
-  Scheme_Object *v;
-
-  while (!SCHEME_NULLP(l)) {
-    prev = cvar;
-    cvar = MALLOC_ONE_RT(ClassVariable);
-#ifdef MZTAG_REQUIRED
-    cvar->type = scheme_rt_class_var;
-#endif
-    cvar->next = prev;
-
-    cvar->name = SCHEME_CAR(l);
-    l = SCHEME_CDR(l);
-
-    cvar->vartype = (short)SCHEME_INT_VAL(SCHEME_CAR(l));
-    l = SCHEME_CDR(l);
-
-    v = SCHEME_CAR(l);
-    if (isref(cvar)) {
-     cvar->u.source.name = v;
-    } else
-      cvar->u.value = v;
-    l = SCHEME_CDR(l);
-  }
-
-  return cvar;
-}
-
-static Scheme_Object *write_Class_Data(Scheme_Object *obj)
-{
-  Class_Data *data;
-  int i;
-  Scheme_Object *l = scheme_null;
-
-  data = (Class_Data *)obj;
-  
-  for (i = 0; i < data->num_interfaces; i++) {
-    l = cons(data->interface_exprs[i], l);
-  }
-
-  return cons(CV_Bundle(data->ivars),
-	      cons(data->super_expr,
-		   cons(data->super_init_name,
-			cons(scheme_make_integer(data->num_args),
-			     cons(scheme_make_integer(data->num_required_args),
-				  cons(scheme_make_integer(data->num_arg_vars),
-				       cons(scheme_make_integer(data->max_let_depth),
-					    cons(scheme_make_svector(data->closure_size,
-								     data->closure_map),
-						 cons(data->defname
-						      ? data->defname
-						      : scheme_null,
-						      cons(scheme_make_integer(data->num_interfaces),
-							   l))))))))));
-}
-
-static Scheme_Object *read_Class_Data(Scheme_Object *obj)
-{
-  Scheme_Object *v;
-  Class_Data *data;
-  int i;
-
-  data = MALLOC_ONE_TAGGED(Class_Data);
-  data->type = scheme_class_data_type;
-
-  {
-    ClassVariable *cvar;
-    cvar = CV_Unbundle(SCHEME_CAR(obj));
-    data->ivars = cvar;
-  }
-  obj = SCHEME_CDR(obj);
-
-  data->super_expr = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
-
-  data->super_init_name = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
-  
-  data->num_args = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
-  obj = SCHEME_CDR(obj);
-
-  data->num_required_args = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
-  obj = SCHEME_CDR(obj);
-
-  data->num_arg_vars = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
-  obj = SCHEME_CDR(obj);
-
-  data->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
-  obj = SCHEME_CDR(obj);
-
-  v = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
-
-  data->closure_size = SCHEME_SVEC_LEN(v);
-  data->closure_map = SCHEME_SVEC_VEC(v);
-  
-  data->defname = SCHEME_CAR(obj);
-  if (SCHEME_NULLP(data->defname))
-    data->defname = 0;
-  obj = SCHEME_CDR(obj);
-
-  data->num_interfaces = SCHEME_INT_VAL(SCHEME_CAR(obj));
-  obj = SCHEME_CDR(obj);
-  {
-    Scheme_Object **sa;
-    sa = MALLOC_N(Scheme_Object*, data->num_interfaces);
-    data->interface_exprs = sa;
-  }
-
-  for (i = data->num_interfaces; i--; ) {
-    data->interface_exprs[i] = SCHEME_CAR(obj);
-    obj = SCHEME_CDR(obj);
-  }
-
-  InitData(data);
-
-  return (Scheme_Object *)data;
-}
+/************************************************************/
 
 static int CompareSymbolNames(Scheme_Object **a, Scheme_Object **b)
 {
@@ -2439,7 +840,7 @@ static Scheme_Object *read_Interface_Data(Scheme_Object *obj)
   /* Sort names: */
   qsort((char *)data->names, data->num_names,
 	sizeof(Scheme_Object *), 
-	(Compare_Proc)CompareObjectPtrs); 
+	(Compare_Proc)scheme_CompareObjectPtrs); 
 
   return (Scheme_Object *)data;
 }
@@ -2464,7 +865,7 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
 
   superclass = (Scheme_Class *)sup;
 
-  InstallHeritage(sclass, superclass);
+  scheme_InstallHeritage(sclass, superclass);
 
   num_methods += superclass->num_public;
 
@@ -2525,12 +926,12 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
     sclass->defname = s;
   }
 
-  install_class_interface(sclass);
+  scheme_install_class_interface(sclass);
 
   return (Scheme_Object *)sclass;
 }
 
-static const char *get_class_name(Scheme_Object *sclass, const char *mode)
+const char *scheme_iget_class_name(Scheme_Object *sclass, const char *mode)
 {
   Scheme_Class *c = (Scheme_Class *)sclass;
   const char *cl, *dn;
@@ -2567,7 +968,7 @@ static const char *get_class_name(Scheme_Object *sclass, const char *mode)
   return r;
 }
 
-static const char *get_interface_name(Scheme_Object *i, const char *mode)
+const char *scheme_iget_interface_name(Scheme_Object *i, const char *mode)
 {
   Scheme_Object *n;
 
@@ -2881,7 +1282,7 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
   } else
     a->data.defname = NULL;
 
-  InitData(&a->data);
+  scheme_InitData(&a->data);
 
   return a;
 }
@@ -2903,7 +1304,7 @@ Scheme_Object *scheme_create_class(Scheme_Class_Assembly *a,
 
   a->data.interface_exprs = interfaces;
 
-  o = _DefineClass_Execute((Scheme_Object *)&a->data, TRUE);
+  o = scheme_DefineClass_Execute((Scheme_Object *)&a->data, TRUE);
 
   cl = (Scheme_Class *)o;
   if (cl->priminit == pi_NOT)
@@ -2952,7 +1353,7 @@ scheme_make_interface_assembly(const char *name, int n_supers, int n_names, Sche
   /* Sort names: */
   qsort((char *)a->data.names, n_names,
 	sizeof(Scheme_Object *), 
-	(Compare_Proc)CompareObjectPtrs); 
+	(Compare_Proc)scheme_CompareObjectPtrs); 
 
   return a;
 }
@@ -2977,7 +1378,7 @@ static Scheme_Object *CloseMethod(CMethod *cmethod, Internal_Object *obj)
 					 cmethod->maxa);
 }
 
-static int DoFindName(int num_public, Scheme_Object **pn, Scheme_Object *symbol)
+int scheme_DoFindName(int num_public, Scheme_Object **pn, Scheme_Object *symbol)
 {
   int p, w, o;
   Scheme_Object *n;
@@ -3374,7 +1775,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
   } else if (((sclass->priminit == pi_NOT) || (sclass->priminit == pi_NOT_OVER_CPP)) && (irec->init_level >= level)) {
     if (sclass->superclass->pos > -1) {
       const char *cl;
-      cl = get_class_name((Scheme_Object *)sclass, " in class: ");
+      cl = scheme_iget_class_name((Scheme_Object *)sclass, " in class: ");
 
       scheme_raise_exn(MZEXN_OBJECT,
 		       CREATE_OBJECT ": initialization did not invoke %s%s",
@@ -3469,7 +1870,7 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
 	|| ((sclass->num_args >= 0) && (argc > sclass->num_args))) {
       const char *cl;
 
-      cl = get_class_name((Scheme_Object *)sclass, "initialization for class: ");
+      cl = scheme_iget_class_name((Scheme_Object *)sclass, "initialization for class: ");
       if (!*cl)
 	cl = "class initialization";
       scheme_wrong_count(cl, 
@@ -3534,7 +1935,7 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
   if (!((sclass->priminit == pi_NOT) || (sclass->priminit == pi_NOT_OVER_CPP))) {
     if (irec->init_level && (irec->init_level >= level)) {
       const char *cl;
-      cl = get_class_name((Scheme_Object *)sclass, " for class: ");
+      cl = scheme_iget_class_name((Scheme_Object *)sclass, " for class: ");
       
       scheme_raise_exn(MZEXN_OBJECT,
 		       CREATE_OBJECT ": superclass never initialized%s",
@@ -3607,8 +2008,8 @@ static Scheme_Object *DoSuperInitPrim(SuperInitData *data,
   if (data->irec->init_level <= data->level) {
     Scheme_Class **heritage = ((Scheme_Class *)data->o->o.sclass)->heritage;
     const char *cl;
-    cl = get_class_name((Scheme_Object *)heritage[data->level + 1], 
-			" in class: ");
+    cl = scheme_iget_class_name((Scheme_Object *)heritage[data->level + 1], 
+				" in class: ");
     scheme_raise_exn(MZEXN_OBJECT,
 		     "multiple intializations of superclass%s",
 		     cl);
@@ -3658,7 +2059,7 @@ Scheme_Object *scheme_get_generic_data(Scheme_Object *clori,
   } else {
     Scheme_Interface *in = (Scheme_Interface *)clori;
     
-    sp = DoFindName(in->num_names, in->names, name);
+    sp = scheme_DoFindName(in->num_names, in->names, name);
 
     if (sp >= 0) {
       vp = in->name_map[sp];
@@ -3703,7 +2104,7 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
     if (NOT_SAME_OBJ((Scheme_Object *)sclass, data->clori)) {
       if (!scheme_is_subclass((Scheme_Object *)sclass, data->clori)) {
 	const char *cl;
-	cl = get_class_name(data->clori, ": ");
+	cl = scheme_iget_class_name(data->clori, ": ");
 	scheme_raise_exn(MZEXN_OBJECT,
 			 "generic for %s: object not an instance of the generic's class%s",
 			 scheme_symbol_name(data->ivar_name),
@@ -3719,7 +2120,7 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
     map = find_implementation((Scheme_Object *)sclass, data->clori, &offset);
     if (!map) {
       const char *inn;
-      inn = get_interface_name(data->clori, ": ");
+      inn = scheme_iget_interface_name(data->clori, ": ");
       scheme_raise_exn(MZEXN_OBJECT,
 		       "generic for %s: object not an instance of the generic's interface%s",
 		       scheme_symbol_name(data->ivar_name),
@@ -3770,9 +2171,9 @@ static Scheme_Object *MakeGeneric(int argc, Scheme_Object *argv[])
 
   if (!data) {
     if (SCHEME_CLASSP(src))
-      s = get_class_name(src, " in class: ");
+      s = scheme_iget_class_name(src, " in class: ");
     else
-      s = get_interface_name(src, " in interface: ");
+      s = scheme_iget_interface_name(src, " in interface: ");
   
     scheme_raise_exn(MZEXN_OBJECT,
 		     MAKE_GENERIC ": can't find instance variable: %S%s",
@@ -3822,7 +2223,7 @@ static Scheme_Object *IVar(int argc, Scheme_Object *argv[])
   if (!v) {
     const char *cl;
 
-    cl = get_class_name(obj->o.sclass, " in class: ");
+    cl = scheme_iget_class_name(obj->o.sclass, " in class: ");
     
     scheme_raise_exn(MZEXN_OBJECT,
 		     IVAR ": instance variable not found: %S%s",
@@ -4006,7 +2407,7 @@ static Scheme_Object *IvarInInterface(int c, Scheme_Object *p[])
 
   in = (Scheme_Interface *)p[1];
 
-  if (DoFindName(in->num_names, in->names, p[0]) >= 0)
+  if (scheme_DoFindName(in->num_names, in->names, p[0]) >= 0)
     return scheme_true;
 
   sclass = in->supclass;
@@ -4134,6 +2535,8 @@ static Scheme_Object *PSubObjectDetail(Scheme_Object *obj, int argc, Scheme_Obje
 
 void scheme_init_object(Scheme_Env *env)
 {
+  scheme_init_objclass(env);
+
   if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
     register_traversers();
@@ -4141,39 +2544,15 @@ void scheme_init_object(Scheme_Env *env)
 
     REGISTER_SO(null_class);
 
-    REGISTER_SO(seq_symbol);
-    REGISTER_SO(pub_symbol);
-    REGISTER_SO(ovr_symbol);
-    REGISTER_SO(pri_symbol);
-    REGISTER_SO(inh_symbol);
-    REGISTER_SO(ren_symbol);
-    
-    REGISTER_SO(class_star_symbol);
     REGISTER_SO(interface_symbol);
 
-    seq_symbol = scheme_intern_symbol("sequence");
-    pub_symbol = scheme_intern_symbol("public");
-    ovr_symbol = scheme_intern_symbol("override");
-    pri_symbol = scheme_intern_symbol("private");
-    inh_symbol = scheme_intern_symbol("inherit");
-    ren_symbol = scheme_intern_symbol("rename");
-    
-    class_star_symbol = scheme_intern_symbol("#%class*/names");
     interface_symbol = scheme_intern_symbol("#%interface");
 
-    scheme_register_syntax("dc", DefineClass_Execute);
     scheme_register_syntax("if", Interface_Execute);
 
-    scheme_install_type_writer(scheme_class_data_type, write_Class_Data);
-    scheme_install_type_reader(scheme_class_data_type, read_Class_Data);
     scheme_install_type_writer(scheme_interface_data_type, write_Interface_Data);
     scheme_install_type_reader(scheme_interface_data_type, read_Interface_Data);
   }
-
-  scheme_add_global_keyword(CLASS_STAR_W_NAMES, 
-			    scheme_make_compiled_syntax(DefineClass, 
-							DefineClass_expand), 
-			    env);
 
   scheme_add_global_keyword(INTERFACE, 
 			    scheme_make_compiled_syntax(Interface, 

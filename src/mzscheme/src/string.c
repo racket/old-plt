@@ -1091,6 +1091,9 @@ int scheme_string_has_null(Scheme_Object *o)
   return 0;
 }
 
+char *scheme_getenv_hack;
+char *scheme_getenv_hack_value;
+
 static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
 {
 #ifdef GETENV_FUNCTION
@@ -1105,9 +1108,12 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
 
   if (s)
     return scheme_make_string(s);
-  else
 #endif
-    return scheme_false;
+
+  if (scheme_getenv_hack && !strcmp(SCHEME_STR_VAL(argv[0]), scheme_getenv_hack))
+    return scheme_make_string(scheme_getenv_hack_value);
+
+  return scheme_false;
 }
 
 static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])

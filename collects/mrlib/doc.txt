@@ -373,3 +373,56 @@ bitmap. The container determines the font that is used for the bitmap
 label. The result is a bitmap (with a mask) that is suitabel for use
 as a button% label.
 
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+                  _cache-image-snip.ss_
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+This library is the core data structure for the image.ss
+teachpack. Images in the image.ss library are instances of
+the _cache-image-snip%_ class. It provides these methods:
+
+  > (send a-cache-image-snip get-bitmap) -> bitmap
+
+    Builds (if not yet built) an bitmap corresponding to
+    this snip and returns it.
+
+  > (send a-cache-image-snip get-pinhole) -> (values number number)
+
+    returns the pinhole coordinates for this image, counting
+    from the top-left of the image.
+
+  > (send a-cache-image-snip get-size) -> (values number number)
+
+    returns the width and height for the image.
+
+  > (send a-cache-image-snip get-argb) -> argb
+
+    Returns a pixel array for this image, forcing it to be
+    computed.
+
+  > (send a-cache-image-snip get-argb/no-compute) -> (union #f argb)
+
+    Returns a pixel array for this image or #f if it has not
+    been computed yet.
+
+The library defines a new type, argb, that represents a
+bitmap, but with alpha values.
+
+In addition, the librari provides these functions:
+
+> (overlay-bitmap argb dx dy color-bitmap mask-bitmap) -> argb
+  builds a new argb after overlaying color-bitmap (with masking
+  based on mask-bitmap) onto argb at (dx, dy) from the top-left.
+
+> build-bitmap
+> flatten-bitmap
+           
+> argb->cache-image-snip
+> argb->bitmap
+           
+> make-argb 
+> argb-vector
+> argb-width

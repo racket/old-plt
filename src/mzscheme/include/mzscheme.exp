@@ -24,6 +24,7 @@ scheme_weak_suspend_thread
 scheme_weak_resume_thread
 scheme_block_until
 scheme_in_main_thread
+scheme_cancel_sleep
 scheme_tls_allocate
 scheme_tls_set
 scheme_tls_get

@@ -1212,10 +1212,10 @@ static void tcp_accept_needs_wakeup(Scheme_Object *listener, void *fds)
 #endif
 }
 
-static int tcp_check_connect(Scheme_Object *connector)
+static int tcp_check_connect(Scheme_Object *connector_p)
 {
 #ifdef USE_MAC_TCP
-  return ((TCPiopb *)connector)->ioResult != inProgress;
+  return ((TCPiopb *)connector_p)->ioResult != inProgress;
 #else
 #ifdef USE_SOCKETS_TCP
   tcp_t s;
@@ -1227,7 +1227,7 @@ static int tcp_check_connect(Scheme_Object *connector)
   INIT_DECL_FDSET(writefds, 1);
   INIT_DECL_FDSET(exnfds, 1);
 
-  s = (tcp_t)connector;
+  s = *(tcp_t *)connector_p;
 
   MZ_FD_ZERO(writefds);
   MZ_FD_SET(s, writefds);
@@ -1250,11 +1250,11 @@ static int tcp_check_connect(Scheme_Object *connector)
 #endif
 }
 
-static void tcp_connect_needs_wakeup(Scheme_Object *connector, void *fds)
+static void tcp_connect_needs_wakeup(Scheme_Object *connector_p, void *fds)
 {
 #ifdef USE_SOCKETS_TCP
   void *fds1, *fds2;
-  tcp_t s = (tcp_t)connector;
+  tcp_t s = *(tcp_t *)connector_p;
   
   fds1 = MZ_GET_FDSET(fds, 1);
   fds2 = MZ_GET_FDSET(fds, 2);
@@ -2045,8 +2045,13 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	scheme_file_open_count++;
 	
 	if (inprogress) {
+	  tcp_t *sptr;
+
+	  sptr = (tcp_t *)scheme_malloc_atomic(sizeof(tcp_t));
+	  *sptr = s;
+
           BEGIN_ESCAPEABLE(closesocket_w_decrement, s);
-	  scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)s, (float)0.0);
+	  scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)sptr, (float)0.0);
 	  END_ESCAPEABLE();
 
 	  /* Check whether connect succeeded, or get error: */
@@ -2063,7 +2068,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	    /* getsockopt() seems not to work in Windows 95, so use the
 	       result from select(), which seems to reliably detect an error condition */
 	    if (!status) {
-	      if (tcp_check_connect((Scheme_Object *)s) == -1) {
+	      if (tcp_check_connect((Scheme_Object *)sptr) == -1) {
 		status = 1;
 		errno = WSAECONNREFUSED; /* guess! */
 	      }

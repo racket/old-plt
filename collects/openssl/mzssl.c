@@ -13,18 +13,18 @@
 # include <fcntl.h>
 # include <unistd.h>
 # include <errno.h>
+# define SOCK_ERRNO() errno
 # define NOT_WINSOCK(x) (x)
 # define INVALID_SOCKET (-1)
 # define WAS_EINPROGRESS(e) ((e == EINPROGRESS))
-# define mz_strerror(x) dup_errstr(strerror(x))
 # define mz_hstrerror(x) dup_errstr(hstrerror(x))
 #endif
 
 #ifdef USE_WINSOCK_TCP
 # include <winsock.h>
+# define SOCK_ERRNO() WSAGetLastError()
 # define NOT_WINSOCK(x) 0
 # define WAS_EINPROGRESS(e) ((e == WSAEINPROGRESS))
-# define mz_strerror(x) "Unknown error"
 # define mz_hstrerror(x) "Unknown error"
 #endif
 
@@ -56,8 +56,8 @@ struct sslplt {
   SSL *ssl;
   char ibuffer, obuffer;
   char ib_used, ob_used;
-  Scheme_Object *lock;
   char close_in, close_out;
+  char write_blocked_reason; /* 0 => might not be blocked, 1 => for read, 2 => for write */
   struct sslplt *next;
 };
 
@@ -65,7 +65,7 @@ struct sslplt {
  * TOP-LEVEL THREAD: This is the routine and data involved with running the  *
  * top level thread (the one that helps us fake a couple guarantees).        *
  *****************************************************************************/
-Scheme_Object *list_lock = NULL;
+Scheme_Object *daemon_lock = NULL;
 struct sslplt *ssls = NULL;
 
 /* create_ register_sslplt: called when a new sslplt structure needs to be 
@@ -77,49 +77,174 @@ struct sslplt *create_register_sslplt(SSL *ssl)
   sslplt->ssl = ssl;
   sslplt->ib_used = 0; sslplt->ob_used = 0; 
   sslplt->close_in = 0; sslplt->close_out = 0;
-  sslplt->lock = scheme_make_sema(1);
-  scheme_wait_sema(list_lock, 0);
-  sslplt->next = ssls;
-  ssls = sslplt;
-  scheme_post_sema(list_lock);
   return sslplt;
 }
+
+int check_socket_ready(int s, int for_write)
+{
+  DECL_FDSET(writefds, 1);
+  DECL_FDSET(exnfds, 1);
+  struct timeval time = {0, 0};
+  int res;
+
+  INIT_DECL_FDSET(writefds, 1);
+  INIT_DECL_FDSET(exnfds, 1);
+
+  MZ_FD_ZERO(writefds);
+  MZ_FD_SET(s, writefds);
+  MZ_FD_ZERO(exnfds);
+  MZ_FD_SET(s, exnfds);
+
+  do {
+    res = select(s + 1, 
+		 for_write ? NULL : writefds, 
+		 for_write ? writefds : NULL, 
+		 exnfds, &time);
+  } while((res == 0) && NOT_WINSOCK(errno == EINTR));
+
+  return res;
+}
+
+void socket_add_fds(int s, void *fds, int for_write)
+{
+  void *fds1, *fds2;
+  
+  fds1 = MZ_GET_FDSET(fds, (for_write ? 1 : 0));
+  fds2 = MZ_GET_FDSET(fds, 2);
+  MZ_FD_SET(s, (fd_set *)fds1);
+  MZ_FD_SET(s, (fd_set *)fds2);
+}
+
+int daemon_ready(Scheme_Object *ignored)
+{
+  struct sslplt *cur;
+
+  for (cur = ssls; cur; cur = cur->next) {
+    if (!cur->write_blocked_reason)
+      return 1;
+    else
+      check_socket_ready(BIO_get_fd(SSL_get_wbio(cur->ssl), NULL),
+			 (cur->write_blocked_reason == 2));
+  }
+}
+
+void deamon_needs_wakeup(Scheme_Object *ignored, void *fds)
+{
+  struct sslplt *cur;
+
+  for (cur = ssls; cur; cur = cur->next) {
+    if (!cur->write_blocked_reason)
+      scheme_cancel_sleep();
+    else
+      socket_add_fds(BIO_get_fd(SSL_get_wbio(cur->ssl), NULL),
+		     fds,
+		     (cur->write_blocked_reason == 2));
+  }
+}
+
 
 /* write_close_thread: this is the thread that flushes out our buffers
    automatically and/or closes items which need closing */
 Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 {
   struct sslplt *cur, *prev;
-  int did_something = 0;
+  int empty;
 
   /* this thread should not terminate unless killed externally */
-  while(1) {
-    scheme_wait_sema(list_lock, 0);
-    cur = ssls; prev = NULL; did_something = 0;
-    while(cur) {
-      if(scheme_wait_sema(cur->lock, 1)) {
-        if(cur->ob_used) {
-          int status = SSL_write(cur->ssl, &(cur->obuffer), 1);
-          if(status > 1) cur->ob_used = 0;
-          scheme_post_sema(cur->lock);
-          prev = cur; cur = cur->next;
-          did_something = 1;
-        } else if(cur->close_in && cur->close_out) {
-          struct sslplt *killed = cur;
-          cur = cur->next;
-          SSL_free(killed->ssl);
-          did_something = 1;
-          /* no need to post anything, since this is dead */
-        } else {
-          scheme_post_sema(cur->lock);
-	  prev = cur; cur = cur->next;
+  while (1) {
+    scheme_wait_sema(daemon_lock, 0);
+
+    while (1) {
+      cur = ssls; prev = NULL;
+      while (cur) {
+	int status, drop = 1;
+
+	if (cur->ob_used) {
+	  cur->write_blocked_reason = 0;
+	  status = SSL_write(cur->ssl, &(cur->obuffer), 1);
+	  if (status > 1) {
+	    cur->ob_used = 0;
+	  } else {
+	    int err;
+	    drop = 0;
+	    err = SSL_get_error(cur->ssl, status);
+	    if (err == SSL_ERROR_WANT_READ)
+	      cur->write_blocked_reason = 1;
+	    else if (err == SSL_ERROR_WANT_WRITE)
+	      cur->write_blocked_reason = 2;
+	    else {
+	      /* Some error. We drop the char, and assume
+		 that it's not a transient error, so the
+		 next action will find the same error. */
+	      drop = 1;
+	    }
+	  }
+	} else if (cur->close_in && cur->close_out) {
+	  /* Apparently a force close */
+          SSL_free(cur->ssl);
         }
-      } else { prev = cur; cur = cur->next; }
+	/* there shouldn't be a 3rd possibility */
+	
+	if (drop) {
+	  prev = cur; 
+	} else{
+	  if (prev)
+	    prev->next = cur->next;
+	  else
+	    ssls = cur->next;
+	}
+	cur = cur->next;
+      }
+      empty = !ssls;
+   
+      if (empty)
+	break;
+
+      /* wait until something becomes unblocked, or something new is queued */
+      scheme_block_until(daemon_ready, deamon_needs_wakeup, NULL, (float)0.0);
     }
-    scheme_post_sema(list_lock);
-    if(did_something) scheme_making_progress();
-    scheme_thread_block((float)0.0);
   }
+}
+
+/*****************************************************************************
+ * ERROR FUNCTION: 
+ *****************************************************************************/
+
+/* Copy error strings in case a thread swap happens
+   between the time the string is obtained and
+   the string is put into an error message. */
+static const char *dup_errstr(const char *s) {
+  char *t;
+  long len;
+  if (s){
+    len = strlen(s);
+    t = scheme_malloc_atomic(len);
+    memcpy(t, s, len);
+    return t;
+  } else
+    return s;
+}
+
+static int get_ssl_error_msg(int errid, const char **msg, int status, int has_status)
+{
+  if ((errid == SSL_ERROR_SYSCALL) && has_status) {
+    if (status == 0) {
+      *msg = "unexpected EOF";
+    } else {
+      *msg = NULL;
+      errid = SOCK_ERRNO();
+    }
+  } else {
+    const char *c;
+
+    c = dup_errstr(ERR_reason_error_string(errid));
+    if (c)
+      *msg = c;
+    else
+      *msg = "Unknown error";
+  }
+
+  return errid;
 }
 
 /*****************************************************************************
@@ -132,35 +257,47 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 /* this is the new subtype we're creating */
 Scheme_Object *ssl_input_port_type = NULL; 
 
+/* forward decls: */
+static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds);
+static int sslin_char_ready(Scheme_Input_Port *port);
+
 /* ssl_get_string: read a sequence of bytes into a buffer given to us. This is 
    made severely annoying by the nonblocking nature of the socket stream and 
    the possibly blocking nature that mzscheme might want from us. */
-long ssl_get_string(Scheme_Input_Port *port, char *buffer, long offset,
-		    long size, int nonblocking) 
+long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
+		       long size, int nonblocking, 
+		       int *stuck_why, int err_ok) 
 {
   const char *errstr = "Unknown error";
+  int err = 0;
   long status = 0;
   long bytes_read = 0;
   struct sslplt *ssl = (struct sslplt *)SCHEME_INPORT_VAL(port);
 
-  /* make sure people aren't being sneaky */
-  if(ssl->close_in) {
-    errstr = "read from closed port!"; goto read_error;
-  }
-  
   /* check the buffer */
   if(ssl->ib_used) {
     buffer[offset++] = ssl->ibuffer;
     bytes_read++; 
+    ssl->ib_used = 0;
   }
 
-  while(bytes_read != size) {
+  while (!bytes_read) {
+    /* make sure people aren't being sneaky */
+    if(ssl->close_in) {
+      errstr = "read from closed port!";
+      goto read_error;
+    }
+    
+    /* re-check writes,if any are blocked, since we're touching the
+       ssl channel */
+    ssl->write_blocked_reason = 0;
+  
     /* read the data. maybe. hopefully. please. */
     status = SSL_read(ssl->ssl, buffer+offset+bytes_read, size-bytes_read);
 
     if(status < 1) {
       /* see what kind of error this was */
-      int err = SSL_get_error(ssl->ssl, status);
+      err = SSL_get_error(ssl->ssl, status);
 
       /* see if we've hit the end of file */
       if(err == SSL_ERROR_ZERO_RETURN) {
@@ -169,66 +306,124 @@ long ssl_get_string(Scheme_Input_Port *port, char *buffer, long offset,
 	  return EOF;
 	else
 	  return bytes_read;
-      } else if((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
+      } else if ((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
         /* critical error */
-	const char *temperr = ERR_reason_error_string(err);
-	errstr = temperr ? temperr : errstr;
+	if (!err_ok) return 0;
+
+	err = get_ssl_error_msg(err, &errstr, status, 1);
         goto read_error;
       }
-    } else bytes_read += status;
 
-    if(nonblocking) break;
+      *stuck_why = ((err == SSL_ERROR_WANT_READ) ? 1 : 2);
+    } else
+      bytes_read += status;
 
-    scheme_making_progress();
-    scheme_thread_block((float)0.0);
+    if (nonblocking)
+      break;
+
+    /* It might be tempting at this point to block on the fd
+       forreading if SSL_ERROR_WANT_READ. That would be a bad
+       idea, because another thread might be using the port,
+       and might shift it into SSL_ERROR_WANT_WRITE mode.
+       Use the general sll input blocking functions. */
+
+    scheme_block_until((Scheme_Ready_Fun)sslin_char_ready, 
+		       (Scheme_Needs_Wakeup_Fun)sslin_need_wakeup,
+		       (void *)port, (float)0.0);
   }
   
   return bytes_read;
 
  read_error:
-  scheme_raise_exn(MZEXN_I_O_PORT_READ, port, "ssl-read: error reading (%s)",
-		   errstr);
+  scheme_raise_exn(MZEXN_I_O_PORT_READ, port, "ssl-read: error reading (%Z)",
+		   err, errstr);
   return 0; /* needless, but it makes GCC happy */
+}
+
+long ssl_get_string(Scheme_Input_Port *port, char *buffer, long offset,
+		    long size, int nonblocking) 
+{
+  int stuck_why;
+
+  return ssl_do_get_string(port, buffer, offset, size, nonblocking, &stuck_why, 1);
 }
 
 /* sslin_char_ready: return 1 (true) iff a nonblocking call to get_string 
    can read at least one character (that is, it won't return 0). This 
    function is the cause of a bit of suffering, actually. */
-int sslin_char_ready(Scheme_Input_Port *port)
+static int sslin_do_char_ready(Scheme_Input_Port *port, int *stuck_why)
 {
   struct sslplt *ssl = SCHEME_INPORT_VAL(port);
-  int status;
+  char buf[1];
+  
+  *stuck_why = 0;
+
+  if (ssl->close_in) return 1;
 
   /* see if the buffer has something in it, and if so, return true */
   if(ssl->ib_used) return 1;
 
   /* otherwise, try to read a character in */
-  status = SSL_read(ssl->ssl, &ssl->ibuffer, 1);
-  if(status == 1) ssl->ib_used = 1; 
+  if (ssl_do_get_string(port, buf, 0, 1, 1, stuck_why, 0)) {
+    ssl->ib_used = 1;
+    ssl->ibuffer = ((unsigned char *)buf)[0];
+    return 1;
+  }
+
+  if (!*stuck_why) {
+    /* not-yet-reported error */
+    return 1;
+  }
 
   /* nothing buffered and we can't read, so the answer is no */
-  return ssl->ib_used;
+  return 0;
+}
+
+static int sslin_char_ready(Scheme_Input_Port *port)
+{
+  int stuck_why;
+
+  return sslin_do_char_ready(port, &stuck_why);
 }
 
 /* sslin_close: close down a buffer, freeing the temporary structures we
    created. */
 void sslin_close(Scheme_Input_Port *port)
 {
-  ((struct sslplt *)SCHEME_INPORT_VAL(port))->close_in = 1;
+  struct sslplt *ssl;
+  ssl= (struct sslplt *)SCHEME_INPORT_VAL(port);
+
+  ssl->close_in = 1;
+  ssl->write_blocked_reason = 0;
+
+  if (ssl->close_out)
+    SSL_free(ssl->ssl);
 }
 
 /* sslin_need_wakeup: called when the input port is blocked to determine 
-   what exactly it's blocked on. */
-void sslin_need_wakeup(Scheme_Input_Port *port, void *fds)
+   what exactly it's blocked on. We have to try a read to find out
+   why it's blocked. */
+static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds)
 {
   struct sslplt *ssl = SCHEME_INPORT_VAL(port);
-  long wfd = BIO_get_fd(SSL_get_wbio(ssl->ssl), NULL);
   long rfd = BIO_get_fd(SSL_get_rbio(ssl->ssl), NULL);
   void *fds2;
-  
-  fds2 = MZ_GET_FDSET(fds, 2);
-  MZ_FD_SET(wfd, (fd_set *)fds2);
-  MZ_FD_SET(rfd, (fd_set *)fds2);
+  int stuck_why;
+
+  if (sslin_do_char_ready(port, &stuck_why)) {
+    /* Need wakeup now! */
+    scheme_cancel_sleep();
+  } else {
+    if (stuck_why == 1) {
+      /* waiting for read */
+      fds2 = MZ_GET_FDSET(fds, 0);
+      MZ_FD_SET(rfd, (fd_set *)fds2);
+    } else {
+      /* waiting for write */
+      fds2 = MZ_GET_FDSET(fds, 1);
+      MZ_FD_SET(rfd, (fd_set *)fds2);
+    }
+  }
 }
 
 /* make_sslin_port: called to create a scheme input port to return to the
@@ -257,6 +452,10 @@ Scheme_Input_Port *make_named_sslin_port(SSL *ssl, struct sslplt *d, char *n)
 /* this is the new subtype we're creating */
 Scheme_Object *ssl_output_port_type = NULL;
 
+/* forward decls: */
+static int sslout_char_ready(Scheme_Output_Port *port);
+static void sslout_need_wakeup(Scheme_Output_Port *port, void *fds);
+
 /* write_string: write some bits of data out to the wire, if possible. This
    is made complicated by a host of problems. */
 long write_string(Scheme_Output_Port *port, const char *buffer, long offset, 
@@ -264,72 +463,79 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
 {
   struct sslplt *ssl = (struct sslplt *)SCHEME_OUTPORT_VAL(port);
   const char *errstr = "Unknown error";
+  int err = 0;
   int status = 0;
   long wrote_bytes = 0;
 
   /* make sure people aren't trying to do something sneaky */
   if(ssl->close_out) {
-    errstr = "write to closed port!"; goto write_error;
+    errstr = "write to closed port!"; 
+    goto write_error;
   }
 
   /* this is all very complicated due to rarely_block being three valued */
-  if(scheme_wait_sema(ssl->lock, rarely_block == 2)) {
-    while(ssl->ob_used) {
-      status = SSL_write(ssl->ssl, &(ssl->obuffer), 1);
-      if(status < 1) {
-        int err = SSL_get_error(ssl->ssl, status);
-        if((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
-          const char *temperr = ERR_reason_error_string(err);
-          scheme_post_sema(ssl->lock);
-	  errstr = temperr ? temperr : errstr;
-	  goto write_error;
-        }
-        if(rarely_block == 2) break;
-        scheme_thread_block((float)0.0);
-      } else ssl->ob_used = 0;
-    }
-    scheme_post_sema(ssl->lock);
-    if(ssl->ob_used) return 0;
-  } else return 0;
-
-  while(wrote_bytes != size) {
-    status = SSL_write(ssl->ssl, buffer+offset+wrote_bytes, size-wrote_bytes);
-    if(status < 1) {
-      int err = SSL_get_error(ssl->ssl, status);
-      if((status != SSL_ERROR_WANT_READ) && (status != SSL_ERROR_WANT_WRITE)) {
-        const char *temperr = ERR_reason_error_string(status);
-	errstr = temperr ? temperr : errstr;
-	goto write_error;
-      }
-    } else wrote_bytes += status;
-
-    if(rarely_block) break;
-
-    scheme_making_progress();
-    scheme_thread_block((float)0.0);
+  if (ssl->ob_used) {
+    if (rarely_block == 2)
+      return 0;
+    /* Wait until it's writable */
+    scheme_block_until((Scheme_Ready_Fun)sslout_char_ready, 
+		       (Scheme_Needs_Wakeup_Fun)sslout_need_wakeup,
+		       (void *)port, (float)0.0);      
   }
 
-  return wrote_bytes;
-  
+  /* We get here only where !ssl->ob_used. */
+
+  /* Try to write a decent sized chunk: */
+  status = SSL_write(ssl->ssl, buffer+offset+wrote_bytes, size-wrote_bytes);
+
+  if (status > 0)
+    return status; /* success */
+
+  err = SSL_get_error(ssl->ssl, status);
+  if((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
+    err = get_ssl_error_msg(err, &errstr, status, 1);
+    goto write_error;
+  }
+  if (rarely_block == 2) 
+    return 0;
+
+  /* Can't write a decent-sized chunk. Put one char in the outgoing
+     buffer, and block asnecessary until the char is flushed */
+   {
+    int was_empty;
+
+    ssl->ob_used = 1;
+    ssl->obuffer= buffer[offset];
+
+    /* Put this SLL into the list of things that the deamon must
+       process. */
+    was_empty = !ssls;
+    ssl->next = ssls;
+    ssls = ssl;
+
+    /* Wake up the daemon thread if the list usedto be empty: */
+    if (was_empty)
+      scheme_post_sema(daemon_lock);
+
+    /* We "wrote" one byte. The daemon will ensure that the byte
+       actually goes out. */
+
+    return 1;
+  }
+
  write_error:
-  scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-read: error writing (%s)",
-		   errstr);
+  scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-read: error writing (%Z)",
+		   err, errstr);
   return 0; /* needless, but it makes GCC happy */
 }
 
 /* sslout_char_ready: return 1 (true) iff a nonblocking (version 1, not 
    version 2) call to write_string will write at least one character. */
-int sslout_char_ready(Scheme_Output_Port *port)
+static int sslout_char_ready(Scheme_Output_Port *port)
 {
   struct sslplt *ssl = SCHEME_OUTPORT_VAL(port);
-  int val = 1;
 
-  if(scheme_wait_sema(ssl->lock, 1)) {
-    val = ssl->ob_used;
-    scheme_post_sema(ssl->lock);
-  } 
-
-  return !val;
+  return !ssl->ob_used;
 }
 
 /* sslout_close: close down a buffer, freeing the temporary structures we
@@ -337,28 +543,32 @@ int sslout_char_ready(Scheme_Output_Port *port)
 void sslout_close(Scheme_Output_Port *port)
 {
   struct sslplt *ssl = (struct sslplt *)SCHEME_OUTPORT_VAL(port);
-  
-  SSL_shutdown(ssl->ssl);
+  int forced = 0;
+
+  if (!ssl->ob_used)
+    SSL_shutdown(ssl->ssl);
+  else if (scheme_close_should_force_port_closed()) {
+    /* Tell daemon to give up: */
+    ssl->ob_used = 0;
+    ssl->write_blocked_reason = 0;
+    forced = 1;
+  }
+
   ssl->close_out = 1;
+  if (!forced && ssl->close_in) {
+    SSL_free(ssl->ssl);
+  }
 }
 
-/* sslout_need_wakeup: called when the output port is blocked to determine
-   what exactly it's blocked on. */
-void sslout_need_wakeup(Scheme_Output_Port *port, void *fds)
+/* sslout_need_wakeup: we don't do anything, because low-level
+   blocking is handled by the daemon thread */
+static void sslout_need_wakeup(Scheme_Output_Port *port, void *fds)
 {
-  struct sslplt *ssl = SCHEME_OUTPORT_VAL(port);
-  long wfd = BIO_get_fd(SSL_get_wbio(ssl->ssl), NULL);
-  long rfd = BIO_get_fd(SSL_get_rbio(ssl->ssl), NULL);
-  void *fds2;
-  
-  fds2 = MZ_GET_FDSET(fds, 2);
-  MZ_FD_SET(wfd, (fd_set *)fds2);
-  MZ_FD_SET(rfd, (fd_set *)fds2);
 }
 
 /* make_sslout_port: called to create a scheme output port to return to the
    caller, eventually. */
-Scheme_Output_Port *make_sslout_port(SSL *ssl, struct sslplt *data)
+static Scheme_Output_Port *make_sslout_port(SSL *ssl, struct sslplt *data)
 {
   return scheme_make_output_port(ssl_output_port_type, data, write_string, 
 				 sslout_char_ready, sslout_close, 
@@ -483,42 +693,20 @@ struct hostent *get_host_by_number(const char *address)
   return NULL;
 }
 
-/* ssl_check_connect: determine if a connection's been established, and if
-   so, return 1. Stolen slmost entirely from tcp_check_connect in 
-   ${PLTHOME}/src/mzscheme/src/network.c */
-int ssl_check_connect(Scheme_Object *connector)
+/* ssl_check_sock: determine if a socket is ready for reading or
+   writing; conector_p is an array of integers: socket and 
+   0=>read/1=>write. */
+int ssl_check_sock(Scheme_Object *connector_p)
 {
-  DECL_FDSET(writefds, 1);
-  DECL_FDSET(exnfds, 1);
-  struct timeval time = {0, 0};
-  int res;
-
-  INIT_DECL_FDSET(writefds, 1);
-  INIT_DECL_FDSET(exnfds, 1);
-
-  MZ_FD_ZERO(writefds);
-  MZ_FD_SET((int)connector, writefds);
-  MZ_FD_ZERO(exnfds);
-  MZ_FD_SET((int)connector, exnfds);
-
-  do {
-    res = select((int)connector + 1, NULL, writefds, exnfds, &time);
-  } while((res == 0) && NOT_WINSOCK(errno == EINTR));
-
-  return res;
+  return check_socket_ready(((int *)connector_p)[0], ((int *)connector_p)[1]);
 }
 
-/* ssl_connect_needs_wakeup: set the file descriptors we're blocking on
-   for a connection. stolen entirely from tcp_connect_needs_wakeup in
-   ${PLTHOME}/src/mzscheme/src/network.c */
-void ssl_connect_needs_wakeup(Scheme_Object *connector, void *fds)
+/* ssl_check_sock: block on socket for reading or
+   writing; conector_p is an array of integers: socket and 
+   0=>read/1=>write. */
+void ssl_sock_needs_wakeup(Scheme_Object *connector_p, void *fds)
 {
-  void *fds1, *fds2;
-  
-  fds1 = MZ_GET_FDSET(fds, 1);
-  fds2 = MZ_GET_FDSET(fds, 2);
-  MZ_FD_SET((int)connector, (fd_set *)fds1);
-  MZ_FD_SET((int)connector, (fd_set *)fds2);
+  socket_add_fds(((int *)connector_p)[0], fds, ((int *)connector_p)[1]);
 }
 
 #ifdef USE_UNIX_SOCKETS_TCP
@@ -538,22 +726,85 @@ void closesocket(long s)
 void close_socket_and_dec(unsigned short sock)
 {
   closesocket(sock);
-/*   --scheme_file_open_count; */
 }
 
-#ifdef USE_UNIX_SOCKETS_TCP
-/* Copy error strings in case a thread swap happens
-   between the time the string is obtained and
-   the string is put into an error message. */
-static char *dup_errstr(char *s) {
-  char *t;
-  long len;
-  len = strlen(s);
-  t = scheme_malloc_atomic(len);
-  memcpy(t, s, len);
-  return t;
+/*****************************************************************************
+ * SOCKET->SSL connection completion                                         *
+ *****************************************************************************/
+
+static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
+				 char *address, int port)
+{
+  SSL_CTX *ctx = NULL;
+  BIO *bio = NULL;
+  SSL *ssl = NULL;
+  struct sslplt *sslplt = NULL;
+  const char *errstr = "Unknown error";
+  Scheme_Object *retval[2]; 
+  int status;
+  int err = 0;
+  int *sptr = NULL;
+
+  /* set up the BIO pipe */
+  bio = BIO_new_socket(sock, BIO_CLOSE);
+  if(!bio) { errstr = "couldn't create BIO stream"; goto clean_up_and_die; }
+
+  /* set up the SSL context object */
+  ctx = SSL_CTX_new(meth);
+  if(!ctx) { 
+    err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+    goto clean_up_and_die; 
+  }
+
+  /* set up the full SSL object */
+  ssl = SSL_new(ctx);
+  if(!ssl) {
+    err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+    goto clean_up_and_die; 
+  }
+  SSL_set_bio(ssl, bio, bio);
+
+  /* see if we can connect via SSL */
+  status = SSL_connect(ssl);
+  while(status < 1) {
+    status = SSL_get_error(ssl, status);
+    if ((status == SSL_ERROR_WANT_READ) 
+	|| (status == SSL_ERROR_WANT_WRITE)) {
+      if (!sptr) {
+	sptr = (int *)scheme_malloc_atomic(2 * sizeof(int));
+	sptr[0] = sock;
+      }
+      sptr[1] = (status == SSL_ERROR_WANT_WRITE);
+
+      BEGIN_ESCAPEABLE(close_socket_and_dec, sock);
+      scheme_block_until(ssl_check_sock, ssl_sock_needs_wakeup, 
+			 (void *)sptr, (float)0.0);
+      END_ESCAPEABLE();
+    } else {
+      err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+      goto clean_up_and_die;
+    }
+    status = SSL_connect(ssl);
+  }
+  scheme_making_progress();
+
+  sslplt = create_register_sslplt(ssl);
+  retval[0] = (Scheme_Object*)make_named_sslin_port(ssl, sslplt, address);
+  retval[1] = (Scheme_Object*)make_sslout_port(ssl, sslplt);
+  return scheme_values(2, retval);
+
+ clean_up_and_die:
+  if(sock) closesocket(sock);
+  if(ctx) SSL_CTX_free(ctx);
+  if(ssl) SSL_free(ssl);
+  scheme_raise_exn(MZEXN_I_O_TCP, 
+		   "%s: connection to %s, port %d failed (%Z)",
+		   name,
+		   address, port, err, errstr);
+  
+  /* not strictly necessary, but it makes our C compiler happy */
+  return NULL;
 }
-#endif
 
 /*****************************************************************************
  * SCHEME EXTERNAL FUNCTION IMPLEMENTATIONS: These are the implemenations of *
@@ -566,14 +817,10 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   unsigned short nport = check_port_and_convert(argc, argv);
   unsigned long port = SCHEME_INT_VAL(argv[1]);
   SSL_METHOD *meth = check_encrypt_and_convert(argc, argv, 1);
-  SSL_CTX *ctx = NULL;
-  BIO *bio = NULL;
-  SSL *ssl = NULL;
   struct hostent *host = NULL;
-  struct sslplt *sslplt = NULL;
-  Scheme_Object *retval[2]; 
   int status;
   const char *errstr = "Unknown error";
+  int err = 0;
   struct sockaddr_in addr;
   int sock;
 #ifndef PROTOENT_IS_INT
@@ -591,7 +838,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   }
 #endif
   sock = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
-  if (sock == INVALID_SOCKET)  { errstr = mz_strerror(errno); goto clean_up_and_die; }
+  if (sock == INVALID_SOCKET)  { errstr = NULL; err = errno; goto clean_up_and_die; }
 #ifdef USE_WINSOCK_TCP
   {
     unsigned long ioarg = 1;
@@ -604,7 +851,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   /* lookup hostname and get a reasonable structure */
   host = get_host_by_number(address);
   if(!host) host = gethostbyname(address);
-  if(!host) { errstr = mz_hstrerror(h_errno); goto clean_up_and_die; }
+  if(!host) { err = h_errno; errstr = mz_hstrerror(err); goto clean_up_and_die; }
     
   /* make the network connection */
   addr.sin_family = AF_INET;
@@ -616,73 +863,41 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   /* here's the complicated bit */
   if(status == -1) {
     if(!WAS_EINPROGRESS(errno)) { 
-      errstr = mz_strerror(errno); goto clean_up_and_die; 
+      errstr = NULL; err= errno; goto clean_up_and_die; 
     }
     
-/*     scheme_file_open_count++; */
-    BEGIN_ESCAPEABLE(close_socket_and_dec, sock);
-    scheme_block_until(ssl_check_connect, ssl_connect_needs_wakeup, 
-		       (void *)sock, (float)0.0);
-    END_ESCAPEABLE();
+    {
+      int *sptr;
+
+      sptr = (int *)scheme_malloc_atomic(2 * sizeof(int));
+      sptr[1] = sock;
+      sptr[0] = 1;
+
+      BEGIN_ESCAPEABLE(close_socket_and_dec, sock);
+      scheme_block_until(ssl_check_sock, ssl_sock_needs_wakeup, 
+			 (void *)sptr, (float)0.0);
+      END_ESCAPEABLE();
+    }
 
     /* see if the connection succeeded, or die if it didn't */
     {
       int so_len = sizeof(status);
       if(getsockopt(sock, SOL_SOCKET,SO_ERROR, (void*)&status, &so_len) != 0) {
-/* 	scheme_file_open_count--; */ errstr = mz_strerror(status); 
+	errstr = NULL;
+	err = status; 
 	goto clean_up_and_die;
       }
     }
   }
 
-  /* set up the BIO pipe */
-  bio = BIO_new_socket(sock, BIO_CLOSE);
-  if(!bio) { errstr = "couldn't create BIO stream"; goto clean_up_and_die; }
-
-  /* set up the SSL context object */
-  ctx = SSL_CTX_new(meth);
-  if(!ctx) { 
-    const char *temperr = ERR_reason_error_string(ERR_get_error()); 
-    errstr = temperr ? temperr : "Error setting up SSL context";
-    goto clean_up_and_die; 
-  }
-
-  /* set up the full SSL object */
-  ssl = SSL_new(ctx);
-  if(!ssl) {
-    const char *temperr = ERR_reason_error_string(ERR_get_error()); 
-    errstr = temperr ? temperr : "Error in creation of SSL structure";
-    goto clean_up_and_die; 
-  }
-  SSL_set_bio(ssl, bio, bio);
-
-  /* see if we can connect via SSL */
-  status = SSL_connect(ssl);
-  while(status < 1) {
-    status = SSL_get_error(ssl, status);
-    if((status != SSL_ERROR_WANT_READ) && (status != SSL_ERROR_WANT_WRITE)) {
-      const char *temp = ERR_reason_error_string(ERR_get_error());
-      if(temp) errstr = temp;
-      goto clean_up_and_die;
-    }
-    scheme_thread_block((float)0.0);
-    status = SSL_connect(ssl);
-  }
-  scheme_making_progress();
-
-  sslplt = create_register_sslplt(ssl);
-  retval[0] = (Scheme_Object*)make_named_sslin_port(ssl, sslplt, address);
-  retval[1] = (Scheme_Object*)make_sslout_port(ssl, sslplt);
-  return scheme_values(2, retval);
+  return finish_ssl("ssl-connect", sock, meth, address, port);
 
  clean_up_and_die:
-  if(sock) closesocket(sock);
-  if(host) free(host);
-  if(ctx) SSL_CTX_free(ctx);
-  if(ssl) SSL_free(ssl);
+  if (sock != INVALID_SOCKET) closesocket(sock);
   scheme_raise_exn(MZEXN_I_O_TCP, 
-		   "ssl-connect: connection to %s, port %d failed: %s",
-		   SCHEME_STR_VAL(argv[0]), SCHEME_INT_VAL(argv[1]), errstr);
+		   "ssl-connect: connection to %s, port %d failed (%Z)",
+		   SCHEME_STR_VAL(argv[0]), SCHEME_INT_VAL(argv[1]), 
+		   err, errstr);
   
   /* not strictly necessary, but it makes our C compiler happy */
   return NULL;
@@ -706,10 +921,10 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   Scheme_Custodian *newcust = scheme_make_custodian(NULL);
   
   SSL_library_init();
-  list_lock = scheme_make_sema(1);
+  daemon_lock = scheme_make_sema(0);
   ssl_input_port_type = scheme_make_port_type("<ssl-input-port>");
   ssl_output_port_type = scheme_make_port_type("<ssl-output-port>");
-  scheme_register_extension_global(&list_lock, 4);
+  scheme_register_extension_global(&daemon_lock, 4);
   scheme_register_extension_global(&ssls, 4);
   scheme_register_extension_global(&ssl_input_port_type, 4);
   scheme_register_extension_global(&ssl_output_port_type, 4);

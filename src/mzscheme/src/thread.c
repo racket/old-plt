@@ -181,6 +181,8 @@ static int have_activity = 0;
 int scheme_active_but_sleeping = 0;
 static int thread_ended_with_activity;
 
+static int needs_sleep_cancelled;
+
 static int tls_pos = 0;
 
 #ifdef MZ_PRECISE_GC
@@ -2044,6 +2046,8 @@ static int check_sleep(int need_activity, int sleep_now)
     fds = NULL;
 #endif
     
+    needs_sleep_cancelled = 0;
+
     p = scheme_first_thread;
     while (p) {
       int merge_time = 0;
@@ -2079,7 +2083,10 @@ static int check_sleep(int need_activity, int sleep_now)
       } 
       p = p->next;
     }
-    
+  
+    if (needs_sleep_cancelled)
+      return 0;
+  
     if (sleep_now)
       scheme_sleep(max_sleep_time, fds);
     else
@@ -2089,6 +2096,11 @@ static int check_sleep(int need_activity, int sleep_now)
   }
 
   return 0;
+}
+
+void scheme_cancel_sleep()
+{
+  needs_sleep_cancelled = 1;
 }
 
 void scheme_check_threads(void)

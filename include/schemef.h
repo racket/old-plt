@@ -89,6 +89,8 @@ MZ_EXTERN int scheme_block_until(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Sc
 
 MZ_EXTERN int scheme_in_main_thread(void);
 
+MZ_EXTERN void scheme_cancel_sleep(void);
+
 MZ_EXTERN int scheme_tls_allocate();
 MZ_EXTERN void scheme_tls_set(int pos, void *v);
 MZ_EXTERN void *scheme_tls_get(int pos);

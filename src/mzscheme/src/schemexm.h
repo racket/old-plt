@@ -34,6 +34,7 @@
 #define scheme_weak_resume_thread (scheme_extension_table->scheme_weak_resume_thread)
 #define scheme_block_until (scheme_extension_table->scheme_block_until)
 #define scheme_in_main_thread (scheme_extension_table->scheme_in_main_thread)
+#define scheme_cancel_sleep (scheme_extension_table->scheme_cancel_sleep)
 #define scheme_tls_allocate (scheme_extension_table->scheme_tls_allocate)
 #define scheme_tls_set (scheme_extension_table->scheme_tls_set)
 #define scheme_tls_get (scheme_extension_table->scheme_tls_get)

@@ -34,6 +34,7 @@
   scheme_extension_table->scheme_weak_resume_thread = scheme_weak_resume_thread;
   scheme_extension_table->scheme_block_until = scheme_block_until;
   scheme_extension_table->scheme_in_main_thread = scheme_in_main_thread;
+  scheme_extension_table->scheme_cancel_sleep = scheme_cancel_sleep;
   scheme_extension_table->scheme_tls_allocate = scheme_tls_allocate;
   scheme_extension_table->scheme_tls_set = scheme_tls_set;
   scheme_extension_table->scheme_tls_get = scheme_tls_get;

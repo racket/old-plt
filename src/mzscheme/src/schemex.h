@@ -73,6 +73,7 @@ void (*scheme_weak_suspend_thread)(Scheme_Thread *p);
 void (*scheme_weak_resume_thread)(Scheme_Thread *p);
 int (*scheme_block_until)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
 int (*scheme_in_main_thread)(void);
+void (*scheme_cancel_sleep)(void);
 int (*scheme_tls_allocate)();
 void (*scheme_tls_set)(int pos, void *v);
 void *(*scheme_tls_get)(int pos);

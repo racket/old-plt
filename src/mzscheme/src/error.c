@@ -130,6 +130,8 @@ void scheme_init_error_escape_proc(Scheme_Thread *p)
   %L = line number, -1 means no line
   %e = error number for strerror()
   %E = error number for platform-specific error string
+  %Z = potential platform-specific error number; additional char*
+       is either NULL or a specific error message
 */
 
 static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
@@ -173,6 +175,10 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
       case 'e':	  
       case 'E':
 	ints[ip++] = mzVA_ARG(args, int);
+	break;
+      case 'Z':
+	ints[ip++] = mzVA_ARG(args, int);
+	ptrs[pp++] = mzVA_ARG(args, char*);
 	break;
       case 'S':
       case 'V':
@@ -273,17 +279,25 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	  break;
 	case 'e':
 	case 'E':
+	case 'Z':
 	  {
 	    int en;
+	    char *es;
 	    en = ints[ip++];
-	    if (en) {
-	      char *es;
+
+	    if (type == 'Z')
+	      es = ptrs[pp++];
+	    else
+	      es = NULL;
+
+	    if (en || es) {
 #ifdef NO_STRERROR_AVAILABLE
-	      es = "Unknown error";
+	      if (!es)
+		es = "Unknown error";
 #else
 # ifdef DOS_FILE_SYSTEM
 	      char mbuf[256];
-	      if (type == 'E') {
+	      if ((type != 'E') && !es) {
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, 
 				  en, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 				  mbuf, 255, NULL)) {
@@ -296,12 +310,10 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 		    else
 		      break;
 		  }
-		} else
-		  es = NULL;
-	      } else
-		es = NULL;
-	      if (!es)
+		}
+	      }
 # endif
+	      if (!es)
 		es = strerror(en);
 #endif
 	      tlen = strlen(es) + 24;

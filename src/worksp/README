@@ -3,7 +3,7 @@ MzScheme and MrEd with Microsoft Visual C++ (MSVC) version 6.
 If you have downloaded MzCOM, the directory also contains an 
 MSVC makefile and project file for MzCOM. 
 
-MzScheme (but not MzCOM and MrEd) also compiles with Cygwin gcc (a
+MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a
 free compiler from GNU and Cygnus Solutions); to compile with gcc,
 follow the instructions in plt\src\README (there is a short
 Windows-specific section in that file.)
@@ -11,8 +11,8 @@ Windows-specific section in that file.)
 
 As always, please report bugs via one of the following:
   - Help Desk's "submit bug report" link  (preferred)
-  - http://www.cs.rice.edu/CS/PLT/Bugs/
-  - plt-bugs@cs.rice.edu                  (last resort)
+  - http://bugs.plt-scheme.org/
+  - bugs@plt-scheme.org                   (last resort)
 
 -Matthew Flatt
  PLT

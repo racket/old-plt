@@ -5,9 +5,9 @@ file plt/notes/COPYING.LIB.
 
 Compiled binaries, documentation, and up-to-date information are
 available at
-  http://www.cs.rice.edu/CS/PLT/packages/drscheme/
-  http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
-  http://www.cs.rice.edu/CS/PLT/packages/mred/
+  http://www.plt-scheme.org/software/drscheme/
+  http://www.plt-scheme.org/software/mzscheme/
+  http://www.plt-scheme.org/software/mred/
 
 The MzScheme source code should compile and execute on any Windows,
 MacOS, Unix (Linux), or BeOS platform. The MrEd source code should
@@ -18,8 +18,8 @@ Per-platform instructions are below.
 
 Please report bugs via one of the following:
   - Help Desk's "submit bug report" link  (preferred)
-  - http://www.cs.rice.edu/CS/PLT/Bugs/
-  - plt-bugs@cs.rice.edu                  (last resort)
+  - http://bugs.plt-scheme.org/
+  - bugs@plt-scheme.org                   (last resort)
 
 -Matthew Flatt
  PLT
@@ -40,13 +40,13 @@ MSVC or Cygwin), cd to plt\src\mzscheme\dynsrc and run mkbordyn.bat.
 The mkbordyn.bat script requires bcc23.exe.
 
 ========================================================================
- Compiling for MacOS
+ Compiling for Mac OS (not Mac OS X)
 ========================================================================
 
 Read the instructions in plt/src/mac/README.
 
 ========================================================================
- Compiling for Unix (including Linux), Cygwin, or BeOS
+ Compiling for Unix (including Linux), Cygwin, BeOS, or Mac OS X
 ========================================================================
 
  1. Run the script `configure', which is in the same directory as
@@ -70,9 +70,9 @@ Read the instructions in plt/src/mac/README.
     following platforms:
 
               Windows
-              MacOS (PPC and 68k)
+              Mac OS (PPC and 68k) and Mac OS X
               Linux (x86, PPC, and 68k)
-              Cygwin b20
+              Cygwin
               BeOS
               Solaris (x86 and Sparc)    [see notes below]
               SunOS4 (Sparc)
@@ -112,13 +112,12 @@ Read the instructions in plt/src/mac/README.
     This step copies binaries and libraries into their normal places
     in the plt tree relative to the source directory. For example, the
     `mzscheme' binary is copied for Unix into the directory
-    plt/.bin/<platform>/mzscheme, where <platform> depends on your
-    platform.
+    plt/mzscheme.
 
- 4. Unix (Linux) and BeOS: Run ./install in the plt directory (one
-    directory up from here). Afterwards, plt/bin/setup-plt and
-    plt/bin/mzc should work. If you move the plt tree, simply re-run
-    plt/install.
+ 4. Unix (Linux), BeOS, and Mac OS X: Run ./install in the plt
+    directory (one directory up from here). Afterwards, programs like
+    plt/bin/setup-plt and plt/bin/mzc should work. If you move the plt
+    tree, re-run plt/install.
 
     Cygwin: Create the other executables (besides mred.exe and
     mzscheme.exe) by running
@@ -210,14 +209,11 @@ Configuration Options
 By default, MzScheme is compiled:
 
  * without image dumps (since the application will probably be linked
-   dynamically);
-
- * without using any OS-specific threads; and
+   dynamically); and
 
  * without support for single-precision floating point numbers.
 
 These options can be modified by setting flags in mzscheme/sconfig.h.
-MrEd works only *without* OS-specific threads.
 
 Modifying MzScheme
 ------------------
@@ -231,5 +227,5 @@ Guile Compatibility Library
 ---------------------------
 
 In the mzscheme/ directory, `make libguile' produces a libguile.a
-library that implements the high-level guile interface. See
+library that implements an ancient high-level guile interface. See
 mzscheme/libguile/README.

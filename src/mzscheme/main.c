@@ -490,6 +490,7 @@ int main(int argc, char **argv)
 
   /******* OSKIT init START *******/
 #if defined(OSKIT) && !defined(OSKIT_TEST)
+  start_clock();
   oskit_init_libc();
 
 # ifdef OSK_LINUX_FILESYSTEMS
@@ -510,16 +511,13 @@ int main(int argc, char **argv)
   /* We talk to console directly */
   direct_cons_set_flags(DC_NONBLOCK);
 # else
-  /* C library handles console */
-  /* THIS DOESN'T WORK. I don't know why. */
-#  ifndef OSK_LINUX_FILESYSTEMS
+  /* C library handles console; needs liboskit_freebsd_dev.a. */
+  /* (Initialization here conflicts with OSK_LINUX_FILESYSTEMS). */
   oskit_dev_init();
-#  endif
   oskit_freebsd_init_sc();
+  oskit_dev_probe();
   oskit_console_init();
 # endif
-
-  start_clock();
 #endif
   /******* OSKIT init END *******/
 

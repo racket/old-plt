@@ -28,15 +28,6 @@ fi
 
 LANG="-DNO_TCP_SUPPORT"
 
-# Talk to console directly?
-if [ "y" ] ; then
-  CS="-DUSE_OSKIT_CONSOLE"
-else
-  CS=""
-  OSK_DEV_LIB="-loskit_freebsd_dev"
-  export OSK_DEV_LIB
-fi
-
 # Use Linux FS drivers?
 if [ "" ] ; then
   FS="-DOSK_LINUX_FILESYSTEMS"
@@ -46,4 +37,4 @@ else
   FS=""
 fi
 
-MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $LANG $FS $CS" $TARGET
+MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $LANG $FS" $TARGET

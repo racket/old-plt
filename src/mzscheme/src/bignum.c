@@ -536,9 +536,6 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
   bl = SCHEME_BIGLEN(b);
   al = SCHEME_BIGLEN(a);
 
-  /* Because bignum calculations are not bounded: */
-  SCHEME_USE_FUEL(al * bl);
-
   size = bl + al;
   buffer = (bigdig *)scheme_malloc_atomic(size * sizeof(bigdig));
 
@@ -561,6 +558,8 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
   if ((bl == 1) && (ba[0] < BIG_LO_HALF)) {
     /* Fast simplified version */
     unsigned long m = ba[0];
+
+    SCHEME_USE_FUEL(al);
 
     carry = 0;
     for (i = 0; i < al; i++) {
@@ -588,6 +587,7 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
     memset(buffer, 0, size * sizeof(bigdig));
 
     for (i = 0; i < bl; i++) {
+      SCHEME_USE_FUEL(al);
       carry = 0;
       for (k = 0; k < al; k++) {
 	long a, b, loa, lob, hia, hib;

@@ -1008,7 +1008,12 @@
 						      (struct-type? (cdr base-is-ptr?))
 						      (struct-type-struct (cdr base-is-ptr?))))]
 				[union? (eq? base 'union)]
-				[struct-array? (and base-struct (not pointer?) (number? array-size))])
+				[struct-array? (or (and base-struct (not pointer?) (number? array-size))
+						   (and base-is-ptr? (struct-array-type? (cdr base-is-ptr?))))]
+				[array-size (if (number? array-size)
+						array-size
+						(and struct-array?
+						     (struct-array-type-count (cdr base-is-ptr?))))])
 			   (when (and struct-array?
 				      (> array-size 10))
 			     (log-error "[SIZE] ~a in ~a: Large array of structures at ~a."

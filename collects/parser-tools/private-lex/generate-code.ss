@@ -24,7 +24,7 @@
                         (let ((action (cadr (syntax->list x))))
                           (datum->syntax-object
                            action
-                           `(lambda (get-start-pos get-end-pos get-lexeme return-without-pos lex-buf)
+                           `(lambda (get-start-pos get-end-pos get-lexeme return-without-pos input-port)
                               ,action)
                            action)))
                       (syntax->list rules))))
@@ -135,7 +135,7 @@
   
   (define (compile-table table)
     (let ((code (build-code table)))
-      `(c-lambda (scheme-object scheme-object) ;; lex-buf get-next-char
+      `(c-lambda (scheme-object scheme-object) ;; input-port peek-string
 		 scheme-object 
 		 ,code)))
   

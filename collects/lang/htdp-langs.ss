@@ -112,6 +112,20 @@
                  sharing-printing
                  abbreviate-cons-as-list
                  get-teachpack-names)
+         (define (get-module) '(lib "beginner-abbr.ss" "lang"))
+         (define (get-language-position) '("How to Design Programs" "Beginning Student wth List Abbreviations"))
+         (define (sharing-printing) #f)
+         (define (abbreviate-cons-as-list) #t)
+         (define (get-teachpack-names) '(make-posn posn-x posn-y posn?))
+         (super-instantiate ())))
+      
+      (add-htdp-language
+       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>)
+         (public get-module
+                 get-language-position
+                 sharing-printing
+                 abbreviate-cons-as-list
+                 get-teachpack-names)
          (define (get-module) '(lib "beginner.ss" "lang"))
          (define (get-language-position) '("How to Design Programs" "Beginning Student"))
          (define (sharing-printing) #f)

@@ -6,7 +6,8 @@
     (case (string->symbol d)
       [(help) -10]
       
-      [(beginning) -5]
+      [(beginning) -6]
+      [(beginning-abbr) -5]
       [(intermediate) -4]
       [(advanced) -3]
       
@@ -26,9 +27,10 @@
   
   ; Known manuals:
   (define known-docs
-    '(("beginning" . "PLT DrScheme: Beginning Student Language")
-      ("advanced" . "PLT DrScheme: Advanced Student Language")
-      ("intermediate" . "PLT DrScheme: Intermediate Student Language")
+    '(("beginning" . "Beginning Student Language")
+      ("beginning-abbr" . "Beginning Student with List Abbreviations Language")
+      ("advanced" . "Advanced Student Language")
+      ("intermediate" . "Intermediate Student Language")
       ("drscheme" . "PLT DrScheme: Programming Environment Manual")
       ("r5rs" . "Revised(5) Report on the Algorithmic Language Scheme")
       ("mzscheme" . "PLT MzScheme: Language Manual")

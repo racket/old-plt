@@ -815,7 +815,15 @@
                                         (throws-error (name-id t) (name-src t)))))
                                 (method-throws method))))
            (over? (overrides? name parms inherited-methods)))
-      
+
+      (when (and (memq level '(beginner intermediate))
+                 (member name (map method-record-name inherited-methods))
+                 (not over?))
+        (inherited-overload-error name parms (method-record-atypes 
+                                              (car (filter (lambda (m) (equal? (method-record-name m) name))
+                                                           inherited-methods)))
+                                  (id-src (method-name method))))        
+            
       (when (eq? ret 'ctor)
         (if (regexp-match "\\." (car cname))
             (begin
@@ -1154,6 +1162,18 @@
           (format "Method ~a from ~a has the same name as a class, which is not allowed" m-name class)))
        m-name src)))
 
+  ;inherited-overload-error: string (list type) (list type) src -> void
+  (define (inherited-overload-error name new-type inherit-type src)
+    (let ((n (string->symbol name))
+          (nt (map type->ext-name new-type))
+          (gt (map type->ext-name inherit-type)))
+      (raise-error n
+                   (string-append 
+                    (format "Attempted to override method ~a, but it should have ~a arguments with types ~a.~n"
+                            n (length inherit-type) gt)                                      
+                    (format "Given ~a arguments with types ~a" (length new-type) nt))
+                   n src)))                               
+  
   ;not-ctor-error: string string src -> void
   (define (not-ctor-error meth class src)
     (let ((n (string->symbol meth)))

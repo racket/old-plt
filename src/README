@@ -51,8 +51,8 @@ mkbordyn.bat script requires bcc23.exe.)
 Read the instructions in plt/src/mac/README.
 
 ========================================================================
- Compiling for supported Unix variants (including Linux, but not
-                         Mac OS X) and Cygwin
+ Compiling for supported Unix variants (including Linux),
+               Mac OS X (MzScheme only), or Cygwin (MzScheme only)
 ========================================================================
 
  0. If you have an old PLT installation in the target directory,
@@ -190,10 +190,10 @@ information. As dsitributed, mzscheme/sconfig.h contains
 configurations for the following platforms:
 
               Windows
-              Mac OS (PPC and 68k) and Mac OS X
+              Mac OS (PPC and 68k)
               Linux (x86, PPC, and 68k)
               Cygwin
-              Solaris (x86 and Sparc)    [see notes below]
+              Solaris (x86 and Sparc)
               SunOS4 (Sparc)
               IBM AIX (RS6000)
               SGI IRIX (Mips)

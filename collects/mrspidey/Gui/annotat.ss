@@ -625,7 +625,6 @@
 		    [_ (set! type-snip (make-object editor-snip%))]
 		    [snip-edit (make-object text%)]
 		    [_ (send type-snip set-editor snip-edit)])
-	      (send snip-edit set-style-list (scheme:get-style-list))
 
 	      (dynamic-wind
 	       (lambda ()
@@ -666,7 +665,7 @@
 
        [copy-type-to-clipboard
 	(lambda ()
-	  (let* ([snip-edit (send type-snip get-this-media)])
+	  (let* ([snip-edit (send type-snip get-editor)])
 	    (send snip-edit copy #f 0 0 (send snip-edit last-position))))]
 
        ;; ---------- Making the popup menus

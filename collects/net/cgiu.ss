@@ -1,4 +1,4 @@
-(reference-library "refer.ss")
-(reference-library "cgis.ss" "net")
+(require-library "refer.ss")
+(require-library "cgis.ss" "net")
 
-(define mzlib:cgi@ (reference-library-unit/sig "cgir.ss" "net"))
+(define mzlib:cgi@ (require-library-unit/sig "cgir.ss" "net"))

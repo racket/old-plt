@@ -1,8 +1,8 @@
-(reference-library "macro.ss")
-(reference-library "match.ss")
-(reference-library "file.ss")
+(require-library "macro.ss")
+(require-library "match.ss")
+(require-library "file.ss")
 
-(reference-library "urlu.ss" "net")
+(require-library "urlu.ss" "net")
 
 (invoke-open-unit/sig
   (compound-unit/sig

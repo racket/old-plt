@@ -1332,10 +1332,18 @@ static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const ch
     m = (Scheme_Module *)scheme_hash_get(env->module_registry, name);
 
     if (!m) {
+      char *mred_note;
+
+      if (!strcmp(SCHEME_SYM_VAL(name), "#%mred-kernel")
+	  && !(scheme_strncmp(scheme_banner(), "Welcome to MzScheme", 19)))
+	mred_note = "; need to run in MrEd instead of MzScheme";
+      else
+	mred_note = "";
+
       scheme_raise_exn(MZEXN_MODULE,
-		       "%s: unknown module: %S",
+		       "%s: unknown module: %S%s",
 		       who ? who : "require", 
-		       name);
+		       name, mred_note);
       return NULL;
     }
 

@@ -355,42 +355,53 @@
 	  (send output-delta set-delta-foreground (make-object mred:color% 150 0 150)))
 
 	(private
-	  [io-collected-callback-queued? #f]
+	  [flushing-event-running? #f]
+	  [flush? #f]
 	  [io-collected-thunks null]
-	  [io-collected-edits null]
-	  [io-semaphore #f]
 	  [run-io-collected-thunks
 	   (lambda ()
 
+	     (printf "saved: ~a~n" (length io-collected-thunks))
 	     ;; also need to start edit-sequence in any affected
 	     ;; transparent io boxes.
 	     (begin-edit-sequence)
 	     (for-each (lambda (t) (t)) (reverse io-collected-thunks))
 	     (end-edit-sequence)
 
-	     (set! io-collected-thunks null)
-	     (set! io-collected-edits null)
-	     (semaphore-post io-semaphore)
-	     (set! io-semaphore #f))]
+	     (set! io-collected-thunks null))]
 	  [wait-for-io-to-complete
 	   (lambda ()
-	     (when (and (thread? user-thread)
-			(thread-running? user-thread)
-			io-semaphore)
-	       (semaphore-wait io-semaphore)))]
+	     (let ([s (make-semaphore)])
+	       (mred:queue-callback
+		(lambda ()
+		  (when flush?
+		    (run-io-collected-thunks)
+		    (set! flush? #f))
+		  (semaphore-post s)))
+	       (semaphore-wait s)))]
 	  [queue-io
 	   (lambda (thunk)
 	     (let ([this-eventspace user-eventspace])
-	       (set! io-collected-thunks
-		     (cons
-		      (lambda ()
-			(when (eq? this-eventspace user-eventspace)
-			  (thunk)))
-		      io-collected-thunks)))
-		
-	     (unless io-semaphore
-	       (set! io-semaphore (make-semaphore 0))
-	       (mred:queue-callback run-io-collected-thunks)))])
+	       (system
+		(lambda ()
+		  (mred:queue-callback
+		   (lambda ()
+		     (set! io-collected-thunks
+			   (cons
+			    (lambda ()
+			      (when (eq? this-eventspace user-eventspace)
+				(thunk)))
+			    io-collected-thunks))
+		     (unless flushing-event-running?
+		       (set! flushing-event-running? #t)
+		       (mred:queue-callback
+			(lambda ()
+			  (set! flush? #t)
+			  (set! flushing-event-running? #f))))
+		     (when flush?
+		       (run-io-collected-thunks)
+		       (set! flush? #f))))))))])
+
 
 	(public
 	  [generic-write

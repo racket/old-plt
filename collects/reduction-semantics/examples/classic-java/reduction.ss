@@ -2,7 +2,7 @@
 ;;
 ;; reduction.ss
 ;; Richard Cobbe
-;; $Id: reduction.ss,v 1.1 2004/07/27 22:41:35 cobbe Exp $
+;; $Id: reduction.ss,v 1.2 2004/08/24 20:36:07 cobbe Exp $
 ;;
 ;; Contains the definition of ClassicJava for PLT Redex
 ;;
@@ -46,14 +46,14 @@
   (define cj-lang
     (language [id (variable-except class new ref set send super this cast let
                                    if + - * == and or not null? zero? int bool
-                                   null Object addr)]
+                                   null Object true false)]
 
               [class-name Object id]
               [binop + - * == and or]
               [unop not null? zero?]
 
               [value null
-                     #t #f
+                     true false         ; can't use #t or #f; see below
                      number]            ; either a numeric literal or an addr
 
               [expr value
@@ -87,16 +87,29 @@
                        (unop context)
                        (if context expr expr)]))
 
+  ;; Can't use #t or #f as literals in the language because the PLT Redex
+  ;; pattern matcher can't deal with booleans.
+
   (define cj-id? (language->predicate cj-lang 'id))
+
+  (define bool->rexp
+    (lambda (b)
+      (if b 'true 'false)))
+
+  (define rexp->bool
+    (lambda (r)
+      (cond
+       [(eq? r 'true) #t]
+       [(eq? r 'false) #f])))
 
   ;; delta-1 :: Unary-Prim Value -> Value
   ;; implements unary primitives
   (define delta-1
     (lambda (rator rand)
       (case rator
-        [(null?) (eq? rand 'null)]
-        [(zero?) (= rand 0)]
-        [(not) (not rand)])))
+        [(null?) (bool->rexp (eq? rand 'null))]
+        [(zero?) (bool->rexp (= rand 0))]
+        [(not) (bool->rexp (not (rexp->bool rand)))])))
 
   ;; delta-2 :: Unary-Prim Value Value -> Value
   ;; implements binary primitives
@@ -106,9 +119,9 @@
         [(+) (+ r1 r2)]
         [(-) (- r1 r2)]
         [(*) (* r1 r2)]
-        [(==) (= r1 r2)]
-        [(and) (and r1 r2)]
-        [(or) (or r1 r2)])))
+        [(==) (bool->rexp (= r1 r2))]
+        [(and) (bool->rexp (and (rexp->bool r1) (rexp->bool r2)))]
+        [(or) (bool->rexp (or (rexp->bool r1) (rexp->bool r2)))])))
 
   ;; subst-args :: Tagged-Expr (Listof Value) (Listof ID) -> RExpr
   (define subst-args
@@ -275,7 +288,7 @@
                                            (method-arg-names method)))))))]
 
      ;; [super]
-     (reduction
+     [reduction
       cj-lang
       (program_ store_ (inhole context_
                                (super value_obj
@@ -292,10 +305,10 @@
                                    (cons (term value_obj)
                                          (term (value_arg ...)))
                                    (cons 'this
-                                         (method-arg-names method))))))))
+                                         (method-arg-names method)))))))]
 
      ;; [cast]
-     (reduction
+     [reduction
       cj-lang
       (side-condition
        (program_ store_ (inhole context_ (cast class-name_ value_obj)))
@@ -306,20 +319,20 @@
                        (make-class-type (term class-name_))))))
       (term (program_
              store_
-             ,(replace (term context_) (term hole) (term value_obj)))))
+             ,(replace (term context_) (term hole) (term value_obj))))]
 
      ;; [let]
-     (reduction
+     [reduction
       cj-lang
       (program_ store_ (inhole context_ (let id_ value_rhs expr_body)))
       (term (program_
              store_
              ,(replace (term context_) (term hole)
                        (cj-subst (term id_) (term value_rhs)
-                                 (term expr_body))))))
+                                 (term expr_body)))))]
 
      ;; [xcast]
-     (reduction
+     [reduction
       cj-lang
       (side-condition
        (program_ store_ (inhole context_ (cast class-name_ value_obj)))
@@ -330,36 +343,65 @@
                             (make-class-type (term class-name_)))))))
       (term (program_
              store_
-             "error: bad cast")))
+             "error: bad cast"))]
 
      ;; [ncast]
-     (reduction
+     [reduction
       cj-lang
       (program_ store_ (inhole context_ (cast class-name_ null)))
       (term (program_
              store_
-             (replace (term context_) (term hole) 'null))))
+             (replace (term context_) (term hole) 'null)))]
 
      ;; [nget]
-     (reduction
+     [reduction
       cj-lang
       (program_ store_ (inhole context_ (ref null id id)))
       (term (program_
              store_
-             "error: dereferenced null")))
+             "error: dereferenced null"))]
 
      ;; [nset]
-     (reduction
+     [reduction
       cj-lang
       (program_ store_ (inhole context_ (set null id id value)))
       (term (program_
              store_
-             "error: dereferenced null")))
+             "error: dereferenced null"))]
 
-     ;; FIXME: need if, primop reductions
-     ))
+     ;; [uprim]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole context_ (unop_ value_)))
+      (term (program_
+             store_
+             ,(replace (term context_) (term hole) (delta-1 (term unop_)
+                                                            (term value_)))))]
 
+     ;; [bprim]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole context_ (unop_ value_1 value_2)))
+      (term (program_
+             store_
+             ,(replace (term context_) (term hole)
+                       (delta-2 (term unop_) (term value_1) (term value_2)))))]
 
+     ;; [if-true]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole context_ (if true expr_1 expr_2)))
+      (term (program_
+             store_
+             ,(replace (term context_) (term hole) (term expr_1))))]
+
+     ;; [if-false]
+     [reduction
+      cj-lang
+      (program_ store_ (inhole context_ (if false expr_1 expr_2)))
+      (term (program_
+             store_
+             ,(replace (term context_) (term hole) (term expr_2))))]))
 
   ;; create-instance :: Program Class-Name -> Instance
   (define create-instance
@@ -408,6 +450,4 @@
                                       rhs)
                            (cdr ivars))
                      (cons (car ivars)
-                           (loop (cdr ivars)))))))))))
-
-  )
+                           (loop (cdr ivars))))))))))))

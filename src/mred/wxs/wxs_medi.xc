@@ -63,6 +63,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 // but acutally are implemented with virtual
 @SETMARK X = D
 
+// These don't use `pathname' because they expand internally
 @ X "load-file" : bool LoadFile(nstring=NULL,int=wxMEDIA_FF_GUESS,bool=TRUE);
 @ X "save-file" : bool SaveFile(nstring=NULL,int=wxMEDIA_FF_SAME,bool=TRUE);
 @ X "insert-file" : bool InsertFile(string,int=wxMEDIA_FF_GUESS,bool=TRUE);

@@ -4298,6 +4298,7 @@ class wxTabSnip *objscheme_unbundle_wxTabSnip(Scheme_Object *obj, const char *wh
 
 
 
+// This isn't `pathname' because it expands internally
 
 
 
@@ -4309,6 +4310,7 @@ class wxTabSnip *objscheme_unbundle_wxTabSnip(Scheme_Object *obj, const char *wh
 
 
 
+// This isn't `pathname' because it expands internally
 
 
 

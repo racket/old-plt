@@ -79,6 +79,7 @@
 
 @CLASSBASE wxImageSnip "wx:image-snip":"wx:snip"
 
+// This isn't `pathname' because it expands internally
 @CREATOR (nstring=NULL,long=0,bool=FALSE,bool=TRUE);
 
 @CLASSID wxTYPE_IMAGE_SNIP
@@ -86,6 +87,7 @@
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
 
+// This isn't `pathname' because it expands internally
 @ "load-file" : void LoadFile(nstring,long,bool=FALSE,bool=TRUE);
 
 @ "get-filename" : nstring GetFilename(bool?);

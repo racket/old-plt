@@ -113,8 +113,6 @@ public:
 static GCInit _gcinit;
 #endif
 
-extern "C" char *scheme_get_thread_current_directory(Scheme_Process *p, int *len, int noexn);
-
 static Scheme_Env *global_env;
 
 class MrEdApp: public wxApp
@@ -342,8 +340,6 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   c->ready = 1;
 
   c->handler_running = NULL;
-
-  c->wd = scheme_get_thread_current_directory(scheme_current_process, &c->wdlen, 1);
 
   c->busyState = 0;
 
@@ -709,8 +705,6 @@ static void on_handler_killed(Scheme_Process *p)
   c->alternate = NULL;
   c->alt_data = NULL;
   c->ready_to_go = 0;
-
-  c->wd = scheme_get_thread_current_directory(p, &c->wdlen, 1);
 }
 
 static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
@@ -730,9 +724,6 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
   this_thread->kill_data = c;
   c->ready = 0;
 
-  if (c->wd)
-    scheme_setcwd(c->wd, 1);
-  
   if (!scheme_setjmp(scheme_error_buf)) {
     if (!TheMrEdApp->initialized)
       TheMrEdApp->RealInit();
@@ -751,16 +742,6 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
     }
   }
    
-  int newlen;
-  char *newdir;
-
-  newdir = scheme_getcwd(c->wd, c->wdlen, &newlen, 1);
-  if (!newdir)
-    c->wdlen = 0;
-  else if (newlen > c->wdlen)
-    c->wdlen = newlen;
-  c->wd = newdir;
-
   c->ready = 1;
   c->handler_running = NULL;
   this_thread->on_kill = NULL;

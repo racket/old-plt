@@ -57,9 +57,15 @@ static void memmove(char *dest, char *src, long size)
 #endif
 
 #ifndef WXME_FOR_MRED
-#ifndef wx_mac
-#define KeyType int
+# ifndef wx_mac
+#  define KeyType int
+# endif
 #endif
+
+#ifndef WXME_FOR_MRED
+# define WXGC_CLEANUP_ARG(a) /* empty */
+#else
+# define WXGC_CLEANUP_ARG(a) a
 #endif
 
 /* MSW version needs this for just a little while longer... */
@@ -111,12 +117,12 @@ void wxSnipClass::WriteDone(void)
 
 /***************************************************************/
 
-wxSnip::wxSnip() : wxObject(WXGC_NO_CLEANUP)
+wxSnip::wxSnip() : wxObject(WXGC_CLEANUP_ARG(WXGC_NO_CLEANUP))
 {
   Init();
 }
 
-wxSnip::wxSnip(Bool cleanup) : wxObject(cleanup)
+wxSnip::wxSnip(Bool cleanup) : wxObject(WXGC_CLEANUP_ARG(cleanup))
 {
   Init();
 }

@@ -51,10 +51,6 @@ typedef struct MrEdContext {
   int (*alternate)(void *);
   void *alt_data;
 
-  /* Save current directory across thread creations: */
-  char *wd;
-  int wdlen; /* size of buffer, not name */
-
   /* Used to chain active contexts while reading events: */
   struct MrEdContext *next;
 

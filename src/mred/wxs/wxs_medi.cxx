@@ -92,6 +92,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 // X are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
 
+// These don't use `pathname' because they expand internally
 
 
 

@@ -83,10 +83,19 @@
 		 (when (file-exists? info-file)
 		   (hash-table-put! ht key #f)
 		   (with-handlers ([(lambda (x) #t)
-				    (lambda (x) (void))])
+				    (lambda (x)
+				      (when (and (getenv "MREDDEBUG")
+						 (not (eq? x 'failure)))
+					(printf "~a " info-file)
+					(if (exn? x)
+					    (display (exn-message x))
+					    (write x))
+					(newline))
+				      (void))])
 		     (let* ([info (load info-file)]
-			    [name (info 'name)])
-		       (for-each info required-requests) ; ensure no exceptions
+			    [name (info 'name (lambda () (raise 'failure)))])
+		       (for-each (lambda (x) (info x (lambda () (raise 'failure))))
+				 required-requests)
 		       (hash-table-put! ht key info)))))))
 	   (define pull-from-hash-table
 	     (lambda ()
@@ -107,8 +116,8 @@
 		      [sorted-list
 		       (function:quicksort
 			valid-list
-			(lambda (x y) (string<=? ((vector-ref x 1) 'name) 
-						 ((vector-ref y 1) 'name))))])
+			(lambda (x y) (string<=? ((vector-ref x 1) 'name (lambda () "")) 
+						 ((vector-ref y 1) 'name (lambda () "")))))])
 		 sorted-list)))
 
 	   (define collections/infos
@@ -124,7 +133,7 @@
 	   (define (add-collection collection/info)
 	     (let ([collection (vector-ref collection/info 0)]
 		   [info (vector-ref collection/info 1)])
-	       (gui:add-button (info 'name)
+	       (gui:add-button (info 'name (lambda () "Impossible Name"))
 			       (lambda ()
 				 (app:start-app collection info)))))
 	   

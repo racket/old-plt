@@ -449,17 +449,26 @@ add structu contracts for immutable structs?
   ;; the argument to the result function is the value to test.
   ;; (the result function is the projection)
   
-  (define-struct contract (name proc))
-  
   (define-values (make-flat-contract
                   flat-contract-predicate
-                  flat-contract?)
+                  flat-contract?
+                  
+                  make-contract
+                  contract-name
+                  contract-proc
+                  contract?)
     (let ()
+      (define-struct contract (name proc))
       (define-struct (flat-contract contract) (predicate))
       (values make-flat-contract
               flat-contract-predicate
-              flat-contract?)))
-  
+              flat-contract?
+              
+              make-contract
+              contract-name
+              contract-proc
+              contract?)))
+   
   (define (flat-contract predicate)
     (unless (and (procedure? predicate)
                  (procedure-arity-includes? predicate 1))

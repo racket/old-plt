@@ -1,12 +1,9 @@
 (module runcheck mzscheme
   (require (lib "unitsig.ss"))
-; !!! TEMP TO BE FIXED
-; will need to unquote string constants in this file 
-;  (require (lib "string-constant.ss" "string-constants"))
-; !!! END TEMP
   (require (lib "list.ss"))
   (require (lib "url.ss" "net"))
   (require (lib "getinfo.ss" "setup"))
+  (require (lib "string-constant.ss" "string-constants"))
 
   (require "checksigs.ss")
 
@@ -17,29 +14,10 @@
 
       (import extra-params^ defs^)
 
-      ; temp!!!! until string-constant stuff works with MzScheme
-      (define strings-port 
-	(open-input-file 
-	 (build-path (collection-path "string-constants")
-		     "english-string-constants.ss")))
-
-      (define ss (read strings-port))
-      (close-input-port strings-port)
-	
-      (define (string-constant s)
-	(let ([pr (assoc s ss)])
-	  (if pr
-	      (cadr pr)
-	      "???")))
-      ; !!! end temp
-
       (define download-url-string "http://download.plt-scheme.org/")
 
-      (define check-question 
-	(string-constant 'vc-check-question))
-	
       (define star "*")
-      (define dialog-title (string-constant 'vc-update-dialog-title))
+      (define dialog-title (string-constant vc-update-dialog-title))
 
       (define sync-sem (make-semaphore 0))
 
@@ -142,8 +120,8 @@
 				(set! got-cancel? #t))
 			  (run-thunk
 			   (lambda () 
-			     (show-ok (string-constant 'vc-network-timeout)
-				      (string-constant 'vc-cannot-connect)
+			     (show-ok (string-constant vc-network-timeout)
+				      (string-constant vc-cannot-connect)
 				      #f))))
 			(begin
 			  (sleep 1)
@@ -155,8 +133,8 @@
 	     (set! wait-dialog
 		   (make-wait-dialog 
 		    #f
-		    (string-constant 'vc-please-wait)
-		    (string-constant 'vc-connecting-version-server)
+		    (string-constant vc-please-wait)
+		    (string-constant vc-connecting-version-server)
 		    (lambda ()
 		      (set! got-cancel? #t)
 		      (with-handlers 
@@ -178,8 +156,8 @@
 		     (run-thunk
 		      (lambda ()
 			(show-error-ok
-			 (string-constant 'vc-network-failure)
-			 (string-constant 'vc-cannot-connect))))
+			 (string-constant vc-network-failure)
+			 (string-constant vc-cannot-connect))))
 		     (raise 'network-error))))
 		 (get-pure-port (string->url 
 				 (make-url-string
@@ -226,14 +204,14 @@
 		 (show-ok 
 		  dialog-title
 		  (string-append
-		   (string-constant 'vc-old-binaries)
+		   (string-constant vc-old-binaries)
 		   nl nl
 		   (format 
-		    (string-constant 'vc-binary-information-format)
+		    (string-constant vc-binary-information-format)
 		    binary-version binary-iteration)
 		   nl nl
 		   (format 
-		    (string-constant 'vc-latest-binary-information-format)
+		    (string-constant vc-latest-binary-information-format)
 		    latest-binary-version latest-binary-iteration)
 		   nl nl
 		   "Updates are available at "
@@ -258,7 +236,7 @@
 			       (begin
 				 (set! needs-update #t)
 				 (format 
-				  (string-constant 'vc-update-format)
+				  (string-constant vc-update-format)
 				  package 
 				  installed-version installed-iteration 
 				  latest-version latest-iteration))]
@@ -279,19 +257,18 @@
 		    dialog-title
 		    (string-append
 		     (if needs-update
-			 (string-constant 'vc-need-update-string)
-			 (string-constant 'vc-no-update-string))
+			 (string-constant vc-need-update-string)
+			 (string-constant vc-no-update-string))
 		     nl
 		     " "
 		     (format up-to-format
-			     (string-constant 'vc-binary-name)
+			     (string-constant vc-binary-name)
 			     binary-version binary-iteration))
 		    (if needs-update
 			(string-append
 			 folded-string
 			 nl nl
-			 (string-constant 
-			  'updates-available)
+			 (string-constant vc-updates-available)
 			 " "
 			 download-url-string)
 			folded-string)))))))

@@ -1752,19 +1752,18 @@
 						      ""))
 					  (lambda (t s e)
 					    (send t set-clickback s (sub1 e)
-						  (let ([s #f])
-						    (lambda (a b c)
-						      (let ([fn (put-file "Save Attachement As"
-									  main-frame
-									  #f
-									  fn)])
-							(when fn
-							  (unless s
-							    (set! s (slurp ent)))
-							  (with-output-to-file fn
-							    (lambda ()
-							      (display s))
-							    'truncate/replace)))))
+						  (lambda (a b c)
+						    (let ([fn (put-file "Save Attachement As"
+									main-frame
+									#f
+									fn)])
+						      (when fn
+							(unless s
+							  (set! s (slurp ent)))
+							(with-output-to-file fn
+							  (lambda ()
+							    (display s))
+							  'truncate/replace))))
 						  #f #f)
 					    (send t change-style url-delta s (sub1 e))))
 				  (lambda ()

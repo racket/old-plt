@@ -51,4 +51,6 @@
  play-sound
  get-display-size
  get-color-from-user
- get-font-from-user)
+ get-font-from-user
+ append-edit-operation-items
+ append-edit-font-items)

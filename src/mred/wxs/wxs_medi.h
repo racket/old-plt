@@ -32,11 +32,8 @@ extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object
 extern class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *, const char *, int);
 extern class wxStyleList *objscheme_unbundle_wxStyleList(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxStyleList(class wxStyleList *);
-extern class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxKeymap(class wxKeymap *);
 extern class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *, const char *, int);
-extern class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *, const char *, int);
-extern class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
 extern class wxMediaAdmin *objscheme_unbundle_wxMediaAdmin(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxMediaAdmin(class wxMediaAdmin *);

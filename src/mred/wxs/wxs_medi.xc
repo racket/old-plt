@@ -60,7 +60,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @SYM "paste" : wxEDIT_PASTE
 @SYM "kill" : wxEDIT_KILL
 @SYM "insert-text-box" : wxEDIT_INSERT_TEXT_BOX
-@SYM "insert-graphic-box" : wxEDIT_INSERT_GRAPHIC_BOX
+@SYM "insert-pasteboard-box" : wxEDIT_INSERT_GRAPHIC_BOX
 @SYM "insert-image" : wxEDIT_INSERT_IMAGE
 @SYM "select-all" : wxEDIT_SELECT_ALL
 @ENDSYMBOLS
@@ -140,15 +140,10 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "set-max-undo-history" : void SetMaxUndoHistory(int);
 @ "get-max-undo-history" : int GetMaxUndoHistory();
 
-@ "append-edit-items" : int AppendEditItems(wxMenu!,int=0);
-@ "append-font-items" : int AppendFontItems(wxMenu!,int=0);
-@ "do-edit" : void DoEdit(SYM[editOp],bool=TRUE,long=0);
-@ "do-font" : void DoFont(int,bool=TRUE);
+@ "do-edit-operation" : void DoEdit(SYM[editOp],bool=TRUE,long=0);
 
 @ "set-keymap" : void SetKeymap(wxKeymap^=NULL);
 @ "get-keymap" : wxKeymap^ GetKeymap();
-
-@ "add-buffer-functions" : void AddBufferFunctions(wxKeymap!);
 
 @ "get-style-list" : wxStyleList! GetStyleList();
 @ "set-style-list" : void SetStyleList(wxStyleList!);
@@ -193,9 +188,9 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "write-editor-global-header" : bool wxWriteMediaGlobalHeader(wxMediaStreamOut%);
 @ "write-editor-global-footer" : bool wxWriteMediaGlobalFooter(wxMediaStreamOut%);
 
-@ "add-editor-functions" : void wxAddMediaBufferFunctions(wxKeymap!);
-@ "add-text-editor-functions" : void wxAddMediaEditorFunctions(wxKeymap!);
-@ "add-pasteboard-editor-functions" : void wxAddMediaPasteboardFunctions(wxKeymap!);
+@ "add-editor-keymap-functions" : void wxAddMediaBufferFunctions(wxKeymap!);
+@ "add-text-editor-keymap-functions" : void wxAddMediaEditorFunctions(wxKeymap!);
+@ "add-pasteboard-editor-keymap-functions" : void wxAddMediaPasteboardFunctions(wxKeymap!);
 
 @ "editor-set-x-selection-mode" : void wxMediaSetXSelectionMode(bool);
 

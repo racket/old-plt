@@ -252,7 +252,7 @@ static void init_symset_editOp(void) {
   editOp_wxEDIT_PASTE_sym = scheme_intern_symbol("paste");
   editOp_wxEDIT_KILL_sym = scheme_intern_symbol("kill");
   editOp_wxEDIT_INSERT_TEXT_BOX_sym = scheme_intern_symbol("insert-text-box");
-  editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym = scheme_intern_symbol("insert-graphic-box");
+  editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym = scheme_intern_symbol("insert-pasteboard-box");
   editOp_wxEDIT_INSERT_IMAGE_sym = scheme_intern_symbol("insert-image");
   editOp_wxEDIT_SELECT_ALL_sym = scheme_intern_symbol("select-all");
 }
@@ -386,7 +386,6 @@ static Scheme_Object *bundle_symset_printMethod(int v) {
 // but acutally are implemented with virtual
 
 // These don't use `pathname' because they expand internally
-
 
 
 
@@ -2302,24 +2301,6 @@ static Scheme_Object *os_wxMediaBufferGetStyleList(Scheme_Object *obj, int n,  S
 }
 
 #pragma argsused
-static Scheme_Object *os_wxMediaBufferAddBufferFunctions(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxKeymap* x0;
-
-  
-  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-buffer-functions", 0);
-
-  
-  ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AddBufferFunctions(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxMediaBufferGetKeymap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2358,29 +2339,6 @@ static Scheme_Object *os_wxMediaBufferSetKeymap(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
-static Scheme_Object *os_wxMediaBufferDoFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  Bool x1;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "editor%::do-font");
-  if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "editor%::do-font");
-  } else
-    x1 = TRUE;
-
-  
-  ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->DoFont(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2390,13 +2348,13 @@ static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_
   long x2;
 
   
-  x0 = unbundle_symset_editOp(p[0], "editor%::do-edit");
+  x0 = unbundle_symset_editOp(p[0], "editor%::do-edit-operation");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "editor%::do-edit");
+    x1 = objscheme_unbundle_bool(p[1], "editor%::do-edit-operation");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "editor%::do-edit");
+    x2 = objscheme_unbundle_integer(p[2], "editor%::do-edit-operation");
   } else
     x2 = 0;
 
@@ -2406,54 +2364,6 @@ static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_
   
   
   return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxMediaBufferAppendFontItems(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-  objscheme_check_valid(obj);
-  class wxMenu* x0;
-  int x1;
-
-  
-  x0 = objscheme_unbundle_wxMenu(p[0], "editor%::append-font-items", 0);
-  if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "editor%::append-font-items");
-  } else
-    x1 = 0;
-
-  
-  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AppendFontItems(x0, x1);
-
-  
-  
-  return scheme_make_integer(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxMediaBufferAppendEditItems(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-  objscheme_check_valid(obj);
-  class wxMenu* x0;
-  int x1;
-
-  
-  x0 = objscheme_unbundle_wxMenu(p[0], "editor%::append-edit-items", 0);
-  if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "editor%::append-edit-items");
-  } else
-    x1 = 0;
-
-  
-  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AppendEditItems(x0, x1);
-
-  
-  
-  return scheme_make_integer(r);
 }
 
 #pragma argsused
@@ -4383,7 +4293,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 113);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 109);
 
   scheme_add_method_w_arity(os_wxMediaBuffer_class,"get-class-name",objscheme_classname_os_wxMediaBuffer, 0, 0);
 
@@ -4405,13 +4315,9 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-load-overwrites-styles", os_wxMediaBufferSetLoadOverwritesStyles, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-style-list", os_wxMediaBufferSetStyleList, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-style-list", os_wxMediaBufferGetStyleList, 0, 0);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "add-buffer-functions", os_wxMediaBufferAddBufferFunctions, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-keymap", os_wxMediaBufferGetKeymap, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-keymap", os_wxMediaBufferSetKeymap, 0, 1);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "do-font", os_wxMediaBufferDoFont, 1, 2);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "do-edit", os_wxMediaBufferDoEdit, 1, 3);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "append-font-items", os_wxMediaBufferAppendFontItems, 1, 2);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "append-edit-items", os_wxMediaBufferAppendEditItems, 1, 2);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "do-edit-operation", os_wxMediaBufferDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-max-undo-history", os_wxMediaBufferGetMaxUndoHistory, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-max-undo-history", os_wxMediaBufferSetMaxUndoHistory, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "clear-undos", os_wxMediaBufferClearUndos, 0, 0);
@@ -4623,7 +4529,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaPasteboardFunctions(int n,  Scheme_
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-pasteboard-editor-functions", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-pasteboard-editor-keymap-functions", 0);
 
   
   wxAddMediaPasteboardFunctions(x0);
@@ -4640,7 +4546,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaEditorFunctions(int n,  Scheme_Obje
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-text-editor-functions", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-text-editor-keymap-functions", 0);
 
   
   wxAddMediaEditorFunctions(x0);
@@ -4657,7 +4563,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaBufferFunctions(int n,  Scheme_Obje
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-editor-functions", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-editor-keymap-functions", 0);
 
   
   wxAddMediaBufferFunctions(x0);
@@ -4806,9 +4712,9 @@ void objscheme_setup_wxMediaGlobal(void *env)
   scheme_install_xc_global("get-the-buffer-data-class-list", scheme_make_prim_w_arity(wxMediaGlobalwxGetTheBufferDataClassList, "get-the-buffer-data-class-list", 0, 0), env);
   scheme_install_xc_global("get-the-snip-class-list", scheme_make_prim_w_arity(wxMediaGlobalwxGetTheSnipClassList, "get-the-snip-class-list", 0, 0), env);
   scheme_install_xc_global("editor-set-x-selection-mode", scheme_make_prim_w_arity(wxMediaGlobalwxMediaSetXSelectionMode, "editor-set-x-selection-mode", 1, 1), env);
-  scheme_install_xc_global("add-pasteboard-editor-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaPasteboardFunctions, "add-pasteboard-editor-functions", 1, 1), env);
-  scheme_install_xc_global("add-text-editor-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaEditorFunctions, "add-text-editor-functions", 1, 1), env);
-  scheme_install_xc_global("add-editor-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaBufferFunctions, "add-editor-functions", 1, 1), env);
+  scheme_install_xc_global("add-pasteboard-editor-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaPasteboardFunctions, "add-pasteboard-editor-keymap-functions", 1, 1), env);
+  scheme_install_xc_global("add-text-editor-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaEditorFunctions, "add-text-editor-keymap-functions", 1, 1), env);
+  scheme_install_xc_global("add-editor-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaBufferFunctions, "add-editor-keymap-functions", 1, 1), env);
   scheme_install_xc_global("write-editor-global-footer", scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalFooter, "write-editor-global-footer", 1, 1), env);
   scheme_install_xc_global("write-editor-global-header", scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalHeader, "write-editor-global-header", 1, 1), env);
   scheme_install_xc_global("read-editor-global-footer", scheme_make_prim_w_arity(wxMediaGlobalwxReadMediaGlobalFooter, "read-editor-global-footer", 1, 1), env);

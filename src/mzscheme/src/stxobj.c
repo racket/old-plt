@@ -4150,6 +4150,26 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
 
 static Scheme_Object *syntax_property_keys(int argc, Scheme_Object **argv)
 {
+  Scheme_Stx *stx;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-property", "syntax", 0, argc, argv);
+
+  stx = (Scheme_Stx *)argv[0];
+
+  if (stx->props) {
+    if (!SAME_OBJ(stx->props, STX_SRCTAG)) {
+      Scheme_Object *e, *k, *l = scheme_null;
+
+      for (e = stx->props; SCHEME_PAIRP(e); e = SCHEME_CDR(e)) {
+	k = SCHEME_CAR(SCHEME_CAR(e));
+	if (SCHEME_SYMBOLP(k) && !SCHEME_SYM_WEIRDP(k))
+	  l = scheme_make_pair(k, l);
+      }
+      return l;
+    }
+  }
+   
   return scheme_null;
 }
 

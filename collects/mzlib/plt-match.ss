@@ -3,7 +3,7 @@
 ;;
 ;; All bugs or questions concerning this software should be directed to
 ;; Bruce Hauman <bhauman@cs.wcu.edu>.  The latest version of this software
-;; can be obtained from http://sol.cs.wcu.edu/~bhauman/scheme/pattern.html.
+;; can be obtained from http://sol.cs.wcu.edu/~bhauman/scheme/pattern.php.
 ;;
 ;; Special thanks go out to:
 ;; Robert Bruce Findler for support and bug detection.
@@ -142,7 +142,8 @@
                       (lib "etc.ss")
                       (lib "list.ss")
                       (lib "include.ss")
-                      (lib "struct.ss" "syntax"))
+                      (lib "struct.ss" "syntax")
+                      (lib "pretty.ss"))
   (require (lib "etc.ss")
            (lib "list.ss"))
   
@@ -177,6 +178,7 @@
 
     (define node-count 0)
 
+
     ;;!(syntax match-test)
     ;; This macro only returns a list of two numbers.  
     ;; The first number represents the
@@ -196,7 +198,7 @@
                                          '()
                                          (syntax (clause ...))
                                          stx))))
-                #`(list #,node-count
+                #`(list #,(add1 node-count)
                         #,rt)))))))
 
     (define match/proc 

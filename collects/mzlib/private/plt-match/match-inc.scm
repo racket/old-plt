@@ -1,4 +1,4 @@
-;; This library is used by match.ss and plt-match.ss
+;; This library is usedby match.ss and plt-match.ss
 
 ;;! (function match:syntax-err
 ;;          (form (match:syntax-err object message . detail) -> void)
@@ -101,7 +101,7 @@
 ;;
 ;; <p>patlist - is a list of the pattern clauses of the match expr
 ;; these can be of either form (pat body ...) or
-;; (pat (=> fail) body ...)
+;; (pat (=> fail) body ...)x
 ;;
 ;; <p>stx is the original syntax of the match expression.
 ;; This is only used for error reporting.
@@ -116,12 +116,14 @@
 (define gen-match
   (opt-lambda (exp tsf patlist stx [success-func #f])
     (include "test-structure.scm")
-    (include "coupling-and-binding.scm")
+    (include "coupling-and-binding-new.scm")
     (include "render-test-list.scm")
     (include "reorder-tests.scm")
     (include "update-counts.scm")
     (include "update-binding-counts.scm")
     (include "match-util.scm")
+    (include "tag-negate-tests.scm")
+
     ;;!(function unreachable
     ;;          (form (unreachable plist match-expr) -> void)
     ;;          (contract (list syntax-object) -> void)
@@ -182,7 +184,6 @@
                                  (let ((match-failure
                                         (lambda ()
                                           (match:error #,exp (quote #,stx)))))
-                                   ;; this has been changed to gen2 for testing
                                    #,(gen exp tsf marked-clauses
                                           stx
                                           (syntax (match-failure))
@@ -313,7 +314,6 @@
     ;; tests are "coupled" together for final compilation.
     (define gen
       (opt-lambda (exp tsf patlist stx failure-func opt [success-func #f])
-
         ;; iterate through list and render each pattern to a list of tests
         ;; and success functions
         (let ((rendered-list
@@ -326,15 +326,17 @@
                                                         success-func)
                            (loop (cdr clause-list)))))))
           (update-counts rendered-list)
+          (tag-negate-tests rendered-list)
           (update-binding-counts rendered-list)
-                                        ;(pretty-print rendered-list)
           (let* ((rendered-list (reorder-all-lists rendered-list))
                  (output
-                  ((meta-couple rendered-list
-                                (lambda (sf bv) failure-func)
-                                '()
-                                '())
-                   '() '())))
+                  (begin 
+                    ;(pretty-print rendered-list)(newline)      
+                    ((meta-couple rendered-list
+                                  (lambda (sf bv) failure-func)
+                                  '()
+                                  '())
+                     '() '()))))
             output))))
-
     (gen-help exp tsf patlist stx #f success-func)))
+

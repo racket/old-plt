@@ -3,7 +3,7 @@
 ;;
 ;; All bugs or questions concerning this software should be directed to
 ;; Bruce Hauman <bhauman@cs.wcu.edu>.  The latest version of this software
-;; can be obtained from http://sol.cs.wcu.edu/~bhauman/scheme/pattern.html.
+;; can be obtained from http://sol.cs.wcu.edu/~bhauman/scheme/pattern.php.
 ;;
 ;; Special thanks go out to:
 ;; Robert Bruce Findler for support and bug detection.
@@ -132,6 +132,7 @@
                       (lib "etc.ss")
                       (lib "list.ss")
                       (lib "include.ss")
+                      (lib "pretty.ss")
                       (lib "struct.ss" "syntax"))
 
   (require (lib "etc.ss")

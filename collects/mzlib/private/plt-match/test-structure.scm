@@ -33,7 +33,11 @@
                      used-set
                      bind-exp-stx
                      bind-exp
-                     bind-count)
+                     bind-count
+                     times-used-neg
+                     used-set-neg
+                     closest-shape-tst
+                     equal-set)
   (make-inspector))
 
 ;;!(function make-shape-test
@@ -52,7 +56,7 @@
 ;; comp - the compilation function which will finish the compilation
 ;;        after tests have been reordered
 (define (make-shape-test test exp comp)
-  (make-test test comp #t 0 '() exp (syntax-object->datum exp) 1))
+  (make-test test comp #t 0 '() exp (syntax-object->datum exp) 1 0 '() #f '()))
 
 ;;!(function make-reg-test
 ;;          (form (make-shape-test test exp comp) -> test-struct)
@@ -68,7 +72,7 @@
 ;; comp - the compilation function which will finish the compilation
 ;;        after tests have been reordered
 (define (make-reg-test test exp comp)
-  (make-test test comp #f 0 '() exp (syntax-object->datum exp) 1))
+  (make-test test comp #f 0 '() exp (syntax-object->datum exp) 1 0 '() #f '()))
 
 ;;!(function make-act-test
 ;;          (form (make-shape-test test exp comp) -> test-struct)
@@ -86,7 +90,7 @@
 ;; comp - the compilation function which will finish the compilation
 ;;        after tests have been reordered
 (define (make-act act-name exp comp)
-  (make-test act-name comp #f -1 '() exp (syntax-object->datum exp) 1))
+  (make-test act-name comp #f -1 '() exp (syntax-object->datum exp) 1 -1 '() #f '()))
 
 ;;!(function action-test?
 ;;          (form (action-test? test) -> bool)
@@ -101,3 +105,6 @@
 ;; a predicate that returns true if a test is an shape test
 (define (shape-test? test)
   (test-shape test))
+
+(define (negate-test? test)
+  (test-closest-shape-tst test))

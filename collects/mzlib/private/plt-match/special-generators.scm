@@ -16,7 +16,6 @@
 ;; that will help optimaize its compilation.  And the success of
 ;; any pattern results in the same outcome.
 (define or-gen
-  ;; patlist
   (lambda (exp orpatlist stx sf bv ks kf let-bound)
     (let ((rendered-list
            (map
@@ -34,7 +33,9 @@
             orpatlist)))
       (update-counts rendered-list)
       (update-binding-counts rendered-list)
-      (let* ((rendered-list (reorder-all-lists rendered-list))
+      (let* ((rendered-list 
+              (reorder-all-lists rendered-list)
+              )
              (output ((meta-couple rendered-list kf let-bound bv) sf bv)))
         output))))
 
@@ -121,8 +122,7 @@
           (lambda (sf bv)
             #`(begin
                 #,@(map (lambda (bind)
-                          (let ((binding-name 
-                                 (cdr (assoc (car bind) bind-map)))
+                          (let ((binding-name (get-bind-val (car bind) bind-map))
                                 (exp-to-bind 
                                  (subst-bindings (cdr bind) let-bound)))
                             (if last-test
@@ -146,5 +146,5 @@
            '()
            '()
            '()
-           (lambda (sf bv) '(dummy-symbol))
+           (lambda (sf bv) #'(dummy-symbol))
            (lambda (sf bv) (out (map car bv))))))

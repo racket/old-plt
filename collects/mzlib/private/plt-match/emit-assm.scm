@@ -55,8 +55,16 @@
     (let ((s (syntax-object->datum main-succ))
           (f (syntax-object->datum main-fail)))
       ;; this is for match-count
+      ;;(write (syntax-object->datum tst))(newline)
       (set! node-count (add1 node-count))
-      (cond ((equal? s f) main-succ)
+      (cond ((equal? s f) 
+              (begin 
+                (when (equal? s '(match-failure))
+                   (set! node-count (sub1 node-count))
+                  ;(write 'here)(newline)
+                  '()
+                  )
+                main-succ))
             ((and (eq? s #t) (eq? f #f)) tst)
             (else
              (syntax-case main-succ (if

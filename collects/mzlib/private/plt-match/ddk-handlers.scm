@@ -1,5 +1,20 @@
 ;; This library is used by match.ss
 
+(define (get-bind-val b-var bv-list)
+  (let ((res (assq
+              b-var
+              bv-list)))
+    (if res (cdr res)
+        (let ((res 
+               (assq
+                (syntax-object->datum b-var)
+                (map (lambda (x)
+                       (cons 
+                        (syntax-object->datum (car x)) (cdr x))) 
+                     bv-list))))
+          (if res (cdr res) (error 'var-not-found))))))
+
+
 ;;!(function handle-end-ddk-list
 ;;          (form (handle-end-ddk-list ae kf ks pat
 ;;                                     dot-dot-k stx
@@ -32,6 +47,8 @@
       (let* ((k (stx-dot-dot-k? dot-dot-k))
              (ksucc (lambda (sf bv)
                       (let ((bound (getbindings pat)))
+                        (if (syntax? bound)
+                            (kf sf bv)
                         (syntax-case pat (_)
                           (_ (ks sf bv))
                           (the-pat
@@ -129,12 +146,11 @@
                                                             (quasisyntax/loc
                                                              stx
                                                              (cons
-                                                              #,(cdr
-                                                                 (assq
+                                                              #,(get-bind-val
                                                                   b-var
-                                                                  bv))
+                                                                  bv)
                                                               #,bindings-var)))
-                                                          bound binding-list-names)))))))))))))))
+                                                          bound binding-list-names))))))))))))))))
         (case k
           ((0) (ksucc sf bv))
           ((1) (emit (lambda (exp) (quasisyntax/loc stx (pair? #,exp)))
@@ -181,6 +197,8 @@
     (lambda (sf bv)
       (let* ((k (stx-dot-dot-k? dot-dot-k)))
         (let ((bound (getbindings pat)))
+          (if (syntax? bound)
+              (kf sf bv)
           (syntax-case pat (_)
             (_
              (stx-null? pat-rest)
@@ -326,13 +344,12 @@
                                                 (quasisyntax/loc 
                                                  stx 
                                                  (cons
-                                                  #,(cdr
-                                                     (assq
+                                                  #,(get-bind-val
                                                       b-var
-                                                      bv))
+                                                      bv)
                                                   #,bindings-var)))
                                               bound
-                                              binding-list-names)))))))))))))))))
+                                              binding-list-names))))))))))))))))))
 ;;!(function handle-ddk-vector
 ;;          (form (handle-ddk-vector ae kf ks pt let-bound)
 ;;                ->
@@ -365,6 +382,8 @@
            (bound (getbindings (vector-ref vec-stx vlen)))
            (exp-name (gensym 'exnm)))
       (lambda (sf bv)
+        (if (syntax? bound)
+            (kf sf bv)
         (quasisyntax/loc
          pt
          (let ((#,exp-name #,(subst-bindings ae let-bound)))
@@ -433,15 +452,14 @@
                                                     (quasisyntax/loc
                                                      stx
                                                      (cons
-                                                      #,(cdr
-                                                         (assq
+                                                      #,(get-bind-val
                                                           b-var
-                                                          bv))
+                                                          bv)
                                                       #,bindings-var)))
                                                   bound
                                                   binding-list-names)))))))))))))
                     sf
-                    bv))))))))
+                    bv)))))))))
 
 ;;!(function handle-ddk-vector-inner
 ;;          (form (handle-ddk-vector-inner ae kf ks pt let-bound)
@@ -544,10 +562,12 @@
                                             (stx-dot-dot-k? (vector-ref vec-stx (add1 n)))))
                                    (ks sf bv))
                                   (else  ;; we now know that the next pattern is a ddk
-                                   (let* ((k (stx-dot-dot-k? (vector-ref vec-stx (add1 n))))
-                                          (bound (getbindings (vector-ref vec-stx n)))
-                                          (binding-list-names
-                                           (map (lambda (x)
+                                   (let ((bound (getbindings (vector-ref vec-stx n))))
+                                     (if (syntax? bound)
+                                         (kf sf bv)
+                                     (let* ((k (stx-dot-dot-k? (vector-ref vec-stx (add1 n))))
+                                            (binding-list-names
+                                             (map (lambda (x)
                                                   (datum->syntax-object
                                                    (quote-syntax here)
                                                    (symbol-append
@@ -619,16 +639,15 @@
                                                                        (quasisyntax/loc
                                                                         stx
                                                                         (cons
-                                                                         #,(cdr
-                                                                            (assq
+                                                                         #,(get-bind-val
                                                                              b-var
-                                                                             bv))
+                                                                             bv)
                                                                          #,bindings-var)))
                                                                      bound
                                                                      binding-list-names))))
                                                            (apply
                                                             #,vloop-name
                                                             (add1 #,count-name)
-                                                            arglist))))))))))))))))
+                                                            arglist))))))))))))))))))
                              sf
                              bv))))))))))))

@@ -19,7 +19,6 @@
 ;; forward in the argument list of next and then test for it later and
 ;; then take the appropriate action.  To understand this better take a
 ;; look at how proper and improper lists are handled.
-
 (define (render-test-list p ae stx)
   (include "special-generators.scm")
   (include "ddk-handlers.scm")
@@ -49,7 +48,7 @@
                 or 
                 not 
                 set! 
-                get! 
+                get!
                 ))))
   (define (append-if-necc sym stx)
     (syntax-case stx ()
@@ -57,6 +56,7 @@
       ((a ...) 
        (quasisyntax/loc stx (#,sym a ...)))
       (p (syntax p))))
+
   ;(write (syntax-object->datum p)) (newline)
   (syntax-case*
    p
@@ -87,7 +87,8 @@
               ae
               (lambda (ks kf let-bound)
                 (lambda (sf bv)
-                  (emit (lambda (exp) (quasisyntax/loc p (null? #,exp)))
+                  (emit (lambda (exp) 
+                          (quasisyntax/loc p (null? #,exp)))
                         ae
                         let-bound
                         sf
@@ -100,13 +101,15 @@
               ae
               (lambda (ks kf let-bound)
                 (lambda (sf bv)
-                  (emit (lambda (exp) (quasisyntax/loc p (null? #,exp)))
+                  (emit (lambda (exp) 
+                          (quasisyntax/loc p (null? #,exp)))
                         ae
                         let-bound
                         sf
                         bv
                         kf
-                        ks))))))
+                        ks)))))
+       )
 
       (pt
        ;; could convert the syntax once
@@ -157,7 +160,7 @@
       ;; could we check to see if a predicate is a procedure here?
       ((? pred?)
        (list (make-reg-test
-              `(,(syntax-object->datum (syntax pred))
+              `(,(syntax-object->datum (syntax pred?))
                 ,(syntax-object->datum ae))
               ae
               (lambda (ks kf let-bound)
@@ -182,7 +185,7 @@
        (match:syntax-err
         p
         (if (zero? (length (syntax-e (syntax (op ...)))))
-            "an operation pattern must have a procedure following the ="
+            "an operation pattern must have a procedure following the app"
             "there should be one pattern following the operator")))
       ((and pats ...)
        (let loop
@@ -193,42 +196,53 @@
             (append (render-test-list (syntax pat1) ae stx)
                     (loop (syntax (pats ...))))))))
 
-      ;; this will be rendered with the  old next function
-      ;; or patterns will not be optimized for now
-      ;;((or pats ...)
-      ;; (list (make-act
-      ;;        'or-pat ;`(or-pat ,(syntax-object->datum ae))
-      ;;        ae
-      ;;        (lambda (ks kf let-bound)
-      ;;          (lambda (sf bv)
-      ;;            (let loop
-      ;;                ((p (syntax (pats ...)))
-      ;;                 (seensofar sf)
-      ;;                 (boundvars bv))
-      ;;              (syntax-case p ()
-      ;;                (() (kf seensofar boundvars))
-      ;;                ((pat1 pats ...)
-      ;;                 (next-outer
-      ;;                  (syntax pat1)
-      ;;                  ae
-      ;;                 seensofar
-      ;;                  ;; get rid of collected vars and start over
-      ;;                  bv
-      ;;                  let-bound
-      ;;                  (lambda (sf bv)
-      ;;                    ;; if it fails check next one
-      ;;                    (loop (syntax (pats ...))
-      ;;                          sf bv))
-      ;;                  ks)))))))))
 
       ((or pats ...)
-       (list (make-act
-              'or-pat ;`(or-pat ,(syntax-object->datum ae))
-              ae
-              (lambda (ks kf let-bound)
-                (lambda (sf bv)
-                  (or-gen ae (syntax-e (syntax (pats ...)))
-                          stx sf bv ks kf let-bound))))))
+         (list (make-act
+                'or-pat ;`(or-pat ,(syntax-object->datum ae))
+                ae
+                (lambda (ks kf let-bound)
+                  (lambda (sf bv)
+                    (or-gen ae (syntax-e (syntax (pats ...)))
+                            stx sf bv ks kf let-bound))))))
+
+; backtracking or
+
+;       ((or pats ...)
+;        (let* ((pat-list (syntax->list (syntax (pats ...)))))
+;          (let* ((bound (getbindings (stx-car (syntax (pats ...)))))
+;                 (bind-map
+;                  (map (lambda (x)
+;                         (cons x
+;                               #`#,(gensym (syntax-object->datum x))))
+;                       bound))
+;                 (id (begin (set! or-id (add1 or-id)) (sub1 or-id))))
+;            (write id)(newline)
+;            (write (syntax-object->datum (syntax (pats ...))))(newline)
+;            (list 
+;             (make-act
+;              'or-pat
+;              ae
+;              (lambda (ks kf let-bound)
+;                (lambda (sf bv)
+;                  (write id)(newline)
+;                  (if (stx-null? (syntax (pats ...)))
+;                      (kf sf bv)
+;                      #`(let #,(map (lambda (b)
+;                                      #`(#,(cdr b) '()))
+;                                    bind-map)
+;                          (if (or                               
+;                               #,@(map (lambda (p)
+;                                         #`(#,(create-test-func
+;                                               p
+;                                               sf
+;                                               let-bound
+;                                               bind-map
+;                                               #f) #,(subst-bindings ae 
+;                                                            let-bound)))
+;                                       pat-list))
+;                              #,(ks sf (append bind-map bv))
+;                              #,(kf sf bv)))))))))))
 
       ((not pat)
        (list (make-act
@@ -255,6 +269,7 @@
                                 (cons x
                                       #`#,(gensym (syntax-object->datum x))))
                               bound)))
+                   
                    (list 
                     (make-shape-test
                      `(list? ,(syntax-object->datum ae))
@@ -651,10 +666,24 @@
          (render-test-list (syntax car-pat)
                            (quasisyntax/loc (syntax car-pat) (car #,ae))
                            stx) ;(add-a e)
-         (render-test-list
-          (append-if-necc 'list (syntax (cdr-pat ...)))
-          (quasisyntax/loc (syntax (cdr-pat ...)) (cdr #,ae))
-          stx))))
+         (if (stx-null? (syntax (cdr-pat ...)))
+             (list (make-shape-test
+                    `(null? (cdr ,(syntax-object->datum ae)))
+                    ae
+                    (lambda (ks kf let-bound)
+                      (lambda (sf bv)
+                        (emit (lambda (exp) 
+                                (quasisyntax/loc p (null? #,exp)))
+                              (quasisyntax/loc (syntax (cdr-pat ...)) (cdr #,ae));ae
+                              let-bound
+                              sf
+                              bv
+                              kf
+                              ks)))))
+             (render-test-list
+              (append-if-necc 'list (syntax (cdr-pat ...)))
+              (quasisyntax/loc (syntax (cdr-pat ...)) (cdr #,ae))
+              stx)))))
 
       ((vector pats ...)
        (ddk-only-at-end-of-list? (syntax-e (syntax (pats ...))))

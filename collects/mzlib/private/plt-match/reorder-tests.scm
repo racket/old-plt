@@ -38,6 +38,18 @@
              (let ((t1-tu (test-times-used t1))
                    (t2-tu (test-times-used t2)))
                (cond ((> t1-tu t2-tu) #t)
+                     ;; these two new rules allow negate
+                     ;; tests to be placed properly
+                     ((and (= t1-tu t2-tu)
+                           (shape-test? t1)
+                           (not (shape-test? t2))
+                           (negate-test? t2))
+                      #t)
+                     ((and (= t1-tu t2-tu)
+                           (not (shape-test? t1))
+                           (negate-test? t1)
+                           (shape-test? t2))
+                      #f)
                      ((and (= t1-tu t2-tu)
                            (or (equal? (test-used-set t1) (test-used-set t2))
                                (>= (number-of-similar (test-used-set t1) 

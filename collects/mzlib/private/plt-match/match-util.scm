@@ -50,7 +50,7 @@
 ;;!(function struct-pred-accessors-mutators
 ;;          (form (struct-pred-accessors-mutators struct-name failure-thunk)
 ;;                ->
-;;                (values pred accessors mutators))
+;;                (values pred accessors mutators parental-chain))
 ;;          (contract (syntax-object (any -> void))
 ;;                     ->
 ;;                     (values (any -> bool) list list)))
@@ -58,9 +58,10 @@
 ;; as well as a failure thunk.  It returns three values.  The first is
 ;; a predicate for the structure.  The second is a list of accessors
 ;; in the same order as the fields of the structure declaration.  The
-;; last is a list of mutators for the structure also in the same
-;; order.  The failure thunk is invoked if the struct-name is not
-;; bound to a structure.
+;; third is a list of mutators for the structure also in the same
+;; order.  The last is a list of supertypes of this struct. The
+;; failure thunk is invoked if the struct-name is not bound to a
+;; structure.
 (define struct-pred-accessors-mutators
   (let ((accessors-index 3)
         (mutators-index 4)
@@ -274,7 +275,7 @@
 (define match:disjoint-predicates
   '(struct-pred null? pair? symbol? boolean? number? string? char?
           procedure? vector?
-          box?)) 
+          box? promise?)) 
 
 (define match:vector-structures '())
 

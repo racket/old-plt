@@ -24,6 +24,7 @@
                 (update-binding-count
                  (let loop ((l (cdr render-list)))
                    (cond ((null? l) '())
+                         ((>= (test-bind-count cur-test) 2) l)
                          ((and (valid-for-let-binding (test-bind-exp cur-test))
                                (equal? (test-bind-exp cur-test)
                                        (test-bind-exp (car l))))

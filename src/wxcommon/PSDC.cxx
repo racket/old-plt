@@ -281,6 +281,12 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
   cliph = -1;
 
   ok = PrinterDialog(interactive, parent, usePaperBBox);
+
+  /* We set these even if !ok, for use with text sizing: */
+  wxThePrintSetupData = wxGetThePrintSetupData();
+  level2ok = wxThePrintSetupData->GetLevel2();
+  afm_path = wxThePrintSetupData->GetAFMPath();
+
   if (!ok)
     return FALSE;
 
@@ -290,11 +296,6 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
 
   Colour = TRUE;
   
-  wxThePrintSetupData = wxGetThePrintSetupData();
-
-  level2ok = wxThePrintSetupData->GetLevel2();
-  afm_path = wxThePrintSetupData->GetAFMPath();
-
   paperType = wxThePrintSetupData->GetPaperName();
   if (!paperType)
     paperType = DEFAULT_PAPER;
@@ -1237,7 +1238,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
   if (current_font)
     SetFont (current_font);
 
-  GetTextExtent(text, &tw, &th, NULL, NULL, NULL, use16, dt);
+  GetTextExtent(text, &tw, &th, NULL, NULL, NULL, (use16 ? -2 : -1), dt);
 
   if (current_bk_mode == wxSOLID) {
     unsigned char red, blue, green;
@@ -1783,28 +1784,27 @@ static int lastWidths[256]; // widths of the characters
 
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
-				    Bool WXUNUSED(use16), int dt)
+				    Bool use16, int dt)
 {
   wxFont *fontToUse = theFont;
   int family;
   int size;
   int style;
   int weight;
+  int do_scale = 1;
 
   float widthSum = 0.0;
   float height;
   int dp;
 
+  if (use16 < 0) {
+    do_scale = 0;
+    use16 = (use16 == -2);
+  }
+
   if (!fontToUse)
     fontToUse = current_font;
     
-  if (!pstream) {
-    *x = *y = 0;
-    if (descent) *descent = 0.0;
-    if (topSpace) *topSpace = 0.0;
-    return;
-  }
-  
   // ************************************************************
   // method for calculating string widths in postscript:
   // read in the AFM (adobe font metrics) file for the
@@ -1889,8 +1889,8 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 	char bfr[256];
 	sprintf(bfr, "Cannot open AFM file for %.150s; guessing font sizes.\n"
 		"(Silently guessing fonts for future AFM failures.)"
-		, name);
-	wxError(bfr, "MrEd Warning");
+		, (afmName ? afmName : (name ? name : "<unknown>")));
+	scheme_console_printf("%s\n", bfr);
 	complained_afm = 1;
       }
       for (i = 0; i < 256; i++) {
@@ -1973,20 +1973,20 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   }
   
   // return size values
-  *x = widthSum;
-  *y = height;
+  *x = widthSum * (do_scale ? user_scale_x : 1);
+  *y = height * (do_scale ? user_scale_y : 1);
 
   // return other parameters
   if (descent){
     if (lastDescender != INT_MIN)
-      *descent = ((-lastDescender) / 1000.0F) * size;
+      *descent = ((-lastDescender) / 1000.0F) * size * (do_scale ? user_scale_y : 1);
     else
       *descent = 0.0;
   }
 
   if (topSpace) {
     if (capHeight > -1)
-      *topSpace = ((1000 - capHeight) / 1000.0F) * size;
+      *topSpace = ((1000 - capHeight) / 1000.0F) * size * (do_scale ? user_scale_y : 1);
     else
       *topSpace = 0.0;
   }

@@ -13,6 +13,9 @@
 	   (lib "etc.ss")
 	   (lib "list.ss"))
 
+  ;; Maximum number of times to inline while processing a call site
+  (define max-fuel 30)
+  (define fuel (make-parameter max-fuel))
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Optimizer
   ;; classes representing syntax with methods for optimization steps
@@ -67,6 +70,10 @@
     (class object%
       
       (init-field src-stx)
+      (if (not (syntax? src-stx))
+          (begin
+            (printf "~a~n" src-stx)
+            (error 'stx)))
       (field (known-value #f))
       
       ;; resets known-value computation, use counts, etc.
@@ -188,21 +195,23 @@
 
   (define global%
     (class exp% 
-      (init-field stx trans? tables needs-top?)
+      (init-field trans? tables needs-top?)
+      (super-instantiate ())
+      (inherit-field src-stx) ;; The identifier
       
       (define mbind #f)
-      (define bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) stx))
+      (define bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) src-stx))
       (define (get-mbind!)
         (unless mbind
           (set! mbind ((if trans?
                            identifier-transformer-binding 
                            identifier-binding)
-                       stx))))
+                       src-stx))))
       (define/public (orig-name)
         (get-mbind!)
         (if (pair? mbind)
             (cadr mbind)
-            (syntax-e stx)))
+            (syntax-e src-stx)))
 
       (define/public (is-kernel?)
         (get-mbind!)
@@ -224,29 +233,29 @@
 
       (define/override (can-dup/move?) (valueable?))
 
-      (define/override (clone env) (make-object global% stx trans? tables needs-top?))
+      (define/override (clone env) (make-object global% trans? tables needs-top? src-stx))
 
       (define/override (global->local env)
         (or (ormap (lambda (e)
-                     (and (module-identifier=? (car e) stx)
-                          (make-object ref% stx (cdr e))))
+                     (and (module-identifier=? (car e) src-stx)
+                          (make-object ref% (cdr e) src-stx)))
                    env)
             this))
 
       (define/override (sexpr)
         (if needs-top?
-            (with-syntax ([stx stx])
+            (with-syntax ([stx src-stx])
               (syntax (#%top . stx)))
-            stx))
+            src-stx))
       
       (define/public (set-mutated) (set-bucket-mutated?! bucket #t))
-      (define/public (set-inited) (set-bucket-inited-before-use?! bucket #t))
-
-      (super-instantiate (stx))))
+      (define/public (set-inited) (set-bucket-inited-before-use?! bucket #t))))
 
   (define binding% 
     (class exp% 
-      (init-field name always-inited?)
+      (init-field always-inited?)
+      (super-instantiate ())
+      (inherit-field src-stx)
       (define value #f)
       (define used 0)
       (define mutated? #f)
@@ -263,11 +272,13 @@
       (define/public (set-value v) (set! value v))
 
       (define/public (clone-binder env) 
-        (make-object binding% (datum->syntax-object
-                               #f
-                               (gensym (syntax-e name))
-                               name
-                               always-inited?)))
+        (make-object binding% 
+          always-inited?
+          (datum->syntax-object
+           #f
+           (gensym (syntax-e src-stx))
+           src-stx)))
+
 
       (define/override (reset-varflags)
         (set! used 0)
@@ -289,16 +300,17 @@
 
       (define/override (sexpr)
         ;; `(==lexical== ,name ,used ,mutated? ,inited? ,(get-value))
-        name
+        src-stx
         )
       (define/public (orig-name)
-        (syntax-e name))
-      (super-instantiate (name))))
+        (syntax-e src-stx))))
 
   (define ref% 
     (class exp% 
-      (init-field stx binding)
-
+      (init-field binding)
+      (super-instantiate ())
+      (inherit-field src-stx) ;; The identifier
+      
       (define/public (is-used?) (send binding is-used?))
       (define/public (is-mutated?) (send binding is-mutated?))
       (define/public (is-inited?) (send binding is-inited?))
@@ -330,7 +342,7 @@
                   this))
             (begin
               (drop-uses)
-              (make-object void% stx))))
+              (make-object void% src-stx))))
 
       (define/override (clone env) (lookup-clone binding this env))
       (define/override (substitute env) (lookup-clone binding this env))
@@ -340,16 +352,17 @@
           (datum->syntax-object
            x
            (syntax-e x)
-           stx)))
+           src-stx)))
       (define/public (get-binding) binding)
-      (define/public (orig-name) (send binding orig-name))
+      (define/public (orig-name) (send binding orig-name))))
       
-      (super-instantiate (stx))))
 
   (define begin% 
     (class exp%
-      (init-field stx subs)
-
+      (init-field subs)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       (define/override (nonbind-sub-exprs) subs)
       (define/override (set-nonbind-sub-exprs s) (set! subs s))
 
@@ -386,21 +399,21 @@
 
       (define/override (clone env)
         (make-object begin% 
-          stx
           (map (lambda (x) (send x clone env)) 
-               subs)))
+               subs)
+          src-stx))
 
 	(define/override (sexpr)
           (with-syntax ([(body ...) (body-sexpr)])
-            (syntax/loc stx (begin body ...))))
+            (syntax/loc src-stx (begin body ...))))
       (define/override (body-sexpr)
-        (map get-sexpr subs))
-
-      (super-instantiate (stx))))
+        (map get-sexpr subs))))
   
   (define top-def% 
     (class exp% 
-      (init-field stx formname varnames expr tables)
+      (init-field formname varnames expr tables)
+      (super-instantiate ())
+      (inherit-field src-stx)
       (define globals #f)
       
       (define/override (nonbind-sub-exprs) (list expr))
@@ -411,14 +424,18 @@
       (define/override (no-side-effect?) #f)
       (define/override (valueable?) #f)
       
-      (define/override (clone env) (make-object top-def% stx varnames 
-                                     (send expr clone env)))
+      (define/override (clone env) (make-object top-def% 
+                                     formname
+                                     varnames 
+                                     (send expr clone env)
+                                     tables
+                                     src-stx))
 
       (define/override (sexpr)
         (with-syntax ([formname formname]
                       [(varname ...) varnames]
                       [rhs (get-sexpr expr)])
-          (syntax/loc stx (formname (varname ...) rhs))))
+          (syntax/loc src-stx (formname (varname ...) rhs))))
 
       (define/public (get-vars) varnames)
       (define/public (get-rhs) expr)
@@ -429,22 +446,20 @@
         (unless globals
           (set! globals
                 (map (lambda (v)
-                       (make-object global% v #f tables #f))
+                       (make-object global% #f tables #f v))
                      varnames)))
-        globals)
-
-      (super-instantiate (stx))))
+        globals)))
 
   (define variable-def% 
     (class top-def% 
-      (init stx varnames expr tables)
+      (init varnames expr tables stx)
       
-      (super-instantiate (stx (quote-syntax define-values) varnames expr tables))))
+      (super-instantiate ((quote-syntax define-values) varnames expr tables stx))))
 
   (define syntax-def% 
     (class top-def% 
-      (init stx varnames expr tables)
-      (super-instantiate (stx (quote-syntax define-syntaxes) varnames expr tables))))
+      (init varnames expr tables stx)
+      (super-instantiate ((quote-syntax define-syntaxes) varnames expr tables stx))))
 
   (define (install-values vars expr)
     (when (= 1 (length vars))
@@ -452,8 +467,10 @@
 
   (define constant% 
     (class exp% 
-      (init-field stx val)
-
+      (init-field val)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       (define/public (get-const-val) val)
 
       (define/override (get-value) this)
@@ -474,18 +491,18 @@
           [(eq? 'bool (context-need ctx))
            (if (boolean? val)
                this
-               (make-object constant% stx #t))]
+               (make-object constant% #t src-stx))]
           [(context-need ctx)
            (cond
              [(eq? val (void))
-              (make-object void% stx)]
+              (make-object void% src-stx)]
              [else this])]
-          [else (make-object void% stx)]))
+          [else (make-object void% src-stx)]))
       
-      (define/override (clone env) (make-object constant% stx val))
+      (define/override (clone env) (make-object constant% val src-stx))
       
       (define/override (sexpr)
-        (let ([vstx (datum->syntax-object (quote-syntax here) val stx)])
+        (let ([vstx (datum->syntax-object (quote-syntax here) val src-stx)])
           (cond
 	      [(or (number? val)
 		   (string? val)
@@ -497,30 +514,30 @@
 		 (syntax (quote-syntax vstx)))]
 	      [else
 	       (with-syntax ([vstx vstx])
-		 (syntax (quote vstx)))])))
-      
-      (super-instantiate (stx))))
+		 (syntax (quote vstx)))])))))
 
   (define void%
     (class constant% 
-      (init -stx)
-      (define stx -stx)
+      (init stx)
+      (super-instantiate ((void) stx))
+      (inherit-field src-stx)
 
       (define/override (sexpr) (quote-syntax (void)))
 
       (define/override (simplify ctx)
         (if (eq? 'bool (context-need ctx))
-            (make-object constant% stx #t)
+            (make-object constant% #t src-stx)
             this))
 
-      (define/override (clone env) (make-object void% stx))
+      (define/override (clone env) (make-object void% src-stx))))
 
-      (super-instantiate (stx (void)))))
 
   (define app%
     (class exp% 
-      (init-field stx rator rands tables)
-
+      (init-field rator rands tables)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       (define known-single-result? #f)
 
       (rename [super-simplify simplify]
@@ -575,10 +592,10 @@
                          (install-values (list var) rand))
                        vars rands)
              (send (make-object let%
-                     stx
                      (map list vars)
                      rands
-                     body)
+                     body
+                     src-stx)
                    simplify ctx))]
           
           ;; constant folding
@@ -587,7 +604,7 @@
                 (send rator is-kernel?)
                 (andmap (lambda (x) (is-a? x constant%)) rands))
            (if (eq? (send rator orig-name) 'void)
-               (make-object void% stx)
+               (make-object void% src-stx)
                (let ([vals (map (lambda (x) (send x get-const-val)) rands)]
                      [f (dynamic-require 'mzscheme (send rator orig-name))])
                  (with-handlers ([not-break-exn? (lambda (x) 
@@ -596,7 +613,7 @@
                                                             (exn-message x))
                                                    this)])
                    (known-single-result
-                    (send (make-object constant% stx (apply f vals))
+                    (send (make-object constant% (apply f vals) src-stx)
                           simplify ctx)))))]
           
           ;; (+ x 1) => (add1 x)
@@ -609,14 +626,14 @@
                     (and (is-a? (cadr rands) constant%)
                          (eq? 1 (send (cadr rands) get-const-val)))))
            (make-object app% 
-             stx
-             (make-object global% (quote-syntax add1) (send rator is-trans?) tables #f)
+             (make-object global% (send rator is-trans?) tables #f (quote-syntax add1))
              (list
               (if (and (is-a? (car rands) constant%)
                        (eq? 1 (send (car rands) get-const-val)))
                   (cadr rands)
                   (car rands)))
-             tables)]
+             tables
+             src-stx)]
           ;; (- x 1) => (sub1 x)
           [(and (is-a? rator global%)
                 (send rator is-kernel?)
@@ -625,10 +642,10 @@
                 (and (is-a? (cadr rands) constant%)
                      (eq? 1 (send (cadr rands) get-const-val))))
            (make-object app% 
-             stx
-             (make-object global% (quote-syntax sub1)  (send rator is-trans?) tables #f)
+             (make-object global%  (send rator is-trans?) tables #f (quote-syntax sub1))
              (list (car rands))
-             tables)]
+             tables
+             src-stx)]
           
           ;; (car x) where x is known to be a list construction
           [(and (is-a? rator global%)
@@ -668,15 +685,17 @@
            (let ([xformed
                   (let ([l (send (cadr rands) get-const-val)]
                         [l-stx (send (cadr rands) get-stx)]
-                        [false (make-object constant% (datum->syntax-object #f #f) #f)]
-                        [true (make-object constant% (datum->syntax-object #f #t) #t)])
+                        [false (make-object constant% #f (datum->syntax-object #f #f))]
+                        [true (make-object constant% #t (datum->syntax-object #f #t))])
                     (if (null? l)
                         false
                         (let loop ([l l])
                           (let ([test
                                  (make-object app%
-                                   stx
-                                   (make-object global% 
+                                   (make-object global%
+                                     (send rator is-trans?)
+                                     tables
+                                     #f
                                      (let ([a (car l)])
                                        (if (or (symbol? a)
                                                (and (number? a)
@@ -687,26 +706,24 @@
                                                         a
                                                         (expt 2 29))))
                                            (quote-syntax eq?)
-                                           (quote-syntax eqv?)))
-                                     (send rator is-trans?)
-                                     tables
-                                     #f)
+                                           (quote-syntax eqv?))))
                                    (list
                                     (car rands)
                                     (make-object constant% 
-                                      l-stx
-                                      (car l)))
-                                   tables)])
+                                      (car l)
+                                      l-stx))
+                                   tables
+                                   src-stx)])
                             (cond
                               [(null? (cdr l)) test]
                               [else (let ([rest (loop (cdr l))])
                                       ;; increment use count:
                                       (send (car rands) set-known-values)
                                       (make-object if%
-                                        stx
                                         test
                                         true
-                                        rest))])))))])
+                                        rest
+                                        src-stx))])))))])
              (send xformed simplify ctx))]
           
           ;; (values e) where e has result arity 1
@@ -717,38 +734,39 @@
                 (equal? 1 (send (car rands) get-result-arity)))
            (known-single-result (car rands))]
           
-          ;; inlining: currently hacked for testing to only inline on two special names
-          [(and (is-a? rator binding%)
+          ;; inlining
+          [(and (> (fuel) 0)
+                (or (is-a? rator ref%) (is-a? rator global%))
                 (is-a? (send rator get-value) lambda%)
-                (or 
-                 (eq? (send rator orig-name) '*++scan)
-                 (eq? (send rator orig-name) '*++match)
-                 ;; Only use and not in defn context? Always inline
-                 (and (= (send rator get-use-count) 1)
-                      (not (memq rator (context-indef ctx))))))
+                (not (send (send rator get-value) get-simplifying-body)))
            (let ([f (send (send rator get-value) clone null)])
              (send rator drop-uses)
              (set! rator f)
              (send f set-known-values)
              ;; Now we have ((lambda ...) ...). Go again.
-             (simplify ctx))]
+             (fuel (sub1 (fuel)))
+             (if (= (fuel) (sub1 max-fuel))
+                 (begin0
+                   (simplify ctx)
+                   (fuel max-fuel))
+                 (simplify ctx)))]
           
           [else this]))
-
+      
       (define/override (clone env) (make-object app%
-                                     stx
                                      (send rator clone env)
                                      (map (lambda (rand)
                                             (send rand clone env))
                                           rands)
-                                     tables))
+                                     tables
+                                     src-stx))
 
       (define/override (sexpr)
         (keep-mzc-property
          (with-syntax ([rator (get-sexpr rator)]
                        [(rand ...) (map get-sexpr rands)])
-           (syntax/loc stx (rator rand ...)))
-         stx))
+           (syntax/loc src-stx (rator rand ...)))
+         src-stx))
 
       ;; Checks whether the expression is an app of `values'
       ;; to a particular set of bindings.
@@ -773,13 +791,15 @@
              (let ([i (list-ref rands n)])
                (if (send i can-dup/move?)
                    i
-                   #f))))
-      
-      (super-instantiate (stx))))
+                   #f))))))
 
   (define lambda% 
     (class exp% 
-      (init-field stx varss normal?s bodys)
+      (init-field varss normal?s bodys)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      (define simplifying-body #f)
+      
       
       (rename [super-simplify simplify])
       (inherit drop-uses)
@@ -791,6 +811,8 @@
             (cons (car l)
                   (multarity-ize (cdr l)))))
 
+      (define/public (get-simplifying-body) simplifying-body)
+      
       (define/public (multi?) (or (null? bodys)
                                   (pair? (cdr bodys))))
       
@@ -816,7 +838,7 @@
               (loop n (cdr varss) (cdr normal?s) (cdr bodys))))))
       
       (define/public (can-inline?)
-        (not (syntax-property stx 'mzc-cffi)))
+        (not (syntax-property src-stx 'mzc-cffi)))
       
       (define/override (bind-sub-exprs) (apply append varss))
       (define/override (nonbind-sub-exprs) bodys)
@@ -831,8 +853,12 @@
         (if (eq? 'bool (context-need ctx))
             (begin
               (drop-uses)
-              (make-object constant% stx #t))
-            (super-simplify ctx)))
+              (make-object constant% #t src-stx))
+            (begin
+              (set! simplifying-body #t)
+              (begin0
+                (super-simplify ctx)
+                (set! simplifying-body #f)))))
       
       (define/override (clone env)
         (let ([varss+bodys
@@ -849,10 +875,10 @@
                                                   env)))
                         (loop (cdr varss) (cdr bodys))))))])
           (make-object lambda%
-            stx
             (map car varss+bodys)
             normal?s
-            (map cdr varss+bodys))))
+            (map cdr varss+bodys)
+            src-stx)))
 
       (define/override (sexpr)
         (with-syntax ([(vars ...)
@@ -868,20 +894,20 @@
                             bodys)])
           (keep-mzc-property
            (if (multi?)
-               (syntax/loc stx
+               (syntax/loc src-stx
                            (case-lambda
                              [vars . body] ...))
                (with-syntax ([body (car (syntax->list (syntax (body ...))))])
-                 (syntax/loc stx
+                 (syntax/loc src-stx
                              (lambda vars ... . body))))
-           stx)))
-
-      (super-instantiate (stx))))
+           src-stx)))))
 
   (define local% 
     (class exp% 
-      (init-field stx form varss rhss body)
-
+      (init-field form varss rhss body)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       (define/public (get-rhss) rhss)
       (define/public (get-varss) varss)
       (define/public (get-body) body)
@@ -931,10 +957,10 @@
                        (eq? (caar varss) t)
                        (= 1 (send t get-use-count)))))
            (make-object if%
-             stx
              (car rhss)
              (send body get-if-then)
-             (send body get-if-else))]
+             (send body get-if-else)
+             src-stx)]
           [(null? varss)
            (send body simplify ctx)]
           ;; (let-values [(x) y] ...) whether y is inited, and
@@ -972,7 +998,8 @@
             (map (lambda (rhs) 
                    (send rhs clone (if letrec? body-env env)))
                  rhss)
-            (send body clone body-env))))
+            (send body clone body-env)
+            src-stx)))
 
       (define/override (get-value) (send body get-value))
 	
@@ -985,16 +1012,13 @@
                       [(rhs ...)
                        (map get-sexpr rhss)]
                       [(body ...) (get-body-sexpr body)])
-          (syntax/loc stx
+          (syntax/loc src-stx
                       (form ([vars rhs] ...) 
-                            body ...))))
-      
-      
-      (super-instantiate (stx))))
+                            body ...))))))
 
   (define let%
     (class local% 
-      (init -stx -varss -rhss -body)
+      (init -varss -rhss -body -stx)
       (inherit get-varss get-rhss get-body)
       (rename [super-set-known-values set-known-values])
       
@@ -1003,11 +1027,11 @@
                   (get-varss) (get-rhss))
         (super-set-known-values))
       
-      (super-instantiate (-stx (quote-syntax let-values) -varss -rhss -body))))
+      (super-instantiate ((quote-syntax let-values) -varss -rhss -body -stx))))
 
   (define letrec%
     (class local% 
-      (init -stx -varss -rhss -body)
+      (init -varss -rhss -body -stx) 
       (inherit get-varss get-rhss)
       (rename [super-set-known-values set-known-values])
       
@@ -1021,11 +1045,14 @@
         (for-each install-values (get-varss) (get-rhss))
         (super-set-known-values))
 
-      (super-instantiate (-stx (quote-syntax letrec-values) -varss -rhss -body))))
+      (super-instantiate ((quote-syntax letrec-values) -varss -rhss -body -stx))))
 
   (define set!%
     (class exp% 
-      (init-field stx var val)
+      (init-field var val)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       
       (define/override (nonbind-sub-exprs) (list var val))
       (define/override (set-nonbind-sub-exprs s) 
@@ -1044,20 +1071,21 @@
       (define/override (clone env)
         (make-object set!% 
           (send var clone env)
-          (send val clone env)))
+          (send val clone env)
+          src-stx))
 
 	(define/override (sexpr)
           (with-syntax ([var (get-sexpr var)]
                         [val (get-sexpr val)])
-            (syntax/loc stx
-                        (set! var val))))
-      
-      (super-instantiate (stx))))
+            (syntax/loc src-stx
+                        (set! var val))))))
 
   (define if%
     (class exp% 
-      (init-field stx test then else)
-
+      (init-field test then else)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       (define/public (get-if-test) test)
       (define/public (get-if-then) then)
       (define/public (get-if-else) else)
@@ -1086,12 +1114,12 @@
                    (is-a? test binding%)
                    (eq? test then))
           (send then drop-uses)
-          (set! then (make-object constant% stx #t)))
+          (set! then (make-object constant% #t src-stx)))
         (when (and (eq? 'bool (context-need ctx))
                    (eq? test else)
                    (is-a? test binding%))
           (send else drop-uses)
-          (set! else (make-object constant% stx #f)))
+          (set! else (make-object constant% #f src-stx)))
         
         
         (cond
@@ -1116,40 +1144,41 @@
                        (eq? #f (send c get-const-val)))))
            (send
             (make-object if%
-              stx
               (send test get-if-test)
               (make-object if%
-                stx
                 (send test get-if-then)
                 then
-                (make-object void% stx))
-              (make-object void% stx))
+                (make-object void% src-stx)
+                src-stx)
+              (make-object void% src-stx)
+              src-stx)
             simplify ctx)]
           
           [else this]))
 
       (define/override (clone env) 
         (make-object if%
-          stx
           (send test clone env)
           (send then clone env)
-          (send else clone env)))
+          (send else clone env)
+          src-stx))
       
       (define/override (sexpr)
         (with-syntax ([test (get-sexpr test)]
                       [then (get-sexpr then)])
           (if (else . is-a? . void%)
-              (syntax/loc stx
+              (syntax/loc src-stx
                           (if test then))
               (with-syntax ([else (get-sexpr else)])
-                (syntax/loc stx
-                            (if test then else))))))
-      
-      (super-instantiate (stx))))
+                (syntax/loc src-stx
+                            (if test then else))))))))
 
   (define begin0%
     (class exp% 
-      (init-field stx first rest)
+      (init-field first rest)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       
       (define/override (nonbind-sub-exprs) (list first rest))
       (define/override (set-nonbind-sub-exprs s)
@@ -1175,14 +1204,14 @@
 	(define/override (sexpr)
           (with-syntax ([first (get-sexpr first)]
                         [(rest ...) (get-body-sexpr rest)])
-            (syntax/loc stx
-                        (begin0 first rest ...))))
-
-      (super-instantiate (stx))))
+            (syntax/loc src-stx
+                        (begin0 first rest ...))))))
 
   (define wcm%
     (class exp% 
-      (init-field stx key val body)
+      (init-field key val body)
+      (super-instantiate ())
+      (inherit-field src-stx)
 
       (define/override (nonbind-sub-exprs) (list key val body))
       (define/override (set-nonbind-sub-exprs s)
@@ -1202,15 +1231,15 @@
         (with-syntax ([key (get-sexpr key)]
                       [val (get-sexpr val)]
                       [body (get-sexpr body)])
-          (syntax/loc stx
-                      (with-continuation-mark key val body))))
-      
-      (super-instantiate (stx))))
+          (syntax/loc src-stx
+                      (with-continuation-mark key val body))))))
 
   (define module%
     (class exp% 
-      (init-field stx body et-body name init-req req-prov tables)
-
+      (init-field body et-body name init-req req-prov tables)
+      (super-instantiate ())
+      (inherit-field src-stx)
+      
       (rename [super-deorganize deorganize])
 
       (define/override (reset-varflags)
@@ -1273,11 +1302,11 @@
                           [lex-varss (map (lambda (vars)
                                             (map (lambda (var)
                                                    (make-object binding%
+                                                     #t
                                                      (datum->syntax-object
                                                       #f
                                                       (syntax-e var)
-                                                      var)
-                                                     #t))
+                                                      var)))
                                                  vars))
                                           varss)]
                           [vars (apply append varss)]
@@ -1286,27 +1315,27 @@
                      (set! -body
                            (cons
                             (make-object variable-def%
-                              (send (car defs) get-stx)
                               vars
                               (make-object letrec%
-                                (send (car defs) get-stx)
                                 lex-varss
                                 (map (lambda (rhs)
                                        (send rhs global->local env))
                                      rhss)
                                 (make-object app%
-                                  (send (car defs) get-stx)
                                   (make-object global%
-                                    (quote-syntax values)
                                     #f
                                     tables
-                                    #f)
+                                    #f
+                                    (quote-syntax values))
                                   (map (lambda (var lex-var)
-                                         (make-object ref% var lex-var))
+                                         (make-object ref% lex-var var))
                                        vars
                                        lex-vars)
-                                  tables))
-                              tables)
+                                  tables 
+                                  (send (car defs) get-stx))
+                                (send (car defs) get-stx))
+                              tables
+                              (send (car defs) get-stx))
                             l))))])
             (set! body -body)
             (set! et-body -et-body)))
@@ -1342,16 +1371,16 @@
                   [bindings (apply append bindingss)])
               (let ([env (map cons bindings 
                               (map (lambda (var) 
-                                     (make-object global% var #f tables #f)) 
+                                     (make-object global% #f tables #f var)) 
                                    vars))])
                 (set! body
                       (append
                        (map (lambda (vars body)
                               (make-object variable-def%
-                                stx
                                 vars
                                 (send body substitute env)
-                                tables))
+                                tables
+                                src-stx))
                             varss bodys)
                        (cdr body)))))))
         (super-deorganize))
@@ -1362,16 +1391,14 @@
                         [(body ...) (map get-sexpr body)]
                         [(et-body ...) (map get-sexpr et-body)]
                         [(req-prov ...) (map get-sexpr req-prov)])
-            (syntax/loc stx
+            (syntax/loc src-stx
                         (module name init-req
                           (#%plain-module-begin
                            req-prov ...
                            body ...
                            et-body ...)))))
       (define/override (body-sexpr)
-        (list (sexpr)))
-      
-      (super-instantiate (stx))))
+        (list (sexpr)))))
 
   ;; requires and provides should really be ignored:
   (define require/provide%
@@ -1400,7 +1427,7 @@
 				       [id (identifier? args) (list args)]
 				       [(id . rest)
 					(cons (syntax id) (loop (syntax rest)))])))])])
-      (let ([bindings (map (lambda (id) (make-object binding% id #t)) ids)])
+      (let ([bindings (map (lambda (id) (make-object binding% #t id)) ids)])
 	(values
 	 (append (map cons ids bindings) env)
 	 bindings
@@ -1413,7 +1440,7 @@
 	      [rhses (syntax->list (syntax (rhs ...)))]
 	      [var-objses (map (lambda (vars)
 				 (map (lambda (var)
-					(make-object binding% var (not rec?)))
+					(make-object binding% (not rec?) var))
 				      (syntax->list vars)))
 			       varses)]
 	      [body-env (append
@@ -1426,14 +1453,13 @@
 			       var-objses
 			       varses))
 			 env)])
-	 (make-object
-	  %
-	  stx
-	  var-objses
-	  (map (lambda (rhs)
-		 (loop rhs (if rec? body-env env)))
-	       rhses)
-	  (loop (syntax (begin . body)) body-env)))]))
+	 (make-object %
+           var-objses
+           (map (lambda (rhs)
+                  (loop rhs (if rec? body-env env)))
+                rhses)
+           (loop (syntax (begin . body)) body-env)
+           stx))]))
 
   (define (stx-bound-assq ssym l)
     (ormap (lambda (p)
@@ -1446,7 +1472,7 @@
       (if s
 	  (let ([b (cdr s)])
 	    (if (b . is-a? . binding%)
-		(make-object ref% (send var get-stx) b)
+		(make-object ref% b (send var get-stx))
 		;; it's a global%:
 		b))
 	  var)))
@@ -1458,54 +1484,54 @@
 	 (identifier? stx)
 	 (let ([a (stx-bound-assq stx env)])
 	   (if a
-	       (make-object ref% stx (cdr a))
-	       (make-object global% stx trans? tables #f)))]
+	       (make-object ref% (cdr a) stx)
+	       (make-object global% trans? tables #f stx)))]
 
 	[(#%top . id)
-	 (make-object global% (syntax id) trans? tables #t)]
+	 (make-object global% trans? tables #t (syntax id))]
 	
 	[(#%datum . val)
-	 (make-object constant% stx (syntax-object->datum (syntax val)))]
+	 (make-object constant% (syntax-object->datum (syntax val)) stx)]
 
 	[(define-values names rhs)
 	 (make-object variable-def% 
-		      stx
-		      (syntax->list (syntax names))
-		      (parse (syntax rhs) env #f in-module? tables)
-		      tables)]
+           (syntax->list (syntax names))
+           (parse (syntax rhs) env #f in-module? tables)
+           tables
+           stx)]
 	
 	[(define-syntaxes names rhs)
 	 (make-object syntax-def% 
-		      stx
-		      (syntax->list (syntax names))
-		      (parse (syntax rhs) env #t in-module? tables)
-		      tables)]
+           (syntax->list (syntax names))
+           (parse (syntax rhs) env #t in-module? tables)
+           tables
+           stx)]
 	
 	[(begin . exprs)
 	 (make-object begin%
-		      stx
-		      (map (lambda (e) ((if top? parse-top parse) e env trans? in-module? tables))
-			   (syntax->list (syntax exprs))))]
+           (map (lambda (e) ((if top? parse-top parse) e env trans? in-module? tables))
+                (syntax->list (syntax exprs)))
+           stx)]
 
 	[(begin0 expr . exprs)
 	 (make-object begin0%
-		      stx
-		      (parse (syntax expr) env trans? in-module? tables)
-		      (parse (syntax (begin . exprs)) env trans? in-module? tables))]
+           (parse (syntax expr) env trans? in-module? tables)
+           (parse (syntax (begin . exprs)) env trans? in-module? tables)
+           stx)]
 
 	[(quote expr)
-	 (make-object constant% stx (syntax-object->datum (syntax expr)))]
+	 (make-object constant% (syntax-object->datum (syntax expr)) stx)]
 
 	[(quote-syntax expr)
-	 (make-object constant% stx (syntax expr))]
+	 (make-object constant% (syntax expr) stx)]
 
 	[(lambda args . body)
 	 (let-values ([(env args norm?) (parse-args env (syntax args))])
 	   (make-object lambda%
-			stx
-			(list args)
-			(list norm?)
-			(list (parse (syntax (begin . body)) env trans? in-module? tables))))]
+             (list args)
+             (list norm?)
+             (list (parse (syntax (begin . body)) env trans? in-module? tables))
+             stx))]
 
 	[(case-lambda [args . body] ...)
 	 (let-values ([(envs argses norm?s)
@@ -1520,14 +1546,14 @@
 			  (map cadr es+as+n?s)
 			  (map cddr es+as+n?s)))])
 	   (make-object lambda%
-			stx
-			argses
-			norm?s
-			(map (lambda (env body)
-			       (with-syntax ([body body])
-				 (parse (syntax (begin . body)) env trans? in-module? tables)))
-			     envs
-			     (syntax->list (syntax (body ...))))))]
+             argses
+             norm?s
+             (map (lambda (env body)
+                    (with-syntax ([body body])
+                      (parse (syntax (begin . body)) env trans? in-module? tables)))
+                  envs
+                  (syntax->list (syntax (body ...))))
+             stx))]
 	
 	[(let-values . _)
 	 (parse-let let% #f stx env
@@ -1538,35 +1564,35 @@
 
 	[(set! var rhs)
 	 (make-object set!% 
-		      stx
-		      (parse (syntax var) env trans? in-module? tables)
-		      (parse (syntax rhs) env trans? in-module? tables))]
+           (parse (syntax var) env trans? in-module? tables)
+           (parse (syntax rhs) env trans? in-module? tables)
+           stx)]
 
 	[(if test then . else)
 	 (make-object if%
-		      stx
-		      (parse (syntax test) env trans? in-module? tables)
-		      (parse (syntax then) env trans? in-module? tables)
-		      (if (null? (syntax-e (syntax else)))
-			  (parse (quote-syntax (#%app void)) env trans? in-module? tables)
-			  (parse (car (syntax-e (syntax else))) env trans? in-module? tables)))]
+           (parse (syntax test) env trans? in-module? tables)
+           (parse (syntax then) env trans? in-module? tables)
+           (if (null? (syntax-e (syntax else)))
+               (parse (quote-syntax (#%app void)) env trans? in-module? tables)
+               (parse (car (syntax-e (syntax else))) env trans? in-module? tables))
+           stx)]
 	
 	[(with-continuation-mark k v body)
 	 (make-object wcm% 
-		      stx
-		      (parse (syntax k) env trans? in-module? tables)
-		      (parse (syntax v) env trans? in-module? tables)
-		      (parse (syntax body) env trans? in-module? tables))]
+           (parse (syntax k) env trans? in-module? tables)
+           (parse (syntax v) env trans? in-module? tables)
+           (parse (syntax body) env trans? in-module? tables)
+           stx)]
 	
 	[(#%app)
-	 (make-object constant% stx null)]
+	 (make-object constant% null stx)]
 	
 	[(#%app func . args)
 	 (make-object app% 
-		      stx
-		      (parse (syntax func) env trans? in-module? tables)
-		      (map (lambda (v) (parse v env trans? in-module? tables)) (syntax->list (syntax args)))
-		      tables)]
+           (parse (syntax func) env trans? in-module? tables)
+           (map (lambda (v) (parse v env trans? in-module? tables)) (syntax->list (syntax args)))
+           tables
+           stx)]
 
 	[(module name init-require (#%plain-module-begin . body))
 	 (let* ([body (map (lambda (x)
@@ -1582,14 +1608,13 @@
 		 (filter (lambda (x) (x . is-a? . require/provide%))
 			 body)])
 	   (make-object module%
-			stx
-			rt-body
-			et-body
-			(syntax name)
-			(syntax init-require)
-			req-prov
-			tables))]
-
+             rt-body
+             et-body
+             (syntax name)
+             (syntax init-require)
+             req-prov
+             tables stx))]
+        
 	[(require . i) (make-object require/provide% stx)]
 	[(require-for-syntax . i) (make-object require/provide% stx)]
 	[(provide i ...) (make-object require/provide% stx)]
@@ -1602,16 +1627,6 @@
   (define (create-tables)
     (make-tables (make-hash-table) (make-hash-table)))
 
-  
-  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Inliner
-  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; (define (inline! in-module? node)
- ;   (cond
-  ;    ((and (is-a? node global%) in-module?)
-       
-       
-  
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Optimizer
@@ -1630,5 +1645,5 @@
 
   (provide optimize))
 ;(require src2src)
-;(optimize (expand (call-with-input-file "src2src.ss"
-;                    (lambda (x) (read-syntax "src2src.ss" x)))))
+;(optimize (expand (call-with-input-file "/home/sowens/sgl/test.ss"
+;                    (lambda (x) (read-syntax "test.ss" x)))))

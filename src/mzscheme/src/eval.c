@@ -1909,11 +1909,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #define UPDATE_THREAD_RSPTR_FOR_GC() UPDATE_THREAD_RSPTR()
 #define UPDATE_THREAD_RSPTR_FOR_ERROR() UPDATE_THREAD_RSPTR()
 
+  MZ_CONT_MARK_POS++;
   old_runstack = RUNSTACK;
   old_cont_mark_chain = MZ_CONT_MARK_CHAIN;
 
-# define INC_MARK_POS() MZ_CONT_MARK_POS++
-# define DEC_MARK_POS() --MZ_CONT_MARK_POS
+# define INC_MARK_POS() /* MZ_CONT_MARK_POS++ */
+# define DEC_MARK_POS() /* --MZ_CONT_MARK_POS */
 
   if (num_rands >= 0) {
 
@@ -2771,6 +2772,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   MZ_RUNSTACK = old_runstack;
   MZ_CONT_MARK_CHAIN = old_cont_mark_chain;
+  --MZ_CONT_MARK_POS;
 
   DEBUG_CHECK_TYPE(v);
 

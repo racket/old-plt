@@ -230,9 +230,9 @@
 
 (define *css-port* #f)
 
-(define *current-tex2page-input* #f)
+(define *current-source-file* #f)
 
-(define *current-tex-file* #f)
+(define *current-tex2page-input* #f)
 
 (define *display-justification* 'center)
 
@@ -318,7 +318,7 @@
 
 (define *infructuous-calls-to-tex2page* #f)
 
-(define *input-line-no* #f)
+(define *input-line-no* 0)
 
 (define *input-streams* '())
 
@@ -772,12 +772,12 @@
 (define display-error-context-lines
   (lambda ()
     (let ((n (let ((c (find-count "\\errorcontextlines"))) (if c (cadr c) 0))))
-      (when (and *input-line-no* *current-tex-file* (> n 0))
+      (when (and *current-source-file* (> n 0))
         (let* ((n1 (max 0 (- *input-line-no* (quotient (- n 1) 2))))
                (nf (+ n1 n -1))
                (ll
                 (call-with-input-file
-                  *current-tex-file*
+                  *current-source-file*
                   (lambda (ip)
                     (let loop ((i 1) (ll '()))
                       (let ((L (read-line ip)))
@@ -793,7 +793,7 @@
                    (ll (reverse! ll))
                    (n1 (caar ll)))
               (write-log "Likely error context: ")
-              (write-log *current-tex-file*)
+              (write-log *current-source-file*)
               (write-log ", line")
               (unless only-1? (write-log "s"))
               (write-log " ")
@@ -821,10 +821,9 @@
     (write-log "! ")
     (for-each write-log args)
     (write-log 'separation-newline)
-    (when *input-line-no*
-      (write-log "l.")
-      (write-log *input-line-no*)
-      (write-log #\space))
+    (write-log "l.")
+    (write-log *input-line-no*)
+    (write-log #\space)
     (write-log where)
     (write-log " failed.")
     (write-log 'separation-newline)
@@ -864,7 +863,7 @@
               (set! s
                 (string-append
                   (substring s 0 i)
-                  *current-tex-file*
+                  *current-source-file*
                   (substring s (+ i 2) (string-length s))))))
            (else (set! bad-texedit? #t)))
           (cond
@@ -880,17 +879,16 @@
               " +"
               (number->string *input-line-no*)
               " "
-              *current-tex-file*)))))
+              *current-source-file*)))))
       (when cmd (system cmd)))))
 
 (define trace-if
   (lambda (write? . args)
     (when write?
       (write-log 'separation-newline)
-      (when *input-line-no*
-        (write-log "l.")
-        (write-log *input-line-no*)
-        (write-log #\space))
+      (write-log "l.")
+      (write-log *input-line-no*)
+      (write-log #\space)
       (for-each write-log args)
       (write-log 'separation-newline))))
 
@@ -926,7 +924,7 @@
       (lambda (i)
         (fluid-let
           ((*current-tex2page-input* (make-bport 'port i))
-           (*current-tex-file* f)
+           (*current-source-file* f)
            (*input-line-no* 1))
           (th))))))
 
@@ -3667,14 +3665,10 @@
           (ignore-all-whitespace)
           (let ((c (snoop-actual-char)))
             (unless (eof-object? c)
-              (case (string->symbol (scm-get-token))
-                ((last-page) (set! *colophon-on-first-page?* #f))
-                ((no-timestamp) (set! *colophon-mentions-last-mod-time?* #f))
-                ((dont-credit-tex2page ingrate)
-                 (set! *colophon-mentions-tex2page?* #f))
-                ((dont-link-to-tex2page-website)
-                 (set! *colophon-links-to-tex2page-website?* #f)))
-              (loop))))))))
+              (let ((directive (string->symbol (scm-get-token))))
+                (!colophon directive)
+                (write-aux `(!colophon ,directive))
+                (loop)))))))))
 
 (define output-colophon
   (lambda ()
@@ -3807,7 +3801,7 @@
   (lambda ()
     (unless (and
              (eof-object? (snoop-actual-char))
-             (eqv? *current-tex-file* *main-tex-file*))
+             (eqv? *current-source-file* *main-tex-file*))
       (unless (> *last-page-number* 0)
         (flag-missing-piece 'last-modification-time))
       (do-end-page)
@@ -7059,7 +7053,7 @@
               (if txi2p
                 (begin
                   (tex2page-file txi2p)
-                  (tex2page-file *current-tex-file*)
+                  (tex2page-file *current-source-file*)
                   ':encountered-endinput)
                 (terror 'do-input "File texinfo2p.tex not found"))))
            ((actual-tex-filename f (check-input-file-timestamp? f))
@@ -7471,6 +7465,15 @@
 
 (define !html-slideshow (lambda () (set! *html-slideshow?* #t)))
 
+(define !colophon
+  (lambda (x)
+    (case x
+      ((last-page) (set! *colophon-on-first-page?* #f))
+      ((no-timestamp) (set! *colophon-mentions-last-mod-time?* #f))
+      ((dont-credit-tex2page ingrate) (set! *colophon-mentions-tex2page?* #f))
+      ((dont-link-to-tex2page-website)
+       (set! *colophon-links-to-tex2page-website?* #f)))))
+
 (define fully-qualified-url?
   (lambda (u) (or (substring? "//" u) (char=? (string-ref u 0) #\/))))
 
@@ -7517,35 +7520,45 @@
 
 (define load-tex2page-data-file
   (lambda (f)
-    (if (file-exists? f)
-      (call-with-input-file
-        f
-        (lambda (i)
-          (let loop ()
-            (let ((e (read i)))
-              (unless (eof-object? e)
-                (apply
-                 (case (car e)
-                   ((!default-title) !default-title)
-                   ((!definitely-latex) !definitely-latex)
-                   ((!external-labels) !external-labels)
-                   ((!html-head) !html-head)
-                   ((!html-slideshow) !html-slideshow)
-                   ((!index) !index)
-                   ((!index-page) !index-page)
-                   ((!infructuous-calls-to-tex2page)
-                    !infructuous-calls-to-tex2page)
-                   ((!label) !label)
-                   ((!last-modification-time) !last-modification-time)
-                   ((!last-page-number) !last-page-number)
-                   ((!preferred-title) !preferred-title)
-                   ((!stylesheet) !stylesheet)
-                   ((!toc-entry) !toc-entry)
-                   ((!toc-page) !toc-page)
-                   ((!using-chapters) !using-chapters)
-                   ((!using-external-program) !using-external-program))
-                 (cdr e))
-                (loop)))))))))
+    (when (file-exists? f)
+      (fluid-let
+        ((*current-source-file* f) (*input-line-no* 0))
+        (call-with-input-file
+          f
+          (lambda (i)
+            (let loop ()
+              (let ((e (read i)))
+                (unless (eof-object? e)
+                  (set! *input-line-no* (+ *input-line-no* 1))
+                  (let ((x (car e)))
+                    (apply
+                     (case x
+                       ((!colophon) !colophon)
+                       ((!default-title) !default-title)
+                       ((!definitely-latex) !definitely-latex)
+                       ((!external-labels) !external-labels)
+                       ((!html-head) !html-head)
+                       ((!html-slideshow) !html-slideshow)
+                       ((!index) !index)
+                       ((!index-page) !index-page)
+                       ((!infructuous-calls-to-tex2page)
+                        !infructuous-calls-to-tex2page)
+                       ((!label) !label)
+                       ((!last-modification-time) !last-modification-time)
+                       ((!last-page-number) !last-page-number)
+                       ((!preferred-title) !preferred-title)
+                       ((!stylesheet) !stylesheet)
+                       ((!toc-entry) !toc-entry)
+                       ((!toc-page) !toc-page)
+                       ((!using-chapters) !using-chapters)
+                       ((!using-external-program) !using-external-program)
+                       (else
+                        (terror
+                          'load-tex2page-data-file
+                          "Unrecognized aux file directive "
+                          x)))
+                     (cdr e))
+                    (loop)))))))))))
 
 (define tex2page-massage-file (lambda (f) f))
 
@@ -9130,7 +9143,7 @@
        (*comment-char* #\%)
        (*css-port* #f)
        (*current-tex2page-input* #f)
-       (*current-tex-file* #f)
+       (*current-source-file* #f)
        (*display-justification* 'center)
        (*dotted-counters* (make-table 'equ string=?))
        (*dumping-nontex?* #f)
@@ -9169,7 +9182,7 @@
        (*index-page* #f)
        (*index-port* #f)
        (*infructuous-calls-to-tex2page* 0)
-       (*input-line-no* #f)
+       (*input-line-no* 0)
        (*input-streams* '())
        (*inputting-boilerplate?* #f)
        (*inside-appendix?* #f)

@@ -24,7 +24,6 @@
   scheme_extension_table->scheme_fuel_counter_ptr = scheme_fuel_counter_ptr;
 #endif
 #endif
-  scheme_extension_table->scheme_make_namespace = scheme_make_namespace;
 #ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_thread = scheme_thread;
   scheme_extension_table->scheme_thread_w_manager = scheme_thread_w_manager;
@@ -44,7 +43,6 @@
   scheme_extension_table->scheme_tls_allocate = scheme_tls_allocate;
   scheme_extension_table->scheme_tls_set = scheme_tls_set;
   scheme_extension_table->scheme_tls_get = scheme_tls_get;
-  scheme_extension_table->scheme_add_namespace_option = scheme_add_namespace_option;
   scheme_extension_table->scheme_make_manager = scheme_make_manager;
   scheme_extension_table->scheme_add_managed = scheme_add_managed;
   scheme_extension_table->scheme_remove_managed = scheme_remove_managed;
@@ -280,6 +278,8 @@
   scheme_extension_table->scheme_fdisset = scheme_fdisset;
   scheme_extension_table->scheme_add_fd_handle = scheme_add_fd_handle;
   scheme_extension_table->scheme_add_fd_eventmask = scheme_add_fd_eventmask;
+  scheme_extension_table->scheme_make_namespace = scheme_make_namespace;
+  scheme_extension_table->scheme_add_namespace_option = scheme_add_namespace_option;
   scheme_extension_table->scheme_add_global = scheme_add_global;
   scheme_extension_table->scheme_add_global_constant = scheme_add_global_constant;
   scheme_extension_table->scheme_add_global_keyword = scheme_add_global_keyword;

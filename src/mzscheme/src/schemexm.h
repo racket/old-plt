@@ -24,7 +24,6 @@
 #define scheme_fuel_counter_ptr (scheme_extension_table->scheme_fuel_counter_ptr)
 #endif
 #endif
-#define scheme_make_namespace (scheme_extension_table->scheme_make_namespace)
 #ifndef NO_SCHEME_THREADS
 #define scheme_thread (scheme_extension_table->scheme_thread)
 #define scheme_thread_w_manager (scheme_extension_table->scheme_thread_w_manager)
@@ -44,7 +43,6 @@
 #define scheme_tls_allocate (scheme_extension_table->scheme_tls_allocate)
 #define scheme_tls_set (scheme_extension_table->scheme_tls_set)
 #define scheme_tls_get (scheme_extension_table->scheme_tls_get)
-#define scheme_add_namespace_option (scheme_extension_table->scheme_add_namespace_option)
 #define scheme_make_manager (scheme_extension_table->scheme_make_manager)
 #define scheme_add_managed (scheme_extension_table->scheme_add_managed)
 #define scheme_remove_managed (scheme_extension_table->scheme_remove_managed)
@@ -280,6 +278,8 @@
 #define scheme_fdisset (scheme_extension_table->scheme_fdisset)
 #define scheme_add_fd_handle (scheme_extension_table->scheme_add_fd_handle)
 #define scheme_add_fd_eventmask (scheme_extension_table->scheme_add_fd_eventmask)
+#define scheme_make_namespace (scheme_extension_table->scheme_make_namespace)
+#define scheme_add_namespace_option (scheme_extension_table->scheme_add_namespace_option)
 #define scheme_add_global (scheme_extension_table->scheme_add_global)
 #define scheme_add_global_constant (scheme_extension_table->scheme_add_global_constant)
 #define scheme_add_global_keyword (scheme_extension_table->scheme_add_global_keyword)

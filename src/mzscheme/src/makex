@@ -26,10 +26,6 @@ while (<>) {
 			$_ = substr($_, 7);
 		    }
 
-		    if ($_ =~ /^NONPROC /) {
-			$_ = substr($_, 8);
-		    }
-
 		    if ($_ =~ /^const /) {
 			$_ = substr($_, 6);
 			$const = 'const ';

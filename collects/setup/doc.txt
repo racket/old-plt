@@ -374,11 +374,12 @@ general functions to help make .plt archives:
  Unpacking .plt archives
  -----------------------
 
- The _plt-installer.ss_ library in the setup collection defines two
+ The _plt-installer.ss_ library in the setup collection defines these
  procedures:
 
 > (run-installer filename) - run the .plt installer on the .plt file in
-  `filename' and show the output in a window.
+  `filename' and show the output in a window. This is a simple
+  composition of with-installer-window and run-single-installer.
 
 > (on-installer-run thunk) - sets the on-installer-run thunk to
   `thunk'. The on-installer-run thunk is run after a .plt file is
@@ -387,6 +388,18 @@ general functions to help make .plt archives:
 > (on-installer-run) - returns the on-installer-run thunk. The
   on-installer-run thunk is run after a .plt file is installed.
 
+> (with-installer-window do-install)
+    do-install : ((union (instanceof dialog%) (instanceof frame%)) -> void)
+      creates a frame and sets up the current error and output ports
+      before calling `do-install'. When it returns, closes down the frame.
+
+> (run-single-installer file parent)
+     file : string
+     parent: (union (instanceof frame%) (instanceof dialog%))
+      creates a separate thread, runs the installer in that thread,
+      returns when the thread completes. Does no GUI stuff.
+
+      
  The _plt-installer-unit.ss_ library in the setup collection returns a unit/sig
  that imports mred^ and exports setup:plt-installer^. The signature
  setup:plt-installer^ has two names: run-installer and on-installer-run, as

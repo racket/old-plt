@@ -154,7 +154,15 @@
  (and "and")
  (error-finding-docs
   "Could not find documentation.\n\n~a")
- ; help desk htty proxy
+ (manual-installed-date "(installed ~a)")
+
+ ;; refreshing manuals
+ (refreshing-manuals "Re-downloading Manuals")
+ (refresh-downloading... "Downloading ~a...")
+ (refresh-deleting... "Deleting old version of ~a...")
+ (refresh-installing... "Installing new version of ~a...")
+
+ ;; help desk htty proxy
  (http-proxy "HTTP Proxy")
  (proxy-direct-connection "Direct connection")
  (proxy-use-proxy "Use proxy:")

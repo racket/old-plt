@@ -1,5 +1,7 @@
 (module manuals mzscheme
   (require (lib "list.ss")
+           (lib "date.ss")
+           (lib "string-constant.ss" "string-constants")
            "private/colldocs.ss"
            "private/docpos.ss")
 
@@ -8,7 +10,8 @@
   (define re:title (regexp "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>"))
 
   (define (find-manuals)
-    (let* ([doc-collection-path (with-handlers ([void (lambda (x) #f)])
+    (let* ([cvs-user? (directory-exists? (build-path (collection-path "help") "CVS"))]
+           [doc-collection-path (with-handlers ([void (lambda (x) #f)])
                                   (collection-path "doc"))]
            [docs (let loop ([l (if doc-collection-path
                                    (directory-list doc-collection-path)
@@ -62,9 +65,21 @@
 	   [tool-names (map car tool-names+paths)]
 	   [tool-doc-paths (map cdr tool-names+paths)]
 	   [mk-link (lambda (doc name)
-		      (format "<LI> <A HREF=\"file:~a\">~a</A>"
-			      (build-path doc "index.htm")
-			      name))]
+                      (let ([index-file (build-path doc "index.htm")])
+                        (format "<LI> <A HREF=\"file:~a\">~a</A>~a"
+                                index-file
+                                name
+                                (if (and cvs-user?
+                                         (file-exists? index-file))
+                                    (string-append 
+                                     "<br>"
+                                     (format (string-constant manual-installed-date)
+                                             (date->string
+                                              (seconds->date
+                                               (file-or-directory-modify-seconds
+                                                index-file)))))
+                                    ""))))]
+                                       
 	   [break-between (lambda (re l)
 			    (if (null? l)
 				l
@@ -84,8 +99,14 @@
          "</head>"
          "<body>"
          (append 
-	  (list "<H1>Installed Manuals</H1>"
-		"<H3>Languages</H3>"
+	  
+          (list "<H1>Installed Manuals</H1>")
+          
+          (if cvs-user?
+              (list "<b>CVS:</b> <a mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals))\">refresh all manuals</a>")
+              (list))
+          
+          (list "<H3>Languages</H3>"
 		"<UL>")
 	  (break-between "Student" (map mk-link lang-doc-paths lang-names))
 	  (list "</UL>"
@@ -129,4 +150,5 @@
                                 " (index installed)"
                                 "")))
                   uninstalled)
-                 (list "</UL></body></html>")))]))))))))
+                 (list "</UL>")))]))
+          (list "</body></html>")))))))

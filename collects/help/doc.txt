@@ -398,3 +398,11 @@ These libraries are used to build dynamic portions of the documentation.
 > (find-manuals)
   It returns a string version of html code that, when rendered, shows
   the installed and known uninstalled manuals.
+
+> Refresh Manuals
+  The _refresh-manuals.ss_ library contains a module that defines a
+  single procedure:
+> (refresh-manuals)
+  It deletes all of the sub-collections of the doc collection and 
+  the downloads all of the .plt files from the documentation web site
+  and installs them.

@@ -31,6 +31,7 @@
   (define known-docs
     '(("beginning" . "Beginning Student Language")
       ("beginning-abbr" . "Beginning Student with List Abbreviations Language")
+#|
       ("advanced" . "Advanced Student Language")
       ("intermediate" . "Intermediate Student Language")
       ("intermediate-lambda" . "Intermediate Student with Lambda Language")
@@ -45,4 +46,6 @@
       ("insidemz" . "Inside PLT MzScheme")
       ("tools" . "PLT Tools: DrScheme Extension Manual")
       ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")
-      ("tex2page" . "TeX2page"))))
+      ("tex2page" . "TeX2page")
+      |#
+      )))

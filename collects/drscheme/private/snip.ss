@@ -38,7 +38,7 @@ carry over the computation of the original
         (let ([n (instantiate number-snip% ()
                    [number number]
                    [decimal-prefix (if e-prefix? "#e" "")])])
-          (send n reverse-fraction-view)
+          (send n set-fraction-view #t)
           n))
 
       (define (set-box/f! b v) (when (box? b) (set-box! b v)))
@@ -64,15 +64,15 @@ carry over the computation of the original
       
       (define number-snip%
         (class snip%
-          (init-field
-           ;; number : number
-           ;; this is the number to show
-           number
-
+          ;; number : number
+          ;; this is the number to show
+          (init-field number)
+          (define/public (get-number) number)
+          
            ;; decimal-prefix : string
            ;; this prefix is shown on the string when it is viewed in
            ;; the decimal view
-           [decimal-prefix ""])
+          (init-field [decimal-prefix ""])
         
           ;; fraction-view? : boolean
           ;; this field holds the current view state
@@ -87,17 +87,19 @@ carry over the computation of the original
            ;; barred-portion : (union #f string)
            [barred-portion #f])
           
-          ;; these fields are for the fractional printing view
           (field
            ;; wholes : string
-           ;; the whole-number portion of the fraction, as a string
+           ;; the whole-number portion of the fraction or decimal, as a string
            [wholes (cond
                      [(= (floor number) 0) ""]
                      [(= (ceiling number) 0) "-"]
                      [(< number 0)
                       (number->string (ceiling number))]
                      [else
-                      (number->string (floor number))])]
+                      (number->string (floor number))])])
+
+          ;; these fields are for the fractional printing view
+          (field
            ;; nums : string
            ;; the numerator, as a string
            [nums (number->string (numerator (- (abs number) (floor (abs number)))))]
@@ -108,9 +110,8 @@ carry over the computation of the original
 
           ;; these fields are for the decimal expansion calculation code
           (field
-           [whole-part (floor number)]
-           [init-num (* 10 (numerator (- number whole-part)))]
-           [den (denominator (- number whole-part))])
+           [init-num (* 10 (numerator (- (abs number) (floor (abs number)))))]
+           [den (denominator (- (abs number) (floor (abs number))))])
           
           ;; ht : number -o> (cons digit number)
           ;; this maps from divisors of the denominator to
@@ -137,11 +138,20 @@ carry over the computation of the original
           ;; reverse-fraction-view : -> void
           ;; toggles the view
           (define/public (reverse-fraction-view)
-            (set! fraction-view? (not fraction-view?))
+            (set-fraction-view (not fraction-view?)))
+
+          ;; set-fraction-view : boolean -> void
+          ;; sets the view based on the input
+          (define/public (set-fraction-view b)
+            (set! fraction-view? b)
             (let ([admin (get-admin)])
               (when admin
                 (send admin resized this #t))))
 
+          ;; get-fraction-view : -> boolean
+          ;; returns the current fraction view settings
+          (define/public (get-fraction-view) fraction-view?)
+          
           ;; iterate : number -> void
           ;; computes the next sequence of digits (`n' times)
           ;; and update the strings for GUI drawing
@@ -204,7 +214,7 @@ carry over the computation of the original
                (set! unbarred-portion
                      (string-append
                       decimal-prefix
-                      (if (zero? whole-part) "" (number->string whole-part))
+                      wholes
                       "."
                       (apply string-append (map number->string (extract-non-cycle)))))
                (set! barred-portion #f)
@@ -213,7 +223,7 @@ carry over the computation of the original
                (set! unbarred-portion
                      (string-append
                       decimal-prefix
-                      (if (zero? whole-part) "" (number->string whole-part))
+                      wholes
                       "."
                       (apply string-append 
                              (map number->string (extract-non-cycle)))))
@@ -223,7 +233,7 @@ carry over the computation of the original
                (set! unbarred-portion
                      (string-append
                       decimal-prefix
-                      (if (zero? whole-part) "" (number->string whole-part))
+                      wholes
                       "."
                       (apply string-append
                              (map number->string (extract-non-cycle)))))
@@ -267,10 +277,12 @@ carry over the computation of the original
             (case-lambda
               [(offset num) (get-text offset num #f)]
               [(offset num flattened?) 
-               (string-append 
-                unbarred-portion
-                (or barred-portion "")
-                (or clickable-portion ""))]))
+               (if fraction-view?
+                   (string-append wholes " " nums "/" dens)
+                   (string-append 
+                    unbarred-portion
+                    (or barred-portion "")
+                    (or clickable-portion "")))]))
           
           (define/override (write f)
             (send f put (number->string number))
@@ -281,6 +293,7 @@ carry over the computation of the original
                           [number number]
                           [decimal-prefix decimal-prefix])])
               (send snip iterate expansions)
+              (send snip set-fraction-view fraction-view?)
               snip))
           
           (inherit get-style)

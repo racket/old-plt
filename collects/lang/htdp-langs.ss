@@ -62,7 +62,7 @@
           (define (default-settings)
             (make-setting/parse
              `((case-sensitive #t)
-               (printing-style 'constructor)
+               (printing-style 'constructor-style)
                (use-pretty-printer #t)
                (sharing-printing ,(send htdp-language sharing-printing))
                (abbreviate-cons-as-list ,(send htdp-language abbreviate-cons-as-list))
@@ -83,7 +83,7 @@
           (define (render-value val settings port dump-snip)
             (display "value" port))
           
-          (super-initialize ())))
+          (super-instantiate ())))
 
       ;; htdp-language-config-panel : ((instanceof panel<%>) -> (-> setting))
       ;; constrcts the standard settings panel
@@ -113,7 +113,8 @@
                     [(constructor-style) 0]
                     [(quasi-style) 1]
                     [(r4rs-style) 2]
-                    [else (error 'drscheme:language:update-to "got: ~a as printing style"
+                    [else (error 'htdp-langs.ss:symbol->printer-number
+                                 "got: ~a as printing style"
                                  printing-setting)]))]
                [printer-number->symbol
                 (lambda (which)
@@ -123,7 +124,7 @@
                     [(2) 'r4rs-style]
                     [else 'constructor-style]))]
                
-               [printing-rb
+               [printing-style-rb
                 (right-align
                  (lambda (main)
                    (make-object radio-box%
@@ -145,7 +146,7 @@
                [use-pretty-printer-cb
                 (make-check-box (string-constant use-pretty-printer-label) output-syntax-panel)])
           
-          (send printing-rb set-value (symbol->printer-number (setting-use-pretty-printer settings)))
+          (send printing-style-rb set-selection (symbol->printer-number (setting-printing-style settings)))
           (send case-sensitive-cb set-value (setting-case-sensitive settings))
           (send sharing-printing-cb set-value (setting-sharing-printing settings))
           (send booleans-as-true/false-cb set-value (setting-booleans-as-true/false settings))
@@ -154,7 +155,7 @@
           (lambda ()
             (make-setting/parse 
              `((case-sensitive ,(send case-sensitive-cb get-value))
-               (printing ,(printer-number->symbol (send printing-rb get-value)))
+               (printing-style ,(printer-number->symbol (send printing-style-rb get-selection)))
                (sharing-printing ,(send sharing-printing-cb get-value))
                (booleans-as-true/false ,(send booleans-as-true/false-cb get-value))
                (use-pretty-printer ,(send use-pretty-printer-cb get-value)))))))
@@ -176,7 +177,8 @@
          (define (get-module) '(lib "beginner.ss" "langs"))
          (define (get-language-position) '("How to Design Programs" "Beginning Student"))
          (define (sharing-printing) #f)
-         (define (abbreviate-cons-as-list) #f)))
+         (define (abbreviate-cons-as-list) #f)
+         (super-instantiate ())))
       
       (add-htdp-language
        (class* object% (htdp-language<%>) 
@@ -187,7 +189,8 @@
          (define (get-module) '(lib "intermediate.ss" "langs"))
          (define (get-language-position) '("How to Design Programs" "Intermediate Student"))
          (define (sharing-printing) #f)
-         (define (abbreviate-cons-as-list) #t)))
+         (define (abbreviate-cons-as-list) #t)
+         (super-instantiate ())))
       
       (add-htdp-language
        (class* object% (htdp-language<%>) 
@@ -198,4 +201,5 @@
          (define (get-module) '(lib "advanced.ss" "langs"))
          (define (get-language-position) '("How to Design Programs" "Advanced Student"))
          (define (sharing-printing) #t)
-         (define (abbreviate-cons-as-list) #t))))))
+         (define (abbreviate-cons-as-list) #t)
+         (super-instantiate ()))))))

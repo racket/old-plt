@@ -185,21 +185,21 @@
 		  [(string=? s ".") 'same]
 		  [else s]))))
           (lambda (index offset)
-            (let*-values ([(simple-index) (simplify-path index)]
-                          [(base name dir?)
-                           (split-path simple-index)])
-              (if (string=? "" offset)
-                  (build-path base name)
-                  (build-path
-                   (if (or dir?
-                           (directory-exists? simple-index))
-                       simple-index
-                       (if (eq? base 'relative)
-                           'same
-                           base))
-                   (let loop ((str offset))
-                     (let ((m (regexp-match path-segment-regexp str)))
-                       (cond
+	    (let*-values ([(simple-index) (simplify-path index)]
+			  [(base name dir?)
+			   (split-path simple-index)])
+	      (if (string=? "" offset)
+		  (build-path base name)
+		  (build-path
+		   (if (or dir?
+			   (directory-exists? simple-index))
+		       simple-index
+		       (if (eq? base 'relative)
+			   'same
+			   base))
+		   (let loop ((str offset))
+		     (let ((m (regexp-match path-segment-regexp str)))
+		       (cond
 			[(not m) str]
 			[else
 			 (if (string=? "" (caddr m))

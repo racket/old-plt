@@ -187,9 +187,11 @@ Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
     for (i = 1; i < 5 - len; i++) {
       buff[i] = '0';
     } 
+    buff[6-len] = '\0';
   }
   else {
     buff[0] = '0';
+    buff[1] = '\0';
   }
 
   port = scheme_make_string_input_port(buff);    

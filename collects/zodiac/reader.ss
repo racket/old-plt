@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:reader-code@
-;;  $Id$
+;;  $Id: reader.ss,v 1.1 1997/02/25 16:09:50 krentel Exp $
 ;;
 ;;  Zodiac Reader  July 96
 ;;  mwk, plt group, Rice university.
@@ -115,6 +115,8 @@
 					  head len '()))))
    (define pack-vector    (pack-seqn  zodiac:make-vector))
 
+   (define allow-improper-lists (make-parameter #t))
+
    (define pack-imp-list 
      (lambda (open-token  close-token  head  len  dot)
        (let ([obj  (zodiac:make-improper-list
@@ -122,7 +124,7 @@
                      (zodiac-start   open-token)
                      (zodiac-finish  close-token)
                      head  len  dot '())])
-         (if parm:allow-improper-lists?
+         (if (allow-improper-lists)
              obj 
              (z:r-s-e  obj  "improper lists are not allowed")))))
 

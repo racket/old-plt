@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.124 1997/08/25 14:54:32 shriram Exp $
+; $Id: scm-main.ss,v 1.125 1997/08/25 16:48:27 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1084,69 +1084,6 @@
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed rec"))))))
-
-  '(add-primitivized-macro-form
-    'cond
-    scheme-vocabulary
-    (let* ((kwd-1 '(else =>))
-	    (in-pattern-1 (if (language<=? 'structured)
-			    '(_ (else b)) '(_ (else b ...))))
-	    (out-pattern-1 (if (language<=? 'structured)
-			     'b '(begin b ...)))
-	    (in-pattern-2 (if (language<=? 'structured)
-			    '(_ (else b) rest ...)
-			    '(_ (else b ...) rest ...)))
-	    (out-pattern-2 'this-is-an-error-case)
-	    (in-pattern-3 '(_))
-	    (out-pattern-3-signal-error
-	      '(#%raise (#%make-exn:else
-			  "no matching else clause"
-			  ((debug-info-handler)))))
-	    (out-pattern-3-no-error
-	      '(#%void))
-	    (in-pattern-4 (if (language<=? 'side-effecting)
-			    '()		; will never match
-			    '(_ (item) rest ...)))
-	    (out-pattern-4 '(or item (cond rest ...)))
-	    (in-pattern-5 '(_ (test => receiver) rest ...))
-	    (out-pattern-5 '(let ((t test))
-			      (if t (receiver t) (cond rest ...))))
-	    (in-pattern-6 '(_ (test =>) rest ...))
-	    (out-pattern-6 'this-is-an-error-case)
-	    (in-pattern-7 (if (language<=? 'structured)
-			    '(_ (test b) rest ...)
-			    '(_ (test b0 b1 ...) rest ...)))
-	    (out-pattern-7 (if (language<=? 'structured)
-			     '(if test b (cond rest ...))
-			     '(if test (begin b0 b1 ...) (cond rest ...))))
-	    (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
-	    (m&e-2 (pat:make-match&env in-pattern-2 kwd-1))
-	    (m&e-3 (pat:make-match&env in-pattern-3 kwd-1))
-	    (m&e-4 (pat:make-match&env in-pattern-4 kwd-1))
-	    (m&e-5 (pat:make-match&env in-pattern-5 kwd-1))
-	    (m&e-6 (pat:make-match&env in-pattern-6 kwd-1))
-	    (m&e-7 (pat:make-match&env in-pattern-7 kwd-1)))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
-	  (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd-1
-	    (lambda (_)
-	      (static-error expr "else allowed only in last position"))
-	    (lambda () #f)
-	    env)
-	  (if (compile-allow-cond-fallthrough)
-	    (pat:match-and-rewrite expr m&e-3
-	      out-pattern-3-no-error kwd-1 env)
-	    (pat:match-and-rewrite expr m&e-3
-	      out-pattern-3-signal-error kwd-1 env))
-	  (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd-1 env)
-	  (pat:match-and-rewrite expr m&e-5 out-pattern-5 kwd-1 env)
-	  (pat:match-and-rewrite expr m&e-6 out-pattern-6 kwd-1
-	    (lambda (_)
-	      (static-error expr "=> must be followed by a receiver"))
-	    (lambda () #f)
-	    env)
-	  (pat:match-and-rewrite expr m&e-7 out-pattern-7 kwd-1 env)
-	  (static-error expr "Malformed cond")))))
 
   (define-struct cond-clause (text question answer else? =>? or?))
 

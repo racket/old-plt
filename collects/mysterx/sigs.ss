@@ -32,7 +32,6 @@
    set-coclass!
    set-coclass-from-progid!
    com-object-eq?
-   com-object?	
    com-omit
    make-css-percentage
    css-percentage?
@@ -40,8 +39,19 @@
    make-css-length
    css-length?
    css-length-num
-   css-length-units))
-
+   css-length-units
+   com-date->date
+   date->com-date
+   com-date?
+   com-currency?
+   com-currency->number
+   number->com-currency
+   com-scode?
+   com-scode->number
+   number->com-scode
+   com-object?
+   com-iunknown?))
+   
 (define-signature mysterx:prims^
   (mx-version
    com-invoke
@@ -57,6 +67,17 @@
    com-event-type
    com-object-type
    com-is-a?
+   com-date->date
+   date->com-date
+   com-date?
+   com-currency?
+   com-currency->number	
+   number->com-currency
+   com-scode?
+   com-scode->number
+   number->com-scode
+   com-object?
+   com-iunknown?
    com-help
    com-register-event-handler
    com-unregister-event-handler
@@ -71,7 +92,6 @@
    set-coclass!
    set-coclass-from-progid!
    com-object-eq?
-   com-object?	
    com-register-object
    com-release-object
    make-browser

@@ -610,6 +610,8 @@ _Remote COM servers_
 
   There are a few special types that appear in the
   types of COM component methods and properties.
+  We describe those types and, in some cases, operations
+  involving those types.
 
 > boolean
 
@@ -621,30 +623,73 @@ _Remote COM servers_
 
   A 16-bit integer, with value -32768 <= n <= 32767.
 
-> mx-currency
+> com-currency
 
-  A currency value.  Currently, there is no way to
-  construct such values, though they may be
-  returned by COM objects.
-  
-> mx-date
+  A currency value.
 
-  A date value.  Currently, there is no way to
-  construct such values, though they may be
-  returned by COM objects.
-  
-> mx-scode
+> (com-currency? a-val)
 
-  An error value.  Currently, there is no way to
-  construct such values, though they may be
-  returned by COM objects.
+  Returns #t if `a-val' has type com-currency, #f otherwise.
+
+> (com-currency->number a-com-curr)
+
+  Returns a number given `a-com-curr', a value of type
+  com-currency.
+
+> (number->com-currency a-num)
+
+  Returns a value of type com-currency given `a-num', a number.
+  The com-currency value stores a 64-bit two's-complement integer,
+  though `a-num' may contain decimal digits.  If the number is
+  too large, an error occurs.
   
-> mx-unknown-com-object
+> com-date
+
+  A date value.
+  
+> (com-date? a-val)
+
+  Returns #t if `a-val' has type com-date, #f otherwise.
+
+> (com-date->date a-com-date)
+
+  Returns an instance of the date structure, given `a-com-date',
+  a com-date.  In the returned structure, the dst? field is
+  always #f and the time-zone-offset field is 0.
+
+> (date->com-date a-date)
+
+  Returns a com-date value, given `a-date', an instance of the date
+  structure.
+
+> com-scode
+
+  An error value.
+  
+> (com-scode? a-val)
+
+  Returns #t if `a-val' has type com-scode, #f otherwise.
+  
+> (com-scode->number an-scode)
+
+  Returns a number, given `an-scode', a value of type com-scode.
+
+> (number->com-scode a-num)
+
+  Returns a com-scode value, given the number `a-num'.
+  The number must be representable as a 32-bit two's-complement
+  number, else an error occurs.
+
+> com-iunknown
 
   An interface pointer for a COM object.
   Currently, there is no way to construct such
   values, though they may be returned by COM
   objects.
+  
+> (com-iunknown? a-val)
+
+  Returns #t if `a-val' has type com-iunknown, #f otherwise.
   
 > mx-any
 

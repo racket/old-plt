@@ -355,6 +355,7 @@ int scheme_solaris_semaphore_try_down(void *);
 # define HAS_BSD_IOB
 
 # define STACK_GROWS_DOWN
+# define USE_MAP_ANON
 
 /* can't figure out how (or even whether) dynamic loading works */
 # undef UNIX_DYNAMIC_LOAD
@@ -1366,6 +1367,9 @@ int scheme_pthread_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
+
+ /* USE_MAP_ANON indicates that mmap should use BSD's MAP_ANON flag
+    rather than trying to open /dev/zero */
 
  /* REGISTER_POOR_MACHINE guides a hand optimization that seems to
     be work best one way for Sparc machines, and better the other

@@ -2,10 +2,10 @@
 (module tool mzscheme
   (require (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
+           (lib "framework.ss" "framework")
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "file.ss")
-           (lib "list.ss")
 	   (lib "string-constant.ss" "string-constants")
            (lib "Object.ss" "profj" "libs" "java" "lang")
            (lib "array.ss" "profj" "libs" "java" "lang")
@@ -15,6 +15,10 @@
 
   (provide tool@)
 
+  (preferences:set-default 'profj:classpath null (lambda (v) (and (list? v) (andmap string? v))))
+  (preferences:set-default 'profj:print-style 'type symbol?)
+  (preferences:set-default 'profj:print-full? #t boolean?)
+  
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
@@ -80,17 +84,32 @@
                                      (parent parent)
                                      (alignment '(left center)))]
                      [print-full (when (memq level '(advanced full))
-                                   (make-object check-box% "Print entire contents of arrays?" output-panel void))]
+                                   (make-object check-box% "Print entire contents of arrays?" output-panel 
+                                     (lambda (x y) update-pf)))]
                      [print-style (make-object radio-box%
                                     "Display style"
                                     (list "Type" "Type+Fields" "Graphical")
                                     output-panel
-                                    void)]
+                                    (lambda (x y) (update-ps)))]
+                     
+                     [update-pf
+                      (lambda ()
+                        (preferences:set 'profj:print-full? (send print-full get-value)))]
+                     [update-ps
+                      (lambda ()
+                        (preferences:set 'profj:print-style (case (send print-style get-selection)
+                                                              ((0) 'type)
+                                                              ((1) 'type+field)
+                                                              ((2) 'graphical))))]
                      
                      [cp-panel (instantiate group-box-panel% ()
                                             (parent parent)
                                             (alignment '(left center))
                                             (label "Class path"))]
+                     [tp-panel (instantiate horizontal-panel% ()
+                                 (parent cp-panel)
+                                 (alignment '(center center))
+                                 (stretchable-height #f))]
                      [lb (instantiate list-box% ()
                                      (parent cp-panel)
                                      (choices `("a" "b" "c"))
@@ -104,20 +123,23 @@
                                             (parent cp-panel)
                                             (alignment '(center center))
                                             (stretchable-height #f))]
+                     [list-button (make-object button% "Display Current" tp-panel (lambda (x y) (list-callback)))]
+                     
                      [add-button (make-object button% "Add" bottom-button-panel (lambda (x y) (add-callback)))]
-                     [list-button (make-object button% "Display Current" bottom-button-panel (lambda (x y) (list-callback)))]
                      [remove-button (make-object button% "Remove" bottom-button-panel (lambda (x y) (remove-callback)))]
                      
                      [raise-button (make-object button% "Raise" top-button-panel (lambda (x y) (raise-callback)))]
                      [lower-button (make-object button% "Lower" top-button-panel (lambda (x y) (lower-callback)))]
                      
+                     [enable? #f]
+                     
                      [update-buttons 
                       (lambda ()
                         (let ([lb-selection (send lb get-selection)]
                               [lb-tot (send lb get-number)])
-                          (send remove-button enable lb-selection)
-                          (send raise-button enable (and lb-selection (not (= lb-selection 0))))
-                          (send lower-button enable (and lb-selection (not (= lb-selection (- lb-tot 1)))))))]
+                          (send remove-button enable (and lb-selection enable?))
+                          (send raise-button enable (and lb-selection enable? (not (= lb-selection 0))))
+                          (send lower-button enable (and lb-selection enable? (not (= lb-selection (- lb-tot 1)))))))]
                      
                      [add-callback
                       (lambda ()
@@ -125,12 +147,13 @@
                                                   (send parent get-top-level-window))])
                           (when dir
                             (send lb append dir #f)
+                            (preferences:set 'profj:classpath (cons dir (preferences:get 'profj:classpath)))
                             (update-buttons))))]
                       
                      [list-callback
                       (lambda ()
                         (send lb clear)
-                        (let ((cpath (get-preference 'profj:classpath (lambda () null))))
+                        (let ((cpath (preferences:get 'profj:classpath)))
                           (let loop ((n 0) (l cpath))
                             (cond
                               ((> n (sub1 (length cpath))) (void))
@@ -139,6 +162,7 @@
                                     (loop (+ n 1) (cdr l)))))
                           (unless (null? cpath)
                             (send lb set-selection 0))
+                          (set! enable? #t)
                           (update-buttons)))]
                      
                       [remove-callback
@@ -147,6 +171,7 @@
                            (send lb delete to-delete)
                            (unless (zero? (send lb get-number))
                              (send lb set-selection (min to-delete (- (send lb get-number) 1))))
+                           (preferences:set 'profj:classpath (get-classpath))
                            (update-buttons)))]
                       [lower-callback
                        (lambda ()
@@ -157,6 +182,7 @@
                            (vector-set! vec sel below)
                            (set-lb-vector vec)
                            (send lb set-selection (+ sel 1))
+                           (preferences:set 'profj:classpath (get-classpath))
                            (update-buttons)))]
                       [raise-callback
                        (lambda ()
@@ -167,6 +193,7 @@
                            (vector-set! vec sel above)
                            (set-lb-vector vec)
                            (send lb set-selection (- sel 1))
+                           (preferences:set 'profj:classpath (get-classpath))
                            (update-buttons)))]
                       
                       [get-lb-vector

@@ -156,10 +156,10 @@
 		(lambda ()
 		  (send edit begin-edit-sequence))
 		(lambda ()
-		  (let* ([backwards (send backwards-check-box get-value)]
-			 [dir-check (if backwards > <)]
-			 [real-start (send edit get-start-position)])
-		    (letrec ([text (send replace-edit get-text)]
+                  (let* ([backwards (send backwards-check-box get-value)]
+                         [dir-check (if backwards > <)]
+                         [real-start (send edit get-start-position)])
+                    (letrec ([text (send replace-edit get-text)]
 			     [repl-&-find
 			      (lambda (start end)
 				(send edit set-position start end)
@@ -291,13 +291,14 @@
 		    (lambda (frame)
 		      (set! searching-frame frame))]
 		   [search
-		    (opt-lambda ([reset-anchor? #t])
+		    (opt-lambda ([reset-anchor? #t] [beep? #t])
 		      (when searching-frame
 			(let* ([string (get-text)]
 			       [searching-edit (send searching-frame get-edit-to-search)]
 			       [not-found
 				(lambda ()
-				  (wx:bell)
+				  (when beep?
+				    (wx:bell))
 				  #f)]
 			       [found
 				(lambda (first-pos)
@@ -394,23 +395,35 @@
 	      [find-canvas (make-object canvas% left-panel)]
 	      [replace-canvas (make-object canvas% left-panel)]
 
-	      [middle-panel (make-object mred:container:vertical-panel% search-panel)]
+	      [middle-panel (make-object mred:container:horizontal-panel% search-panel)]
 
-	      [middle-top-panel (make-object mred:container:horizontal-panel% middle-panel)]
-	      [search-button (make-object mred:container:button% middle-top-panel 
+	      [middle-left-panel (make-object mred:container:vertical-panel% middle-panel)]
+	      [middle-middle-panel (make-object mred:container:vertical-panel% middle-panel)]
+	      [middle-right-panel (make-object mred:container:vertical-panel% middle-panel)]
+
+	      [spacing1 (make-object mred:container:horizontal-panel% middle-left-panel)]
+	      [spacing2 (make-object mred:container:horizontal-panel% middle-middle-panel)]
+	      [search-button (make-object mred:container:button% middle-left-panel 
 					  (lambda args (search)) "Search")]
 
-	      [replace&search-button (make-object mred:container:button% middle-top-panel 
+	      [replace&search-button (make-object mred:container:button% middle-middle-panel 
 						  (lambda x (replace&search)) "Replace && Search")]
-	      [spacing1 (make-object mred:container:horizontal-panel% middle-top-panel)]
-	      
-	      [middle-bottom-panel (make-object mred:container:horizontal-panel% middle-panel)]
-	      [replace-button (make-object mred:container:button% middle-bottom-panel (lambda x (replace)) "Replace")]
-	      [replace-all-button (make-object mred:container:button% middle-bottom-panel
+	      [replace-button (make-object mred:container:button% middle-left-panel (lambda x (replace)) "Replace")]
+	      [replace-all-button (make-object mred:container:button% middle-middle-panel
 					       (lambda x (replace-all)) "Replace All")]
-	      [spacing2 (make-object mred:container:horizontal-panel% middle-bottom-panel)]
+	      [spacing3 (make-object mred:container:horizontal-panel% middle-left-panel)]
+	      [spacing4 (make-object mred:container:horizontal-panel% middle-middle-panel)]
 
-	      [close-button (make-object mred:container:button% search-panel
+	      [dir-radio (make-object mred:container:radio-box% middle-right-panel
+				      (lambda (dir-radio evt)
+					(let ([forward (if (= 0 (send evt get-command-int))
+							   1
+							   -1)])
+					  (set-search-direction forward)))
+				      ""
+				      -1 -1 -1 -1
+				      (list "Forward" "Backward"))]
+	      [close-button (make-object mred:container:button% middle-right-panel
 					 (lambda args (hide-search)) "Close")]
 	      [hidden? #f])
 	    (sequence
@@ -445,7 +458,10 @@
 			     (if (eq? this (ivar find-edit searching-frame))
 				 (send find-edit set-searching-frame #f))
 			     #t)))]
-	      [set-search-direction (lambda (x) (set! searching-direction x))]
+	      [set-search-direction 
+	       (lambda (x) 
+		 (set! searching-direction x)
+		 (send dir-radio set-selection (if (= x 1) 0 1)))]
 	      [replace&search
 	       (lambda ()
 		 (when (replace)
@@ -453,18 +469,29 @@
 	      [replace-all
 	       (lambda ()
 		 (let* ([replacee-edit (get-edit-to-search)]
-			[pos (send replacee-edit get-start-position)]
-			[after #t])
-		   (let loop ([previous-pos pos])
-		     (let ([current-pos (send replacee-edit get-start-position)])
-		       (when (and after
-				  (<= current-pos pos))
-			 (set! after #f))
-		       (when (and (or after
-				      (<= current-pos previous-pos))
-				  (search))
-			 (replace)
-			 (loop current-pos))))))]
+			[pos (if (= searching-direction 1)
+				 (send replacee-edit get-start-position)
+				 (send replacee-edit get-end-position))]
+			[get-pos (let ([s (if (= searching-direction 1)
+					      'get-end-position
+					      'get-start-position)])
+				   (lambda () ((uq-ivar replacee-edit s))))]
+			[done? (if (= 1 searching-direction)
+				   <=
+				   >=)])
+		   (send* replacee-edit 
+		     (begin-edit-sequence)
+		     (set-position pos))
+		   (when (search)
+		     (send replacee-edit set-position pos)
+		     (let loop ([last-pos pos])
+		       (search searching-direction #f)
+		       (let ([current-pos (get-pos)])
+			 (if (done? current-pos last-pos)
+			     (send replacee-edit set-position last-pos)
+			     (begin (replace)
+				    (loop current-pos))))))
+		   (send replacee-edit end-edit-sequence)))]
 	      [replace
 	       (lambda ()
 		 (let* ([search-text (send find-edit get-text)]
@@ -477,13 +504,13 @@
 			      #t)
 		       #f)))]
 	      [search
-	       (opt-lambda ([direction searching-direction])
+	       (opt-lambda ([direction searching-direction] [beep? #t])
 		 (send find-edit set-searching-frame this)
 		 (if hidden?
 		     (unhide-search)
 		     (begin
 		       (set-search-direction direction)
-		       (send find-edit search))))])))))
+		       (send find-edit search #t beep?))))])))))
 
     (define find-string
       (lambda (canvas in-edit x y flags)

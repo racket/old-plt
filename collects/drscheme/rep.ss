@@ -163,18 +163,12 @@
 						  "zodiac eval; annotated: ~a~n" annotated)])
 		       (user-eval annotated))))))]
 	    [user-eval
-	     (let ([primitive-eval (current-eval)])
+	     (let* ([primitive-eval (current-eval)])
 	       (lambda (expr)
-		 (with-parameterization param
-		   (lambda ()
-		     (parameterize ([current-output-port this-out]
-				    [current-error-port this-err]
-				    [current-input-port this-in]
-				    [current-load do-load]
-				    [current-eval userspace-eval]
-				    [mzlib:pretty-print@:pretty-print-size-hook size-hook]
-				    [mzlib:pretty-print@:pretty-print-print-hook print-hook])
-		       (primitive-eval expr))))))]
+		 (let ([ans (with-parameterization param
+			      (lambda ()
+				(primitive-eval expr)))])
+		   ans)))]
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (get-expr [before void] [after void])
@@ -305,7 +299,17 @@
 	  (public
 	    [reset-console
 	     (lambda ()
-	       (set! param (build-parameterization))
+	       (set! param (let ([p (build-parameterization)])
+			     (with-parameterization p
+			       (lambda ()
+				 (current-output-port this-out)
+				 (current-error-port this-err)
+				 (current-input-port this-in)
+				 (current-load do-load)
+				 (current-eval userspace-eval)
+				 (mzlib:pretty-print@:pretty-print-size-hook size-hook)
+				 (mzlib:pretty-print@:pretty-print-print-hook print-hook)))
+			     p))
 	       (super-reset-console))]
 	    [initialize-console
 	     (lambda ()
@@ -333,15 +337,16 @@
 		   (insert-delta "Welcome to " delta)
 		   (let-values ([(before after)
 				 (insert-delta "DrScheme" click-delta)])
-		     (insert-delta (format ", version ~a.~nLanguage: " (mred:version))
+		     (insert-delta (format ", version ~a.~nVocabulary: " (mred:version))
 				   delta)
 		     (insert-delta 
-		      (format "~a Scheme"
-			      '(list-ref
+		      (format "~a"
+			      (list-ref
 			       drscheme:basis:level-strings
 			       (drscheme:basis:level->number
-				(mred:get-preference
-				 'drscheme:scheme-level))))
+				(drscheme:language:setting-vocabulary-symbol
+				 (mred:get-preference
+				  'drscheme:settings)))))
 		      red-delta)
 		     (insert-delta "." delta)
 		     (set-clickback before after 

@@ -454,17 +454,19 @@
 		   (search)))]
 	      [replace-all
 	       (lambda ()
-		 (let* ([replacee-edit (get-edit-to-search)]
-			[pos (if (= searching-direction 1)
-				 (send replacee-edit get-start-position)
-				 (send replacee-edit get-end-position))]
-			[get-pos (let ([s (if (= searching-direction 1)
-					      'get-end-position
-					      'get-start-position)])
-				   (lambda () ((uq-ivar replacee-edit s))))]
-			[done? (if (= 1 searching-direction)
-				   <=
-				   >=)])
+		 (let* ( [replacee-edit (get-edit-to-search)]
+                         [pos (if (= searching-direction 1)
+                                (send replacee-edit get-start-position)
+                                (send replacee-edit get-end-position))]
+                         [get-pos 
+                           (if (= searching-direction 1)
+                             (lambda ()
+                               (ivar replacee-edit get-end-position))
+                             (lambda ()
+                               (ivar replacee-edit get-start-position)))]
+                         [done? (if (= 1 searching-direction)
+                                  <=
+                                  >=)])
 		   (send* replacee-edit 
 		     (begin-edit-sequence)
 		     (set-position pos))

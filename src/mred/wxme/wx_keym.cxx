@@ -451,12 +451,17 @@ void wxKeymap::ImpliesShift(char *str)
 void wxKeymap::MapFunction(char *keys, char *fname)
 {
   char *keyseq = keys;
-  wxKeycode *key = NULL;
-  Bool shift, ctrl, alt, meta;
-  int part = 1, i;
+  int num_keys, num_new_keys;
+  wxKeycode **key, **new_key;
+  Bool shift, ctrl, alt, meta, both_shifts;
+  int part = 1, i, j;
   long code;
   char *errstr;
   char buffer[256];
+
+  num_keys = 1;
+  key = new wxKeycode*[1];
+  key[0] = NULL;
 
   while (*keyseq) {
     shift = ctrl = alt = meta = 0;
@@ -509,16 +514,30 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 	  shift = TRUE;
       } 
 
+      both_shifts = FALSE;
       if (!shift) {
 	for (i = 0; i < numImpliedShifts; i++)
 	  if (code == impliesShift[i]) {
-	    shift = TRUE;
+	    both_shifts = TRUE;
 	    break;
 	  }
       }
 
-      key = MapFunction(code, shift, ctrl, alt, meta, fname, key, 
-			*keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
+      num_new_keys = (both_shifts ? 2 : 1) * num_keys;
+      new_key = new wxKeycode*[num_new_keys];
+
+      for (i = 0, j = 0; i < num_keys; i++) {
+	new_key[j++] = MapFunction(code, shift, ctrl, alt, meta, fname, key[i], 
+				   *keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
+	if (both_shifts) {
+	  new_key[j++] = MapFunction(code, !shift, ctrl, alt, meta, fname, key[i], 
+				     *keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
+	}
+      }
+      
+      num_keys = num_new_keys;
+      key = new_key;
+
       part++;
       if (*keyseq)
 	keyseq++;

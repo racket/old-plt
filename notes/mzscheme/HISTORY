@@ -1,6 +1,9 @@
 
 Version 102/10:
 
+ * Switched to `configure'-based Makefiles (autoconf). See
+   plt/src/README, and use plt/src/configure.
+
  * Changed `read-string!' to `read-string-avail!', which reads only as
    many characters as are immediately ready, blocking only if no chars
    are available. (The old `read-string!' can be efficiently
@@ -30,6 +33,18 @@ Version 102/10:
    As with `read-string-avail!', an error after writing at least one
    character is treated like blocking. (Output mechanisms like `write'
    and `display' can still fumble characters.)
+
+   The `write-string-avail' procedure works on all output port types,
+   but it is not especially effective for FILE*-based ports (like most
+   ports in Windows and MacOS); to guarantee succesful flushing, only
+   one character can be writte. The procedure is especially effective
+   for TCP and fd-based ports (like most ports in Unix, now).
+
+ * Unix: changed MzScheme's `open-input-file' and `open-output-file'
+   (etc.) to use fd-based ports instead of FILE*-based ports. This
+   move gives MzScheme finer control over input and output, and it
+   makes sense now that the relatively new fd ports have been tested
+   for a while.
 
  * Added `process[*]/ports', which is like `process[*]', but it takes
    three file-stream ports to use for the subprocess's stdio streams:
@@ -81,8 +96,8 @@ Version 102/10:
       running), and instead only collect from the registered static
       variable locations.
 
-      The standalone versions of MzScheme and MrEd both use this new
-      collection mechanism.
+      The standalone versions of MzScheme and MrEd for Windows both
+      use this new GC mechanism.
 
     - Changed scheme_get_chars to include a new last argument: an
       offset into the string.
@@ -128,8 +143,8 @@ Version 102/9:
    53), instead of names (as, due to a bug, in 101). This fix shrinks
    the size of a .zo file by 20% on average.
 
- * Fixed missing `volatile' annotations, needed to make MzScheme work
-   with gcc 2.95.2 on sparcs.
+ * Fixed missing `volatile' annotations, which were needed to make
+   MzScheme work with gcc 2.95.2 on Sparc.
 
 Version 102/8:
 
@@ -231,6 +246,7 @@ Version 102/1:
    means parse as exact.
 
 Version 102, ??, 2000
+Switched to configure-based makefiles (autoconf)
 with-input-from-file and with-output-to-file close the port when
  control leaves the dynamic extent of the call (normally, through an
  exception, or through a general continuation jump).
@@ -247,6 +263,11 @@ Fixed reading from special devices, such as /dev/null and /dev/zero,
  in Solaris and HP/UX
 Fixed blocking output (to stdout, stderr, or a process port) so that
  only the writing thread is blocked
+Changed read-string! to read-string-avail!, added
+ read-string-avail!/enable-break
+Added write-string-avail and write-string-avail/enable-break
+Added process/ports and process*/ports
+Added file-stream-port?
 Changed default exit handler to return only results in 0 to 255
  as results to the OS, and everything else means 1
 Changed time-apply to return four values, and to take an argument
@@ -257,13 +278,21 @@ Fixed expt on 0 and a negative number
 Added 'exec-file flag to find-system-path
 Added square and mergesort to MzLib's function.ss
 Added tcp-addresses
+Inside MzScheme: provided a way to fix the GC--thread problems
+ under Windows, via GC_use_registered_statics
 Inside MzScheme: scheme_basic_env() initializes break-enabled
  to #f instead of #t
+Inside MzScheme: changed scheme_get_chars to consume an
+ offset into the string
+Inside MzScheme: added embedding-settable function
+ scheme_console_output, used to report low-level errors
+Inside MzScheme: restricted the format strings accepted by
+ scheme_signal_error, scheme_raise_exn, and scheme_warning
 
 Version 101, October 25, 1999
 Added 'sys-dir to find-system-path
 Added latin-1-integer->char and char->latin-1-integer
-Added timezone-offset field to the date structure
+Added time-zone-offset field to the date structure
 Added continuation field to exn:misc:user-break
 Windows: all network sockets are closed on exit
 Fixed (acos 0)

@@ -245,7 +245,7 @@
 
   (define-syntax and 
     (lambda (x)
-      (if (stx-symbol? x)
+      (if (not (stx-list? x))
 	  (raise-syntax-error 'and "bad syntax" x))
       (let ([e (stx-cdr x)])
 	(if (stx-null? e)
@@ -254,19 +254,14 @@
 		    (stx-null? (stx-cdr e))
 		    #t)
 		(stx-car e)
-		(if (stx-list? e)
-		    (datum->syntax
-		     (list (quote-syntax if)
-			   (stx-car e)
-			   (cons (quote-syntax and)
-				 (stx-cdr e))
-			   (quote-syntax #f))
-		     x
-		     (quote-syntax here))
-		    (raise-syntax-error 
-		     'and
-		     "bad syntax"
-		     x)))))))
+		(datum->syntax
+		 (list (quote-syntax if)
+		       (stx-car e)
+		       (cons (quote-syntax and)
+			     (stx-cdr e))
+		       (quote-syntax #f))
+		 x
+		 (quote-syntax here)))))))
 
   (define-syntax or
     (lambda (x)
@@ -371,7 +366,8 @@
 
   (define-syntax define
     (lambda (code)
-      (if (stx-symbol? code)
+      (if (or (stx-symbol? code)
+	      (not (stx-pair? (stx-cdr code))))
 	  (raise-syntax-error 'define "bad syntax" code))
       (let ([body (stx-cdr code)])
 	(if (stx-null? body)
@@ -1046,7 +1042,7 @@
 ;;----------------------------------------------------------------------
 ;; syntax-case and syntax
 
-(module .syntax-case .kernel
+(module .stxcase .kernel
   (import .stx .small-scheme)
   (import-for-syntax .stx .small-scheme .sc .kernel)
 
@@ -1261,8 +1257,8 @@
 ;; syntax/loc
 
 (module .syntax-loc .kernel
-  (import .syntax-case)
-  (import-for-syntax .kernel .syntax-case)
+  (import .stxcase)
+  (import-for-syntax .kernel .stxcase)
 
   (define-syntax syntax/loc
     (lambda (stx)
@@ -1280,8 +1276,8 @@
 ;; with-syntax, generate-temporaries, identifier?
 
 (module .with-syntax .kernel
-  (import .syntax-case .stx .small-scheme)
-  (import-for-syntax .kernel .syntax-case .syntax-loc)
+  (import .stxcase .stx .small-scheme)
+  (import-for-syntax .kernel .stxcase .syntax-loc)
 
   ;; From Dybvig
   (define-syntax with-syntax
@@ -1306,12 +1302,12 @@
   (export with-syntax generate-temporaries identifier?))
 
 ;;----------------------------------------------------------------------
-;; .syntax-case-scheme: adds let-syntax, synatx-rules, and
+;; .stxcase-scheme: adds let-syntax, synatx-rules, and
 ;;  check-duplicate-identifier, and assembles everything we have so far
 
-(module .syntax-case-scheme .kernel
-  (import .small-scheme .stx .syntax-case .with-syntax .syntax-loc)
-  (import-for-syntax .kernel .small-scheme .syntax-case .with-syntax .syntax-loc)
+(module .stxcase-scheme .kernel
+  (import .small-scheme .stx .stxcase .with-syntax .syntax-loc)
+  (import-for-syntax .kernel .small-scheme .stxcase .with-syntax .syntax-loc)
 
   (define (check-duplicate-identifier names)
     (let/ec escape
@@ -1348,16 +1344,16 @@
 		       ((dummy . pattern) (syntax template))
 		       ...))))))))
 
-  (export (all-from .syntax-case) (all-from .small-scheme)
+  (export (all-from .stxcase) (all-from .small-scheme)
 	  (all-from .with-syntax) (all-from .syntax-loc) check-duplicate-identifier
 	  let-syntax syntax-rules))
 
 ;;----------------------------------------------------------------------
-;; .more-scheme : case, do, etc.
+;; .more-scheme : case, do, etc. - remaining syntax
 
 (module .more-scheme .kernel
   (import .small-scheme)
-  (import-for-syntax .kernel .syntax-case-scheme)
+  (import-for-syntax .kernel .stx .stxcase-scheme)
 
   (define (check-parameter-procedure p)
     (unless (and (procedure? p)
@@ -1394,8 +1390,8 @@
 				     'do
 				     "bad variable syntax"
 				     orig-x))))
-			     (syntax (var ...))
-			     (syntax (step ...)))))
+			     (syntax->list (syntax (var ...)))
+			     (syntax->list (syntax (step ...))))))
 	   (syntax-case (syntax (e1 ...)) ()
 	     (() (syntax/loc
 		  orig-x
@@ -1423,19 +1419,19 @@
   (define make-a-promise
     (lambda (thunk)
       (make-promise
-       (let ([value (void)] [set? #f])
+       (let ([result (void)] [set? #f])
 	 (lambda ()
 	   (unless set?
-	     (let ([v (thunk)])
+	     (let ([v (call-with-values thunk list)])
 	       (unless set?
-		 (set! value v)
+		 (set! result v)
 		 (set! set? #t))))
-	   value)))))
+	   (apply values result))))))
   
   (define (force p)
     (unless (promise? p)
       (raise-type-error 'force "promise" p))
-    (promise-p p))
+    ((promise-p p)))
 
   (define-syntax parameterize
     (lambda (stx)
@@ -1462,6 +1458,7 @@
   (define-syntax with-handlers
     (lambda (stx)
       (syntax-case stx ()
+	[(_ () expr1 expr ...) (syntax/loc stx (let () expr1 expr ...))]
 	[(_ ([pred handler] ...) expr1 expr ...)
 	 (syntax/loc
 	  stx
@@ -1483,13 +1480,27 @@
 		  (call-with-values (lambda () expr1 expr ...)
 		    (lambda args (lambda () (apply values args))))))))))])))
 
-  (define (not-break-exn? x) (not (exn:misc:user-break? x)))
-
   (define-syntax set!-values
     (lambda (stx)
       (syntax-case stx ()
+	[(_ () expr) (syntax (let-values ([() expr]) (void)))]
 	[(_ (id) expr) (identifier? (syntax id)) (syntax (set! id expr))]
 	[(_ (id ...) expr)
+	 (let ([ids (stx->list (syntax (id ...)))])
+	   (for-each
+	    (lambda (id)
+	      (unless (identifier? id)
+		(raise-syntax-error 'set!-values
+				    "not an identifier"
+				    stx
+				    id)))
+	    ids)
+	   (let ([dup (check-duplicate-identifier ids)])
+	     (when dup
+	       (raise-syntax-error 'set!-values
+				   "duplicate identifier"
+				   stx
+				   dup))))
 	 (with-syntax ([(temp ...) (generate-temporaries (syntax (id ...)))])
 	   (syntax/loc
 	    stx
@@ -1513,6 +1524,7 @@
   (define-syntax fluid-let
     (lambda (stx)
       (syntax-case stx ()
+	[(_ () body1 body ...) (syntax/loc stx (let () body1 body ...))]
 	[(_ ([name val] ...) body1 body ...)
 	 (with-syntax ([(tmp ...) (generate-temporaries (syntax (name ...)))])
 	   (syntax/loc
@@ -1529,8 +1541,218 @@
 		    (lambda () body1 body ...)
 		    swap)))))])))
 
-  (export-indirect make-a-promise)
+  (define-syntax time
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ expr1 expr ...)
+	 (syntax/loc
+	  stx
+	  (let-values ([(v cpu user gc) (time-apply (lambda () expr1 expr ...) null)])
+	    (printf "cpu time: ~s real time: ~s gc time: ~s~n" cpu user gc)
+	    (apply values v)))])))
+
+  (export-indirect make-a-promise check-parameter-procedure)
   (export case do delay force promise?
-	  parameterize with-handlers not-break-exn? set!-values
-	  let/cc let-struct fluid-let
+	  parameterize with-handlers set!-values
+	  let/cc let-struct fluid-let time
 	  (all-from .small-scheme)))
+
+;;----------------------------------------------------------------------
+;; .misc : file utilities, etc. - remaining functions
+
+(module .misc .kernel
+  (import .more-scheme)
+  
+  (define rationalize
+    (letrec ([check (lambda (x) 
+                      (unless (real? x) (raise-type-error 'rationalize "real" x)))]
+	     [find-between 
+	      (lambda (lo hi)
+		(if (integer? lo)
+		    lo
+		    (let ([lo-int (floor lo)]
+			  [hi-int (floor hi)])
+		      (if (< lo-int hi-int)
+			  (add1 lo-int)
+			  (+ lo-int
+			     (/ (find-between (/ (- hi lo-int)) (/ (- lo lo-int)))))))))])
+      (lambda (x within)
+	(check x) (check within)
+	(let* ([delta (abs within)]
+	       [lo (- x delta)]
+	       [hi (+ x delta)])
+	  (cond
+	   [(not (= x x)) +nan.0]
+	   [(<= lo 0 hi) (if (exact? x) 0 0.0)]
+	   [(negative? lo) (- (find-between (- hi) (- lo)))]
+	   [else (find-between lo hi)])))))
+
+  (define (read-eval-print-loop)
+    (let* ([eeh #f]
+	   [jump #f]
+	   [be? #f]
+	   [rep-error-escape-handler (lambda () (jump))])
+      (dynamic-wind
+	  (lambda () (set! eeh (error-escape-handler))
+		  (set! be? (break-enabled))
+		  (error-escape-handler rep-error-escape-handler)
+		  (break-enabled #f))
+	  (lambda ()
+	    (let/ec done
+	      (let loop ()
+		(let/ec k
+		  (dynamic-wind
+		      (lambda ()
+			(break-enabled be?)
+			(set! jump k))
+		      (lambda ()
+			(let ([v ((current-prompt-read))])
+			  (when (eof-object? v) (done (void)))
+			  (call-with-values
+			      (lambda () ((current-eval) v))
+			    (lambda results (for-each (current-print) results)))))
+		      (lambda () 
+			(set! be? (break-enabled))
+			(break-enabled #f)
+			(set! jump #f))))
+		(loop))))
+	  (lambda () (error-escape-handler eeh)
+		  (break-enabled be?)
+		  (set! jump #f)
+		  (set! eeh #f)))))
+
+  (define load/cd
+    (lambda (n)
+      (unless (string? n)
+	(raise-type-error 'load/cd "string" n))
+      (let-values ([(base name dir?) (split-path n)])
+	(if dir?
+	    (raise
+	     (make-exn:i/o:filesystem
+	      (string->immutable-string
+	       (format "load/cd: cannot open a directory: ~s" n))
+	      (current-continuation-marks)
+	      n
+	      #f))
+	    (if (not (string? base))
+		(load n)
+		(begin
+		  (if (not (directory-exists? base))
+		      (raise
+		       (make-exn:i/o:filesystem
+			(string->immutable-string
+			 (format 
+			  "load/cd: directory of ~s does not exist (current directory is ~s)" 
+			  n (current-directory)))
+			(current-continuation-marks)
+			base
+			#f)))
+		  (let ([orig (current-directory)])
+		    (dynamic-wind
+			(lambda () (current-directory base))
+			(lambda () (load name))
+			(lambda () (current-directory orig))))))))))
+
+  (define-values (load-relative load-relative-extension)
+    (let ([mk
+	   (lambda (load name)
+             (lambda (path)
+               (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
+                 (raise-type-error name "pathname string" path))
+               (if (complete-path? path)
+		   (load path)
+		   (let ([dir (current-load-relative-directory)])
+           	     (load (if dir (path->complete-path path dir) path))))))])
+      (values (mk load 'load-relative) (mk load-extension 'load-relative-extension))))
+  
+  (define path-list-string->path-list
+    (let ((r (regexp (let ((sep (case (system-type) 
+				  ((unix beos oskit) ":")
+				  ((windows macos) ";"))))
+		       (format "([^~a]*)~a(.*)" sep sep))))
+	  (cons-path (lambda (default s l) 
+		       (if (string=? s "")
+			   (append default l)
+			   (if (or (relative-path? s) (absolute-path? s)) (cons s l) l)))))
+      (lambda (s default)
+	(unless (string? s) (raise-type-error 'path-list-string->path-list "string" s))
+	(unless (list? default) (raise-type-error 'path-list-string->path-list "list" default))
+	(let loop ([s s])
+	  (let ([m (regexp-match r s)])
+	    (if m
+		(cons-path default (cadr m) (loop (caddr m)))
+		(cons-path default s null)))))))
+
+  (define find-executable-path
+    (lambda (program libpath)
+      (unless (and (string? program) 
+		   (or (relative-path? program)
+		       (absolute-path? program)))
+	(raise-type-error 'find-executable-path "path string" program))
+      (unless (or (not libpath) (and (string? libpath) (relative-path? libpath)))
+	(raise-type-error 'find-executable-path "relative-path string or #f" libpath))
+      (letrec ([found-exec
+		(lambda (exec-name)
+                  (if libpath
+		      (let-values ([(base name isdir?) (split-path exec-name)])
+			(if (string? base)
+			    (let ([lib (build-path base libpath)])
+			      (if (or (directory-exists? lib) 
+				      (file-exists? lib))
+				  lib
+				  (let ([resolved (resolve-path exec-name)])
+				    (cond
+				     [(string=? resolved exec-name) #f]
+				     [(relative-path? resolved)
+				      (found-exec (build-path base resolved))]
+			             [else (found-exec resolved)]))))
+			    #f))
+		      exec-name))])
+	(if (and (relative-path? program)
+		 (let-values ([(base name dir?) (split-path program)])
+		   (eq? base 'relative)))
+	    (let ([paths-str (getenv "PATH")]
+		  [win-add (lambda (s) (if (eq? (system-type) 'windows) (cons "." s) s))])
+	      (let loop ([paths (if paths-str 
+				    (win-add (path-list-string->path-list paths-str null))
+				    null)])
+		(if (null? paths)
+		    #f
+		    (let* ([base (path->complete-path (car paths))]
+			   [name (build-path base program)])
+		      (if (file-exists? name)
+			  (found-exec name)
+			  (loop (cdr paths)))))))
+	    (let ([p (path->complete-path program)])
+	      (and (file-exists? p) (found-exec p)))))))
+
+  (define (simple-return-primitive? v)
+    (unless (primitive? v) (raise-type-error 'simple-return-primitive? "primitive-procedure" v))
+    (not (memq (inferred-name v) '(call-with-values 
+				      apply 
+				    error
+				    call-with-current-continuation
+				    hash-table-get
+				    write-image-to-file))))
+
+  (define (port? x) (or (input-port? x) (output-port? x)))
+
+  (define (not-break-exn? x) (not (exn:misc:user-break? x)))
+
+  (export rationalize 
+	  read-eval-print-loop
+	  load/cd
+	  load-relative load-relative-extension
+	  path-list-string->path-list find-executable-path
+	  simple-return-primitive? port? not-break-exn?))
+
+;;----------------------------------------------------------------------
+;; startup
+
+(import .more-scheme)
+(import .misc)
+(import .stxcase-scheme)
+
+(import-for-syntax .more-scheme)
+(import-for-syntax .misc)
+(import-for-syntax .stxcase-scheme)

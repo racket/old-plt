@@ -883,9 +883,8 @@ set_link(Scheme_Object *data, Link_Info *link)
   Scheme_Object *orig_var, *var, *orig_val, *val, *set_undef;
 
   set_undef = SCHEME_CAR(data);
-  data = SCHEME_CDR(data);
-  orig_var = SCHEME_CAR(data);
-  orig_val = SCHEME_CDR(data);
+  orig_var = SCHEME_CAR(SCHEME_CDR(data));
+  orig_val = SCHEME_CDR(SCHEME_CDR(data));
 
   var = scheme_link_expr(orig_var, link);
   val = scheme_link_expr(orig_val, link);
@@ -982,9 +981,6 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
     }
   }
   
-  if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)) {
-  } 
-
   set_undef = SCHEME_TRUEP(scheme_get_param(scheme_config,
 					    MZCONFIG_ALLOW_SET_UNDEFINED));
   
@@ -1707,6 +1703,11 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
   Scheme_Compiled_Let_Value *last = NULL, *lv;
   DupCheckRecord r;
 
+#if 1
+  if (!SCHEME_STXP(form))
+    scheme_signal_error("not syntax: %V", form );
+#endif
+
   if (scheme_stx_proper_list_length(form) < 3)
     scheme_wrong_syntax(formname, NULL, form, NULL);
 
@@ -1792,7 +1793,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
 	  if (scheme_stx_bound_eq(names[m], names[j], env->genv->phase))
 	    scheme_wrong_syntax(formname, NULL, form,
 				"multiple bindings of `%S' in the same clause", 
-				names[m]);
+				SCHEME_STX_SYM(names[m]));
 	}
       }
     } else {
@@ -2222,7 +2223,7 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
 {
 #if 1
   if (!SCHEME_STXP(forms))
-    scheme_signal_error("not syntax");
+    scheme_signal_error("not syntax: %V", forms);
 #endif
 
   if (SCHEME_STX_PAIRP(forms) && SCHEME_STX_NULLP(SCHEME_STX_CDR(forms))) {
@@ -2233,8 +2234,10 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
       first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, &val);
       
       if (SAME_OBJ(val, scheme_begin_syntax)) {
-	if (scheme_stx_proper_list_length(SCHEME_STX_CDR(first)) > 0)
-	  return scheme_compile_sequence(SCHEME_STX_CDR(first), env, rec, drec);
+	if (scheme_stx_proper_list_length(SCHEME_STX_CDR(first)) > 0) {
+	  first = scheme_datum_to_syntax(SCHEME_STX_CDR(first), first, first);
+	  return scheme_compile_sequence(first, env, rec, drec);
+	}
       }
     }
 

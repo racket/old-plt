@@ -1603,17 +1603,34 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
   return imods;
 }
 
+static void check_dup_import(Scheme_Object *name, Scheme_Object *nominal_modname, 
+			     Scheme_Object *modname, Scheme_Object *srcname, 
+			     int isval, void *ht, Scheme_Object *e)
+{
+  if (scheme_lookup_in_table((Scheme_Hash_Table *)ht, (const char *)name))
+    scheme_wrong_syntax("import", name, e, "duplicate import identifier");
+  else
+    scheme_add_to_table((Scheme_Hash_Table *)ht, (const char *)name, scheme_false, 0);
+}
+
 static Scheme_Object *
 top_level_import_execute(Scheme_Object *data)
 {
-  Scheme_Object *rn = SCHEME_CAR(SCHEME_CAR(data)), *brn;
-  int for_exp = (SCHEME_TRUEP(SCHEME_CDR(SCHEME_CAR(data))) ? 1 : 0);
+  Scheme_Hash_Table *ht;
+  Scheme_Object *rn;
+  Scheme_Object *form = SCHEME_CDR(SCHEME_CAR(data)), *brn;
+  int for_exp = (SCHEME_TRUEP(SCHEME_CAR(SCHEME_CAR(data))) ? 1 : 0);
   Scheme_Env *env = (Scheme_Env *)SCHEME_CDR(data);
 
   if (for_exp) {
     scheme_prepare_exp_env(env);
     env = env->exp_env;
   }
+
+  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  rn = scheme_make_module_rename(for_exp, 1);
+
+  (void)parse_imports(form, form, env, rn, check_dup_import, ht, 1);
 
   brn = env->rename;
   if (!brn) {
@@ -1636,16 +1653,6 @@ static Scheme_Object *
 top_level_import_resolve(Scheme_Object *data, Resolve_Info *rslv)
 {
   return scheme_make_syntax_resolved(IMPORT_EXPD, data);
-}
-
-static void check_dup_import(Scheme_Object *name, Scheme_Object *nominal_modname, 
-			     Scheme_Object *modname, Scheme_Object *srcname, 
-			     int isval, void *ht, Scheme_Object *e)
-{
-  if (scheme_lookup_in_table((Scheme_Hash_Table *)ht, (const char *)name))
-    scheme_wrong_syntax("import", name, e, "duplicate import identifier");
-  else
-    scheme_add_to_table((Scheme_Hash_Table *)ht, (const char *)name, scheme_false, 0);
 }
 
 static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -1687,9 +1694,10 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
     return scheme_make_syntax_compiled(IMPORT_EXPD, 
-				       cons(rn, (for_exp 
-						 ? scheme_true 
-						 : scheme_false)));
+				       cons((for_exp 
+					     ? scheme_true 
+					     : scheme_false),
+					    form));
   } else
     return form;
 }

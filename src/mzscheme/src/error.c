@@ -1026,7 +1026,7 @@ void scheme_wrong_syntax(const char *where,
 
   if (detail_form) {
     if (SCHEME_STXP(detail_form)) {
-      if (((Scheme_Stx *)form)->line >= 0)
+      if (((Scheme_Stx *)detail_form)->line >= 0)
 	p = make_srcloc_string(detail_form, &plen);
       detail_form = scheme_syntax_to_datum(detail_form, 0, NULL);
     }

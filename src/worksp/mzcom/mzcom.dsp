@@ -43,9 +43,9 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /MT /W3 /Gm /ZI /Od /I "../../mzscheme/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_ATL_STATIC_REGISTRY" /YX /FD /GZ /c
+# ADD CPP /nologo /MT /W3 /Gm /ZI /Od /I "..\..\..\collects\mzscheme\include" /I "..\..\mzcom" /I "." /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_ATL_STATIC_REGISTRY" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /d "_DEBUG"
+# ADD RSC /l 0x409 /i ".\..\mzcom" /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -75,23 +75,23 @@ SOURCE="$(InputPath)"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "MzCOM___Win32_Release"
-# PROP Intermediate_Dir "MzCOM___Win32_Release"
+# PROP Output_Dir "Release"
+# PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /O1 /I "../../mzscheme/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MT /W3 /O1 /I "../../mzscheme/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_ATL_STATIC_REGISTRY" /Fp"Release/MzCOM.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c
+# ADD CPP /nologo /MT /W3 /O1 /I "..\..\..\collects\mzscheme\include" /I "..\..\mzcom" /I "." /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_ATL_STATIC_REGISTRY" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /i "..\..\mzcom" /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib mzsrc.lib gc.lib /nologo /subsystem:windows /machine:I386 /out:"Release/MzCOM.exe" /libpath:"..\mzsrc\Release" /libpath:"..\gc\Release"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib mzsrc.lib gc.lib /nologo /subsystem:windows /machine:I386 /libpath:"..\mzsrc\Release" /libpath:"..\gc\Release"
 # SUBTRACT LINK32 /pdb:none
 # Begin Custom Build - Performing registration
-OutDir=.\MzCOM___Win32_Release
+OutDir=.\Release
 TargetPath=.\Release\MzCOM.exe
 InputPath=.\Release\MzCOM.exe
 SOURCE="$(InputPath)"
@@ -115,18 +115,41 @@ SOURCE="$(InputPath)"
 # Begin Source File
 
 SOURCE=..\..\mzcom\mzcom.cxx
+
+!IF  "$(CFG)" == "MzCOM - Win32 Debug"
+
+# ADD CPP /I "../../mzscheme/include ../worksp/mzcom"
+
+!ELSEIF  "$(CFG)" == "MzCOM - Win32 Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\mzcom\mzcom.idl
+
+!IF  "$(CFG)" == "MzCOM - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "MzCOM - Win32 Release"
+
+# PROP Intermediate_Dir "Release"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\mzcom\mzobj.cxx
-# End Source File
-# Begin Source File
 
-SOURCE=..\..\mzcom\mzobj.h
-# End Source File
-# Begin Source File
+!IF  "$(CFG)" == "MzCOM - Win32 Debug"
 
-SOURCE=..\..\mzcom\resource.h
+!ELSEIF  "$(CFG)" == "MzCOM - Win32 Release"
+
+# PROP Intermediate_Dir "Release"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -150,16 +173,24 @@ SOURCE=.\MzCOMCP.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\MzObj.h
+SOURCE=..\..\mzcom\mzobj.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Resource.h
+SOURCE=..\..\mzcom\resource.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=.\mzcom.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\mzcom.rc
+# End Source File
 # Begin Source File
 
 SOURCE=.\MzCOM.rgs

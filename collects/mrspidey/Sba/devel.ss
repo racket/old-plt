@@ -19,6 +19,8 @@
 ;; ----------------------------------------------------------------------
 ;; Timing
 
+(printf "HEY- devel.ss was loaded.~n")
+
 (defmacro trace-time args
   (match args
     [(fn)

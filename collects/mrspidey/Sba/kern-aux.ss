@@ -308,6 +308,8 @@
 
 (define-struct NT (tvar type rhs*))
 
+(define create-NT make-NT)
+
 (define mk-Tvar-NTs!
   (lambda (Tvar)
     (set-Tvar-L!  Tvar (create-NT Tvar 'L '()))

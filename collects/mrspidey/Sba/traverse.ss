@@ -596,7 +596,7 @@
                           [base-num num-ftype]
                           ;; Capture edges from external mono AVSs 
                           [edges '()]
-                          [orig-new-edge! (new-edge-para)]
+                          [orig-new-edge! new-edge!]
                           [capture-edge! 
                             (lambda (from to)
                               (unless (eq? from to)
@@ -605,13 +605,16 @@
                                   (set! edges (cons (cons from to) edges))
                                   (orig-new-edge! from to))))]
                           [(env refs tvar)
-                            (parameterize
-                              ([new-edge-para capture-edge!])
-                              (let*-vals 
-                                ( [(ftype env refs) (traverse-exp exp env)]
-                                  [ftype1 (extract-1st-value ftype)]
-                                  [tvar (FlowType->Tvar ftype1)])
-                                (values env refs tvar)))]
+                            (let ([ne! new-edge!])
+			      (dynamic-wind
+			       (lambda () (set!-new-edge! capture-edge!))
+			       (lambda ()
+				 (let*-vals 
+				  ( [(ftype env refs) (traverse-exp exp env)]
+				    [ftype1 (extract-1st-value ftype)]
+				    [tvar (FlowType->Tvar ftype1)])
+				  (values env refs tvar)))
+			       (lambda () (set!-new-edge! ne!))))]
                           [l2 list-ftype])
 
                         (pretty-debug 

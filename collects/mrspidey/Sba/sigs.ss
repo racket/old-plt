@@ -72,6 +72,7 @@
    list-pos-equal
    find
    index
+   with-directory
 ))
 
 (define-signature mrspidey:library-vec^
@@ -297,7 +298,7 @@
     create-AV
     mk-Tvar
     create-con create-con-misc create-con-filter
-    new-edge! new-bidir-edge! new-edge-para new-AV! new-create-AV! new-con!
+    new-edge! new-bidir-edge! set!-new-edge! new-AV! new-create-AV! new-con!
     new-leq-top-s! new-geq-top-s!
     mk-Tvar-init-AV
     constraint-system-size
@@ -537,6 +538,7 @@
 
     ;; --- NTs
     (struct NT (tvar type rhs*))
+    create-NT
     mk-Tvar-NTs! mk-AV-NTs! 
     alloc-NT-field
     nt->sym

@@ -21,7 +21,7 @@
   (case-lambda
    [(default list-opt)
     (make-parameter-list default list-opt 
-                         (lambda (x) (void))
+                         void
                          (lambda (x) #f))]
    [(default list-opt call)
     (make-parameter-list default list-opt call
@@ -37,17 +37,17 @@
            [list-tag (map car list-opt)])
                                         ;(assert (memq default list-tag))
       (let ([current default])
-        (call current)
-        (match-lambda*
-         [() current]
-         [('?) list-opt]
-         [(x)
-          (unless (or (member x list-tag) (also-ok? x))
-            (error 
-              'parameter
-              "Parameter argument ~s is not one of ~s" x list-tag))
-          (set! current x)
-          (call current)])))]))
+	(call current)
+	(match-lambda*
+	 [() current]
+	 [('?) list-opt]
+	 [(x)
+	  (unless (or (member x list-tag) (also-ok? x))
+	     (error 
+	      'parameter
+	      "Parameter argument ~s is not one of ~s" x list-tag))
+	  (set! current x)
+	  (call current)])))]))
 
 (define (make-parameter-boolean x)
   (make-parameter-list x 
@@ -55,17 +55,9 @@
       (list #f "Off" "")
       (list #t "On" ""))))
 
-'(define (make-parameter-integer x)
+(define (make-parameter-integer x)
   (make-parameter x
                   (lambda (x)
                     (unless (integer? x)
                       (error 'parameter "Must be an integer"))
                     x)))
-
-(define (make-parameter-integer x)
-  (unless (integer? x) (error 'parameter "Must be an integer"))
-  (case-lambda
-    [() x]
-    [(y)
-      (unless (integer? y) (error 'parameter "Must be an integer"))
-      (set! x y)]))

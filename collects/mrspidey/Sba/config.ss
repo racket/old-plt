@@ -98,7 +98,7 @@
       (make-parameter-list
         default
         constraint-simplification-list
-        (lambda (_) (void))
+	void
         ;; also-ok?
         (lambda (x)
           (and (list? x)
@@ -280,10 +280,13 @@
        ;; Return one setting
        (match (assq para-name paras)
          [(_ . para)
-           (if (memq nu-val (map car (para '?)))
-             (para nu-val)
-             (error 'mrspidey:control "Value ~s invalid for parameter ~s" 
-               nu-val para-name))]
+#|
+	  (if (memq nu-val (map car (para '?)))
+	      (para nu-val)
+	      (error 'mrspidey:control "Value ~s invalid for parameter ~s" 
+		     nu-val para-name))
+|#
+	  (para nu-val)]
          [#f
            (error 'mrspidey:control "Unknown parameter ~s" para-name)])]
      [_ (error 'mrspidey:control "Bad # arguments")])))

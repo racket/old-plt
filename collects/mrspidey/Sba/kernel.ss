@@ -365,10 +365,9 @@
     (new-edge! from to)
     (new-edge! to from)))
 
-(define new-edge-para
-  (case-lambda
-    [() new-edge!]
-    [(x) (set! new-edge! x)]))
+(define set!-new-edge!
+  (lambda (ne!)
+    (set! new-edge! ne!)))
 
 (define (close-constraints tvars)
   (pretty-debug `(close-constraints ,(map Tvar-name tvars)))
@@ -468,7 +467,7 @@
 ;; ------------------------------------------------------------
 
 (define (really-check-kernel-ok)
-  (parameterize
+  (parameterize*
     ([st:check-kernel #t]) 
     (check-kernel-ok)))
 

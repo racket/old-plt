@@ -255,7 +255,7 @@
           (expand-file infile outfile)))]
     [(infile outfile)
       (when (file-exists? outfile) (delete-file outfile))
-      (parameterize ( [st:system-expand #t] )
+      (parameterize* ([st:system-expand #t])
         (with-directory
 	 (path-only  (normalize-path infile))
 	 (lambda ()
@@ -338,10 +338,7 @@
   (let* ( [p (make-parameterization)]
           [_ (with-parameterization p
                (lambda () 
-                 (current-namespace 
-                   expander-namespace
-                                        ;(make-expander-namespace)
-                   ) 
+                 (current-namespace expander-namespace) 
                  (reference-library "core.ss")
                  (reference-library "macro.ss")
                  '(reference 

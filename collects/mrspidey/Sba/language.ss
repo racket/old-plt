@@ -49,7 +49,8 @@
         (case scheme
           [(MzScheme)
             (init-MzScheme-on-R4RS!)]
-          [(MrEd)     (init-MzScheme-on-R4RS!)
+          [(MrEd)
+	   (init-MzScheme-on-R4RS!)
             (init-mzlib!)
             (init-MrEd-on-MzScheme!)
             (set! make-expander-namespace (lambda () (make-namespace 'wx)))]
@@ -57,8 +58,7 @@
             (init-MzScheme-on-R4RS!) 
             (init-mzlib!)
             (init-DrScheme-on-MzScheme!)
-            (set! make-expander-namespace (lambda () (make-namespace 'wx)))
-            ]
+            (set! make-expander-namespace (lambda () (make-namespace 'wx)))]
           [(R4RS)     (void)]
           [(Chez)     (init-Chez-on-R4RS!)]
           [(none)     (void)])

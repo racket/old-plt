@@ -34,7 +34,7 @@
       [nuTvar
         (let*-vals
           ([(live-Tvar cvt) 
-             (parameterize
+             (parameterize*
                ([st:minimize-respect-assignable-part-of-fields
                   (st:show-assignable-part-of-fields)])
                (pretty-debug-sdl2

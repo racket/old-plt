@@ -555,6 +555,7 @@
 	(current-custodian custodian)
 	(error-value->string-handler drscheme-error-value->string-handler)
 	(current-exception-handler drscheme-exception-handler)
+	(initial-exception-handler drscheme-exception-handler)
 	(current-namespace n)
 	(current-zodiac-namespace n)
 	(break-enabled #t)

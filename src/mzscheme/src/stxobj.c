@@ -3144,9 +3144,7 @@ static Scheme_Object *unmarshal_mark(Scheme_Object *a, Scheme_Hash_Table *rns)
   return n;
 }
 
-Scheme_Object *oops() { return NULL; }
-
-#define return_NULL return oops();
+#define return_NULL return NULL
 
 static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 				     Scheme_Hash_Table *rns)

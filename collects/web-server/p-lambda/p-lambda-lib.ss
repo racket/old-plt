@@ -4,7 +4,7 @@
            (lib "kerncase.ss" "syntax")
            "proc-table.ss"
            "closure.ss")
-  (provide p-lambda current-abort)
+  (provide p-lambda current-abort lift normalize-term)
   
   ;; ****************************************
   ;; continuation-mark mumble
@@ -495,32 +495,6 @@
        (eqv? 'call/cc (syntax-object->datum #'id))
        (begin (printf "third case~n") #t)]
       [_else #f]))
-     
-  
-;  [(#%app maybe-call/cc proc)
-;   (call/cc? #'maybe-call/cc)
-;   (let ([f (namespace-syntax-introduce
-;             (datum->syntax-object #f (genproc 'f)))]
-;         [k-var (namespace-syntax-introduce
-;                 (datum->syntax-object #f (gensym 'k)))])
-;     (let-values ([(body body-defines)
-;                   (k #`(#%app proc #,k-var))])
-;       (let ([fvars (set-diff (free-vars body)
-;                              (union (list k-var)
-;                                     (defined-ids body-defines)))])
-;         (values
-;          #`(#%app #,f #,@fvars
-;                   (let-values ([(marks)
-;                                 (#%app continuation-mark-set->list
-;                                        (#%app current-continuation-marks)
-;                                        the-cont-key)])
-;                     (#%app p-lambda
-;                            resume
-;                            (lambda ()
-;                              (#%app list marks)))))
-;          (cons
-;           #`(define (#,f #,@fvars #,k-var) #,body)
-;           body-defines)))))]
   
   ;; normalize-name: flat-expr (value (listof identifier) -> P-expr (listof definition))
   ;;                 -> P-expr (listof definition)

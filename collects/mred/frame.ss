@@ -39,7 +39,7 @@
       (class mred:container:frame% args
 	(rename [super-pre-on-char pre-on-char]
 		[super-pre-on-event pre-on-event])
-	(inherit show)
+	(rename [super-show show])
 	(public
 	  [get-panel% 
 	   (lambda ()
@@ -51,6 +51,10 @@
 	(sequence 
 	  (apply super-init args))
 	(public
+	  [shown #f]
+	  [show (lambda (x) 
+		  (set! shown x)
+		  (super-show x))]
 	  [keymap (make-object wx:keymap%)]
 	  [panel (make-object (get-panel%) this)])
 	(public

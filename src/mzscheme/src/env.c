@@ -25,13 +25,13 @@
 #include "schminc.h"
 
 #if defined(UNIX_LIMIT_STACK) || defined(UNIX_LIMIT_FDSET_SIZE)
-#include <signal.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+# include <signal.h>
+# include <sys/time.h>
+# include <sys/resource.h>
 #endif
 
 #ifdef MZ_USE_IRIX_SPROCS
-#include "../gc/gc.h"
+# include "../gc/gc.h"
 #endif
 
 #define GLOBAL_TABLE_SIZE 1500
@@ -518,8 +518,7 @@ static Scheme_Env *make_env(void)
   Scheme_Hash_Table *globals, *ll;
   Scheme_Env *env;
 
-  globals = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 
-			      1, 0 /* scheme_starting_up */);
+  globals = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 1, 0);
 
   env = MALLOC_ONE_TAGGED(Scheme_Env);
 

@@ -439,24 +439,22 @@ void scheme_init_error(Scheme_Env *env)
 						      0, 1), 
 			     env);
 
-  if (scheme_starting_up) {
-    newline_char = scheme_make_char('\n');
+  newline_char = scheme_make_char('\n');
 
-    REGISTER_SO(scheme_def_exit_proc);
-    scheme_def_exit_proc = scheme_make_prim_w_arity(def_exit_handler_proc, 
-						    "default-exit-handler",
-						    1, 1);
+  REGISTER_SO(scheme_def_exit_proc);
+  scheme_def_exit_proc = scheme_make_prim_w_arity(def_exit_handler_proc, 
+						  "default-exit-handler",
+						  1, 1);
 
-    REGISTER_SO(def_err_val_proc);
-    def_err_val_proc = scheme_make_prim_w_arity(def_error_value_string_proc,
-						"default-error-value->string-handler",
-						2, 2);
-
-    REGISTER_SO(prepared_buf);
-    prepared_buf = init_buf(NULL, &prepared_buf_len);
-
-    scheme_init_error_config();
-  }
+  REGISTER_SO(def_err_val_proc);
+  def_err_val_proc = scheme_make_prim_w_arity(def_error_value_string_proc,
+					      "default-error-value->string-handler",
+					      2, 2);
+  
+  REGISTER_SO(prepared_buf);
+  prepared_buf = init_buf(NULL, &prepared_buf_len);
+  
+  scheme_init_error_config();
 }
 
 void scheme_init_error_config(void)
@@ -1652,21 +1650,20 @@ void scheme_init_exn(Scheme_Env *env)
   int i, j;
   Scheme_Object *tmpo, **tmpop;
 
-  if (scheme_starting_up) {
 #define _MZEXN_DECL_FIELDS
-#include "schexn.h"
+# include "schexn.h"
 #undef _MZEXN_DECL_FIELDS
 
-    REGISTER_SO(exn_table);
+  REGISTER_SO(exn_table);
 
 #ifdef MEMORY_COUNTING_ON
-#ifndef GLOBAL_EXN_TABLE
-    scheme_misc_count += (sizeof(exn_rec) * MZEXN_OTHER);
-#endif
+# ifndef GLOBAL_EXN_TABLE
+  scheme_misc_count += (sizeof(exn_rec) * MZEXN_OTHER);
+# endif
 #endif
 
 #define _MZEXN_PRESETUP
-#include "schexn.h"
+# include "schexn.h"
 #undef _MZEXN_PRESETUP
 
 #define EXN_PARENT(id) exn_table[id].type
@@ -1678,11 +1675,10 @@ void scheme_init_exn(Scheme_Env *env)
       exn_table[id].type = tmpo; \
       tmpop = scheme_make_struct_names_from_array(name, argc, args, EXN_FLAGS, &exn_table[id].count); \
       exn_table[id].names = tmpop; }
-
+  
 #define EXNCONS scheme_make_pair
 #define _MZEXN_SETUP
 #include "schexn.h"
-  }
 
   for (i = 0; i < MZEXN_OTHER; i++) {
     if (exn_table[i].count) {
@@ -1717,9 +1713,7 @@ void scheme_init_exn(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
-  if (scheme_starting_up) {
-    scheme_init_exn_config();
-  }
+  scheme_init_exn_config();
 }
 
 void scheme_init_exn_config(void)

@@ -169,56 +169,54 @@ void (*scheme_handle_aewait_event)(EventRecord *e);
 
 void scheme_init_file(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    REGISTER_SO(up_symbol);
-    REGISTER_SO(relative_symbol);
-    REGISTER_SO(same_symbol);
+  REGISTER_SO(up_symbol);
+  REGISTER_SO(relative_symbol);
+  REGISTER_SO(same_symbol);
 #ifndef NO_FILE_SYSTEM_UTILS
-    REGISTER_SO(read_symbol);
-    REGISTER_SO(write_symbol);
-    REGISTER_SO(execute_symbol);
-
-    REGISTER_SO(temp_dir_symbol);
-    REGISTER_SO(home_dir_symbol);
-    REGISTER_SO(pref_dir_symbol);
-    REGISTER_SO(init_dir_symbol);
-    REGISTER_SO(init_file_symbol);
-    REGISTER_SO(sys_dir_symbol);
-    REGISTER_SO(exec_file_symbol);
+  REGISTER_SO(read_symbol);
+  REGISTER_SO(write_symbol);
+  REGISTER_SO(execute_symbol);
+  
+  REGISTER_SO(temp_dir_symbol);
+  REGISTER_SO(home_dir_symbol);
+  REGISTER_SO(pref_dir_symbol);
+  REGISTER_SO(init_dir_symbol);
+  REGISTER_SO(init_file_symbol);
+  REGISTER_SO(sys_dir_symbol);
+  REGISTER_SO(exec_file_symbol);
 #endif
 
-    REGISTER_SO(fail_err_symbol);
-    REGISTER_SO(path_err_symbol);
-    REGISTER_SO(exists_err_symbol);
+  REGISTER_SO(fail_err_symbol);
+  REGISTER_SO(path_err_symbol);
+  REGISTER_SO(exists_err_symbol);
     
-    up_symbol = scheme_intern_symbol("up");
-    relative_symbol = scheme_intern_symbol("relative");
-    same_symbol = scheme_intern_symbol("same");
-
-    fail_err_symbol = scheme_false;
-    path_err_symbol = scheme_intern_symbol("ill-formed-path");
-    exists_err_symbol = scheme_intern_symbol("already-exists");
+  up_symbol = scheme_intern_symbol("up");
+  relative_symbol = scheme_intern_symbol("relative");
+  same_symbol = scheme_intern_symbol("same");
+  
+  fail_err_symbol = scheme_false;
+  path_err_symbol = scheme_intern_symbol("ill-formed-path");
+  exists_err_symbol = scheme_intern_symbol("already-exists");
 
 #ifndef NO_FILE_SYSTEM_UTILS
 
-    read_symbol = scheme_intern_symbol("read");
-    write_symbol = scheme_intern_symbol("write");
-    execute_symbol = scheme_intern_symbol("execute");
-
-    temp_dir_symbol = scheme_intern_symbol("temp-dir");
-    home_dir_symbol = scheme_intern_symbol("home-dir");
-    pref_dir_symbol = scheme_intern_symbol("pref-dir");
-    init_dir_symbol = scheme_intern_symbol("init-dir");
-    init_file_symbol = scheme_intern_symbol("init-file");
-    sys_dir_symbol = scheme_intern_symbol("sys-dir");
-    exec_file_symbol = scheme_intern_symbol("exec-file");
-
+  read_symbol = scheme_intern_symbol("read");
+  write_symbol = scheme_intern_symbol("write");
+  execute_symbol = scheme_intern_symbol("execute");
+  
+  temp_dir_symbol = scheme_intern_symbol("temp-dir");
+  home_dir_symbol = scheme_intern_symbol("home-dir");
+  pref_dir_symbol = scheme_intern_symbol("pref-dir");
+  init_dir_symbol = scheme_intern_symbol("init-dir");
+  init_file_symbol = scheme_intern_symbol("init-file");
+  sys_dir_symbol = scheme_intern_symbol("sys-dir");
+  exec_file_symbol = scheme_intern_symbol("exec-file");
+  
 # ifdef MACINTOSH_EVENTS
-	record_symbol = scheme_intern_symbol("record");
-	file_symbol = scheme_intern_symbol("file");
+  record_symbol = scheme_intern_symbol("record");
+  file_symbol = scheme_intern_symbol("file");
 # endif
 #endif
-  }
 
   scheme_add_global_constant("file-exists?", 
 			     scheme_make_prim_w_arity(file_exists, 

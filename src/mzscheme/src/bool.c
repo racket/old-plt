@@ -54,11 +54,9 @@ void scheme_init_true_false(void)
 
 void scheme_init_bool (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    scheme_not_prim = scheme_make_folding_prim(not_prim, "not", 1, 1, 1);
+  REGISTER_SO(scheme_not_prim);
 
-    REGISTER_SO(scheme_not_prim);
-  }
+  scheme_not_prim = scheme_make_folding_prim(not_prim, "not", 1, 1, 1);
 
   scheme_add_global_constant("not", scheme_not_prim, env);
   scheme_add_global_constant("boolean?", 

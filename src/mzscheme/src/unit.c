@@ -3016,44 +3016,42 @@ void scheme_init_unit(Scheme_Env *env)
 {
   Scheme_Object *v;
 
-  if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
-    REGISTER_SO(unitsig_macros);
+  REGISTER_SO(unitsig_macros);
 
-    REGISTER_SO(import_symbol);
-    REGISTER_SO(export_symbol);
-    REGISTER_SO(with_symbol);
-    REGISTER_SO(define_values_symbol);
-    REGISTER_SO(unit_symbol);
-    REGISTER_SO(compound_unit_symbol);
-    REGISTER_SO(invoke_unit_symbol);
+  REGISTER_SO(import_symbol);
+  REGISTER_SO(export_symbol);
+  REGISTER_SO(with_symbol);
+  REGISTER_SO(define_values_symbol);
+  REGISTER_SO(unit_symbol);
+  REGISTER_SO(compound_unit_symbol);
+  REGISTER_SO(invoke_unit_symbol);
 
-    export_symbol = scheme_intern_symbol("export");
-    import_symbol = scheme_intern_symbol("import");
-    with_symbol = scheme_intern_symbol("link");
+  export_symbol = scheme_intern_symbol("export");
+  import_symbol = scheme_intern_symbol("import");
+  with_symbol = scheme_intern_symbol("link");
 
-    define_values_symbol = scheme_intern_symbol("#%define-values");
+  define_values_symbol = scheme_intern_symbol("#%define-values");
 
-    unit_symbol = scheme_intern_symbol("#%unit");
-    compound_unit_symbol = scheme_intern_symbol("#%compound-unit");
-    invoke_unit_symbol = scheme_intern_symbol("#%invoke-unit");
+  unit_symbol = scheme_intern_symbol("#%unit");
+  compound_unit_symbol = scheme_intern_symbol("#%compound-unit");
+  invoke_unit_symbol = scheme_intern_symbol("#%invoke-unit");
 
-    scheme_register_syntax("m", CloseUnit, 1);
-    scheme_register_syntax("cm", CloseCompoundUnit, 1);
-    scheme_register_syntax("im", InvokeUnit, 1);
+  scheme_register_syntax("m", CloseUnit, 1);
+  scheme_register_syntax("cm", CloseCompoundUnit, 1);
+  scheme_register_syntax("im", InvokeUnit, 1);
 
-    scheme_install_type_writer(scheme_compiled_unit_type, write_compiled_unit);
-    scheme_install_type_reader(scheme_compiled_unit_type, read_compiled_unit);
-    scheme_install_type_writer(scheme_unit_body_data_type, write_body_data);
-    scheme_install_type_reader(scheme_unit_body_data_type, read_body_data);
-    scheme_install_type_writer(scheme_unit_compound_data_type, write_compound_data);
-    scheme_install_type_reader(scheme_unit_compound_data_type, read_compound_data);
-    scheme_install_type_writer(scheme_invoke_unit_data_type, write_invoke_data);
-    scheme_install_type_reader(scheme_invoke_unit_data_type, read_invoke_data);  
-  }
+  scheme_install_type_writer(scheme_compiled_unit_type, write_compiled_unit);
+  scheme_install_type_reader(scheme_compiled_unit_type, read_compiled_unit);
+  scheme_install_type_writer(scheme_unit_body_data_type, write_body_data);
+  scheme_install_type_reader(scheme_unit_body_data_type, read_body_data);
+  scheme_install_type_writer(scheme_unit_compound_data_type, write_compound_data);
+  scheme_install_type_reader(scheme_unit_compound_data_type, read_compound_data);
+  scheme_install_type_writer(scheme_invoke_unit_data_type, write_invoke_data);
+  scheme_install_type_reader(scheme_invoke_unit_data_type, read_invoke_data);  
 
   scheme_add_global_keyword(MAKE_UNIT, 
 			    scheme_make_compiled_syntax(make_unit_syntax, 

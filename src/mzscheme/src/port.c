@@ -281,182 +281,180 @@ static status_t kill_my_team(void *t)
 void 
 scheme_init_port (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
 #ifdef WINDOWS_PROCESSES
-    init_thread_memory();
+  init_thread_memory();
 #endif
     
-    REGISTER_SO(text_symbol);
-    REGISTER_SO(binary_symbol);
-    REGISTER_SO(append_symbol); 
-    REGISTER_SO(error_symbol);
-    REGISTER_SO(replace_symbol);
-    REGISTER_SO(truncate_symbol);
-    REGISTER_SO(truncate_replace_symbol);
-    REGISTER_SO(update_symbol);
+  REGISTER_SO(text_symbol);
+  REGISTER_SO(binary_symbol);
+  REGISTER_SO(append_symbol); 
+  REGISTER_SO(error_symbol);
+  REGISTER_SO(replace_symbol);
+  REGISTER_SO(truncate_symbol);
+  REGISTER_SO(truncate_replace_symbol);
+  REGISTER_SO(update_symbol);
 
-    text_symbol = scheme_intern_symbol("text");
-    binary_symbol = scheme_intern_symbol("binary");
-    append_symbol = scheme_intern_symbol("append");
-    error_symbol = scheme_intern_symbol("error");
-    replace_symbol = scheme_intern_symbol("replace");
-    truncate_symbol = scheme_intern_symbol("truncate");
-    truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
-    update_symbol = scheme_intern_symbol("update");
+  text_symbol = scheme_intern_symbol("text");
+  binary_symbol = scheme_intern_symbol("binary");
+  append_symbol = scheme_intern_symbol("append");
+  error_symbol = scheme_intern_symbol("error");
+  replace_symbol = scheme_intern_symbol("replace");
+  truncate_symbol = scheme_intern_symbol("truncate");
+  truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
+  update_symbol = scheme_intern_symbol("update");
 
-    REGISTER_SO(scheme_orig_stdout_port);
-    REGISTER_SO(scheme_orig_stderr_port);
-    REGISTER_SO(scheme_orig_stdin_port);
+  REGISTER_SO(scheme_orig_stdout_port);
+  REGISTER_SO(scheme_orig_stderr_port);
+  REGISTER_SO(scheme_orig_stdin_port);
 #ifdef USE_FD_PORTS
-    REGISTER_SO(fd_input_port_type);
-    REGISTER_SO(fd_output_port_type);
+  REGISTER_SO(fd_input_port_type);
+  REGISTER_SO(fd_output_port_type);
 #endif
 #ifdef USE_OSKIT_CONSOLE
-    REGISTER_SO(oskit_console_input_port_type);
+  REGISTER_SO(oskit_console_input_port_type);
 #endif
-    REGISTER_SO(file_input_port_type);
-    REGISTER_SO(scheme_string_input_port_type);
+  REGISTER_SO(file_input_port_type);
+  REGISTER_SO(scheme_string_input_port_type);
 #ifdef USE_TCP
-    REGISTER_SO(scheme_tcp_input_port_type);
-    REGISTER_SO(scheme_tcp_output_port_type);
+  REGISTER_SO(scheme_tcp_input_port_type);
+  REGISTER_SO(scheme_tcp_output_port_type);
 #endif
-    REGISTER_SO(file_output_port_type);
-    REGISTER_SO(scheme_string_output_port_type);
-    REGISTER_SO(scheme_user_input_port_type);
-    REGISTER_SO(scheme_user_output_port_type);
-    REGISTER_SO(scheme_pipe_read_port_type);
-    REGISTER_SO(scheme_pipe_write_port_type);
+  REGISTER_SO(file_output_port_type);
+  REGISTER_SO(scheme_string_output_port_type);
+  REGISTER_SO(scheme_user_input_port_type);
+  REGISTER_SO(scheme_user_output_port_type);
+  REGISTER_SO(scheme_pipe_read_port_type);
+  REGISTER_SO(scheme_pipe_write_port_type);
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-    REGISTER_SO(tested_file_input_port_type);
-    REGISTER_SO(tested_file_output_port_type);
+  REGISTER_SO(tested_file_input_port_type);
+  REGISTER_SO(tested_file_output_port_type);
 #endif
 
 #if defined(UNIX_PROCESSES)
-    REGISTER_SO(scheme_system_children);
+  REGISTER_SO(scheme_system_children);
 #endif
 
 #ifndef DONT_IGNORE_PIPE_SIGNAL
-    START_XFORM_SKIP;
-    MZ_SIGSET(SIGPIPE, SIG_IGN);
-    END_XFORM_SKIP;
+  START_XFORM_SKIP;
+  MZ_SIGSET(SIGPIPE, SIG_IGN);
+  END_XFORM_SKIP;
 #endif
 
 #if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
-    /* Extra help to make sure we terminate properly: */
-    resume_thread(spawn_thread(kill_my_team, "killer",
-			       B_NORMAL_PRIORITY, (void*)find_thread(NULL)));
+  /* Extra help to make sure we terminate properly: */
+  resume_thread(spawn_thread(kill_my_team, "killer",
+			     B_NORMAL_PRIORITY, (void*)find_thread(NULL)));
 #endif
 
-    if (!scheme_sleep)
-      scheme_sleep = default_sleep;
-
-    scheme_eof->type = scheme_eof_type;
-
-    scheme_string_input_port_type = scheme_make_port_type("<string-input-port>");
-    scheme_string_output_port_type = scheme_make_port_type("<string-output-port>");
+  if (!scheme_sleep)
+    scheme_sleep = default_sleep;
+  
+  scheme_eof->type = scheme_eof_type;
+  
+  scheme_string_input_port_type = scheme_make_port_type("<string-input-port>");
+  scheme_string_output_port_type = scheme_make_port_type("<string-output-port>");
 
 #ifdef USE_FD_PORTS
-    fd_input_port_type = scheme_make_port_type("<stream-input-port>");
-    fd_output_port_type = scheme_make_port_type("<stream-output-port>");
+  fd_input_port_type = scheme_make_port_type("<stream-input-port>");
+  fd_output_port_type = scheme_make_port_type("<stream-output-port>");
 #endif
 #ifdef USE_OSKIT_CONSOLE
-    oskit_console_input_port_type = scheme_make_port_type("<console-input-port>");
+  oskit_console_input_port_type = scheme_make_port_type("<console-input-port>");
 #endif
 
-    file_input_port_type = scheme_make_port_type("<file-input-port>");
-    file_output_port_type = scheme_make_port_type("<file-output-port>");
+  file_input_port_type = scheme_make_port_type("<file-input-port>");
+  file_output_port_type = scheme_make_port_type("<file-output-port>");
+  
+  scheme_user_input_port_type = scheme_make_port_type("<user-input-port>");
+  scheme_user_output_port_type = scheme_make_port_type("<user-output-port>");
 
-    scheme_user_input_port_type = scheme_make_port_type("<user-input-port>");
-    scheme_user_output_port_type = scheme_make_port_type("<user-output-port>");
-
-    scheme_pipe_read_port_type = scheme_make_port_type("<pipe-input-port>");
-    scheme_pipe_write_port_type = scheme_make_port_type("<pipe-output-port>");
+  scheme_pipe_read_port_type = scheme_make_port_type("<pipe-input-port>");
+  scheme_pipe_write_port_type = scheme_make_port_type("<pipe-output-port>");
 
 #ifdef USE_TCP
-    scheme_tcp_input_port_type = scheme_make_port_type("<tcp-input-port>");
-    scheme_tcp_output_port_type = scheme_make_port_type("<tcp-output-port>");
+  scheme_tcp_input_port_type = scheme_make_port_type("<tcp-input-port>");
+  scheme_tcp_output_port_type = scheme_make_port_type("<tcp-output-port>");
 #endif
 
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-    tested_file_input_port_type = scheme_make_port_type("<file-input-port>");
-    tested_file_output_port_type = scheme_make_port_type("<file-output-port>");
+  tested_file_input_port_type = scheme_make_port_type("<file-input-port>");
+  tested_file_output_port_type = scheme_make_port_type("<file-output-port>");
 # ifdef WIN32_FD_HANDLES
-    scheme_break_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+  scheme_break_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
 # endif
 # ifdef USE_BEOS_PORT_THREADS
-    scheme_break_semaphore = create_sem(0, NULL);
+  scheme_break_semaphore = create_sem(0, NULL);
 # endif
 #endif
 
 #ifdef DETECT_WIN32_CONSOLE_STDIN
-    if (scheme_binary_mode_stdio) {
-      _setmode(_fileno(stdin), _O_BINARY);
-      _setmode(_fileno(stdout), _O_BINARY);
-      _setmode(_fileno(stderr), _O_BINARY);
-    }
+  if (scheme_binary_mode_stdio) {
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+  }
 #endif
 
-    scheme_orig_stdin_port = (scheme_make_stdin
-			      ? scheme_make_stdin()
+  scheme_orig_stdin_port = (scheme_make_stdin
+			    ? scheme_make_stdin()
 #ifdef USE_FD_PORTS
-			      : make_fd_input_port(0, "STDIN", 0)
+			    : make_fd_input_port(0, "STDIN", 0)
 #else
 # ifdef USE_OSKIT_CONSOLE
-			      : (osk_not_console
-				 ? make_tested_file_input_port(stdin, "STDIN", 1)
-				 : make_oskit_console_input_port())
+			    : (osk_not_console
+			       ? make_tested_file_input_port(stdin, "STDIN", 1)
+			       : make_oskit_console_input_port())
 # else
-			      : make_tested_file_input_port(stdin, "STDIN", 1)
+			    : make_tested_file_input_port(stdin, "STDIN", 1)
 # endif
 #endif
-			      );
+			    );
 
-    scheme_orig_stdout_port = (scheme_make_stdout
-			       ? scheme_make_stdout()
+  scheme_orig_stdout_port = (scheme_make_stdout
+			     ? scheme_make_stdout()
 #ifdef USE_FD_PORTS
-			       : make_fd_output_port(1, 0)
+			     : make_fd_output_port(1, 0)
 #else
-			       : make_tested_file_output_port(stdout, 1)
+			     : make_tested_file_output_port(stdout, 1)
 #endif
-			       );
+			     );
 
-    scheme_orig_stderr_port = (scheme_make_stderr
-			       ? scheme_make_stderr()
+  scheme_orig_stderr_port = (scheme_make_stderr
+			     ? scheme_make_stderr()
 #ifdef USE_FD_PORTS
-			       : make_fd_output_port(2, 0)
+			     : make_fd_output_port(2, 0)
 #else
-			       : make_tested_file_output_port(stderr, 1)
+			     : make_tested_file_output_port(stderr, 1)
 #endif
-			       );
+			     );
 #ifdef USE_FD_PORTS
 # ifdef USE_ON_EXIT_FOR_ATEXIT
-    on_exit(flush_all_output_fds, NULL);
+  on_exit(flush_all_output_fds, NULL);
 # else
-    atexit(flush_all_output_fds);
+  atexit(flush_all_output_fds);
 # endif
 #endif
 
 #if defined(FILES_HAVE_FDS)
 # ifndef USE_OSKIT_CONSOLE
-    /* Set up a pipe for signalling external events: */
-    {
-      int fds[2];
-      if (!pipe(fds)) {
-	external_event_fd = fds[0];
-	put_external_event_fd = fds[1];
-	fcntl(external_event_fd, F_SETFL, MZ_NONBLOCKING);
-	fcntl(put_external_event_fd, F_SETFL, MZ_NONBLOCKING);
-      }
+  /* Set up a pipe for signalling external events: */
+  {
+    int fds[2];
+    if (!pipe(fds)) {
+      external_event_fd = fds[0];
+      put_external_event_fd = fds[1];
+      fcntl(external_event_fd, F_SETFL, MZ_NONBLOCKING);
+      fcntl(put_external_event_fd, F_SETFL, MZ_NONBLOCKING);
     }
+  }
 # endif
 #endif
 
-    scheme_init_port_config();
-  }
+  scheme_init_port_config();
 
   scheme_add_global_constant("process", 
 			     scheme_make_prim_w_arity(sch_process, 

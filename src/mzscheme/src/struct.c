@@ -102,66 +102,65 @@ scheme_init_struct (Scheme_Env *env)
 {
   int i;
 
-  if (scheme_starting_up) {
-    static const char *arity_fields[1] = { "value" };
+  static const char *arity_fields[1] = { "value" };
 #ifdef TIME_SYNTAX
-    static const char *date_fields[10] = { "second", "minute", "hour",
-					    "day", "month", "year",
-					    "week-day", "year-day", "dst?", "time-zone-offset" };
+  static const char *date_fields[10] = { "second", "minute", "hour",
+					 "day", "month", "year",
+					 "week-day", "year-day", "dst?", "time-zone-offset" };
 #endif
 #ifndef NO_UNIT_SYSTEM
-    static const char *unit_fields[3] = { "unit", "imports", "exports" };
+  static const char *unit_fields[3] = { "unit", "imports", "exports" };
 #endif
-
+  
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
-
-    REGISTER_SO(scheme_arity_at_least);
-    REGISTER_SO(as_names);
-    REGISTER_SO(as_values);
+  
+  REGISTER_SO(scheme_arity_at_least);
+  REGISTER_SO(as_names);
+  REGISTER_SO(as_values);
 #ifdef TIME_SYNTAX
-    REGISTER_SO(scheme_date);
-    REGISTER_SO(ts_names);
-    REGISTER_SO(ts_values);
+  REGISTER_SO(scheme_date);
+  REGISTER_SO(ts_names);
+  REGISTER_SO(ts_values);
 #endif
 #ifndef NO_UNIT_SYSTEM
-    REGISTER_SO(signature);
-    REGISTER_SO(us_names);
-    REGISTER_SO(us_values);
+  REGISTER_SO(signature);
+  REGISTER_SO(us_names);
+  REGISTER_SO(us_values);
 #endif
-
-    REGISTER_SO(struct_symbol);
-
-    scheme_register_syntax("k", struct_execute, 1);
-
-    struct_symbol = scheme_intern_symbol("#%struct");
-
-    scheme_install_type_writer(scheme_struct_info_type, write_struct_info);
-    scheme_install_type_reader(scheme_struct_info_type, read_struct_info);
-
-    scheme_arity_at_least = scheme_make_struct_type_from_string("arity-at-least", NULL, 1);
-
-    as_names = scheme_make_struct_names_from_array("arity-at-least",
-						   1, arity_fields,
-						   BUILTIN_STRUCT_FLAGS, 
-						   &as_count);
-
+  
+  REGISTER_SO(struct_symbol);
+  
+  scheme_register_syntax("k", struct_execute, 1);
+  
+  struct_symbol = scheme_intern_symbol("#%struct");
+  
+  scheme_install_type_writer(scheme_struct_info_type, write_struct_info);
+  scheme_install_type_reader(scheme_struct_info_type, read_struct_info);
+  
+  scheme_arity_at_least = scheme_make_struct_type_from_string("arity-at-least", NULL, 1);
+  
+  as_names = scheme_make_struct_names_from_array("arity-at-least",
+						 1, arity_fields,
+						 BUILTIN_STRUCT_FLAGS, 
+						 &as_count);
+  
 #ifdef TIME_SYNTAX
-    scheme_date = scheme_make_struct_type_from_string("date", NULL, 10);
-
-    ts_names 
-      = scheme_make_struct_names_from_array("date",
-					    10, date_fields,
-					    BUILTIN_STRUCT_FLAGS, &ts_count);
+  scheme_date = scheme_make_struct_type_from_string("date", NULL, 10);
+  
+  ts_names 
+    = scheme_make_struct_names_from_array("date",
+					  10, date_fields,
+					  BUILTIN_STRUCT_FLAGS, &ts_count);
 #endif
 
 #ifndef NO_UNIT_SYSTEM
-    signature = scheme_make_struct_type_from_string("unit-with-signature", NULL, 3);
-    us_names 
-      = scheme_make_struct_names_from_array("unit-with-signature",
-					    3, unit_fields,
-					    BUILTIN_STRUCT_FLAGS, &us_count);
+  signature = scheme_make_struct_type_from_string("unit-with-signature", NULL, 3);
+  us_names 
+    = scheme_make_struct_names_from_array("unit-with-signature",
+					  3, unit_fields,
+					  BUILTIN_STRUCT_FLAGS, &us_count);
 #endif
 
   as_values = scheme_make_struct_values(scheme_arity_at_least, as_names, as_count, 
@@ -174,7 +173,6 @@ scheme_init_struct (Scheme_Env *env)
   us_values = scheme_make_struct_values(signature, us_names, us_count, 
 					BUILTIN_STRUCT_FLAGS);
 #endif
-  }
 
   scheme_add_global_keyword("struct", 
 			    scheme_make_compiled_syntax(struct_syntax, 

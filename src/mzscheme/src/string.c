@@ -82,14 +82,13 @@ static Scheme_Object *vers_str, *banner_str;
 void
 scheme_init_string (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    REGISTER_SO(sys_symbol);
-    sys_symbol = scheme_intern_symbol(SYSTEM_TYPE_NAME);
+  REGISTER_SO(sys_symbol);
+  sys_symbol = scheme_intern_symbol(SYSTEM_TYPE_NAME);
 
-    REGISTER_SO(zero_length_string);
-    zero_length_string = scheme_alloc_string(0, 0); 
+  REGISTER_SO(zero_length_string);
+  zero_length_string = scheme_alloc_string(0, 0); 
 
-    REGISTER_SO(platform_path);
+  REGISTER_SO(platform_path);
 #ifdef MZ_PRECISE_GC
 # ifdef UNIX_FILE_SYSTEM
 #  define MZ2K_SUBDIR "/2k"
@@ -103,12 +102,11 @@ scheme_init_string (Scheme_Env *env)
 #else
 # define MZ2K_SUBDIR /* empty */
 #endif
-    platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZ2K_SUBDIR);
+  platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZ2K_SUBDIR);
 
-    REGISTER_SO(putenv_str_table);
+  REGISTER_SO(putenv_str_table);
 
-    REGISTER_SO(embedding_banner);
-  }
+  REGISTER_SO(embedding_banner);
 
   scheme_add_global_constant("string?", 
 			     scheme_make_folding_prim(string_p,

@@ -2533,22 +2533,20 @@ static Scheme_Object *PSubObjectDetail(Scheme_Object *obj, int argc, Scheme_Obje
 
 void scheme_init_object(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
-    REGISTER_SO(null_class);
-
-    REGISTER_SO(interface_symbol);
-
-    interface_symbol = scheme_intern_symbol("#%interface");
-
-    scheme_register_syntax("if", Interface_Execute, 1);
-
-    scheme_install_type_writer(scheme_interface_data_type, write_Interface_Data);
-    scheme_install_type_reader(scheme_interface_data_type, read_Interface_Data);
-  }
+  REGISTER_SO(null_class);
+  
+  REGISTER_SO(interface_symbol);
+  
+  interface_symbol = scheme_intern_symbol("#%interface");
+  
+  scheme_register_syntax("if", Interface_Execute, 1);
+  
+  scheme_install_type_writer(scheme_interface_data_type, write_Interface_Data);
+  scheme_install_type_reader(scheme_interface_data_type, read_Interface_Data);
 
   scheme_add_global_keyword(INTERFACE, 
 			    scheme_make_compiled_syntax(Interface, 

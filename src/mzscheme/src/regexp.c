@@ -1636,9 +1636,7 @@ END_XFORM_SKIP;
 void scheme_regexp_initialize(Scheme_Env *env)
 {
 #ifdef MZ_PRECISE_GC
-  if (scheme_starting_up) {
-    GC_REG_TRAV(scheme_regexp_type, mark_regexp);
-  }
+  GC_REG_TRAV(scheme_regexp_type, mark_regexp);
 #endif
 
   scheme_add_global_constant("regexp", 

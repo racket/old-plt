@@ -200,28 +200,26 @@ static void clean_symbol_table(void)
 void
 scheme_init_symbol_table ()
 {
-  if (scheme_starting_up) {
-    int size;
-    Scheme_Bucket **ba;
+  int size;
+  Scheme_Bucket **ba;
 
-    REGISTER_SO(scheme_symbol_table);
-
-    scheme_symbol_table = scheme_hash_table(HASH_TABLE_SIZE, 
-					    SCHEME_hash_ptr, 0, 1);
-
-    size = scheme_symbol_table->size * sizeof(Scheme_Bucket *);
+  REGISTER_SO(scheme_symbol_table);
+  
+  scheme_symbol_table = scheme_hash_table(HASH_TABLE_SIZE, 
+					  SCHEME_hash_ptr, 0, 1);
+  
+  size = scheme_symbol_table->size * sizeof(Scheme_Bucket *);
 #ifdef MZ_PRECISE_GC
-    ba = (Scheme_Bucket **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
+  ba = (Scheme_Bucket **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
 #else
-    ba = MALLOC_N_ATOMIC(Scheme_Bucket *, size);
-    memset((char *)ba, 0, size);
+  ba = MALLOC_N_ATOMIC(Scheme_Bucket *, size);
+  memset((char *)ba, 0, size);
 #endif
-    scheme_symbol_table->buckets = ba;
+  scheme_symbol_table->buckets = ba;
 
 #ifndef MZ_PRECISE_GC
-    GC_custom_finalize = clean_symbol_table;
+  GC_custom_finalize = clean_symbol_table;
 #endif
-  }
 }
 
 void
@@ -232,9 +230,6 @@ scheme_init_symbol_type (Scheme_Env *env)
 void
 scheme_init_symbol (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-  }
-
   scheme_add_global_constant("symbol?", 
 			     scheme_make_folding_prim(symbol_p_prim, 
 						      "symbol?", 

@@ -101,65 +101,63 @@ Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
 void 
 scheme_init_port_fun(Scheme_Env *env)
 {
-  if (scheme_starting_up) {    
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
-    REGISTER_SO(default_read_handler);
-    REGISTER_SO(default_display_handler);
-    REGISTER_SO(default_write_handler);
-    REGISTER_SO(default_print_handler);
+  REGISTER_SO(default_read_handler);
+  REGISTER_SO(default_display_handler);
+  REGISTER_SO(default_write_handler);
+  REGISTER_SO(default_print_handler);
+  
+  REGISTER_SO(scheme_write_proc);
+  REGISTER_SO(scheme_display_proc);
+  REGISTER_SO(scheme_print_proc);
+  
+  REGISTER_SO(any_symbol);
+  REGISTER_SO(any_one_symbol);
+  REGISTER_SO(cr_symbol);
+  REGISTER_SO(lf_symbol);
+  REGISTER_SO(crlf_symbol);
+  
+  any_symbol = scheme_intern_symbol("any");
+  any_one_symbol = scheme_intern_symbol("any-one");
+  cr_symbol = scheme_intern_symbol("return");
+  lf_symbol = scheme_intern_symbol("linefeed");
+  crlf_symbol = scheme_intern_symbol("return-linefeed");
 
-    REGISTER_SO(scheme_write_proc);
-    REGISTER_SO(scheme_display_proc);
-    REGISTER_SO(scheme_print_proc);
-
-    REGISTER_SO(any_symbol);
-    REGISTER_SO(any_one_symbol);
-    REGISTER_SO(cr_symbol);
-    REGISTER_SO(lf_symbol);
-    REGISTER_SO(crlf_symbol);
-
-    any_symbol = scheme_intern_symbol("any");
-    any_one_symbol = scheme_intern_symbol("any-one");
-    cr_symbol = scheme_intern_symbol("return");
-    lf_symbol = scheme_intern_symbol("linefeed");
-    crlf_symbol = scheme_intern_symbol("return-linefeed");
-
-    REGISTER_SO(all_symbol);
-    REGISTER_SO(non_elaboration_symbol);
-    REGISTER_SO(none_symbol);
-
-    all_symbol = scheme_intern_symbol("all");
-    non_elaboration_symbol = scheme_intern_symbol("non-elaboration");
-    none_symbol = scheme_intern_symbol("none");
-
-    scheme_write_proc = scheme_make_prim_w_arity(sch_write, 
-						 "write", 
+  REGISTER_SO(all_symbol);
+  REGISTER_SO(non_elaboration_symbol);
+  REGISTER_SO(none_symbol);
+  
+  all_symbol = scheme_intern_symbol("all");
+  non_elaboration_symbol = scheme_intern_symbol("non-elaboration");
+  none_symbol = scheme_intern_symbol("none");
+  
+  scheme_write_proc = scheme_make_prim_w_arity(sch_write, 
+					       "write", 
+					       1, 2);
+  scheme_display_proc = scheme_make_prim_w_arity(display, 
+						 "display", 
 						 1, 2);
-    scheme_display_proc = scheme_make_prim_w_arity(display, 
-						   "display", 
-						   1, 2);
-    scheme_print_proc = scheme_make_prim_w_arity(sch_print, 
-						 "print", 
-						 1, 2);
+  scheme_print_proc = scheme_make_prim_w_arity(sch_print, 
+					       "print", 
+					       1, 2);
     
-    default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
-						    "default-port-read-handler", 
-						    1, 1);
-    default_display_handler = scheme_make_prim_w_arity(sch_default_display_handler,
-						       "default-port-display-handler", 
-						       2, 2);
-    default_write_handler = scheme_make_prim_w_arity(sch_default_write_handler,
-						     "default-port-write-handler", 
+  default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
+						  "default-port-read-handler", 
+						  1, 1);
+  default_display_handler = scheme_make_prim_w_arity(sch_default_display_handler,
+						     "default-port-display-handler", 
 						     2, 2);
-    default_print_handler = scheme_make_prim_w_arity(sch_default_print_handler,
-						     "default-port-print-handler", 
-						     2, 2);
-
-    scheme_init_port_fun_config();
-  }
+  default_write_handler = scheme_make_prim_w_arity(sch_default_write_handler,
+						   "default-port-write-handler", 
+						   2, 2);
+  default_print_handler = scheme_make_prim_w_arity(sch_default_print_handler,
+						   "default-port-print-handler", 
+						   2, 2);
+  
+  scheme_init_port_fun_config();
 
   scheme_add_global_constant("eof", scheme_eof, env);
 

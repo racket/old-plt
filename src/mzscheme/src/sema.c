@@ -36,9 +36,7 @@ static void register_traversers(void);
 void scheme_init_sema(Scheme_Env *env)
 {
 #ifdef MZ_PRECISE_GC
-  if (scheme_starting_up) {
-    register_traversers();
-  }
+  register_traversers();
 #endif
 
   scheme_add_global_constant("make-semaphore", 

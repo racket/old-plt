@@ -55,22 +55,20 @@ static Scheme_Object *char_downcase (int argc, Scheme_Object *argv[]);
 
 void scheme_init_char (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    int i;
+  int i;
 
-    REGISTER_SO(scheme_char_constants);
+  REGISTER_SO(scheme_char_constants);
 
-    scheme_char_constants = 
-      (Scheme_Object **)scheme_malloc_eternal(256 * sizeof(Scheme_Object*));
+  scheme_char_constants = 
+    (Scheme_Object **)scheme_malloc_eternal(256 * sizeof(Scheme_Object*));
     
-    for (i = 0; i < 256; i++) {
-      Scheme_Object *sc;
-      sc = scheme_alloc_eternal_small_object();
-      sc->type = scheme_char_type;
-      SCHEME_CHAR_VAL(sc) = i;
-      
-      scheme_char_constants[i] = sc;
-    }
+  for (i = 0; i < 256; i++) {
+    Scheme_Object *sc;
+    sc = scheme_alloc_eternal_small_object();
+    sc->type = scheme_char_type;
+    SCHEME_CHAR_VAL(sc) = i;
+    
+    scheme_char_constants[i] = sc;
   }
 
   scheme_add_global_constant("char?", 

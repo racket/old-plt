@@ -108,9 +108,7 @@ static Scheme_Object *weak_boxp(int argc, Scheme_Object *argv[]);
 void
 scheme_init_list (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    scheme_null->type = scheme_null_type;
-  }
+  scheme_null->type = scheme_null_type;
 
   scheme_add_global_constant ("null", scheme_null, env);
 

@@ -189,66 +189,64 @@ enum {
 void
 scheme_init_eval (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
 #ifdef MZ_EVAL_WAITING_CONSTANT
-    scheme_eval_waiting = MZ_EVAL_WAITING_CONSTANT;
+  scheme_eval_waiting = MZ_EVAL_WAITING_CONSTANT;
 #else
-    REGISTER_SO(scheme_eval_waiting);
-    scheme_eval_waiting = scheme_alloc_eternal_object();
-    scheme_eval_waiting->type = scheme_eval_waiting_type;
+  REGISTER_SO(scheme_eval_waiting);
+  scheme_eval_waiting = scheme_alloc_eternal_object();
+  scheme_eval_waiting->type = scheme_eval_waiting_type;
 #endif
 
 #ifdef MZ_EVAL_WAITING_CONSTANT
-    scheme_multiple_values = MZ_MULTIPLE_VALUES_CONSTANT;
+  scheme_multiple_values = MZ_MULTIPLE_VALUES_CONSTANT;
 #else
-    REGISTER_SO(scheme_multiple_values);
-    scheme_multiple_values = scheme_alloc_eternal_object();
-    scheme_multiple_values->type = scheme_multiple_values_type;
+  REGISTER_SO(scheme_multiple_values);
+  scheme_multiple_values = scheme_alloc_eternal_object();
+  scheme_multiple_values->type = scheme_multiple_values_type;
 #endif
 
-    REGISTER_SO(define_values_symbol);
-    REGISTER_SO(letrec_values_symbol);
-    REGISTER_SO(lambda_symbol);
-    REGISTER_SO(unknown_symbol);
-    REGISTER_SO(void_link_symbol);
-    REGISTER_SO(quote_symbol);
-    REGISTER_SO(letmacro_symbol);
-    REGISTER_SO(begin_symbol);
-    REGISTER_SO(let_id_macro_symbol);
-    REGISTER_SO(let_exp_time_symbol);
-    REGISTER_SO(let_symbol);
-
-    define_values_symbol = scheme_intern_symbol("#%define-values");
-    letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
-    let_symbol = scheme_intern_symbol("#%let");
-    lambda_symbol = scheme_intern_symbol("#%lambda");
-    unknown_symbol = scheme_intern_symbol("unknown");
-    void_link_symbol = scheme_intern_symbol("-v");
-    quote_symbol = scheme_intern_symbol("#%quote");
-    letmacro_symbol = scheme_intern_symbol("#%let-macro");
-    let_id_macro_symbol = scheme_intern_symbol("#%let-id-macro");
-    let_exp_time_symbol = scheme_intern_symbol("#%let-expansion-time");
-    begin_symbol = scheme_intern_symbol("#%begin");
-
-    scheme_install_type_writer(REGISTYPE(scheme_application), write_application);
-    scheme_install_type_reader(REGISTYPE(scheme_application), read_application);
-    scheme_install_type_writer(REGISTYPE(scheme_sequence), write_sequence);
-    scheme_install_type_reader(REGISTYPE(scheme_sequence), read_sequence);
-    scheme_install_type_writer(REGISTYPE(scheme_branch), write_branch);
-    scheme_install_type_reader(REGISTYPE(scheme_branch), read_branch);
-    scheme_install_type_writer(REGISTYPE(scheme_with_cont_mark), write_with_cont_mark);
-    scheme_install_type_reader(REGISTYPE(scheme_with_cont_mark), read_with_cont_mark);
-    scheme_install_type_writer(REGISTYPE(scheme_syntax), write_syntax);
-    scheme_install_type_reader(REGISTYPE(scheme_syntax), read_syntax);
-
-    scheme_install_type_writer(scheme_begin0_sequence_type, write_sequence);
-    scheme_install_type_reader(scheme_begin0_sequence_type, read_sequence_save_first);
-  }
-    
+  REGISTER_SO(define_values_symbol);
+  REGISTER_SO(letrec_values_symbol);
+  REGISTER_SO(lambda_symbol);
+  REGISTER_SO(unknown_symbol);
+  REGISTER_SO(void_link_symbol);
+  REGISTER_SO(quote_symbol);
+  REGISTER_SO(letmacro_symbol);
+  REGISTER_SO(begin_symbol);
+  REGISTER_SO(let_id_macro_symbol);
+  REGISTER_SO(let_exp_time_symbol);
+  REGISTER_SO(let_symbol);
+  
+  define_values_symbol = scheme_intern_symbol("#%define-values");
+  letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
+  let_symbol = scheme_intern_symbol("#%let");
+  lambda_symbol = scheme_intern_symbol("#%lambda");
+  unknown_symbol = scheme_intern_symbol("unknown");
+  void_link_symbol = scheme_intern_symbol("-v");
+  quote_symbol = scheme_intern_symbol("#%quote");
+  letmacro_symbol = scheme_intern_symbol("#%let-macro");
+  let_id_macro_symbol = scheme_intern_symbol("#%let-id-macro");
+  let_exp_time_symbol = scheme_intern_symbol("#%let-expansion-time");
+  begin_symbol = scheme_intern_symbol("#%begin");
+  
+  scheme_install_type_writer(REGISTYPE(scheme_application), write_application);
+  scheme_install_type_reader(REGISTYPE(scheme_application), read_application);
+  scheme_install_type_writer(REGISTYPE(scheme_sequence), write_sequence);
+  scheme_install_type_reader(REGISTYPE(scheme_sequence), read_sequence);
+  scheme_install_type_writer(REGISTYPE(scheme_branch), write_branch);
+  scheme_install_type_reader(REGISTYPE(scheme_branch), read_branch);
+  scheme_install_type_writer(REGISTYPE(scheme_with_cont_mark), write_with_cont_mark);
+  scheme_install_type_reader(REGISTYPE(scheme_with_cont_mark), read_with_cont_mark);
+  scheme_install_type_writer(REGISTYPE(scheme_syntax), write_syntax);
+  scheme_install_type_reader(REGISTYPE(scheme_syntax), read_syntax);
+  
+  scheme_install_type_writer(scheme_begin0_sequence_type, write_sequence);
+  scheme_install_type_reader(scheme_begin0_sequence_type, read_sequence_save_first);
+  
   scheme_add_global_constant("eval", 
 			     scheme_make_prim_w_arity2(eval, 
 						       "eval", 

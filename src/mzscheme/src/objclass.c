@@ -42,30 +42,28 @@ static Scheme_Object *read_Class_Data(Scheme_Object *obj);
 
 void scheme_init_objclass(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    REGISTER_SO(class_star_symbol);
+  REGISTER_SO(class_star_symbol);
 
-    class_star_symbol = scheme_intern_symbol("#%class*/names");
+  class_star_symbol = scheme_intern_symbol("#%class*/names");
 
-    REGISTER_SO(seq_symbol);
-    REGISTER_SO(pub_symbol);
-    REGISTER_SO(ovr_symbol);
-    REGISTER_SO(pri_symbol);
-    REGISTER_SO(inh_symbol);
-    REGISTER_SO(ren_symbol);
-    
-    seq_symbol = scheme_intern_symbol("sequence");
-    pub_symbol = scheme_intern_symbol("public");
-    ovr_symbol = scheme_intern_symbol("override");
-    pri_symbol = scheme_intern_symbol("private");
-    inh_symbol = scheme_intern_symbol("inherit");
-    ren_symbol = scheme_intern_symbol("rename");
-
-    scheme_register_syntax("dc", DefineClass_Execute, 1);
-
-    scheme_install_type_writer(scheme_class_data_type, write_Class_Data);
-    scheme_install_type_reader(scheme_class_data_type, read_Class_Data);
-  }
+  REGISTER_SO(seq_symbol);
+  REGISTER_SO(pub_symbol);
+  REGISTER_SO(ovr_symbol);
+  REGISTER_SO(pri_symbol);
+  REGISTER_SO(inh_symbol);
+  REGISTER_SO(ren_symbol);
+  
+  seq_symbol = scheme_intern_symbol("sequence");
+  pub_symbol = scheme_intern_symbol("public");
+  ovr_symbol = scheme_intern_symbol("override");
+  pri_symbol = scheme_intern_symbol("private");
+  inh_symbol = scheme_intern_symbol("inherit");
+  ren_symbol = scheme_intern_symbol("rename");
+  
+  scheme_register_syntax("dc", DefineClass_Execute, 1);
+  
+  scheme_install_type_writer(scheme_class_data_type, write_Class_Data);
+  scheme_install_type_reader(scheme_class_data_type, read_Class_Data);
 
   scheme_add_global_keyword("class*/names", 
 			    scheme_make_compiled_syntax(DefineClass, 

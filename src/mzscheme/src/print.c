@@ -26,7 +26,7 @@
 #include "schcpt.h"
 #include <ctype.h>
 #ifdef USE_STACKAVAIL
-#include <malloc.h>
+# include <malloc.h>
 #endif
 
 /* Flag for debugging compiled code in printed form: */
@@ -87,20 +87,18 @@ static Scheme_Hash_Table *global_constants_ht;
 
 void scheme_init_print(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    int i;
+  int i;
 
-    REGISTER_SO(quick_buffer);
-
-    quick_buffer = (char *)scheme_malloc_atomic(100);
-
-    REGISTER_SO(quote_link_symbol);
-
-    quote_link_symbol = scheme_intern_symbol("-q");
-
-    for (i = 0; i < _CPT_COUNT_; i++) {
-      compacts[i] = i;
-    }
+  REGISTER_SO(quick_buffer);
+  
+  quick_buffer = (char *)scheme_malloc_atomic(100);
+  
+  REGISTER_SO(quote_link_symbol);
+  
+  quote_link_symbol = scheme_intern_symbol("-q");
+  
+  for (i = 0; i < _CPT_COUNT_; i++) {
+    compacts[i] = i;
   }
 }
 

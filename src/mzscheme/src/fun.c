@@ -124,25 +124,23 @@ scheme_init_fun (Scheme_Env *env)
 {
   Scheme_Object *o;
 
-  if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
-    REGISTER_SO(scheme_void_func);
+  REGISTER_SO(scheme_void_func);
 
-    scheme_void->type = scheme_void_type;
+  scheme_void->type = scheme_void_type;
 
 #ifdef MZ_APPLY_WAITING_CONSTANT
-    scheme_tail_call_waiting = MZ_APPLY_WAITING_CONSTANT;
+  scheme_tail_call_waiting = MZ_APPLY_WAITING_CONSTANT;
 #else
-    REGISTER_SO(scheme_tail_call_waiting);
-    scheme_tail_call_waiting = scheme_alloc_eternal_object();
-    scheme_tail_call_waiting->type = scheme_tail_call_waiting_type;
+  REGISTER_SO(scheme_tail_call_waiting);
+  scheme_tail_call_waiting = scheme_alloc_eternal_object();
+  scheme_tail_call_waiting->type = scheme_tail_call_waiting_type;
 #endif
 
-    scheme_void_func = scheme_make_folding_prim(void_func, "void", 0, -1, 1);
-  }
+  scheme_void_func = scheme_make_folding_prim(void_func, "void", 0, -1, 1);
 
   scheme_add_global_constant("procedure?", 
 			     scheme_make_folding_prim(procedure_p, 
@@ -337,12 +335,10 @@ scheme_init_fun (Scheme_Env *env)
 			     env);
 
 
-  if (scheme_starting_up) {
-    scheme_install_type_writer(scheme_unclosed_procedure_type,
-			       write_compiled_closure);
-    scheme_install_type_reader(scheme_unclosed_procedure_type,
-			       read_compiled_closure);
-  }
+  scheme_install_type_writer(scheme_unclosed_procedure_type,
+			     write_compiled_closure);
+  scheme_install_type_reader(scheme_unclosed_procedure_type,
+			     read_compiled_closure);
 }
 
 void scheme_init_rep(Scheme_Env *env)

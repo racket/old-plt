@@ -116,100 +116,98 @@ double scheme_floating_point_nzero = 0.0; /* negated below; many compilers treat
 void
 scheme_init_number (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    REGISTER_SO(scheme_pi);
-    REGISTER_SO(scheme_half_pi);
-    REGISTER_SO(scheme_zerod);
-    REGISTER_SO(scheme_nzerod);
+  REGISTER_SO(scheme_pi);
+  REGISTER_SO(scheme_half_pi);
+  REGISTER_SO(scheme_zerod);
+  REGISTER_SO(scheme_nzerod);
 #ifdef MZ_USE_SINGLE_FLOATS
-    REGISTER_SO(single_scheme_pi);
-    REGISTER_SO(scheme_zerof);
-    REGISTER_SO(scheme_nzerof);
+  REGISTER_SO(single_scheme_pi);
+  REGISTER_SO(scheme_zerof);
+  REGISTER_SO(scheme_nzerof);
 #endif
-    REGISTER_SO(scheme_plus_i);
-    REGISTER_SO(scheme_minus_i);
-    REGISTER_SO(scheme_inf_object);
-    REGISTER_SO(scheme_minus_inf_object);
-    REGISTER_SO(scheme_nan_object);
+  REGISTER_SO(scheme_plus_i);
+  REGISTER_SO(scheme_minus_i);
+  REGISTER_SO(scheme_inf_object);
+  REGISTER_SO(scheme_minus_inf_object);
+  REGISTER_SO(scheme_nan_object);
 #ifdef MZ_USE_SINGLE_FLOATS
-    REGISTER_SO(scheme_single_inf_object);
-    REGISTER_SO(scheme_single_minus_inf_object);
-    REGISTER_SO(scheme_single_nan_object);
+  REGISTER_SO(scheme_single_inf_object);
+  REGISTER_SO(scheme_single_minus_inf_object);
+  REGISTER_SO(scheme_single_nan_object);
 #endif
     
-    START_XFORM_SKIP;
+  START_XFORM_SKIP;
 #ifndef DONT_IGNORE_FPE_SIGNAL
-    MZ_SIGSET(SIGFPE, SIG_IGN);
+  MZ_SIGSET(SIGFPE, SIG_IGN);
 #endif
 #ifdef FREEBSD_CONTROL_387
-    __fpsetreg(FP_MSKS_FLD, FP_MSKS_REG, FP_MSKS_FLD, FP_MSKS_OFF);
+  __fpsetreg(FP_MSKS_FLD, FP_MSKS_REG, FP_MSKS_FLD, FP_MSKS_OFF);
 #endif
 #ifdef LINUX_CONTROL_387
-    __setfpucw(_FPU_EXTENDED + _FPU_RC_NEAREST + 0x3F);
+  __setfpucw(_FPU_EXTENDED + _FPU_RC_NEAREST + 0x3F);
 #endif
 #ifdef IGNORE_BY_CONTROL_387
-    {
-      int bits = 0x3F + _RC_NEAR + _PC_64;
-      _control87(bits, 0xFFFF);
-    }
+  {
+    int bits = 0x3F + _RC_NEAR + _PC_64;
+    _control87(bits, 0xFFFF);
+  }
 #endif
 #ifdef ALPHA_CONTROL_FP
-    {
-      long flags = ieee_get_fp_control();
-      flags |= IEEE_TRAP_ENABLE_MASK;
-      ieee_set_fp_control(flags);
-    }
+  {
+    long flags = ieee_get_fp_control();
+    flags |= IEEE_TRAP_ENABLE_MASK;
+    ieee_set_fp_control(flags);
+  }
 #endif
-    END_XFORM_SKIP;
+  END_XFORM_SKIP;
 
 #if defined(HUGE_VAL) && !defined(USE_DIVIDE_MAKE_INFINITY)
-    scheme_infinity_val = HUGE_VAL;
+  scheme_infinity_val = HUGE_VAL;
 #else
 #ifndef USE_INFINITY_FUNC
-    scheme_infinity_val = 1.0 / scheme_floating_point_zero;
+  scheme_infinity_val = 1.0 / scheme_floating_point_zero;
 #else
-    scheme_infinity_val = infinity();
+  scheme_infinity_val = infinity();
 #endif
 #endif
 
 #ifdef ZERO_MINUS_ZERO_IS_POS_ZERO
-    scheme_floating_point_nzero = -1.0 / scheme_infinity_val;
+  scheme_floating_point_nzero = -1.0 / scheme_infinity_val;
 #else
-    scheme_floating_point_nzero = - scheme_floating_point_nzero;
+  scheme_floating_point_nzero = - scheme_floating_point_nzero;
 #endif
 
-    scheme_minus_infinity_val = -scheme_infinity_val;
-    not_a_number_val = scheme_infinity_val + scheme_minus_infinity_val;
-
-    scheme_zerod = scheme_make_double(1.0);
-    SCHEME_DBL_VAL(scheme_zerod) = 0.0;
-    scheme_nzerod = scheme_make_double(-1.0);
-    SCHEME_DBL_VAL(scheme_nzerod) = scheme_floating_point_nzero;
-
-    scheme_pi = scheme_make_double(atan2(0, -1));
-    scheme_half_pi = scheme_make_double(atan2(0, -1)/2);
+  scheme_minus_infinity_val = -scheme_infinity_val;
+  not_a_number_val = scheme_infinity_val + scheme_minus_infinity_val;
+  
+  scheme_zerod = scheme_make_double(1.0);
+  SCHEME_DBL_VAL(scheme_zerod) = 0.0;
+  scheme_nzerod = scheme_make_double(-1.0);
+  SCHEME_DBL_VAL(scheme_nzerod) = scheme_floating_point_nzero;
+  
+  scheme_pi = scheme_make_double(atan2(0, -1));
+  scheme_half_pi = scheme_make_double(atan2(0, -1)/2);
 #ifdef MZ_USE_SINGLE_FLOATS
-    scheme_zerof = scheme_make_float(0.0f);
-    scheme_nzerof = scheme_make_float(-0.0f);
-    single_scheme_pi = scheme_make_float((float)atan2(0, -1));
+  scheme_zerof = scheme_make_float(0.0f);
+  scheme_nzerof = scheme_make_float(-0.0f);
+  single_scheme_pi = scheme_make_float((float)atan2(0, -1));
 #endif
-    scheme_plus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(1));
-    scheme_minus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(-1));
-
-    scheme_inf_object = scheme_make_double(scheme_infinity_val);
-    scheme_minus_inf_object = scheme_make_double(scheme_minus_infinity_val);
+  scheme_plus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(1));
+  scheme_minus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(-1));
+  
+  scheme_inf_object = scheme_make_double(scheme_infinity_val);
+  scheme_minus_inf_object = scheme_make_double(scheme_minus_infinity_val);
 #ifdef NAN_EQUALS_ANYTHING
-    scheme_nan_object = scheme_make_double(1);
-    SCHEME_DBL_VAL(scheme_nan_object) = not_a_number_val;
+  scheme_nan_object = scheme_make_double(1);
+  SCHEME_DBL_VAL(scheme_nan_object) = not_a_number_val;
 #else
-    scheme_nan_object = scheme_make_double(not_a_number_val);
+  scheme_nan_object = scheme_make_double(not_a_number_val);
 #endif
 #ifdef MZ_USE_SINGLE_FLOATS
-    scheme_single_inf_object = scheme_make_float((float)scheme_infinity_val);
-    scheme_single_minus_inf_object = scheme_make_float((float)scheme_minus_infinity_val);
-    scheme_single_nan_object = scheme_make_float((float)not_a_number_val);
+  scheme_single_inf_object = scheme_make_float((float)scheme_infinity_val);
+  scheme_single_minus_inf_object = scheme_make_float((float)scheme_minus_infinity_val);
+  scheme_single_nan_object = scheme_make_float((float)not_a_number_val);
 #endif
-  }
 
   scheme_add_global_constant("number?", 
 			     scheme_make_folding_prim(number_p,

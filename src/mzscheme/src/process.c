@@ -498,38 +498,36 @@ void scheme_init_process(Scheme_Env *env)
 						      0, 0), 
 			     env);
 
-  if (scheme_starting_up) {
-    REGISTER_SO(namespace_options);
+  REGISTER_SO(namespace_options);
 
 #ifdef MZ_REAL_THREADS
-    REGISTER_SO(make_namespace_mutex);
-    REGISTER_SO(will_mutex);
-    REGISTER_SO(nestee_mutex);
-    make_namespace_mutex = SCHEME_MAKE_MUTEX();
-    will_mutex = SCHEME_MAKE_MUTEX();
-    nestee_mutex = SCHEME_MAKE_MUTEX();
+  REGISTER_SO(make_namespace_mutex);
+  REGISTER_SO(will_mutex);
+  REGISTER_SO(nestee_mutex);
+  make_namespace_mutex = SCHEME_MAKE_MUTEX();
+  will_mutex = SCHEME_MAKE_MUTEX();
+  nestee_mutex = SCHEME_MAKE_MUTEX();
 #endif
 
-    REGISTER_SO(keywords_symbol);
-    REGISTER_SO(no_keywords_symbol);
-    REGISTER_SO(callcc_is_callec_symbol);
-    REGISTER_SO(callcc_is_not_callec_symbol);
-    REGISTER_SO(hash_percent_syntax_symbol);
-    REGISTER_SO(all_syntax_symbol);
-    REGISTER_SO(hash_percent_globals_symbol);
-    REGISTER_SO(all_globals_symbol);
-    REGISTER_SO(empty_symbol);
-
-    keywords_symbol = scheme_intern_symbol("keywords");
-    no_keywords_symbol = scheme_intern_symbol("no-keywords");
-    callcc_is_callec_symbol = scheme_intern_symbol("call/cc=call/ec");
-    callcc_is_not_callec_symbol = scheme_intern_symbol("call/cc!=call/ec");
-    hash_percent_syntax_symbol = scheme_intern_symbol("hash-percent-syntax");
-    all_syntax_symbol = scheme_intern_symbol("all-syntax");
-    hash_percent_globals_symbol = scheme_intern_symbol("hash-percent-globals");
-    all_globals_symbol = scheme_intern_symbol("all-globals");
-    empty_symbol = scheme_intern_symbol("empty");
-  }
+  REGISTER_SO(keywords_symbol);
+  REGISTER_SO(no_keywords_symbol);
+  REGISTER_SO(callcc_is_callec_symbol);
+  REGISTER_SO(callcc_is_not_callec_symbol);
+  REGISTER_SO(hash_percent_syntax_symbol);
+  REGISTER_SO(all_syntax_symbol);
+  REGISTER_SO(hash_percent_globals_symbol);
+  REGISTER_SO(all_globals_symbol);
+  REGISTER_SO(empty_symbol);
+  
+  keywords_symbol = scheme_intern_symbol("keywords");
+  no_keywords_symbol = scheme_intern_symbol("no-keywords");
+  callcc_is_callec_symbol = scheme_intern_symbol("call/cc=call/ec");
+  callcc_is_not_callec_symbol = scheme_intern_symbol("call/cc!=call/ec");
+  hash_percent_syntax_symbol = scheme_intern_symbol("hash-percent-syntax");
+  all_syntax_symbol = scheme_intern_symbol("all-syntax");
+  hash_percent_globals_symbol = scheme_intern_symbol("hash-percent-globals");
+  all_globals_symbol = scheme_intern_symbol("all-globals");
+  empty_symbol = scheme_intern_symbol("empty");
 }
 
 static Scheme_Object *collect_garbage(int c, Scheme_Object *p[])
@@ -2743,9 +2741,7 @@ static Scheme_Config *make_initial_config(void)
 
   scheme_set_param(config, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(40));
 
-  if (scheme_starting_up) {
-    REGISTER_SO(main_manager);
-  }
+  REGISTER_SO(main_manager);
   main_manager = scheme_make_manager(NULL);
   scheme_set_param(config, MZCONFIG_MANAGER, (Scheme_Object *)main_manager);
 

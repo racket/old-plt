@@ -157,123 +157,121 @@ static void register_traversers(void);
 void 
 scheme_init_syntax (Scheme_Env *env)
 {
-  if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
-    REGISTER_SO(scheme_define_values_syntax);
-    REGISTER_SO(scheme_defmacro_syntax);
-    REGISTER_SO(scheme_def_id_macro_syntax);
-    REGISTER_SO(scheme_def_exp_time_syntax);
-    REGISTER_SO(scheme_lambda_syntax);
-    REGISTER_SO(scheme_begin_syntax);
-    REGISTER_SO(linker_names);
-    REGISTER_SO(scheme_compiled_void_code);
+  REGISTER_SO(scheme_define_values_syntax);
+  REGISTER_SO(scheme_defmacro_syntax);
+  REGISTER_SO(scheme_def_id_macro_syntax);
+  REGISTER_SO(scheme_def_exp_time_syntax);
+  REGISTER_SO(scheme_lambda_syntax);
+  REGISTER_SO(scheme_begin_syntax);
+  REGISTER_SO(linker_names);
+  REGISTER_SO(scheme_compiled_void_code);
 
-    REGISTER_SO(define_values_symbol);
-    REGISTER_SO(lambda_symbol);
-    REGISTER_SO(letrec_symbol);
-    REGISTER_SO(let_star_symbol);
-    REGISTER_SO(let_symbol);
-    REGISTER_SO(letrec_symbol_nohp);
-    REGISTER_SO(let_star_symbol_nohp);
-    REGISTER_SO(letrec_values_symbol);
-    REGISTER_SO(let_star_values_symbol);
-    REGISTER_SO(let_values_symbol);
-    REGISTER_SO(letrec_values_symbol_nohp);
-    REGISTER_SO(let_star_values_symbol_nohp);
-    REGISTER_SO(let_values_symbol_nohp);
-    REGISTER_SO(begin_symbol);
-    REGISTER_SO(begin0_symbol);
-    REGISTER_SO(set_symbol);
-    REGISTER_SO(quote_symbol);
-    REGISTER_SO(if_symbol);
-    REGISTER_SO(case_lambda_symbol);
-    REGISTER_SO(with_continuation_mark_symbol);
+  REGISTER_SO(define_values_symbol);
+  REGISTER_SO(lambda_symbol);
+  REGISTER_SO(letrec_symbol);
+  REGISTER_SO(let_star_symbol);
+  REGISTER_SO(let_symbol);
+  REGISTER_SO(letrec_symbol_nohp);
+  REGISTER_SO(let_star_symbol_nohp);
+  REGISTER_SO(letrec_values_symbol);
+  REGISTER_SO(let_star_values_symbol);
+  REGISTER_SO(let_values_symbol);
+  REGISTER_SO(letrec_values_symbol_nohp);
+  REGISTER_SO(let_star_values_symbol_nohp);
+  REGISTER_SO(let_values_symbol_nohp);
+  REGISTER_SO(begin_symbol);
+  REGISTER_SO(begin0_symbol);
+  REGISTER_SO(set_symbol);
+  REGISTER_SO(quote_symbol);
+  REGISTER_SO(if_symbol);
+  REGISTER_SO(case_lambda_symbol);
+  REGISTER_SO(with_continuation_mark_symbol);
     
-    REGISTER_SO(define_macro_symbol);
-    REGISTER_SO(define_id_macro_symbol);
-    REGISTER_SO(define_expansion_time_symbol);
-    REGISTER_SO(let_macro_symbol);
-    REGISTER_SO(let_id_macro_symbol);
-    REGISTER_SO(let_expansion_time_symbol);
+  REGISTER_SO(define_macro_symbol);
+  REGISTER_SO(define_id_macro_symbol);
+  REGISTER_SO(define_expansion_time_symbol);
+  REGISTER_SO(let_macro_symbol);
+  REGISTER_SO(let_id_macro_symbol);
+  REGISTER_SO(let_expansion_time_symbol);
 
-    scheme_undefined->type = scheme_undefined_type;
+  scheme_undefined->type = scheme_undefined_type;
+  
+  define_values_symbol = scheme_intern_symbol("#%define-values");
+  lambda_symbol = scheme_intern_symbol("#%lambda");
 
-    define_values_symbol = scheme_intern_symbol("#%define-values");
-    lambda_symbol = scheme_intern_symbol("#%lambda");
+  letrec_symbol = scheme_intern_symbol("#%letrec");
+  let_star_symbol = scheme_intern_symbol("#%let*");
+  let_symbol = scheme_intern_symbol("#%let");
+  letrec_symbol_nohp = scheme_intern_symbol("letrec");
+  let_star_symbol_nohp = scheme_intern_symbol("let*");
 
-    letrec_symbol = scheme_intern_symbol("#%letrec");
-    let_star_symbol = scheme_intern_symbol("#%let*");
-    let_symbol = scheme_intern_symbol("#%let");
-    letrec_symbol_nohp = scheme_intern_symbol("letrec");
-    let_star_symbol_nohp = scheme_intern_symbol("let*");
+  letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
+  let_star_values_symbol = scheme_intern_symbol("#%let*-values");
+  let_values_symbol = scheme_intern_symbol("#%let-values");
+  letrec_values_symbol_nohp = scheme_intern_symbol("letrec-values");
+  let_values_symbol_nohp = scheme_intern_symbol("let-values");
+  let_star_values_symbol_nohp = scheme_intern_symbol("let*-values");
 
-    letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
-    let_star_values_symbol = scheme_intern_symbol("#%let*-values");
-    let_values_symbol = scheme_intern_symbol("#%let-values");
-    letrec_values_symbol_nohp = scheme_intern_symbol("letrec-values");
-    let_values_symbol_nohp = scheme_intern_symbol("let-values");
-    let_star_values_symbol_nohp = scheme_intern_symbol("let*-values");
+  begin_symbol = scheme_intern_symbol("#%begin");
+  begin0_symbol = scheme_intern_symbol("#%begin0");
+  quote_symbol = scheme_intern_symbol("#%quote");
+  if_symbol = scheme_intern_symbol("#%if");
+  set_symbol = scheme_intern_symbol("#%set!");
+  case_lambda_symbol = scheme_intern_symbol("#%case-lambda");
+  with_continuation_mark_symbol = scheme_intern_symbol("#%with-continuation-mark");
+  
+  define_macro_symbol = scheme_intern_symbol("#%define-macro");
+  define_id_macro_symbol = scheme_intern_symbol("#%define-id-macro");
+  define_expansion_time_symbol = scheme_intern_symbol("#%define-expansion-time");
+  let_macro_symbol = scheme_intern_symbol("#%let-macro");
+  let_id_macro_symbol = scheme_intern_symbol("#%let-id-macro");
+  let_expansion_time_symbol = scheme_intern_symbol("#%let-expansion-time");
 
-    begin_symbol = scheme_intern_symbol("#%begin");
-    begin0_symbol = scheme_intern_symbol("#%begin0");
-    quote_symbol = scheme_intern_symbol("#%quote");
-    if_symbol = scheme_intern_symbol("#%if");
-    set_symbol = scheme_intern_symbol("#%set!");
-    case_lambda_symbol = scheme_intern_symbol("#%case-lambda");
-    with_continuation_mark_symbol = scheme_intern_symbol("#%with-continuation-mark");
+  scheme_register_syntax("d", define_values_execute, 1);
+  scheme_register_syntax("!", set_execute, 2);
+  scheme_register_syntax("dm", defmacro_execute, 1);
+  scheme_register_syntax("di", def_id_macro_execute, 1);
+  scheme_register_syntax("dn", def_exp_time_execute, 1);
+  scheme_register_syntax("cl", case_lambda_execute, 1);
+  scheme_register_syntax("v", void_execute, 1);
+  scheme_register_syntax("e", empty_cond_execute, 1);
+  scheme_register_syntax("0", begin0_execute, 1);
 
-    define_macro_symbol = scheme_intern_symbol("#%define-macro");
-    define_id_macro_symbol = scheme_intern_symbol("#%define-id-macro");
-    define_expansion_time_symbol = scheme_intern_symbol("#%define-expansion-time");
-    let_macro_symbol = scheme_intern_symbol("#%let-macro");
-    let_id_macro_symbol = scheme_intern_symbol("#%let-id-macro");
-    let_expansion_time_symbol = scheme_intern_symbol("#%let-expansion-time");
+  scheme_register_syntax("be", scheme_bangboxenv_execute, 1);
+  scheme_register_syntax("b", bangboxvalue_execute, 1);
 
-    scheme_register_syntax("d", define_values_execute, 1);
-    scheme_register_syntax("!", set_execute, 2);
-    scheme_register_syntax("dm", defmacro_execute, 1);
-    scheme_register_syntax("di", def_id_macro_execute, 1);
-    scheme_register_syntax("dn", def_exp_time_execute, 1);
-    scheme_register_syntax("cl", case_lambda_execute, 1);
-    scheme_register_syntax("v", void_execute, 1);
-    scheme_register_syntax("e", empty_cond_execute, 1);
-    scheme_register_syntax("0", begin0_execute, 1);
+  scheme_install_type_writer(scheme_let_value_type, write_let_value);
+  scheme_install_type_reader(scheme_let_value_type, read_let_value);
+  scheme_install_type_writer(scheme_let_void_type, write_let_void);
+  scheme_install_type_reader(scheme_let_void_type, read_let_void);
+  scheme_install_type_writer(scheme_letrec_type, write_letrec);
+  scheme_install_type_reader(scheme_letrec_type, read_letrec);
+  scheme_install_type_writer(scheme_let_one_type, write_let_one);
+  scheme_install_type_reader(scheme_let_one_type, read_let_one);
+  scheme_install_type_writer(scheme_case_lambda_sequence_type, write_case_lambda);
+  scheme_install_type_reader(scheme_case_lambda_sequence_type, read_case_lambda);
 
-    scheme_register_syntax("be", scheme_bangboxenv_execute, 1);
-    scheme_register_syntax("b", bangboxvalue_execute, 1);
+  scheme_install_type_writer(scheme_compilation_top_type, write_top);
+  scheme_install_type_reader(scheme_compilation_top_type, read_top);
 
-    scheme_install_type_writer(scheme_let_value_type, write_let_value);
-    scheme_install_type_reader(scheme_let_value_type, read_let_value);
-    scheme_install_type_writer(scheme_let_void_type, write_let_void);
-    scheme_install_type_reader(scheme_let_void_type, read_let_void);
-    scheme_install_type_writer(scheme_letrec_type, write_letrec);
-    scheme_install_type_reader(scheme_letrec_type, read_letrec);
-    scheme_install_type_writer(scheme_let_one_type, write_let_one);
-    scheme_install_type_reader(scheme_let_one_type, read_let_one);
-    scheme_install_type_writer(scheme_case_lambda_sequence_type, write_case_lambda);
-    scheme_install_type_reader(scheme_case_lambda_sequence_type, read_case_lambda);
+  scheme_define_values_syntax = scheme_make_compiled_syntax(define_values_syntax, 
+							    define_values_expand);
+  scheme_defmacro_syntax = scheme_make_compiled_syntax(defmacro_syntax, 
+						       defmacro_expand);
+  scheme_def_id_macro_syntax = scheme_make_compiled_syntax(def_id_macro_syntax, 
+							   def_id_macro_expand);
+  scheme_def_exp_time_syntax = scheme_make_compiled_syntax(def_exp_time_syntax, 
+							   def_exp_time_expand);
+  scheme_lambda_syntax = scheme_make_compiled_syntax(lambda_syntax,
+						     lambda_expand);
+  scheme_begin_syntax = scheme_make_compiled_syntax(begin_syntax, 
+						    begin_expand);
 
-    scheme_install_type_writer(scheme_compilation_top_type, write_top);
-    scheme_install_type_reader(scheme_compilation_top_type, read_top);
-
-    scheme_define_values_syntax = scheme_make_compiled_syntax(define_values_syntax, 
-							      define_values_expand);
-    scheme_defmacro_syntax = scheme_make_compiled_syntax(defmacro_syntax, 
-							 defmacro_expand);
-    scheme_def_id_macro_syntax = scheme_make_compiled_syntax(def_id_macro_syntax, 
-							     def_id_macro_expand);
-    scheme_def_exp_time_syntax = scheme_make_compiled_syntax(def_exp_time_syntax, 
-							      def_exp_time_expand);
-    scheme_lambda_syntax = scheme_make_compiled_syntax(lambda_syntax,
-						       lambda_expand);
-    scheme_begin_syntax = scheme_make_compiled_syntax(begin_syntax, 
-						      begin_expand);
-
-    scheme_compiled_void_code = scheme_make_syntax_link(void_execute, scheme_null);
-  }
+  scheme_compiled_void_code = scheme_make_syntax_link(void_execute, scheme_null);
 
   scheme_add_global_keyword("lambda", 
 			    scheme_lambda_syntax,

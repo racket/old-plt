@@ -67,9 +67,6 @@ static void init_type_arrays()
 void
 scheme_init_type (Scheme_Env *env)
 {
-  if (!scheme_starting_up)
-    return;
-
   if (!type_names)
     init_type_arrays();
 

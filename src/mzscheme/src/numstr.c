@@ -21,6 +21,13 @@
   All rights reserved.
 */
 
+/* The bulk of this file is the number parser, an insane bit of code
+   that would probably be better off implemented via lex+yacc, except
+   the error messages are better this way.
+
+   Also, for no particularly good reason, random-number support is
+   here, though the real work is in random.inc (from FreeBSD). */
+
 #include "schpriv.h"
 #include <math.h>
 #include <string.h>
@@ -46,9 +53,6 @@ static char *other_not_a_number_str = "-nan.0";
 
 void scheme_init_numstr(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-  }
-
   scheme_add_global_constant("number->string", 
 			     scheme_make_prim_w_arity(number_to_string,
 						      "number->string",

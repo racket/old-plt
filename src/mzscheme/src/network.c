@@ -164,15 +164,13 @@ static void register_traversers(void);
 
 void scheme_init_network(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
-    register_traversers();
+  register_traversers();
 #endif
 
 #ifdef USE_MAC_TCP
-    REGISTER_SO(tcp_send_buffers);
+  REGISTER_SO(tcp_send_buffers);
 #endif    
-  }
 
   scheme_add_global_constant("tcp-connect", 
 			     scheme_make_prim_w_arity2(tcp_connect,

@@ -21,18 +21,23 @@
   All rights reserved.
 */
 
+/* This file contains the MzScheme reader, including the normal reader
+   and the one for .zo files. The normal reader is a recursive-descent
+   parser. The really messy part is number parsing, which is in a
+   different file, numstr.c. */
+
 #include "schpriv.h"
 #include "schmach.h"
 #include "schcpt.h"
 #include <stdlib.h>
 #include <ctype.h>
 #ifdef USE_STACKAVAIL
-#include <malloc.h>
+# include <malloc.h>
 #endif
 
-#define MAX_NUMBER_SIZE 500
-#define MAX_SYMBOL_SIZE 255
+#define MAX_QUICK_SYMBOL_SIZE 255
 
+/* Init options for embedding: */
 int scheme_square_brackets_are_parens = 1;
 int scheme_curly_braces_are_parens = 1;
 
@@ -51,12 +56,14 @@ static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
 static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 
+/* To make reading more efficient with OS threads, pass the
+   process (thread) pointer along. */
 #ifndef MZ_REAL_THREADS
-#define CURRENTPROCPRM /* empty */
-#define CURRENTPROCARG /* empty */
+# define CURRENTPROCPRM /* empty */
+# define CURRENTPROCARG /* empty */
 #else
-#define CURRENTPROCPRM , Scheme_Process *p
-#define CURRENTPROCARG , p
+# define CURRENTPROCPRM , Scheme_Process *p
+# define CURRENTPROCARG , p
 #endif
 
 static Scheme_Object *read_list(Scheme_Object *port, char closer,
@@ -86,39 +93,32 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 
 static int skip_whitespace_comments(Scheme_Object *port);
 
+/* local_... is copy of parameter values, made before read starts: */
+
+#define local_can_read_compiled (PROCESS_FOR_LOCALS->quick_can_read_compiled)
+#define local_can_read_pipe_quote (PROCESS_FOR_LOCALS->quick_can_read_pipe_quote)
+#define local_can_read_box (PROCESS_FOR_LOCALS->quick_can_read_box)
+#define local_can_read_graph (PROCESS_FOR_LOCALS->quick_can_read_graph)
+#define local_case_sensitive (PROCESS_FOR_LOCALS->quick_case_sens)
+#define local_square_brackets_are_parens (PROCESS_FOR_LOCALS->quick_square_brackets_are_parens)
+#define local_curly_braces_are_parens (PROCESS_FOR_LOCALS->quick_curly_braces_are_parens)
+#define local_read_decimal_inexact (PROCESS_FOR_LOCALS->quick_read_decimal_inexact)
+
+#define local_list_stack (PROCESS_FOR_LOCALS->list_stack)
+#define local_list_stack_pos (PROCESS_FOR_LOCALS->list_stack_pos)
+
+#define local_vector_memory (PROCESS_FOR_LOCALS->vector_memory)
+#define local_vector_memory_size (PROCESS_FOR_LOCALS->vector_memory_size)
+#define local_vector_memory_count (PROCESS_FOR_LOCALS->vector_memory_count)
+
 #ifndef MZ_REAL_THREADS
-# define local_can_read_compiled (scheme_current_process->quick_can_read_compiled)
-# define local_can_read_pipe_quote (scheme_current_process->quick_can_read_pipe_quote)
-# define local_can_read_box (scheme_current_process->quick_can_read_box)
-# define local_can_read_graph (scheme_current_process->quick_can_read_graph)
-# define local_case_sensitive (scheme_current_process->quick_case_sens)
-# define local_square_brackets_are_parens (scheme_current_process->quick_square_brackets_are_parens)
-# define local_curly_braces_are_parens (scheme_current_process->quick_curly_braces_are_parens)
-# define local_read_decimal_inexact (scheme_current_process->quick_read_decimal_inexact)
-
-# define local_list_stack (scheme_current_process->list_stack)
-# define local_list_stack_pos (scheme_current_process->list_stack_pos)
-
-# define local_vector_memory (scheme_current_process->vector_memory)
-# define local_vector_memory_size (scheme_current_process->vector_memory_size)
-# define local_vector_memory_count (scheme_current_process->vector_memory_count)
+# define PROCESS_FOR_LOCALS scheme_current_process
 #else
-# define local_can_read_compiled (p->quick_can_read_compiled)
-# define local_can_read_pipe_quote (p->quick_can_read_pipe_quote)
-# define local_can_read_box (p->quick_can_read_box)
-# define local_can_read_graph (p->quick_can_read_graph)
-# define local_case_sensitive (p->quick_case_sens)
-# define local_square_brackets_are_parens (p->quick_square_brackets_are_parens)
-# define local_curly_braces_are_parens (p->quick_curly_braces_are_parens)
-# define local_read_decimal_inexact (p->quick_read_decimal_inexact)
-
-# define local_list_stack (p->list_stack)
-# define local_list_stack_pos (p->list_stack_pos)
-
-# define local_vector_memory (p->vector_memory)
-# define local_vector_memory_size (p->vector_memory_size)
-# define local_vector_memory_count (p->vector_memory_count)
+# define PROCESS_FOR_LOCALS p
 #endif
+
+/* A list stack is used to speed up the creation of intermediate lists
+   during .zo reading. */
 
 #define NUM_CELLS_PER_STACK 500
 
@@ -141,23 +141,26 @@ static Scheme_Object *quasiquote_symbol;
 static Scheme_Object *unquote_symbol;
 static Scheme_Object *unquote_splicing_symbol;
 
+/* Table of built-in variable refs for .zo loading: */
 static Scheme_Object **variable_references;
+
+/*========================================================================*/
+/*                             initialization                             */
+/*========================================================================*/
 
 void scheme_init_read(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    REGISTER_SO(variable_references);
+  REGISTER_SO(variable_references);
 
-    REGISTER_SO(quote_symbol);
-    REGISTER_SO(quasiquote_symbol);
-    REGISTER_SO(unquote_symbol);
-    REGISTER_SO(unquote_splicing_symbol);
+  REGISTER_SO(quote_symbol);
+  REGISTER_SO(quasiquote_symbol);
+  REGISTER_SO(unquote_symbol);
+  REGISTER_SO(unquote_splicing_symbol);
     
-    quote_symbol = scheme_intern_symbol("quote");
-    quasiquote_symbol = scheme_intern_symbol("quasiquote");
-    unquote_symbol = scheme_intern_symbol("unquote");
-    unquote_splicing_symbol = scheme_intern_symbol("unquote-splicing");
-  }
+  quote_symbol = scheme_intern_symbol("quote");
+  quasiquote_symbol = scheme_intern_symbol("quasiquote");
+  unquote_symbol = scheme_intern_symbol("unquote");
+  unquote_splicing_symbol = scheme_intern_symbol("unquote-splicing");
 
   scheme_add_global_constant("read-case-sensitive", 
 			     scheme_register_parameter(read_case_sensitive, 
@@ -232,6 +235,10 @@ void scheme_alloc_list_stack(Scheme_Process *process)
   process->list_stack[0].type = scheme_pair_type;
 #endif
 }
+
+/*========================================================================*/
+/*                             parameters                                 */
+/*========================================================================*/
 
 #define DO_CHAR_PARAM(name, pos) \
   return scheme_param_config(name, scheme_make_integer(pos), argc, argv, -1, NULL, NULL, 1)
@@ -308,6 +315,10 @@ print_vec_shorthand(int argc, Scheme_Object *argv[])
   DO_CHAR_PARAM("print-vector-length", MZCONFIG_PRINT_VEC_SHORTHAND);
 }
 
+/*========================================================================*/
+/*                             main read loop                             */
+/*========================================================================*/
+
 #ifdef DO_STACK_CHECK
 
 static Scheme_Object *read_inner(Scheme_Object *port, Scheme_Hash_Table **ht 
@@ -337,7 +348,6 @@ static Scheme_Object *
 read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 {
   int ch, ch2, depth;
-
 
 #ifdef DO_STACK_CHECK
   {
@@ -810,6 +820,10 @@ scheme_read(Scheme_Object *port)
   return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
 }
 
+/*========================================================================*/
+/*                             list reader                                */
+/*========================================================================*/
+
 /* "(" has already been read */
 static Scheme_Object *
 read_list(Scheme_Object *port, char closer, int vec, int use_stack,
@@ -912,6 +926,10 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
   }
 }
 
+/*========================================================================*/
+/*                            string reader                               */
+/*========================================================================*/
+
 /* '"' has already been read */
 static Scheme_Object *
 read_string(Scheme_Object *port CURRENTPROCPRM)
@@ -951,16 +969,9 @@ read_string(Scheme_Object *port CURRENTPROCPRM)
   return scheme_make_immutable_sized_string(buf, i, i <= 31);
 }
 
-/* "'" has been read */
-static Scheme_Object *
-read_quote(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
-{
-  Scheme_Object *obj;
-
-  obj = read_inner(port, ht CURRENTPROCARG);
-  return (scheme_make_pair(quote_symbol, 
-			   scheme_make_pair(obj, scheme_null)));
-}
+/*========================================================================*/
+/*                            vector reader                               */
+/*========================================================================*/
 
 /* "#(" has been read */
 static Scheme_Object *
@@ -1013,6 +1024,13 @@ read_vector (Scheme_Object *port, char closer,
   return vec;
 }
 
+/*========================================================================*/
+/*                            symbol reader                               */
+/*========================================================================*/
+
+/* Also dispatches to number reader, since things not-a-number are
+   symbols. */
+
 typedef int (*Getc_Fun_r)(Scheme_Object *port);
 
 /* nothing has been read, except maybe some flags */
@@ -1021,7 +1039,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
 		      int radix, int radix_set, 
 		      int is_symbol, int pipe_quote CURRENTPROCPRM)
 {
-  char *buf, *oldbuf, onstack[MAX_SYMBOL_SIZE];
+  char *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
   int size, oldsize;
   int i, ch, quoted, quoted_ever = 0, running_quote = 0;
   int rq_pos = 0, rq_line = 0;
@@ -1041,7 +1059,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
     getc_fun = scheme_peekc;
 
   i = 0;
-  size = MAX_SYMBOL_SIZE - 1;
+  size = MAX_QUICK_SYMBOL_SIZE - 1;
   buf = onstack;
 
   while (((ch = getc_fun(port)) != EOF)
@@ -1157,6 +1175,10 @@ read_symbol(Scheme_Object *port CURRENTPROCPRM)
 			       local_can_read_pipe_quote
 			       CURRENTPROCARG);
 }
+
+/*========================================================================*/
+/*                              char reader                               */
+/*========================================================================*/
 
 /* "#\" has been read */
 static Scheme_Object *
@@ -1276,6 +1298,21 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
   return scheme_make_char(ch);
 }
 
+/*========================================================================*/
+/*                            quote readers                               */
+/*========================================================================*/
+
+/* "'" has been read */
+static Scheme_Object *
+read_quote(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
+{
+  Scheme_Object *obj;
+
+  obj = read_inner(port, ht CURRENTPROCARG);
+  return (scheme_make_pair(quote_symbol, 
+			   scheme_make_pair(obj, scheme_null)));
+}
+
 /* "`" has been read */
 static Scheme_Object *
 read_quasiquote(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
@@ -1323,7 +1360,9 @@ static Scheme_Object *read_box(Scheme_Object *port, Scheme_Hash_Table **ht
   return scheme_box(o);
 }
 
-/* utilities */
+/*========================================================================*/
+/*                               utilities                                */
+/*========================================================================*/
 
 static int
 skip_whitespace_comments(Scheme_Object *port)
@@ -1364,12 +1403,14 @@ skip_whitespace_comments(Scheme_Object *port)
   return ch;
 }
 
-/************************************************************************/
+/*========================================================================*/
+/*                               .zo reader                               */
+/*========================================================================*/
 
 #define USE_BUFFERING_CPORT 1
 /* Also, set USE_BUFFERING_CPORT in print.c */
 /* The disadvantage of USE_BUFFERING_CPORT is that when .zo files are
-   written, large compiled dumps may be im memeory at once. */
+   read, large compiled dumps may be im memeory at once. */
 
 #if USE_BUFFERING_CPORT
 typedef struct CPort {

@@ -145,11 +145,12 @@
        (or files (directory-list dir)))))
   
   (define (std-filter path)
-    (not (or (regexp-match #rx"CVS$" path)
-             (regexp-match #rx"compiled$" path)
-             (regexp-match #rx"~$" path)
-             (regexp-match #rx"^#.*#$" path)
-             (regexp-match #rx"[.]plt$" path))))
+    (let ([path (path->string path)])
+      (not (or (regexp-match #rx"CVS$" path)
+	       (regexp-match #rx"compiled$" path)
+	       (regexp-match #rx"~$" path)
+	       (regexp-match #rx"^#.*#$" path)
+	       (regexp-match #rx"[.]plt$" path)))))
 
   (define pack-collections
     (opt-lambda (output name collections replace? extra-setup-collections [file-filter std-filter] [plt-home-relative? #f])

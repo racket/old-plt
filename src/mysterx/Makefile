@@ -8,6 +8,10 @@
 # the C: drive, that directory would be
 #   C:\Microsoft Visual Studio\VC98\ATL
 
+# The Microsoft HTML Help Workshop must be installed to
+# build mysterx.dll.  The files are on the Visual Studio
+# CD.
+
 all : 
 	cd myspage
         nmake /f myspage.mak

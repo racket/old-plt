@@ -3,8 +3,6 @@
 
 #include "stdafx.h"
 
-#include <assert.h>
-
 #include <stdio.h>
 #include <malloc.h>
 #include <float.h>
@@ -15,6 +13,8 @@
 #include <winnls.h>
 #include <exdisp.h>
 #include <shellapi.h>
+#include <htmlhelp.h>
+#include <process.h>
 
 #include "resource.h"
 
@@ -470,6 +470,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   UINT typeInfoCount;
   BSTR helpFileName;
   char buff[MAX_PATH];
+  int len;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type("com-help","mx-object",0,argc,argv);
@@ -506,11 +507,33 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
 
   SysFreeString(helpFileName);
 
-  if (argc >= 2) {
-    WinHelp(NULL,buff,HELP_KEY,(DWORD)(SCHEME_STR_VAL(argv[1])));
+  len = strlen(buff);
+
+  if (stricmp(buff + len - 4,".CHM") == 0) {
+    HWND hwnd;
+
+    if (argc >= 2) {
+      hwnd = HtmlHelp(NULL,buff,
+		      HH_DISPLAY_INDEX,(DWORD)SCHEME_STR_VAL(argv[1]));
+    }
+    else {
+      hwnd = HtmlHelp(NULL,buff,HH_DISPLAY_TOPIC,0);
+    }
+
+    if (hwnd) {
+      SetForegroundWindow(hwnd);
+    }
+  }
+  else if (stricmp(buff + len - 4,".HLP") == 0) {
+    if (argc >= 2) {
+      WinHelp(NULL,buff,HELP_KEY,(DWORD)(SCHEME_STR_VAL(argv[1])));
+    }
+    else {
+      WinHelp(NULL,buff,HELP_FINDER,0);
+    }
   }
   else {
-    WinHelp(NULL,buff,HELP_FINDER,0);
+    scheme_signal_error("Unknown help file type: %s",buff);
   }
 
   return scheme_void;
@@ -766,19 +789,6 @@ VARTYPE getVarTypeFromElemDesc(ELEMDESC *pElemDesc) {
   
 }
 
-Scheme_Object *makeBoxType(Scheme_Object *theType) {
-  static Scheme_Object *theBox;
-  static BOOL init;
-
-  if (init == FALSE) {
-    theBox = scheme_intern_symbol("box");
-    init = TRUE;
-  }
-
-  return scheme_make_pair(theBox,
-			  scheme_make_pair(theType,scheme_null));
-}
-
 Scheme_Object *newTypeSymbol(char *s) {
   Scheme_Object *retval;
   retval = scheme_intern_symbol(s);
@@ -787,35 +797,11 @@ Scheme_Object *newTypeSymbol(char *s) {
   return retval;
 }
 
-Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef) {
+Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL isOpt) {
   static char buff[256];
+  char *s;
+  BOOL isBox;
   VARTYPE vt;
-  static Scheme_Object 
-    *voidSymbol,*charSymbol,*shortIntSymbol,
-    *intSymbol,*floatSymbol,*doubleSymbol,
-    *stringSymbol,*currencySymbol,*dateSymbol,
-    *booleanSymbol,*scodeSymbol,*unknownSymbol,
-    *comObjectSymbol,*anySymbol;
-  static BOOL init;
-
-  if (init == FALSE) {
-    voidSymbol = newTypeSymbol("void");
-    charSymbol = newTypeSymbol("char");
-    shortIntSymbol = newTypeSymbol("short-int");
-    intSymbol = newTypeSymbol("int");
-    floatSymbol = newTypeSymbol("float"); 
-    doubleSymbol = newTypeSymbol("double");
-    stringSymbol = newTypeSymbol("string");
-    currencySymbol = newTypeSymbol("mx-currency");
-    dateSymbol = newTypeSymbol("mx-date");
-    booleanSymbol = newTypeSymbol("boolean");
-    scodeSymbol = newTypeSymbol("mx-scode");
-    unknownSymbol = newTypeSymbol("mx-unknown-com-object");
-    comObjectSymbol = newTypeSymbol("mx-com-object");
-    anySymbol = newTypeSymbol("mx-any");
-
-    init = TRUE;
-  }
 
   vt = getVarTypeFromElemDesc(pElemDesc);
 
@@ -823,124 +809,186 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef) {
     vt &= ~VT_BYREF;
   }
 
+  isBox = FALSE;
+
   switch(vt) {
 
   case VT_HRESULT :
   case VT_NULL :
 
-    return voidSymbol;
+    s = "void";
+    break;
 
   case VT_UI1 :
 
-    return charSymbol;
+    s = "char";
+    break;
   
   case VT_UI1 | VT_BYREF :
 
-    return makeBoxType(charSymbol);
+    s = "char";
+    isBox = TRUE;
+    break;
 
   case VT_I2 :
     
-    return shortIntSymbol;
+    s = "short-int";
+    break;
 
   case VT_I2 + VT_BYREF :
 
-    return makeBoxType(shortIntSymbol);
+    s = "short-int";
+    isBox = TRUE;
+    break;
   
   case VT_I4 :
 
-    return intSymbol;
+    s = "int";
+    break;
 
   case VT_I4 | VT_BYREF:
 
-    return makeBoxType(intSymbol);
+    s = "int";
+    isBox = TRUE;
+    break;
              
   case VT_R4 :
 
-    return floatSymbol;
+    s = "float";
+    break;
 
   case VT_R4 | VT_BYREF :
 
-    return makeBoxType(floatSymbol);
+    s = "float";
+    isBox = TRUE;
+    break;
 
   case VT_R8 :
 
-    return doubleSymbol;
+    s = "double";
+    break;
 
   case VT_R8 | VT_BYREF :
 
-    return makeBoxType(doubleSymbol);
+    s = "double";
+    isBox = TRUE;
+    break;
 
   case VT_BSTR :
     
-    return stringSymbol;
+    s = "string";
+    break;
     
   case VT_BSTR | VT_BYREF :
     
-    return makeBoxType(stringSymbol);
-    
+    s = "string";
+    isBox = TRUE;
+    break;
+
   case VT_CY :
 
-    return currencySymbol;
+    s = "mx-currency";
+    break;
 
   case VT_CY | VT_BYREF :
 
-    return makeBoxType(currencySymbol);
+    s = "mx-currency";
+    isBox = TRUE;
+    break;
 
   case VT_DATE :
 
-    return dateSymbol;
+    s = "mx-date";
+    break;
       
   case VT_DATE | VT_BYREF :
 
-    return makeBoxType(dateSymbol);
+    s = "mx-date";
+    isBox = TRUE;
+    break;
       
   case VT_BOOL :
 
-    return booleanSymbol;
+    s = "boolean";
+    break;
 
   case VT_BOOL | VT_BYREF :
 
-    return makeBoxType(booleanSymbol);
+    s = "boolean";
+    isBox = FALSE;
+    break;
 
   case VT_ERROR :
     
-    return scodeSymbol;
+    s = "mx-scode";
+    break;
      
   case VT_ERROR | VT_BYREF:
     
-    return makeBoxType(scodeSymbol);
+    s = "mx-scode";
+    isBox = TRUE;
+    break;
      
   case VT_UNKNOWN :
-  
-    return unknownSymbol;
+
+    s = "mx-unknown-com-object";
+    break;
 
   case VT_UNKNOWN | VT_BYREF :
   
-    return makeBoxType(unknownSymbol);
+    s = "mx-unknown-com-object";
+    isBox = TRUE;
+    break;
 
   case VT_DISPATCH :
 
-    return comObjectSymbol;
+    s = "com-object";
+    break;
 
   case VT_DISPATCH | VT_BYREF :
 
-    return makeBoxType(comObjectSymbol);
+    s = "com-object";
+    isBox = TRUE;
+    break;
     
   case VT_VARIANT : 
 
-    return anySymbol;
+    s = "mx-any";
+    break;
 
   case VT_VARIANT | VT_BYREF : 
 
-    return makeBoxType(anySymbol);
+    s = "mx-any";
+    isBox = TRUE;
+    break;
 
   default :
 
-    { char buff[32];
-    sprintf(buff,"COM-0x%X",vt);
-    return scheme_intern_symbol(buff);
+    { 
+      char defaultBuff[32];
+      sprintf(defaultBuff,"COM-0x%X",vt);
+      return scheme_intern_symbol(defaultBuff);
     }
   }
+ 
+  if (isBox) {
+    if (isOpt) {
+      sprintf(buff,"%s-box-opt",s);
+    }
+    else {
+      sprintf(buff,"%s-box",s);
+    }
+  }
+  else {
+    if (isOpt) {
+      sprintf(buff,"%s-opt",s);
+    }
+    else {
+      strcpy(buff,s);
+    }
+  }
+
+  return scheme_intern_exact_symbol(buff,strlen(buff));
 }
 
 
@@ -965,6 +1013,10 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   Scheme_Object *s,*paramTypes,*returnType;
   char *name;
   short int numActualParams;
+  short int numOptParams;
+  short int firstOptArg;
+  short int hiBound;
+  BOOL lastParamIsRetval;
   int i;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
@@ -993,14 +1045,43 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 
     numActualParams = pFuncDesc->cParams;
 
-    if ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) && 
-	pFuncDesc->cParams > 0) {
+    // return value shouldn't count in num of parameters
+
+    if (invKind == INVOKE_PROPERTYGET && pFuncDesc->cParams > 0) {
       numActualParams--; 
     }
 
-    for (i = 0; i < numActualParams; i++) {
-      s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE);
-      paramTypes = scheme_make_pair(s,paramTypes);
+    numOptParams = pFuncDesc->cParamsOpt; 
+
+    if (numOptParams == -1) { // all args > pFuncDesc->cParams - 1 get packaged into SAFEARRAY
+
+      // this branch is untested
+
+      lastParamIsRetval = FALSE;
+      paramTypes = scheme_make_pair(scheme_intern_symbol("..."),paramTypes);
+      for (i = numActualParams - 1; i >= 0; i--) { 
+	s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE,FALSE);
+	paramTypes = scheme_make_pair(s,paramTypes);
+      }
+    }
+    else {
+
+      lastParamIsRetval = 
+	(pFuncDesc->lprgelemdescParam[numActualParams-1].paramdesc.wParamFlags & PARAMFLAG_FRETVAL);
+      
+      if (lastParamIsRetval) {
+	hiBound = numActualParams - 2;
+      }
+      else {
+	hiBound = numActualParams - 1;
+      }
+
+      firstOptArg = hiBound - numOptParams + 1;
+
+      for (i = hiBound; i >= 0; i--) { 
+	s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE,i >= firstOptArg);
+	paramTypes = scheme_make_pair(s,paramTypes);
+      }
     }
   }
 
@@ -1015,7 +1096,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   else if (invKind == INVOKE_PROPERTYPUT) {
     pVarDesc = pTypeDesc->pVarDesc;
     paramTypes = 
-      scheme_make_pair(elemDescToSchemeType(&pVarDesc->elemdescVar,FALSE),
+      scheme_make_pair(elemDescToSchemeType(&pVarDesc->elemdescVar,FALSE,FALSE),
 		       scheme_null);
     numActualParams = 1;
   }
@@ -1024,18 +1105,21 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   
   case INVOKE_FUNC :
 
-    // assume pTypeDesc->descKind is funcDesc
+    // if final parameter is marked as retval, use its type, else void
 
-    if (pFuncDesc->cParams == 0) {
-      returnType = scheme_intern_symbol("void");
+    if (pFuncDesc->lprgelemdescParam[numActualParams-1].paramdesc.wParamFlags & PARAMFLAG_FRETVAL) {
+      returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams-1],TRUE,FALSE);
     }
     else {
-      returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE);
+      returnType = scheme_intern_symbol("void");
     }
+
     break;
 
   case INVOKE_PROPERTYPUT :
+
     returnType = scheme_intern_symbol("void");
+
     break;
   
   case INVOKE_PROPERTYGET :
@@ -1048,12 +1132,11 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 	returnType = scheme_intern_symbol("void");
       }
       else {
-	returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE);
+	returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE,FALSE);
       }
-
     }
     else { // pTypeDesc->descKind == varDesc
-	returnType = elemDescToSchemeType(&pVarDesc->elemdescVar,TRUE);
+	returnType = elemDescToSchemeType(&pVarDesc->elemdescVar,TRUE,FALSE);
     }
 
     break;
@@ -1750,37 +1833,55 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 					    int argc,Scheme_Object **argv,
 					    DISPPARAMS *methodArguments) {
   char errBuff[256];
-  short int numNeededParams;
+  short int numParamsPassed;
+  short int numOptParams;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
 
-  numNeededParams = pFuncDesc->cParams;
+  numParamsPassed = pFuncDesc->cParams;
+  numOptParams = pFuncDesc->cParamsOpt;
 
-  if ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) 
-      && pFuncDesc->cParams > 0) { 
+  if (pFuncDesc->cParams > 0 && 
+      (invKind == INVOKE_PROPERTYGET ||
+       (invKind == INVOKE_FUNC && 
+	(pFuncDesc->lprgelemdescParam[numParamsPassed-1].paramdesc.wParamFlags 
+	 & PARAMFLAG_FRETVAL)))) {
     // last parameter is retval
-    numNeededParams--;
+    numParamsPassed--;
   }
 
-  if (argc != numNeededParams + 2) {
+  if (numOptParams == -1) {  // last args get packaged into SAFEARRAY
+
+    // this branch is untested
+
+    if (argc < numParamsPassed + 2 - 1) {
+      sprintf(errBuff,"%s (%s \"%s\")",
+	      mx_fun_string(invKind),
+	      inv_kind_string(invKind),
+	      SCHEME_STR_VAL(argv[1]));
+      scheme_wrong_count(errBuff,numParamsPassed+1,-1,argc,argv);
+    }
+  }
+  else if (argc < numParamsPassed - numOptParams + 2) {
     sprintf(errBuff,"%s (%s \"%s\")",
 	    mx_fun_string(invKind),
 	    inv_kind_string(invKind),
 	    SCHEME_STR_VAL(argv[1]));
-    scheme_wrong_count(errBuff,numNeededParams+2,numNeededParams+2,argc,argv);
+    scheme_wrong_count(errBuff,numParamsPassed-numOptParams+2,numParamsPassed+2,argc,argv);
   }
 
-  for (i = 0,j = numNeededParams - 1,k = 2; i < numNeededParams; i++,j--,k++) {
+  // compare types of actual arguments to prescribed types
+
+  for (i = 0,k = 2; i < argc - 2; i++,k++) {
 
     // i = index of ELEMDESC's
-    // j = index of VARIANTARG's
     // k = index of actual args in argv
     
     if (schemeValueFitsElemDesc(argv[k],&pFuncDesc->lprgelemdescParam[i]) == FALSE) {
       sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
 	      inv_kind_string(invKind),SCHEME_STR_VAL(argv[1]));
       scheme_wrong_type(errBuff,
-			SCHEME_SYM_VAL(elemDescToSchemeType(&(pFuncDesc->lprgelemdescParam[i]),FALSE)),
+			SCHEME_SYM_VAL(elemDescToSchemeType(&(pFuncDesc->lprgelemdescParam[i]),FALSE,FALSE)),
 			k,argc,argv);
     }
   }
@@ -1799,28 +1900,28 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 
     methodArguments->rgdispidNamedArgs = NULL;
     methodArguments->cNamedArgs = 0;
-    methodArguments->cArgs = numNeededParams;
+    methodArguments->cArgs = numParamsPassed;
     break;
 
   default :
 
     methodArguments->rgdispidNamedArgs = NULL;
     methodArguments->cNamedArgs = 0;
-    methodArguments->cArgs = numNeededParams;
+    methodArguments->cArgs = numParamsPassed;
     break;
 
   }
 
-  if (numNeededParams > 0) {
+  if (numParamsPassed > 0) {
     methodArguments->rgvarg = 
-      (VARIANTARG *)scheme_malloc(numNeededParams * sizeof(VARIANTARG));
+      (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
     scheme_dont_gc_ptr(methodArguments->rgvarg);
   }
 
   // marshall Scheme argument list into COM argument list
   // arguments are in reverse order in rgvarg
 
-  for (i = 0,j = numNeededParams - 1,k = 2; i < numNeededParams; i++,j--,k++) {
+  for (i = 0,j = numParamsPassed - 1,k = 2; i < argc - 2; i++,j--,k++) {
 
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
@@ -1828,10 +1929,19 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     VariantInit(&methodArguments->rgvarg[j]);
     methodArguments->rgvarg[j].vt = 
       getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[i]);
+
     marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
 
-  return numNeededParams;
+  if (numOptParams > 0) {
+    for (i = numParamsPassed - 1 - (argc - 2); i >= 0; i--) {
+      VariantInit(&methodArguments->rgvarg[i]);
+      methodArguments->rgvarg[i].vt = VT_ERROR;
+      methodArguments->rgvarg[i].lVal = DISP_E_PARAMNOTFOUND;
+    }
+  }
+
+  return numParamsPassed;
 }
 
 short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
@@ -1839,24 +1949,24 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
 					   int argc,Scheme_Object **argv,
 					   DISPPARAMS *methodArguments) {
   char errBuff[256];
-  short int numNeededParams;
+  short int numParamsPassed;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
 
   if (invKind == INVOKE_PROPERTYGET) {
-    numNeededParams = 0;
+    numParamsPassed = 0;
   }
   else if (invKind == INVOKE_PROPERTYPUT) {
-    numNeededParams = 1;
+    numParamsPassed = 1;
   }
 
-  if (argc != numNeededParams + 2) {
+  if (argc != numParamsPassed + 2) {
     sprintf(errBuff,"%s (%s \"%s\")",
 	    mx_fun_string(invKind),
 	    inv_kind_string(invKind),
 	    SCHEME_STR_VAL(argv[1]));
     scheme_wrong_count(errBuff,
-		       numNeededParams + 2,numNeededParams + 2,
+		       numParamsPassed + 2,numParamsPassed + 2,
 		       argc,argv);
   }
 
@@ -1872,20 +1982,20 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
 
     methodArguments->rgdispidNamedArgs = NULL;
     methodArguments->cNamedArgs = 0;
-    methodArguments->cArgs = numNeededParams;
+    methodArguments->cArgs = numParamsPassed;
     break;
 
   }
 
-  if (numNeededParams > 0) {
+  if (numParamsPassed > 0) {
     methodArguments->rgvarg = 
-      (VARIANTARG *)scheme_malloc(numNeededParams * sizeof(VARIANTARG));
+      (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
     scheme_dont_gc_ptr(methodArguments->rgvarg);
   }
 
   // marshall Scheme argument list into COM argument list
 
-  for (i = 0,j = numNeededParams - 1,k = 2; i < numNeededParams; i++,j--,k++) {
+  for (i = 0,j = numParamsPassed - 1,k = 2; i < numParamsPassed; i++,j--,k++) {
 
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
@@ -1893,10 +2003,11 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
     VariantInit(&methodArguments->rgvarg[j]);
     methodArguments->rgvarg[j].vt = 
       getVarTypeFromElemDesc(&pVarDesc->elemdescVar);
+
     marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
 
-  return numNeededParams;
+  return numParamsPassed;
 }
 
 short int buildMethodArguments(MX_TYPEDESC *pTypeDesc,
@@ -1924,8 +2035,8 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   unsigned int errorIndex;
   IDispatch *pIDispatch;
   char *name;
-  short numNeededParams;
-  int i,k;
+  short numParamsPassed;
+  int i,j;
   HRESULT hr;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
@@ -1948,7 +2059,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   
   pTypeDesc = getMethodType(pIDispatch,name,invKind);
 
-  numNeededParams = buildMethodArguments(pTypeDesc,
+  numParamsPassed = buildMethodArguments(pTypeDesc,
 					 invKind,
 					 argc,argv,
 					 &methodArguments);
@@ -2001,11 +2112,11 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
   // unmarshall data passed by reference, cleanup
 
-  for (i = 0,k = 2; i < numNeededParams; i++,k++) {
-    unmarshallVariant(argv[k],&methodArguments.rgvarg[i]);
+  for (i = 2,j = numParamsPassed - 1; i < argc; i++,j--) {
+    unmarshallVariant(argv[i],&methodArguments.rgvarg[j]);
   }
- 
-  if (numNeededParams > 0) {
+
+  if (numParamsPassed > 0) {
     scheme_gc_ptr_ok(methodArguments.rgvarg);
   }  
   
@@ -2016,6 +2127,8 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   // unmarshall return value
 
   return variantToSchemeObject(&methodResult);
+
+  return scheme_void;
 }
 
 BOOL _stdcall drawContinue(DWORD data) {
@@ -2527,7 +2640,7 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-DWORD WINAPI docHwndMsgLoop(LPVOID p) {
+void docHwndMsgLoop(LPVOID p) {
   HRESULT hr;
   MSG msg;
   HWND hwnd;
@@ -2569,7 +2682,7 @@ DWORD WINAPI docHwndMsgLoop(LPVOID p) {
           ::MessageBox(NULL,"Can't marshal document interface","MysterX",MB_OK);
           DestroyWindow(hwnd);
           ReleaseSemaphore(createHwndSem,1,NULL);
-          return 0;
+          return; // 0;
         }
 
         ReleaseSemaphore(createHwndSem,1,NULL);
@@ -2582,7 +2695,7 @@ DWORD WINAPI docHwndMsgLoop(LPVOID p) {
     }
   }
 
-  return 0;
+  //  return 0;
 }
 
 int cmpDwso(char *key,DOCUMENT_WINDOW_STYLE_OPTION *dwso) {
@@ -2609,7 +2722,6 @@ void assignIntOrDefault(int *pVal,Scheme_Object **argv,int argc,int ndx) {
 
 Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   HRESULT hr;
-  DWORD threadId;
   IUnknown *pIUnknown;
   IDispatch *pIDispatch;
   IDHTMLPage *pIDHTMLPage;
@@ -2677,7 +2789,11 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
 
   docWindowInit.ppIStream = &pDocumentStream;
 
-  CreateThread(NULL,0,docHwndMsgLoop,(void *)&docWindowInit,0L,&threadId);
+  // use _beginthread instead of CreateThread
+  // because the use of HTMLHelp requires the use of
+  // multithreaded C library
+
+  _beginthread(docHwndMsgLoop,0,(void *)&docWindowInit);
 
   // wait until the window is created
   

@@ -561,7 +561,26 @@ by Felleisen and Flatt.
                      delta as a function for any operation.
 ======================================================================
 
-The _helper.ss_ module provides additional helper functions.
+The _helper.ss_ module provides additional helper functions and syntax.
+
+> (define-memoized (f arg ...) expr ...)    SYNTAX
+
+  Like `define' for function defitions, except that the function is
+  "memoized": it automatically remembers each result, and when `eq?'
+  arguments are provided later, the same result is returned
+  immeduately.
+
+> (lambda-memoized (arg ...) expr)
+
+  Like `lambda' except that the resulting function is "memoized" (see
+  `define-memoized' above).
+
+> (lang-match-lambda (variable) grammar-expr [pattern bodies ...] ...)
+
+  Combines a pattern-matching dispatch with a `lambda', producing a
+  function that takes a single argument and pattern-matches. Each
+  `pattern' is as for `reduction', and the names that the pattern
+  binds are visible in the `bodies'.
 
 > function-reduce* : ((listof red?)
                       any?

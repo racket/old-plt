@@ -25,6 +25,8 @@
               net:imap^
               hierlist^)
       
+      (define mailbox-cache-file (build-path LOCAL* "folder-window-mailboxes"))
+      
       (define (imap-open-connection)
 	(imap-connect IMAP-SERVER
 		      USERNAME
@@ -60,62 +62,109 @@
                  (set! mailbox-name m))])
             
             (inherit new-list new-item delete-item get-items)
-            (public
-              [refresh-children
-               (lambda ()
-                 (with-handlers ([(lambda (x) #t)
-                                  (lambda (x)
-                                    (message-box "Error getting IMAP directory"
-                                                 (if (exn? x)
-                                                     (exn-message x)
-                                                     (format "uncaught exception: ~e" x))))])
-                   (for-each (lambda (i) (delete-item i)) (get-items))
-                   (let-values ([(imap msg-count recent-count)
-                                 (imap-open-connection)])
-                     (let ([mailbox-name-length (string-length mailbox-name)]
-                           [get-child-mailbox-name
-                            (lambda (item)
-                              (format "~a" (second item)))]
-                           [child-mailboxes
-                            (imap-list-child-mailboxes imap mailbox-name)])
-                       (for-each (lambda (item)
-                                   (let* ([child-mailbox-name (get-child-mailbox-name item)]
-                                          [child-mailbox-flags (first item)]
-                                          [flat-mailbox?
-                                           (member 'noinferiors
-                                                   (map imap-flag->symbol child-mailbox-flags))]
-                                          [sub-list (if flat-mailbox?
-                                                        (new-item imap-mailbox-name-mixin)
-                                                        (new-list imap-mailbox-mixin))]
-                                          [text (send sub-list get-editor)])
-                                     
-                                     (send sub-list set-full-mailbox-name child-mailbox-name)
-                                     (unless flat-mailbox?
-                                       (send sub-list set-mailbox-name child-mailbox-name))
-                                     (let* ([child-name-length (string-length child-mailbox-name)]
-                                            [strip-prefix?
-                                             (and (> child-name-length
-                                                     mailbox-name-length)
-                                                  (string=?
-                                                   (substring child-mailbox-name
-                                                              0 mailbox-name-length)
-                                                   mailbox-name))])
-                                       (send text insert 
-                                             (if strip-prefix?
-                                                 (substring child-mailbox-name 
-                                                            ;; strip separator (so, add1)
-                                                            (add1 mailbox-name-length)
-                                                            child-name-length)
-                                                 child-mailbox-name)))))
-                                 (quicksort
-                                  child-mailboxes
-                                  (lambda (x y)
-                                    (string<=? (get-child-mailbox-name x)
-                                               (get-child-mailbox-name y)))))
-                       (imap-disconnect imap)))))])
             (sequence
               (apply super-init args)))))
       
+      ;; mailbox-folder = (make-deep-folder string string nested-mailbox-folder)
+      ;; nested-mailbox-folder = 
+      ;; (union (make-flat-folder string string)
+      ;;        (make-deep-folder string string (listof mailbox-folder)))
+      (define-struct folder (name short-name))
+      (define-struct (deep-folder folder) (children))
+      (define-struct (flat-folder folder) ())
+
+      ;; refresh-mailboxes : -> void
+      (define (refresh-mailboxes)
+        (let ([mailboxes (fetch-mailboxes)])
+          (when mailboxes
+            (write-mailbox-folder mailboxes)
+            (update-gui mailboxes))))
+
+      ;; write-mailbox-folder : mailbox-folder -> void
+      (define (write-mailbox-folder mbf)
+        (let ([raw-datum
+               (let loop ([mbf mbf])
+                 (cond
+                   [(flat-folder? mbf) (list (folder-name mbf)
+                                             (folder-short-name mbf))]
+                   [(deep-folder? mbf)
+                    (list (folder-name mbf)
+                          (folder-short-name mbf)
+                          (map loop (deep-folder-children mbf)))]
+                   [else (error 'write-mailbox-folder "unknown mailbox folder: ~e"
+                                mbf)]))])
+          (call-with-output-file mailbox-cache-file
+            (lambda (port)
+              (write raw-datum port))
+            'truncate 'text)))
+      
+      ;; read-mailbox-folder : -> mailbox-folder
+      (define (read-mailbox-folder)
+        (if (file-exists? mailbox-cache-file)
+            (let ([raw-datum (call-with-input-file mailbox-cache-file read 'text)])
+              (let loop ([rd raw-datum])
+                (cond
+                  [(= 2 (length rd)) (make-flat-folder (car rd) (cadr rd))]
+                  [(= 3 (length rd))
+                   (make-deep-folder (car rd)
+                                     (cadr rd)
+                                     (map loop (caddr rd)))])))
+            (make-deep-folder ROOT-MAILBOX-FOR-LIST
+                              ROOT-MAILBOX-FOR-LIST
+                              null)))
+
+      
+      ;; fetch-mailboxes : -> (union #f mailbox-folder)
+      ;; gets the current mailbox list from the server
+      (define (fetch-mailboxes)
+        (with-handlers ([(lambda (x) #t)
+                         (lambda (x)
+                           (message-box "Error getting IMAP directory"
+                                        (if (exn? x)
+                                            (exn-message x)
+                                            (format "uncaught exception: ~e" x)))
+                           #f)])
+          (let-values ([(imap msg-count recent-count) (imap-open-connection)])
+            (begin0
+              (make-deep-folder
+               ROOT-MAILBOX-FOR-LIST
+               ROOT-MAILBOX-FOR-LIST
+               (let loop ([mailbox-name ROOT-MAILBOX-FOR-LIST])
+                 (let ([mailbox-name-length (string-length mailbox-name)]
+                       [get-child-mailbox-name (lambda (item) (format "~a" (second item)))]
+                       [child-mailboxes (imap-list-child-mailboxes imap mailbox-name)])
+                   (map (lambda (item)
+                          (let* ([child-mailbox-name (get-child-mailbox-name item)]
+                                 [child-mailbox-flags (first item)]
+                                 [flat-mailbox?
+                                  (member 'noinferiors
+                                          (map imap-flag->symbol child-mailbox-flags))]
+                                 [child-name-length (string-length child-mailbox-name)]
+                                 [strip-prefix?
+                                  (and (> child-name-length mailbox-name-length)
+                                       (string=? 
+                                        (substring child-mailbox-name 0 mailbox-name-length)
+                                        mailbox-name))]
+                                 [short-name
+                                  (if strip-prefix?
+                                      (substring child-mailbox-name
+                                                 ;; strip separator (thus add1)
+                                                 (add1 mailbox-name-length)
+                                                 child-name-length)
+                                      child-mailbox-name)])
+                            (if flat-mailbox?
+                                (make-flat-folder child-mailbox-name short-name)
+                                (make-deep-folder 
+                                 child-mailbox-name
+                                 short-name
+                                 (loop child-mailbox-name)))))
+                        (quicksort
+                         child-mailboxes
+                         (lambda (x y)
+                           (string<=? (get-child-mailbox-name x)
+                                      (get-child-mailbox-name y))))))))
+              (imap-disconnect imap)))))
+
       (define imap-mailbox-mixin
         (compose 
          imap-mailbox-list-mixin
@@ -135,15 +184,38 @@
              (lambda (i)
                (set! selected-mailbox (and i (send i get-full-mailbox-name)))
                (send open-button enable i)
-               (send selected-message set-label
+               (send open-button set-label
                      (if i
-                         (send i get-full-mailbox-name)
-                         ""))
-               (super-on-select i))]
-            [on-item-opened
-             (lambda (i)
-               (send i refresh-children))])
+                         (format "Open ~a" (send i get-full-mailbox-name))
+                         "Open ..."))
+               (super-on-select i))])
           (sequence (super-init frame))))
+      
+      (define (update-gui orig-mbf)
+        (define (add-child hl mbf)
+          (let* ([deep? (deep-folder? mbf)]
+                 [new-item (if deep?
+                               (send hl new-list imap-mailbox-mixin)
+                               (send hl new-item imap-mailbox-name-mixin))]
+                 [text (send new-item get-editor)])
+            (send new-item set-full-mailbox-name (folder-name mbf))
+            (when deep?
+              (send new-item set-mailbox-name (folder-name mbf)))
+            (send text insert (folder-short-name mbf))
+            new-item))
+        (send (send top-list get-editor) begin-edit-sequence)
+        (for-each (lambda (x) (send top-list delete-item x))
+                  (send top-list get-items))
+        (for-each
+         (lambda (mbf)
+           (let loop ([hl top-list]
+                      [mbf mbf])
+             (let ([new-item (add-child hl mbf)])
+               (when (deep-folder? mbf)
+                 (for-each (lambda (child) (loop new-item child))
+                           (deep-folder-children mbf))))))
+         (deep-folder-children orig-mbf))
+        (send (send top-list get-editor) end-edit-sequence))
       
       (define folders-frame%
         (class frame%
@@ -235,17 +307,23 @@
       
       
       (define open-button
-        (make-object button% "Open Maibox"
+        (make-object button% "Open ..."
           top-panel
           (lambda xxx
             (let ([mail-box (send top-list get-selected-mailbox)])
               (when mail-box
                 (setup-mailboxes-file mail-box)
                 (open-mailbox mail-box))))))
+      (define refresh-mailbox-button
+        (instantiate button% ()
+          (label "Refresh")
+          (parent top-panel)
+          (callback (lambda (x y)
+                      (refresh-mailboxes)))))
+          
+      (send open-button stretchable-width #t)
       (send open-button enable #f)
       
-      (define selected-message (make-object message% "" top-panel))
-      (send selected-message stretchable-width #t)
       (define top-list (make-object imap-top-list% frame))
       
       (when (and (send icon ok?) (send icon-mask ok?))
@@ -255,5 +333,5 @@
       (send frame min-width 350)
       (send frame min-height 450)
       (send top-list set-mailbox-name ROOT-MAILBOX-FOR-LIST)
-      (send top-list refresh-children)
+      (update-gui (read-mailbox-folder))
       frame)))

@@ -801,12 +801,14 @@
 			(lambda (x)
 			  (and x #t))))
 
-      (define (colorize p color)
-	(if (black-and-white)
-	    p
-	    (extend-pict 
-	     p 0 0 0 0 0
-	     `(color ,color ,(pict-draw p)))))
+      (define colorize
+        (case-lambda
+          [(p color)
+           (if (black-and-white)
+               p
+               (extend-pict 
+                p 0 0 0 0 0
+                `(color ,color ,(pict-draw p))))]))
 
       (define (optimize s)
 	(let o-loop ([s s][dx 0][dy 0])

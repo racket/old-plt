@@ -29,8 +29,8 @@ In the Visual BASIC environment, from the menu
 Project|References, check "MzCOM Type Library".  
 In your code, declare a variable, then assign to it:
 
-  DIM schemeObject as MzObj
-  SET schemeObject as NEW MzObj
+  DIM schemeObject AS MzObj
+  SET schemeObject = NEW MzObj
 
 From Visual C++:
 

@@ -163,6 +163,7 @@ static void interrupt(int)
 #endif
 
 #if defined(_IBMR2)
+static int danger_signal_received;
 static void dangerdanger_gui(int)
 {
   if (danger_signal_received) {

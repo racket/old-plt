@@ -1238,7 +1238,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
   if (current_font)
     SetFont (current_font);
 
-  GetTextExtent(text, &tw, &th, NULL, NULL, NULL, (use16 ? -2 : -1), dt);
+  GetTextExtent(text, &tw, &th, NULL, NULL, NULL, use16, dt);
 
   if (current_bk_mode == wxSOLID) {
     unsigned char red, blue, green;
@@ -1784,23 +1784,17 @@ static int lastWidths[256]; // widths of the characters
 
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
-				    Bool use16, int dt)
+				    Bool WXUNUSED(use16), int dt)
 {
   wxFont *fontToUse = theFont;
   int family;
   int size;
   int style;
   int weight;
-  int do_scale = 1;
 
   float widthSum = 0.0;
   float height;
   int dp;
-
-  if (use16 < 0) {
-    do_scale = 0;
-    use16 = (use16 == -2);
-  }
 
   if (!fontToUse)
     fontToUse = current_font;
@@ -1973,20 +1967,20 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   }
   
   // return size values
-  *x = widthSum * (do_scale ? user_scale_x : 1);
-  *y = height * (do_scale ? user_scale_y : 1);
+  *x = widthSum;
+  *y = height;
 
   // return other parameters
   if (descent){
     if (lastDescender != INT_MIN)
-      *descent = ((-lastDescender) / 1000.0F) * size * (do_scale ? user_scale_y : 1);
+      *descent = ((-lastDescender) / 1000.0F) * size;
     else
       *descent = 0.0;
   }
 
   if (topSpace) {
     if (capHeight > -1)
-      *topSpace = ((1000 - capHeight) / 1000.0F) * size * (do_scale ? user_scale_y : 1);
+      *topSpace = ((1000 - capHeight) / 1000.0F) * size;
     else
       *topSpace = 0.0;
   }

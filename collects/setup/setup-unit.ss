@@ -91,7 +91,7 @@
       ;;              Find Collections                 ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define-struct cc (collection path name info root-dir))
+      (define-struct cc (collection path name info root-dir) (make-inspector))
 
       (define (warning-handler v)
 	(lambda (exn) 
@@ -136,7 +136,7 @@
 	       (if (= (length c) 1)
 		   (car c)
 		   c)))
-
+      
       (define collections-to-compile
 	(quicksort
 	 (if (null? x-specific-collections)
@@ -176,7 +176,7 @@
 		    (cannot-compile c)))
 	      x-specific-collections))
 	 (lambda (a b) (string-ci<? (cc-name a) (cc-name b)))))
-
+      
       ;; Close over sub-collections
       (set! collections-to-compile
 	    (let loop ([l collections-to-compile])
@@ -218,7 +218,11 @@
 				     (error "result is not a list of relative path string lists:" x)))))
 		     (list cc)
 		     (loop (cdr l)))))))
-
+      (print-struct #t)
+      (for-each (lambda (x) (printf " ~s\n" x))
+                collections-to-compile)
+      (newline)
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;                  Clean                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -414,7 +418,7 @@
 							(error 'setup-plt
 							       "error loading installer: ~a"
 							       (if (exn? exn) (exn-message exn) exn)))])
-                             (dynamic-require `(lib ,fn ,@(map path->string (cc-collection cc)))
+                             (dynamic-require (build-path (cc-path cc) fn)
                                               (case part
                                                 [(pre)     'pre-installer]
                                                 [(general) 'installer]
@@ -514,7 +518,8 @@
 				       '#%info-domain))])
 			;; Check whether we have a table for this collection's
 			;;  collection root:
-			(let ([t (hash-table-get ht (cc-root-dir cc)
+			(let ([t (hash-table-get ht 
+                                                 (cc-root-dir cc)
 						 (lambda ()
 						   ;; No table for this root, yet. Build one.
 						   (let ([l (let ([p (build-path (cc-root-dir cc)
@@ -628,7 +633,7 @@
                                  (let ([p (program-launcher-path mzln)]
                                        [aux (cons `(exe-name . ,mzln)
                                                   (build-aux-from-path
-                                                   (build-path (apply collection-path (cc-collection cc))
+                                                   (build-path (cc-path cc)
                                                                (path-replace-suffix (or mzll mzln) #""))))])
                                    (unless (up-to-date? p aux)
                                      (setup-printf "Installing ~a~a launcher ~a"
@@ -638,13 +643,13 @@
                                                    (path->string p))
                                      (make-launcher
                                       (or mzlf
-                                          (if (= 1 (length (cc-collection cc)))
+                                          (if (and (cc-collection cc)
+                                                   #f
+                                                   (= 1 (length (cc-collection cc))))
                                             ;; Common case (simpler parsing for Windows to
                                             ;; avoid cygwin bug):
                                             (list "-qmvL-" mzll (path->string (car (cc-collection cc))))
-                                            (list "-qmve-"
-                                                  (format "~s" `(require (lib ,mzll ,@(map path->string 
-											   (cc-collection cc))))))))
+                                            (list "-qmvt-" (format "~s" (path->string (cc-path cc))))))
                                       p
                                       aux))))
                                mzlns

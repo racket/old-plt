@@ -80,6 +80,7 @@ typedef struct Scheme_Comp_Env
 
 typedef struct Scheme_Compile_Info
 {
+  MZTAG_IF_REQUIRED
   int max_let_depth;
   char can_optimize_constants;
   char keep_unit_debug_info;
@@ -89,6 +90,7 @@ typedef struct Scheme_Compile_Info
 
 typedef struct Link_Info
 {
+  MZTAG_IF_REQUIRED
   int can_optimize_constants;
   int size, oldsize, count, pos, anchor_offset;
   short *old_pos;
@@ -815,8 +817,6 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 # define scheme_malloc_rt(x) scheme_malloc_tagged(x)
 # define MALLOC_ONE_RT(x) MALLOC_ONE_TAGGED(x)
 # define MALLOC_N_RT(x,c) MALLOC_N_TAGGED(x,c)
-# define MALLOC_ONE_WEAK(x) MALLOC_ATOMIC(x)
-# define MALLOC_ONE_WEAK_RT(x) MALLOC_ATOMIC(x)
 # define MALLOC_ONE_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak)
 # define MALLOC_ONE_TAGGED_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak)
 # define MALLOC_ONE_WEAK_RT(x) MALLOC_ONE_TAGGED_WEAK(x)

@@ -1,0 +1,68 @@
+
+#ifndef __mzscheme_gc_2__
+#define __mzscheme_gc_2__
+
+# ifdef __cplusplus
+extern "C" {
+# endif
+
+#define GC_PTR void*
+
+void GC_add_roots(void *start, void *end);
+
+extern void (*GC_start_collect_callback)(void);
+extern void (*GC_end_collect_callback)(void);
+extern void (*GC_custom_finalize)(void);
+
+/* Needed for stack-overflow checks: */
+void GC_set_stack_base(void *base);
+void *GC_get_stack_base(void);
+
+void GC_dump(void);
+
+long GC_get_memory_use();
+
+void GC_end_stubborn_change(void *);
+
+void GC_gcollect(void);
+
+/* Array of pointers: */
+void *GC_malloc(size_t size_in_bytes);
+#define GC_malloc_stubborn GC_malloc
+
+/* Tagged item: */
+void *GC_malloc_tagged(size_t);
+#define GC_malloc_stubborn_tagged GC_malloc_stubborn
+
+/* Pointerless */
+void *GC_malloc_atomic(size_t size_in_bytes);
+#define GC_malloc_atomic_tagged GC_malloc_atomic
+
+/* Plain malloc: */
+void *GC_malloc_atomic_uncollectable(size_t size_in_bytes);
+#define GC_malloc_eternal_tagged GC_malloc_atomic_uncollectable
+
+void GC_free(void *); /* noop */
+
+void GC_general_register_disappearing_link(void **p, void *a);
+void GC_register_late_disappearing_link(void **p, void *a);
+void GC_general_unregister_disappearing_link(void **p, void *a);
+
+void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
+			   void *data, void (**oldf)(void *p, void *data), 
+			   void **olddata);
+void GC_register_finalizer_ignore_self(void *p, void (*f)(void *p, void *data), 
+				       void *data, void (**oldf)(void *p, void *data), 
+				       void **olddata);
+void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
+				 void *data, void (**oldf)(void *p, void *data), 
+				 void **olddata);
+
+void **GC_prepare_stack_frame(int size);
+void GC_set_stack_frame(void **v);
+
+# ifdef __cplusplus
+};
+# endif
+
+#endif /* __mzscheme_gc_2__ */

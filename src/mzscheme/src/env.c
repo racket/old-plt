@@ -92,6 +92,7 @@ static int set_reference_ids = 0;
 static int builtin_ref_counter = 0;
 
 typedef struct Constant_Binding {
+  MZTAG_IF_REQUIRED
   Scheme_Object *name;
   Scheme_Object *val;
   short before;

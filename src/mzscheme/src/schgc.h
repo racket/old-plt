@@ -1,14 +1,22 @@
 
 #ifdef INCLUDE_WITHOUT_PATHS
-# ifdef USE_SENORA_GC
-#  include "sgc.h"
+# ifdef MZ_PRECISE_GC
+#  include "gc2.h"
 # else
-#  include "gc.h"
+#  ifdef USE_SENORA_GC
+#   include "sgc.h"
+#  else
+#   include "gc.h"
+#  endif
 # endif
 #else
-# ifdef USE_SENORA_GC
-#  include "../sgc/sgc.h"
+# ifdef MZ_PRECISE_GC
+#  include "../gc2/gc2.h"
 # else
-#  include "../gc/gc.h"
+#  ifdef USE_SENORA_GC
+#   include "../sgc/sgc.h"
+#  else
+#   include "../gc/gc.h"
+#  endif
 # endif
 #endif

@@ -2098,7 +2098,7 @@ osk_char_ready (Scheme_Input_Port *port)
     else {
       osk->next = MALLOC_ONE(osk_console_input);
 #ifdef MZTAG_REQUIRED
-      osk->type = scheme_rt_osk_console_input;
+      osk->type = scheme_rt_oskit_console_input;
 #endif
       osk = osk->next;
       osk->count = osk->size = osk->ready = 0;

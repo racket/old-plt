@@ -40,6 +40,12 @@
 #define FILL_FACTOR 2
 #endif
 
+#ifdef MZ_PRECISE_GC
+# define USE_FOREVER 0
+#else
+# define USE_FOREVER 1
+#endif
+
 int scheme_hash_primes[] = 
 {7, 31, 127, 257, 521, 1031, 2053, 4099, 8209, 16411, 
    32779, 65543, 131101, 262147, 425329, 1048583, 2097169,
@@ -83,10 +89,12 @@ scheme_hash_table (int size, int type, int has_const, int forever)
   table->type = scheme_hash_table_type;
 
   asize = (size_t)table->size * sizeof(Scheme_Bucket *);
+#if USE_FOREVER
   if (forever) {
     table->buckets = (Scheme_Bucket **)scheme_malloc_atomic(asize);
     memset((char *)table->buckets, 0, asize);
   } else
+#endif
     table->buckets = (Scheme_Bucket **)scheme_malloc(asize);
 
   table->has_constants = has_const;
@@ -175,10 +183,12 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     table->size = scheme_hash_primes[++table->step];
     
     asize = (size_t)table->size * sizeof(Scheme_Bucket *);
+#if USE_FOREVER
     if (table->forever) {
       table->buckets = (Scheme_Bucket **)scheme_malloc_atomic(asize);
       memset((char *)table->buckets, 0, asize);
     } else
+#endif
       table->buckets = (Scheme_Bucket **)scheme_malloc(asize);
 
     table->count = 0;
@@ -207,9 +217,11 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     else
       bsize = sizeof(Scheme_Bucket_With_Const_Flag);
 
+#if USE_FOREVER
     if (table->forever)
       bucket = (Scheme_Bucket *)scheme_malloc_uncollectable_tagged(bsize);
     else
+#endif
       bucket = (Scheme_Bucket *)scheme_malloc_tagged(bsize);
 
     bucket->type = scheme_variable_type;

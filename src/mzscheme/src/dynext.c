@@ -172,11 +172,15 @@ static char *copy_vers(char *vers)
     return NULL;
 }
 
+typedef Scheme_Object *(*Init_Procedure)(Scheme_Env *);
+typedef Scheme_Object *(*Reload_Procedure)(Scheme_Env *);
+typedef char *(*Setup_Procedure)(SSI_ARG_TYPES);
+
 static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 {
 #ifndef NO_DYNAMIC_LOAD
-  Scheme_Object *(*init_f)(Scheme_Env *); /* set by platform-specific code */
-  Scheme_Object *(*reload_f)(Scheme_Env *); /* set by platform-specific code */
+  Init_Procedure init_f; /* set by platform-specific code */
+  Reload_Procedure reload_f; /* set by platform-specific code */
   ExtensionData *ed;
   void *handle;
   int comppath;
@@ -196,7 +200,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 
 #ifdef UNIX_DYNAMIC_LOAD
     void *dl;
-    char *(*f)(SSI_ARG_TYPES), *vers;
+    Setup_Procedure f;
+    char *vers;
     
     /* Make sure that filename is not a pathless filename.
        Some Unix systems don't search as a relative path
@@ -225,7 +230,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 # define SO_SYMBOL_PREFIX
 #endif
 
-    f = (char*(*)(SSI_ARG_TYPES))dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize_internal");
+    f = (Setup_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize_internal");
     
     if (!f) {
       char *err = dlerror();
@@ -247,8 +252,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 		       vers, filename);
     }
     
-    init_f = (Scheme_Object*(*)(Scheme_Env*))dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize");
-    reload_f = (Scheme_Object*(*)(Scheme_Env*))dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
+    init_f = (Init_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize");
+    reload_f = (Reload_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
     
     if (!init_f || !reload_f) {
       char *err = dlerror();
@@ -262,7 +267,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 #endif
 #if defined(WINDOWS_DYNAMIC_LOAD)
     HINSTANCE dl;
-    char *(*f)(SSI_ARG_TYPES), *vers;
+    Setup_Procedure f;
+    char *vers;
   
     dl = LoadLibrary(filename);
     if (!dl)
@@ -273,7 +279,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     
     handle = (void *)dl;
     
-    f = (char*(*)(SSI_ARG_TYPES))GetProcAddress(dl, "scheme_initialize_internal");
+    f = (Setup_Procedure)GetProcAddress(dl, "scheme_initialize_internal");
     
     if (!f) {
       long err = GetLastError();
@@ -284,7 +290,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 		       filename, err);
     }
     
-    vers = (f)(SSI_ARGS);
+    vers = f(SSI_ARGS);
     if (!vers || strcmp(vers, VERSION)) {
       /* Copy, because we're going to unload the extension: */
       vers = copy_vers(vers);
@@ -295,8 +301,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 		       vers, filename);
     }
     
-    init_f = (Scheme_Object*(*)(Scheme_Env*))GetProcAddress(dl,"scheme_initialize");
-    reload_f = (Scheme_Object*(*)(Scheme_Env*))GetProcAddress(dl,"scheme_reload");
+    init_f = (Init_Procedure)GetProcAddress(dl,"scheme_initialize");
+    reload_f = (Releoad_Procedure)GetProcAddress(dl,"scheme_reload");
     
     if (!init_f || !reload_f) {
       FreeLibrary(dl);
@@ -309,7 +315,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 #endif
 #if defined(CODEFRAGMENT_DYNAMIC_LOAD)
     FSSpec spec;
-    char *(*f)(), *vers;
+    Setup_Procedure f;
+    char *vers;
     CFragConnectionID connID;
     
     if (get_ext_file_spec( &spec, filename ) && load_ext_file_spec( &spec, &connID ) )
@@ -324,7 +331,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 			   "load-extension: \"%s\" is not an extension",
 			   filename);
 	
-	vers = (f)(SSI_ARGS);
+	vers = f(SSI_ARGS);
 	
 	if (!vers || strcmp(vers, VERSION))
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -359,7 +366,8 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 #if defined(BEOS_IMAGE_DYNAMIC_LOAD)
     image_id image;
     status_t status;
-    char *(*f)(SSI_ARG_TYPES), *vers;
+    Setup_Procedure f;
+    char *vers;
   
     image = load_add_on(filename);
     printf("loaded\n");
@@ -380,7 +388,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 		       "load-extension: \"%s\" is not an extension (%ld)",
 		       filename, status);
     
-    vers = (f)(SSI_ARGS);
+    vers = f(SSI_ARGS);
     if (!vers || strcmp(vers, VERSION))
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),

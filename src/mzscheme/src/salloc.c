@@ -375,6 +375,9 @@ static void do_next_finalization(void *o, void *data)
     fn->f(o, fn->data);
 }
 
+/* Makes gc2 xformer happy: */
+typedef void (*finalizer_function)(void *p, void *data);
+
 static void add_finalizer(void *v, void (*f)(void*,void*), void *data, 
 			  int prim, int ext,
 			  void (**ext_oldf)(void *p, void *data),
@@ -383,13 +386,16 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 			  Finalization **_fn,
 			  int no_dup)
 {
-  void (*oldf)(void *p, void *data);
+  finalizer_function oldf;
   void *olddata;
   Finalizations *fns, **fns_ptr, *prealloced;
   Finalization *fn;
 
+#ifndef MZ_PRECISE_GC
+  /* FIXME */
   if (v != GC_base(v))
     return;
+#endif
 
   /* Allocate everything first so that we're not changing
      finalizations when finalizations could run: */
@@ -475,7 +481,10 @@ void scheme_weak_reference(void **p)
 
 void scheme_weak_reference_indirect(void **p, void *v)
 {
+#ifndef MZ_PRECISE_GC
+  /* FIXME */
   if (GC_base(v) == v)
+#endif
     GC_register_late_disappearing_link(p, v);
 }
 

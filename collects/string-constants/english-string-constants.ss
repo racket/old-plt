@@ -261,6 +261,7 @@
  (file-menu "File")
  (edit-menu "Edit")
  (help-menu "Help")
+ (windows-menu "Windows")
  
  ;;; menus
  ;;; - in menu labels, the & indicates a alt-key based shortcut.

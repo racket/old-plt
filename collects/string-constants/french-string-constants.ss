@@ -1,8 +1,8 @@
 (
-
+ 
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language "Le Français est-il votre langue maternelle ?")
-
+ 
  (are-you-sure-you-want-to-switch-languages
   "Ceci va changer le language utilisé par l'interface graphique, ce qui va nécessiter un redémarrage de DrScheme. Etes-vous certain de vouloir continuer ?")
  
@@ -15,7 +15,7 @@
  (warning "Avertissement")
  (error "Erreur")
  (close "Fermer") ;; as in, close an open window
-
+ 
  ;;; bug report form
  (cancel-bug-report? "Annuler la soumission du formulaire de bogue ?")
  (are-you-sure-cancel-bug-report?
@@ -49,7 +49,7 @@
  (illegal-bug-report "Formulaire de soumission de bogue incomplet.")
  (pls-fill-in-field "Merci de compléter le champ \"~a\".")
  (malformed-email-address "Adresse email malformée.")
-
+ 
  ;;; check syntax
  (check-syntax "Vérifier") ; "Syntaxe" ; "Correcteur de syntaxe" est long...
  (cs-italic "Italique")
@@ -79,11 +79,11 @@
  
  ; this appears in the drscheme about box.
  (welcome-to-drscheme-version/language "Bienvenue dans DrScheme, version ~a, ~a.")
-
+ 
  ; these appear on subsequent lines in the `Help|Welcome to DrScheme' dialog.
  (welcome-to-drscheme "Bienvenue dans DrScheme.")
  (version/language "version ~a, ~a.")
-
+ 
  (goto-line "Aller à la ligne")
  (goto-line-invalid-number
   "~a n'est pas un numéro de ligne valide. Ce doit être un entier entre 1 et ~a.")
@@ -97,7 +97,7 @@
  (save "Sauvegarder")
  (please-choose-either "Choisissez \"~a\" ou \"~a\".")
  (close-anyway "Fermer quand même")
-
+ 
  (url "URL")
  (url: "URL:")
  (open-url... "Ouvrir l'URL...")
@@ -186,16 +186,16 @@
  
  ; should have entire alphabet
  (font-example-string "aàbcçdeéêèfghiîjklmnoôpqrstuûvwxyz") 
-
+ 
  (change-font-button-label "Changer")
  (fonts "Polices")
-
+ 
  ; filled with type of font, eg modern, swiss, etc.
  (choose-a-new-font "Sélectionnez une nouvelle police \"~a\".")
-
+ 
  (font-size-slider-label "Taille")
  (restart-to-see-font-changes "Redémarrez pour voir le changement de polices.")
-
+ 
  (font-prefs-panel-title "Police")
  (font-name "Nom de la police")
  (font-size "Taille de la police")
@@ -207,12 +207,12 @@
  
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Indentation")
-
+ 
  ; filled with define, lambda, or begin
  (enter-new-keyword "Entrez un nouveau mot clef ressemblant à ~a:")
  (x-keyword "Mot clef ~a")
  (x-like-keywords "Mots clefs ressemblant à ~a")
-
+ 
  (expected-a-symbol "espérait un symbole, trouvé: ~a")
  (already-used-keyword "\"~a\" est déjà un mot clef avec une indentation spéciale.")
  (add-keyword "Ajouter")
@@ -261,6 +261,7 @@
  (file-menu "Fichier")
  (edit-menu "Editer")
  (help-menu "Aide")
+ (windows-menu "Fenêtres")
  
  ;;; menus
  ;;; - in menu labels, the & indicates a alt-key based shortcut.
@@ -271,31 +272,31 @@
  ;;; - the ellipses in the `after' strings indicates that
  ;;; more information is required from the user before completing
  ;;; the command.
-
+ 
  (file-menu-label-windows "&Fichier")
  (file-menu-label-other "F&ichier")
-
+ 
  (new-info  "Ouvrir un nouveau fichier.")
  (new-menu-item "&Nouvelle fenêtre")
-
+ 
  (open-info "Ouvrir un fichier à partir du disque dur.")
  (open-menu-item "&Ouvrir")
-
+ 
  (revert-info "Retour à la version originale de ce fichier sur le disque dur.")
  (revert-menu-item "&Retour version disque")
-
+ 
  (save-info "Sauvegarder ce fichier sur le disque dur.")
  (save-menu-item "&Sauvegarder")
-
+ 
  (save-as-info "Demander un nom de fichier et sauver ce fichier sur le disque dur.")
  (save-as-menu-item "Sauvegarder à")
-
+ 
  (print-info "Envoyer ce fichier à une imprimante.")
  (print-menu-item "&Imprimer...")
-
+ 
  (close-info "Fermer ce fichier.")
  (close-menu-item "&Fermer")
-
+ 
  (quit-info "Fermer toutes les fenêtres.")
  (quit-menu-item-windows "S&ortir")
  (quit-menu-item-others "&Quitter")
@@ -304,60 +305,60 @@
  
  (undo-info "Défaire l'action la plus récente.")
  (undo-menu-item "&Défaire")
-
+ 
  (redo-info "Refaire l'action qui vient d'être défaite.")
  (redo-menu-item "&Refaire")
-
+ 
  (cut-info "Déplacer dans le porte-bloc les éléments sélectionés, pour collage ultérieur.")
  (cut-menu-item "Coupe&r")
-
+ 
  (copy-info "Copier dans le porte-bloc les éléments sélectionés, pour collage ultérieur.")
  (copy-menu-item "&Copier")
-
+ 
  (paste-info "Coller à la place des éléments sélectionnés les éléments qui ont été copiés ou coupés le plus récemment.")
  (paste-menu-item "&Coller")
-
+ 
  (clear-info "Effacer les éléments sélectionnés sans modifier le porte-bloc ou le collage.")
  (clear-menu-item-others "Effacer")
  (clear-menu-item-windows "&Effacer")
-
+ 
  (select-all-info "Sélectionner tout le document.")
  (select-all-menu-item "Sélectionner t&out")
  
  (find-info "Rechercher une chaîne de caractères.")
  (find-menu-item "Rechercher...")
-
+ 
  (find-again-info "Recherche à nouveau la même chaîne de caractères.")
  (find-again-menu-item "Rechercher à nouveau")
  
  (replace-and-find-again-info "Remplacer le texte sélectionné et rechercher à nouveau le même texte.")
  (replace-and-find-again-menu-item "Remplacer && rechercher à nouveau")
-
+ 
  (preferences-info "Configurer vos préférences.")
  (preferences-menu-item "Préférences...")
-
+ 
  (keybindings-info "Montrer les raccourcis clavier actuellement actifs.")
  (keybindings-menu-item "Raccourcis clavier")
  (keybindings-frame-title "Raccourcis clavier")
  (keybindings-sort-by-name "Trier par nom")
  (keybindings-sort-by-key "Trier par raccourci")
-
+ 
  (insert-text-box-item "Insérer une boite texte")
  (insert-pb-box-item "Insérer une boite à dessin")
  (insert-image-item "Insérer une image...")
  (wrap-text-item "Replier le texte")
-
+ 
  (windows-menu-label "&Fenêtres")
  (bring-frame-to-front "Amener une fenêtre au premier plan")       ;;; title of dialog
  (bring-frame-to-front... "Amener une fenêtre au premier plan...") ;;; corresponding title of menu item
  
  (show-menu-label "&Montrer")
-
+ 
  (help-menu-label "&Aide")
  (about-info "Auteurs et détails concernant ce logiciel.")
  (about-menu-item "A propos de ")
  (about-menu-item-after "...")
-
+ 
  ;;; help-desk-specific menus
  (new-help-desk "&Nouvelle Aide")
  
@@ -493,7 +494,7 @@
  (hide-details-button-label "Cacher les détails")
  (choose-language-menu-item-label "Sélectionner le language...")
  (revert-to-language-defaults "Retourner aux valeurs par défaut pour le language.")
-
+ 
  ;;; languages
  (beginning-student "Etudiant niveau débutant")
  (beginning-student/abbrev "Etudiant niveau débutant avec abréviations pour les listes")

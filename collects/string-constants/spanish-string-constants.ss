@@ -261,7 +261,7 @@
  (file-menu "Archivo")
  (edit-menu "Edición")
  (help-menu "Ayuda")
- 
+ (windows-menu "Ventana")
  ;;; menus
  ;;; - in menu labels, the & indicates a alt-key based shortcut.
  ;;; - sometimes, things are stuck in the middle of 

@@ -1922,78 +1922,83 @@
   (define -module-hash-table-table (make-hash-table-weak)) ; weak map from namespace to module ht
   
   (define standard-module-name-resolver
-    (lambda (s)
-      (let ([filename
-	     (cond
-	      [(string? s)
-	       ;; Parse Unix-style relative path string
-	       (let loop ([path (or (current-load-relative-directory)
-				    (current-directory))]
-			  [s s])
-		 (let ([prefix (regexp-match -re:dir s)])
-		   (if prefix
-		       (loop (build-path path 
-					 (let ([p (cadr prefix)])
-					   (cond
-					    [(string=? p ".") 'same]
-					    [(string=? p ".") 'up]
-					    [else p])))
-			     (caddr s))
-		       (build-path path s))))]
-	      [(or (not (pair? s))
-		   (not (list? s)))
-	       #f]
-	      [(eq? (car s) 'lib)
-	       (let ([cols (let ([len (length s)])
-			     (if (= len 2)
-				 (list "mzlib")
-				 (if (> len 2)
-				     (cddr s)
-				     #f)))])
-		 (and cols
-		      (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
-			(build-path p (cadr s)))))]
-	      [(eq? (car s) 'file)
-	       (and (= (length s) 2)
-		    (let ([p (cadr s)])
-		      (path->complete-path s (current-load-relative-directory))))]
-	      [else #f])])
-	(unless filename
-	  (raise-type-error 
-	   'standard-module-name-resolver
-	   "module selection"
-	   s))
-	;; At this point, filename is a complete path
-	(unless (file-exists? filename)
-	  (raise (make-exn:i/o:filesystem
-		  (string->immutable-string 
-		   (format 
-		    "standard-module-name-resolver: module file does not exist: ~a" 
-		    filename))
-		  (current-continuation-marks)
-		  filename
-		  #f)))
-	(let ([filename (normal-case-path (simplify-path (expand-path filename)))])
-	  (let-values ([(base name dir?) (split-path filename)])
-	    (let ([no-sfx (regexp-replace -re:suffix name "")])
-	      (let ([modname (string->symbol (string-append base no-sfx))]
-		    [ht (hash-table-get
-			 -module-hash-table-table
-			 (current-namespace)
-			 (lambda ()
-			   (let ([ht (make-hash-table)])
-			     (hash-table-put! -module-hash-table-table
-					      (current-namespace)
-					      ht)
-			     ht)))])
-		;; unless it has been loaded already...
-		(unless (hash-table-get ht modname (lambda () #f))
-		  (hash-table-put! ht modname #t)
-		  (let ([prefix (string->symbol base)])
-		    (parameterize ([current-module-name-prefix prefix])
-		      (load filename))))
-		;; Result is the module name:
-		modname)))))))
+    (lambda (s relto)
+      (let ([get-dir (lambda ()
+		       (or (and relto
+				(let-values ([(base n d?)
+					      (split-path (symbol->string relto))])
+				  base))
+			   (current-load-relative-directory)
+			   (current-directory)))])
+	(let ([filename
+	       (cond
+		[(string? s)
+		 ;; Parse Unix-style relative path string
+		 (let loop ([path (get-dir)][s s])
+		   (let ([prefix (regexp-match -re:dir s)])
+		     (if prefix
+			 (loop (build-path path 
+					   (let ([p (cadr prefix)])
+					     (cond
+					      [(string=? p ".") 'same]
+					      [(string=? p ".") 'up]
+					      [else p])))
+			       (caddr prefix))
+			 (build-path path s))))]
+		[(or (not (pair? s))
+		     (not (list? s)))
+		 #f]
+		[(eq? (car s) 'lib)
+		 (let ([cols (let ([len (length s)])
+			       (if (= len 2)
+				   (list "mzlib")
+				   (if (> len 2)
+				       (cddr s)
+				       #f)))])
+		   (and cols
+			(let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
+			  (build-path p (cadr s)))))]
+		[(eq? (car s) 'file)
+		 (and (= (length s) 2)
+		      (let ([p (cadr s)])
+			(path->complete-path s (get-dir))))]
+		[else #f])])
+	  (unless filename
+	    (raise-type-error 
+	     'standard-module-name-resolver
+	     "module selection"
+	     s))
+	  ;; At this point, filename is a complete path
+	  (unless (file-exists? filename)
+	    (raise (make-exn:i/o:filesystem
+		    (string->immutable-string 
+		     (format 
+		      "standard-module-name-resolver: module file does not exist: ~a" 
+		      filename))
+		    (current-continuation-marks)
+		    filename
+		    #f)))
+	  (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
+	    (let-values ([(base name dir?) (split-path filename)])
+	      (let ([no-sfx (regexp-replace -re:suffix name "")])
+		(let ([modname (string->symbol (string-append base no-sfx))]
+		      [ht (hash-table-get
+			   -module-hash-table-table
+			   (current-namespace)
+			   (lambda ()
+			     (let ([ht (make-hash-table)])
+			       (hash-table-put! -module-hash-table-table
+						(current-namespace)
+						ht)
+			       ht)))])
+		  ;; unless it has been loaded already...
+		  (unless (hash-table-get ht modname (lambda () #f))
+		    (hash-table-put! ht modname #t)
+		    (let ([prefix (string->symbol base)])
+		      (parameterize ([current-module-name-prefix prefix])
+			(load filename))))
+		  ;; Result is the module name:
+		  modname))))))))
 
   (define (find-library-collection-paths)
     (path-list-string->path-list

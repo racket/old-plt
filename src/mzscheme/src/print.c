@@ -1175,7 +1175,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 
 	print_compact(p, CPT_MODULE_INDEX);
 	print_compact_number(p, l);
-	print(SCHEME_PTR1_VAL(obj), notdisplay, 1, ht, symtab, rnht, p);
+	print(((Scheme_Modidx *)obj)->path, notdisplay, 1, ht, symtab, rnht, p);
+	print(((Scheme_Modidx *)obj)->base, notdisplay, 1, ht, symtab, rnht, p);
       }
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_variable_type)

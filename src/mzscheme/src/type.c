@@ -409,7 +409,7 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_stx_type, stx_val);
   GC_REG_TRAV(scheme_module_type, module_val);
-  GC_REG_TRAV(scheme_module_index_type, twoptr_obj);
+  GC_REG_TRAV(scheme_module_index_type, modidx_val);
 
   GC_REG_TRAV(scheme_reserved_1_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_2_type, bad_trav);

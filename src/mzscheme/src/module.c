@@ -85,6 +85,7 @@ typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname,
 			   Scheme_Object *modname, Scheme_Object *srcname, 
 			   int isval, void *data, Scheme_Object *e);
 static Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *l, 
+				    Scheme_Object *base_modidx,
 				    Scheme_Env *env, Scheme_Env *for_syntax_of,
 				    Scheme_Object *rn,
 				    Check_Func ck, void *data,
@@ -148,7 +149,7 @@ void scheme_init_module(Scheme_Env *env)
 
   o = scheme_make_prim_w_arity(default_module_resolver,
 			       "default-module-name-resolver",
-			       1, 1);
+			       2, 2);
   scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER, o);
 
   scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX, scheme_false);
@@ -383,7 +384,7 @@ current_module_name_resolver(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-module-name-resolver",
 			     scheme_make_integer(MZCONFIG_CURRENT_MODULE_RESOLVER),
 			     argc, argv,
-			     1, NULL, NULL, 0);
+			     2, NULL, NULL, 0);
 }
 
 static Scheme_Object *prefix_p(int argc, Scheme_Object **argv)
@@ -409,27 +410,30 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 /*                       basic module operations                      */
 /**********************************************************************/
 
-Scheme_Object *scheme_make_modidx(Scheme_Object *path, Scheme_Object *resolved)
+Scheme_Object *scheme_make_modidx(Scheme_Object *path, 
+				  Scheme_Object *base_modidx,
+				  Scheme_Object *resolved)
 {
-  Scheme_Object *val;
+  Scheme_Modidx *modidx;
 
   if (SCHEME_SYMBOLP(path))
     return path;
 
-  val = scheme_alloc_object();
-  val->type = scheme_module_index_type;
-  SCHEME_PTR1_VAL(val) = path;
-  SCHEME_PTR2_VAL(val) = resolved;
+  modidx = MALLOC_ONE_TAGGED(Scheme_Modidx);
+  modidx->type = scheme_module_index_type;
+  modidx->path = path;
+  modidx->base = base_modidx;
+  modidx->resolved = resolved;
   
-  return val;
+  return (Scheme_Object *)modidx;
 }
 
 int same_modidx(Scheme_Object *a, Scheme_Object *b)
 {
   if (SAME_TYPE(SCHEME_TYPE(a), scheme_module_index_type))
-    a = SCHEME_PTR1_VAL(a);
+    a = ((Scheme_Modidx *)a)->path;
   if (SAME_TYPE(SCHEME_TYPE(b), scheme_module_index_type))
-    b = SCHEME_PTR1_VAL(b);
+    b = ((Scheme_Modidx *)b)->path;
 
   return scheme_equal(a, b);
 }
@@ -439,19 +443,84 @@ Scheme_Object *scheme_module_resolve(Scheme_Object *modidx)
   if (SCHEME_SYMBOLP(modidx))
     return modidx;
 
-  if (SCHEME_FALSEP(SCHEME_PTR2_VAL(modidx))) {
+  if (SCHEME_FALSEP(((Scheme_Modidx *)modidx)->resolved)) {
     /* Need to resolve access path to a module name: */
-    Scheme_Object *a[1];
-    Scheme_Object *name;
+    Scheme_Object *a[2];
+    Scheme_Object *name, *base;
     
-    a[0] = SCHEME_PTR1_VAL(modidx);
-    
-    name = scheme_apply(scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER), 1, a);
+    base = ((Scheme_Modidx *)modidx)->base;
+    if (!SCHEME_FALSEP(base)) {
+      /* FIXME: this can go arbitrarily deep, in principle. */
+      base = scheme_module_resolve(base);
+    }
 
-    SCHEME_PTR2_VAL(modidx) = name;
+    a[0] = ((Scheme_Modidx *)modidx)->path;
+    a[1] = base;
+    
+    name = scheme_apply(scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER), 2, a);
+    
+    ((Scheme_Modidx *)modidx)->resolved = name;
   }
 
-  return SCHEME_PTR2_VAL(modidx);
+  return ((Scheme_Modidx *)modidx)->resolved;
+}
+
+Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx, 
+				   Scheme_Object *shift_from_modidx,
+				   Scheme_Object *shift_to_modidx)
+{
+  Scheme_Object *base;
+
+  if (SAME_OBJ(modidx, shift_from_modidx))
+    return shift_to_modidx;
+
+  if (!SAME_TYPE(SCHEME_TYPE(modidx), scheme_module_index_type))
+    return modidx;
+  
+  /* Need to shift relative part? */
+  base = ((Scheme_Modidx *)modidx)->base;
+  if (!SCHEME_FALSEP(base)) {
+    /* FIXME: depth */
+    Scheme_Object *sbase;
+    sbase = scheme_modidx_shift(base, shift_from_modidx, shift_to_modidx);
+
+    if (!SAME_OBJ(base, sbase)) {
+      /* There was a shift in the relative part. */
+      /* Shift cached? */
+      Scheme_Modidx *sbm = (Scheme_Modidx *)sbase;
+      int i, c = (sbm->shift_cache ? SCHEME_VEC_SIZE(sbm->shift_cache) : 0);
+      Scheme_Object *smodidx;
+
+      for (i = 0; i < c; i += 2) {
+	if (!SCHEME_VEC_ELS(sbm->shift_cache)[i])
+	  break;
+	if (SAME_OBJ(modidx, SCHEME_VEC_ELS(sbm->shift_cache)[i]))
+	  return SCHEME_VEC_ELS(sbm->shift_cache)[i + 1];
+      }
+      
+      smodidx = scheme_make_modidx(((Scheme_Modidx *)modidx)->path,
+				   sbase,
+				   ((Scheme_Modidx *)modidx)->resolved);
+      
+      if (i >= c) {
+	/* Grow cache vector */
+	Scheme_Object *old = sbm->shift_cache, *naya;
+	int j;
+
+	naya = scheme_make_vector(c + 10, NULL);
+	for (j = 0; j < c; j++)
+	  SCHEME_VEC_ELS(naya)[j] = SCHEME_VEC_ELS(old)[j];
+	sbm->shift_cache = naya;
+      }
+
+      SCHEME_VEC_ELS(sbm->shift_cache)[i] = modidx;
+      SCHEME_VEC_ELS(sbm->shift_cache)[i+1] = smodidx;
+
+      return smodidx;
+    }
+  }
+
+  return modidx;
 }
 
 Scheme_Module *scheme_module_load(Scheme_Object *name, Scheme_Env *env)
@@ -895,7 +964,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 				Scheme_Compile_Info *rec, int drec,
 				int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *fm, *nm, *ii, *mb, *rn, *et_rn, *iidx;
+  Scheme_Object *fm, *nm, *ii, *mb, *rn, *et_rn, *iidx, *self_modidx;
   Scheme_Module *iim;
   Scheme_Env *menv;
   Scheme_Module *m;
@@ -937,7 +1006,12 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
   menv = scheme_new_module_env(env->genv, m);
 
-  iidx = scheme_make_modidx(scheme_syntax_to_datum(ii, 0, NULL), scheme_false);
+  self_modidx = scheme_make_modidx(scheme_false, scheme_false, m->modname);
+  m->self_modidx = self_modidx;
+
+  iidx = scheme_make_modidx(scheme_syntax_to_datum(ii, 0, NULL), 
+			    self_modidx,
+			    scheme_false);
 
   {
     Scheme_Object *ins;
@@ -1202,8 +1276,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   num_to_compile = 0;
 
-  self_modidx = scheme_make_modidx(scheme_false, env->genv->module->modname);
-  env->genv->module->self_modidx = self_modidx;
+  self_modidx = env->genv->module->self_modidx;
   
   /* Partially expand all expressions, and process definitions, imports,
      and exports. Also, flatten top-level `begin' expressions: */
@@ -1362,7 +1435,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  /* Add imports to renaming: */
 	  tables[3] = e;
-	  imods = parse_imports(form, e, env->genv, NULL, 
+	  imods = parse_imports(form, e, self_modidx, env->genv, NULL, 
 				rn, check_import_name, tables, 0,
 				redef_modname);
 	
@@ -1394,7 +1467,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  /* Add imports to renaming: */
 	  et_tables[3] = e;
-	  imods = parse_imports(form, e, env->genv->exp_env, env->genv,
+	  imods = parse_imports(form, e, self_modidx, env->genv->exp_env, env->genv,
 				et_rn, check_import_name, et_tables, 1,
 				redef_modname);
 
@@ -1481,6 +1554,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		
 		midx = SCHEME_STX_CAR(rest);
 		midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
+					  self_modidx,
 					  scheme_false);
 		
 		reexported = scheme_make_pair(scheme_make_pair(midx, scheme_make_pair(a, scheme_null)), 
@@ -1494,6 +1568,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		
 		midx = SCHEME_STX_CAR(rest);
 		midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
+					  self_modidx,
 					  scheme_false);
 		exns = SCHEME_STX_CDR(rest);
 		
@@ -1900,6 +1975,7 @@ module_begin_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme
 /**********************************************************************/
 
 Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll, 
+			     Scheme_Object *base_modidx,
 			     Scheme_Env *env, Scheme_Env *for_syntax_of,
 			     Scheme_Object *rn,
 			     Check_Func ck, void *data,
@@ -2019,7 +2095,9 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       prefix = NULL;
     }
 
-    idx = scheme_make_modidx(scheme_syntax_to_datum(idx, 0, NULL), scheme_false);
+    idx = scheme_make_modidx(scheme_syntax_to_datum(idx, 0, NULL), 
+			     base_modidx,
+			     scheme_false);
 
     name = scheme_module_resolve(idx);
 
@@ -2169,7 +2247,7 @@ top_level_import_execute(Scheme_Object *data)
   ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
   rn = scheme_make_module_rename(for_exp, 1);
 
-  (void)parse_imports(form, form, env, NULL, rn, check_dup_import, ht, 1, NULL);
+  (void)parse_imports(form, form, scheme_false, env, NULL, rn, check_dup_import, ht, 1, NULL);
 
   brn = env->rename;
   if (!brn) {
@@ -2222,7 +2300,7 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
     genv = genv->exp_env;
   }
 
-  (void)parse_imports(form, form, genv, NULL, rn, check_dup_import, ht, 1, NULL);
+  (void)parse_imports(form, form, scheme_false, genv, NULL, rn, check_dup_import, ht, 1, NULL);
 
   if (rec) {
     scheme_compile_rec_done_local(rec, drec);
@@ -2369,7 +2447,7 @@ static Scheme_Object *read_module(Scheme_Object *obj)
 
   m->self_modidx = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
-  SCHEME_PTR2_VAL(m->self_modidx) = m->modname;
+  ((Scheme_Modidx *)m->self_modidx)->resolved = m->modname;
 
   m->kernel_exclusion = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);

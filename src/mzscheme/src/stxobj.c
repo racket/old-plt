@@ -595,10 +595,12 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	    rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
 	  
 	  if (rename) {
-	    /* Match: set mresult for the case of no lexical capture: */
+	    /* Match; set mresult for the case of no lexical capture: */
 	    mresult = SCHEME_CAR(rename);
-	    if (SAME_OBJ(modidx_shift_from, mresult))
-	      mresult = modidx_shift_to;
+	    if (modidx_shift_from)
+	      mresult = scheme_modidx_shift(mresult,
+					    modidx_shift_from,
+					    modidx_shift_to);
 	  }
 	}
       }

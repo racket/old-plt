@@ -2832,7 +2832,7 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS, (scheme_curly_braces_are_parens
 							      ? scheme_true : scheme_false));
 
-  scheme_set_param(config, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(40));
+  scheme_set_param(config, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(100));
 
   REGISTER_SO(main_manager);
   main_manager = scheme_make_manager(NULL);

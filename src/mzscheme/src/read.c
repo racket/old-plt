@@ -1860,12 +1860,13 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     case CPT_MODULE_INDEX:
 	{
-	  Scheme_Object *path;
+	  Scheme_Object *path, *base;
 
 	  l = read_compact_number(port); /* symtab index */
 	  path = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	  base = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
 
-	  v = scheme_make_modidx(path, scheme_false);
+	  v = scheme_make_modidx(path, base, scheme_false);
 
 	  symtab[l] = v;
 	}

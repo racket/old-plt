@@ -1454,6 +1454,16 @@ typedef struct Scheme_Module
   Scheme_Env *primitive;
 } Scheme_Module;
 
+typedef struct Scheme_Modix {
+  Scheme_Type type; /* scheme_module_index_type */
+  MZ_HASH_KEY_EX
+
+  Scheme_Object *path;
+  Scheme_Object *base;
+  Scheme_Object *resolved;
+  Scheme_Object *shift_cache; /* vector */
+} Scheme_Modidx;
+
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m);
@@ -1466,7 +1476,12 @@ Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
-Scheme_Object *scheme_make_modidx(Scheme_Object *path, Scheme_Object *resolved);
+Scheme_Object *scheme_make_modidx(Scheme_Object *path, 
+				  Scheme_Object *base,
+				  Scheme_Object *resolved);
+Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx, 
+				   Scheme_Object *shift_from_modidx,
+				   Scheme_Object *shift_to_modidx);
 
 extern Scheme_Env *scheme_initial_env;
 

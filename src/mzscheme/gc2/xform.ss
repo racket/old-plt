@@ -610,7 +610,7 @@
 					 \| \|\| & && : ? % + - * / ^ >> << 
 					 = >>= <<= ^= += *= /= -= %= \|= &= ++ --
 					 return sizeof if for while else switch case
-					 __asm __asm__ __volatile __volatile__ volatile __extension__
+					 asm __asm __asm__ __volatile __volatile__ volatile __extension__
 					 ;; These are functions, but they don't trigger GC:
 					 strcpy strlen memcpy strcat cos sin exp pow log sqrt atan2
 					 floor ceil round fmod fabs __maskrune

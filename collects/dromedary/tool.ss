@@ -115,9 +115,9 @@
 					 (format "~e~e" (ml-style (car clist)) (listformat (cdr clist)))
 					 (format "~e; ~e" (ml-style (car clist)) (listformat (cdr clist))))))])
 	    (string-append "[" (listformat value)))]
-	 [(procedure? value) (begin (pretty-print (format "procedure ~e" value))
+	 [(procedure? value) ;(begin (pretty-print (format "procedure ~e" value))
 				    "<fun>"
-				    )
+				;    )
 				    ]
 	 [(<tuple>? value)
 	  (letrec ([<tuple>format (lambda (tlist)

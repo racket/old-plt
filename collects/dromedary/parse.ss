@@ -503,7 +503,7 @@
      [(FOR <val_ident> EQUAL <seq_expr> <direction_flag> <seq_expr> DO <seq_expr> DONE)
       (ast:make-expression (ast:make-pexp_for $2 $4 $6 $5 $8) (build-src 9))]
      [(<expr> COLONCOLON <expr>)
-      (ast:make-expression (ast:make-pexp_construct (ast:make-lident "::") (ast:make-expression (ast:make-pexp_tuple (list $1 $3)) (build-src 3)) #f) (build-src 3))]
+      (ast:make-expression (ast:make-pexp_construct (ast:make-lident (datum->syntax-object $2 "::" (build-syn-list $2))) (ast:make-expression (ast:make-pexp_tuple (list $1 $3)) (build-src 3)) #f) (build-src 3))]
      [(<expr> INFIXOP0 <expr>)
       (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP1 <expr>)
@@ -737,7 +737,7 @@
      [(<name_tag> <pattern>) (prec <prec_constr_appl>)
       (ast:make-pattern (ast:make-ppat_variant $1 $2) (build-src 2))]
      [(<pattern> COLONCOLON <pattern>)
-      (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "::") (ast:make-pattern (ast:make-ppat_tuple (list $1 $3)) (build-src 3)) #f) (build-src 3))]
+      (ast:make-pattern (ast:make-ppat_construct (ast:make-lident (datum->syntax-object $2 "::" (build-syn-list $2))) (ast:make-pattern (ast:make-ppat_tuple (list $1 $3)) (build-src 3)) #f) (build-src 3))]
      [(<pattern> BAR <pattern>)
       (ast:make-pattern (ast:make-ppat_or $1 $3))])
 
@@ -1117,17 +1117,17 @@
  
 (define (mktailexp taillist src)
   (if (null? taillist)
-      (ast:make-expression (ast:make-pexp_construct (ast:make-lident "[]") null #f) src)
+      (ast:make-expression (ast:make-pexp_construct (ast:make-lident (datum->syntax-object #f "[]" #f)) null #f) src)
       (let ([exp_el (mktailexp (cdr taillist) src)]
 	    [lsrc (ast:expression-pexp_src (car taillist))])
-	(ast:make-expression (ast:make-pexp_construct (ast:make-lident "::") (ast:make-expression (ast:make-pexp_tuple (list (car taillist) exp_el)) lsrc) #f) lsrc))))
+	(ast:make-expression (ast:make-pexp_construct (ast:make-lident (datum->syntax-object #f "::" #f)) (ast:make-expression (ast:make-pexp_tuple (list (car taillist) exp_el)) lsrc) #f) lsrc))))
 
 (define (mktailpat taillist src)
   (if (null? taillist)
-      (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "[]") null #f) src)
+      (ast:make-pattern (ast:make-ppat_construct (ast:make-lident (datum->syntax-object #f "[]" #f)) null #f) src)
       (let ([pat_pl (mktailpat (cdr taillist) src)]
 	    [lsrc (ast:pattern-ppat_src (car taillist))])
-	(ast:make-pattern (ast:make-ppat_construct (ast:make-lident "::") (ast:make-pattern (ast:make-ppat_tuple (list (car taillist) pat_pl)) lsrc) #f) lsrc))))
+	(ast:make-pattern (ast:make-ppat_construct (ast:make-lident (datum->syntax-object #f "::" #f)) (ast:make-pattern (ast:make-ppat_tuple (list (car taillist) pat_pl)) lsrc) #f) lsrc))))
 			
 
 (define-syntax mkinfix

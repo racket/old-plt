@@ -105,7 +105,8 @@
 		    [($ ast:pexp_array xlist)
 		     (let ([xtypes (map typecheck-ml xlist (repeat context (length xlist)))])
 		       (if (same-types? xtypes (map at (map ast:expression-pexp_desc xlist) (map ast:expression-pexp_src xlist)))
-			   (make-tarray (car xtypes))))]
+			   (make-tarray (car xtypes))
+			   (raise-syntax-error #f "Not all same types" #f)))]
 
 		    [($ ast:pexp_ident name)
 		     (let ([type (get-type (unlongident name) context)])
@@ -125,7 +126,10 @@
 			   [elseexpt (typecheck-ml elseexp context)])
 		       (if (unify "bool" testt (at test (ast:expression-pexp_src test)))
 			   (if (unify ifexpt elseexpt (at elseexp (ast:expression-pexp_src elseexp)))
-			       ifexpt)))]
+			       ifexpt
+			       (raise-syntax-error #f (format "Expected type ~a but found ~a" ifexpt elseexpt) (at elseexp (ast:expression-pexp_src elseexp))))
+			   
+			   (raise-syntax-error #f "Test wasn't boolean" (at ifexp (ast:expression-pexp_src ifexp)))))]
 		    
 		    [($ ast:pexp_match expr pelist)
 		     (let ([totest (typecheck-ml expr context)])
@@ -793,7 +797,7 @@
 					    (let ([old-var (format "'~a" (integer->char (- (char->integer cur-var) 1)))])
 					      (cons old-var (cons (cons dbox old-var) mappings)))))))
 				  (unconvert-tvars (unbox dbox) mappings)))]
-	      [else (pretty-print (format "Bad type: ~a" type))]))
+	      [else (raise-syntax-error #f (format "Bad type: ~a" type) type)]))
 	   
 	   (define (unconvert-list tlist mappings results)
 	     (if (null? tlist)

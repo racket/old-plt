@@ -2913,6 +2913,44 @@ string_to_number (int argc, Scheme_Object *argv[])
 			    0);
 }
 
+static Scheme_Object *read_special_number(const char *str, int pos)
+{
+  if ((str[pos] == '-' || str[pos] == '+') && isalpha((unsigned char)str[pos + 1])) {
+    char s[7];
+    int i;
+
+    for (i = 0; i < 6; i++) {
+      s[i] = tolower((unsigned char)str[i + pos]);
+    }
+    s[i] = 0;
+
+    if (!strcmp(s, infinity_str)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      return single_inf_object;
+#else
+      return inf_object;
+#endif
+    }
+    else if (!strcmp(s, minus_infinity_str)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      return single_minus_inf_object;
+#else
+      return minus_inf_object;
+#endif
+    }
+    else if (!strcmp(s, not_a_number_str)
+	     || !strcmp(s, other_not_a_number_str)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      return single_nan_object;
+#else      
+      return nan_object;
+#endif
+    }
+  }
+
+  return NULL;
+}
+
 /* Don't bother reading more than the following number of digits in a
    floating-point mantissa: */
 #define MAX_FLOATREAD_PRECISION_DIGITS 50
@@ -3126,39 +3164,136 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     return scheme_false;
   }
 
-  if (len == 6 && (str[0] == '-' || str[0] == '+') && isalpha((unsigned char)str[1])) {
-    char s[7];
-    int i;
+  /* look for +inf.0, etc: */
+  if (len == 6) {
+    Scheme_Object *special;
+    special = read_special_number(str, 0);
+    if (special)
+      return special;
+  }
 
-    for (i = 0; i < 6; i++) {
-      if (str[i] > 0)
-	s[i] = tolower((unsigned char)str[i]);
+  /* Look for <special>+...i and ...<special>i */
+  if ((len > 7) && str[len-1] == 'i') {
+    Scheme_Object *special;
+    char *s2;
+    
+    /* Try <special>+...i */
+    special = read_special_number(str, 0);
+    if (special) {
+      s2 = scheme_malloc_atomic(len - 6 + 4 + 1);
+      memcpy(s2, "+0.0", 4);
+      memcpy(s2 + 4, str + 6, len - 5);
+    } else {
+      /* Try ...<special>i: */
+      special = read_special_number(str, len - 7);
+      if (special) {
+	s2 = scheme_malloc_atomic(len - 6 + 4 + 1);
+	memcpy(s2, str, len - 7);
+	memcpy(s2 + len - 7, "+0.0i", 6);
+	special = scheme_bin_mult(special, plus_i);
+      } else
+	s2 = NULL;
+    }
+
+    if (special) {
+      Scheme_Object *other;
+      int dbz = 0;
+
+      other = scheme_read_number(s2, len - 6 + 4,
+				 is_float, is_not_float, 1,
+				 radix, 1, 0,
+				 &dbz, test_only);
+
+      if (dbz) {
+	if (div_by_zero)
+	  *div_by_zero = 1;
+	if (complain)
+	  scheme_raise_exn(MZEXN_READ, complain, 
+			   "read-number: division by zero in %s", str);
+	return scheme_false;
+      }
+
+      if (!SCHEME_FALSEP(other))
+	return scheme_bin_plus(special, other);
+      
+      if (!complain)
+	return scheme_false;
+    }
+  }
+
+  /* Look for <special>@... and ...@<special> */
+  if ((len > 7) && ((str[6] == '@') || (str[len - 7] == '@'))) {
+    Scheme_Object *special;
+    char *s2;
+    int spec_mag = 0;
+
+    /* Try <special>@... */
+    if (str[6] == '@')
+      special = read_special_number(str, 0);
+    else
+      special = NULL;
+    if (special) {
+      s2 = scheme_malloc_atomic(len - 6);
+      memcpy(s2, str + 7, len - 6);
+      spec_mag = 1;
+    } else {
+      if (str[len - 7] == '@')
+	special = read_special_number(str, len - 6);
       else
-	s[i] = str[i];
+	special = NULL;
+      
+      if (special) {
+	s2 = scheme_malloc_atomic(len - 6);
+	memcpy(s2, str, len - 7);
+	s2[len - 7] = 0;
+      } else
+	s2 = NULL;
     }
-    s[i] = 0;
 
-    if (!strcmp(s, infinity_str)) {
-#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
-      return single_inf_object;
-#else
-      return inf_object;
-#endif
-    }
-    else if (!strcmp(s, minus_infinity_str)) {
-#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
-      return single_minus_inf_object;
-#else
-      return minus_inf_object;
-#endif
-    }
-    else if (!strcmp(s, not_a_number_str)
-	     || !strcmp(s, other_not_a_number_str)) {
-#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
-      return single_nan_object;
-#else      
-      return nan_object;
-#endif
+    if (special) {
+      Scheme_Object *other;
+      int dbz = 0;
+
+      /* s2 can't contain @: */
+      for (i = 0; s2[i]; i++)
+	if (s2[i] == '@')
+	  break;
+
+      if (s2[i])
+	other = scheme_false;
+      else
+	other = scheme_read_number(s2, len - 7,
+				   is_float, is_not_float, 1,
+				   radix, 1, 0,
+				   &dbz, test_only);
+
+      if (dbz) {
+	if (div_by_zero)
+	  *div_by_zero = 1;
+	if (complain)
+	  scheme_raise_exn(MZEXN_READ, complain, 
+			   "read-number: division by zero in %s", str);
+	return scheme_false;
+      }
+
+      if (!SCHEME_FALSEP(other)) {
+	/* If string is complex, not well-formed: */
+	if (!SCHEME_COMPLEXP(other)) {
+	  Scheme_Object *a[2];
+	  if (spec_mag) {
+	    a[0] = special;
+	    a[1] = other;
+	  } else {
+	    a[0] = other;
+	    a[1] = special;
+	  }
+
+	  return make_polar(2, a);
+	}
+      }
+
+      if (!complain)
+	return scheme_false;
     }
   }
       
@@ -3324,7 +3459,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 #endif
 
     n2 = scheme_read_number(second, len - has_at - 1,
-			    1, 0, 1,
+			    is_float, is_not_float, decimal_means_float,
 			    radix, 1, next_complain,
 			    &fdbz, test_only);
 
@@ -3332,24 +3467,33 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (SCHEME_FALSEP(n2))
 	return scheme_false;
 
+      /* Special case: angle is zero => real number */
+      if (n2 == zeroi)
+	return scheme_read_number(first, has_at,
+				  is_float, is_not_float, decimal_means_float,
+				  radix, 1, complain,
+				  div_by_zero,
+				  test_only);
+      
+      n2 = TO_DOUBLE(n2);
+
       d2 = SCHEME_FLOAT_VAL(n2);
       
       if (MZ_IS_NAN(d2))
 	return scheme_false;
 
-      /* Special case: angle is zero => real number */
-      if (d2 == 0.0)
-	return scheme_read_number(first, has_at,
-				  is_float, is_not_float, decimal_means_float,
-				  radix, 1, next_complain,
-				  div_by_zero,
-				  test_only);
-      
       n1 = scheme_read_number(first, has_at, 
-			      1, 0, 1,
+			      is_float, is_not_float, decimal_means_float,
 			      radix, 1, next_complain,
 			      &sdbz,
 			      test_only);
+
+      /* Special case: magnitude is zero => zero */
+      if (n1 == zeroi)
+	return zeroi;
+
+      if (!SCHEME_FALSEP(n1))
+	n1 = TO_DOUBLE(n1);
     } else {
       n1 = NULL;
       d2 = 0;

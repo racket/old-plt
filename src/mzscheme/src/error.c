@@ -1064,9 +1064,11 @@ def_exit_handler_proc(int argc, Scheme_Object *argv[])
 {
   long status;
 
-  if (SCHEME_INTP(argv[0]))
+  if (SCHEME_INTP(argv[0])) {
     status = SCHEME_INT_VAL(argv[0]);
-  else
+    if (status < 1 || status > 255)
+      status = 0;
+  } else
     status = 0;
 
   if (scheme_exit)

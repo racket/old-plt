@@ -78,7 +78,6 @@ HRESULT CDHTMLPage::SuppressCtxMenu(IDispatch *pDocDispatch) {
 
 HRESULT CDHTMLPage::AtAnyEvent(void) {
   HRESULT hr;
-  static IHTMLWindow2 *pTopWindow;
   IHTMLEventObj *pIHTMLEventObj;
   IEvent *pEvent;
   EVENT_MAP *eventEntry;
@@ -104,9 +103,9 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
          ::failureBox("Can't get document on event trap");
          return S_OK;
       }
-
-      SuppressCtxMenu(pDocDispatch);
       
+      SuppressCtxMenu(pDocDispatch);
+
       pDocDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
 
       pIHTMLDocument2->get_parentWindow(&pIHTMLWindow2);

@@ -42,10 +42,15 @@ public CComObjectRootEx<CComSingleThreadModel>,
   public IProvideClassInfo2Impl<&CLSID_DHTMLPage, NULL, &LIBID_MYSPAGELib>,
 	public CComCoClass<CDHTMLPage, &CLSID_DHTMLPage>
 {
+
+private:
+  IHTMLWindow2 *pTopWindow;
+
 public:
 	CDHTMLPage()
 	{
-		m_bWindowOnly = TRUE;
+	  m_bWindowOnly = TRUE;
+	  pTopWindow = NULL;
 	}
 
 DECLARE_REGISTRY_RESOURCEID(IDR_DHTMLPAGE)

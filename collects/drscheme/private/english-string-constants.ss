@@ -3,8 +3,9 @@
 
  ;; TeachPack messages
  (teachpack-error-label "DrScheme - TeachPack error")
- (teachpack-dne/cant-read "The TeachPack file ~a does not exist or is not readable")
+ (teachpack-dne/cant-read "The TeachPack file ~a does not exist or is not readable.")
  (teachpack-didnt-load "The TeachPack file ~a did not load properly.")
+ (teachpack-error-invoke "The TeachPack file ~a raised an error when invoked.")
  
  
  ;; Language dialog

@@ -802,6 +802,7 @@
                    equal?
                    get-family
                    get-face
+                   get-transparent-text-backing-on
                    copy
                    set-delta-background
                    set-delta-foreground
@@ -836,8 +837,7 @@
                    set-delta-face
                    set-transparent-text-backing-off
                    get-transparent-text-backing-off
-                   set-transparent-text-backing-on
-                   get-transparent-text-backing-on))
+                   set-transparent-text-backing-on))
                (define string-snip<%>
                  (interface
                    ()

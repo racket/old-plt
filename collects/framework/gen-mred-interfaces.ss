@@ -97,7 +97,9 @@ string=? ; exec mred -magqvf $0
 	(length signature-names)
 	(+ (length signature-names) (length interface-names)))
 
-(call-with-output-file (build-path framework-dir 'up 'up "src" "doc" "framework-mred-interfaces.cdb")
+(define cdb-file (build-path framework-dir 'up 'up "src" "doc" "framework-mred-interfaces.cdb"))
+(fprintf "building cdb file: ~a~n" cdb-file)
+(call-with-output-file cdb-file
   (lambda (port)
     (parameterize ([current-output-port port])
       (printf "@external framework-mred.cdb~n")

@@ -14,11 +14,31 @@
 		[names null])
        (cond
 	[(null? collection-paths)
-	 (let ([l (quicksort (map cons docs names)
-			     (lambda (a b)
-			       (if (string-ci<? (car (car a)) (car (car b)))
-				   #f
-				   (string-ci<? (cadr (car a)) (cadr (car b))))))])
+	 (let* ([collections-docs (map cons docs names)]
+		[general-docs
+		 (let ([dir (collection-path "help" "txt")])
+		   (map (lambda (file)
+			  (cons (list dir file)
+				(substring file 0 (- (string-length file) 4))))
+			(let ([pred
+			       (lambda (x)
+				 (and (> (string-length x) 4)
+				      (string=?
+				       ".txt"
+				       (substring x (- (string-length x) 4)
+						  (string-length x)))))])
+			(let loop ([files (directory-list dir)])
+			  (cond
+			   [(null? files) null]
+			   [else (if (pred (car files))
+				     (cons (car files) (loop (cdr files)))
+				     (loop (cdr files)))])))))]
+
+		[l (quicksort (append collections-docs general-docs)
+			      (lambda (a b)
+				(if (string-ci<? (car (car a)) (car (car b)))
+				    #f
+				    (string-ci<? (cadr (car a)) (cadr (car b))))))])
 	   (values (map car l) (map cdr l)))]
 	[else (let ([path (car collection-paths)])
 		(let cloop ([l (with-handlers ([void (lambda (x) null)]) (directory-list path))]

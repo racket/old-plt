@@ -242,7 +242,9 @@ typedef struct Scheme_Vector {
 #define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
 
 #define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
-#define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && !((obj)->keyex & 0x1))
+#define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && SCHEME_MUTABLEP(obj))
+#define SCHEME_IMMUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && SCHEME_IMMUTABLEP(obj))
+
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
 
 #define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
@@ -253,15 +255,19 @@ typedef struct Scheme_Vector {
 
 #define SCHEME_NULLP(obj)    SAME_OBJ(obj, scheme_null)
 #define SCHEME_PAIRP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_pair_type)
-#define SCHEME_MUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && !((obj)->keyex & 0x1))
-#define SCHEME_IMMUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && ((obj)->keyex & 0x1))
+#define SCHEME_MUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && SCHEME_MUTABLEP(obj))
+#define SCHEME_IMMUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && SCHEME_IMMUTABLEP(obj))
 #define SCHEME_LISTP(obj)    (SCHEME_NULLP(obj) || SCHEME_PAIRP(obj))
 
 #define SCHEME_BOXP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_box_type)
+#define SCHEME_MUTABLE_BOXP(obj)  (SCHEME_BOXP(obj) && SCHEME_MUTABLEP(obj))
+#define SCHEME_IMMUTABLE_BOXP(obj)  (SCHEME_BOXP(obj) && SCHEME_IMMUTABLEP(obj))
 
 #define SCHEME_HASHTP(obj) SAME_TYPE(SCHEME_TYPE(obj),scheme_hash_table_type)
 
 #define SCHEME_VECTORP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_vector_type)
+#define SCHEME_MUTABLE_VECTORP(obj)  (SCHEME_VECTORP(obj) && SCHEME_MUTABLEP(obj))
+#define SCHEME_IMMUTABLE_VECTORP(obj)  (SCHEME_VECTORP(obj) && SCHEME_IMMUTABLEP(obj))
 
 #define SCHEME_STRUCTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)
 #define SCHEME_STRUCT_TYPEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_type_type)
@@ -281,6 +287,9 @@ typedef struct Scheme_Vector {
 #define SCHEME_WEAKP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_weak_box_type)
 
 #define SCHEME_STXP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_stx_type)
+
+#define SCHEME_MUTABLEP(obj) (!((obj)->keyex & 0x1))
+#define SCHEME_IMMUTABLEP(obj) ((obj)->keyex & 0x1)
 
 /*========================================================================*/
 /*                        basic Scheme accessors                          */
@@ -335,9 +344,11 @@ typedef struct Scheme_Vector {
 #define SCHEME_PINT_VAL(obj) ((obj)->u.ptr_int_val.pint)
 #define SCHEME_PLONG_VAL(obj) ((obj)->u.ptr_long_val.pint)
 
-
-#define SCHEME_SET_STRING_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
-#define SCHEME_SET_PAIR_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+#define SCHEME_SET_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+#define SCHEME_SET_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
+#define SCHEME_SET_PAIR_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
+#define SCHEME_SET_VECTOR_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
+#define SCHEME_SET_BOX_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
 
 /*========================================================================*/
 /*               fast basic Scheme constructor macros                     */

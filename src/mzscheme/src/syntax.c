@@ -1755,7 +1755,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
 
   names = MALLOC_N_STUBBORN(Scheme_Object *, num_bindings);
 
-  frame = scheme_new_compilation_frame(num_bindings, SCHEME_LET_FRAME, origenv);
+  frame = scheme_new_compilation_frame(num_bindings, 0, origenv);
   env = frame;
 
   recs = MALLOC_N_RT(Scheme_Compile_Info, (num_clauses + 1));
@@ -2660,8 +2660,6 @@ do_letmacro(char *where, Scheme_Object *formname,
   Scheme_Comp_Env *env;
   Scheme_Compile_Info mrec;
 
-  env = scheme_no_defines(origenv);
-
   form = SCHEME_STX_CDR(forms);
   if (!SCHEME_STX_PAIRP(form))
     scheme_wrong_syntax(where, form, forms, NULL);
@@ -2719,6 +2717,8 @@ do_letmacro(char *where, Scheme_Object *formname,
   }
 
   body = scheme_add_env_renames(body, env, origenv);
+
+  env = scheme_require_renames(env);
 
   if (rec) {
     v = scheme_compile_block(body, env, rec, drec);

@@ -2037,7 +2037,7 @@
       (datum->syntax
        (list* (quote-syntax #%module-begin)
 	      (quote-syntax
-	       (import-for-syntax (rename #%stxcase-scheme syntax-rules syntax-rules)))
+	       (import-for-syntax mzscheme))
 	      (stx-cdr stx))
        stx
        (quote-syntax here))))
@@ -2059,4 +2059,5 @@
 	  (all-from #%stxcase-scheme)
 	  (all-from #%stx)
 	  (all-from-except #%kernel #%module-begin)
-	  (rename syntax-rules-module-begin #%module-begin)))
+	  (rename syntax-rules-module-begin #%module-begin)
+	  (rename #%module-begin #%plain-module-begin)))

@@ -1177,8 +1177,8 @@ Scheme_Object *scheme_unbox(Scheme_Object *obj)
 
 void scheme_set_box(Scheme_Object *b, Scheme_Object *v)
 {
-  if (!SCHEME_BOXP(b))
-      scheme_wrong_type(SETBOX, "box", 0, 1, &b);
+  if (!SCHEME_MUTABLE_BOXP(b))
+      scheme_wrong_type(SETBOX, "mutable box", 0, 1, &b);
   SCHEME_BOX_VAL(b) = v;
 }
 

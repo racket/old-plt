@@ -1628,6 +1628,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   } else if (SCHEME_BOXP(o)) {
     o = datum_to_syntax_inner(SCHEME_PTR_VAL(o), stx_src, stx_wraps, ht);
     result = scheme_box(o);
+    SCHEME_SET_BOX_IMMUTABLE(result);
   } else if (SCHEME_VECTORP(o)) {
     int size = SCHEME_VEC_SIZE(o), i;
     Scheme_Object *a;
@@ -1638,6 +1639,8 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
       a = datum_to_syntax_inner(SCHEME_VEC_ELS(o)[i], stx_src, stx_wraps, ht);
       SCHEME_VEC_ELS(result)[i] = a;
     }
+
+    SCHEME_SET_VECTOR_IMMUTABLE(result);
   } else {
     result = o;
   }
@@ -1685,7 +1688,7 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
   if (!SCHEME_FALSEP(stx_src) && !SCHEME_STXP(stx_src))
     return o;
 
-  if (can_graph)
+  if (can_graph && HAS_SUBSTX(o))
     ht = scheme_setup_datum_graph(o, 0);
   else
     ht = NULL;

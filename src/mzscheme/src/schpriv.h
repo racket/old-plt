@@ -1242,6 +1242,7 @@ void scheme_add_compilation_binding(int index, Scheme_Object *val,
 				    Scheme_Comp_Env *frame);
 Scheme_Comp_Env *scheme_add_compilation_frame(Scheme_Object *vals, 
 					 Scheme_Comp_Env *env, int flags);
+Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env,
 				      int flags);
@@ -1362,15 +1363,11 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_INFO_ANCHORED 2
 
 /* flags used with scheme_new_frame */
-#define SCHEME_AUTO_UNBOX 1
-#define SCHEME_COMPILE_PTR 2
-#define SCHEME_LAMBDA_FRAME 8
-#define SCHEME_LET_FRAME 16
-#define SCHEME_ANCHORED_FRAME 32
-#define SCHEME_TOPLEVEL_FRAME 64
-#define SCHEME_PRIM_GLOBALS_ONLY 128
-#define SCHEME_CAPTURE_WITHOUT_RENAME 256
-#define SCHEME_MODULE_FRAME 512
+#define SCHEME_TOPLEVEL_FRAME 1
+#define SCHEME_MODULE_FRAME 2
+#define SCHEME_LAMBDA_FRAME 4
+#define SCHEME_NO_RENAME 8
+#define SCHEME_CAPTURE_WITHOUT_RENAME 16
 
 /* Flags used with scheme_static_distance */
 #define SCHEME_ELIM_CONST 1

@@ -1151,7 +1151,7 @@ scheme_apply_macro(Scheme_Object *name,
 
   if (!SCHEME_STXP(code)) {
     scheme_raise_exn(MZEXN_MISC,
-		     "%S: return value from expander was not syntax",
+		     "%S: return value from syntax expander was not syntax",
 		     SCHEME_STX_SYM(name));
   }
 

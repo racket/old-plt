@@ -223,8 +223,8 @@ vector_set(int argc, Scheme_Object *argv[])
 {
   long i, len;
 
-  if (!SCHEME_VECTORP(argv[0]))
-    scheme_wrong_type("vector-set!", "vector", 0, argc, argv);
+  if (!SCHEME_MUTABLE_VECTORP(argv[0]))
+    scheme_wrong_type("vector-set!", "mutable vector", 0, argc, argv);
 
   len = SCHEME_VEC_SIZE(argv[0]);
 
@@ -298,8 +298,8 @@ vector_fill (int argc, Scheme_Object *argv[])
 {
   int i;
   
-  if (!SCHEME_VECTORP(argv[0]))
-    scheme_wrong_type("vector-fill!", "vector", 0, argc, argv);
+  if (!SCHEME_MUTABLE_VECTORP(argv[0]))
+    scheme_wrong_type("vector-fill!", "mutable vector", 0, argc, argv);
 
   for (i = 0; i < SCHEME_VEC_SIZE(argv[0]) ; i++) {
     SCHEME_VEC_ELS(argv[0])[i] = argv[1];

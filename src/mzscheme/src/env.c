@@ -81,7 +81,6 @@ typedef struct Constant_Binding {
   MZTAG_IF_REQUIRED
   Scheme_Object *name;
   Scheme_Object *val;
-  short before;
   struct Constant_Binding *next;
 } Constant_Binding;
 
@@ -706,7 +705,7 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   }
 
   frame->num_bindings = num_bindings;
-  frame->flags = flags | (base->flags & SCHEME_PRIM_GLOBALS_ONLY);
+  frame->flags = flags | (base->flags & SCHEME_NO_RENAME);
   frame->next = base;
   frame->genv = base->genv;
 
@@ -763,7 +762,6 @@ void scheme_add_local_syntax(Scheme_Object *name,
   b->next = COMPILE_DATA(env)->constants;
   b->name = name;
   b->val = val;
-  b->before = env->num_bindings;
 
   COMPILE_DATA(env)->constants = b;
 }
@@ -818,6 +816,16 @@ Scheme_Comp_Env *scheme_no_defines(Scheme_Comp_Env *env)
     return env;
 }
 
+Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env)
+{
+  if (env->flags & SCHEME_NO_RENAME) {
+    env = scheme_new_compilation_frame(0, 0, env);
+    env->flags -= SCHEME_NO_RENAME;
+  }
+
+  return env;
+}
+
 int scheme_is_toplevel(Scheme_Comp_Env *env)
 {
   return !env->next || (env->flags & SCHEME_TOPLEVEL_FRAME);
@@ -841,7 +849,7 @@ static int env_uid_counter;
 
 static Scheme_Object *env_frame_uid(Scheme_Comp_Env *env)
 {
-  if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+  if (env->flags & (SCHEME_NO_RENAME | SCHEME_CAPTURE_WITHOUT_RENAME))
     return NULL;
 
   if (!env->uid) {
@@ -862,40 +870,42 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
   }
 
   while (env != upto) {
-    Scheme_Object *uid;
-    Constant_Binding *c;
-    int i, count;
-
-    uid = env_frame_uid(env);
-    
-    count = 0;
-    for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
-      count++;
-    }
-    for (i = env->num_bindings; i--; ) {
-      if (env->values[i])
-	count++;
-    }
-
-    if (!env->renames || (env->rename_var_count != count)) {
-      Scheme_Object *rnm;
-
-      rnm = scheme_make_rename(uid, count);
-     
+    if (!(env->flags & (SCHEME_NO_RENAME | SCHEME_CAPTURE_WITHOUT_RENAME))) {
+      Scheme_Object *uid;
+      Constant_Binding *c;
+      int i, count;
+      
+      uid = env_frame_uid(env);
+      
       count = 0;
       for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
-	scheme_set_rename(rnm, count++, c->name);
+	count++;
       }
       for (i = env->num_bindings; i--; ) {
 	if (env->values[i])
-	  scheme_set_rename(rnm, count++, env->values[i]);
+	  count++;
       }
+      
+      if (!env->renames || (env->rename_var_count != count)) {
+	Scheme_Object *rnm;
+	
+	rnm = scheme_make_rename(uid, count);
+	
+	count = 0;
+	for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
+	  scheme_set_rename(rnm, count++, c->name);
+	}
+	for (i = env->num_bindings; i--; ) {
+	  if (env->values[i])
+	    scheme_set_rename(rnm, count++, env->values[i]);
+	}
  
-      env->renames = rnm;
-      env->rename_var_count = count;
-    }
+	env->renames = rnm;
+	env->rename_var_count = count;
+      }
 
-    stx = scheme_add_rename(stx, env->renames);
+      stx = scheme_add_rename(stx, env->renames);
+    }
 
     env = env->next;
   }
@@ -994,20 +1004,6 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     uid = env_frame_uid(frame);
 
     for (i = frame->num_bindings; i--; ) {
-      while (c && (c->before > i)) {
-	int issame;
-	if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
-	  issame = scheme_stx_module_eq(symbol, c->name, phase);
-	else
-	  issame = scheme_stx_env_bound_eq(symbol, c->name, uid, phase);
-	
-	if (issame) {
-	  val = c->val;
-	  goto found_const;
-	}
-	c = c->next;
-      }
-
       if (frame->values[i] && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
 	if (flags & SCHEME_DONT_MARK_USE)
 	  return scheme_make_local(scheme_local_type, 0);
@@ -1025,8 +1021,25 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
       if (issame) {
 	val = c->val;
-	goto found_const;
+	
+	if (!val) {
+	  scheme_wrong_syntax("compile", NULL, symbol,
+			      "variable used out of context");
+	  return NULL;
+	}
+	if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
+	  if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
+	      || SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_type))
+	    return val;
+	  else
+	    scheme_wrong_syntax("set!", NULL, symbol,
+				"local syntax identifier cannot be mutated");
+	  return NULL;
+	}
+
+	return val;
       }
+
       c = c->next;
     }
 
@@ -1123,23 +1136,6 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     ((Scheme_Bucket_With_Home *)b)->home = genv;
   
   return (Scheme_Object *)b;
-
- found_const:
-  if (!val) {
-    scheme_wrong_syntax("compile", NULL, symbol,
-			"variable used out of context");
-    return NULL;
-  }
-  if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
-    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
-	|| SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_type))
-      return val;
-    else
-      scheme_wrong_syntax("set!", NULL, symbol,
-			  "local syntax identifier cannot be mutated");
-    return NULL;
-  }
-  return val;
 }
 
 void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
@@ -1188,8 +1184,6 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 	if (data->sd_depths[i] > j) {
 	  if (data->stat_dists[i][j]) {
 	    pos++;
-	    if (frame->flags & SCHEME_ANCHORED_FRAME)
-	      pos++;
 	  }
 	}
       }
@@ -1216,8 +1210,6 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 	if (data->sd_depths[i] > j) {
 	  if (data->stat_dists[i][j]) {
 	    map[pos++] = lpos;
-	    if (frame->flags & SCHEME_ANCHORED_FRAME)
-	      map[pos++] = -(lpos + 1);
 	    data->stat_dists[i][j] = 0; /* This closure's done with these vars... */
 	    data->stat_dists[i][j - 1] = 1; /* ... but insure previous keeps */
 	  }

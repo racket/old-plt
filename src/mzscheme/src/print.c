@@ -1155,7 +1155,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  print_this_string(p, quick_buffer, -1);
 	  print_this_string(p, ">", 1);
 	} else
-	  print_this_string(p, "#<syntax>", 10);
+	  print_this_string(p, "#<syntax>", 9);
       }
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_module_index_type)) 

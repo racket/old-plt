@@ -12,7 +12,9 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
            "browser-extensions.ss"
            "server.ss"
            "cookie.ss"
-           "standard-urls.ss")
+           "standard-urls.ss"
+           (lib "string-constant.ss" "string-constants")
+           (lib "mred.ss" "mred"))
   
   (command-line
    "help-desk"
@@ -20,6 +22,23 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
   
   (preferences:add-warnings-checkbox-panel)
   
+  (preferences:add-panel
+   (list (string-constant font-prefs-panel-title))
+   (lambda (panel)
+     (let* ([hp (new horizontal-panel% (parent panel))]
+            [size (make-object slider% 
+                    (string-constant font-size)
+                    1
+                    72
+                    hp
+                    (lambda (size evt)
+                      (preferences:set 'framework:standard-style-list:font-size (send size get-value)))
+                    (preferences:get 'framework:standard-style-list:font-size))])
+       (preferences:add-callback
+        'framework:standard-style-list:font-size
+        (lambda (p v) (send size set-value v)))
+       hp)))
+       
   (define the-hd-cookie (start-help-server (lambda (x) x)))
   (unless the-hd-cookie
     (printf "Help Desk: could not start server\n")
@@ -28,13 +47,14 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
    ;; for use by the bug report frame.
   (namespace-set-variable-value! 'help-desk:frame-mixin (make-bug-report/help-desk-mixin the-hd-cookie))
   
-  (handler:current-create-new-window (lambda (filename) 
-                                       (let ([browser-frame ((hd-cookie-new-browser the-hd-cookie))])
-                                         (when (and filename
-                                                    (file-exists? filename))
-                                           (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url
-                                                 (string-append "file://" filename)
-                                                 #f))
-                                         browser-frame)))
+  (handler:current-create-new-window 
+   (lambda (filename) 
+     (let ([browser-frame ((hd-cookie-new-browser the-hd-cookie))])
+       (when (and filename
+                  (file-exists? filename))
+         (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url
+               (string-append "file://" filename)
+               #f))
+       browser-frame)))
   (goto-hd-location the-hd-cookie 'front-page))
   

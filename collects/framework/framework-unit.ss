@@ -80,7 +80,7 @@
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren scheme-paren 
                            icon keymap text editor frame comment-box mode)]
-	    [main : framework:main^ (main@ mred preferences exit group handler)])
+	    [main : framework:main^ (main@ mred preferences exit group handler editor)])
       (export
        (unit menu)
        (unit application)

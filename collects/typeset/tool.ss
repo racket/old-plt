@@ -23,7 +23,7 @@
       (define (make-delta family)
         (let ([d (make-object style-delta% 'change-family family)])
           (send d set-size-mult 0)
-          (send d set-size-add (preferences:get 'drscheme:font-size))
+          (send d set-size-add (preferences:get 'framework:standard-style-list:font-size))
           ;(send d set-delta-foreground "BLACK")
           d))
       
@@ -215,7 +215,7 @@
             (is-a? snip evaluated-snip%)))
       
       (define typeset-size
-        (let ([value (preferences:get 'drscheme:font-size)])
+        (let ([value (preferences:get 'framework:standard-style-list:font-size)])
           (case-lambda
             [() value]
             [(x)

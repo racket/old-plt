@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.7 1998/09/23 00:49:46 robby Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.8 1998/09/24 18:23:59 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -318,85 +318,74 @@ void wxColourDatabase::Initialize (void)
 #if defined(wx_msw) || defined(wx_mac)
 #define APPEND(name, c) tmpc = c; tmpc->Lock(1); Append(name, tmpc)
   wxColour *tmpc;
-  APPEND ("AQUAMARINE", new wxColour (112, 219, 147));
-  APPEND ("BLACK", new wxColour (0, 0, 0));
-  APPEND ("BLUE", new wxColour (0, 0, 255));
-  APPEND ("BLUE VIOLET", new wxColour (159, 95, 159));
-  APPEND ("BROWN", new wxColour (165, 42, 42));
-  APPEND ("CADET BLUE", new wxColour (95, 159, 159));
-  APPEND ("CORAL", new wxColour (255, 127, 0));
-  APPEND ("CORNFLOWER BLUE", new wxColour (66, 66, 111));
-  APPEND ("CYAN", new wxColour (0, 255, 255));
-  APPEND ("DARK GREY", new wxColour (47, 47, 47));	// ?
-
-  APPEND ("DARK GREEN", new wxColour (47, 79, 47));
-  APPEND ("DARK OLIVE GREEN", new wxColour (79, 79, 47));
-  APPEND ("DARK ORCHID", new wxColour (153, 50, 204));
-  APPEND ("DARK SLATE BLUE", new wxColour (107, 35, 142));
-  APPEND ("DARK SLATE GREY", new wxColour (47, 79, 79));
-  APPEND ("DARK TURQUOISE", new wxColour (112, 147, 219));
-  APPEND ("DIM GREY", new wxColour (84, 84, 84));
-  APPEND ("FIREBRICK", new wxColour (142, 35, 35));
-  APPEND ("FOREST GREEN", new wxColour (35, 142, 35));
-  APPEND ("GOLD", new wxColour (204, 127, 50));
-  APPEND ("GOLDENROD", new wxColour (219, 219, 112));
-#ifdef wx_msw
-  APPEND ("GREY", new wxColour (128, 128, 128));
-#else
-  APPEND ("GREY", new wxColour (192, 192, 192));
-#endif
-  APPEND ("GREEN", new wxColour (0, 255, 0));
-  APPEND ("GREEN YELLOW", new wxColour (147, 219, 112));
-  APPEND ("INDIAN RED", new wxColour (79, 47, 47));
-  APPEND ("KHAKI", new wxColour (159, 159, 95));
-  APPEND ("LIGHT BLUE", new wxColour (191, 216, 216));
-#ifdef wx_msw
-  APPEND ("LIGHT GREY", new wxColour (192, 192, 192));
-#else
-  APPEND ("LIGHT GREY", new wxColour (168, 168, 168));
-#endif
-  APPEND ("LIGHT STEEL BLUE", new wxColour (143, 143, 188));
-  APPEND ("LIME GREEN", new wxColour (50, 204, 50));
-  APPEND ("LIGHT MAGENTA", new wxColour (255, 0, 255));
-  APPEND ("MAGENTA", new wxColour (255, 0, 255));
-  APPEND ("MAROON", new wxColour (142, 35, 107));
-  APPEND ("MEDIUM AQUAMARINE", new wxColour (50, 204, 153));
-  APPEND ("MEDIUM GREY", new wxColour (100, 100, 100));
-  APPEND ("MEDIUM BLUE", new wxColour (50, 50, 204));
-  APPEND ("MEDIUM FOREST GREEN", new wxColour (107, 142, 35));
-  APPEND ("MEDIUM GOLDENROD", new wxColour (234, 234, 173));
-  APPEND ("MEDIUM ORCHID", new wxColour (147, 112, 219));
-  APPEND ("MEDIUM SEA GREEN", new wxColour (66, 111, 66));
-  APPEND ("MEDIUM SLATE BLUE", new wxColour (127, 0, 255));
-  APPEND ("MEDIUM SPRING GREEN", new wxColour (127, 255, 0));
-  APPEND ("MEDIUM TURQUOISE", new wxColour (112, 219, 219));
-  APPEND ("MEDIUM VIOLET RED", new wxColour (219, 112, 147));
-  APPEND ("MIDNIGHT BLUE", new wxColour (47, 47, 79));
-  APPEND ("NAVY", new wxColour (35, 35, 142));
-  APPEND ("ORANGE", new wxColour (255, 165, 0));
-  APPEND ("ORANGE RED", new wxColour (255, 120, 0));
-  APPEND ("ORCHID", new wxColour (219, 112, 219));
-  APPEND ("PALE GREEN", new wxColour (143, 188, 143));
-  APPEND ("PINK", new wxColour (188, 143, 234));
-  APPEND ("PLUM", new wxColour (234, 173, 234));
-  APPEND ("PURPLE", new wxColour (176, 0, 255));
-  APPEND ("RED", new wxColour (255, 0, 0));
-  APPEND ("SALMON", new wxColour (111, 66, 66));
-  APPEND ("SEA GREEN", new wxColour (35, 142, 107));
-  APPEND ("SIENNA", new wxColour (142, 107, 35));
-  APPEND ("SKY BLUE", new wxColour (50, 153, 204));
-  APPEND ("SLATE BLUE", new wxColour (0, 127, 255));
-  APPEND ("SPRING GREEN", new wxColour (0, 255, 127));
-  APPEND ("STEEL BLUE", new wxColour (35, 107, 142));
-  APPEND ("TAN", new wxColour (219, 147, 112));
-  APPEND ("THISTLE", new wxColour (216, 191, 216));
-  APPEND ("TURQUOISE", new wxColour (173, 234, 234));
-  APPEND ("VIOLET", new wxColour (79, 47, 79));
-  APPEND ("VIOLET RED", new wxColour (204, 50, 153));
-  APPEND ("WHEAT", new wxColour (216, 216, 191));
-  APPEND ("WHITE", new wxColour (255, 255, 255));
-  APPEND ("YELLOW", new wxColour (255, 255, 0));
-  APPEND ("YELLOW GREEN", new wxColour (153, 204, 50));
+  APPEND("AQUAMARINE", new wxColour(112 216 144));
+  APPEND("BLACK", new wxColour(0 0 0));
+  APPEND("BLUE", new wxColour(80 80 248));
+  APPEND("BLUE VIOLET", new wxColour(138 43 226));
+  APPEND("BROWN", new wxColour(132 60 36));
+  APPEND("CADET BLUE", new wxColour(96 160 160));
+  APPEND("CORAL", new wxColour(255 127 80));
+  APPEND("CORNFLOWER BLUE", new wxColour(68 64 108));
+  APPEND("CYAN", new wxColour(0 255 255));
+  APPEND("DARK GREY", new wxColour(169 169 169));
+  APPEND("DARK GREEN", new wxColour(0 100 0));
+  APPEND("DARK OLIVE GREEN", new wxColour(85 107 47));
+  APPEND("DARK ORCHID", new wxColour(153 50 204));
+  APPEND("DARK SLATE BLUE", new wxColour(72 61 139));
+  APPEND("DARK SLATE GREY", new wxColour(47 79 79));
+  APPEND("DARK TURQUOISE", new wxColour(0 206 209));
+  APPEND("DIM GREY", new wxColour(105 105 105));
+  APPEND("FIREBRICK", new wxColour(178 34 34));
+  APPEND("FOREST GREEN", new wxColour(34 139 34));
+  APPEND("GOLD", new wxColour(255 215 0));
+  APPEND("GOLDENROD", new wxColour(218 165 32));
+  APPEND("GREY", new wxColour(190 190 190));
+  APPEND("GREEN", new wxColour(60 248 52));
+  APPEND("GREEN YELLOW", new wxColour(173 255 47));
+  APPEND("INDIAN RED", new wxColour(205 92 92));
+  APPEND("KHAKI", new wxColour(240 230 140));
+  APPEND("LIGHT BLUE", new wxColour(173 216 230));
+  APPEND("LIGHT GREY", new wxColour(211 211 211));
+  APPEND("LIGHT STEEL BLUE", new wxColour(176 196 222));
+  APPEND("LIME GREEN", new wxColour(50 205 50));
+  APPEND("MAGENTA", new wxColour(255 0 255));
+  APPEND("MAROON", new wxColour(176 48 96));
+  APPEND("MEDIUM AQUAMARINE", new wxColour(102 205 170));
+  APPEND("MEDIUM BLUE", new wxColour(0 0 205));
+  APPEND("MEDIUM FOREST GREEN", new wxColour(107 142 35));
+  APPEND("MEDIUM GOLDENROD", new wxColour(234 234 173));
+  APPEND("MEDIUM ORCHID", new wxColour(186 85 211));
+  APPEND("MEDIUM SEA GREEN", new wxColour(60 179 113));
+  APPEND("MEDIUM SLATE BLUE", new wxColour(123 104 238));
+  APPEND("MEDIUM SPRING GREEN", new wxColour(0 250 154));
+  APPEND("MEDIUM TURQUOISE", new wxColour(72 209 204));
+  APPEND("MEDIUM VIOLET RED", new wxColour(199 21 133));
+  APPEND("MIDNIGHT BLUE", new wxColour(25 25 112));
+  APPEND("NAVY", new wxColour(36 36 140));
+  APPEND("ORANGE", new wxColour(255 165 0));
+  APPEND("ORANGE RED", new wxColour(255 69 0));
+  APPEND("ORCHID", new wxColour(218 112 214));
+  APPEND("PALE GREEN", new wxColour(152 251 152));
+  APPEND("PINK", new wxColour(255 192 203));
+  APPEND("PLUM", new wxColour(221 160 221));
+  APPEND("PURPLE", new wxColour(160 32 240));
+  APPEND("RED", new wxColour(248 20 64));
+  APPEND("SALMON", new wxColour(250 128 114));
+  APPEND("SEA GREEN", new wxColour(46 139 87));
+  APPEND("SIENNA", new wxColour(160 82 45));
+  APPEND("SKY BLUE", new wxColour(135 206 235));
+  APPEND("SLATE BLUE", new wxColour(106 90 205));
+  APPEND("SPRING GREEN", new wxColour(0 255 127));
+  APPEND("STEEL BLUE", new wxColour(70 130 180));
+  APPEND("TAN", new wxColour(210 180 140));
+  APPEND("THISTLE", new wxColour(216 191 216));
+  APPEND("TURQUOISE", new wxColour(64 224 208));
+  APPEND("VIOLET", new wxColour(238 130 238));
+  APPEND("VIOLET RED", new wxColour(208 32 144));
+  APPEND("WHEAT", new wxColour(245 222 179));
+  APPEND("WHITE", new wxColour(255 255 255));
+  APPEND("YELLOW", new wxColour(255 255 0));
+  APPEND("YELLOW GREEN", new wxColour(154 205 50));
 #endif
 }
 

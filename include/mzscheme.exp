@@ -241,6 +241,7 @@ scheme_utf8_decode_all
 scheme_utf8_decode_prefix
 scheme_utf8_decode_to_buffer
 scheme_utf8_decode_to_buffer_len
+scheme_utf8_decode_count
 scheme_utf8_encode
 scheme_utf8_encode_all
 scheme_utf8_encode_to_buffer
@@ -310,6 +311,7 @@ scheme_peekc_is_ungetc
 scheme_need_wakeup
 scheme_get_byte_string
 scheme_get_byte_string_unless
+scheme_get_byte_string_special_ok_unless
 scheme_progress_evt
 scheme_peeked_read
 scheme_get_char_string

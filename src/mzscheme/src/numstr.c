@@ -49,6 +49,8 @@ static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **arg
 static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object **argv);
 static Scheme_Object *current_sched_pseudo_random_generator(int argc, Scheme_Object **argv);
 static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv);
+static Scheme_Object *sch_unpack(int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_pack(int argc, Scheme_Object *argv[]);
 
 static char *number_to_allocated_string(int radix, Scheme_Object *obj, int alloc);
 
@@ -111,7 +113,7 @@ void scheme_init_numstr(Scheme_Env *env)
   scheme_add_global_constant("random", 
 			     scheme_make_prim_w_arity(sch_random,
 						      "random",
-						      1, 1),
+						      0, 1),
 			     env);
   scheme_add_global_constant("random-seed", 
 			     scheme_make_prim_w_arity(random_seed,
@@ -122,6 +124,16 @@ void scheme_init_numstr(Scheme_Env *env)
 			     scheme_make_prim_w_arity(make_pseudo_random_generator,
 						      "make-pseudo-random-generator", 
 						      0, 0), 
+			     env);
+  scheme_add_global_constant("vector->pseudo-random-generator",
+			     scheme_make_prim_w_arity(sch_pack,
+						      "vector->pseudo-random-generator", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("pseudo-random-generator->vector",
+			     scheme_make_prim_w_arity(sch_unpack,
+						      "pseudo-random-generator->vector", 
+						      1, 1), 
 			     env);
   scheme_add_global_constant("pseudo-random-generator?", 
 			     scheme_make_prim_w_arity(pseudo_random_generator_p,
@@ -1965,7 +1977,16 @@ static Scheme_Object *system_big_endian_p (int argc, Scheme_Object *argv[])
 /*                       random number generator                          */
 /*========================================================================*/
 
-#include "random.inc"
+#ifdef MZ_BSD_RANDOM_GENERATOR
+# include "random.inc"
+#else
+# include "newrandom.inc"
+#endif
+
+long scheme_rand(Scheme_Random_State *rs)
+{
+  return sch_int_rand(2147483647, rs);
+}
 
 static Scheme_Object *
 random_seed(int argc, Scheme_Object *argv[])
@@ -1990,21 +2011,61 @@ random_seed(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 sch_random(int argc, Scheme_Object *argv[])
 {
-  long i = -1, v;
-  Scheme_Object *o = argv[0], *rand_state;
+  if (!argc) {
+    double v;
+    Scheme_Object *rand_state;
+    
+    rand_state = scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE);
+    v = sch_double_rand((Scheme_Random_State *)rand_state);
+    return scheme_make_double(v);
+  } else {
+    unsigned long i, v;
+    Scheme_Object *o, *rand_state;
 
-  if (scheme_get_int_val(o,  &i)) {
-    if (i > 2147483647)
-      i = -1;
+    o = argv[0];
+    if (scheme_get_unsigned_int_val(o,  &i)) {
+      if (i > 2147483647)
+	i = 0;
+    } else
+      i = 0;
+    
+    if (!i)
+      scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
+    
+    rand_state = scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE);
+    v = sch_int_rand(i, (Scheme_Random_State *)rand_state);
+    
+    return scheme_make_integer_value_from_unsigned(v);
   }
+}
 
-  if (i <= 0)
-    scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
-  
-  rand_state = scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE);
-  v = scheme_rand((Scheme_Random_State *)rand_state) % i;
+static Scheme_Object *
+sch_pack(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *s;
 
-  return scheme_make_integer_value(v);
+  if (SCHEME_VECTORP(argv[0]))
+    s = pack_rand_state(argv[0]);
+  else
+    s = NULL;
+
+  if (!s)
+    scheme_wrong_type("vector->pseudo-random-generator",
+		      "vector of six elements, three in [0, 4294967086] and three in [0, 4294944442], "
+		      "at least one non-zero in each set of three",
+		      0, argc, argv);
+
+  return s;
+}
+
+static Scheme_Object *
+sch_unpack(int argc, Scheme_Object *argv[])
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_random_state_type))
+    scheme_wrong_type("pseudo-random-generator->vector", "pseudo-random-generator",
+		      0, argc, argv);
+
+  return unpack_rand_state((Scheme_Random_State *)argv[0]);
 }
 
 static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *argv[])

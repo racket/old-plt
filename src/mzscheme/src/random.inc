@@ -122,7 +122,7 @@ typedef struct {
  *
  * Returns a 31-bit random number.
  */
-long scheme_rand(Scheme_Random_State *rs)
+long scheme_rand(unsigned long n, Scheme_Random_State *rs)
 {
   long i;
   
@@ -134,7 +134,7 @@ long scheme_rand(Scheme_Random_State *rs)
   } else if (++(rs->rpos) >= DEG)
     rs->rpos = 0;
 
-  return i;
+  return i % n;
 }
 
 /*
@@ -149,7 +149,7 @@ long scheme_rand(Scheme_Random_State *rs)
  * introduced by the L.C.R.N.G.  Note that the initialization of randtbl[]
  * for default usage relies on values produced by this routine.
  */
-static void sch_srand(long x, Scheme_Random_State *rs)
+static void sch_srand(long x, Scheme_Random_State *rs, int reset)
 {
   register int i;
   long *state = rs->state;

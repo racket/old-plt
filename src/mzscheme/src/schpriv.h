@@ -1277,12 +1277,19 @@ int scheme_nonneg_exact_p(Scheme_Object *n);
 
 /***** Random number generator *****/
 
-#define	MZ_RANDOM_STATE_DEG 31
+#ifdef MZ_BSD_RANDOM_GENERATOR
+# define MZ_RANDOM_STATE_DEG 31
 typedef struct {
   Scheme_Object so;
   short fpos, rpos;
   long state[MZ_RANDOM_STATE_DEG];
 } Scheme_Random_State;
+#else
+typedef struct {
+  Scheme_Object so;
+  double x10, x11, x12, x20, x21, x22; 
+} Scheme_Random_State;
+#endif
 
 Scheme_Object *scheme_make_random_state(long seed);
 long scheme_rand(Scheme_Random_State *rs);

@@ -3030,16 +3030,52 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+introducer_proc(void *mark, int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *s;
+
+  s = argv[0];
+  if (!SCHEME_STXP(s))
+    scheme_wrong_type("syntax-introducer", "syntax", 0, argc, argv);
+
+  return scheme_add_remove_mark(s, (Scheme_Object *)mark);
+}
+
+static Scheme_Object *
+make_introducer(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *mark;
+
+  mark = scheme_new_mark();
+
+  return scheme_make_closed_prim_w_arity(introducer_proc, mark,
+					 "syntax-introducer", 1, 1);
+}
+
+static Scheme_Object *
 certifier(void *_data, int argc, Scheme_Object **argv)
 {
   Scheme_Object *s, **cert_data = (Scheme_Object **)_data;
+  Scheme_Object *mark = scheme_false;
 
   s = argv[0];
   if (!SCHEME_STXP(s))
     scheme_wrong_type("certifier", "syntax", 0, argc, argv);
 
+  if (argc > 2) {
+    if (SCHEME_CLSD_PRIMP(argv[2])
+	&& (((Scheme_Closed_Primitive_Proc *)argv[2])->prim_val == introducer_proc))
+      mark = (Scheme_Object *)((Scheme_Closed_Primitive_Proc *)argv[2])->data;
+    else {
+      scheme_wrong_type("certifier", 
+			"procedure from make-syntax-introducer", 
+			2, argc, argv);
+      return NULL;
+    }
+  }
+
   if (cert_data[0] || cert_data[1]) {
-    s = scheme_stx_cert(s, scheme_false, 
+    s = scheme_stx_cert(s, mark, 
 			(Scheme_Env *)cert_data[1],
 			cert_data[0],
 			(argc > 1) ? argv[1] : NULL);
@@ -3066,30 +3102,7 @@ local_certify(int argc, Scheme_Object *argv[])
   return scheme_make_closed_prim_w_arity(certifier,
 					 cert_data,
 					 "certifier",
-					 1, 2);
-}
-
-static Scheme_Object *
-introducer_proc(void *mark, int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *s;
-
-  s = argv[0];
-  if (!SCHEME_STXP(s))
-    scheme_wrong_type("syntax-introducer", "syntax", 0, argc, argv);
-
-  return scheme_add_remove_mark(s, (Scheme_Object *)mark);
-}
-
-static Scheme_Object *
-make_introducer(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *mark;
-
-  mark = scheme_new_mark();
-
-  return scheme_make_closed_prim_w_arity(introducer_proc, mark,
-					 "syntax-introducer", 1, 1);
+					 1, 3);
 }
 
 static Scheme_Object *

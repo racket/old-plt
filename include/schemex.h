@@ -405,6 +405,8 @@ mzchar *(*scheme_utf8_decode_to_buffer)(const unsigned char *s, int len,
 					       mzchar *buf, int blen);
 mzchar *(*scheme_utf8_decode_to_buffer_len)(const unsigned char *s, int len, 
 						   mzchar *buf, int blen, long *rlen);
+int (*scheme_utf8_decode_count)(const unsigned char *s, int start, int end, 
+				       char *_state, int might_continue, int permissive);
 int (*scheme_utf8_encode)(const unsigned int *us, int start, int end, 
 				 unsigned char *s, int dstart,
 				 char utf16);
@@ -524,6 +526,12 @@ long (*scheme_get_byte_string_unless)(const char *who,
 					     int only_avail,
 					     int peek, Scheme_Object *peek_skip,
 					     Scheme_Object *unless_evt);
+long (*scheme_get_byte_string_special_ok_unless)(const char *who,
+							Scheme_Object *port,
+							char *buffer, long offset, long size,
+							int only_avail,
+							int peek, Scheme_Object *peek_skip,
+							Scheme_Object *unless_evt);
 Scheme_Object *(*scheme_progress_evt)(Scheme_Object *port);
 int (*scheme_peeked_read)(Scheme_Object *port,
 				 long size,

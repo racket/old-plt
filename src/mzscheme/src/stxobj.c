@@ -41,6 +41,7 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
 static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_property(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_property_keys(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_track_origin(int argc, Scheme_Object **argv);
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
@@ -330,6 +331,11 @@ void scheme_init_stx(Scheme_Env *env)
 			     scheme_make_prim_w_arity(syntax_property,
 						      "syntax-property",
 						      2, 3),
+			     env);
+  scheme_add_global_constant("syntax-property-symbol-keys", 
+			     scheme_make_prim_w_arity(syntax_property_keys,
+						      "syntax-property-symbol-keys",
+						      1, 1),
 			     env);
 
   scheme_add_global_constant("syntax-track-origin", 
@@ -4142,6 +4148,11 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
 			     (argc > 2) ? argv[2] : NULL);
 }
 
+static Scheme_Object *syntax_property_keys(int argc, Scheme_Object **argv)
+{
+  return scheme_null;
+}
+
 #define SCHEME_STX_IDP(o) (SCHEME_STXP(o) && SCHEME_SYMBOLP(SCHEME_STX_VAL(o)))
 
 static Scheme_Object *syntax_track_origin(int argc, Scheme_Object **argv)
@@ -4314,13 +4325,15 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
     scheme_wrong_type("syntax-recertify", "syntax", 0, argc, argv);
   if (!SCHEME_STXP(argv[1]))
     scheme_wrong_type("syntax-recertify", "syntax", 1, argc, argv);
-  if (!SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_inspector_type))
-    scheme_wrong_type("syntax-recertify", "inspector", 2, argc, argv);
+  if (SCHEME_TRUEP(argv[2]) && !SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_inspector_type))
+    scheme_wrong_type("syntax-recertify", "inspector or #f", 2, argc, argv);
   
   if (SAME_OBJ(argv[0], argv[1]))
     return argv[0];
 
   insp = argv[2];
+  if (SCHEME_FALSEP(insp))
+    insp = NULL;
   key = argv[3];
 
   if (((Scheme_Stx *)argv[1])->certs) {
@@ -4332,7 +4345,7 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
     while (certs) {
       if (!SAME_OBJ(certs->key, key) 
 	  && !SAME_OBJ(certs->insp, insp) 
-	  && !scheme_is_subinspector(certs->insp, insp)) {
+	  && (!insp || !scheme_is_subinspector(certs->insp, insp))) {
 	/* Drop opaque certification. */
       } else
 	new_certs = cons_cert(certs->mark, certs->modidx, certs->insp, certs->key, new_certs);

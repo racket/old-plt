@@ -258,7 +258,8 @@ sub-directories:
     submission as a string. (See also `unpack-submission', etc. from
     "util.ss", below.) To reject the submission, the `checker'
     function can raise an exception; the exception message will be
-    relayed back to the student.
+    relayed back to the student.  The `checker' function is called
+    when the current directory is active/<assignment>/<user>.
 
     The checker should return a string, such as "handin", to use in
     naming the submission. For submissions that require both programs

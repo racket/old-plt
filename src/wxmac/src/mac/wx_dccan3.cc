@@ -171,7 +171,7 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
     int glyph;
     Scheme_Object *val;
     int smoothing, use_cgctx;
-      
+    
     smoothing = font->GetEffectiveSmoothing(user_scale_y);
     use_cgctx = (always_use_atsu 
 		 && ((smoothing != wxSMOOTHING_PARTIAL) || (user_scale_x != user_scale_y)));
@@ -322,16 +322,22 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
   wxMacSetCurrentTool(kTextTool);
 
   ::GetFontInfo(&fontInfo);
-  
-  w = wxDrawUnicodeText(text, d, -1, ucs4, 
-			!combine, font->GetEffectiveSmoothing(user_scale_y), angle,
-			user_scale_x, user_scale_y,
-			1,
-			x + (fontInfo.ascent * sin(angle)) - logical_origin_x,
-			y + (fontInfo.ascent * cos(angle)) - logical_origin_y, 
-			device_origin_x + SetOriginX,
-			device_origin_y + SetOriginY,
-			font->GetFamily());
+
+  {
+    int smoothing;
+    smoothing = font->GetEffectiveSmoothing(user_scale_y);
+    if (!Colour)
+      smoothing = wxSMOOTHING_OFF;
+    w = wxDrawUnicodeText(text, d, -1, ucs4, 
+			  !combine, smoothing, angle,
+			  user_scale_x, user_scale_y,
+			  1,
+			  x + (fontInfo.ascent * sin(angle)) - logical_origin_x,
+			  y + (fontInfo.ascent * cos(angle)) - logical_origin_y, 
+			  device_origin_x + SetOriginX,
+			  device_origin_y + SetOriginY,
+			  font->GetFamily());
+  }
   
   ReleaseCurrentDC();
 }

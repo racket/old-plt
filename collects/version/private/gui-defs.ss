@@ -22,6 +22,7 @@
                   (instantiate frame% ()
                     (label title)
 		    (alignment '(center center))
+		    (min-width 200)
                     (stretchable-height #f)
                     (stretchable-width #f)
                     (style '(no-resize-border)))]
@@ -82,14 +83,17 @@
                               (callback (lambda (b ev) 
                                           (send frame show #f))))]
                  [spacer 
-                  (instantiate message% () 
-                    (min-width 20)
-                    (label "") (parent buttons-panel))]
-                 [details-button (instantiate button% ()
-                                   (label show-details-button-text)
-                                   (min-width 50)
-                                   (parent buttons-panel)
-                                   (callback details-button-callback))])
+		  (and details
+		       (instantiate message% () 
+				    (min-width 20)
+				    (label "") (parent buttons-panel)))]
+                 [details-button 
+		  (and details
+		       (instantiate button% ()
+				    (label show-details-button-text)
+				    (min-width 50)
+				    (parent buttons-panel)
+				    (callback details-button-callback)))])
 	  (send frame center)
           (send frame show #t)))
    

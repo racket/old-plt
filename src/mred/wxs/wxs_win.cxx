@@ -1292,6 +1292,3 @@ class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *obj, const char *wher
     return (wxWindow *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

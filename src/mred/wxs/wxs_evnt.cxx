@@ -2454,6 +2454,3 @@ class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *obj, const ch
     return (wxMouseEvent *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

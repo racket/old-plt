@@ -871,6 +871,3 @@ class wxMessage *objscheme_unbundle_wxMessage(Scheme_Object *obj, const char *wh
     return (wxMessage *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -173,6 +173,20 @@ static Scheme_Object *class_meth_vec(int argc, Scheme_Object **argv)
   return v;
 }
 
+Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass)
+{
+  Scheme_Class_Object *obj;
+
+  obj = (Scheme_Class_Object *)scheme_malloc_tagged(sizeof(Scheme_Class_Object)
+						    - sizeof(Scheme_Object*));
+  obj->type = objscheme_object_type;
+  obj->sclass = sclass;
+  obj->dispatcher = NULL;
+
+  return (Scheme_Object *)obj;
+  
+}
+
 /***************************************************************************/
 
 Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup, 
@@ -241,6 +255,15 @@ Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name)
   return scheme_false;
 }
 
+int objscheme_is_subclass(Scheme_Object *a, Scheme_Object *b)
+{
+  while (a && (a != b)) {
+    a = ((Scheme_Class *)a)->sup;
+  }
+
+  return !!a;
+}
+
 /***************************************************************************/
 
 #ifdef SUPPORT_ARBITRARY_OBJECTS
@@ -297,8 +320,8 @@ void objscheme_init(Scheme_Env *env)
     bhash[i].id = 0;
   }
 
-  objscheme_class_type = scheme_make_type("primitive-class");
-  objscheme_object_type = scheme_make_type("primitive-object");
+  objscheme_class_type = scheme_make_type("<primitive-class>");
+  objscheme_object_type = scheme_make_type("<primitive-object>");
 
   scheme_install_xc_global("make-primitive-object",
 			   scheme_make_prim_w_arity(make_prim_obj,

@@ -321,6 +321,7 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
 }
 
 void scheme_save_initial_module_set(Scheme_Env *env)
+/* Can be called multiple times! */
 {
   int i, c, count;
   Scheme_Bucket **bs, *b;
@@ -337,8 +338,9 @@ void scheme_save_initial_module_set(Scheme_Env *env)
   }
 
   num_initial_modules = count;
-
-  REGISTER_SO(initial_modules);
+  
+  if (!initial_modules)
+    REGISTER_SO(initial_modules);
   initial_modules = MALLOC_N(Scheme_Object *, 2 * count);
 
   count = 0;
@@ -482,6 +484,8 @@ void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, S
 {
   if (env == scheme_initial_env)
     return;
+  if (env->module->primitive)
+    return;
 
   if (scheme_lookup_in_table(env->module->accessible, (const char *)symbol))
     return;
@@ -577,6 +581,17 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
       return;
   } else
     syntax = NULL;
+
+  if (m->primitive) {
+    menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
+    if (!menv)
+      scheme_add_to_table(env->modules, (const char *)m->modname, m->primitive, 0);
+    if (!syntax) {
+      syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      scheme_add_to_table(env->module_syntax, (const char *)m->modname, syntax, 0);      
+    }
+    return;
+  }
 
   menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
   if (!menv || restart) {
@@ -709,6 +724,9 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
   expstart_module(m, env, restart, for_syntax_of, syntax_idx);
 
+  if (m->primitive)
+    return;
+
   menv = (Scheme_Env *)scheme_lookup_in_table(env->modules, (const char *)m->modname);
 
   if (restart)
@@ -753,6 +771,62 @@ static void prevent_cyclic_imports(Scheme_Module *m, Scheme_Object *modname, Sch
     prevent_cyclic_imports(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env),
 			   modname, env);
   }
+}
+
+Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
+{
+  Scheme_Module *m;
+  Scheme_Env *env;
+
+  m = MALLOC_ONE_TAGGED(Scheme_Module);
+  m->type = scheme_module_type;
+  
+  env = scheme_new_module_env(for_env, m);
+
+  m->modname = name;
+  m->imports = scheme_null;
+  m->et_imports = scheme_null;
+  m->primitive = env;
+
+  scheme_add_to_table(for_env->module_registry, (const char *)m->modname, m, 0);
+
+  return env;
+}
+
+void scheme_finish_primitive_module(Scheme_Env *env)
+{
+  Scheme_Module *m = env->module;
+  Scheme_Hash_Table *ht;
+  Scheme_Bucket **bs;
+  Scheme_Object **exs;
+  int i, count;
+
+  /* Export all variables: */
+  count = 0;
+  ht = env->toplevel;
+
+  bs = ht->buckets;
+  for (i = ht->size; i--; ) {
+    Scheme_Bucket *b = bs[i];
+    if (b && b->val)
+      count++;
+  }
+
+  exs = MALLOC_N(Scheme_Object *, count);
+  count = 0;
+  for (i = ht->size; i--; ) {
+    Scheme_Bucket *b = bs[i];
+    if (b && b->val)
+      exs[count++] = (Scheme_Object *)b->key;
+  }
+ 
+  m->exports = exs;
+  m->export_srcs = NULL;
+  m->export_src_names = exs;
+  m->num_exports = count;
+  m->num_var_exports = count;
+
+  env->running = 1;
 }
 
 /**********************************************************************/

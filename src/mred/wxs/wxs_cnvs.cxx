@@ -1240,6 +1240,3 @@ class wxCanvas *objscheme_unbundle_wxCanvas(Scheme_Object *obj, const char *wher
     return (wxCanvas *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

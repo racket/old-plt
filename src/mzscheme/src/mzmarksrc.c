@@ -640,6 +640,8 @@ module_val {
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
+
+  gcMARK(m->primitive);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));
 }

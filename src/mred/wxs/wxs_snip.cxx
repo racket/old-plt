@@ -10792,6 +10792,3 @@ class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *obj, const ch
 }
 
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -2241,6 +2241,3 @@ class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const 
 
 
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

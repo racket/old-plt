@@ -6097,6 +6097,3 @@ class wxMediaPasteboard *objscheme_unbundle_wxMediaPasteboard(Scheme_Object *obj
     return (wxMediaPasteboard *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

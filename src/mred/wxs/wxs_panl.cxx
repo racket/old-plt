@@ -1848,6 +1848,3 @@ class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, const char
     return (wxDialogBox *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -3358,6 +3358,3 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
   WITH_VAR_STACK(scheme_apply_multi(f, 1, p));
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

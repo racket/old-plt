@@ -2531,9 +2531,12 @@ static char *get_init_filename(Scheme_Env *env)
   f = scheme_lookup_global(fgp, env);
   type = scheme_intern_symbol("init-file");
   
-  path = _scheme_apply(f, 1, &type);
-
-  return SCHEME_STR_VAL(path);
+  if (f) {
+    path = _scheme_apply(f, 1, &type);
+    
+    return SCHEME_STR_VAL(path);
+  } else
+    return "~/.mredrc";
 }
 #endif
 
@@ -2789,9 +2792,9 @@ wxFrame *MrEdApp::OnInit(void)
   return NULL;
 }
 
-static void do_graph_repl(void)
+static void do_graph_repl(Scheme_Env *env)
 {
-  scheme_eval_string("(graphical-read-eval-print-loop)", global_env);
+  scheme_eval_string("(graphical-read-eval-print-loop)", env);
 }
 
 #if WINDOW_STDIO

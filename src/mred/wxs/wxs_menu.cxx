@@ -1118,6 +1118,3 @@ void objscheme_setup_wxsMenuItemGlobal(void *env)
   WITH_VAR_STACK(scheme_install_xc_global("id-to-menu-item", functmp, env));
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

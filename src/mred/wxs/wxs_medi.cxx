@@ -5563,6 +5563,3 @@ int wxsSchemeUndo(void *f)
   Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
   return SCHEME_TRUEP(v);
 }
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -2218,6 +2218,3 @@ class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *obj, 
 }
 
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -4407,6 +4407,3 @@ class wxFontNameDirectory *objscheme_unbundle_wxFontNameDirectory(Scheme_Object 
 
 
 #endif
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -533,6 +533,11 @@ Scheme_Bucket *scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *e
 void scheme_set_global_bucket(char *proc, Scheme_Bucket *var, Scheme_Object *val,
 			      int set_undef);
 
+
+void scheme_save_initial_module_set(Scheme_Env *env);
+Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env);
+void scheme_finish_primitive_module(Scheme_Env *env);
+
 /*========================================================================*/
 /*                                symbols                                 */
 /*========================================================================*/

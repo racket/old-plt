@@ -1225,6 +1225,3 @@ class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *obj, const char *where,
     return (wxFrame *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

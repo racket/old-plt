@@ -167,6 +167,3 @@ class wxObject *objscheme_unbundle_wxObject(Scheme_Object *obj, const char *wher
 }
 
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

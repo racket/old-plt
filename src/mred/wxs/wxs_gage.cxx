@@ -757,6 +757,3 @@ class wxsGauge *objscheme_unbundle_wxsGauge(Scheme_Object *obj, const char *wher
     return (wxsGauge *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

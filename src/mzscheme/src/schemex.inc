@@ -304,6 +304,9 @@
   scheme_extension_table->scheme_global_bucket = scheme_global_bucket;
   scheme_extension_table->scheme_global_keyword_bucket = scheme_global_keyword_bucket;
   scheme_extension_table->scheme_set_global_bucket = scheme_set_global_bucket;
+  scheme_extension_table->scheme_save_initial_module_set = scheme_save_initial_module_set;
+  scheme_extension_table->scheme_primitive_module = scheme_primitive_module;
+  scheme_extension_table->scheme_finish_primitive_module = scheme_finish_primitive_module;
   scheme_extension_table->scheme_intern_symbol = scheme_intern_symbol;
   scheme_extension_table->scheme_intern_exact_symbol = scheme_intern_exact_symbol;
   scheme_extension_table->scheme_make_symbol = scheme_make_symbol;

@@ -83,6 +83,9 @@ sub ReadFile {
     $marks{'v'} = 'v';
     $marks{'m'} = 'm';
     $ifzero = 0;
+
+    open(SOUT, ">${file}.ss");
+
     while(!$stop)
     {
 	$_ = <IN>;
@@ -255,6 +258,8 @@ sub ReadFile {
 	    &IgnoreLine($_);
 	}
     }
+
+    close(OUT);
 
     # Finish up the file
     while(<IN>) { &IgnoreLine($_); }
@@ -767,7 +772,7 @@ sub DoPrintClass
 	}
 
 	# destruction
-	print "  ~${newclass}();\n"
+	print "  ~${newclass}();\n";
     } else {
 	$newclass = "";
 
@@ -986,7 +991,7 @@ sub DoPrintClass
 	print HEADER "$proto;\n";
 	print HEADER $setup_d_start;
 	print "$proto\n{\n";
-	
+
 	# Count methods to be installed:
 	@funcs = ();
 	$nmethod = 0; # count
@@ -1031,9 +1036,14 @@ sub DoPrintClass
 	print ", ${nmethod}))";
 	print ";\n\n";
 
+	$sym = &Unquote($classstring);
+	print SOUT "(class $sym";
+	
 	@funcs = ();
 	foreach $function (@functions) {
 	    &ReadFields($function);
+	    $sym = &Unquote($fname);
+	    print SOUT "\n  $sym";
 	    @l = grep($_ =~ /^$func$/, @funcs);
 	    if ($#l < $[) {
 		@funcs = (@funcs, $func);
@@ -1068,14 +1078,22 @@ sub DoPrintClass
 	    &OIStart;
 	    print "  WITH_VAR_STACK(scheme_add_method_w_arity(${newclass}_class,";
 	    print "${getname}, objscheme_${oldclass}_Get${ivarname}, 0, 0));\n";
+
+	    $sym = &Unquote($getname);
+	    print SOUT "\n  $sym";
+
 	    if (!$readonly) {
 		print "  WITH_VAR_STACK(scheme_add_method_w_arity(${newclass}_class,";
 		print "${setname}, objscheme_${oldclass}_Set${ivarname}, 1, 1));\n";
+
+		$sym = &Unquote($setname);
+		print SOUT "\n  $sym";
 	    }
 	    &OIEnd;
 	}
 
 	print "\n";
+	print SOUT ")\n";
 
 	print "  WITH_VAR_STACK(scheme_made_class(${newclass}_class));\n\n";
 	if ($interfacestring ne '') {
@@ -1106,6 +1124,10 @@ sub DoPrintClass
 	@funcs = ();
 	foreach $function (@functions) {
 	    &ReadFields($function);
+
+	    $sym = &Unquote($fname);
+	    print SOUT "(function $sym)\n";
+
 	    @l = grep($_ =~ /^$func$/, @funcs);
 	    if ($#l < $[) {
 		@funcs = (@funcs, $func);

@@ -7780,6 +7780,3 @@ class wxMediaEdit *objscheme_unbundle_wxMediaEdit(Scheme_Object *obj, const char
     return (wxMediaEdit *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

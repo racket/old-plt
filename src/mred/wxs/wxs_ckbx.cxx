@@ -823,6 +823,3 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

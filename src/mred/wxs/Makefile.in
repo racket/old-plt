@@ -64,6 +64,14 @@ SCRIPTS = $(srcdir)/wxs_bmap.xc $(srcdir)/wxs_butn.xc $(srcdir)/wxs_chce.xc $(sr
           $(srcdir)/wxs_obj.xc $(srcdir)/wxs_panl.xc $(srcdir)/wxs_rado.xc $(srcdir)/wxs_slid.xc \
           $(srcdir)/wxs_snip.xc $(srcdir)/wxs_styl.xc $(srcdir)/wxs_win.xc
 
+SSDESCS = $(srcdir)/wxs_bmap.ss $(srcdir)/wxs_butn.ss $(srcdir)/wxs_chce.ss $(srcdir)/wxs_ckbx.ss \
+          $(srcdir)/wxs_cnvs.ss $(srcdir)/wxs_dc.ss $(srcdir)/wxs_evnt.ss $(srcdir)/wxs_fram.ss \
+          $(srcdir)/wxs_gage.ss $(srcdir)/wxs_gdi.ss $(srcdir)/wxs_glob.ss $(srcdir)/wxs_item.ss \
+          $(srcdir)/wxs_lbox.ss $(srcdir)/wxs_madm.ss $(srcdir)/wxs_mede.ss $(srcdir)/wxs_medi.ss \
+          $(srcdir)/wxs_menu.ss $(srcdir)/wxs_mio.ss $(srcdir)/wxs_misc.ss $(srcdir)/wxs_mpb.ss \
+          $(srcdir)/wxs_obj.ss $(srcdir)/wxs_panl.ss $(srcdir)/wxs_rado.ss $(srcdir)/wxs_slid.ss \
+          $(srcdir)/wxs_snip.ss $(srcdir)/wxs_styl.ss $(srcdir)/wxs_win.ss
+
 all: libwxscheme.a
 
 libwxscheme.a : $(OBJECTS) 
@@ -74,8 +82,8 @@ test-file:
 	rm -f $(srcdir)/../../../tests/mred/tests.ss
 	$(MAKE) $(srcdir)/../../../tests/mred/tests.ss
 
-../../../tests/mred/tests.ss: $(SCRIPTS) danger.tst
-	$(srcdir)/../../mzscheme/utils/xctotest danger.tst $(srcdir)/*.xc > $(srcdir)/../../../tests/mred/tests.ss
+$(srcdir)/../../../collects/mred/kernel.ss : $(SSDESCS)
+	cat $(srcdir)/khead.ss $(SSDESCS) $(srcdir)/ktail.ss > $(srcdir)/../../../collects/mred/kernel.ss
 
 ccsources: $(SOURCES)
 

@@ -78,7 +78,7 @@ static void (*orig_collect_end_callback)(void);
 static void collect_start_callback(void);
 static void collect_end_callback(void);
 
-static void wxScheme_Install(Scheme_Env *env, void *global_env);
+static void wxScheme_Install(Scheme_Env *global_env);
 
 static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
@@ -88,72 +88,23 @@ static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip,
 
 static Scheme_Object *wait_symbol;
 
-#define INSTALL_COUNT 520
-
-static Scheme_Object *mred_unit_opener, *mred_sig;
-
 #define CONS scheme_make_pair
-
-typedef struct {
-  int count;
-  char *names[INSTALL_COUNT];
-  Scheme_Object *vals[INSTALL_COUNT];
-} InstallRec;
-
-static void wxScheme_Invoke(Scheme_Env *env)
-{
-  Scheme_Object *save = scheme_get_param(scheme_config, MZCONFIG_ENV);
-  scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env);
-
-  _scheme_apply(mred_unit_opener, 0, NULL);
-
-  scheme_set_param(scheme_config, MZCONFIG_ENV, save);
-
-  if (!mred_sig) {
-    wxREGGLOB(mred_sig);
-    mred_sig = scheme_lookup_global(scheme_intern_symbol("mred^"), env);
-  } else
-    scheme_add_global("mred^", mred_sig, env);
-
-  if (!get_file) {
-    wxREGGLOB(get_file);
-    wxREGGLOB(put_file);
-    wxREGGLOB(get_ps_setup_from_user);
-    wxREGGLOB(message_box);
-    wxREGGLOB(execute);
-    get_file = scheme_lookup_global(scheme_intern_symbol("get-file"), env);
-    put_file = scheme_lookup_global(scheme_intern_symbol("put-file"), env);
-    get_ps_setup_from_user = scheme_lookup_global(scheme_intern_symbol("get-ps-setup-from-user"), env);
-    message_box = scheme_lookup_global(scheme_intern_symbol("message-box"), env);
-    execute = scheme_lookup_global(scheme_intern_symbol("process"), env);
-  }
-}
-
-static Scheme_Object *wxsUnit_Init(Scheme_Object **boxes, Scheme_Object ** /* anchors */,
-				   Scheme_Unit *u, void * /* debug_request */)
-{
-  InstallRec *rec = (InstallRec *)u->data;
-  int i;
-
-  for (i = rec->count; i--; ) {
-    SCHEME_ENVBOX_VAL(boxes[i]) = rec->vals[i];
-  }
-
-  return scheme_void;
-}
 
 extern "C" Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env);
 
 void wxsScheme_setup(Scheme_Env *env)
 {
-  InstallRec *rec;
-  Scheme_Unit *u;
-  int i;
-  Scheme_Object *link, *a[1], **exs;
+  wxREGGLOB(get_file);
+  wxREGGLOB(put_file);
+  wxREGGLOB(get_ps_setup_from_user);
+  wxREGGLOB(message_box);
+  wxREGGLOB(execute);
+
+  execute = scheme_lookup_global(scheme_intern_symbol("process"), env);
+
+  env = scheme_primitive_module(scheme_intern_symbol("#%mred-kernel"), env);
 
   wxREGGLOB(gc_bitmaps);
-
-  rec = (InstallRec *)scheme_malloc(sizeof(InstallRec));
 
   objscheme_init(env);
 
@@ -162,42 +113,15 @@ void wxsScheme_setup(Scheme_Env *env)
   setup_file_symbol = scheme_intern_symbol("setup-file");
   init_file_symbol = scheme_intern_symbol("init-file");
 
-  rec->count = 0;
+  wxScheme_Install(env);
 
-  wxScheme_Install(env, rec);
-
-  /* Note: the order of exports doesn't matter for matching the (sorted) sig */
-  u = (Scheme_Unit *)scheme_malloc_tagged(sizeof(Scheme_Unit));
-  u->type = scheme_unit_type;
-  u->num_imports = 0;
-  u->num_exports = rec->count;
-  exs = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * rec->count);
-  u->exports = exs;
-  u->export_debug_names = NULL;
-  u->data = (Scheme_Object *)rec;
-  for (i = rec->count; i--; ) {
-    Scheme_Object *s;
-    s = scheme_intern_symbol(rec->names[i]);
-    u->exports[i] = s;
-  }
-  u->init_func = wxsUnit_Init;
-
-#define EVAL_ONE_STR(x) link = scheme_eval_string(x, env)
-#define EVAL_ONE_SIZED_STR(x, s) link = scheme_eval_compiled_sized_string(x, s, env)
-#define JUST_DEFINED_FUNC(x) /**/
-#define JUST_DEFINED_KEY(x) /**/
-#define MZCOMPILED_STRING_FAR /**/
-#if 1
-# include "cwrap.inc"
-#else
-# include "wrap.inc"
-#endif
-
-  a[0] = (Scheme_Object *)u;
-  wxREGGLOB(mred_unit_opener);
-  mred_unit_opener = _scheme_apply(link, 1, a);
-
-  wxScheme_Invoke(env);
+  scheme_finish_primitive_module(env);
+  
+  /* FIXME! */
+  get_file = scheme_lookup_global(scheme_intern_symbol("get-file"), env);
+  put_file = scheme_lookup_global(scheme_intern_symbol("put-file"), env);
+  get_ps_setup_from_user = scheme_lookup_global(scheme_intern_symbol("get-ps-setup-from-user"), env);
+  message_box = scheme_lookup_global(scheme_intern_symbol("message-box"), env);
 
   orig_collect_start_callback = GC_collect_start_callback;
   GC_collect_start_callback = collect_start_callback;
@@ -205,33 +129,19 @@ void wxsScheme_setup(Scheme_Env *env)
   GC_collect_end_callback = collect_end_callback;
 }
 
-void scheme_install_xc_global(char *name, Scheme_Object *val, void *env)
-{
-  InstallRec *rec = (InstallRec *)env;
+extern "C" {
 
-  if (rec->count >= INSTALL_COUNT) {
-    fprintf(stderr, "wx install overflow~n");
-    exit(-1);
-  }
+  void scheme_install_xc_global(char *name, Scheme_Object *val, Scheme_Env *env)
+    {
+      scheme_add_global(name, val, env);
+    }
+  
+  Scheme_Object * scheme_lookup_xc_global(char *name, Scheme_Env *env)
+    {
+      return scheme_lookup_global(scheme_intern_symbol(name), env);
+    }
 
-  rec->names[rec->count] = name;
-  rec->vals[rec->count] = val;
-  rec->count++;
-}
-
-Scheme_Object * scheme_lookup_xc_global(char *name, void *env)
-{
-  InstallRec *rec = (InstallRec *)env;
-  int i;
-
-  for (i = 0; i < rec->count; i++) {
-    if (!strcmp(rec->names[i], name))
-      return rec->vals[i];
-  }
-
-  return NULL;
-}
-
+};
 
 #ifdef wx_x
 extern Display *MrEdGetXDisplay(void);
@@ -1724,26 +1634,17 @@ void wxsExecute(char **argv)
   scheme_close_input_port(SCHEME_CAR(p));
 }
 
-static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
+static void wxScheme_Install(Scheme_Env *global_env)
 {
-  static int installed = 0;
+  wxREGGLOB(wxs_app_quit_proc);
+  wxREGGLOB(wxs_app_file_proc);
 
-  scheme_defining_primitives = 1;
-  
-  if (!installed) {
-    installed = 1;
-    scheme_add_namespace_option(scheme_intern_symbol("mred"), wxScheme_Invoke);
-    
-    wxREGGLOB(wxs_app_quit_proc);
-    wxREGGLOB(wxs_app_file_proc);
-
-    wxs_app_file_proc = scheme_make_prim_w_arity(DefaultAppFileProc,
-						 "default-application-file-handler",
-						 1, 1);
-    wxs_app_quit_proc = scheme_make_prim_w_arity(DefaultAppQuitProc,
-						 "default-application-quit-handler",
-						 0, 0);
-  }
+  wxs_app_file_proc = scheme_make_prim_w_arity(DefaultAppFileProc,
+					       "default-application-file-handler",
+					       1, 1);
+  wxs_app_quit_proc = scheme_make_prim_w_arity(DefaultAppQuitProc,
+					       "default-application-quit-handler",
+					       0, 0);
 
   scheme_install_xc_global("special-control-key", 
 			   scheme_make_prim_w_arity(SpecialCtlKey, 
@@ -1995,7 +1896,5 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 
   objscheme_setup_wxsGlobal(global_env);
   objscheme_setup_wxsMenuItemGlobal(global_env);
-
-  scheme_defining_primitives = 0;
 }
 

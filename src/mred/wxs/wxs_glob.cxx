@@ -643,6 +643,3 @@ void objscheme_setup_wxsGlobal(void *env)
   WITH_VAR_STACK(scheme_install_xc_global("file-selector", functmp, env));
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -1786,6 +1786,3 @@ class wxPrintSetupData *objscheme_unbundle_wxPrintSetupData(Scheme_Object *obj, 
 
 
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

@@ -4798,6 +4798,3 @@ class wxMediaWordbreakMap *objscheme_unbundle_wxMediaWordbreakMap(Scheme_Object 
 }
 
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

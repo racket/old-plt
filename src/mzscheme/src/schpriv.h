@@ -1450,6 +1450,8 @@ typedef struct Scheme_Module
   Scheme_Object *self_modidx;
 
   Scheme_Hash_Table *accessible;
+
+  Scheme_Env *primitive;
 } Scheme_Module;
 
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
@@ -1468,7 +1470,6 @@ Scheme_Object *scheme_make_modidx(Scheme_Object *path, Scheme_Object *resolved);
 
 extern Scheme_Env *scheme_initial_env;
 
-void scheme_save_initial_module_set(Scheme_Env *env);
 void scheme_install_initial_module_set(Scheme_Env *env);
 
 /*========================================================================*/

@@ -10,8 +10,8 @@ extern "C"
 #endif
 
 /* Provided by the embedding client: */
-void scheme_install_xc_global(char *name, Scheme_Object *val, void *env);
-Scheme_Object *scheme_lookup_xc_global(char *name, void *env);
+void scheme_install_xc_global(char *name, Scheme_Object *val, Scheme_Env *env);
+Scheme_Object *scheme_lookup_xc_global(char *name, Scheme_Env *env);
 
 /* initialization: */
 void objscheme_init(Scheme_Env *);

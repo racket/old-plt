@@ -524,6 +524,3 @@ class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *obj, const char *wher
     return (wxBitmap *)o->primdata;
 }
 
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif

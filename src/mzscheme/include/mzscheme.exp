@@ -240,6 +240,9 @@ scheme_lookup_global
 scheme_global_bucket
 scheme_global_keyword_bucket
 scheme_set_global_bucket
+scheme_save_initial_module_set
+scheme_primitive_module
+scheme_finish_primitive_module
 scheme_intern_symbol
 scheme_intern_exact_symbol
 scheme_make_symbol

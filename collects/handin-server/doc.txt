@@ -30,26 +30,54 @@ the server includes setting the list of currently active assignments
 The handin process uses SSL, so it is as secure as the server and each
 user's password.
 
+Quick Start for Testing:
+============================================
+
+ 1. Create a new directory.
+
+ 2. Copy "server-cert.pem" from the "handin-client" collection
+    to the new directory.
+       NOTE: for real use, you need a new certificate.
+
+ 3. Copy "private-key.pem" from the "handin-server" collection
+    to the new directory.
+       NOTE: for real use, you need a new key.
+
+ 4. Create a file "users.ss" with the following content:
+       ((tester ("pw" "Chester Tester" "123")))
+
+ 5. Make an "active" subdirectory in your new directory.
+
+ 6. Make a "test" subdirectory in "active".
+
+ 7. In your new directory, run
+        mred -mvqM handin-server
+     
+ 8. Start DrScheme, click "Handin" to run the client, submit with
+    username "tester" and password "pw".
+
+    The submitted file will be .../active/test/tester/handin0.
+
 Client Customization
 ============================================
 
 To customize the client:
 
   1. Rename (or make a copy of) the "handin-client" collection
-     directory that is distibuted with this server. The new name
-     should describe your class fairly uniquely. For example,
-     "uu-cpsc2010" is a good name for CPSC 2010 at the University of
-     Utah.
+     directory. The new name should describe your class more or less
+     uniquely. For example, "uu-cpsc2010" is a good name for CPSC 2010
+     at the University of Utah.
 
   2. Edit the first four definitions of "info.ss" in your renamed
-     collection directory:
+     client collection:
 
        * For `name', choose a name for the handin tool as it will
          appear in DrScheme's interface (e.g., the "XXX" for the
          "Manage XXX..."  menu item). Again, make the name specific to
          the course, in case a student installs multiple handin tools.
          It's a good idea to use "Handin" as the last part of the
-         name, as in "2010 Handin".
+         name, as in "2010 Handin", since the button is always named
+         "Handin".
 
        * For `collection', use the name that you chose for your
          collection directory (i.e., whatever you changed
@@ -65,8 +93,8 @@ To customize the client:
    3. Replace "icon.png" in your renamed directory with a new 32x32
       icon. This icon is displayed on startup with DrScheme's splash
       screen, and it is included at half size on the "Handin"
-      button. Again, choose a distinct icon for the sake of students
-      who install multiple handin tools.
+      button. Again, choose a distinct icon for the benefit of
+      students who install multiple handin tools.
 
    4. Replace "server-cert.pem" in your renamed directory with a
       server certificate. The file "server-cert.pem" in
@@ -90,28 +118,6 @@ To customize the client:
 
 Server Setup
 ============================================
-
-Quick start for testing:
-------------------------
-
- 1. Create a new directory.
- 2. Copy "server-cert.pem" from "handin-client" to the new directory.
-       NOTE: for real use, you need a new certificate.
- 3. Copy "private-key.pem" from "handin-server" to the new directory.
-       NOTE: for real use, you need a new key.
- 4. Create a file "users.ss" with the following content:
-       ((tester ("pw" "Chester Tester" "123")))
- 5. Make an "active" subdirectory in your new directory.
- 6. Make a "test" subdirectory in "active".
-
- 7. In your new directory, run
-        mred -mvqM handin-server
-     
- 8. Start DrScheme, click "Handin", handin as "tester" with
-    password "pw".
-
-Details and permament setup:
-----------------------------
 
 The server must be run from a directory that is specially prepared to
 host the server. This directory contains the following files and
@@ -162,7 +168,7 @@ sub-directories:
 
     If the 'allow-new-users configuration allows new users, the
     "users.ss" file can be updated by the server with new users. It
-    can always be updated by the server to change password.
+    can always be updated by the server to change passwords.
 
   * active/ --- sub-directory for active assignments. A list of active
     assignments is sent to a client tool when a student clicks
@@ -172,13 +178,15 @@ sub-directories:
     Within each directory, the student id is used for a sub-directory
     name. Within each student sub-directory are "handin0", etc., for
     each student who submits an assignment. (The most recent handin is
-    called "handin0", "handin1" is an older submission for the same
-    assignment, etc.)
+    called "handin0", then "handin1" is an older submission for the
+    same assignment, etc.)
 
     Each "handin0", etc. file contains a copy of the student's
     definitions and interactions windows. The file is in a binary
-    format that can be parsed with `unpack-submission' from "utils.ss"
-    (see below).
+    format (to support non-text code), and opening the file directly
+    in DrScheme shows the definitions part. To get both the defintions
+    and interactions parts, the file can be parsed with
+    `unpack-submission' from "utils.ss" (see below).
 
   * active/<assignment>/checker.ss (optional) --- a module that
     exports a `checker' function. This function receives two
@@ -188,25 +196,30 @@ sub-directories:
     function can raise an exception; the exception message will be
     relayed back to the student.
 
-The server currently provides to mechanism for a graceful shutdown,
+The server can be run within either MzScheme or MrEd, but "utils.ss"
+requires MrEd (which means that `checker' modules will likely require
+the server to run under MrEd).
+
+The server currently provides no mechanism for a graceful shutdown,
 but terminiating the server is no worse than a network outage. (In
 particular, no data should be lost.) To reconfigure the server (e.g.,
 to change the set of active assignments), stop it and restart it.
 
-The client and server are designed with the expectation that network
-problems and timeouts will be common. The tool always provides a
-"cancel" button for any network transaction. For submissions, "cancel"
-is guaranteed to work up to the point that the client sends a "commit"
-command, which happens only after the server is ready to accept the
-submission (having run it through thew checker, if any), but before
-the server writes the file. The server responds to a commit with "ok"
-only after it has written the file. Thus, when the tool says that the
-handin was successful, the report is reliable. Meanwhile, the tool can
-also report successful cancels most of the time. In the (normally
-brief) time between a commit and an "ok" response, the tool gives the
-student a suitable warning that the cancel is unreliable.
+The client and server are designed to be robust against network
+problems and timeouts. The client-side tool always provides a "cancel"
+button for any network transaction. For handins, "cancel" is
+guaranteed to work up to the point that the client sends a "commit"
+command; this command is sent only after the server is ready to record
+the submission (having run it through the checker, if any), but before
+the server writes the "handin0" file. Also, the server responds to a
+commit with "ok" only after it has written the file. Thus, when the
+client-side tool reports that the handin was successful, the report is
+reliable. Meanwhile, the tool can also report successful cancels most
+of the time. In the (normally brief) time between a commit and an "ok"
+response, the tool gives the student a suitable warning that the
+cancel is unreliable.
 
-To minimize handin error, the number of active assignments should be
+To minimize human error, the number of active assignments should be
 limited to 1 whenever possible. When multiple assignments are active,
 design a checker to help ensure that the student has selected the
 correct assignment in the handin dialog.

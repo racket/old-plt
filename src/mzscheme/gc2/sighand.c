@@ -22,6 +22,8 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
 #  define NEED_SIGACTION
 #  define USE_SIGACTON_SIGNAL_KIND SIGSEGV
 # else
+  struct sigcontext *sc = (struct sigcontext *)si;
+
   /* The old code. If didn't work for the 2.4.20 x86 kernel, though. */
 #  if (defined(powerpc) || defined(__powerpc__))
    /* PowerPC */

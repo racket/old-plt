@@ -173,8 +173,10 @@ class wxbDC: public wxObject
  
   virtual void SetLogicalOrigin(float x, float y);
   virtual void SetDeviceOrigin(float x, float y);
+  void GetDeviceOrigin(float *x, float *y) {*x = device_origin_x; *y = device_origin_y; }
   virtual void SetLogicalScale(float x, float y);
   virtual void SetUserScale(float x, float y) = 0;
+  void GetUserScale(float *x, float *y) {*x = user_scale_x; *y = user_scale_y; }
   virtual float DeviceToLogicalX(int x) = 0;
   virtual float DeviceToLogicalY(int y) = 0;
   virtual float DeviceToLogicalXRel(int x) = 0;

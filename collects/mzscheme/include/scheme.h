@@ -275,6 +275,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_NAMESPACEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_namespace_type)
 #define SCHEME_WEAKP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_weak_box_type)
 
+#define SCHEME_STXP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_stx_type)
 
 /*========================================================================*/
 /*                        basic Scheme accessors                          */
@@ -673,8 +674,6 @@ typedef struct Scheme_Process {
 
   int eof_on_error; /* For port operations */
 
-  int tail_buffer_set;
-
   /* MzScheme client can use: */
   void (*on_kill)(struct Scheme_Process *p);
   void *kill_data;
@@ -803,6 +802,7 @@ typedef struct Scheme_Input_Port
   unsigned char *ungotten;
   int ungotten_count, ungotten_allocated;
   long position, lineNumber, charsSinceNewline;
+  long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines;
 #ifdef MZ_REAL_THREADS
   Scheme_Object *sema;

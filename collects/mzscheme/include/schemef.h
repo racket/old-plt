@@ -410,6 +410,7 @@ Scheme_Object *scheme_make_promise_value(Scheme_Object *compiled_expr);
 /*========================================================================*/
 
 Scheme_Object *scheme_read(Scheme_Object *port);
+Scheme_Object *scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc);
 void scheme_write(Scheme_Object *obj, Scheme_Object *port);
 void scheme_display(Scheme_Object *obj, Scheme_Object *port);
 void scheme_write_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl);
@@ -436,6 +437,7 @@ long scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset);
 long scheme_tell(Scheme_Object *port);
 long scheme_output_tell(Scheme_Object *port);
 long scheme_tell_line(Scheme_Object *port);
+long scheme_tell_column(Scheme_Object *port);
 void scheme_count_lines(Scheme_Object *port);
 void scheme_close_input_port(Scheme_Object *port);
 void scheme_close_output_port(Scheme_Object *port);

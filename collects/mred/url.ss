@@ -1,11 +1,22 @@
 (require-library "macro.ss")
 
+(define-signature mred:url^
+  ((struct url (scheme host port path params query fragment))
+    get-pure-port			; url [x list (str)] -> in-port
+    get-impure-port			; url [x list (str)] -> in-port
+    display-pure-port			; in-port -> ()
+    purify-port				; in-port -> list (mime-header)
+    string->url				; str -> url
+    call/input-url			; url x (url -> in-port) x
+					; (in-port -> ())
+					; [x list (str)] -> ()
+    combine-url/relative))		; url x str -> url
+
 ; Need to return the HTTPd version, status code, etc.
 
 ; ----------------------------------------------------------------------
 
-; Input ports have three statuses:
-;   "raw" = they've just been opened
+; Input ports have two statuses:
 ;   "impure" = they have text waiting
 ;   "pure" = the MIME headers have been read
 
@@ -39,7 +50,8 @@
 		   [(string=? s "/") (car (filesystem-root-list))]
 		   [(char=? #\/ (string-ref s 0))
 		    (build-path (car (filesystem-root-list))
-				(build-relative-path (substring s 1 (string-length s))))]
+				(build-relative-path
+				  (substring s 1 (string-length s))))]
 		   [else (build-relative-path s)]))))
 
     ; scheme : str + #f
@@ -73,8 +85,8 @@
 			     (url->default-port url))))
 	  (tcp-connect (url-host url) port-number))))
 
-    ; http/get-impure-port : url [x list (str)] -> in-port
-    (define http/get-impure-port
+    ; http://get-impure-port : url [x list (str)] -> in-port
+    (define http://get-impure-port
       (opt-lambda (url (strings '()))
 	(let-values (((server->client client->server)
 		       (make-ports url)))
@@ -85,6 +97,43 @@
 	  (newline client->server)
 	  (close-output-port client->server)
 	  server->client)))
+
+    ; file://get-pure-port : url -> in-port
+    (define file://get-pure-port
+      (lambda (url)
+	(let ((host (url-host url)))
+	  (if (or (not host)
+		(string=? host "localhost"))
+	    (open-input-file
+	      (unixpath->path (url-path url)))
+	    (error 'file://get-pure-port
+	      "Cannot get file from remote hosts")))))
+
+    ; get-impure-port : url [x list (str)] -> in-port
+    (define get-impure-port
+      (opt-lambda (url (strings '()))
+	(let ((scheme (url-scheme url)))
+	  (cond
+	    ((string=? scheme "http")
+	      (http://get-impure-port url strings))
+	    ((string=? scheme "file")
+	      (error 'get-impure-port "There are no impure file:// ports"))
+	    (else
+	      (error 'get-impure-port "Unsupported scheme: ~s" scheme))))))
+
+    ; get-pure-port : url [x list (str)] -> in-port
+    (define get-pure-port
+      (opt-lambda (url (strings '()))
+	(let ((scheme (url-scheme url)))
+	  (cond
+	    ((string=? scheme "http")
+	      (let ((port (http://get-impure-port url strings)))
+		(purify-port port)
+		port))
+	    ((string=? scheme "file")
+	      (file://get-pure-port url))
+	    (else
+	      (error 'get-pure-port "Unsupported scheme: ~s" scheme))))))
 
     ; display-pure-port : in-port -> ()
     (define display-pure-port
@@ -203,14 +252,18 @@
 		(apply string-append grouped))
 	      relative-url)))))
 
-    ; call/input-url : url x (in-port -> ()) [x list (str)] -> ()
+    ; call/input-url : url x (url -> in-port) x (in-port -> ())
+    ;                  [x list (str)] -> ()
     (define call/input-url
-      (opt-lambda (url handler (params '()))
-	(let ((server->client (http/get-impure-port url params)))
-	  (dynamic-wind
-	    (lambda () 'do-nothing)
-	    (lambda () (handler server->client))
-	    (lambda () (close-input-port server->client))))))
+      (let ((handle-port (lambda (server->client handler)
+			   (dynamic-wind (lambda () 'do-nothing)
+			     (lambda () (handler server->client))
+			     (lambda () (close-input-port server->client))))))
+	(case-lambda
+	  ((url getter handler)
+	    (handle-port (getter url) handler))
+	  ((url getter handler params)
+	    (handle-port (getter url params) handler)))))
 
     (define empty-line?
       (lambda (chars)
@@ -232,7 +285,7 @@
 		      (headers-loop (cons (reverse header) headers))))
 		  (char-loop (cons c header)))))))))
 
-    ; purify-port : in-port -> list mime-header
+    ; purify-port : in-port -> list (mime-header)
     (define purify-port
       (lambda (port)
 	(let ((headers-as-chars (extract-mime-headers-as-char-lists port)))
@@ -334,7 +387,7 @@
 	  (let ((begin-point (if has-host?
 			       (+ begin-point 2)
 			       begin-point)))
-	    (let loop ((index begin-point) ; skip over leading "//"
+	    (let loop ((index begin-point)
 			(first-colon #f)
 			(first-slash #f))
 	      (cond
@@ -357,7 +410,7 @@
 		      (values
 			#f
 			#f
-			path))))
+			(substring path begin-point end-point)))))
 		(else
 		  (loop (add1 index) first-colon first-slash))))))))
 
@@ -372,6 +425,5 @@
     (define comb combine-url/relative)
     (define (test url)
       (call/input-url url
-	(lambda (p)
-	  (purify-port p)
-	  (display-pure-port p))))))
+	get-pure-port
+	display-pure-port))))

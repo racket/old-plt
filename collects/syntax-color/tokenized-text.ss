@@ -272,7 +272,9 @@
 
       (define match-parens
         (opt-lambda ([just-clear? #f])
+          (printf "trying match~n")
           (unless in-match-parens?
+            (printf "matching~n")
             (set! in-match-parens? #t)
             (begin-edit-sequence #f #f)
             (clear-old-locations)
@@ -308,7 +310,6 @@
       
       (rename (super-on-change on-change))
       (define/override (on-change)
-        (super-on-change)
         (modify))
 
       (rename (super-after-edit-sequence after-edit-sequence))
@@ -328,8 +329,8 @@
       (rename (super-after-change-style after-change-style))
       (define/override (after-change-style a b)
         (super-after-change-style a b)
-        (unless (local-edit-sequence?)
-          (unless (get-styles-fixed)
+        (unless (get-styles-fixed)
+          (unless (local-edit-sequence?)
             (when (has-focus?)
               (match-parens))))
         (modify))
@@ -344,13 +345,13 @@
 
       (rename (super-after-insert after-insert))
       (define/override (after-insert edit-start-pos change-length)
-        (super-after-insert edit-start-pos change-length)
-        (do-insert/delete edit-start-pos change-length))
+        (do-insert/delete edit-start-pos change-length)
+        (super-after-insert edit-start-pos change-length))
       
       (rename (super-after-delete after-delete))
       (define/override (after-delete edit-start-pos change-length)
-        (super-after-delete edit-start-pos change-length)
-        (do-insert/delete edit-start-pos (- change-length)))
+        (do-insert/delete edit-start-pos (- change-length))
+        (super-after-delete edit-start-pos change-length))
       
       (super-instantiate ())))
   

@@ -197,6 +197,16 @@ An environment is a (listof (cons symbol string)), as before.
   password was provided.  This only extracts the provided username and
   password.  The servlet must perform any desired checking.
 
+> redirect-to : str [redirection-status] -> response
+  constructs a reponse that redirects to the given url(str).
+  The optional argument specifies which kind of redirection to perform:
+    - permanently (Browsers should send future requests directly to this url.) 
+    - temporarily (Browsers should send future requests to the original url.)
+    - see-other (The redirection is not replacing the current url.)
+  See the HTTP/1.1 specification for details on each kind of redirection.
+  Permanently is the default redirection type.
+  
+
 For small example servlets, look in the "examples" directory in
 the "servlets" directory in the "default-web-root" of the web-server
 collection.

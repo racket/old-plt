@@ -68,6 +68,17 @@
 
 ;;
 
+
+(mytest (match "hello"
+               (#rx"he..o" #t)
+               (else #f))
+        #t)
+
+(mytest (match "hello"
+               (#rx"heffo" #t)
+               (else #f))
+        #f)
+
 (mytest (match "hello"
                ((pregex (pregexp "hello")) #t)
                (else #f))

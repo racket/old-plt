@@ -2735,6 +2735,58 @@ int mark_will_registration_FIXUP(void *p) {
 }
 
 
+int mark_waitable_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Waitable));
+}
+
+int mark_waitable_MARK(void *p) {
+  Waitable *r = (Waitable *)p;
+ 
+  gcMARK(r->next);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Waitable));
+}
+
+int mark_waitable_FIXUP(void *p) {
+  Waitable *r = (Waitable *)p;
+ 
+  gcFIXUP(r->next);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Waitable));
+}
+
+
+int mark_waiting_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Waiting));
+}
+
+int mark_waiting_MARK(void *p) {
+  Waiting *w = (Waiting *)p;
+ 
+  gcMARK(w->ws);
+  gcMARK(w->argv);
+  gcMARK(w->result);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Waiting));
+}
+
+int mark_waiting_FIXUP(void *p) {
+  Waiting *w = (Waiting *)p;
+ 
+  gcFIXUP(w->ws);
+  gcFIXUP(w->argv);
+  gcFIXUP(w->result);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Waiting));
+}
+
+
 #endif  /* THREAD */
 
 /**********************************************************************/

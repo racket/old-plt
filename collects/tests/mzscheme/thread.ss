@@ -375,4 +375,95 @@
 
 (arity-test call-in-nested-thread 1 2)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Test wait-multiple:
+
+(let ([s (make-semaphore 1)]
+      [s2 (make-semaphore 1)])
+  (let ([w (list
+	    (object-wait-multiple #f s s2)
+	    (object-wait-multiple #f s s2))])
+    (test #t 'both (or (equal? w (list s s2))
+		       (equal? w (list s2 s))))
+    (test #f semaphore-try-wait? s)
+    (test #f semaphore-try-wait? s2)))
+
+(let ([s (make-semaphore)]
+      [s-t (make-semaphore)])
+  (let ([t (thread
+	    (lambda ()
+	      (object-wait-multiple #f s-t)))]
+	[l (tcp-listen 40001 5 #t)]
+	[orig-thread (current-thread)])
+    (let-values ([(r w) (make-pipe)])
+      
+      (define (try-all-blocked* wait)
+	(let ([v #f])
+	  (let ([bt (thread
+		     (lambda ()
+		       (with-handlers ([exn:break? (lambda (x) (set! v 'break))])
+			 (set! v (wait #f s t l r)))))])
+	    (sleep 0.05) ;;;     <---------- race condition (that's unlikely to fail)
+	    (break-thread bt)
+	    (sleep 0.05) ;;;     <----------
+	    )
+	  (test 'break 'broken-wait v)))
+
+      (define (try-all-blocked)
+	(test #f object-wait-multiple 0.05 s t l r))
+
+      (try-all-blocked* object-wait-multiple)
+      (try-all-blocked* object-wait-multiple/enable-break)
+      (parameterize ([break-enabled #f])
+	(try-all-blocked* object-wait-multiple/enable-break))
+
+      (display #\x w)
+      (test r object-wait-multiple #f s t l r)
+      (test r object-wait-multiple #f s t l r)
+      (peek-char r)
+      (test r object-wait-multiple #f s t l r)
+      (read-char r)
+      (try-all-blocked)
+	  
+      (semaphore-post s)
+      (test s object-wait-multiple #f s t l r)
+      (try-all-blocked)
+
+      (semaphore-post s-t)
+      (test t object-wait-multiple #f s t l r)
+      (test t object-wait-multiple #f s t l r)
+
+      (set! t (thread (lambda () (semaphore-wait (make-semaphore)))))
+
+      (let-values ([(cr cw) (tcp-connect "localhost" 40001)])
+	(test l object-wait-multiple #f s t l r)
+	(test l object-wait-multiple #f s t l r)
+
+	(let-values ([(sr sw) (tcp-accept l)])
+	  (try-all-blocked)
+
+	  (close-output-port w)
+	  (test r object-wait-multiple #f s t l r)
+	  (test r object-wait-multiple #f s t l r)
+
+	  (set! r cr)
+	  (try-all-blocked)
+
+	  (display #\y sw)
+	  (test cr object-wait-multiple #f s t l sr cr)
+	  (read-char cr)
+	  (try-all-blocked)
+	  
+	  (display #\z cw)
+	  (test sr object-wait-multiple #f s t l sr cr)
+	  (read-char sr)
+	  (try-all-blocked)
+
+	  (close-output-port sw)
+	  (test cr object-wait-multiple #f s t l sr cr)
+	  (test cr object-wait-multiple #f s t l sr cr)
+
+	  (close-output-port cw)
+	  (test sr object-wait-multiple #f s t l sr))))))
+
 (report-errs)

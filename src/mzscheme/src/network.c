@@ -163,6 +163,8 @@ static Scheme_Object *tcp_accept_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
 
+static void register_tcp_listener_wait();
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -226,6 +228,8 @@ void scheme_init_network(Scheme_Env *env)
 						      "tcp-addresses", 
 						      1, 1, 1), 
 			     env);
+
+  register_tcp_listener_wait();
 }
 
 
@@ -2064,6 +2068,11 @@ static Scheme_Object *
 tcp_accept_break(int argc, Scheme_Object *argv[])
 {
   return scheme_call_enable_break(tcp_accept, argc, argv);
+}
+
+static void register_tcp_listener_wait()
+{
+  scheme_add_waitable(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL);
 }
 
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])

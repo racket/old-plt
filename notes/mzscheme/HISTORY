@@ -4,6 +4,35 @@ See MzScheme_200.txt for information on major changes in MzScheme
 
 Version 199.20:
 
+ * Added `tcp-connect/enable-break' and `tcp-accept/enable-break'.
+
+ * Added `object-wait-multiple' and `object-wait-multiple/enable-break'.
+   The new procedures accept a timeout (possibly #f) and one or more
+   arguments for waiting. They block until the timeout expires, in
+   which case #f is returned, or until one of the objects becomes
+   unblocked, in which case an unblocked object is returned. If a
+   semaphore is returned, then its internal count has been decremented
+   by the wait.
+
+   The waitable objects, plus the corresponding blocking states, are
+   as follows:
+
+     type of object   blocking state      
+     --------------   --------------------
+     semaphore        count is zero       
+     thread           running             
+     subprocess       running             
+     TCP listener     nothing to accept   
+     will executor    no wills to execute 
+     input port:      no characters ready 
+       file-stream
+       pipe
+       TCP
+
+   The `semaphore-wait', `semaphore-wait/enable-break', `thread-wait',
+   and `subprocess-wait' procedures are all technically redundant, but
+   it seems worthwhile to keep them.
+
  * Added `letrec-syntaxes+values', and changed the expansion of
    internal defines to use the new form so that a sequence of internal
    `define' and `define-syntax' defininitions create a single,
@@ -14,8 +43,14 @@ Version 199.20:
  * Fixed `write' on symbols with uppercase characters to quote the
    characters.
 
+ * Added a fourth optional argument to `datum->syntax-errors' for
+   copying properties.
+
  * Fixed reader error messages to use `error-print-source-location'
    and GNU-style source locations.
+
+ * Removed `semaphore-wait-multiple' from the "thread.ss" MzLib
+   library.
 
 Version 199.19:
 
@@ -314,12 +349,14 @@ Removed make-hash-table-weak and changed make-hash-table to
  accept up to two flag arguments: 'weak and/or 'equal
 Added eq-hash-code and equal-hash-code
 Added port-count-lines!, which enables line-couting for a port
-Extended customports to support non-char input, added
+Extended custom ports to support non-char input, added
  read-char-or-special and peek-char-or-special
 Quoted portions of a symbol (using | or \) preserve their case,
 Added read-dot-as-symbol and read-accept-quasiquote parameters
 Changed quoted parts of a symbol (with | or \) to always preserve case
 Added an optional third argument to tcp-listen to reuse addresses
+Added tcp-connect/enable-break and tcp-accept/enable-break
+Added object-wait-multiple and object-wait-multiple/enable-break
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
 Default for pconvert.ss's whole/fractional-exact-numbers parameter

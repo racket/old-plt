@@ -33,6 +33,8 @@ EXPORTS
  scheme_remove_managed
  scheme_close_managed
  scheme_add_atexit_closer
+ scheme_add_waitable
+ scheme_add_waitable_through_sema
  scheme_signal_error
  scheme_raise_exn
  scheme_warning

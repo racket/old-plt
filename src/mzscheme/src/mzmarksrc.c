@@ -1200,6 +1200,28 @@ mark_will_registration {
   gcBYTES_TO_WORDS(sizeof(WillRegistration));
 }
 
+mark_waitable {
+ mark:
+  Waitable *r = (Waitable *)p;
+ 
+  gcMARK(r->next);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Waitable));
+}
+
+mark_waiting {
+ mark:
+  Waiting *w = (Waiting *)p;
+ 
+  gcMARK(w->ws);
+  gcMARK(w->argv);
+  gcMARK(w->result);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Waiting));
+}
+
 END thread;
 
 /**********************************************************************/

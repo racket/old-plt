@@ -1493,7 +1493,7 @@ static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Ob
   Scheme_Object *src;
 
   if (!(argc == 1) && !(argc == 3))
-    scheme_case_lambda_wrong_count("default-port-read-handler", argc, argv, 2, 1, 1, 3, 3);
+    scheme_case_lambda_wrong_count("default-port-read-handler", argc, argv, 0, 2, 1, 1, 3, 3);
 
   if (!SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("default-port-read-handler", "input-port", 0, argc, argv);

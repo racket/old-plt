@@ -573,6 +573,11 @@ typedef struct Scheme_Custodian *Scheme_Custodian_Reference;
 
 typedef struct Scheme_Custodian Scheme_Custodian;
 
+typedef int (*Scheme_Ready_Fun)(Scheme_Object *o);
+typedef void (*Scheme_Needs_Wakeup_Fun)(Scheme_Object *, void *);
+typedef Scheme_Object *(*Scheme_Wait_Sema_Fun)(Scheme_Object *, int *repost);
+typedef int (*Scheme_Wait_Filter_Fun)(Scheme_Object *);
+
 /* The Scheme_Thread structure represents a MzScheme thread. */
 
 typedef struct Scheme_Thread {

@@ -202,8 +202,8 @@
 						(car l)
 						(loop (cdr l))))))]
 		 [(list? a)
-					; Just check that all are consistent for now.
-					; This should be improved.
+		  ;; Just check that all are consistent for now.
+		  ;; This should be improved.
 		  (andmap
 		   (lambda (a)
 		     (if (number? a)

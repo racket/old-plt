@@ -1806,10 +1806,10 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
       make_list_immutable(m->et_requires);
 
       fm = scheme_stx_property(fm, 
-			       scheme_intern_symbol("module-direct-imports"),
+			       scheme_intern_symbol("module-direct-requires"),
 			       m->requires);
       fm = scheme_stx_property(fm, 
-			       scheme_intern_symbol("module-direct-for-syntax-imports"),
+			       scheme_intern_symbol("module-direct-for-syntax-requires"),
 			       m->et_requires);
       
       fm = scheme_stx_property(fm, 

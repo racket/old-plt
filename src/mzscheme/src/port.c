@@ -223,6 +223,8 @@ System_Child *scheme_system_children;
 static int external_event_fd, put_external_event_fd, event_fd_set;
 #endif
 
+static void register_input_port_wait();
+
 #ifdef USE_FD_PORTS
 static int flush_fd(Scheme_Output_Port *op, 
 		    char * volatile bufstr, volatile int buflen, 
@@ -232,10 +234,11 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
 
 static Scheme_Object *subprocess(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_status(int c, Scheme_Object *args[]);
-static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_pid(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_p(int c, Scheme_Object *args[]);
+static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
+static void register_subprocess_wait();
 
 Scheme_Object *
 _scheme_make_named_file_input_port(FILE *fp, const char *filename, 
@@ -480,6 +483,8 @@ scheme_init_port (Scheme_Env *env)
 
   scheme_init_port_config();
 
+  register_input_port_wait();
+
   scheme_add_global_constant("subprocess", 
 			     scheme_make_prim_w_arity2(subprocess, 
 						       "subprocess", 
@@ -491,11 +496,6 @@ scheme_init_port (Scheme_Env *env)
 						      "subprocess-status", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("subprocess-wait", 
-			     scheme_make_prim_w_arity(subprocess_wait, 
-						      "subprocess-wait", 
-						      1, 1),
-			     env);
   scheme_add_global_constant("subprocess-pid", 
 			     scheme_make_prim_w_arity(subprocess_pid, 
 						      "subprocess-pid", 
@@ -506,6 +506,14 @@ scheme_init_port (Scheme_Env *env)
 						      "subprocess?", 
 						      1, 1),
 			     env);
+  scheme_add_global_constant("subprocess-wait", 
+			     scheme_make_prim_w_arity(subprocess_wait, 
+						      "subprocess-wait", 
+						      1, 1),
+			     env);
+
+
+  register_subprocess_wait();
 
   scheme_add_global_constant("send-event", 
 			     scheme_make_prim_w_arity(sch_send_event,
@@ -898,6 +906,33 @@ scheme_make_input_port(Scheme_Object *subtype,
   return _scheme_make_input_port(subtype, data,
 				 getc_fun, peekc_fun, char_ready_fun, close_fun, 
 				 need_wakeup_fun, must_close);
+}
+
+int waitable_input_port_p(Scheme_Object *p)
+{
+  Scheme_Object *sub_type = ((Scheme_Input_Port *)p)->sub_type;
+
+  return (SAME_OBJ(sub_type, file_input_port_type)
+#ifdef USE_FD_PORTS
+	  || SAME_OBJ(sub_type, fd_input_port_type)
+#endif
+#ifdef USE_OSKIT_CONSOLE
+	  || SAME_OBJ(sub_type, oskit_console_input_port_type)
+#endif
+#ifdef USE_TCP
+	  || SAME_OBJ(sub_type, scheme_tcp_input_port_type)
+#endif
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+	  || SAME_OBJ(sub_type, tested_file_input_port_type)
+#endif
+	  || SAME_OBJ(sub_type, scheme_pipe_read_port_type));
+}
+
+void register_input_port_wait()
+{
+  scheme_add_waitable(scheme_input_port_type,
+		      scheme_char_ready, scheme_need_wakeup, 
+		      waitable_input_port_p);
 }
 
 Scheme_Output_Port *
@@ -4619,8 +4654,10 @@ typedef struct {
 } BeOSProcess;
 #endif
 
-static int subp_done(Scheme_Object *sci)
+static int subp_done(Scheme_Object *sp)
 {
+  Scheme_Object *sci = ((Scheme_Subprocess *)sp)->handle;
+
 #if defined(UNIX_PROCESSES)
   System_Child *sc = (System_Child *)sci;
   return sc->done;
@@ -4648,14 +4685,16 @@ static int subp_done(Scheme_Object *sci)
 #endif
 }
 
-static void subp_needs_wakeup(Scheme_Object *sci, void *fds)
+static void subp_needs_wakeup(Scheme_Object *sp, void *fds)
 {
 #ifdef WINDOWS_PROCESSES
 # ifndef NO_STDIO_THREADS
+  Scheme_Object *sci = ((Scheme_Subprocess *)sp)->handle;
   scheme_add_fd_handle((void *)(HANDLE)sci, fds, 0);
 # endif
 #endif
 #ifdef BEOS_PROCESSES
+  Scheme_Object *sci = ((Scheme_Subprocess *)sp)->handle;
   scheme_add_fd_handle((void *)((BeOSProcess *)sci)->done_sem, fds, 1);
 #endif
 }
@@ -4716,27 +4755,30 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
 }
 
 
+static void register_subprocess_wait()
+{
+#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+  scheme_add_waitable(scheme_subprocess_type, subp_done, subp_needs_wakeup, NULL);
+#endif
+}
+
 static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
     scheme_wrong_type("subprocess-wait", "subprocess", 0, argc, argv);
 
-#if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
+#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   {
     Scheme_Subprocess *sp = (Scheme_Subprocess *)argv[0];
 
-# ifdef MZ_REAL_THREADS
-    scheme_wait_sema(((System_Child *)sp->handle)->sema, 0);
-# else
-    scheme_block_until(subp_done, subp_needs_wakeup, sp->handle, (float)0.0);
-# endif
+    scheme_block_until(subp_done, subp_needs_wakeup, sp, (float)0.0);
 
     return scheme_void;
   }
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		   "%s: not supported on this platform",
-		   "subprocess-wait");
+                 "%s: not supported on this platform",
+                 "subprocess-wait");
 #endif
 }
 

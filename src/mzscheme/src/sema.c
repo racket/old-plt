@@ -32,6 +32,12 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p);
 static void register_traversers(void);
 #endif
 
+/* For object-wait: */
+static Scheme_Object *sema_identity(Scheme_Object *s, int *repost)
+{
+  *repost = 0;
+  return s;
+}
 
 void scheme_init_sema(Scheme_Env *env)
 {
@@ -69,6 +75,8 @@ void scheme_init_sema(Scheme_Env *env)
 						      "semaphore-wait/enable-break", 
 						      1, 1), 
 			     env);
+
+  scheme_add_waitable_through_sema(scheme_sema_type, sema_identity, NULL);
 
 }
 

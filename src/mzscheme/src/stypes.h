@@ -149,6 +149,8 @@ enum {
   scheme_thread_hop_type,
   scheme_rt_breakable,
   scheme_rt_srcloc,
+  scheme_rt_waitable,
+  scheme_rt_waiting,
 #endif
 
   _scheme_last_type_

@@ -192,7 +192,7 @@ static int do_atomic = 0;
 static int missed_context_switch = 0;
 static int have_activity = 0;
 int scheme_active_but_sleeping = 0;
-static int process_ended_with_activity;
+static int thread_ended_with_activity;
 #endif
 
 static int tls_pos = 0;
@@ -224,13 +224,17 @@ static Scheme_Object *sch_thread(int argc, Scheme_Object *args[]);
 #endif
 static Scheme_Object *sch_sleep(int argc, Scheme_Object *args[]);
 #ifndef NO_SCHEME_THREADS
-static Scheme_Object *processp(int argc, Scheme_Object *args[]);
-static Scheme_Object *process_running_p(int argc, Scheme_Object *args[]);
-static Scheme_Object *process_wait(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_p(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_running_p(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_wait(int argc, Scheme_Object *args[]);
 static Scheme_Object *sch_current(int argc, Scheme_Object *args[]);
 static Scheme_Object *kill_thread(int argc, Scheme_Object *args[]);
 static Scheme_Object *break_thread(int argc, Scheme_Object *args[]);
+static void register_thread_wait();
 #endif
+
+static Scheme_Object *object_wait(int argc, Scheme_Object *args[]);
+static Scheme_Object *object_wait_break(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[]);
 static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[]);
@@ -252,6 +256,7 @@ static Scheme_Object *will_executor_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *register_will(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_try(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_go(int argc, Scheme_Object *args[]);
+static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost);
 
 static Scheme_Config *make_initial_config(void);
 static int do_kill_thread(Scheme_Thread *p);
@@ -389,21 +394,21 @@ void scheme_init_thread(Scheme_Env *env)
 
 #ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("thread?",
-			     scheme_make_folding_prim(processp,
+			     scheme_make_folding_prim(thread_p,
 						      "thread?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("thread-running?",
-			     scheme_make_prim_w_arity(process_running_p,
+			     scheme_make_prim_w_arity(thread_running_p,
 						      "thread-running?",
 						      1, 1),
 			     env);
   scheme_add_global_constant("thread-wait",
-			     scheme_make_prim_w_arity(process_wait,
+			     scheme_make_prim_w_arity(thread_wait,
 						      "thread-wait",
 						      1, 1),
 			     env);
-  
+
   scheme_add_global_constant("current-thread", 
 			     scheme_make_prim_w_arity(sch_current,
 						      "current-thread", 
@@ -420,6 +425,8 @@ void scheme_init_thread(Scheme_Env *env)
 						      "break-thread", 
 						      1, 1), 
 			     env);
+
+  register_thread_wait();
 #endif
 
   scheme_add_global_constant("make-custodian",
@@ -500,6 +507,9 @@ void scheme_init_thread(Scheme_Env *env)
 						      "will-execute", 
 						      1, 1), 
 			     env);
+  
+  scheme_add_waitable_through_sema(scheme_will_executor_type, will_executor_sema, NULL);
+
 
   scheme_add_global_constant("collect-garbage", 
 			     scheme_make_prim_w_arity(collect_garbage, 
@@ -523,6 +533,18 @@ void scheme_init_thread(Scheme_Env *env)
 						      3, 3),
 			     env);
   
+
+  scheme_add_global_constant("object-wait-multiple", 
+			     scheme_make_prim_w_arity(object_wait,
+						      "object-wait-multiple", 
+						      2, -1), 
+			     env);
+  scheme_add_global_constant("object-wait-multiple/enable-break", 
+			     scheme_make_prim_w_arity(object_wait_break,
+						      "object-wait-multiple/enable-break", 
+						      2, -1),
+			     env);
+
   REGISTER_SO(namespace_options);
 
 #ifdef MZ_REAL_THREADS
@@ -581,6 +603,7 @@ static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[])
     lim = 0x3fffffff; /* more memory than we actually have */
   } else {
     scheme_wrong_type("custodian-require-memory", "positive exact integer", 0, argc, args);
+    return NULL;
   }
 
   scheme_check_proc_arity("custodian-require-memory", 0, 1, argc, args);
@@ -601,6 +624,7 @@ static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[])
   
   if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type)) {
     scheme_wrong_type("custodian-limit-memory", "custodian", 0, argc, args);
+    return NULL;
   }
 
   if (SCHEME_INTP(args[1]) && (SCHEME_INT_VAL(args[1]) > 0)) {
@@ -1522,7 +1546,7 @@ static void start_child(Scheme_Thread * volatile child,
     SCHEME_RELEASE_LOCK();
     
 #ifndef MZ_REAL_THREADS
-    process_ended_with_activity = 1;
+    thread_ended_with_activity = 1;
     
     if (scheme_notify_multithread && !scheme_first_thread->next) {
       scheme_notify_multithread(0);
@@ -1653,12 +1677,12 @@ static Scheme_Object *sch_current(int argc, Scheme_Object *args[])
   return (Scheme_Object *)scheme_current_thread;
 }
 
-static Scheme_Object *processp(int argc, Scheme_Object *args[])
+static Scheme_Object *thread_p(int argc, Scheme_Object *args[])
 {
   return SCHEME_THREADP(args[0]) ? scheme_true : scheme_false;
 }
 
-static Scheme_Object *process_running_p(int argc, Scheme_Object *args[])
+static Scheme_Object *thread_running_p(int argc, Scheme_Object *args[])
 {
   int running;
 
@@ -1670,15 +1694,13 @@ static Scheme_Object *process_running_p(int argc, Scheme_Object *args[])
   return MZTHREAD_STILL_RUNNING(running) ? scheme_true : scheme_false;
 }
 
-#ifndef MZ_REAL_THREADS
 static int thread_wait_done(Scheme_Object *p)
 {
   int running = ((Scheme_Thread *)p)->running;
   return !MZTHREAD_STILL_RUNNING(running);
 }
-#endif
 
-static Scheme_Object *process_wait(int argc, Scheme_Object *args[])
+static Scheme_Object *thread_wait(int argc, Scheme_Object *args[])
 {
   Scheme_Thread *p;
 
@@ -1688,19 +1710,19 @@ static Scheme_Object *process_wait(int argc, Scheme_Object *args[])
   p = (Scheme_Thread *)args[0];
 
   if (MZTHREAD_STILL_RUNNING(p->running)) {
-#ifndef MZ_REAL_THREADS
     scheme_block_until(thread_wait_done, NULL, p, 0);
-#else
-    scheme_wait_sema(p->done_sema, 0);
-    scheme_post_sema(p->done_sema);
-#endif
   }
 
   return scheme_void;
 }
 
+static void register_thread_wait()
+{
+  scheme_add_waitable(scheme_thread_type, thread_wait_done, NULL, NULL);
+}
+
 /**************************************************************************/
-/* Ensure that a new thread has a reasonable starting stack   */
+/* Ensure that a new thread has a reasonable starting stack */
 
 #ifndef MZ_REAL_THREADS
 # ifdef DO_STACK_CHECK
@@ -2051,8 +2073,8 @@ static int check_sleep(int need_activity, int sleep_now)
     p2 = p2->next;
   }
   
-  end_with_act = process_ended_with_activity;
-  process_ended_with_activity = 0;
+  end_with_act = thread_ended_with_activity;
+  thread_ended_with_activity = 0;
   
   if (need_activity && !end_with_act && 
       (do_atomic 
@@ -2835,6 +2857,237 @@ void scheme_pop_kill_action()
 }
 
 /*========================================================================*/
+/*                              waiting                                   */
+/*========================================================================*/
+
+typedef struct Waitable {
+  MZTAG_IF_REQUIRED
+  Scheme_Type wait_type;
+  Scheme_Ready_Fun ready;
+  Scheme_Needs_Wakeup_Fun needs_wakeup;
+  Scheme_Wait_Sema_Fun get_sema;
+  Scheme_Wait_Filter_Fun filter;
+  struct Waitable *next;
+} Waitable;
+
+static Waitable *waitables;
+
+void scheme_add_waitable(Scheme_Type type,
+			 Scheme_Ready_Fun ready, 
+			 Scheme_Needs_Wakeup_Fun wakeup, 
+			 Scheme_Wait_Filter_Fun filter)
+{
+  Waitable *next = waitables;
+
+  if (!waitables) {
+    REGISTER_SO(waitables);
+  }
+
+  waitables = MALLOC_ONE_RT(Waitable);
+#ifdef MZTAG_REQUIRED
+  waitables->type = scheme_rt_waitable;
+#endif
+  waitables->wait_type = type;
+  waitables->ready = ready;
+  waitables->needs_wakeup = wakeup;
+  waitables->filter = filter;
+  waitables->next = next;
+}
+
+void scheme_add_waitable_through_sema(Scheme_Type type,
+				      Scheme_Wait_Sema_Fun get_sema, 
+				      Scheme_Wait_Filter_Fun filter)
+{
+  scheme_add_waitable(type, NULL, NULL, filter);
+  waitables->get_sema = get_sema;
+}
+
+typedef struct Waiting {
+  MZTAG_IF_REQUIRED
+  int argc;
+  Scheme_Object **argv;
+  Waitable **ws;
+  Scheme_Object *result;
+  long start_time;
+  float timeout;
+} Waiting;
+
+static int waiting_ready(Scheme_Object *s)
+{
+  int i;
+  Waiting *waiting = (Waiting *)s;
+  Waitable *w;
+
+  if (waiting->result)
+    return 1;
+
+  /* Anything ready? */
+  for (i = 0; i < waiting->argc; i++) {
+    w = waiting->ws[i];
+    if (w->ready) {
+      Scheme_Ready_Fun ready = w->ready;
+      
+      if (ready(waiting->argv[i])) {
+	waiting->result = waiting->argv[i];
+	return 1;
+      }
+    } else if (w->get_sema) {
+      int repost = 0;
+      Scheme_Wait_Sema_Fun get_sema = w->get_sema;
+      Scheme_Object *sema;
+      
+      sema = get_sema(waiting->argv[i], &repost);
+      if (scheme_wait_sema(sema, 1)) {
+	if (repost)
+	  scheme_post_sema(sema);
+	waiting->result = waiting->argv[i];
+	return 1;
+      }
+    }
+  }
+
+  if (waiting->timeout >= 0.0) {
+    long d;
+    d = (scheme_get_milliseconds() - waiting->start_time);
+    if (d < 0)
+      d = -d;
+    if (d >= (waiting->timeout * 1000))
+      return 1;
+  }
+
+  return 0;
+}
+
+static void waiting_needs_wakeup(Scheme_Object *s, void *fds)
+{
+  int i;
+  Waiting *waiting = (Waiting *)s;
+  Waitable *w;
+
+  for (i = 0; i < waiting->argc; i++) {
+    w = waiting->ws[i];
+    if (w->needs_wakeup) {
+      Scheme_Needs_Wakeup_Fun nw = w->needs_wakeup;
+      
+      nw(waiting->argv[i], fds);
+    }
+  }
+}
+
+static Scheme_Object *object_wait(int argc, Scheme_Object *argv[])
+{
+  Waitable *w, **ws, *qws[1];
+  Waiting *waiting;
+  Scheme_Object **args;
+  Scheme_Type t;
+  int i;
+  float timeout = -1.0;
+  long start_time;
+
+  if (!SCHEME_FALSEP(argv[0])) {
+    if (SCHEME_REALP(argv[0]))
+      timeout = scheme_real_to_double(argv[0]);
+
+    if (timeout < 0.0) {
+      scheme_wrong_type("object-wait", "non-negative real number", 0, argc, argv);
+      return NULL;
+    }
+
+    start_time = scheme_get_milliseconds();
+  } else
+    start_time = 0;
+
+  if (argc == 2 && SCHEME_FALSEP(argv[0]) && SCHEME_SEMAP(argv[1])) {
+    scheme_wait_sema(argv[1], 0);
+    return scheme_void;
+  }
+
+  if ((argc == 2) && SCHEME_FALSEP(argv[0]))
+    ws= qws;
+  else
+    ws = MALLOC_N(Waitable*, argc-1);
+
+  /* Find Waitable record for each argument: */
+  for (i = 0; i < argc-1; i++) {
+    t = SCHEME_TYPE(argv[i+1]);
+    for (w = waitables; w; w = w->next) {
+      if (SAME_TYPE(t, w->wait_type)){
+	ws[i] = w;
+	if (w->filter) {
+	  Scheme_Wait_Filter_Fun filter;
+	  filter = w->filter;
+	  if (!filter(argv[i+1]))
+	    w = NULL;
+	}
+	break;
+      }
+    }
+    if (!w) {
+      scheme_arg_mismatch("object-wait-multiple",
+			  "argument is not waitable: ",
+			  argv[i+1]);
+    }
+  }
+
+  /* Special case: one argument, no timeout */
+  if ((argc == 1) && SCHEME_FALSEP(argv[0])) {
+    w = ws[0];
+    if (w->ready) {
+      scheme_block_until(w->ready, w->needs_wakeup, argv[1], 0.0);
+      return argv[1];
+    } else if (w->get_sema) {
+      int repost = 0;
+      Scheme_Wait_Sema_Fun get_sema = w->get_sema;
+      Scheme_Object *sema;
+
+      sema = get_sema(argv[1], &repost);
+      scheme_wait_sema(sema, 0);
+      if (repost)
+	scheme_post_sema(sema);
+
+      return argv[1];
+    }
+  }
+
+  /* Normal case: wait for more than one thing */
+  waiting = MALLOC_ONE_RT(Waiting);
+#ifdef MZTAG_REQUIRED
+  waiting->type = scheme_rt_waiting;
+#endif
+  waiting->argc = argc - 1;
+  waiting->ws = ws;
+  args = MALLOC_N(Scheme_Object*, argc-1);
+  for (i = 1; i < argc; i++) {
+    args[i - 1] = argv[i];
+  }
+  waiting->argv = args;
+  waiting->timeout = timeout;
+  waiting->start_time = start_time;
+  
+  if (timeout < 0.0)
+    timeout = 0.0; /* means "no timeout" to block_until */
+
+  if (!waiting_ready((Scheme_Object *)waiting)) {
+    scheme_block_until(waiting_ready, waiting_needs_wakeup, waiting, timeout);
+  }
+
+  if (waiting->result)
+    return waiting->result;
+  else
+    return scheme_false;
+}
+
+static Scheme_Object *object_wait_break(int argc, Scheme_Object *argv[])
+{
+  if (argc == 2 && SCHEME_FALSEP(argv[0]) && SCHEME_SEMAP(argv[1])) {
+    scheme_wait_sema(argv[1], -1);
+    return scheme_void;
+  }
+
+  return scheme_call_enable_break(object_wait, argc, argv);
+}
+
+/*========================================================================*/
 /*                              parameters                                */
 /*========================================================================*/
 
@@ -3398,6 +3651,12 @@ static Scheme_Object *will_executor_go(int argc, Scheme_Object **argv)
   scheme_wait_sema(w->sema, 0);
 
   return do_next_will(w);
+}
+
+static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost)
+{
+  *repost = 1;
+  return ((WillExecutor *)w)->sema;
 }
 
 /*========================================================================*/
@@ -4501,6 +4760,8 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_param_data, mark_param_data);
   GC_REG_TRAV(scheme_rt_will, mark_will);
   GC_REG_TRAV(scheme_rt_will_registration, mark_will_registration);
+  GC_REG_TRAV(scheme_rt_waitable, mark_waitable);
+  GC_REG_TRAV(scheme_rt_waiting, mark_waiting);
 }
 
 END_XFORM_SKIP;

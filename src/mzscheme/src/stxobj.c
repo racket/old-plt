@@ -241,7 +241,7 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("datum->syntax-object", 
 			     scheme_make_folding_prim(datum_to_syntax,
 						      "datum->syntax-object",
-						      2, 3, 1),
+						      2, 4, 1),
 			     env);
 
   scheme_add_global_constant("syntax-e", 
@@ -2739,7 +2739,7 @@ static int pos_exact_or_false_p(Scheme_Object *o)
 
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
-  Scheme_Object *src = scheme_false;
+  Scheme_Object *src = scheme_false, *properties = NULL;
 
   if (!SCHEME_FALSEP(argv[0]) && !SCHEME_STXP(argv[0]))
     scheme_wrong_type("datum->syntax-object", "syntax or #f", 0, argc, argv);
@@ -2758,6 +2758,14 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 	     && pos_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src))))
 	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src)))))))
       scheme_wrong_type("datum->syntax-object", "syntax, source location list, or #f", 2, argc, argv);
+
+    if (argc > 3) {
+      if (!SCHEME_FALSEP(argv[3])) {
+	if (!SCHEME_STXP(argv[3]))
+	  scheme_wrong_type("datum->syntax-object", "syntax or #f", 3, argc, argv);
+	properties = ((Scheme_Stx *)argv[3])->props;
+      }
+    }
 
     if (ll == 5) {
       /* line--column--pos--span format */
@@ -2793,7 +2801,14 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
     }
   }
   
-  return scheme_datum_to_syntax(argv[1], src, argv[0], 1, 0);
+  src = scheme_datum_to_syntax(argv[1], src, argv[0], 1, 0);
+
+  if (properties) {
+    if (!((Scheme_Stx *)src)->props)
+      ((Scheme_Stx *)src)->props = properties;
+  }
+
+  return src;
 }
 
 

@@ -90,6 +90,13 @@ Scheme_Custodian_Reference *(*scheme_add_managed)(Scheme_Custodian *m, Scheme_Ob
 void (*scheme_remove_managed)(Scheme_Custodian_Reference *m, Scheme_Object *o);
 void (*scheme_close_managed)(Scheme_Custodian *m);
 void (*scheme_add_atexit_closer)(Scheme_Exit_Closer_Func f);
+void (*scheme_add_waitable)(Scheme_Type type,
+			 Scheme_Ready_Fun ready, 
+			 Scheme_Needs_Wakeup_Fun wakeup, 
+			 Scheme_Wait_Filter_Fun filter);
+void (*scheme_add_waitable_through_sema)(Scheme_Type type,
+				      Scheme_Wait_Sema_Fun sema, 
+				      Scheme_Wait_Filter_Fun filter);
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/

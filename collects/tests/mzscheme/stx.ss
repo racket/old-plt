@@ -70,6 +70,8 @@
 (test 10 syntax-property se 'testing)
 (test 'mcr syntax-e (syntax-property se 'origin))
 
+(test 10 syntax-property (datum->syntax-object #f 0 #f s) 'testing)
+
 (test #t syntax-original? s)
 (test #f syntax-original? se)
 

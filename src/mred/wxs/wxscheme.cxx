@@ -2905,20 +2905,24 @@ void wxscheme_prepare_hooks(int argc, char **argv)
     ender = 0;
     if (!i) {
       delta = strlen(s);
-#ifdef wx_msw
+#ifndef wx_xt
+# ifdef wx_msw
       if ((delta >= 12) && (s[delta-4] == '.')
 	  && (s[delta-3] == 'e') && (s[delta-2] == 'x')
 	  && (s[delta-1] == 'e')) {
-	delta -= 12;
+	delta -= 4;
 	ender = '.';
       } else
 	delta = 0;
-#endif
-#ifdef wx_mac
+# endif
+      if ((delta >= 10) && (s[delta-2] == '3')
+	  && (s[delta-1] == 'm')) {
+	delta -= 2;
+	ender = '3';
+      }
+
       if (delta >= 8)
 	delta -= 8;
-      else
-	delta = 0;
 #endif
     } else
       delta = 0;

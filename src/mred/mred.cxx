@@ -246,12 +246,12 @@ int mred_het_param;
 #endif
 
 typedef struct Nested_Wait {
-  Scheme_Type type;
+  Scheme_Object so;
   Scheme_Object *wait_on;
 } Nested_Wait;
 
 typedef struct Context_Custodian_Hop {
-  Scheme_Type type;
+  Scheme_Object so;
   MrEdContext *context;
 } Context_Custodian_Hop;
 
@@ -699,7 +699,7 @@ static MrEdContext *MakeContext(MrEdContext *c)
     MrEdFinalizedContext *fc;
 
     c = (MrEdContext *)scheme_malloc_tagged(sizeof(MrEdContext));
-    c->type = mred_eventspace_type;
+    c->so.type = mred_eventspace_type;
 
     tlwl = new wxChildList();
     c->topLevelWindowList = tlwl;
@@ -763,7 +763,7 @@ static MrEdContext *MakeContext(MrEdContext *c)
 #else
   mr_hop = (Context_Custodian_Hop *)scheme_malloc_atomic(sizeof(Context_Custodian_Hop));
 #endif
-  mr_hop->type = mred_eventspace_hop_type;
+  mr_hop->so.type = mred_eventspace_hop_type;
   {
     MrEdContext *ctx;
     ctx = WEAKIFY(c);
@@ -1201,7 +1201,7 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
       Scheme_Object *a[3], *v;
 
       nw = (Nested_Wait *)scheme_malloc_tagged(sizeof(Nested_Wait));
-      nw->type = mred_nested_wait_type;
+      nw->so.type = mred_nested_wait_type;
       nw->wait_on = (Scheme_Object *)c;
 
       a[0] = scheme_false;
@@ -3084,7 +3084,7 @@ wxFrame *MrEdApp::OnInit(void)
 #else
   mmc = new MrEdContext;
 #endif
-  mmc->type = mred_eventspace_type;
+  mmc->so.type = mred_eventspace_type;
   wxREGGLOB(mred_main_context);
   mred_main_context = mmc;
   {

@@ -79,8 +79,12 @@
 
 #ifdef MZ_PRECISE_GC
 # define MZ_HASH_KEY_EX  short keyex;
+# define MZ_OPT_HASH_KEY_EX /**/
+# define MZ_OPT_HASH_KEY(obj) (obj)->so.keyex
 #else
 # define MZ_HASH_KEY_EX /**/
+# define MZ_OPT_HASH_KEY_EX  short keyex;
+# define MZ_OPT_HASH_KEY(obj) (obj)->keyex
 #endif
 
 #ifdef PALMOS_STUFF
@@ -184,14 +188,19 @@ typedef int mzshort;
 typedef unsigned int mzchar;
 typedef int mzchar_int; /* includes EOF */
 
-/* MzScheme values have the type `Scheme_Object *'.
-   The actual Scheme_Object structure only defines a few variants.
-   The important thing is that all `Scheme_Object *'s start with
-   a Scheme_Type field.
+/* MzScheme values have the type `Scheme_Object *'. The Scheme_Object
+   structure declares just the header: a type tag and space for
+   hashing or extra flags; actual object types will extend this
+   structure.
 
-   The structures are defined here, instead of in a private header, so
-   that macros can provide quick access. Of course, don't access the
-   fields of these structures directly; use the macros instead. */
+   For example, Scheme_Simple_Object defines a few variants. The
+   important thing is that it starts with a nested Scheme_Object
+   record.
+
+   The Scheme_Simple_Object struct is defined here, instead of in a
+   private header, so that macros can provide quick access. Of course,
+   don't access the fields of these structures directly; use the
+   macros instead. */
 
 typedef struct Scheme_Object
 {
@@ -202,8 +211,25 @@ typedef struct Scheme_Object
      store a hash key extension. The low bit is not used for this
      purpose, though. For string, pair, vector, and box values in all
      variants of MzScheme, the low bit is set to 1 to indicate that
-     the object is immutable. */
-  short keyex;
+     the object is immutable. Thus, the keyex field is needed even in
+     non-precise GC mode, so such structures embed
+     Scheme_Inclhash_Object */
+
+  MZ_HASH_KEY_EX
+} Scheme_Object;
+
+  /* See note above on MZ_HASH_KEY_EX. To get the keyex field,
+     use MZ_OPT_HASH_KEY(iso), where iso is a pointer to a
+     Scheme_Inclhash_Object */
+typedef struct Scheme_Inclhash_Object
+{
+  Scheme_Object so;
+  MZ_OPT_HASH_KEY_EX
+} Scheme_Inclhash_Object;
+
+typedef struct Scheme_Simple_Object
+{
+  Scheme_Inclhash_Object iso;
 
   union
     {
@@ -216,14 +242,13 @@ typedef struct Scheme_Object
       struct { struct Scheme_Object *car, *cdr; } pair_val;
       struct { mzshort len; mzshort *vec; } svector_val;
     } u;
-} Scheme_Object;
+} Scheme_Simple_Object;
 
 typedef struct Scheme_Object *(*Scheme_Closure_Func)(struct Scheme_Object *);
 
 /* Scheme_Small_Object is used for several types of MzScheme values: */
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   union {
     mzchar char_val;
     Scheme_Object *ptr_value;
@@ -234,29 +259,25 @@ typedef struct {
 
 /* A floating-point number: */
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   double double_val;
 } Scheme_Double;
 
 #ifdef MZ_USE_SINGLE_FLOATS
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   float float_val;
 } Scheme_Float;
 #endif
 
 typedef struct Scheme_Symbol {
-  Scheme_Type type;
-  short keyex; /* 1 in low bit indicates uninterned */
+  Scheme_Inclhash_Object iso; /* 1 in low bit of keyex indicates uninterned */
   int len;
   char s[4]; /* Really, a number of chars to match `len' */
 } Scheme_Symbol;
 
 typedef struct Scheme_Vector {
-  Scheme_Type type;
-  short keyex; /* 1 in low bit indicates immutable */
+  Scheme_Inclhash_Object iso; /* 1 in low bit of keyex indicates immutable */
   int size;
   Scheme_Object *els[1];
 } Scheme_Vector;
@@ -298,7 +319,7 @@ typedef struct Scheme_Vector {
 #define SAME_TYPE(a, b) ((Scheme_Type)(a) == (Scheme_Type)(b))
 #define NOT_SAME_TYPE(a, b) ((Scheme_Type)(a) != (Scheme_Type)(b))
 
-# define SCHEME_TYPE(obj)     (SCHEME_INTP(obj)?(Scheme_Type)scheme_integer_type:(obj)->type)
+# define SCHEME_TYPE(obj)     (SCHEME_INTP(obj)?(Scheme_Type)scheme_integer_type:((Scheme_Object *)(obj))->type)
 # define _SCHEME_TYPE(obj) ((obj)->type) /* unsafe version */
 
 /*========================================================================*/
@@ -388,8 +409,8 @@ typedef struct Scheme_Vector {
 
 #define SCHEME_CPTRP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_c_pointer_type)
 
-#define SCHEME_MUTABLEP(obj) (!((obj)->keyex & 0x1))
-#define SCHEME_IMMUTABLEP(obj) ((obj)->keyex & 0x1)
+#define SCHEME_MUTABLEP(obj) (!(MZ_OPT_HASH_KEY((Scheme_Inclhash_Object *)(obj)) & 0x1))
+#define SCHEME_IMMUTABLEP(obj) (MZ_OPT_HASH_KEY((Scheme_Inclhash_Object *)(obj)) & 0x1)
 
 #define GUARANTEE_TYPE(fname, argnum, typepred, typenam)                                \
    (typepred (argv [argnum])                                                            \
@@ -421,16 +442,16 @@ typedef struct Scheme_Vector {
 # define scheme_make_float(x) scheme_make_double((double)x)
 #endif
 
-#define SCHEME_CHAR_STR_VAL(obj)  ((obj)->u.char_str_val.string_val)
-#define SCHEME_CHAR_STRTAG_VAL(obj)  ((obj)->u.char_str_val.tag_val)
-#define SCHEME_CHAR_STRLEN_VAL(obj)  ((obj)->u.char_str_val.tag_val)
-#define SCHEME_BYTE_STR_VAL(obj)  ((obj)->u.byte_str_val.string_val)
-#define SCHEME_BYTE_STRTAG_VAL(obj)  ((obj)->u.byte_str_val.tag_val)
-#define SCHEME_BYTE_STRLEN_VAL(obj)  ((obj)->u.byte_str_val.tag_val)
-#define SCHEME_PATH_VAL(obj)  ((obj)->u.byte_str_val.string_val)
-#define SCHEME_PATH_LEN(obj)  ((obj)->u.byte_str_val.tag_val)
-#define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
-#define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
+#define SCHEME_CHAR_STR_VAL(obj)  (((Scheme_Simple_Object *)(obj))->u.char_str_val.string_val)
+#define SCHEME_CHAR_STRTAG_VAL(obj)  (((Scheme_Simple_Object *)(obj))->u.char_str_val.tag_val)
+#define SCHEME_CHAR_STRLEN_VAL(obj)  (((Scheme_Simple_Object *)(obj))->u.char_str_val.tag_val)
+#define SCHEME_BYTE_STR_VAL(obj)  (((Scheme_Simple_Object *)(obj))->u.byte_str_val.string_val)
+#define SCHEME_BYTE_STRTAG_VAL(obj)  (((Scheme_Simple_Object *)(obj))->u.byte_str_val.tag_val)
+#define SCHEME_BYTE_STRLEN_VAL(obj)  (((Scheme_Simple_Object *)(obj))->u.byte_str_val.tag_val)
+#define SCHEME_PATH_VAL(obj)  (((Scheme_Simple_Object *)(obj))->u.byte_str_val.string_val)
+#define SCHEME_PATH_LEN(obj)  (((Scheme_Simple_Object *)(obj))->u.byte_str_val.tag_val)
+#define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)((Scheme_Simple_Object *)(obj)))->s)
+#define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)((Scheme_Simple_Object *)(obj)))->len)
 
 #define SCHEME_SYMSTR_OFFSET(obj) ((unsigned long)SCHEME_SYM_VAL(obj)-(unsigned long)(obj))
 
@@ -439,8 +460,8 @@ typedef struct Scheme_Vector {
 
 #define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
 
-#define SCHEME_CAR(obj)      ((obj)->u.pair_val.car)
-#define SCHEME_CDR(obj)      ((obj)->u.pair_val.cdr)
+#define SCHEME_CAR(obj)      (((Scheme_Simple_Object *)(obj))->u.pair_val.car)
+#define SCHEME_CDR(obj)      (((Scheme_Simple_Object *)(obj))->u.pair_val.cdr)
 
 #define SCHEME_CADR(obj)     (SCHEME_CAR (SCHEME_CDR (obj)))
 #define SCHEME_CAAR(obj)     (SCHEME_CAR (SCHEME_CAR (obj)))
@@ -454,19 +475,19 @@ typedef struct Scheme_Vector {
 #define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj)
 
 #define SCHEME_PTR_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
-#define SCHEME_PTR1_VAL(obj) ((obj)->u.two_ptr_val.ptr1)
-#define SCHEME_PTR2_VAL(obj) ((obj)->u.two_ptr_val.ptr2)
-#define SCHEME_IPTR_VAL(obj) ((obj)->u.ptr_int_val.ptr)
-#define SCHEME_LPTR_VAL(obj) ((obj)->u.ptr_long_val.ptr)
-#define SCHEME_INT1_VAL(obj) ((obj)->u.two_int_val.int1)
-#define SCHEME_INT2_VAL(obj) ((obj)->u.two_int_val.int2)
-#define SCHEME_PINT_VAL(obj) ((obj)->u.ptr_int_val.pint)
-#define SCHEME_PLONG_VAL(obj) ((obj)->u.ptr_long_val.pint)
+#define SCHEME_PTR1_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.two_ptr_val.ptr1)
+#define SCHEME_PTR2_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.two_ptr_val.ptr2)
+#define SCHEME_IPTR_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_int_val.ptr)
+#define SCHEME_LPTR_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_long_val.ptr)
+#define SCHEME_INT1_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.two_int_val.int1)
+#define SCHEME_INT2_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.two_int_val.int2)
+#define SCHEME_PINT_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_int_val.pint)
+#define SCHEME_PLONG_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_long_val.pint)
 
 #define SCHEME_CPTR_VAL(obj) SCHEME_PTR1_VAL(obj)
 #define SCHEME_CPTR_TYPE(obj) ((char *)SCHEME_PTR2_VAL(obj))
 
-#define SCHEME_SET_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+#define SCHEME_SET_IMMUTABLE(obj)  ((MZ_OPT_HASH_KEY((Scheme_Inclhash_Object *)(obj)) |= 0x1))
 #define SCHEME_SET_CHAR_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
 #define SCHEME_SET_BYTE_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
 #define SCHEME_SET_PAIR_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
@@ -526,23 +547,24 @@ typedef struct Scheme_Object *
 (Scheme_Closed_Prim)(void *d, int argc, struct Scheme_Object *argv[]);
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  short flags; /* keep flags at same place as in closed */
+  Scheme_Object so;
+  short flags;
+} Scheme_Prim_Proc_Header;
+
+typedef struct {
+  Scheme_Prim_Proc_Header pp;
   Scheme_Prim *prim_val;
   const char *name;
   mzshort mina, maxa;
 } Scheme_Primitive_Proc;
 
 typedef struct {
-  Scheme_Primitive_Proc p;
+  Scheme_Primitive_Proc pp;
   mzshort minr, maxr;
 } Scheme_Prim_W_Result_Arity;
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  short flags; /* keep flags at same place as in unclosed */
+  Scheme_Prim_Proc_Header pp;
   Scheme_Closed_Prim *prim_val;
   void *data;
   const char *name;
@@ -561,23 +583,23 @@ typedef struct {
 } Scheme_Closed_Case_Primitive_Proc;
 
 #define _scheme_fill_prim_closure(rec, cfunc, dt, nm, amin, amax, flgs) \
-  ((rec)->type = scheme_closed_prim_type, \
+  ((rec)->pp.so.type = scheme_closed_prim_type, \
    (rec)->prim_val = cfunc, \
    (rec)->data = (void *)(dt), \
    (rec)->name = nm, \
    (rec)->mina = amin, \
    (rec)->maxa = amax, \
-   (rec)->flags = flgs, \
+   (rec)->pp.flags = flgs, \
    rec)
 
 #define _scheme_fill_prim_case_closure(rec, cfunc, dt, nm, ccount, cses, flgs) \
-  ((rec)->p.type = scheme_closed_prim_type, \
+  ((rec)->p.pp.so.type = scheme_closed_prim_type, \
    (rec)->p.prim_val = cfunc, \
    (rec)->p.data = (void *)(dt), \
    (rec)->p.name = nm, \
    (rec)->p.mina = -2, \
    (rec)->p.maxa = -(ccount), \
-   (rec)->p.flags = flgs, \
+   (rec)->p.pp.flags = flgs, \
    (rec)->cases = cses, \
    rec)
 
@@ -589,8 +611,8 @@ typedef struct {
 #define SCHEME_ECONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_escaping_cont_type)
 #define SCHEME_CONT_MARK_SETP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_cont_mark_set_type)
 #define SCHEME_PROC_STRUCTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_proc_struct_type)
-#define SCHEME_STRUCT_PROCP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_STRUCT_PROC))
-#define SCHEME_GENERICP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_GENERIC))
+#define SCHEME_STRUCT_PROCP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)(obj))->pp.flags & SCHEME_PRIM_IS_STRUCT_PROC))
+#define SCHEME_GENERICP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)(obj))->pp.flags & SCHEME_PRIM_IS_GENERIC))
 #define SCHEME_CLOSUREP(obj) (SAME_TYPE(SCHEME_TYPE(obj), scheme_closure_type) || SAME_TYPE(SCHEME_TYPE(obj), scheme_case_closure_type))
 
 #define SCHEME_PRIM(obj)     (((Scheme_Primitive_Proc *)(obj))->prim_val)
@@ -605,8 +627,7 @@ typedef struct {
 
 typedef struct Scheme_Hash_Table
 {
-  Scheme_Type type;
-  short keyex; /* always needed to support immutability */
+  Scheme_Inclhash_Object iso;
   int size, count, step;
   Scheme_Object **keys;
   Scheme_Object **vals;
@@ -619,16 +640,14 @@ typedef struct Scheme_Hash_Table
 
 typedef struct Scheme_Bucket
 {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   void *val;
   char *key;
 } Scheme_Bucket;
 
 typedef struct Scheme_Bucket_Table
 {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   int size, count, step;
   Scheme_Bucket **buckets;
   char weak, with_home;
@@ -733,8 +752,7 @@ typedef int (*Scheme_Wait_Filter_Fun)(Scheme_Object *);
 /* The Scheme_Thread structure represents a MzScheme thread. */
 
 typedef struct Scheme_Thread {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
 
   struct Scheme_Thread *next;
   struct Scheme_Thread *prev;
@@ -854,7 +872,7 @@ typedef struct Scheme_Thread {
   short suspend_break;
   short external_break;
 
-  Scheme_Object *list_stack;
+  Scheme_Simple_Object *list_stack;
   int list_stack_pos;
 
   Scheme_Hash_Table *rn_memory;
@@ -1020,8 +1038,7 @@ typedef int (*Scheme_Write_Special_Fun)(Scheme_Output_Port *, Scheme_Object *,
 
 struct Scheme_Input_Port
 {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   char closed, pending_eof;
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
@@ -1045,8 +1062,7 @@ struct Scheme_Input_Port
 
 struct Scheme_Output_Port
 {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   short closed;
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
@@ -1210,8 +1226,8 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #ifdef MZ_PRECISE_GC
 /* Need to make sure that a __gc_var_stack__ is always available where
    setjmp & longjmp are used. */
-# define scheme_longjmp(b, v) (((long *)((b).gcvs))[1] = (b).gcvs_cnt, \
-                               GC_variable_stack = (void **)(b).gcvs, \
+# define scheme_longjmp(b, v) (((long *)(void*)((b).gcvs))[1] = (b).gcvs_cnt, \
+                               GC_variable_stack = (void **)(void*)(b).gcvs, \
                                scheme_mz_longjmp((b).jb, v))
 # define scheme_setjmp(b)     ((b).gcvs = (long)__gc_var_stack__, \
                                (b).gcvs_cnt = (long)(__gc_var_stack__[1]), \
@@ -1227,15 +1243,15 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 
 /* Allocation */
 #define scheme_alloc_object() \
-   ((Scheme_Object *) scheme_malloc_tagged(sizeof(Scheme_Object)))
+   ((Scheme_Object *) scheme_malloc_tagged(sizeof(Scheme_Simple_Object)))
 #define scheme_alloc_small_object() \
    ((Scheme_Object *) scheme_malloc_tagged(sizeof(Scheme_Small_Object)))
 #define scheme_alloc_stubborn_object() \
-   ((Scheme_Object *) scheme_malloc_stubborn_tagged(sizeof(Scheme_Object)))
+   ((Scheme_Object *) scheme_malloc_stubborn_tagged(sizeof(Scheme_Simple_Object)))
 #define scheme_alloc_stubborn_small_object() \
    ((Scheme_Object *) scheme_malloc_stubborn_tagged(sizeof(Scheme_Small_Object)))
 #define scheme_alloc_eternal_object() \
-   ((Scheme_Object *) scheme_malloc_eternal_tagged(sizeof(Scheme_Object)))
+   ((Scheme_Object *) scheme_malloc_eternal_tagged(sizeof(Scheme_Simple_Object)))
 #define scheme_alloc_eternal_small_object() \
    ((Scheme_Object *) scheme_malloc_eternal_tagged(sizeof(Scheme_Small_Object)))
 

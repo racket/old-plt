@@ -44,8 +44,7 @@ class LeaveEvent;
 #endif
 
 typedef struct MrEdContext {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
 
   Scheme_Thread *handler_running;
   int suspended;

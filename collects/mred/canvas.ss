@@ -141,7 +141,7 @@
 	    [lines lnes]
 	    [set-lines (lambda (x) 
 			 (set! lines x)
-			 (update-size))])
+			 (update-size (get-media)))])
 	  (private
 	    [update-size
 	     (lambda (media)

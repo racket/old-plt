@@ -32,7 +32,7 @@
 /* Flag for debugging compiled code in printed form: */
 #define NO_COMPACT 0
 
-#define USE_BUFFERING_CPORT 0
+#define USE_BUFFERING_CPORT 1
 /* Companion to USE_BUFFERING_CPORT in read.c */
 
 #define PRINT_MAXLEN_MIN 3
@@ -1203,6 +1203,7 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	closed = print(v, escaped, 1, NULL, vht, p);
       else {
 #if USE_BUFFERING_CPORT
+	closed = print_substring(v, escaped, 1, NULL, vht, p, &s, &slen);
 	print_compact_number(p, slen);
 	print_this_string(p, s, slen);
 #else

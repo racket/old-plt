@@ -1321,7 +1321,7 @@ peek_char (Scheme_Object *port)
 
 /************************************************************************/
 
-#define USE_BUFFERING_CPORT 0
+#define USE_BUFFERING_CPORT 1
 /* Also, set USE_BUFFERING_CPORT in print.c */
 /* The disadvantage of USE_BUFFERING_CPORT is that when .zo files are
    written, large compiled dumps may be im memeory at once. */

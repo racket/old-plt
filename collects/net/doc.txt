@@ -1709,3 +1709,237 @@ PROCEDURES -----------------------------------------------------------
   connections to "127.0.0.1", the unit's implementation does not use
   TCP connections, but instead uses internal buffered channels. Such
   channels behave exactly as TCP listeners and ports.
+
+==========================================================================
+_cookies_, HTTP _State Management_
+==========================================================================
+
+To load directly: (require (lib "cookie.ss" "net"))
+Module files: _cookie.ss_ - provides the procedures documented below
+              _cookie-unit.ss_ - provides unit net:cookie@
+              _cookie-sig.ss_ - provides signalture net:cookie^
+
+
+ABSTRACT -------------------------------------------------------------
+
+The cookie package helps programmers use cookies as specified in RFC
+2109 HTTP State Management Mechanism, aka HTTP cookies:
+http://www.w3.org/Protocols/rfc2109/rfc2109
+
+EXCEPTIONS -----------------------------------------------------------
+
+> cookie-error
+  struct (cookie-error exn) ()
+
+  All errors are signalled by raising a cookie-error
+
+TYPES ----------------------------------------------------------------
+
+> cookie
+
+  The opaque structure that represents a cookie
+
+PROCEDURES -----------------------------------------------------------
+
+> (set-cookie name value)
+  : String String -> cookie
+
+  Creates a new cookie, with default values for required fields:
+
+> (cookie:add-comment cookie comment)
+  : cookie String -> cookie
+
+> (cookie:add-domain cookie domain)
+  : cookie String -> cookie
+
+> (cookie:add-max-age cookie seconds)
+  : cookie Nat -> cookie
+
+> (cookie:add-path cookie path)
+  : cookie String -> cookie
+
+> (cookie:secure cookie secure?)
+  : cookie Boolean -> cookie
+
+> (cookie:version cookie version)
+  : cookie Nat -> cookie
+
+  These procedures all modify the fields of an existing cookie.  The
+  modification is destructive, and the modified cookie is returned.
+
+  `domain' must match a prefix of the request-URI.
+
+  `seconds' should be a non-negative natural number representing the
+  number of seconds you want the client to retain the cookie.
+
+  `version' is a required field; the library defaults to the only
+  known incarnation of HTTP cookies: 1.
+
+> (print-cookie cookie)
+  : cookie-structure -> String
+
+  Printing a cookie obtains the string that represents the cookie you
+  formed with the procedures above.
+
+  Empty fields will not appear in the output except when there is a
+  required default.  Currently only the Version is always added.
+
+> (get-cookie name cookies)
+  : String String -> (listof String)
+
+  Returns a list with all the values (strings) associated with name.
+
+> (get-cookie/single name cookies)
+  : String String -> (U String #f)
+
+  Returns the `first' value string associated to name, or #f if no
+  association is found.
+
+  The method used to obtain the `Cookie' header depends on the web
+  server.  It may be an environment variable (CGI), or you may have to
+  read it from the `input port' (FastCGI), or maybe it comes in an
+  `initial-request' structure, etc.  The above two procedures can be
+  used to extract fields from a `Cookie' header.
+
+
+EXAMPLES -------------------------------------------------------------
+
+> Creating a cookie
+
+(let ((c (cookie:add-max-age
+          (cookie:add-path
+           (set-cookie "foo" "bar")
+           "/servlets")
+	  3600)))
+  (print-cookie c))
+=>
+"foo=bar; Max-Age=3600; Path=/servlets; Version=1"
+
+To use this output in a "regular" CGI, instead of the last line you
+would use:
+
+  (display (format "Set-Cookie: ~a" (print-cookie c)))
+
+and to use with the PLT Web Server, you would use:
+
+  (make-response/full code message (current-seconds) mime 
+                      `((Set-Cookie . ,(print-cookie c))) 
+                      body)
+
+> Parsing a cookie
+
+Imagine your Cookie header looks like this:
+
+(cookies . "test2=2; test3=3; xfcTheme=theme6; xfcTheme=theme2")
+
+Then, to get the values of the xfcTheme cookie, you would use:
+
+  (get-cookie "xfcTheme" cookies)
+=> ("theme6" "theme2")
+  (get-cookie/single "xfcTheme" cookies)
+=> "theme6"
+
+If you try to get a cookie that simply is not there, you will get:
+
+ (get-cookie/single "foo" cookies)
+=> #f
+ (get-cookie "foo" cookies)
+=> ()
+
+Note that not having a cookie is normally not an error.  Most clients
+won't have a cookie set then first arrive at your site.
+
+==========================================================================
+_URL encoding_, _URL decoding_, _application/x-www-form-urlencoded_
+==========================================================================
+
+To load directly: (require (lib "uri-codec.ss" "net"))
+Module files: _uri-codec.ss_ - provides the procedures documented below
+              _uri-codec-unit.ss_ - provides unit net:uri-codec@
+              _uri-codec-sig.ss_ - provides signalture net:uri-codec^
+
+
+ABSTRACT -------------------------------------------------------------
+
+The module provides functions to encode and decode strings using
+the URI encoding rules given in RFC 2396, and to encode and decode
+name/value pairs using the application/x-www-form-urlencoded
+mimetype given the in HTML 4.0 specification.  There are minor
+differences between the two encodings.
+
+The URI encoding uses allows a few characters to be represented `as
+is': a-Z, A-Z, 0-9, -, _, ., !, ~, *, ', ( and ).  The remaining
+characters are encoded as %xx, where xx is the hex representation
+of the integer value of the character (where the mapping
+character<->integer is determined by US-ASCII if the integer is
+<128).
+
+The encoding, inline with RFC 2396's recommendation, represents a
+character as is, if possible.  The decoding allows any characters
+to be represented by their hex values, and allows characters to be
+incorrectly represented `as is'.
+
+The rules for the application/x-www-form-urlencoded mimetype given
+in the HTML 4.0 spec are:
+
+  1. Control names and values are escaped. Space characters are
+  replaced by `+', and then reserved characters are escaped as
+  described in [RFC1738], section 2.2: Non-alphanumeric characters
+  are replaced by `%HH', a percent sign and two hexadecimal digits
+  representing the ASCII code of the character. Line breaks are
+  represented as "CR LF" pairs (i.e., `%0D%0A').
+
+  2. The control names/values are listed in the order they appear
+  in the document. The name is separated from the value by `=' and
+  name/value pairs are separated from each other by `&'.
+
+NB: RFC 2396 supersedes RFC 1738.
+
+This differs slightly from the straight encoding in RFC 2396 in
+that `+' is allowed, and represents a space.  We follow this
+convention, encoding a space as `+' and decoding `+' as a space.
+There appear to be some brain-dead decoders on the web, so we also
+encode `!', `~', `'', `(' and ')' using their hex representation.
+This is the same choice as made by the Java URLEncoder.
+
+TYPES ----------------------------------------------------------------
+
+> alist
+
+  (list-of (cons String String))  Represents decoded name/value pairs 
+
+PROCEDURES -----------------------------------------------------------
+
+> (uri-encode string)
+  : String -> String
+
+  Encode a string using the URI encoding rules
+
+> (uri-decode string)
+  : String -> cookie
+
+  Decode a string encoded using the URI encoding rules
+
+> (form-urlencoded-encode string)
+  : String -> String
+
+  Encode a string using the application/x-www-form-urlencoded encoding
+  rules
+
+> (form-urlencoded-decode string)
+  : String -> String
+
+  Decode a string encoded using the application/x-www-form-urlencoded
+  encoding rules
+
+> (alist->form-urlencoded)
+  : alist -> String
+
+  Encode an alist of key/value pairs using the
+  application/x-www-form-urlencoded encoding rules
+
+> (form-urlencoded->alist)
+  : String -> alist
+
+  Decode a string encoded using the application/x-www-form-urlencoded
+  encoding rules into an alist of key/value pairs.

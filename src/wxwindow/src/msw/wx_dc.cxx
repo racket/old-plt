@@ -39,6 +39,13 @@ void RegisterGDIObject(HANDLE x);
 extern Bool wx_gdi_plus;
 extern void wxInitGraphicsPlus(void);
 
+typedef struct {
+  double sx, sy, angle;
+  int c;
+} wxSizeKey;
+
+static Scheme_Object *theSizeKey;
+
 void wxGDIStartup(void)
 {
   wxInitGraphicsPlus();
@@ -63,6 +70,9 @@ static int is_nt()
       nt = 1;
     else
       nt = 0;
+
+    wxREGGLOB(theSizeKey);
+    theSizeKey = scheme_alloc_byte_string(sizeof(wxSizeKey), 0);
   }
   return nt;
 }
@@ -1677,11 +1687,12 @@ static void wxTextSize(HDC dc, wxFont *font, wchar_t *ustring, int d, int alen, 
       if (font->size_cache) {
 	ht = (Scheme_Hash_Table *)font->size_cache;
       } else {
-	ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	ht = scheme_make_hash_table_equal();
 	font->size_cache = ht;
       }
-      
-      sz = (double *)scheme_hash_get(ht, scheme_make_integer(ustring[d]));
+
+      ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->c = ustring[d];
+      sz = (double *)scheme_hash_get(ht, theSizeKey);
     } else {
       ht = NULL;
       sz = NULL;
@@ -1702,7 +1713,7 @@ static void wxTextSize(HDC dc, wxFont *font, wchar_t *ustring, int d, int alen, 
 	sz = (double *)scheme_malloc_atomic(sizeof(double) * 2);
 	sz[0] = *ow;
 	sz[1] = *oh;
-	scheme_hash_set(ht, scheme_make_integer(ustring[d]), (Scheme_Object *)sz);
+	scheme_hash_set(ht, theSizeKey, (Scheme_Object *)sz);
       }
     }
   } else {
@@ -1747,6 +1758,11 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   theFont = font;
   if (theFont->redirect)
     theFont = theFont->redirect;
+  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
+  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
+  oh = theFont->GetRotation();
+  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->angle = oh;
+
 
   ustring = convert_to_drawable_format(text, d, ucs4, &len, fam == wxSYMBOL);
 
@@ -2054,8 +2070,14 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
     theFont = font;
     SetFont(font);
   }
+
   if (theFont->redirect)
     theFont = theFont->redirect;
+  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
+  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
+  oh = theFont->GetRotation();
+  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->angle = oh;
+
   fam = theFont->GetFamily();
 
   dc = ThisDC();

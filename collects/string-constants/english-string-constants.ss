@@ -895,7 +895,7 @@ please adhere to these guidelines:
  ;;; Language dialog
  (introduction-to-language-dialog
   "Please select a language. Students in most introductory courses should use the default language.")
- (language-dialog-title "Configure Language")
+ (language-dialog-title "Choose Language")
  (case-sensitive-label "Case sensitive")
  (output-style-label "Output Style")
  (constructor-printing-style "Constructor")

@@ -1058,7 +1058,7 @@ static char *scheme_bignum_to_string_10(const Scheme_Object *b)
 
 char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
 {
-  char *n;
+  char *n, c;
   int size, p, i, j;
   int bl, dig, step, needed;
   bigdig *ba, v;
@@ -1124,9 +1124,9 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
 
   /* Reverse the string: */
   for (i = 0, j = p - 1; i < j; i++, --j) {
-    v = n[i];
+    c = n[i];
     n[i] = n[j];
-    n[j] = v;
+    n[j] = c;
   }
 
   n[p] = 0;

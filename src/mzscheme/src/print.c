@@ -145,7 +145,7 @@ scheme_debug_print (Scheme_Object *obj)
   fflush (stdout);
 }
 
-static void *print_to_port_k()
+static void *print_to_port_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *obj, *port;
@@ -228,7 +228,7 @@ void scheme_display(Scheme_Object *obj, Scheme_Object *port)
   scheme_display_w_max(obj, port, -1);
 }
 
-static void *print_to_string_k()
+static void *print_to_string_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *obj;

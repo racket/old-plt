@@ -410,7 +410,7 @@ void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
   s = make_arity_expect_string(name, minc, maxc, argc, argv);
 
   if (minc >= 0)
-    arity = scheme_make_arity(minc, maxc);
+    arity = scheme_make_arity((short)minc, (short)maxc);
   else if (minc == -1)
     arity = scheme_arity((Scheme_Object *)name);
   else
@@ -1130,6 +1130,14 @@ exn_handler(int argc, Scheme_Object *argv[])
 			     1, NULL, NULL, 0);
 }
 
+static Scheme_Object *
+init_exn_handler(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("initial-exception-handler", MZCONFIG_INIT_EXN_HANDLER,
+			     argc, argv,
+			     1, NULL, NULL, 0);
+}
+
 static void pre_raise(void *v)
 {
   scheme_current_process->exn_raised = 1;
@@ -1291,6 +1299,12 @@ void scheme_init_exn(Scheme_Env *env)
 						       MZCONFIG_EXN_HANDLER), 
 			     env);
 
+  scheme_add_global_constant("initial-exception-handler", 
+			     scheme_register_parameter(init_exn_handler, 
+						       "initial-exception-handler",
+						       MZCONFIG_INIT_EXN_HANDLER), 
+			     env);
+
   scheme_add_global_constant("raise", 
 			     scheme_make_prim_w_arity(sch_raise, 
 						      "raise", 
@@ -1299,11 +1313,12 @@ void scheme_init_exn(Scheme_Env *env)
 
   if (scheme_starting_up) {
     Scheme_Config *config = scheme_config;
-    
-    scheme_set_param(config, MZCONFIG_EXN_HANDLER,
-		     scheme_make_prim_w_arity(def_exn_handler,
-					      "default-exception-handler",
-					      1, 1));
+    Scheme_Object *h = scheme_make_prim_w_arity(def_exn_handler,
+						"default-exception-handler",
+						1, 1);
+
+    scheme_set_param(config, MZCONFIG_EXN_HANDLER, h);
+    scheme_set_param(config, MZCONFIG_INIT_EXN_HANDLER, h);
   }
 }
 

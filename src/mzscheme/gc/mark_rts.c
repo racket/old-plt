@@ -433,6 +433,8 @@ ptr_t cold_gc_frame;
 #   endif /* !THREADS */
 }
 
+static int done_once; /* MATTHEW */
+
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
@@ -465,8 +467,11 @@ ptr_t cold_gc_frame;
      /* Reregister dynamic libraries, in case one got added.	*/
 #      if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(PCR)) \
            && !defined(SRC_M3)
+	if (!done_once) { /* MATTHEW */
          GC_remove_tmp_roots();
          GC_register_dynamic_libraries();
+	 done_once = 1; /* MATTHEW */
+	}
 #      endif
      /* Mark everything in static data areas                             */
        for (i = 0; i < n_root_sets; i++) {

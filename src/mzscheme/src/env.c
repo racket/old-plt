@@ -48,16 +48,19 @@
 /* globals */
 int scheme_constant_builtins;
 int scheme_allow_set_undefined;
-int scheme_no_keywords;
+int scheme_no_keywords = 0;
+int scheme_escape_continuations_only = 0; 
+int scheme_hash_percent_syntax_only = 0;
 
 int scheme_starting_up;
 
-int scheme_hash_percent_syntax_only = 0;
-
 Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
+
+static Scheme_Env *initial_env;
 
 /* locals */
 static Scheme_Env *make_env(void);
+static void make_init_env(void);
 static Scheme_Object *keyword_prim(int argc, Scheme_Object *argv[]);
 static Scheme_Object *keyword_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *undefine(int argc, Scheme_Object *argv[]);
@@ -213,7 +216,12 @@ Scheme_Env *scheme_basic_env ()
   printf("process @ %ld\n", scheme_get_process_milliseconds());
 #endif
 
-  env = scheme_top_level_env();
+  make_init_env();
+
+  env = scheme_make_empty_env();
+  scheme_copy_from_original_env(env);
+  scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
+		   (Scheme_Object *)env); 
 
   scheme_init_error_escape_proc(process);
 
@@ -231,21 +239,13 @@ Scheme_Env *scheme_basic_env ()
 static void primitive_syntax_through_scheme(const char *name, 
 					    Scheme_Env *env)
 {
-  Scheme_Object *hp;
-
-  if (scheme_no_keywords && scheme_hash_percent_syntax_only)
-    return;
+  Scheme_Object *hp, *sym;
 
   hp = scheme_hash_percent_name(name, -1);
+  scheme_set_keyword(hp, env);
 
-  if (!scheme_no_keywords)
-    scheme_set_keyword(hp, env);
-
-  if (!scheme_hash_percent_syntax_only) {
-    Scheme_Object *sym = scheme_intern_symbol(name);
-
-    scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
-  }
+  sym = scheme_intern_symbol(name);
+  scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
 }
 
 static void primitive_function_through_scheme(const char *name, 
@@ -259,8 +259,7 @@ static void primitive_function_through_scheme(const char *name,
   
   add_primitive_symbol(hp, scheme_lookup_global(sym, env), env);
 
-  if (!scheme_no_keywords)
-    scheme_set_keyword(hp, env);
+  scheme_set_keyword(hp, env);
 }
 
 static void primitive_cond_through_scheme(const char *name, 
@@ -299,19 +298,21 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
 #endif
 #endif
 
-Scheme_Env *scheme_top_level_env(void)
+static void make_init_env(void)
 {
   Scheme_Env *env;
-  Scheme_Object *q, *qq, *nllt;
+  Scheme_Object *nllt;
 #ifdef TIME_STARTUP_PROCESS
   long startt;
 #endif
 
   env = make_env();
 
-  if (scheme_starting_up)
-    scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
-		     (Scheme_Object *)env);
+  scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
+		   (Scheme_Object *)env);
+
+  REGISTER_SO(initial_env);
+  initial_env = env;
 
   scheme_defining_primitives = 1;
   set_reference_ids = 1;
@@ -427,14 +428,12 @@ Scheme_Env *scheme_top_level_env(void)
   MZTIMEIT(object, scheme_init_object(env));
 #endif
 
-  if (scheme_starting_up) {
-    scheme_install_type_writer(scheme_variable_type, write_variable);
-    scheme_install_type_reader(scheme_variable_type, read_variable);
-    scheme_install_type_writer(scheme_local_type, write_local);
-    scheme_install_type_reader(scheme_local_type, read_local);
-    scheme_install_type_writer(scheme_local_unbox_type, write_local);
-    scheme_install_type_reader(scheme_local_unbox_type, read_local_unbox);
-  }
+  scheme_install_type_writer(scheme_variable_type, write_variable);
+  scheme_install_type_reader(scheme_variable_type, read_variable);
+  scheme_install_type_writer(scheme_local_type, write_local);
+  scheme_install_type_reader(scheme_local_type, read_local);
+  scheme_install_type_writer(scheme_local_unbox_type, write_local);
+  scheme_install_type_reader(scheme_local_unbox_type, read_local_unbox);
 
   MARK_START_TIME();
 
@@ -446,28 +445,13 @@ Scheme_Env *scheme_top_level_env(void)
   nllt = scheme_intern_symbol("current-loaded-library-table");
   scheme_add_global_symbol(nllt, scheme_make_prim(current_loaded_library_table), env);
 
-  if (scheme_hash_percent_syntax_only) {
-    Scheme_Object *q_hp;
-    q = scheme_intern_symbol("quote");
-    qq = scheme_intern_symbol("quasiquote");
-    q_hp = scheme_intern_symbol("#%quote");
-
-    scheme_add_global_symbol(q, scheme_lookup_global(q_hp, env), env);
-  } else
-    q = qq = NULL;
-
 #define EVAL_ONE_STR(str) scheme_eval_string(str, env)
 #define EVAL_ONE_SIZED_STR(str, len) scheme_eval_compiled_sized_string(str, len, env)
 #define JUST_DEFINED(name) primitive_syntax_through_scheme(#name, env)
 #define JUST_DEFINED_FUNC(name) primitive_function_through_scheme(#name, env)
 #define JUST_DEFINED_KEY(name) primitive_syntax_through_scheme(#name, env)
 #define JUST_DEFINED_COND(name) primitive_cond_through_scheme(#name, env)
-#define JUST_DEFINED_QQ(name) \
-   JUST_DEFINED_KEY(name); \
-   if (qq) { \
-     Scheme_Object *qq_hp = scheme_intern_symbol("#%quasiquote"); \
-     scheme_add_global_symbol(qq, scheme_lookup_global(qq_hp, env), env); \
-   }
+#define JUST_DEFINED_QQ(name) JUST_DEFINED_KEY(name)
 
 #if USE_COMPILED_MACROS
    if (builtin_ref_counter != EXPECTED_PRIM_COUNT) {
@@ -484,21 +468,12 @@ Scheme_Env *scheme_top_level_env(void)
 
    scheme_remove_global_symbol(nllt, env);
 
-  if (scheme_hash_percent_syntax_only) {
-    scheme_remove_global_symbol(q, env);
-    scheme_remove_global_symbol(qq, env);
-  }
-
-  if (scheme_starting_up) {
-    scheme_init_format_procedure(env);
-    scheme_init_rep(env);
-  }
+  scheme_init_format_procedure(env);
+  scheme_init_rep(env);
 
   DONE_TIME(macro);
 
   scheme_defining_primitives = 0;
-
-  return env;
 }
 
 Scheme_Env *scheme_make_empty_env(void)
@@ -576,16 +551,6 @@ do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
     ((Scheme_Bucket_With_Const_Flag *)b)->flags |= GLOB_IS_PRIMITIVE;
   } else
     b = NULL;
-
-#if 0
-  if (scheme_starting_up && !scheme_no_reference_id) {
-    if (!b)
-      b = scheme_bucket_from_table(globals, (char *)sym);
-
-    ((Scheme_Bucket_With_Ref_Id *)b)->id = (++builtin_ref_counter);
-    ((Scheme_Bucket_With_Const_Flag *)b)->flags |= GLOB_HAS_REF_ID;
-  }
-#endif
 }
 
 static void
@@ -706,17 +671,13 @@ scheme_add_global_keyword(const char *name, Scheme_Object *obj,
 			  Scheme_Env *env)
 {
   Scheme_Object *hp = scheme_hash_percent_name(name, -1);
+  Scheme_Object *sym;
 
   do_add_global_symbol(env, hp, obj, 0, 0);
+  scheme_set_keyword(hp, env);
 
-  if (!scheme_no_keywords)
-    scheme_set_keyword(hp, env);
-
-  if (!scheme_hash_percent_syntax_only) {
-    Scheme_Object *sym = scheme_intern_symbol(name);
-
-    scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
-  }
+  sym = scheme_intern_symbol(name);  
+  scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
 }
 
 #ifndef NO_SEPARATE_HASH_PRECENT
@@ -769,8 +730,7 @@ static void hash_percent(const char *name, Scheme_Object *obj,
 
     globals->has_constants = 1;
     
-    if (!scheme_no_keywords)
-      scheme_set_keyword(sym, env);
+    scheme_set_keyword(sym, env);
     
 #if 1
     if (set_reference_ids) {
@@ -783,6 +743,61 @@ static void hash_percent(const char *name, Scheme_Object *obj,
 }
 
 #endif
+
+void scheme_copy_from_original_env(Scheme_Env *env)
+{
+  Scheme_Hash_Table *ht;
+  Scheme_Bucket **bs;
+  Scheme_Object *call_ec;
+  int i;
+  
+  ht = get_globals(initial_env);
+  bs = ht->buckets;
+
+  if (scheme_escape_continuations_only)
+    call_ec = scheme_lookup_global(scheme_intern_symbol("call/ec"), initial_env);
+  else
+    call_ec = NULL;
+  
+  for (i = ht->size; i--; ) {
+    Scheme_Bucket *b = bs[i];
+    if (b && b->val) {
+      Scheme_Object *name = (Scheme_Object *)b->key;
+      Scheme_Object *val = (Scheme_Object *)b->val;
+      int key = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_KEYWORD;
+      int builtin = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_PRIMITIVE;
+      
+      if (!scheme_hash_percent_syntax_only || key 
+	  || !(SCHEME_SYNTAXP(val)
+	       || SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))) {
+	if (call_ec) {
+	  char *s = SCHEME_SYM_VAL(name);
+
+	  if (s[0] == '#')
+	    s += 2;
+
+	  if ((s[0] == 'c') && (!strcmp(s, "call/cc") || !strcmp(s, "call-with-current-continuation")))
+	    val = call_ec;
+	}
+
+	scheme_add_global_symbol(name, val, env);
+	
+	if (key || builtin) {
+	  Scheme_Bucket *b2;
+  
+	  b2 = scheme_bucket_from_table(get_globals(env), (char *)name);
+	  if (builtin)
+	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_PRIMITIVE;
+	  if (key && !scheme_no_keywords)
+	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_KEYWORD;
+	}
+      }
+    }
+  }
+
+  if (scheme_no_keywords)
+    env->no_keywords = 1;
+}
 
 Scheme_Object **scheme_make_builtin_references_table(void)
 {
@@ -816,6 +831,7 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
 {
   Scheme_Bucket *b;
   Scheme_Hash_Table *globals;
+  Scheme_Env *root;
 
   if (!where)
     where = "";
@@ -824,11 +840,12 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
     scheme_wrong_syntax(formname, form ? id : NULL, 
 			form ? form : id, 
 			"not an identifier%s", where);
-  
-  if (scheme_no_keywords)
+
+  root = scheme_min_env(env);
+  if (root->no_keywords)
     return;
-  
-  globals = get_globals(scheme_min_env(env));
+
+  globals = get_globals(root);
 
   if (scheme_lookup_in_table(globals, (char *)id)) {
     b = scheme_bucket_from_table(globals, (char *)id);
@@ -1001,7 +1018,7 @@ static Scheme_Object *alloc_local(short type, int pos)
   return (Scheme_Object *)v;
 }
 
-Scheme_Object *scheme_make_local(short type, int pos)
+Scheme_Object *scheme_make_local(Scheme_Type type, int pos)
 {
   int k;
 

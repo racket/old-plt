@@ -52,8 +52,6 @@
 #endif /* TIME_SYNTAX */
 
 /* globals */
-int scheme_escape_continuations_only; 
-
 int scheme_defining_primitives;
 
 Scheme_Object scheme_void[1];
@@ -199,11 +197,10 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("call-with-escape-continuation", o, env);
   scheme_add_global_constant("call/ec", o, env);  
 
-  if (!scheme_escape_continuations_only)
-    o = scheme_make_prim_w_arity2(call_cc,  
-				  "call-with-current-continuation", 
-				  1, 1,
-				  0, -1);
+  o = scheme_make_prim_w_arity2(call_cc,  
+				"call-with-current-continuation", 
+				1, 1,
+				0, -1);
   
   scheme_add_global_constant("call-with-current-continuation", o, env);
   scheme_add_global_constant("call/cc", o, env);  
@@ -857,7 +854,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   return v;
 }
 
-static void *apply_k()
+static void *apply_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *rator;

@@ -142,6 +142,7 @@ typedef struct {
 static int num_link_names = 0, link_names_size = 0;
 static Linker_Name *linker_names;
 
+static Scheme_Object *nonempty_cond;
 
 #define cons(a,b) scheme_make_pair(a,b)
 
@@ -365,7 +366,9 @@ scheme_init_empty_cond(Scheme_Env *env)
 
   b = scheme_global_bucket(scheme_intern_symbol("#%cond"), env);
   
-  env->nonempty_cond = (Scheme_Object *)b->val;
+  REGISTER_SO(nonempty_cond);
+
+  nonempty_cond = (Scheme_Object *)b->val;
   b->val = (void *)scheme_make_compiled_syntax(empty_cond_syntax, 
 					       empty_cond_expand);
 }
@@ -2082,27 +2085,23 @@ empty_cond_execute (Scheme_Object *expr)
 static Scheme_Object *
 empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
 {
-  Scheme_Env *top = scheme_min_env(env);
-
   if (SCHEME_FALSEP(scheme_get_param(scheme_config, MZCONFIG_COND_AUTO_ELSE)))
     if (SCHEME_NULLP(SCHEME_CDR(form))) {
       return scheme_make_syntax_link(empty_cond_execute, scheme_false);
     }
 
-  return scheme_compile_expand_macro_app(top->nonempty_cond,
+  return scheme_compile_expand_macro_app(nonempty_cond,
 					 form, env, rec, 1);
 }
 
 static Scheme_Object *
 empty_cond_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
-  Scheme_Env *top = scheme_min_env(env);
-
   if (SCHEME_FALSEP(scheme_get_param(scheme_config, MZCONFIG_COND_AUTO_ELSE)))
     if (SCHEME_NULLP(SCHEME_CDR(form)))
       return form;
 
-  return scheme_compile_expand_macro_app(top->nonempty_cond,
+  return scheme_compile_expand_macro_app(nonempty_cond,
 					 form, env, NULL, depth);
 }
 

@@ -203,7 +203,6 @@ typedef struct {
 /* ininitializarion */
 void scheme_init_stack_check(void);
 Scheme_Process *scheme_make_process(void);
-Scheme_Env *scheme_top_level_env(void);
 void scheme_init_true_false(void);
 void scheme_init_symbol_table (void);
 void scheme_init_symbol_type (Scheme_Env *env);
@@ -791,7 +790,7 @@ int scheme_is_regular_file(char *filename);
 extern int scheme_builtin_ref_counter;
 
 Scheme_Object **scheme_make_builtin_references_table(void);
-Scheme_Object *scheme_make_local(short type, int pos);
+Scheme_Object *scheme_make_local(Scheme_Type type, int pos);
 
 #define MAX_CONST_LOCAL_POS 20
 
@@ -1123,6 +1122,8 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
 				  int spos, int fpos, long *_start, long *_finish);
 
 Scheme_Object *scheme_make_random_state(long seed);
+
+void scheme_copy_from_original_env(Scheme_Env *env);
 
 extern int scheme_internal_checking_char;
 

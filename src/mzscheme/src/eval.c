@@ -753,7 +753,7 @@ scheme_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
   return scheme_inner_compile_list(form, env, rec, 0);
 }
 
-static void *compile_k()
+static void *compile_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *form;
@@ -2798,7 +2798,7 @@ Scheme_Object *scheme_eval_multi(Scheme_Object *obj, Scheme_Env *env)
   return scheme_eval_compiled_multi(scheme_compile(obj, env, 0));
 }
 
-static void *eval_k()
+static void *eval_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *v;
@@ -2876,7 +2876,7 @@ Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj)
   return _eval(obj, 1, 0, 1);
 }
 
-static void *expand_k()
+static void *expand_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *obj;

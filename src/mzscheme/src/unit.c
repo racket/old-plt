@@ -1166,7 +1166,7 @@ make_compound_unit_record(int count, /* subunits */
 	  }
 	} else
 	  pos = (long)sub->int_id;
-	param_maps[i][j].u.pos = pos;
+	param_maps[i][j].u.pos = (short)pos;
       }
     }
   }  
@@ -1918,7 +1918,7 @@ Scheme_Object *scheme_invoke_unit(Scheme_Object *unit, int num_ins,
 /* Unit execution                                                     */
 /**********************************************************************/
 
-static void *do_unit_k()
+static void *do_unit_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *v;
@@ -1957,7 +1957,7 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
     p->ku.k.p2 = (void *)anchors;
     p->ku.k.p3 = (void *)m;
 
-    return scheme_handle_stack_overflow((Scheme_Object *(*)())do_unit_k);
+    return scheme_handle_stack_overflow((Scheme_Object *(*)(void))do_unit_k);
   }
 #endif
   SCHEME_USE_FUEL(1);

@@ -1302,6 +1302,8 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   child = make_process(NULL, config, mgr);
 
   scheme_init_error_escape_proc(child);
+  scheme_set_param(child->config, MZCONFIG_EXN_HANDLER,
+		   scheme_get_param(child->config, MZCONFIG_INIT_EXN_HANDLER));
 
   child->stack_start = child_start;
   
@@ -1506,13 +1508,10 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
     }
   }
   
-#ifndef MZ_REAL_THREADS
-  do_atomic++;
-#endif
-  env = (empty ? scheme_make_empty_env() : scheme_top_level_env());
-#ifndef MZ_REAL_THREADS
-  --do_atomic;
-#endif
+  /* Copy from original namespace: */
+  env = scheme_make_empty_env();
+  if (!empty)
+    scheme_copy_from_original_env(env);
 
   scheme_no_keywords = save_no_key;   
   scheme_escape_continuations_only = save_ec_only;

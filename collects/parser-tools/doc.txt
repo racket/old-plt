@@ -43,6 +43,12 @@ This gives you the following syntatic forms:
    > (get-lexeme) returns the matched string
    > lex-buf is the lex-buf being processed (this is useful for
       matching input with multiple lexers, see example below)
+   The lexer will raise an exception (via the (error ...) function) if
+   none of the regular expressions match the input.
+   Hint: If ((- #\000 #\377) custom-error-behavior) is the last rule,
+   then there will always be a match and custom-error-behavior will be
+   executed to handle the error situation as desired, only consuming
+   the first character from the input buffer.
 
 > (define-tokens group-name (token-name ...)) which binds group-name
    to the group of tokens being defined.  For each token-name, t, a
@@ -82,12 +88,6 @@ the module to a .zo with 'mzc --zo --auto-dir filename'.  This should
 create a .zo file in the 'compiled' subdirectory.
 
 See the combined lexer/parser example below.
-
-Hint: If there is no match in the input buffer the generated lexer
-will signal an error.  If ((- #\000 #\377) custom-error-behavior) is
-the last rule, then there will always be a match and
-custom-error-behavior will be executed to handle the error situation
-as desired.
 
 
 _yacc.ss_

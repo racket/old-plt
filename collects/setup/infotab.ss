@@ -33,7 +33,7 @@
 					   (syntax mod-beg) ; target module's context
 					   '#%info-lookup)])
 	       (syntax
-		(#%module-begin
+		(#%plain-module-begin
 		 defn ...
 		 (define #%info-lookup
 		   (case-lambda

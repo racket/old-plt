@@ -9,7 +9,7 @@
             (andmap string? (syntax-object->datum (syntax (str ...)))))
        (with-syntax ([string-constants (datum->syntax-object stx 'string-constants)])
          (syntax
-          (#%module-begin
+          (#%plain-module-begin
            (provide string-constants)
            (define string-constants
              '((name str) ...)))))]

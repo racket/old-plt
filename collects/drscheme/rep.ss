@@ -1171,6 +1171,37 @@
 	     
 	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
 	     
+	     (print-struct #t)
+	     (printf "about to invoke ~s~n" library-unit)
+	     (with-handlers ([(lambda (x) #t)
+			      (lambda (y) 
+				(display (exn-message y))
+				(newline))])
+	       (invoke-unit/sig
+		(compound-unit/sig
+		  (import)
+		  (link [userspace : plt:userspace^ 
+				   ((compound-unit/sig 
+				      (import)
+				      (link [core : mzlib:core-flat^ ((require-library-unit/sig "coreflatr.ss"))]
+					    [mred : mred^ (mred:mred@)])
+				      (export (open core)
+					      (open mred))))]
+			[library : () ((unit/sig ()
+					 (import plt:userspace^)
+					 (when library-unit
+					   (with-handlers ([(lambda (x) #t)
+							    (lambda (x)
+							      ((error-display-handler)
+							       (format
+								"Invalid Library:~n~a"
+								(if (exn? x) (exn-message x) x))
+							       "Invalid Library"))])
+					     (invoke-open-unit/sig library-unit #f plt:userspace^))))
+				       userspace)])
+		  (export))))
+	     (printf "invoked~n")
+	     
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's
 	     ;; parameterization

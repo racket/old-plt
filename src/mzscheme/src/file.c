@@ -3552,9 +3552,10 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
     DTPBRec rec;
     Str255 nm;
     short vrefnum;
+    long junk;
     long creator = check_four(name, 0, 1, &o);
 
-    if (GetVol(nm, &vrefnum))
+    if (HGetVol(nm, &vrefnum, &junk))
       return 0;
     rec.ioNamePtr = NULL;
     rec.ioVRefNum = vrefnum;

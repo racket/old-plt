@@ -1354,7 +1354,11 @@ sub PrintSpecificFunction
     if ($global) {
 	$pointercount = 1;
     } else {
-	$pointercount = 2;
+	if ($iscreator) {
+	    $pointercount = 3;
+	} else {
+	    $pointercount = 2;
+	}
     }
     @pbls = @pushables;
     foreach $paramtype (@paramtypes) {
@@ -1374,14 +1378,22 @@ sub PrintSpecificFunction
     print "$prefix  VAR_STACK_PUSH(0, p);\n";
     if (!$global) {
 	print "$prefix  VAR_STACK_PUSH(1, obj);\n";
+	if ($iscreator) {
+	    print "$prefix  VAR_STACK_PUSH(2, realobj);\n";
+	}
     }
     # Push each pounter:
     $paramnum = 0;
     if ($global) {
 	$pointercount = 1;
     } else {
-	$pointercount = 2;
+	if ($iscreator) {
+	    $pointercount = 3;
+	} else {
+	    $pointercount = 2;
+	}
     }
+
     @pbls = @pushables;
     foreach $paramtype (@paramtypes) {
 	$pt = $paramtype;

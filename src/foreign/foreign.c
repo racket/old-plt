@@ -1514,8 +1514,8 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   int           nargs   = cif->nargs;
   GC_CAN_IGNORE ForeignAny oval, *ivals;
   void **avalues, *p;
-  ForeignAny stack_ivals[MAX_QUICK_ARGS];
-  void *stack_avalues[MAX_QUICK_ARGS];
+  GC_CAN_IGNORE ForeignAny stack_ivals[MAX_QUICK_ARGS];
+  GC_CAN_IGNORE void *stack_avalues[MAX_QUICK_ARGS];
   int i;
   if (nargs <= MAX_QUICK_ARGS) {
     ivals   = stack_ivals;

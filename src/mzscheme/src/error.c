@@ -86,10 +86,10 @@ typedef struct {
 
 static void default_printf(char *msg, ...)
 {
-  va_list args;
-  va_start(args, msg);
+  GC_CAN_IGNORE va_list args;
+  HIDE_FROM_XFORM(va_start(args, msg));
   vfprintf(stderr, msg, args);
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
   fflush(stderr);
 }
 
@@ -432,11 +432,11 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 static long scheme_sprintf(char *s, long maxlen, const char *msg, ...)
 {
   long len;
+  GC_CAN_IGNORE va_list args;
 
-  va_list args;
-  va_start(args, msg);
+  HIDE_FROM_XFORM(va_start(args, msg));
   len = sch_vsprintf(s, maxlen, msg, args);
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
 
   return len;
 }
@@ -669,16 +669,16 @@ void scheme_reset_prepared_error_buffer(void)
 void
 scheme_signal_error (const char *msg, ...)
 {
-  va_list args;
+  GC_CAN_IGNORE va_list args;
   char *buffer;
   long len;
 
   /* Precise GC: Don't allocate before getting hidden args off stack */
   buffer = prepared_buf;
 
-  va_start(args, msg);
+  HIDE_FROM_XFORM(va_start(args, msg));
   len = sch_vsprintf(buffer, prepared_buf_len, msg, args);
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);
 
@@ -706,16 +706,16 @@ scheme_signal_error (const char *msg, ...)
 
 void scheme_warning(char *msg, ...)
 {
-  va_list args;
+  GC_CAN_IGNORE va_list args;
   char *buffer;
   long len;
 
   /* Precise GC: Don't allocate before getting hidden args off stack */
   buffer = prepared_buf;
 
-  va_start(args, msg);
+  HIDE_FROM_XFORM(va_start(args, msg));
   len = sch_vsprintf(buffer, prepared_buf_len, msg, args);
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);
 
@@ -1172,7 +1172,7 @@ void scheme_read_err(Scheme_Object *port,
 		     int gotc, Scheme_Object *indentation,
 		     const char *detail, ...)
 {
-  va_list args;
+  GC_CAN_IGNORE va_list args;
   char *s, *ls, lbuf[30], *fn, *suggests;
   long slen, fnlen;
   int show_loc;
@@ -1181,9 +1181,9 @@ void scheme_read_err(Scheme_Object *port,
   /* Precise GC: Don't allocate before getting hidden args off stack */
   s = prepared_buf;
 
-  va_start(args, detail);
+  HIDE_FROM_XFORM(va_start(args, detail));
   slen = sch_vsprintf(s, prepared_buf_len, detail, args);
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);
 
@@ -1283,6 +1283,22 @@ void scheme_wrong_syntax(const char *where,
   nomwho = NULL;
   mod = scheme_false;
 
+  if (!detail) {
+    s = "bad syntax";
+    slen = strlen(s);
+  } else {
+    GC_CAN_IGNORE va_list args;
+
+    /* Precise GC: Don't allocate before getting hidden args off stack */
+    s = prepared_buf;
+
+    HIDE_FROM_XFORM(va_start(args, detail));
+    slen = sch_vsprintf(s, prepared_buf_len, detail, args);
+    HIDE_FROM_XFORM(va_end(args));
+
+    prepared_buf = init_buf(NULL, &prepared_buf_len);
+  }
+
   /* Check for special strings that indicate `form' doesn't have a
      good name: */
   if ((where == scheme_compile_stx_string)
@@ -1299,22 +1315,6 @@ void scheme_wrong_syntax(const char *where,
     mod = scheme_intern_symbol("mzscheme");
     if (where == scheme_begin_stx_string)
       where = "begin (possibly implicit)";
-  }
-
-  if (!detail) {
-    s = "bad syntax";
-    slen = strlen(s);
-  } else {
-    va_list args;
-
-    /* Precise GC: Don't allocate before getting hidden args off stack */
-    s = prepared_buf;
-
-    va_start(args, detail);
-    slen = sch_vsprintf(s, prepared_buf_len, detail, args);
-    va_end(args);
-
-    prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
 
   buffer = init_buf(&len, &blen);
@@ -1498,14 +1498,14 @@ void scheme_wrong_return_arity(const char *where,
     s = NULL;
     slen = 0;
   } else {
-    va_list args;
+    GC_CAN_IGNORE va_list args;
 
     /* Precise GC: Don't allocate before getting hidden args off stack */
     s = prepared_buf;
 
-    va_start(args, detail);
+    HIDE_FROM_XFORM(va_start(args, detail));
     slen = sch_vsprintf(s, prepared_buf_len, detail, args);
-    va_end(args);
+    HIDE_FROM_XFORM(va_end(args));
 
     prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
@@ -2012,7 +2012,7 @@ void scheme_immediate_exit(int status)
 void
 scheme_raise_exn(int id, ...)
 {
-  va_list args;
+  GC_CAN_IGNORE va_list args;
   long alen;
   char *msg;
   int i, c;
@@ -2022,7 +2022,7 @@ scheme_raise_exn(int id, ...)
   /* Precise GC: Don't allocate before getting hidden args off stack */
   buffer = prepared_buf;
 
-  va_start(args, id);
+  HIDE_FROM_XFORM(va_start(args, id));
 
   if (id == MZEXN_OTHER)
     c = 3;
@@ -2036,7 +2036,7 @@ scheme_raise_exn(int id, ...)
   msg = mzVA_ARG(args, char*);
 
   alen = sch_vsprintf(buffer, prepared_buf_len, msg, args);
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);
 

@@ -79,6 +79,10 @@ Parameters
        All consecutive whitespace is replaced by a single space.
        CDATA sections are not affected.
 
+> trim-whitespace : Bool
+       This parameter no longer exists.  Consider using collapse-whitespace
+       and eliminate-whitespace instead.
+
 > read-comments : Bool
        Default: #f
        Comments, by definition, should be ignored by programs.  However,

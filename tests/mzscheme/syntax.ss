@@ -107,9 +107,6 @@
 (syntax-test '(lambda (x . 5) x))
 (syntax-test '(lambda (x) x . 5))
 
-(syntax-test '(lambda (#%define) 0))
-(syntax-test '(lambda (#%car) 0))
-
 (let ([f
        (case-lambda
 	[() 'zero]
@@ -178,9 +175,6 @@
 (syntax-test '(case-lambda [(x . x) 8] [(y) 7]))
 (syntax-test '(case-lambda [(y) 7] [(x x) 8]))
 (syntax-test '(case-lambda [(y) 7] [(x . x) 8]))
-
-(syntax-test '(case-lambda [() 0][(#%define) 0]))
-(syntax-test '(case-lambda [() 0][(#%car) 0]))
 
 (SECTION 4 1 5)
 (test 'yes 'if (if (> 3 2) 'yes 'no))
@@ -536,13 +530,6 @@
   (wrap 13 '((begin) 13))
   (wrap 7 '((begin) (begin) (begin (define x 7) (begin) x)))
   (wrap 7 '((begin (begin (begin (define x 7) (begin) x))))))
-
-(syntax-test '(let ([#%define 0]) 1))
-(syntax-test '(let* ([#%define 0]) 1))
-(syntax-test '(letrec ([#%define 0]) 1))
-(syntax-test '(let-values ([(y) 10][(x #%define) 0]) 1))
-(syntax-test '(let*-values ([(y) 10][(x #%define) 0]) 1))
-(syntax-test '(letrec-values ([(y) 10][(x #%define) 0]) 1))
 
 (SECTION 4 2 3)
 (define x 0)
@@ -946,6 +933,7 @@
 (error-test '(parameterize ([(lambda (a) 10) 10]) 8))
 (error-test '(parameterize ([(lambda (a b) 10) 10]) 8))
 
+#|
 (test #t procedure? (check-parameter-procedure current-directory))
 (test #t procedure? (check-parameter-procedure (case-lambda
 						[() 0]
@@ -957,6 +945,7 @@
 (test 'exn 'not-param (with-handlers ([void (lambda (x) 'exn)])
 			(check-parameter-procedure (lambda (x y) 10))))
 (arity-test check-parameter-procedure 1 1)
+|#
 
 (SECTION 'time)
 (test 1 'time (time 1))
@@ -970,7 +959,7 @@
 ; Tests specifically aimed at the compiler
 (error-test '(let ([x (values 1 2)]) x) exn:application:arity?)
 ; Known primitive
-(error-test '(let ([x (#%make-pipe)]) x) exn:application:arity?)
+(error-test '(let ([x (make-pipe)]) x) exn:application:arity?)
 ; Known local
 (error-test '(let* ([f (lambda () (values 1 2))][x (f)]) x) exn:application:arity?)
 

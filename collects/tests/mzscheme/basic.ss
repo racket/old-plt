@@ -958,7 +958,7 @@
 (test '("") regexp-match "b??" input)
 (test '("") regexp-match "[tag]??" input)
 (test '("g1") regexp-match "[tag]??1" input)
-(test '("ag") regexp-match "[a-m]*" input)
+(test '("ag") regexp-match "[a-m]+" input)
 
 ;; Test regexp with null chars:
 (let* ([s (string #\a #\b #\nul #\c)]

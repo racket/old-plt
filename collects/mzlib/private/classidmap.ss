@@ -182,10 +182,20 @@
        [else
 	(reverse (cons args accum))])))
 
+  (define-struct private-name (gen-id))
+
+  (define (localize id)
+    (let ([v (syntax-local-value id (lambda () #f))])
+      (if (and v (private-name? v))
+	  (private-name-gen-id v)
+	  id)))
+
+
   (provide make-this-map make-field-map make-method-map 
 	   make-direct-method-map make-rename-map
 	   init-error-map super-error-map 
 	   make-with-method-map
-	   flatten-args))
+	   flatten-args
+	   make-private-name localize))
 
     

@@ -613,7 +613,7 @@
 								(stx-car idp)))
 							  (syntax->list (syntax (idp ...))))])
 						(with-syntax ([(id ...) ids]
-							      [(idpos ...) ids]
+							      [(idpos ...) (map localize ids)]
 							      [(defval ...) 
 							       (map (lambda (idp)
 								      (if (identifier? idp)
@@ -761,32 +761,35 @@
 						  (syntax
 						   (letrec-syntaxes+values extra-init-mappings ()
 						     proc)))))
-					 methods)))])
+					 methods)))]
+				   [localize-cdr (lambda (p) (localize (cdr p)))])
 			       
 			       ;; ---- build final result ----
-			       (with-syntax ([public-names (map cdr publics)]
-					     [override-names (map cdr overrides)]
-					     [public-final-names (map cdr public-finals)]
-					     [override-final-names (map cdr override-finals)]
-					     [rename-names (map cdr renames)]
-					     [inherit-names (map cdr inherits)]
+			       (with-syntax ([public-names (map localize-cdr publics)]
+					     [override-names (map localize-cdr overrides)]
+					     [public-final-names (map localize-cdr public-finals)]
+					     [override-final-names (map localize-cdr override-finals)]
+					     [rename-names (map localize-cdr renames)]
+					     [inherit-names (map localize-cdr inherits)]
 					     [num-fields (datum->syntax-object
 							  (quote-syntax here)
 							  (+ (length private-field-names)
 							     (length plain-init-fields)
 							     (length plain-fields)))]
 					     [field-names (map (lambda (i)
-								 (if (identifier? i)
-								     i
-								     (car i)))
+								 (localize
+								  (if (identifier? i)
+								      i
+								      (car i))))
 							       (append
 								plain-fields
 								plain-init-fields))]
-					     [inherit-field-names inherit-field-names]
+					     [inherit-field-names (map localize inherit-field-names)]
 					     [init-names (map (lambda (i)
-								(if (identifier? i)
-								    i
-								    (car i)))
+								(localize
+								 (if (identifier? i)
+								     i
+								     (car i))))
 							      inits)]
 					     [init-mode init-mode]
 					     [(private-method ...) (map (find-method private-methods) (map car privates))]
@@ -822,7 +825,6 @@
 				     (quote override-final-names)
 				     (quote override-names)
 				     (quote inherit-names)
-				     (quote (public-final-name ... override-final-name ...))
 				     ;; Init arg names (in order)
 				     (quote init-names)
 				     (quote init-mode)
@@ -972,6 +974,37 @@
        (mk 'define/public (syntax public))
        (mk 'define/override (syntax override)))))
 
+  (define-syntax (declare-local-member-name stx)
+    (syntax-case stx ()
+      [(_ id ...)
+       (let ([ids (syntax->list (syntax (id ...)))])
+	 (for-each (lambda (id)
+		     (unless (identifier? id)
+		       (raise-syntax-error
+			#f
+			"expected an identifier"
+			stx
+			id)))
+		   ids)
+	 (let ([dup (check-duplicate-identifier ids)])
+	   (when dup
+	     (raise-syntax-error
+	      #f
+	      "duplicate identifier"
+	      stx
+	      dup)))
+	 (if (eq? (syntax-local-context) 'top-level)
+	     ;; Does nothing in particular at the top level:
+	     (syntax/loc stx (define-syntaxes (id ...) (values 'id ...)))
+	     ;; Map names to private indicators:
+	     (with-syntax ([(gen-id ...) (map (lambda (id)
+						(string->uninterned-symbol
+						 (format "~a" (syntax-e id))))
+					      ids)])
+	       (syntax/loc stx
+		 (define-syntaxes (id ...)
+		   (values (make-private-name 'gen-id) ...))))))]))
+
   ;;--------------------------------------------------------------------
   ;;  class implementation
   ;;--------------------------------------------------------------------
@@ -1020,7 +1053,6 @@
 			 override-final-names
 			 override-normal-names
 			 inherit-names
-			 final-names         ; subset of public + override
 
 			 init-args           ; list of symbols in order
 			 init-mode           ; 'normal, 'stop, or 'list
@@ -1044,6 +1076,7 @@
 	   ;; Combine method lists
 	   [public-names (append public-final-names public-normal-names)]
 	   [override-names (append override-final-names override-normal-names)]
+	   [final-names (append public-final-names override-final-names)]
 	   ;; Mis utilities
 	   [no-new-methods? (null? public-names)]
 	   [no-method-changes? (and (null? public-names)
@@ -1503,10 +1536,11 @@
       (syntax-case stx ()
 	[(_ do-make-object orig-stx class args (kw arg) ...)
 	 (andmap identifier? (syntax->list (syntax (kw ...))))
-	 (syntax (do-make-object class
-				 args
-				 (list (cons 'kw arg)
-				       ...)))]
+	 (with-syntax ([(kw ...) (map localize (syntax->list (syntax (kw ...))))])
+	   (syntax (do-make-object class
+				   args
+				   (list (cons 'kw arg)
+					 ...))))]
 	[(_ super-make-object orig-stx class args kwarg ...)
 	 ;; some kwarg must be bad:
 	 (for-each (lambda (kwarg)
@@ -1680,24 +1714,25 @@
 		       "method name is not an identifier"
 		       stx
 		       (syntax name)))
-		    (if flatten?
-			(if (stx-list? (syntax args))
-			    (syntax (let ([this obj])
-				      (apply (find-method this 'name) this . args)))
-			    (raise-syntax-error
-			     #f
-			     "bad syntax (illegal use of `.')"
-			     stx))
-			(if (stx-list? (syntax args))
-			    (with-syntax ([call (syntax/loc stx
-						  ((find-method this 'name) this . args))])
-			      (syntax/loc stx (let ([this obj])
-						call)))
-			    (with-syntax ([args (flatten-args (syntax args))])
+		    (with-syntax ([name (localize (syntax name))])
+		      (if flatten?
+			  (if (stx-list? (syntax args))
+			      (syntax (let ([this obj])
+					(apply (find-method this 'name) this . args)))
+			      (raise-syntax-error
+			       #f
+			       "bad syntax (illegal use of `.')"
+			       stx))
+			  (if (stx-list? (syntax args))
 			      (with-syntax ([call (syntax/loc stx
-						    (apply (find-method this 'name) this . args))])
+						    ((find-method this 'name) this . args))])
 				(syntax/loc stx (let ([this obj])
-						  call)))))))])))])
+						  call)))
+			      (with-syntax ([args (flatten-args (syntax args))])
+				(with-syntax ([call (syntax/loc stx
+						      (apply (find-method this 'name) this . args))])
+				  (syntax/loc stx (let ([this obj])
+						    call))))))))])))])
       (values (mk #f) (mk #t))))
   
   (define-syntax send*
@@ -1746,12 +1781,12 @@
       (which (cwhich (car p)) (cdr p))))
   
   (define (make-class-field-accessor class name)
-    (class-field-X 'make-class-field-accessor
+    (class-field-X 'class-field-accessor
 		   make-struct-field-accessor class-field-ref
 		   class name))
   
   (define (make-class-field-mutator class name)
-    (class-field-X 'make-class-field-mutator 
+    (class-field-X 'class-field-mutator 
 		   make-struct-field-mutator class-field-set!
 		   class name))
 
@@ -1810,6 +1845,33 @@
 		 (syntax (let ([this obj])
 			   call)))))])))
   
+  (define-syntaxes (class-field-accessor class-field-mutator generic/form)
+    (let ([mk
+	   (lambda (make targets)
+	     (lambda (stx)
+	       (syntax-case stx ()
+		 [(_ class-expr name)
+		  (let ([name (syntax name)])
+		    (unless (identifier? name)
+		      (raise-syntax-error
+		       #f
+		       "expected an indentifier"
+		       stx
+		       name))
+		    (with-syntax ([name (localize name)]
+				  [make make])
+		      (syntax/loc stx (make class-expr 'name))))]
+		 [(_ class-expr)
+		  (raise-syntax-error
+		   #f
+		   (format "expected a field name after the ~a expression"
+			   targets)
+		   stx)])))])
+      (values
+       (mk (quote-syntax make-class-field-accessor) "class")
+       (mk (quote-syntax make-class-field-mutator) "class")
+       (mk (quote-syntax make-generic/proc) "class or interface"))))
+
   (define (find-with-method object name)
     (find-method/who 'with-method object name))
 
@@ -1818,7 +1880,7 @@
       (syntax-case stx ()
 	[(_ ([id (obj-expr name)] ...) body0 body1 ...)
 	 (let ([ids (syntax->list (syntax (id ...)))]
-	       [names (syntax->list (syntax (id ...)))])
+	       [names (syntax->list (syntax (name ...)))])
 	   (for-each (lambda (id name)
 		       (unless (identifier? id)
 			 (raise-syntax-error #f
@@ -1832,7 +1894,8 @@
 					     name)))
 		     ids names)
 	   (with-syntax ([(method ...) (generate-temporaries ids)]
-			 [(method-obj ...) (generate-temporaries ids)])
+			 [(method-obj ...) (generate-temporaries ids)]
+			 [(name ...) (map localize names)])
 	     (syntax/loc stx (let-values ([(method method-obj)
 					   (let ([obj obj-expr])
 					     (values (find-with-method obj 'name) obj))]
@@ -1924,8 +1987,16 @@
   (define (interface->method-names i)
     (unless (interface? i)
       (raise-type-error 'interface->method-names "interface" i))
-    ;; copy list
-    (map values (interface-public-ids i)))
+    ;; copy list, and also filter private (interned) methods:
+    (let loop ([l (interface-public-ids i)])
+      (cond
+       [(null? l) null]
+       [(eq? (car l) (string->symbol (symbol->string (car l)))) 
+	;; interned
+	(cons (car l) (loop (cdr l)))]
+       [else 
+	;; uninterned
+	(loop (cdr l))])))
 
   ;;--------------------------------------------------------------------
   ;;  primitive classes
@@ -1967,7 +2038,6 @@
 		   null new-names
 		   null override-names
 		   null ; no inherits
-		   null ; no finals
 		   
 		   ; #f => init args by position only
 		   ; sym => required arg
@@ -2036,13 +2106,14 @@
 
   (provide (rename :class class)
 	   class* class*/names class?
-	   (rename :interface interface) interface?	   
+	   (rename :interface interface) interface?
 	   object% object?
 	   make-object instantiate
-	   send send/apply send* make-class-field-accessor make-class-field-mutator with-method
+	   send send/apply send* class-field-accessor class-field-mutator with-method
 	   private* public* override*
 	   define/private define/public define/override
-	   (rename make-generic/proc make-generic) send-generic
+	   declare-local-member-name
+	   (rename generic/form generic) (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface
 	   method-in-interface? interface->method-names class->interface

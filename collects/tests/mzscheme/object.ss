@@ -57,7 +57,7 @@
 
 (test 115 'e (send fish2 eat fish1))
 
-(define fish-size (make-class-field-accessor fish% 'size))
+(define fish-size (class-field-accessor fish% size))
 (test 12 fish-size fish1)
 (test 115 fish-size fish2)
 
@@ -79,7 +79,7 @@
 (define blue-fish (instantiate color-fish% () (color 'blue) (size 10)))
 (define red-fish (instantiate color-fish% () (size 1)))
 
-(define color-fish-color (make-class-field-accessor color-fish% 'color))
+(define color-fish-color (class-field-accessor color-fish% color))
 
 (test 'red color-fish-color red-fish)
 (test 'blue color-fish-color blue-fish)
@@ -457,8 +457,8 @@
     (super-instantiate ())))
 
 (test 10 'cm1-meth (send (make-object cm1%) meth))
-(test 10 'cm1-x ((make-class-field-accessor cm1% 'x) (make-object cm1%)))
-(test 10 'cm1-y ((make-class-field-accessor cm1% 'y) (make-object cm1%)))
+(test 10 'cm1-x ((class-field-accessor cm1% x) (make-object cm1%)))
+(test 10 'cm1-y ((class-field-accessor cm1% y) (make-object cm1%)))
 (test 10 'cm1-z (send (make-object cm1%) get-z))
 (test 10 'cm1-w (send (make-object cm1%) get-w))
 
@@ -495,5 +495,96 @@
   (mk-syntax-test (lambda (id) `((public ,id) (define (id) 10))))
   (mk-syntax-test (lambda (id) `((private ,id) (define (id) 10))))
   (mk-syntax-test (lambda (id) `((override ,id) (define (id) 10)))))
+
+
+(syntax-test #'(class-field-accessor))
+(syntax-test #'(class-field-accessor ok))
+(syntax-test #'(class-field-accessor ok 7))
+(syntax-test #'(class-field-accessor ok% ok ok))
+(syntax-test #'(class-field-accessor ok% . ok))
+(syntax-test #'(class-field-mutator))
+(syntax-test #'(class-field-mutator ok))
+(syntax-test #'(class-field-mutator ok 7))
+(syntax-test #'(class-field-mutator ok% ok ok))
+(syntax-test #'(class-field-mutator ok% . ok))
+
+(syntax-test #'(declare-local-member-name . a))
+(syntax-test #'(declare-local-member-name 7))
+(syntax-test #'(declare-local-member-name a 7))
+(syntax-test #'(declare-local-member-name a a))
+
+;; ------------------------------------------------------
+;; Private names
+
+(let ([o (let ()
+	   (declare-local-member-name priv)
+	   (let ([o (make-object
+		     (class object%
+		       (define/public (priv) (let ([priv 73]) priv))
+		       (super-make-object)))])
+	     (test 73 'priv (send o priv))
+	     o))])
+  (err/rt-test (send o priv) exn:object?))
+
+(let ([c% (let ()
+	    (declare-local-member-name priv)
+	    (let ([c% (class object%
+			(init-field priv)
+			(super-make-object))])
+	      (test 100 'priv ((class-field-accessor c% priv) (make-object c% 100)))
+	      (test 100 'priv ((class-field-accessor c% priv) (instantiate c% () [priv 100])))
+	      c%))])
+  (err/rt-test (class-field-accessor c% priv) exn:object?)
+  (test #t object? (make-object c% 10))
+  (err/rt-test (instantiate c% () [priv 10]) exn:object?))
+
+(let ([c% (let ()
+	    (declare-local-member-name priv)
+	    (let ([c% (class object%
+			(init priv)
+			(define xpriv priv)
+			(define/public (m) xpriv)
+			(super-make-object))])
+	      (test 100 'priv (send (make-object c% 100) m))
+	      (test 100 'priv (send (instantiate c% () [priv 100]) m))
+	      c%))])
+  (test 101 'priv (send (make-object c% 101) m))
+  (err/rt-test (instantiate c% () [priv 101]) exn:object?))
+
+(let ([c% (let ()
+	    (declare-local-member-name priv)
+	    (let ([c% (class object%
+			(init xpriv)
+			(field [priv xpriv])
+			(define/public (m) priv)
+			(super-make-object))])
+	      (test 100 'priv ((class-field-accessor c% priv) (make-object c% 100)))
+	      (test 101 'priv (send (make-object c% 101) m))
+	      (test 100 'priv (send (instantiate c% () [xpriv 100]) m))
+	      (test 100 'priv ((class-field-accessor c% priv) (instantiate c% () [xpriv 100])))
+	      c%))])
+  (err/rt-test (class-field-accessor c% priv) exn:object?)
+  (test 101 'priv (send (make-object c% 101) m))
+  (test 101 'priv (send (instantiate c% () [xpriv 101]) m))
+  (err/rt-test (instantiate c% () [priv 10]) exn:object?))
+
+(let ([c% (let ()
+	    (declare-local-member-name priv)
+	    (let ([c% (class object%
+			(init-field val)
+			(define/public (priv) val)
+			(super-make-object))])
+	      (test 100 'priv (send (make-object c% 100) priv))
+	      (test 100 'priv (send* (make-object c% 100) (priv)))
+	      (test 100 'priv (with-method ([p ((make-object c% 100) priv)]) (p)))
+	      (test 100 'gen-priv (send-generic (make-object c% 100) (generic c% priv)))
+	      (err/rt-test (make-generic c% 'priv) exn:object?)
+	      c%))])
+  (test #t object? (make-object c% 10))
+  (err/rt-test (send (make-object c% 10) priv) exn:object?)
+  (err/rt-test (send* (make-object c% 10) (priv)) exn:object?)
+  (err/rt-test (with-method ([p ((make-object c% 100) priv)]) (p)) exn:object?)
+  (err/rt-test (generic c% priv) exn:object?)
+  (err/rt-test (make-generic c% 'priv) exn:object?))
 
 (report-errs)

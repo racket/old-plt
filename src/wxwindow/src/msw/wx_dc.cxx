@@ -41,7 +41,6 @@ extern void wxInitGraphicsPlus(void);
 
 typedef struct {
   double sx, sy, angle;
-  int c;
 } wxSizeKey;
 
 static Scheme_Object *theSizeKey;
@@ -70,9 +69,6 @@ static int is_nt()
       nt = 1;
     else
       nt = 0;
-
-    wxREGGLOB(theSizeKey);
-    theSizeKey = scheme_alloc_byte_string(sizeof(wxSizeKey), 0);
   }
   return nt;
 }
@@ -143,6 +139,11 @@ wxDC::wxDC(void)
 
   null_pen = ::GetStockObject(NULL_PEN);
   null_brush = ::GetStockObject(NULL_BRUSH);
+
+  if (!theSizeKey) {
+    wxREGGLOB(theSizeKey);
+    theSizeKey = scheme_alloc_byte_string(sizeof(wxSizeKey), 0);
+  }
 }
 
 
@@ -1675,26 +1676,46 @@ static int substitute_font(wchar_t *ustring, int d, int alen, wxFont *font, HDC 
   return alen;
 }
 
-static void wxTextSize(HDC dc, wxFont *font, wchar_t *ustring, int d, int alen, double *ow, double *oh)
+static Scheme_Hash_Table *wxSizeHashTable(wxFont *font, Bool screen_font, Bool combine, double sx, double sy)
+{
+  if (screen_font && !combine) {
+    Scheme_Hash_Table *ht;
+    double a;
+    Scheme_Object *szht;
+
+    ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sx = sx;
+    ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sy = sy;
+    a = font->GetRotation();
+    ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->angle = a;
+
+    if (font->size_cache) {
+      ht = (Scheme_Hash_Table *)font->size_cache;
+    } else {
+      ht = scheme_make_hash_table_equal();
+      font->size_cache = ht;
+    }
+
+    szht = scheme_hash_get(ht, theSizeKey);
+    if (!szht) {
+      szht = (Scheme_Object *)scheme_make_hash_table(SCHEME_hash_ptr);
+      scheme_hash_set(ht, theSizeKey, szht);
+    }
+    return (Scheme_Hash_Table *)szht;
+  }
+
+  return NULL;
+}
+
+static void wxTextSize(HDC dc, Scheme_Hash_Table *ht, wchar_t *ustring, int d, int alen, double *ow, double *oh)
 {
   /* Gets the text size, caching the result in font when alen == 1 */ 
 
   if ((alen == 1) && is_nt()) {
-    Scheme_Hash_Table *ht;
     double *sz;
 
-    if (font) {
-      if (font->size_cache) {
-	ht = (Scheme_Hash_Table *)font->size_cache;
-      } else {
-	ht = scheme_make_hash_table_equal();
-	font->size_cache = ht;
-      }
-
-      ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->c = ustring[d];
-      sz = (double *)scheme_hash_get(ht, theSizeKey);
+    if (ht) {
+      sz = (double *)scheme_hash_get(ht, scheme_make_integer(ustring[d]));
     } else {
-      ht = NULL;
       sz = NULL;
     }
 
@@ -1710,14 +1731,10 @@ static void wxTextSize(HDC dc, wxFont *font, wchar_t *ustring, int d, int alen, 
       *oh = (double)sizeRect.cy;
 
       if (ht) {
-	Scheme_Object *key;
 	sz = (double *)scheme_malloc_atomic(sizeof(double) * 2);
 	sz[0] = *ow;
 	sz[1] = *oh;
-	key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(theSizeKey), 
-					    sizeof(wxSizeKey), 
-					    1);
-	scheme_hash_set(ht, theSizeKey, (Scheme_Object *)sz);
+	scheme_hash_set(ht, scheme_make_integer(ustring[d]), (Scheme_Object *)sz);
       }
     }
   } else {
@@ -1738,6 +1755,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   double oox, ooy;
   int fam, reset = 0;
   wxFont *theFont;
+  Scheme_Hash_Table *ht;
 
   dc = ThisDC();
 
@@ -1762,11 +1780,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   theFont = font;
   if (theFont->redirect)
     theFont = theFont->redirect;
-  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
-  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
-  oh = theFont->GetRotation();
-  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->angle = oh;
-
+  ht = wxSizeHashTable(theFont, screen_font, combine, MS_XLOG2DEVREL(1), MS_YLOG2DEVREL(1));
 
   ustring = convert_to_drawable_format(text, d, ucs4, &len, fam == wxSYMBOL);
 
@@ -1807,7 +1821,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
 
     if (alen < len) {
-      wxTextSize(dc, screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
+      wxTextSize(dc, ht, ustring, d, alen, &ow, &oh);
       w += ow * ws;
       h += ow * hs;
     }
@@ -2066,6 +2080,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
   double tx, ty, ow, oh;
   wchar_t *ustring;
   int once = 1, fam, reset = 0;
+  Scheme_Hash_Table *ht;
 
   if (theFont) {
     oldFont = font;
@@ -2077,10 +2092,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
   if (theFont->redirect)
     theFont = theFont->redirect;
-  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
-  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
-  oh = theFont->GetRotation();
-  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->angle = oh;
+  ht = wxSizeHashTable(theFont, screen_font, combine, MS_XLOG2DEVREL(1), MS_YLOG2DEVREL(1));
 
   fam = theFont->GetFamily();
 
@@ -2114,7 +2126,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
     alen = substitute_font(ustring, d, alen, theFont, dc, screen_font, 0.0, &reset);
 
-    wxTextSize(dc, screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
+    wxTextSize(dc, ht, ustring, d, alen, &ow, &oh);
 
     tx += ow;
     if (oh > ty)

@@ -69,8 +69,11 @@
                         (syntaxes (compilation-unit-code dependents))
                         (locations (compilation-unit-locations dependents)))
                     (unless (= (length names) (length syntaxes))
+                      ;(printf "Writing a composite file out~n")
                       ;(printf "~a~n~n" (syntax-object->datum (car syntaxes)))
-                      (call-with-output-file* (send type-recs get-composite-location (car names))
+                      (call-with-output-file* (build-path (send type-recs get-compilation-location)
+                                                          (file-name-from-path
+                                                           (send type-recs get-composite-location (car names))))
                                               (lambda (port) (write (compile (car syntaxes)) port)) 'truncate/replace)
                       (set! syntaxes (cdr syntaxes)))
                     (unless (= (length names) (length syntaxes) (length locations))

@@ -1592,7 +1592,8 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
       data = SCHEME_COMPILED_CLOS_CODE(seq->array[i]);
       mina = maxa = data->num_params;
       if (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST) {
-	--mina;
+	if (mina)
+	  --mina;
 	maxa = -1;
       }
 
@@ -1634,7 +1635,8 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
     data = SCHEME_COMPILED_CLOS_CODE(p);
     mina = maxa = data->num_params;
     if (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST) {
-      --mina;
+      if (mina)
+	--mina;
       maxa = -1;
     }
   }

@@ -1066,13 +1066,7 @@ add struct contracts for immutable structs?
                 (syntax 
                  (->d any/c doms ... 
                       (let ([f rng-proc])
-                        (unless (procedure? f)
-                          (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
-                        (unless (procedure-arity-includes? f arity-count)
-                          (error 'object-contract 
-                                 "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
-                                 arity-count
-                                 f))
+			(check->* f arity-count)
                         (lambda (_this-var arg-vars ...)
                           (f arg-vars ...))))))
               (with-syntax ([(args-vars ...) (generate-temporaries doms-val)])
@@ -1085,13 +1079,7 @@ add struct contracts for immutable structs?
                             [arity-count (length doms-val)])
                 (syntax (->d* (any/c doms ...)
                               (let ([f rng-proc])
-                                (unless (procedure? f)
-                                  (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
-                                (unless (procedure-arity-includes? f arity-count)
-                                  (error 'object-contract 
-                                         "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
-                                         arity-count
-                                         f))
+				(check->* f arity-count)
                                 (lambda (_this-var arg-vars ...)
                                   (f arg-vars ...)))))))
             (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
@@ -1107,13 +1095,7 @@ add struct contracts for immutable structs?
                 (syntax (->d* (any/c doms ...)
                               rst-ctc
                               (let ([f rng-proc])
-                                (unless (procedure? f)
-                                  (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
-                                (unless (procedure-accepts-and-more? f arity-count)
-                                  (error 'object-contract 
-                                         "expected last argument of ->d* to be a procedure that accepts ~a arguments and arbitrarily many more, got ~e"
-                                         arity-count
-                                         f))
+				(check->*/more f arity-count)
                                 (lambda (_this-var arg-vars ... . rest-var)
                                   (apply f arg-vars ... rest-var))))))
               (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
@@ -1268,34 +1250,17 @@ add struct contracts for immutable structs?
                                                       '(field-name ...))]
                              [field-names-list '(field-name ...)])
                          (lambda (val)
-                           (unless (object? val)
-                             (raise-contract-error src-info
-                                                   pos-blame
-                                                   neg-blame
-                                                   orig-str
-                                                   "expected an object, got ~e"
-                                                   val))
+			   (check-object val src-info pos-blame neg-blame orig-str)
                            (let ([val-mtd-names
                                   (interface->method-names
                                    (object-interface
                                     val))])
                              (void)
-                             (unless (memq 'method-name val-mtd-names)
-                               (raise-contract-error src-info
-                                                     pos-blame
-                                                     neg-blame
-                                                     orig-str
-                                                     "expected an object with method ~s"
-                                                     'method-name))
+			     (check-method 'method-name val-mtd-names src-info pos-blame neg-blame orig-str)
                              ...)
                            
                            (unless (field-bound? field-name val)
-                             (raise-contract-error src-info
-                                                   pos-blame
-                                                   neg-blame
-                                                   orig-str
-                                                   "expected an object with field ~s"
-                                                   'field-name)) ...
+			     (field-error 'field-name src-info pos-blame neg-blame orig-str)) ...
                            
                            (let ([vtable (extract-vtable val)]
                                  [method-ht (extract-method-ht val)])
@@ -1473,16 +1438,7 @@ add struct contracts for immutable structs?
                  (lambda (outer-args)
                    (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                      (syntax
-                      (unless (and (procedure? val)
-                                   (procedure-arity-includes? val dom-length))
-                        (raise-contract-error
-                         src-info
-                         pos-blame
-                         neg-blame
-                         orig-str
-                         "expected a procedure that accepts ~a arguments, given: ~e"
-                         dom-length
-                         val)))))
+		      (check-procedure val dom-length src-info pos-blame neg-blame orig-str))))
                  
                  (lambda (outer-args)
                    (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
@@ -1523,16 +1479,7 @@ add struct contracts for immutable structs?
                    (lambda (outer-args)
                      (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                        (syntax
-                        (unless (and (procedure? val)
-                                     (procedure-arity-includes? val dom-length))
-                          (raise-contract-error
-                           src-info
-                           pos-blame
-                           neg-blame
-                           orig-str
-                           "expected a procedure that accepts ~a arguments, given: ~e"
-                           dom-length
-                           val)))))
+			(check-procedure val dom-length src-info pos-blame neg-blame orig-str))))
                    
                    (lambda (outer-args)
                      (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
@@ -1571,16 +1518,7 @@ add struct contracts for immutable structs?
                    (lambda (outer-args)
                      (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                        (syntax
-                        (unless (and (procedure? val)
-                                     (procedure-arity-includes? val dom-length))
-                          (raise-contract-error
-                           src-info
-                           pos-blame
-                           neg-blame
-                           orig-str
-                           "expected a procedure that accepts ~a arguments, given: ~e"
-                           dom-length
-                           val)))))
+			(check-procedure val dom-length src-info pos-blame neg-blame orig-str))))
                    
                    (lambda (outer-args)
                      (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
@@ -1638,16 +1576,7 @@ add struct contracts for immutable structs?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (and (procedure? val)
-                              (procedure-arity-includes? val dom-length))
-                   (raise-contract-error
-                    src-info
-                    pos-blame
-                    neg-blame
-                    orig-str
-                    "expected a procedure that accepts ~a arguments, given: ~e"
-                    dom-length
-                    val)))))
+		 (check-procedure val dom-length src-info pos-blame neg-blame orig-str))))
             
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
@@ -1693,16 +1622,7 @@ add struct contracts for immutable structs?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (and (procedure? val)
-                              (procedure-arity-includes? val dom-length))
-                   (raise-contract-error
-                    src-info
-                    pos-blame
-                    neg-blame
-                    orig-str
-                    "expected a procedure that accepts ~a arguments, given: ~e"
-                    dom-length
-                    val)))))
+		 (check-procedure val dom-length src-info pos-blame neg-blame orig-str))))
             
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
@@ -1763,17 +1683,7 @@ add struct contracts for immutable structs?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (and (procedure? val)
-                              (procedure-accepts-and-more? val dom-length))
-                   (raise-contract-error
-                    src-info
-                    pos-blame
-                    neg-blame
-                    orig-str
-                    "expected a procedure that accepts ~a arguments and any number of arguments larger than ~a, given: ~e"
-                    dom-length
-                    dom-length
-                    val)))))
+		 (check-procedure/more val dom-length src-info pos-blame neg-blame orig-str))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
@@ -1829,15 +1739,8 @@ add struct contracts for immutable structs?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (procedure? val)
-                   (raise-contract-error
-                    src-info
-                    pos-blame
-                    neg-blame
-                    orig-str
-                    "expected a procedure that accepts ~a arguments, given: ~e"
-                    dom-length
-                    val)))))
+		 ;; CHECK: previously, this test didn't use `procedure-arity' and compare to `dom-length'
+		 (check-procedure val dom-length src-info pos-blame neg-blame orig-str))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
@@ -1872,11 +1775,7 @@ add struct contracts for immutable structs?
                  (let ([dom-contract-x (coerce-contract ->d dom)] ...)
                    (let ([dom-x (contract-proc dom-contract-x)] ...
                          [rng-x rng])
-                     (unless (and (procedure? rng-x)
-                                  (procedure-arity-includes? rng-x arity))
-                       (error '->d "expected range portion to be a function that takes ~a arguments, given: ~e"
-                              arity
-                              rng-x))
+		     (check-rng-procedure '->d rng-x arity)
                      (let ([name-id (build-compound-type-name '->d name-dom-contract-x ... '(... ...))])
                        
                        body))))))
@@ -1889,16 +1788,7 @@ add struct contracts for immutable structs?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (and (procedure? val)
-                              (procedure-arity-includes? val arity))
-                   (raise-contract-error
-                    src-info
-                    pos-blame
-                    neg-blame
-                    orig-str
-                    "expected a procedure that accepts ~a arguments, given: ~e"
-                    arity
-                    val)))))
+		 (check-procedure val arity src-info pos-blame neg-blame orig-str))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
@@ -1935,10 +1825,7 @@ add struct contracts for immutable structs?
                  (let ([dom-contract-x (coerce-contract ->d* dom)] ...)
                    (let ([dom-x (contract-proc dom-contract-x)] ...
                          [rng-mk-x rng-mk])
-                     (unless (and (procedure? rng-mk-x)
-                                  (procedure-arity-includes? rng-mk-x dom-length))
-                       (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
-                              dom-length rng-mk-x))
+		     (check-rng-procedure '->d* rng-mk-x dom-length)
                      (let ([name-id (build-compound-type-name
                                      '->d* 
                                      (build-compound-type-name name-dom-contract-x ...)
@@ -1953,16 +1840,7 @@ add struct contracts for immutable structs?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (and (procedure? val)
-                              (procedure-arity-includes? val dom-length))
-                   (raise-contract-error
-                    src-info
-                    pos-blame
-                    neg-blame
-                    orig-str
-                    "expected a procedure that accepts ~a arguments, given: ~e"
-                    dom-length
-                    val)))))
+		 (check-procedure val dom-length src-info pos-blame neg-blame orig-str))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
@@ -1974,10 +1852,7 @@ add struct contracts for immutable structs?
                       (lambda ()
                         (val (dom-projection-x arg-x) ...))
                       (lambda results
-                        (unless (= (length results) (length rng-contracts))
-                          (error '->d* 
-                                 "expected range contract contructor and function to have the same number of values, given: ~a and ~a respectively" 
-                                 (length results) (length rng-contracts)))
+			(check-rng-lengths results rng-contracts)
                         (apply 
                          values
                          (map (lambda (rng-contract result)
@@ -2014,11 +1889,7 @@ add struct contracts for immutable structs?
                    (let ([dom-x (contract-proc dom-contract-x)] ...
                          [dom-rest-x (contract-proc dom-rest-contract-x)]
                          [rng-mk-x rng-mk])
-                     (unless (and (procedure? rng-mk-x)
-                                  (procedure-accepts-and-more? rng-mk-x arity))
-                       (error '->d* "expected range position to be a procedure that accepts ~a arguments and arbitrarily many more, given: ~e"
-                              arity 
-                              rng-mk-x))
+		     (check-rng-procedure/more rng-mk-x arity)
                      (let ([name-id (build-compound-type-name 
                                      '->d*
                                      (build-compound-type-name name-dom-contract-x ...)
@@ -2035,16 +1906,8 @@ add struct contracts for immutable structs?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (and (procedure? val)
-                              (procedure-accepts-and-more? val arity))
-                   (raise-contract-error
-                    src-info
-                    pos-blame
-                    neg-blame
-                    orig-str
-                    "expected a procedure that accepts ~a arguments, given: ~e"
-                    arity
-                    val)))))
+		 ;; CHECK: old check use "and more", but error message didn't
+		 (check-procedure/more val arity src-info pos-blame neg-blame orig-str))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
@@ -2061,10 +1924,7 @@ add struct contracts for immutable structs?
                          ...
                          (dom-rest-projection-x rest-arg-x)))
                       (lambda results
-                        (unless (= (length results) (length rng-contracts))
-                          (error '->d* 
-                                 "expected range contract contructor and function to have the same number of values, given: ~a and ~a respectively" 
-                                 (length results) (length rng-contracts)))
+			(check-rng-lengths results rng-contracts)
                         (apply 
                          values
                          (map (lambda (rng-contract result)
@@ -2105,26 +1965,10 @@ add struct contracts for immutable structs?
             (lambda (outer-args inner-lambda) inner-lambda)
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
-                            [kind-of-thing (if method-proc? "method" "procedure")])
+                            [kind-of-thing (if method-proc? 'method 'procedure)])
                 (syntax
                  (begin 
-                   (unless (procedure? val)
-                     (raise-contract-error src-info
-                                           pos-blame
-                                           neg-blame
-                                           orig-str
-                                           "expected a procedure, got ~e"
-                                           val))
-                   (unless (procedure-arity-includes? val arity)
-                     (raise-contract-error src-info
-                                           pos-blame
-                                           neg-blame
-                                           orig-str
-                                           "expected a ~a of arity ~a (not arity ~a), got  ~e"
-                                           kind-of-thing
-                                           arity
-                                           (procedure-arity val)
-                                           val))))))
+		   (check-procedure/kind val arity 'kind-of-thing src-info pos-blame neg-blame orig-str)))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax-case* (syntax rng) (any values) module-or-top-identifier=?
@@ -2203,26 +2047,10 @@ add struct contracts for immutable structs?
             (lambda (outer-args inner-lambda) inner-lambda)
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
-                            [kind-of-thing (if method-proc? "method" "procedure")])
+                            [kind-of-thing (if method-proc? 'method 'procedure)])
                 (syntax
                  (begin 
-                   (unless (procedure? val)
-                     (raise-contract-error src-info
-                                           pos-blame
-                                           neg-blame
-                                           orig-str
-                                           "expected a procedure, got ~e"
-                                           val))
-                   (unless (procedure-accepts-and-more? val arity)
-                     (raise-contract-error src-info
-                                           pos-blame
-                                           neg-blame
-                                           orig-str
-                                           "expected a ~a that accepts ~a arguments and aribtrarily more (not arity ~a), got  ~e"
-                                           kind-of-thing
-                                           arity
-                                           (procedure-arity val)
-                                           val))))))
+		   (check-procedure/more/kind val arity 'kind-of-thing src-info pos-blame neg-blame orig-str)))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax-case* (syntax rng) (values any) module-or-top-identifier=?
@@ -2366,6 +2194,138 @@ add struct contracts for immutable structs?
                            (void)]
                           [else (loop (cdr counts))]))))
                   (<= min-at-least dom-length))))])))
+
+  ;; ----------------------------------------
+  ;; Checks and error functions used in macro expansions
+  
+  (define (check->* f arity-count)
+    (unless (procedure? f)
+      (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
+    (unless (procedure-arity-includes? f arity-count)
+      (error 'object-contract 
+	     "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
+	     arity-count
+	     f)))
+
+  (define (check->*/more f arity-count)
+    (unless (procedure? f)
+      (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
+    (unless (procedure-accepts-and-more? f arity-count)
+      (error 'object-contract 
+	     "expected last argument of ->d* to be a procedure that accepts ~a arguments and arbitrarily many more, got ~e"
+	     arity-count
+	     f)))
+
+
+  (define (check-procedure val dom-length src-info pos-blame neg-blame orig-str)
+    (unless (and (procedure? val)
+		 (procedure-arity-includes? val dom-length))
+      (raise-contract-error
+       src-info
+       pos-blame
+       neg-blame
+       orig-str
+       "expected a procedure that accepts ~a arguments, given: ~e"
+       dom-length
+       val)))
+
+  (define (check-procedure/kind val arity kind-of-thing src-info pos-blame neg-blame orig-str)
+    (unless (procedure? val)
+      (raise-contract-error src-info
+			    pos-blame
+			    neg-blame
+			    orig-str
+			    "expected a procedure, got ~e"
+			    val))
+    (unless (procedure-arity-includes? val arity)
+      (raise-contract-error src-info
+			    pos-blame
+			    neg-blame
+			    orig-str
+			    "expected a ~a of arity ~a (not arity ~a), got  ~e"
+			    kind-of-thing
+			    arity
+			    (procedure-arity val)
+			    val)))
+
+  (define (check-procedure/more/kind val arity kind-of-thing src-info pos-blame neg-blame orig-str)
+    (unless (procedure? val)
+      (raise-contract-error src-info
+			    pos-blame
+			    neg-blame
+			    orig-str
+			    "expected a procedure, got ~e"
+			    val))
+    (unless (procedure-accepts-and-more? val arity)
+      (raise-contract-error src-info
+			    pos-blame
+			    neg-blame
+			    orig-str
+			    "expected a ~a that accepts ~a arguments and aribtrarily more (not arity ~a), got  ~e"
+			    kind-of-thing
+			    arity
+			    (procedure-arity val)
+			    val)))
+
+  (define (check-procedure/more val dom-length src-info pos-blame neg-blame orig-str)
+    (unless (and (procedure? val)
+		 (procedure-accepts-and-more? val dom-length))
+      (raise-contract-error
+       src-info
+       pos-blame
+       neg-blame
+       orig-str
+       "expected a procedure that accepts ~a arguments and any number of arguments larger than ~a, given: ~e"
+       dom-length
+       dom-length
+       val)))
+
+
+  (define (check-rng-procedure who rng-x arity)
+    (unless (and (procedure? rng-x)
+		 (procedure-arity-includes? rng-x arity))
+      (error who "expected range position to be a procedure that accepts ~a arguments, given: ~e"
+	     arity
+	     rng-x)))
+
+  (define (check-rng-procedure/more rng-mk-x arity)
+    (unless (and (procedure? rng-mk-x)
+		 (procedure-accepts-and-more? rng-mk-x arity))
+      (error '->d* "expected range position to be a procedure that accepts ~a arguments and arbitrarily many more, given: ~e"
+	     arity 
+	     rng-mk-x)))
+
+  (define (check-rng-lengths results rng-contracts)
+    (unless (= (length results) (length rng-contracts))
+      (error '->d* 
+	     "expected range contract contructor and function to have the same number of values, given: ~a and ~a respectively" 
+	     (length results) (length rng-contracts))))
+
+  (define (check-object val src-info pos-blame neg-blame orig-str)
+    (unless (object? val)
+      (raise-contract-error src-info
+			    pos-blame
+			    neg-blame
+			    orig-str
+			    "expected an object, got ~e"
+			    val)))
+
+  (define (check-method method-name val-mtd-names src-info pos-blame neg-blame orig-str)
+    (unless (memq method-name val-mtd-names)
+      (raise-contract-error src-info
+			    pos-blame
+			    neg-blame
+			    orig-str
+			    "expected an object with method ~s"
+			    method-name)))
+
+  (define (field-error field-name src-info pos-blame neg-blame orig-str)
+    (raise-contract-error src-info
+			  pos-blame
+			  neg-blame
+			  orig-str
+			  "expected an object with field ~s"
+			  field-name))
                                                 
   #|
 

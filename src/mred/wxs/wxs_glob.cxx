@@ -46,8 +46,13 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 #endif
 }
 
+#ifndef wxDIR
+# define wxDIR 0
+#endif
+
 static Scheme_Object *fileSelMode_wxOPEN_sym = NULL;
 static Scheme_Object *fileSelMode_wxSAVE_sym = NULL;
+static Scheme_Object *fileSelMode_wxDIR_sym = NULL;
 static Scheme_Object *fileSelMode_wxMULTIOPEN_sym = NULL;
 static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
 static Scheme_Object *fileSelMode_wxHIDE_READONLY_sym = NULL;
@@ -58,6 +63,8 @@ static void init_symset_fileSelMode(void) {
   fileSelMode_wxOPEN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("get"));
   wxREGGLOB(fileSelMode_wxSAVE_sym);
   fileSelMode_wxSAVE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("put"));
+  wxREGGLOB(fileSelMode_wxDIR_sym);
+  fileSelMode_wxDIR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dir"));
   wxREGGLOB(fileSelMode_wxMULTIOPEN_sym);
   fileSelMode_wxMULTIOPEN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("multi"));
   wxREGGLOB(fileSelMode_wxOVERWRITE_PROMPT_sym);
@@ -73,6 +80,7 @@ static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == fileSelMode_wxOPEN_sym) { return wxOPEN; }
   else if (v == fileSelMode_wxSAVE_sym) { return wxSAVE; }
+  else if (v == fileSelMode_wxDIR_sym) { return wxDIR; }
   else if (v == fileSelMode_wxMULTIOPEN_sym) { return wxMULTIOPEN; }
   else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return wxOVERWRITE_PROMPT; }
   else if (v == fileSelMode_wxHIDE_READONLY_sym) { return wxHIDE_READONLY; }

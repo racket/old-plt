@@ -1,8 +1,6 @@
 # Button -- Button widget
 # Bert Bos <bert@let.rug.nl>
 # Version 2.0 for FWF V4.0
-#
-# $Id: Button.w,v 1.1 1996/01/10 14:57:36 markus Exp $
 
 @class XfwfButton(XfwfLabel)  @file=xwButton
 
@@ -56,8 +54,9 @@ usually takes part in keyboard traversal.
 mouse click and to the Enter key.
 
 	@trans <Btn1Down>: set_shadow("sunken")
-	@trans <Btn1Down>,<Btn1Up>: activate() set_shadow()
+	@trans <Btn1Up>: activate() set_shadow()
 	@trans Button1<Leave>: set_shadow() leave()
+	@trans Button1<Enter>: set_shadow("sunken") enter()
 	@trans <Key>Return: set_shadow("sunken") activate() set_shadow()
 	@trans <EnterNotify>: enter()
 	@trans <LeaveNotify>: leave()
@@ -67,11 +66,12 @@ mouse click and to the Enter key.
 
 @ The |activate| action just calls the |activate|
 callback functions, passing the |XEvent| pointer in
-the |call_data| argument.
+the |call_data| argument, if the button is sunken.
 
 @proc activate
 {
-    XtCallCallbackList($, $activate, event);
+    if ($frameType == XfwfSunken)
+      XtCallCallbackList($, $activate, event);
 }
 
 @proc enter

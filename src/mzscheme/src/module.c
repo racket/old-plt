@@ -1150,7 +1150,7 @@ static Scheme_Object *_module_resolve(Scheme_Object *modidx, Scheme_Object *stx)
     
     if (SCHEME_FALSEP(a[0])) {
       scheme_wrong_syntax("require", NULL, NULL, 
-			  "broken compiled code: unresolved module index without path");
+			  "broken compiled/expanded code: unresolved module index without path");
     }
 
     name = scheme_apply(scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER), 3, a);

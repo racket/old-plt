@@ -4,19 +4,16 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <./xwButtonP.h>
-#line 72 "XWidgets/xwButton.w"
 static void activate(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 77 "XWidgets/xwButton.w"
 static void enter(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 82 "XWidgets/xwButton.w"
 static void leave(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -31,8 +28,9 @@ static XtActionsRec actionsList[] = {
 
 static char defaultTranslations[] = "\
 <Btn1Down>: set_shadow(sunken) \n\
-<Btn1Down>,<Btn1Up>: activate() set_shadow() \n\
+<Btn1Up>: activate() set_shadow() \n\
 Button1<Leave>: set_shadow() leave() \n\
+Button1<Enter>: set_shadow(sunken) enter() \n\
 <Key>Return: set_shadow(sunken) activate() set_shadow() \n\
 <EnterNotify>: enter() \n\
 <LeaveNotify>: leave() \n\
@@ -44,15 +42,10 @@ WidgetClass
 );
 
 static XtResource resources[] = {
-#line 33 "XWidgets/xwButton.w"
 {XtNactivate,XtCActivate,XtRCallback,sizeof(((XfwfButtonRec*)NULL)->xfwfButton.activate),XtOffsetOf(XfwfButtonRec,xfwfButton.activate),XtRImmediate,(XtPointer)NULL },
-#line 37 "XWidgets/xwButton.w"
 {XtNenter,XtCEnter,XtRCallback,sizeof(((XfwfButtonRec*)NULL)->xfwfButton.enter),XtOffsetOf(XfwfButtonRec,xfwfButton.enter),XtRImmediate,(XtPointer)NULL },
-#line 41 "XWidgets/xwButton.w"
 {XtNleave,XtCLeave,XtRCallback,sizeof(((XfwfButtonRec*)NULL)->xfwfButton.leave),XtOffsetOf(XfwfButtonRec,xfwfButton.leave),XtRImmediate,(XtPointer)NULL },
-#line 45 "XWidgets/xwButton.w"
 {XtNframeWidth,XtCFrameWidth,XtRDimension,sizeof(((XfwfButtonRec*)NULL)->xfwfFrame.frameWidth),XtOffsetOf(XfwfButtonRec,xfwfFrame.frameWidth),XtRImmediate,(XtPointer)2 },
-#line 50 "XWidgets/xwButton.w"
 {XtNtraversalOn,XtCTraversalOn,XtRBoolean,sizeof(((XfwfButtonRec*)NULL)->xfwfCommon.traversalOn),XtOffsetOf(XfwfButtonRec,xfwfCommon.traversalOn),XtRImmediate,(XtPointer)True },
 };
 
@@ -129,21 +122,19 @@ XtInherit_set_label,
 };
 WidgetClass xfwfButtonWidgetClass = (WidgetClass) &xfwfButtonClassRec;
 /*ARGSUSED*/
-#line 72 "XWidgets/xwButton.w"
 static void activate(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-    XtCallCallbackList(self, ((XfwfButtonWidget)self)->xfwfButton.activate, event);
+    if (((XfwfButtonWidget)self)->xfwfFrame.frameType == XfwfSunken)
+      XtCallCallbackList(self, ((XfwfButtonWidget)self)->xfwfButton.activate, event);
 }
 
 /*ARGSUSED*/
-#line 77 "XWidgets/xwButton.w"
 static void enter(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     XtCallCallbackList(self, ((XfwfButtonWidget)self)->xfwfButton.enter, event);
 }
 
 /*ARGSUSED*/
-#line 82 "XWidgets/xwButton.w"
 static void leave(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     XtCallCallbackList(self, ((XfwfButtonWidget)self)->xfwfButton.leave, event);

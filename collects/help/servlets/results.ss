@@ -235,7 +235,7 @@
       (BODY
        ,@(if (use-frames?)
 	    '()
-	    `((TABLE,(search-pane search-string) (HR)))
+	    `(,(search-pane search-string) (HR)))
        (FONT ((SIZE "+1"))
 	     ,(color-with "blue" `(B ,(string-constant search-results))))
        (BR)
@@ -257,7 +257,7 @@
 			       exact-match?
 			       key
 			       (build-maxxed-out k)
-			       add-header
+			       add-header<
 			       set-current-kind!
 			       (if lucky? goto-lucky-entry add-entry)))]
 	   [html (make-results-page

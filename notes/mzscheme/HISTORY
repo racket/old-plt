@@ -55,6 +55,10 @@ Improved the support for dynamic extensions that gives an
 Unix images: removed constraint against using stdio before
  dumps, but images are disabled by default. Also added
  read-image-from-file procedure
+MzLib functio.ss: added remv*, remq*, remove*, filter,
+ and assf
+MzLib constan.ss: added constant-signature-content macro
+MzLib pconver.ss: added whole/fractional-exact-numbers
 
 Version 50, August 26, 1997
 Added compile-time inferrence of names for closures, classes,

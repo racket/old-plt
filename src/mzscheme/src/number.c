@@ -1128,7 +1128,7 @@ div_prim (int argc, Scheme_Object *argv[])
       return scheme_bin_div(scheme_make_integer(1), ret);
     else {
       scheme_raise_exn(MZEXN_APPLICATION_MATH_ZERO, ret,
-		       "/: divide by zero");
+		       "/: division by zero");
       return NULL;
     }
   }
@@ -1144,7 +1144,7 @@ div_prim (int argc, Scheme_Object *argv[])
       ret = scheme_bin_div(ret, o);
     else {
       scheme_raise_exn(MZEXN_APPLICATION_MATH_ZERO, o,
-		       "/: divide by zero");
+		       "/: division by zero");
       return NULL;
     }
   }
@@ -3030,7 +3030,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (complain)
 	scheme_raise_exn(MZEXN_READ_NUMBER, complain, 
 			 scheme_make_string(str),
-			 "read-number: divide by zero in %s", str);
+			 "read-number: division by zero in %s", str);
       return scheme_false;
     }
 
@@ -3096,7 +3096,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (complain)
 	scheme_raise_exn(MZEXN_READ_NUMBER, complain, 
 			 scheme_make_string(str),
-			 "read-number: divide by zero in %s", str);
+			 "read-number: division by zero in %s", str);
       return scheme_false;
     }
 
@@ -3331,7 +3331,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	  if (complain)
 	    scheme_raise_exn(MZEXN_READ_NUMBER, complain, 
 			     scheme_make_string(str),
-			     "read-number: divide by zero in %s", str);
+			     "read-number: division by zero in %s", str);
 	}
 	if (report)
 	  scheme_raise_exn(MZEXN_READ_NUMBER, complain, 
@@ -3436,7 +3436,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (complain)
 	scheme_raise_exn(MZEXN_READ_NUMBER, complain, 
 			 scheme_make_string(str),
-			 "read-number: divide by zero in %s", str);
+			 "read-number: division by zero in %s", str);
       if (div_by_zero)
 	*div_by_zero = 1;
       return scheme_false;

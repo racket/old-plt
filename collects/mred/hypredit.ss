@@ -8,7 +8,7 @@
 	    [mred:hyper-dialog mred:hyper-dialog^] [mzlib:file mzlib:file^]
 	    [mzlib:string mzlib:string^])
 
-    (mred:debug:printf "mred:hyper-edit@~n")
+    (mred:debug:printf "mred:hyper-edit@")
 
     ; for cut and paste:
     (define hyper-buffer-data%

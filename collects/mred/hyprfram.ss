@@ -9,7 +9,7 @@
 	    [mred:frame mred:frame^] [mred:canvas mred:canvas^]
 	    [mred:group mred:group^] [mred:handler mred:handler^])
 
-    (mred:debug:printf "mred:hyper-frame@~n")
+    (mred:debug:printf "mred:hyper-frame@")
 
     (define hyper-frame-group (make-object mred:group:frame-group%))
 

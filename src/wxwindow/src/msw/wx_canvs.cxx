@@ -13,6 +13,32 @@
 
 #include <math.h>
 
+#include <gl/gl.h>
+#include <gl/glu.h>
+#include <gl/glaux.h>
+
+struct _previous_context_ {
+  HGLRC hglrc;
+  struct _previous_context_ *next;
+};
+
+class wxGLContext : public wxObject
+{
+public:
+  HGLRC			m_hGLRC;
+  HDC				m_hDC;
+  wxColourMap*	m_palette;
+  wxWindow*		m_window;
+  Bool			m_deletePalette;
+
+  wxGLContext(wxWindow *win);
+  ~wxGLContext(void);
+
+  void SetupPixelFormat(void);
+  void SetupPalette(void);
+  wxColourMap* CreateDefaultPalette(void);
+};
+
 extern char wxCanvasClassName[];
 
 wxCanvas::wxCanvas (void)
@@ -29,7 +55,7 @@ wxCanvas::wxCanvas (wxWindow *parent, int x, int y, int width, int height, long 
 	  char *name):
 wxbCanvas (parent, x, y, width, height, style, name)
 {
-  Create (parent, x, y, width, height, style, name);
+  Create(parent, x, y, width, height, style, name);
 }
 
 Bool wxCanvas::
@@ -73,6 +99,10 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->AdvanceCursor(this);
+
+  if (style & wxGL_CONTEXT) {
+    m_wxglc = new wxGLContext(this);
+  }
 
   return TRUE;
 }
@@ -452,4 +482,183 @@ BOOL wxCanvasWnd::OnPaint(void)
   }
 
   return retval;
+}
+
+void wxCanvas::CanvasSwapBuffers(void)
+{
+	SwapBuffers(this->m_wxglc->m_hDC);
+}
+
+void wxCanvas::ThisContextCurrent(void)
+{
+	
+	HGLRC hglrcCurrent = wglGetCurrentContext();
+	
+	if (hglrcCurrent)
+	{
+		_previous_context_ *pc = new _previous_context_;
+		pc->hglrc = hglrcCurrent;
+		pc->next = m_PreviousContext;
+		m_PreviousContext = pc;
+	}
+
+	wglMakeCurrent(m_wxglc->m_hDC, m_wxglc->m_hGLRC);
+}
+
+void wxCanvas::PreviousContextCurrent(void)
+{
+	_previous_context_ *pc = m_PreviousContext;
+
+	if (pc)
+	{
+		m_PreviousContext = m_PreviousContext->next;
+		wglMakeCurrent(m_wxglc->m_hDC, pc->hglrc);
+		delete pc;
+		
+	} else {
+
+		wglMakeCurrent(NULL, NULL);
+	}
+}
+/**************************************************/
+
+/*
+ * GLContext implementation
+ */
+
+wxGLContext::wxGLContext(wxWindow *win)
+{
+  m_window = win;
+
+  m_palette = NULL;
+  m_deletePalette = FALSE;
+
+
+  m_hDC = NULL;
+  m_hGLRC = NULL;
+
+  m_hDC = ::GetDC(win->GetHWND());
+ 
+  SetupPixelFormat();
+  SetupPalette();
+
+  m_hGLRC = wglCreateContext(m_hDC);	
+}
+
+wxGLContext::~wxGLContext(void)
+{
+  if (m_hGLRC)
+  {
+    wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(m_hGLRC);
+  }
+  if ( m_palette && m_deletePalette)
+    delete m_palette;
+
+  ::ReleaseDC(m_window->GetHWND(), m_hDC);
+}
+
+void wxGLContext::SetupPixelFormat(void) // (HDC hDC)
+{
+    PIXELFORMATDESCRIPTOR pfd = {
+	sizeof(PIXELFORMATDESCRIPTOR),	/* size */
+	1,				/* version */
+	PFD_SUPPORT_OPENGL |
+	PFD_DRAW_TO_WINDOW |
+	PFD_DOUBLEBUFFER,		/* support double-buffering */
+	PFD_TYPE_RGBA,			/* color type */
+	16,				/* prefered color depth */
+	0, 0, 0, 0, 0, 0,		/* color bits (ignored) */
+	0,				/* no alpha buffer */
+	0,				/* alpha bits (ignored) */
+	0,				/* no accumulation buffer */
+	0, 0, 0, 0,			/* accum bits (ignored) */
+	16,				/* depth buffer */
+	0,				/* no stencil buffer */
+	0,				/* no auxiliary buffers */
+	PFD_MAIN_PLANE,			/* main layer */
+	0,				/* reserved */
+	0, 0, 0,			/* no layer, visible, damage masks */
+    };
+    int pixelFormat;
+
+    pixelFormat = ChoosePixelFormat(m_hDC, &pfd);
+    if (pixelFormat == 0) {
+	MessageBox(WindowFromDC(m_hDC), "ChoosePixelFormat failed.", "Error",
+		MB_ICONERROR | MB_OK);
+	exit(1);
+    }
+
+    if (SetPixelFormat(m_hDC, pixelFormat, &pfd) != TRUE) {
+	MessageBox(WindowFromDC(m_hDC), "SetPixelFormat failed.", "Error",
+		MB_ICONERROR | MB_OK);
+	exit(1);
+    }
+}
+
+void wxGLContext::SetupPalette() // (HDC hDC)
+{
+    int pixelFormat = GetPixelFormat(m_hDC); // GetPixelFormat is an OpenGL call.
+    PIXELFORMATDESCRIPTOR pfd;
+
+    DescribePixelFormat(m_hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+
+    if (pfd.dwFlags & PFD_NEED_PALETTE)
+    {
+    }
+    else
+    {
+	  return;
+    }
+
+    m_palette = CreateDefaultPalette();
+	m_deletePalette = TRUE;
+    
+    if (m_palette && m_palette->ms_palette)
+    {
+        SelectPalette(m_hDC, m_palette->ms_palette, FALSE);
+        RealizePalette(m_hDC);
+    }
+}
+
+wxColourMap* wxGLContext::CreateDefaultPalette(void)
+{
+    PIXELFORMATDESCRIPTOR pfd;
+    int paletteSize;
+    int pixelFormat = GetPixelFormat(m_hDC); // GetPixelFormat is an OpenGL call.
+
+    DescribePixelFormat(m_hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+
+	paletteSize = 1 << pfd.cColorBits;
+
+    LOGPALETTE* pPal =
+     (LOGPALETTE*) malloc(sizeof(LOGPALETTE) + paletteSize * sizeof(PALETTEENTRY));
+    pPal->palVersion = 0x300;
+    pPal->palNumEntries = paletteSize;
+
+    /* build a simple RGB color palette */
+    {
+	int redMask = (1 << pfd.cRedBits) - 1;
+	int greenMask = (1 << pfd.cGreenBits) - 1;
+	int blueMask = (1 << pfd.cBlueBits) - 1;
+	int i;
+
+	for (i=0; i<paletteSize; ++i) {
+	    pPal->palPalEntry[i].peRed =
+		    (((i >> pfd.cRedShift) & redMask) * 255) / redMask;
+	    pPal->palPalEntry[i].peGreen =
+		    (((i >> pfd.cGreenShift) & greenMask) * 255) / greenMask;
+	    pPal->palPalEntry[i].peBlue =
+		    (((i >> pfd.cBlueShift) & blueMask) * 255) / blueMask;
+	    pPal->palPalEntry[i].peFlags = 0;
+	}
+    }
+
+    HPALETTE hPalette = CreatePalette(pPal);
+    free(pPal);
+
+    wxColourMap* cmap = new wxColourMap;
+    cmap->ms_palette = hPalette;
+
+    return cmap;
 }

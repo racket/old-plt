@@ -77,28 +77,28 @@ typedef short int WXTYPE;
  * Frame/dialog style flags
  */
  
-#define wxSTAY_ON_TOP       0x00000008
-#define wxICONIZE           0x00000010
-#define wxMINIMIZE          wxICONIZE
-#define wxMAXIMIZE          0x00000020
-#define wxSDI               0x00000040
-#define wxMDI_PARENT        0x00000080
-#define wxMDI_CHILD         0x00000100
-#define wxNO_THICK_FRAME       0x00000200
-#define wxNO_SYSTEM_MENU       0x00000400
+#define wxSTAY_ON_TOP        0x00000008
+#define wxICONIZE            0x00000010
+#define wxMINIMIZE           wxICONIZE
+#define wxMAXIMIZE           0x00000020
+#define wxSDI                0x00000040
+#define wxMDI_PARENT         0x00000080
+#define wxMDI_CHILD          0x00000100
+#define wxNO_THICK_FRAME     0x00000200
+#define wxNO_SYSTEM_MENU     0x00000400
 #define wxRESIZE_BORDER      0x00001000
 #define wxTINY_CAPTION_HORIZ 0x00002000
-#define wxTINY_CAPTION_VERT 0x00004000
-#define wxRESIZE_BOX        wxMAXIMIZE_BOX
-#define wxNO_RESIZE_BORDER	    0x00800000
-#define wxNO_CAPTION           0x00000004
+#define wxTINY_CAPTION_VERT  0x00004000
+#define wxRESIZE_BOX         wxMAXIMIZE_BOX
+#define wxNO_RESIZE_BORDER   0x00800000
+#define wxNO_CAPTION         0x00000004
 
 /*
  * Subwindow style flags
  */
  
-#define wxBORDER           0x00000040
-
+#define wxBORDER             0x00000040
+#define wxGL_CONTEXT         0x00000800
 
 enum {
 // Text font families

@@ -1131,9 +1131,8 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     return;
   } else {    
     long n_size, d_size, q_alloc, r_alloc, n_pos, d_pos;
-    bigdig *q_digs, *r_digs;
+    bigdig *q_digs, *r_digs, *n_digs, *d_digs;
     Scheme_Object *q, *r;
-    SAFE_SPACE(nsd) SAFE_SPACE(dsd)
 
     n_size = SCHEME_BIGLEN(n);
     d_size = SCHEME_BIGLEN(d);
@@ -1149,12 +1148,20 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     q_digs = PROTECT_RESULT(q_alloc);
     r_digs = PROTECT_RESULT(r_alloc);
 
-    mpn_tdiv_qr(q_digs, r_digs, 0, SCHEME_BIGDIG_SAFE(n, nsd), n_size,
-		SCHEME_BIGDIG_SAFE(d, dsd), d_size);
+    n_digs = SCHEME_BIGDIG(n);
+    d_digs = SCHEME_BIGDIG(d);
+    PROTECT(n_digs, n_size);
+    PROTECT(d_digs, d_size);
 
+    mpn_tdiv_qr(q_digs, r_digs, 0, 
+		n_digs, n_size,
+		d_digs, d_size);
+
+    RELEASE(d_digs);
+    RELEASE(n_digs);
     FINISH_RESULT(q_digs, q_alloc);
     FINISH_RESULT(r_digs, r_alloc);
-    
+
     n_pos = SCHEME_BIGPOS(n);
     d_pos = SCHEME_BIGPOS(d);
     

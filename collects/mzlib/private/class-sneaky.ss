@@ -2102,44 +2102,50 @@ substitutability is checked properly.
     (syntax-case stx ()
       [(_ name obj)
        (identifier? (syntax name))
-       (syntax (let ([obj-x obj])
-                 (unless (object? obj-x)
-                   (raise-mismatch-error 
-                    'get-field
-                    "expected an object, got"
-                    obj-x))
-                 (let* ([cls (object-ref obj-x)]
-                        [field-ht (class-field-ht cls)]
-                        [index (hash-table-get 
-                                field-ht
-                                'name
-                                (lambda ()
-                                  (raise-mismatch-error 
-                                   'get-field
-                                   (format "expected an object that has a field named ~s, got " 'name)
-                                   obj-x)))]
-                        [getter (class-field-ref cls)])
-                   (getter obj-x (cdr index)))))]
+       (with-syntax ([localized (localize (syntax name))])
+         (syntax (get-field/proc `localized obj)))]
       [(_ name obj)
        (raise-syntax-error 'get-field "expected a field name as first argument" stx (syntax name))]))
+  
+  (define (get-field/proc id obj)
+    (unless (object? obj)
+      (raise-mismatch-error 
+       'get-field
+       "expected an object, got "
+       obj))
+    (let* ([cls (object-ref obj)]
+           [field-ht (class-field-ht cls)]
+           [index (hash-table-get 
+                   field-ht
+                   id
+                   (lambda ()
+                     (raise-mismatch-error 
+                      'get-field
+                      (format "expected an object that has a field named ~s, got " id)
+                      obj)))]
+           [getter (class-field-ref cls)])
+      (getter obj (cdr index))))
   
   (define-syntax (field-bound? stx)
     (syntax-case stx ()
       [(_ name obj)
        (identifier? (syntax name))
-       (syntax (let ([obj-x obj])
-                 (unless (object? obj-x)
-                   (raise-mismatch-error 
-                    'field-bound?
-                    "expected an object, got"
-                    obj-x))
-                 (let* ([cls (object-ref obj-x)]
-                        [field-ht (class-field-ht cls)])
-                   (if (hash-table-get field-ht 'name (lambda () #f))
-                       #t
-                       #f))))]
+       (with-syntax ([localized (localize (syntax name))])
+         (syntax (field-bound?/proc `localized obj)))]
       [(_ name obj)
        (raise-syntax-error 'field-bound? "expected a field name as first argument" stx (syntax name))]))
+  
+  (define (field-bound?/proc id obj)
+    (unless (object? obj)
+      (raise-mismatch-error 
+       'field-bound?
+       "expected an object, got "
+       obj))
+    (let* ([cls (object-ref obj)]
+           [field-ht (class-field-ht cls)])
+      (if (hash-table-get field-ht id (lambda () #f))
+          #t
+          #f)))
   
   (define (find-with-method object name)
     (find-method/who 'with-method object name))

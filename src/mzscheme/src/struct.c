@@ -73,6 +73,8 @@ static Scheme_Object *make_struct_proc(Scheme_Struct_Type *struct_type, Scheme_O
 static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const char *post1, const char *fn, int fnl, const char *post2);
 
 static Scheme_Object *struct_execute(Scheme_Object *form);
+static Scheme_Object *struct_link(Scheme_Object *form, Link_Info *info);
+static Scheme_Object *struct_resolve(Scheme_Object *form, Resolve_Info *info);
 
 static Scheme_Object *write_struct_info(Scheme_Object *obj);
 static Scheme_Object *read_struct_info(Scheme_Object *obj);
@@ -138,7 +140,7 @@ scheme_init_struct (Scheme_Env *env)
   
   REGISTER_SO(struct_symbol);
   
-  scheme_register_syntax("k", struct_execute, 1);
+  scheme_register_syntax(STRUCT_EXPD, struct_resolve, struct_link, struct_execute, 1);
   
   struct_symbol = scheme_intern_symbol("struct");
   
@@ -930,15 +932,15 @@ struct_link(Scheme_Object *expr, Link_Info *info)
   if (e)
     e = scheme_link_expr(e, info);
 
-  /* If expression needs no linking, reuse Struct_Info */
+  /* If expression needs no linking, reuse old one */
   if (e == osinfo->parent_type_expr)
-    return scheme_make_syntax_linked(struct_execute, (Scheme_Object *)osinfo);
+    return (Scheme_Object *)osinfo;
 
   nsinfo = MALLOC_ONE_TAGGED(Struct_Info);
   memcpy(osinfo, nsinfo, sizeof(Struct_Info));
   nsinfo->parent_type_expr = e;
 
-  return scheme_make_syntax_linked(struct_execute, (Scheme_Object *)nsinfo);
+  return scheme_make_syntax_linked(STRUCT_EXPD, (Scheme_Object *)nsinfo);
 }
 
 static Scheme_Object *
@@ -954,7 +956,7 @@ struct_resolve(Scheme_Object *expr, Resolve_Info *info)
     sinfo->parent_type_expr = le;
   }
 
-  return scheme_make_syntax_resolved(struct_link, expr);
+  return scheme_make_syntax_resolved(STRUCT_EXPD, expr);
 }
 
 static Scheme_Object *
@@ -1028,7 +1030,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     info->num_fields = count;
     info->memo_names = NULL;
 
-    return scheme_make_syntax_compiled(struct_resolve, (Scheme_Object *)info);
+    return scheme_make_syntax_compiled(STRUCT_EXPD, (Scheme_Object *)info);
   } else {
     Scheme_Object *base;
     base = (parent_expr 

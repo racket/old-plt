@@ -35,6 +35,15 @@ static Scheme_Object *import_for_syntax_expand(Scheme_Object *form, Scheme_Comp_
 static Scheme_Object *export_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *export_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
+static Scheme_Object *module_execute(Scheme_Object *data);
+static Scheme_Object *top_level_import_execute(Scheme_Object *data);
+
+static Scheme_Object *module_link(Scheme_Object *data, Link_Info *info);
+static Scheme_Object *top_level_import_link(Scheme_Object *data, Link_Info *info);
+
+static Scheme_Object *module_resolve(Scheme_Object *data, Resolve_Info *info);
+static Scheme_Object *top_level_import_resolve(Scheme_Object *data, Resolve_Info *info);
+
 #define cons scheme_make_pair
 
 static Scheme_Object *kernel_symbol;
@@ -67,9 +76,15 @@ static Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *l,
 				    Check_Func ck, void *data,
 				    int start);
 static void start_module(Scheme_Env *menv, Scheme_Env *env);
+static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env);
 
 void scheme_init_module(Scheme_Env *env)
 {
+  scheme_register_syntax(MODULE_EXPD, module_resolve, 
+			 module_link, module_execute, 1);
+  scheme_register_syntax(IMPORT_EXPD, top_level_import_resolve, 
+			 top_level_import_link, top_level_import_execute, 1);
+
   scheme_add_global_keyword("module", 
 			    scheme_make_compiled_syntax(module_syntax, 
 							module_expand), 
@@ -266,12 +281,13 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
     return scheme_lookup_in_table(env->modules, (const char *)name);
 }
 
-Scheme_Hash_Table *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env)
+Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name)
 {
   if (modname == kernel_symbol)
-    return kernel->syntax;
+    return scheme_lookup_in_table(kernel->syntax, (char *)name);
   else {
     Scheme_Hash_Table *ht;
+    Scheme_Object *val;
 
     ht = scheme_lookup_in_table(env->module_syntax, (char *)modname);
 
@@ -279,14 +295,21 @@ Scheme_Hash_Table *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env)
       scheme_wrong_syntax("import", NULL, modname, 
 			  "broken compiled code: cannot find prepared module's syntax");
 
-    return ht;
+    val = scheme_lookup_in_table(ht, (char *)name);
+    if (val && SCHEME_PAIRP(val)) {
+      /* A pair indicates a lazy expstart: */
+      finish_expstart_module(val, ht, env);
+      val = scheme_lookup_in_table(ht, (char *)name);
+    }
+
+    return val;
   }
 }
 
 static void expstart_module(Scheme_Env *menv, Scheme_Env *env)
 {
-  Scheme_Env *m, *exp_env;
-  Scheme_Object *body, *e, *l, *macro;
+  Scheme_Env *m;
+  Scheme_Object *body, *l, *lazy;
   Scheme_Hash_Table *syntax;
 
   if (SAME_OBJ(menv, kernel))
@@ -330,6 +353,27 @@ static void expstart_module(Scheme_Env *menv, Scheme_Env *env)
 
   syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
   scheme_add_to_table(env->module_syntax, (const char *)menv->modname, syntax, 0);
+
+  /* Lazily start the module. Map all syntax names to a lazy marker: */
+  lazy = scheme_make_pair((Scheme_Object *)m, (Scheme_Object *)menv);
+  body = menv->et_body;
+  for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
+    scheme_add_to_table(syntax, 
+			(const char *)SCHEME_CAR(SCHEME_CAR(body)),
+			lazy, 0);
+  }
+}
+
+static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env)
+{
+  Scheme_Object *l, *body, *e, *macro;
+  Scheme_Env *exp_env;
+  Scheme_Env *m, *menv;
+
+  /* Continue a delayed expstart: */
+
+  m = (Scheme_Env *)SCHEME_CAR(lazy);
+  menv = (Scheme_Env *)SCHEME_CDR(lazy);
 
   scheme_prepare_exp_env(m);
   exp_env = m->exp_env;
@@ -409,7 +453,7 @@ module_link(Scheme_Object *data, Link_Info *link)
 {
   /* We don't actually link, leaving that until some later run
      time. */
-  return scheme_make_syntax_linked(module_execute,
+  return scheme_make_syntax_linked(MODULE_EXPD,
 				   cons(data, (Scheme_Object *)link));
 }
 
@@ -425,7 +469,7 @@ module_resolve(Scheme_Object *data, Resolve_Info *rslv)
     SCHEME_CAR(b) = e;
   }
 
-  return scheme_make_syntax_resolved(module_link, cons(body, rest));
+  return scheme_make_syntax_resolved(MODULE_EXPD, cons(body, rest));
 }
 
 static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -502,9 +546,9 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
       scheme_wrong_syntax("module", NULL, form, "body is not built with #%module-begin");
     }
 
-    return scheme_make_syntax_compiled(module_resolve, cons(SCHEME_PTR1_VAL(fm), 
-							    cons(SCHEME_PTR2_VAL(fm), 
-								 (Scheme_Object *)menv)));
+    return scheme_make_syntax_compiled(MODULE_EXPD, cons(SCHEME_PTR1_VAL(fm), 
+							 cons(SCHEME_PTR2_VAL(fm), 
+							      (Scheme_Object *)menv)));
   } else {
     fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
 
@@ -1326,14 +1370,13 @@ top_level_import_execute(Scheme_Object *data)
 static Scheme_Object *
 top_level_import_link(Scheme_Object *data, Link_Info *link)
 {
-  return scheme_make_syntax_linked(top_level_import_execute, 
-				   cons(data, (Scheme_Object *)link));
+  return scheme_make_syntax_linked(IMPORT_EXPD, cons(data, (Scheme_Object *)link));
 }
 
 static Scheme_Object *
 top_level_import_resolve(Scheme_Object *data, Resolve_Info *rslv)
 {
-  return scheme_make_syntax_resolved(top_level_import_link, data);
+  return scheme_make_syntax_resolved(IMPORT_EXPD, data);
 }
 
 static void check_dup_import(Scheme_Object *name, Scheme_Object *nominal_modname, 
@@ -1384,7 +1427,7 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
   if (rec) {
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
-    return scheme_make_syntax_compiled(top_level_import_resolve, 
+    return scheme_make_syntax_compiled(IMPORT_EXPD, 
 				       cons(rn, (for_exp 
 						 ? scheme_true 
 						 : scheme_false)));

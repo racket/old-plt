@@ -513,9 +513,6 @@ int scheme_omittable_expr(Scheme_Object *o)
 {
   Scheme_Type vtype;
 
-  if (SAME_OBJ(o, scheme_compiled_void_code))
-    return 1;
-
   vtype = SCHEME_TYPE(o);
 
   if ((vtype > _scheme_compiled_values_types_) 
@@ -997,44 +994,26 @@ static Scheme_Object *resolve_sequence(Scheme_Object *o, Resolve_Info *info)
   return look_for_letv_change(s);
 }
 
-Scheme_Object *scheme_make_syntax_linked(Scheme_Syntax_Executer *prim,
-					 Scheme_Object *data)
+Scheme_Object *scheme_make_syntax_resolved(int idx, Scheme_Object *data)
 {
   Scheme_Object *v;
 
-  v = scheme_alloc_stubborn_object();
+  v = scheme_alloc_object();
   v->type = scheme_syntax_type;
-  SCHEME_PTR1_VAL(v) = (void *)prim;
-  SCHEME_PTR2_VAL(v) = (void *)data;
-  scheme_end_stubborn_change((void *)v);
+  SCHEME_PINT_VAL(v) = idx;
+  SCHEME_IPTR_VAL(v) = (void *)data;
 
   return v;
 }
 
-Scheme_Object *scheme_make_syntax_resolved(Scheme_Syntax_Linker *prim,
-					   Scheme_Object *data)
+Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data)
 {
   Scheme_Object *v;
 
-  v = scheme_alloc_stubborn_object();
-  v->type = scheme_syntax_type;
-  SCHEME_PTR1_VAL(v) = (void *)prim;
-  SCHEME_PTR2_VAL(v) = (void *)data;
-  scheme_end_stubborn_change((void *)v);
-
-  return v;
-}
-
-Scheme_Object *scheme_make_syntax_compiled(Scheme_Syntax_Resolver *prim,
-					   Scheme_Object *data)
-{
-  Scheme_Object *v;
-
-  v = scheme_alloc_stubborn_object();
+  v = scheme_alloc_object();
   v->type = scheme_compiled_syntax_type;
-  SCHEME_PTR1_VAL(v) = (void *)prim;
-  SCHEME_PTR2_VAL(v) = (void *)data;
-  scheme_end_stubborn_change((void *)v);
+  SCHEME_PINT_VAL(v) = idx;
+  SCHEME_IPTR_VAL(v) = (void *)data;
 
   return v;  
 }
@@ -1066,10 +1045,15 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
     }
   case scheme_syntax_type:
     {
-      Scheme_Syntax_Linker *f;
+      Scheme_Syntax_Linker f;
+      Scheme_Object *o;
 	  
-      f = (Scheme_Syntax_Linker *)SCHEME_PTR1_VAL(expr);
-      return f((Scheme_Object *)SCHEME_PTR2_VAL(expr), info);
+      f = scheme_syntax_linkers[SCHEME_PINT_VAL(expr)];
+      o = f((Scheme_Object *)SCHEME_IPTR_VAL(expr), info);
+      if (SAME_OBJ(o, (Scheme_Object *)SCHEME_IPTR_VAL(expr)))
+	return expr;
+      else
+	return o;
     }
   case scheme_application_type:
     return link_application(expr, info);
@@ -1133,10 +1117,10 @@ Scheme_Object *scheme_resolve_expr(Scheme_Object *expr, Resolve_Info *info)
     }
   case scheme_compiled_syntax_type:
     {
-      Scheme_Syntax_Resolver *f;
+      Scheme_Syntax_Resolver f;
 	  
-      f = (Scheme_Syntax_Resolver *)SCHEME_PTR1_VAL(expr);
-      return f((Scheme_Object *)SCHEME_PTR2_VAL(expr), info);
+      f = scheme_syntax_resolvers[SCHEME_PINT_VAL(expr)];
+      return f((Scheme_Object *)SCHEME_IPTR_VAL(expr), info);
     }
   case scheme_application_type:
     return resolve_application(expr, info);
@@ -2895,11 +2879,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	}
       case scheme_syntax_type:
 	{
-	  Scheme_Syntax_Executer *f;
+	  Scheme_Syntax_Executer f;
 
 	  UPDATE_THREAD_RSPTR();
-	  f = (Scheme_Syntax_Executer *)SCHEME_PTR1_VAL(obj);
-	  v = f((Scheme_Object *)SCHEME_PTR2_VAL(obj));
+	  f = scheme_syntax_executers[SCHEME_PINT_VAL(obj)];
+	  v = f((Scheme_Object *)SCHEME_IPTR_VAL(obj));
 	  break;
 	}
       case scheme_application_type:
@@ -3776,16 +3760,14 @@ static Scheme_Object *read_with_cont_mark(Scheme_Object *obj)
 
 static Scheme_Object *write_syntax(Scheme_Object *obj)
 {
-  Scheme_Object *sym, *rest, *l;
-  Scheme_Syntax_Registered *f;
+  Scheme_Object *idx, *rest, *l;
   int protect_after, c;
 
-  f = (Scheme_Syntax_Registered *)SCHEME_PTR1_VAL(obj);
-  sym = scheme_find_linker_name(f, &protect_after);
-  if (!sym)
-    sym = unknown_symbol;
+  c = SCHEME_PINT_VAL(obj);
+  idx = scheme_make_integer(c);
+  protect_after = scheme_syntax_protect_afters[c];
 
-  l = rest = (Scheme_Object *)SCHEME_PTR2_VAL(obj);
+  l = rest = (Scheme_Object *)SCHEME_IPTR_VAL(obj);
   for (c = 0; SCHEME_PAIRP(l) && (c < protect_after); c++) {
     l = SCHEME_CDR(l);
   }
@@ -3819,13 +3801,12 @@ static Scheme_Object *write_syntax(Scheme_Object *obj)
     }
   }
 
-  return cons(sym, rest);
+  return cons(idx, rest);
 }
 
 static Scheme_Object *read_syntax(Scheme_Object *obj)
 {
-  Scheme_Object *sym;
-  Scheme_Syntax_Registered *f;
+  Scheme_Object *idx;
   Scheme_Object *first = NULL, *last = NULL;
 
 #if 0
@@ -3833,16 +3814,7 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
     scheme_signal_error("bad compiled syntax");
 #endif
 
-  sym = SCHEME_CAR(obj);
-  if (SAME_OBJ(unknown_symbol, sym))
-    scheme_signal_error("unknown (at write time) compiled syntax");
-
-  if (SAME_OBJ(void_link_symbol, sym))
-    return scheme_void;
-
-  f = scheme_find_linker(sym);
-  if (!f)
-    scheme_signal_error("unknown compiled syntax: %S", sym);
+  idx = SCHEME_CAR(obj);
 
   /* Copy obj: */
   obj = SCHEME_CDR(obj);
@@ -3862,7 +3834,7 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
   else
     first = obj;
 
-  return scheme_make_syntax_linked(f, first);
+  return scheme_make_syntax_resolved(SCHEME_INT_VAL(idx), first);
 }
 
 /*========================================================================*/

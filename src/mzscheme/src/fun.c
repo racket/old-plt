@@ -622,7 +622,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
       int j = i + data->closure_size;
       Scheme_Object *code;
       
-      code = scheme_make_syntax_resolved(scheme_bangboxenv_link, 
+      code = scheme_make_syntax_resolved(BOXENV_EXPD,
 					 scheme_make_pair(scheme_make_integer(j),
 							  data->code));
       data->code = code;

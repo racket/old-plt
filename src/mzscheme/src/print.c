@@ -1041,7 +1041,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (compact && SAME_OBJ(obj, scheme_void))
     {
-      compact = print(scheme_compiled_void_code, notdisplay, compact, ht, vht, p);
+      print_compact(p, CPT_VOID);
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type))
     {

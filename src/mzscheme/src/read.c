@@ -1728,6 +1728,9 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_FALSE:
       v = scheme_false;
       break;
+    case CPT_VOID:
+      v = scheme_void;
+      break;
     case CPT_BOX:
       v = scheme_box(read_compact(port, ht, 0 CURRENTPROCARG));
       break;

@@ -1109,8 +1109,6 @@ void scheme_internal_write(Scheme_Object *obj, Scheme_Object *port, Scheme_Confi
 #define _scheme_eval_linked_expr_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,1,p)
 #define _scheme_eval_linked_expr_multi_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,-1,p)
 
-Scheme_Object *scheme_bangboxenv_link(Scheme_Object *data, Link_Info *info);
-
 Scheme_Object *scheme_named_map_1(char *, 
 				  Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object *form), 
 				  Scheme_Object *lst, Scheme_Object *form);
@@ -1172,11 +1170,9 @@ typedef struct Scheme_Object *
 (Scheme_Syntax_Expander)(struct Scheme_Object *form, struct Scheme_Comp_Env *env,
 			 int depth, Scheme_Object *boundname);
 
-typedef struct Scheme_Object *(Scheme_Syntax_Linker)(Scheme_Object *data, Link_Info *info);
-typedef struct Scheme_Object *(Scheme_Syntax_Resolver)(Scheme_Object *data, Resolve_Info *info);
-typedef struct Scheme_Object *(Scheme_Syntax_Executer)(struct Scheme_Object *data);
-
-typedef Scheme_Syntax_Executer Scheme_Syntax_Registered;
+typedef struct Scheme_Object *(*Scheme_Syntax_Linker)(Scheme_Object *data, Link_Info *info);
+typedef struct Scheme_Object *(*Scheme_Syntax_Resolver)(Scheme_Object *data, Resolve_Info *info);
+typedef struct Scheme_Object *(*Scheme_Syntax_Executer)(struct Scheme_Object *data);
 
 typedef struct Scheme_Closure_Compilation_Data
 {
@@ -1263,21 +1259,34 @@ Scheme_Object *scheme_make_linked_closure(Scheme_Process *p,
 #define scheme_add_good_binding(i,v,f) (f->values[i] = v)
 
 Scheme_Object *scheme_compiled_void();
-extern Scheme_Object *scheme_compiled_void_code; /* used by print */
 
 /* Resolving & linking */
-void scheme_register_syntax(const char *name, Scheme_Syntax_Registered *f, int protect_after);
-Scheme_Object *scheme_find_linker_name(Scheme_Syntax_Registered *f, int *protect_after);
-Scheme_Syntax_Registered *scheme_find_linker(Scheme_Object *sym);
+#define DEFINE_VALUES_EXPD 0
+#define DEFINE_SYNTAX_EXPD 1
+#define SET_EXPD           2
+#define CASE_LAMBDA_EXPD   3
+#define BEGIN0_EXPD        4
+#define QUOTE_SYNTAX_EXPD  5
+#define BOXENV_EXPD        6
+#define BOXVAL_EXPD        7
+#define STRUCT_EXPD        8
+#define MODULE_EXPD        9
+#define IMPORT_EXPD        10
+#define _COUNT_EXPD_       11
+
+#define scheme_register_syntax(i, fr, fl, fe, pa) \
+     (scheme_syntax_resolvers[i] = fr, scheme_syntax_linkers[i] = fl, \
+      scheme_syntax_executers[i] = fe, scheme_syntax_protect_afters[i] = pa)
+extern Scheme_Syntax_Resolver scheme_syntax_resolvers[_COUNT_EXPD_];
+extern Scheme_Syntax_Linker scheme_syntax_linkers[_COUNT_EXPD_];
+extern Scheme_Syntax_Executer scheme_syntax_executers[_COUNT_EXPD_];
+extern int scheme_syntax_protect_afters[_COUNT_EXPD_];
 
 Scheme_Object *scheme_protect_quote(Scheme_Object *expr);
 
-Scheme_Object *scheme_make_syntax_linked(Scheme_Syntax_Executer *prim,
-				       Scheme_Object *data);
-Scheme_Object *scheme_make_syntax_resolved(Scheme_Syntax_Linker *prim,
-					   Scheme_Object *data);
-Scheme_Object *scheme_make_syntax_compiled(Scheme_Syntax_Resolver *prim,
-					   Scheme_Object *data);
+#define scheme_make_syntax_linked scheme_make_syntax_resolved
+Scheme_Object *scheme_make_syntax_resolved(int idx, Scheme_Object *data);
+Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data);
 
 Scheme_Object *scheme_link_expr(Scheme_Object *, Link_Info *);
 Scheme_Object *scheme_link_list(Scheme_Object *, Link_Info *);
@@ -1431,7 +1440,7 @@ int scheme_is_module_env(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
-Scheme_Hash_Table *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env);
+Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

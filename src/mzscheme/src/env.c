@@ -1055,14 +1055,11 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
   if (!(flags & SCHEME_GLOB_ALWAYS_REFERENCE)) {
     /* Try syntax table: */
-    Scheme_Hash_Table *ht;
-    
     if (modname)
-      ht = scheme_module_syntax(modname, home_env ? home_env : env->genv);
+      val = scheme_module_syntax(modname, home_env ? home_env : env->genv, SCHEME_STX_SYM(symbol));
     else
-      ht = genv->syntax;
+      val = scheme_lookup_in_table(genv->syntax, (char *)SCHEME_STX_SYM(symbol));
 
-    val = scheme_lookup_in_table(ht, (char *)SCHEME_STX_SYM(symbol));
     if (val)
       return val;
   }

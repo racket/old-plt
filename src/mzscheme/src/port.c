@@ -2958,7 +2958,7 @@ read_string(int argc, Scheme_Object *argv[])
   return str;
 }
 
-Scheme_Object *
+static Scheme_Object *
 read_string_bang(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port, *str;

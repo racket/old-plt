@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.111 1997/08/11 20:15:18 shriram Exp $
+; $Id: scm-main.ss,v 1.112 1997/08/11 20:28:21 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1146,7 +1146,7 @@
 	  (pat:match-and-rewrite expr m&e-7 out-pattern-7 kwd-1 env)
 	  (static-error expr "Malformed cond")))))
 
-  (define-struct cond-clause (text question answer else? =>?))
+  (define-struct cond-clause (text question answer else? =>? or?))
 
   (define cond-clause-vocab
     (create-vocabulary 'cond-clause-vocab scheme-vocabulary
@@ -1161,37 +1161,58 @@
 
   (add-list-micro cond-clause-vocab
     (let* ((kwd '(else =>))
-	    (in-pattern-1 '(else answer))
-	    (in-pattern-4 '(question =>)) ; [sic]
-	    (in-pattern-2 '(question answer))
-	    (in-pattern-3 '(question => answer))
+	    (in-pattern-1 (if (language<=? 'structured)
+			    '(else answer)
+			    '(else answer ...)))
+	    (get-pattern-1 (if (language<=? 'structured)
+			     'answer '(begin answer ...)))
+	    (in-pattern-2 '(question =>))
+	    (in-pattern-3 (if (language<=? 'structured)
+			    '(question answer)
+			    '(question answer ...)))
+	    (get-pattern-3 (if (language<=? 'structured)
+			     'answer '(begin answer ...)))
+	    (in-pattern-4 (if (language<=? 'structured)
+			    '(question => answer)
+			    '(question => answer ...)))
+	    (get-pattern-4 (if (language<=? 'structured)
+			     'answer '(begin answer ...)))
+	    (in-pattern-5 (if (language<=? 'side-effecting)
+			    '()	; will not match
+			    '(question)))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	    (m&e-3 (pat:make-match&env in-pattern-3 kwd))
-	    (m&e-4 (pat:make-match&env in-pattern-4 kwd)))
+	    (m&e-4 (pat:make-match&env in-pattern-4 kwd))
+	    (m&e-5 (pat:make-match&env in-pattern-5 kwd)))
       (lambda (expr env attributes vocab)
 	(cond
 	  ((pat:match-against m&e-1 expr env)
 	    =>
 	    (lambda (p-env)
-	      (let ((answer (pat:pexpand 'answer p-env kwd)))
-		(make-cond-clause expr #f answer #t #f))))
-	  ((pat:match-against m&e-4 expr env)
-	    =>
-	    (lambda (p-env)
-	      (static-error expr "=> not followed by receiver")))
+	      (let ((answer (pat:pexpand get-pattern-1 p-env kwd)))
+		(make-cond-clause expr #f answer #t #f #f))))
 	  ((pat:match-against m&e-2 expr env)
 	    =>
 	    (lambda (p-env)
-	      (let ((question (pat:pexpand 'question p-env kwd))
-		     (answer (pat:pexpand 'answer p-env kwd)))
-		(make-cond-clause expr question answer #f #f))))
+	      (static-error expr "=> not followed by receiver")))
 	  ((pat:match-against m&e-3 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((question (pat:pexpand 'question p-env kwd))
-		     (answer (pat:pexpand 'answer p-env kwd)))
-		(make-cond-clause expr question answer #f #t))))
+		     (answer (pat:pexpand get-pattern-3 p-env kwd)))
+		(make-cond-clause expr question answer #f #f #f))))
+	  ((pat:match-against m&e-4 expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((question (pat:pexpand 'question p-env kwd))
+		     (answer (pat:pexpand get-pattern-4 p-env kwd)))
+		(make-cond-clause expr question answer #f #t #f))))
+	  ((pat:match-against m&e-5 expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((question (pat:pexpand 'question p-env kwd)))
+		(make-cond-clause expr question #f #f #f #t))))
 	  (else (static-error expr "Clause not in question-answer format"))))))
 
   (add-primitivized-micro-form 'cond scheme-vocabulary
@@ -1231,6 +1252,9 @@
 				  (cond-clause-answer first)
 				  (static-error (cond-clause-text first)
 				    "else allowed only in last position")))
+			      ((cond-clause-or? first)
+				`(or ,(cond-clause-question first)
+				   ,(loop rest)))
 			      (else
 				`(if ,(cond-clause-question first)
 				   ,(cond-clause-answer first)

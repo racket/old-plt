@@ -204,8 +204,7 @@
       (define-values (connect disconnect force-disconnect)
 	(let ([connection #f]
 	      [connection-custodian #f]
-	      [message-count 0]
-	      [next-uid 0])
+	      [message-count 0])
 	  (values
 	   (letrec ([connect
 		     (case-lambda
@@ -228,31 +227,20 @@
                             
                             ;; Already Connected
                             (cond
-                              [(memq mode '(reselect next-uid))
-			       ;; There's a separate case for next-uid that
-			       ;;  skips the reselect. But it doesn't work with
-			       ;;  my IMAP setup at cs.utah.edu. Don't know why,
-			       ;;  but I've spent too much time investigating, and
-			       ;;  SELECTing again works fine.
+                              [(eq? mode 'reselect)
+			       (let-values ([(count new) (with-disconnect-handler
+							  (lambda ()
+							    (imap-reselect connection mailbox-name)))])
+			         (check-validity (or (imap-uidvalidity connection) 0) void)
+                                 (set! message-count count)
+                                 (values connection count (imap-new? connection)))]
+			      [(eq? mode 'check-new)
                                (let-values ([(count new) (with-disconnect-handler
 							  (lambda ()
-							    (imap-reselect connection mailbox-name)))]
-                                            [(uid-l) (with-disconnect-handler
-						      (lambda ()
-							(imap-status connection mailbox-name '(uidnext uidvalidity))))])
-			         (check-validity (cadr uid-l) void)
-                                 (set! message-count count)
-                                 (set! next-uid (car uid-l))
-                                 (values connection count new next-uid))]
-			      [(eq? mode 'next-uid)
-                               (let-values ([(uid-l) (with-disconnect-handler
-						      (lambda ()
-							(imap-status connection mailbox-name '(uidnext uidvalidity))))])
-				 (check-validity (cadr uid-l) void)
-                                 (set! next-uid (car uid-l))
-                                 (values connection message-count 0 next-uid))]
+							    (imap-noop connection)))])
+                                 (values connection message-count (imap-new? connection)))]
 			      [else
-                               (values connection message-count 0 next-uid)])
+                               (values connection message-count (imap-new? connection))])
                             
                             ;; New connection
                             (begin
@@ -280,21 +268,18 @@
 									     (let-values ([(in out) (ssl-connect server port-no c)])
 									       (imap-connect* in out (USERNAME) pw mailbox-name)))
 									   (parameterize ([imap-port-number port-no])
-									     (imap-connect server (USERNAME) pw mailbox-name)))))))]
-					      [(uid-l) (with-disconnect-handler
-							(lambda ()
-							  (imap-status imap mailbox-name '(uidnext uidvalidity))))])
+									     (imap-connect server (USERNAME) pw mailbox-name)))))))])
                                   (unless (get-PASSWORD)
 				    (set-PASSWORD pw))
 				  (status "(Connected, ~a messages)" count)
 				  (with-disconnect-handler
 				   (lambda ()
-				     (check-validity (cadr uid-l) (lambda () (imap-disconnect imap)))))
+				     (check-validity (or (imap-uidvalidity imap) 0) 
+						     (lambda () (imap-disconnect imap)))))
 				  (set! connection imap)
 				  (set! message-count count)
-				  (set! next-uid (car uid-l))
 				  (send disconnected-msg show #f)
-				  (values imap count new next-uid)))))])])
+				  (values imap count (imap-new? imap))))))])])
 	     connect)
 	   (lambda ()
 	     (when connection
@@ -318,7 +303,7 @@
 	(force-disconnect)
 	(send disconnected-msg show #t)
 	(set! initialized? #f)
-	(set! current-next-uid 0)
+	(set! continue? #f)
 	(status ""))
 
       (define (check-validity v cleanup)
@@ -327,7 +312,8 @@
 	  ;; This is really very unlikely, but we checked
 	  ;; to guard against disaster.
 	  (cleanup)
-	  (error 'connect "UID validity changed! SirMail can't handle it."))
+	  (error 'connect "UID validity changed, ~a -> ~a! SirMail can't handle it."
+		 uid-validity v))
 	(set! uid-validity v))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -336,32 +322,41 @@
       
       (define initialized? #f)
       (define new-messages? #f)
-      (define current-next-uid 0)
       (define current-count 0)
+      (define continue? #f)
 
-      (define (initialized next-uid count)
+      (define (initialized count)
 	(set! initialized? #t)
+	(set! continue? #t)
 	(set! new-messages? #f)
-	(set! current-next-uid next-uid)
 	(set! current-count count)
 	(hide-new-mail-msg))
 
       ;; Syncs `mailbox' with the server
       (define (update-local break-bad break-ok)
 	(status "Updating ~a from ~a..." mailbox-name (IMAP-SERVER))
-	(let-values ([(imap count new next-uid) (connect 'reselect break-bad break-ok)])
+	(let-values ([(imap count new?) (connect 'reselect break-bad break-ok)])
+	  (imap-reset-new! imap)
 	  (start-biff)
 	  (status "Getting message ids...")
-	  (let* ([positions (enumerate count)]
+	  (let* ([positions (if continue?
+				(let ([p (length mailbox)])
+				  (map (lambda (i) (+ i p))
+				       (enumerate (- count p))))
+				(enumerate count))]
 		 [data (imap-get-messages imap 
-					  (enumerate count)
+					  positions
 					  '(uid))]
 		 [uids (map car data)]
 		 [curr-uids (map car mailbox)]
-		 [deleted (remove* uids curr-uids)]
+		 [deleted (if continue?
+			      null
+			      (remove* uids curr-uids))]
 		 [position-uids (map cons uids positions)]
-		 [new (remove* curr-uids position-uids
-			       (lambda (a b) (equal? a (car b))))])
+		 [new (if continue?
+			  position-uids
+			  (remove* curr-uids position-uids
+				   (lambda (a b) (equal? a (car b)))))])
 	    (status "~a deleted, ~a locally new" (length deleted) (length new))
 	    
 	    (unless (null? new)
@@ -380,7 +375,7 @@
 		   [new-uid/size-map (map cons (map car new) new-sizes)])
 	      (if (and (null? deleted) (null? new))
 		  (begin
-		    (initialized next-uid count)
+		    (initialized count)
 		    (status "No new messages")
 		    #f)
 		  (begin
@@ -407,31 +402,34 @@
 			   'truncate))
 		       new new-headers))
 		    
-		    (set! mailbox (map
-				   (lambda (uid pos)
-				     (let ([old (assoc uid mailbox)])
-				       `(,uid ,pos 
-                                         ,(if old
-                                              (message-downloaded? old)
-                                              #f)
-                                         ,(if old
-                                              (message-from old)
-                                              (extract-field "From" (get-header uid)))
-                                         ,(if old
-                                              (message-subject old)
-                                              (extract-field "Subject" (get-header uid)))
-                                         ,(if old
-                                              (message-flags old)
-                                              null)
-                                         ,(if old
-                                              (message-size old)
-                                              (let ([new (assoc uid new-uid/size-map)])
-                                                (if new
-							 (cdr new)
-							 0))))))
-				   uids positions))
+		    (set! mailbox 
+			  (append
+			   (if continue? mailbox null)
+			   (map
+			    (lambda (uid pos)
+			      (let ([old (assoc uid mailbox)])
+				`(,uid ,pos 
+				       ,(if old
+					    (message-downloaded? old)
+					    #f)
+				       ,(if old
+					    (message-from old)
+					    (extract-field "From" (get-header uid)))
+				       ,(if old
+					    (message-subject old)
+					    (extract-field "Subject" (get-header uid)))
+				       ,(if old
+					    (message-flags old)
+					    null)
+				       ,(if old
+					    (message-size old)
+					    (let ([new (assoc uid new-uid/size-map)])
+					      (if new
+						  (cdr new)
+						  0))))))
+			    uids positions)))
 		    (write-mailbox)
-		    (initialized next-uid count)
+		    (initialized count)
 		    (display-message-count (length mailbox))
 		    (let ([len (length new-headers)])
 		      (status "Got ~a new message~a" 
@@ -441,8 +439,8 @@
       
       (define (check-for-new break-bad break-ok)
 	(status "Checking ~a at ~a..." mailbox-name (IMAP-SERVER))
-	(let-values ([(imap count new next-uid) (connect 'next-uid break-bad break-ok)])
-	  (set! new-messages? (not (= next-uid current-next-uid))))
+	(let-values ([(imap count new?) (connect 'check-new break-bad break-ok)])
+	  (set! new-messages? new?))
 	(if new-messages?
 	    (begin
 	      (show-new-mail-msg)
@@ -479,7 +477,7 @@
 					  main-frame))
 		  (status "")
 		  (error "download aborted"))))
-	    (let*-values ([(imap count new next-uid) (connect 'reuse break-bad break-ok)])
+	    (let*-values ([(imap count new?) (connect 'reuse break-bad break-ok)])
 	      (let ([body (with-handlers ([exn:break?
 					   (lambda (exn)
 					     (force-disconnect/status)
@@ -524,7 +522,7 @@
       ;; purge-messages : (listof messages) -> void
       (define (purge-messages marked bad-break break-ok)
         (unless (null? marked)
-          (let-values ([(imap count new next-uid) (connect)])
+          (let-values ([(imap count new?) (connect)])
 	    (with-handlers ([exn:break?
 			     (lambda (exn)
 			       (force-disconnect/status)
@@ -945,8 +943,7 @@
       (send global-keymap add-function "disconnect"
 	    (lambda (w e)
 	      (disconnect)
-	      (set! current-next-uid 0)
-	      (send disconnected-msg show #t)))
+	      (force-disconnect/status)))
       (send global-keymap add-function "get-new-mail"
 	    (lambda (w e) (get-new-mail)))
       (send global-keymap add-function "archive-current"
@@ -1076,8 +1073,7 @@
             (make-object menu-item% "D&isconnect" file-menu
               (lambda (i e) 
                 (disconnect)
-		(set! current-next-uid 0)
-                (send disconnected-msg show #t))
+		(force-disconnect/status))
               #\i))
           
           (define/override (file-menu:close-callback i e) (send main-frame on-close))
@@ -1573,7 +1569,7 @@
       
       (define (copy-messages-to marked dest-mailbox-name)
         (unless (null? marked)
-          (let-values ([(imap count new next-uid) (connect)])
+          (let-values ([(imap count new?) (connect)])
             (check-positions imap marked)
             (status "Copying messages to ~a..." dest-mailbox-name)
 	    (imap-copy imap (map message-position marked) dest-mailbox-name)
@@ -1605,7 +1601,7 @@
 		    (unless (null? file-msgs)
 		      (status "Filing to ~a..." dest-mailbox-name)
 		      (break-bad)
-		      (let-values ([(imap count new next-uid) (connect)])
+		      (let-values ([(imap count new?) (connect)])
 			(status (format "Filing to ~a..." dest-mailbox-name))
                         ; Copy messages for filing:
 			(imap-copy imap (map message-position file-msgs) dest-mailbox-name)

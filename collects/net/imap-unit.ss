@@ -207,9 +207,15 @@
 
       (define (ok-tag-eq? i t)
 	(and (tag-eq? (car i) 'OK)
-	     (list? (cadr i))
-	     (= 2 (length (cadr i)))
-	     (tag-eq? (cadadr i) t)))
+	     ((length i) . >= . 3)
+	     (tag-eq? (cadr i) (string->symbol (format "[~a" t)))))
+
+      (define (ok-tag-val i)
+	(let ([v (caddr i)])
+	  (and (symbol? v)
+	       (let ([v (symbol->string v)])
+		 (regexp-match #rx"[]]$" v)
+		 (string->number (substring v 0 (sub1 (string-length v))))))))
 	
       (define (wrap-info-handler imap info-handler)
 	(lambda (i)
@@ -249,11 +255,11 @@
 					   (loop (cdr old) new)]
 					  [else (loop (cdr old) (cons (car old) new))]))))))]
 	     [(ok-tag-eq? i 'UIDNEXT)
-	      (set-imap-uidnext! imap (cadadr i))]
+	      (set-imap-uidnext! imap (ok-tag-val i))]
 	     [(ok-tag-eq? i 'UIDVALIDITY)
-	      (set-imap-uidvalidity! imap (cadadr i))]
+	      (set-imap-uidvalidity! imap (ok-tag-val i))]
 	     [(ok-tag-eq? i 'UNSEEN)
-	      (set-imap-uidvalidity! imap (cadadr i))]))
+	      (set-imap-uidvalidity! imap (ok-tag-val i))]))
 	  (info-handler i)))
       
       (define-struct imap (r w 

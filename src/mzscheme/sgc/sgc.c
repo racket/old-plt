@@ -194,8 +194,10 @@
 /* Automatically registers static C variables as roots if
    platform-specific code is porvided */
 
-#define GC_SECTOR_MAPS 1
-/* Write a sector map before and after each GC. */
+#define SHOW_SECTOR_MAPS_AT_GC 0
+/* Write a sector map before and after each GC. This is helpful for
+   noticing unusual memory pattens, such as allocations of large
+   blocks or unusually repetitive allocations. */
 
 /****************************************************************************/
 /* Parameters and platform-specific settings                                */
@@ -4278,7 +4280,7 @@ void do_GC_gcollect(void *stack_now)
 #  endif
 # endif
 	  );
-# if GC_SECTOR_MAPS
+# if SHOW_SECTOR_MAPS_AT_GC
   dump_sector_map("");
 # endif
 #endif
@@ -4515,7 +4517,7 @@ void do_GC_gcollect(void *stack_now)
 #if SGC_STD_DEBUGGING
   FPRINTF(STDERR, "done  %ld (%ld); recovered %ld\n",
 	  mem_use, sector_mem_use, orig_mem_use - mem_use);
-# if GC_SECTOR_MAPS
+# if SHOW_SECTOR_MAPS_AT_GC
   dump_sector_map("                            ");
 # endif
 #endif

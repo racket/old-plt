@@ -219,7 +219,7 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
     SetCurrentDC();
 
     wxRegion *rgn;
-    if (rgn = BrushStipple()) {
+    if ((rgn = BrushStipple())) {
       rgn->SetArc(x, y, w, h, start, end);
       PaintStipple(rgn);
     }
@@ -292,7 +292,7 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 	if (n <= 0) return;
 
     wxRegion *rgn;
-    if (rgn = BrushStipple()) {
+    if ((rgn = BrushStipple())) {
       rgn->SetPolygon(n, points, xoffset, yoffset, fillStyle);
       PaintStipple(rgn);
     }
@@ -416,7 +416,7 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
     SetCurrentDC();
 	
     wxRegion *rgn;
-    if (rgn = BrushStipple()) {
+    if ((rgn = BrushStipple())) {
       rgn->SetRectangle(x, y, width, height);
       PaintStipple(rgn);
     }
@@ -453,7 +453,7 @@ void wxCanvasDC::DrawRoundedRectangle
     SetCurrentDC();
 	
     wxRegion *rgn;
-    if (rgn = BrushStipple()) {
+    if ((rgn = BrushStipple())) {
       rgn->SetRoundedRectangle(x, y, width, height, radius);
       PaintStipple(rgn);
     }
@@ -503,7 +503,7 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
      SetCurrentDC();
 	
      wxRegion *rgn;
-    if (rgn = BrushStipple()) {
+    if ((rgn = BrushStipple())) {
       rgn->SetEllipse(x, y, width, height);
       PaintStipple(rgn);
     }
@@ -598,16 +598,13 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
         const BitMap *dstbm;
+        const BitMap *srcbm;
 
 		dstbm = GetPortBitMapForCopyBits(theMacGrafPort);
-		
-		// Lock PixMaps
-		PixMapHandle srpixh = pixmap = ::GetGWorldPixMap(source->x_pixmap);
-		// ::LockPixels(srpixh);
+		srcbm = GetPortBitMapForCopyBits(source->x_pixmap);
 
-		::CopyBits((BitMap *)(*srpixh), dstbm, &srcr, &destr, mode, NULL);
+		::CopyBits(srcbm, dstbm, &srcr, &destr, mode, NULL);
 
-		// ::UnlockPixels(srpixh);
 		CalcBoundingBox(xdest, ydest);
 		CalcBoundingBox(xdest + width, ydest + height);
 		theResult = TRUE;

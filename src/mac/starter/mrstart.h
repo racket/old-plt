@@ -1,10 +1,14 @@
 
-#ifdef __MWERKS__
-#if defined(__powerc)
-#include <MacHeadersPPC>
+#ifdef OS_X
+# include <Carbon/Carbon.h>
 #else
-#include <MacHeaders68K>
-#endif
+# ifdef __MWERKS__
+#  if defined(__powerc)
+#   include <MacHeadersPPC>
+#  else
+#   include <MacHeaders68K>
+#  endif
+# endif
 #endif
 
 #define FOR_STARTER

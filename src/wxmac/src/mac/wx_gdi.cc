@@ -1047,12 +1047,13 @@ void wxBitmap::DrawMac(int x, int y, int mode)
 		Rect sbounds = {0, 0, height, width};
 		Rect dbounds = {y, x, height+y, width+x};
                 OffsetRect(&dbounds,SetOriginX,SetOriginY);
-		PixMapHandle  srcpixh = ::GetGWorldPixMap(x_pixmap);
 		CGrafPtr portNow;
                 GDHandle deviceNow;
 		::GetGWorld(&portNow,&deviceNow);
-		PixMapHandle destpixh = GetPortPixMap(portNow);
-		::CopyBits( (BitMap *) *srcpixh, (BitMap *) *destpixh,
-			&sbounds, &dbounds, mode, NULL);
+
+        const BitMap *srcbm = GetPortBitMapForCopyBits(x_pixmap);
+        const BitMap *dstbm = GetPortBitMapForCopyBits(portNow);
+
+		::CopyBits(srcbm, dstbm, &sbounds, &dbounds, mode, NULL);
 	}
 }

@@ -40,6 +40,7 @@
 ;;          string
 ;;          boolean
 ;;          char
+;;          box
 ;;          external
 ;;       sequence (length)
 ;;          list
@@ -55,6 +56,7 @@
    (struct  string  ())
    (struct  boolean ())
    (struct  char    ())
+   (struct  box     ())
    (struct  external  ())
    (struct  sequence  (length))
    (struct  list  (marks))

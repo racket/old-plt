@@ -64,7 +64,9 @@
       (lambda (expr)
 	(cond
 	  ((z:scalar? expr)
-	    (z:read-object expr))
+	    (if (z:box? expr)
+	      (box (sexp->raw (z:read-object expr)))
+	      (z:read-object expr)))
 	  ((z:sequence? expr)
 	    (let ((objects (map sexp->raw (z:read-object expr))))
 	      (cond

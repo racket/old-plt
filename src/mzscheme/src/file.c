@@ -3231,6 +3231,7 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
   int isdir;
   Scheme_Object *file, *base;
 
+#if 0
 #if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
   /* Faster check --- avoids split operations, if possible */
   {
@@ -3258,6 +3259,7 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	return path;
     }
   }
+#endif
 #endif
 
   /* Check whether it can be simplified: */

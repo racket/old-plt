@@ -7,6 +7,8 @@
            (lib "framework.ss" "framework"))
 
   (require (lib "list.ss"))
+  (require (lib "file.ss")
+	   (lib "process.ss"))
 
   (require "sirmails.ss")
 
@@ -62,7 +64,11 @@
 		   (send send-icon-mask ok?))
 	(set! send-icon #f))
 
-      (define SEPARATOR (make-string 80 #\=))
+      (define SEPARATOR (make-string 75 #\=))
+
+      ;; Name of editor to use for composing messages externally;
+      ;; defaults to 'xemacs (see definition of external-composer below)
+      (define sirmail:external-composer-pref 'sirmail:external-composer)
 
       ;; Returns a list of <full>-<address> pairs
       (define (resolve-alias addr)
@@ -192,6 +198,7 @@
 	(define mb (make-object menu-bar% f))
 	(define file-menu (make-object menu% "File" mb))
 	(define edit-menu (make-object menu% "Edit" mb))
+	(define composer-menu (make-object menu% "Composer" mb))
 	(define button-pane (make-object horizontal-pane% f))
 	(define title-message (make-object message% "Compose message" button-pane)) 
 	(define button-pane-spacer (make-object vertical-pane%  button-pane))
@@ -199,6 +206,41 @@
 	  (make-object button% "Stop" button-pane
 		       (lambda (b e) (cancel-button-todo))))
 	(define cancel-button-todo void)
+
+	(define external-composer-button
+	  (make-object
+	   button%
+	   "External Composer"
+	   button-pane
+	   (lambda (button control-event)
+	     (let ([t (make-temporary-file "sirmail~a")])
+
+	       (send message-editor save-file t 'text #t)
+
+	       (system
+		(case external-composer
+		  [(xemacs)
+		   (string-append "gnuclient +5 " t)]
+		  [(emacs)
+		   (string-append "emacsclient +5 " t)]
+		  [(vi)
+		   (string-append "vi " t)]))
+
+	       (send message-editor load-file t 'guess #t)
+
+	       (with-handlers
+		([exn:i/o:filesystem?
+		  (lambda (exn)
+		    (message-box "Error Deleting Temporary File"
+				 (string-append
+				  "Attempted to delete the "
+				  "temporary file "
+				  "`" t "'"
+				  "but couldn't find it.")
+				 #f
+				 '(ok)))])
+		(delete-file t))))))
+
 	(define c (make-object editor-canvas% f))
 	(define message-editor (make-object (editor:backup-autosave-mixin text:basic%)))
 	(define enclosure-list (make-object hierarchical-list% f))
@@ -259,6 +301,10 @@
           (build-path queue-directory 
                       (format "enq~a" (+ 1 (length (directory-list queue-directory))))))
         
+	(define external-composer
+	  (get-preference sirmail:external-composer-pref
+			  (lambda () 'xemacs)))
+
         (send button-pane stretchable-height #f)
 	(send cancel-button enable #f)
 
@@ -273,6 +319,38 @@
 	     (send i user-data enc)))
 	 enclosures)
 	
+	(letrec ([switch (lambda (item e)
+			   (if (send item is-checked?)
+			       (begin
+				 ;; Disable others:
+				 (send xemacs check (eq? xemacs item))
+                                 (send gnu-emacs check (eq? gnu-emacs item))
+                                 (send vi check (eq? vi item))
+                                 ;; Update flags
+				 (set! external-composer
+				       (cond
+					[(send xemacs is-checked?)
+					 'xemacs]
+					[(send gnu-emacs is-checked?)
+					 'gnu-emacs]
+					[(send vi is-checked?)
+					 'vi]))
+				 (put-preferences
+				  (list sirmail:external-composer-pref)
+				  (list external-composer))
+				 )
+			       ;; Turn it back on
+			       (send item check #t)))]
+                 [xemacs (make-object checkable-menu-item% "XEmacs" composer-menu switch)]
+                 [gnu-emacs (make-object checkable-menu-item% "GNU Emacs" composer-menu switch)]
+                 [vi (make-object checkable-menu-item% "vi" composer-menu switch)])
+	  (send
+	   (case external-composer
+	     [(xemacs) xemacs]
+	     [(gnu-emacs) gnu-emacs]
+	     [(vi) vi])
+	   check #t))
+
 	(make-object menu-item% "Save" file-menu 
 		     (lambda (i ev) (send message-editor save-file #f 'text)))
 	(make-object menu-item% "Send" file-menu (lambda (i ev) (send-msg)))

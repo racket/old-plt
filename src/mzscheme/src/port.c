@@ -948,7 +948,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->charsSinceNewline = 1;
   ip->closed = 0;
   ip->read_handler = NULL;
-  ip->count_lines = 0;
+  ip->count_lines = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_PORT_COUNT_LINES));
 
   if (must_close) {
     Scheme_Custodian_Reference *mref;    

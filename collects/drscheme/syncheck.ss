@@ -472,10 +472,6 @@
               
               (super-instantiate ())))))
       
-      (define (make-clear-text super%)
-        (class super%
-          (super-instantiate ())))
-      
       (define syncheck-bitmap
         (drscheme:unit:make-bitmap
          "Check Syntax"

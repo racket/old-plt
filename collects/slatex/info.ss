@@ -1,6 +1,11 @@
 (lambda (request fail)
   (case request
     ((name) "SLaTeX")
+    [(blurb)
+     (list "SLaTeX is an pre-processor for LaTeX that formats Scheme code. "
+	   "For more information, see slatxdoc.dvi in the "
+	   (build-path (collection-path "slatex") "slatex-code")
+	   " directory on this machine.")]
     ((install-collection)
      (lambda (plt-home) 
        (unless (file-exists? (build-path (collection-path "slatex") "compiled" "slatexsrc.zo"))

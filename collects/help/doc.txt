@@ -275,6 +275,16 @@ Each index entry is a list of four values:
 
 See plt/collects/doc/mzscheme/hdindex for an example.
 
+
+The _'blurb_ field of the info.ss file
+- - - - - - - - - - - - - - - - - - - 
+
+The 'blurb field of the info.txt file should be a list of xexprs (see the
+xml documentation for information on the xexpr datatype) that correspond to
+the html that help desk can parse. If a collection's info.ss file returns
+such a list, the blurb is inserted into the ``installed components'' page
+of the help desk documentation.
+
 _Help Desk Entry Points_
 ========================
 

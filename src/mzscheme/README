@@ -125,7 +125,7 @@ placed in the same directory as the main "Makefile".
 
 To compile with MSVC, read the instructions in "plt\src\worksp\README".
 
-To compile with CYGWIN32's gcc, follow the Unix instructions above.
+To compile with Cygwin's gcc, follow the Unix instructions above.
 Then, to set up the libraries for buidling extensions (or compiling
 with mzc), go to "plt\src\mzscheme\dynsrc" and run "gmkmzdyn.bat".
 

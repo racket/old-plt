@@ -1707,7 +1707,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   if (scheme_active_but_sleeping)
     scheme_wake_up();
 #else
-  if (!p->running || (p->running & MZTHREAD_KILLED))) {
+  if (!p->running || (p->running & MZTHREAD_KILLED)) {
     remove_process(p);
     SCHEME_EXIT_THREAD();
   }
@@ -1872,7 +1872,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     }
   }
 #else
-  if (p->running || (p->running & MZTHREAD_KILLED)) {
+  if (!p->running || (p->running & MZTHREAD_KILLED)) {
     remove_process(p);
     SCHEME_EXIT_THREAD();
   }
@@ -1930,6 +1930,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;
 }
 
+#ifndef MZ_REAL_THREADS
 void scheme_start_atomic(void)
 {
   if (!do_atomic)
@@ -1943,6 +1944,7 @@ void scheme_end_atomic(void)
   if (!do_atomic && missed_context_switch)
     scheme_process_block(0.0);
 }
+#endif
 
 void scheme_weak_suspend_thread(Scheme_Process *r)
 {

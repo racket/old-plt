@@ -113,6 +113,9 @@
     ; inherit section below.  You will note below that I ran wx:panel%
     ; through this function to create panel%.  (Yes, this is
     ; cheating.  So what's your point?)
+
+    ;; Actually, Richard, it seems to me like good design -Robby.
+
     (define make-item%
       (lambda (item% stretch-x stretch-y make-default-size)
 	(class item% args

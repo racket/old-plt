@@ -21,6 +21,7 @@
 	     (send p stretchable-in-x #f)
 	     (send f show #t)
 	     (parameterize ([wx:current-eventspace e])
+		(wx:flush-display) (wx:yield)
 		(wx:flush-display) (wx:yield))
 	     (require-library "drspidey.ss" "mrspidey")
 	     (send f show #f))

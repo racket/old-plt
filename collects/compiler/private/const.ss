@@ -261,7 +261,6 @@
 	   [(vector? (zodiac:read-object ast))
 	    (construct-vector-constant ast 'vector known-immutable?)]
 
-	   ;; elaboration may return #<void> - should it?
 	   [(or (void? ast)
 		(void? (zodiac:read-object ast)))
 	    (zodiac:make-special-constant 'void)]
@@ -270,6 +269,6 @@
 	   [else
 	    (compiler:add-const! (compiler:re-quote ast) 
 				 (if (and (string? (zodiac:read-object ast))
-					  (not  known-immutable?))
+					  (not known-immutable?))
 				     varref:per-load-static 
 				     varref:static))]))))))

@@ -40,7 +40,8 @@
 					    (use-mrspidey-for-units))
 					"spidey-unit.ss"
 					"nospidey-unit.ss")
-				   'spidey-compiler@))]
+				   "compiler")
+				 'compiler-linked@)]
 	      [init (unit/sig ()
 		      (import compiler:inner^)
 		      (eval-compile-prefix prefix)

@@ -15,9 +15,9 @@
   (import "private/base.ss")
   (import "private/spnoop.ss")
 
-  (export compiler:nospidey@)
+  (export compiler-linked@)
 
-  (define compiler:nospidey@
+  (define compiler-linked@
     (compound-unit/sig
      (import (COMPILE : dynext:compile^)
 	     (LINK : dynext:link^)

@@ -514,8 +514,7 @@
 				   input-directory
 				   (lambda ()
 				     (read-syntax input-path input-port))
-				   (compiler:option:verbose)
-				   identity))))))])
+				   (compiler:option:verbose)))))))])
 		    (verbose-time read-thunk)
 		    (close-input-port input-port)
 		    (set! input-port #f)
@@ -569,7 +568,7 @@
 				       [errors compiler:messages])
 			      (if (null? source)
 				  source
-				  (let ([ast (prephase! (car source) #f (null? (cdr source)) #f)])
+				  (let ([ast (prephase! (car source) (null? (cdr source)) #f)])
 				    (if (eq? errors compiler:messages)
 					; no errors here
 					(cons ast (loop (cdr source) errors))

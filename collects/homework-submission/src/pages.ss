@@ -120,7 +120,7 @@
           '(h2 "Upcoming")
           (html-table
             "Assignments which are not yet due"
-            (list "Name" "Due" "Submitted?")
+            (list "Name" "Due" "Submitted?" "Submit")
             (map
               (lambda (a)
                 `(tr (th ,(hyperlink (transition-view-description a)
@@ -131,7 +131,11 @@
                               (transition-view-submission a)
                               (string-append "on "
                                              (assignment-submission-date a)))
-                            "no"))))
+                            "no"))
+                     (td ,(form (transition-submit-assignment session a)
+                                '((enctype "multipart/form-data"))
+                                (input "File" "file" "file")
+                                (submit-button)))))
               upcoming))
           '(h2 "Past Due")
           (html-table

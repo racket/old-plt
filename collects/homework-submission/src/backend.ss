@@ -8,7 +8,9 @@
 (module backend mzscheme
   (require (lib "contract.ss")
            (lib "class.ss")
+           (lib "file.ss")
            (lib "spgsql.ss" "spgsql")
+           (lib "13.ss" "srfi")
            "data.ss"
            )
 
@@ -33,6 +35,9 @@
     (id/username (string? . -> . number?))
     (partnership-full? (number? number? . -> . boolean?))
     (assignments/due (number? number? symbol? . -> . (listof assignment?)))
+    (submission-filename (number? number? number? . -> . path?))
+    (store-submission/file! (path? string? . -> . any))
+    (store-submission/db! (number? number? path? . -> . any))
     )
 
   (provide *connection*)
@@ -246,7 +251,7 @@
         (string-append
           "SELECT DISTINCT "
           "a.id, a.name, a.due, a.description, a.description_url, "
-          "a.grade_type, a.grade_misc, a_g.partner_id, a_g.submission_date, "
+          "a.grade_type, a.grade_misc, pt.partner_id, a_g.submission_date, "
           "a_g.submission, a_g.grade, a_g.comment "
           "FROM courses c "
           "JOIN partners pt ON pt.course_id = c.id "
@@ -260,6 +265,62 @@
           (if (equal? cmp '<) "ASC" "DESC"))
         sid cid cmp)
       row->assignment))
+
+  ;; Generate the filename used to save the file on the disc.
+  ;; ${course-directory}/hw/${assignment-name}/${student-names}-random
+  (define (submission-filename sid cid aid)
+    (let  ((course-directory 
+             (send *connection* query-value
+                   (format "SELECT directory FROM courses WHERE id = ~a" cid)))
+           (assignment-name
+             (send *connection* query-value
+                   (format "SELECT name FROM assignments WHERE id = ~a" aid)))
+           (student-names
+             (send *connection* query-list
+                   (format
+                     (string-append
+                       "SELECT p.name "
+                       "FROM people p "
+                       "JOIN partners pt ON pt.student_id = p.id "
+                       "WHERE pt.ended IS NULL "
+                       "AND pt.partner_id = "
+                       "(SELECT partner_id FROM partners WHERE student_id = ~a)")
+                     sid))))
+      (build-path
+        (bytes->string/utf-8 course-directory)
+        "hw"
+        (bytes->string/utf-8 assignment-name)
+        (string-append
+          (string-join (map bytes->string/utf-8 student-names) ", ")
+          "-"
+          (number->string (random 1000))))))
+
+  ;; Store the file on the filesystem.
+  (define (store-submission/file! filename contents)
+    (let-values (((base name must-be-dir?) (split-path filename)))
+      (make-directory* base))
+    (when (file-exists? filename) (delete-file filename))
+    (with-output-to-file
+      filename
+      (lambda () (display contents))))
+
+  ;; Store information about the file in the database
+  (define (store-submission/db! pid aid filename)
+    (if (exists? "assignment_grades"
+                 (format "assignment_id = ~a AND partner_id = ~a" aid pid))
+      (send *connection* exec
+            (format
+              (string-append
+                "UPDATE assignment_grades SET submission = '~a' "
+                "WHERE assignment_id = ~a AND partner_id = ~a")
+              (dbify (path->string filename)) aid pid))
+      (send *connection* exec
+            (format
+              (string-append
+                "INSERT INTO assignment_grades "
+                "(assignment_id, partner_id, submission) "
+                "VALUES (~a,~a,'~a')")
+              aid pid (dbify (path->string filename))))))
 
   ;; ******************************************************************
 
@@ -297,7 +358,7 @@
                      (value/null (vector-ref r 4) "")
                      (string->symbol (bytes->string/utf-8 (vector-ref r 5)))
                      (bytes->string/utf-8 (vector-ref r 6))
-                     (value/null (vector-ref r 7) #f)
+                     (vector-ref r 7)
                      (value/null (vector-ref r 8) #f)
                      (value/null (vector-ref r 9) #f)
                      (value/null (vector-ref r 10) #f)

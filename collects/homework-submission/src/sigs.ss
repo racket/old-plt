@@ -32,6 +32,7 @@
      transition-view-description
      transition-view-submission
      transition-student-assignments
+     transition-submit-assignment
      ))
 
   )

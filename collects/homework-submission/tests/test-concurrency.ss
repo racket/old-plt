@@ -1,3 +1,8 @@
+#!/bin/sh
+#|
+exec mzscheme -vt "$0" "$@" -e '(test-concurrency)'
+|#
+
 ;; Drive the servlet using HTTP, with a new connection for every page request.
 ;; The idea of this stress test is to test parrallel usages of this servlet.
 ;; Are there deadlocks or other concurrency issues?
@@ -9,7 +14,8 @@
   (require (lib "etc.ss")
            (lib "url.ss" "net")
            (lib "send-assertions.ss" "web-server" "tools")
-           (lib "xml.ss" "xml"))
+           (lib "xml.ss" "xml")
+           "create-data.ss")
 
   (provide test-concurrency)
 
@@ -17,6 +23,11 @@
   (define *SERVLET-URL* (string-append *SERVER-URL* "/servlets/submit.ss"))
 
   (define (test-concurrency)
+    (with-handlers ((exn? (lambda (e) (db-do "ROLLBACK") (raise e))))
+      (db-do "BEGIN")
+      (cleanup)
+      (setup)
+      (db-do "COMMIT"))
     (let ((tester
             (lambda (id)
               (let loop ((n 0))
@@ -28,7 +39,11 @@
                 (loop (add1 n))))))
       (thread (lambda () (tester 0)))
       (thread (lambda () (tester 1))))
-    (sleep +inf.0))
+    (sleep +inf.0)
+    (with-handlers ((exn? (lambda (e) (db-do "ROLLBACK") (raise e))))
+      (db-do "BEGIN")
+      (cleanup)
+      (db-do "COMMIT")))
 
   ;; id-display : a -> a
   ;; Print the argument to STDOUT, then produce the argument.
@@ -48,7 +63,7 @@
 
   (define (single-concurrency-test)
     ;; A user logs in, changes his or her password, then logs out.
-    (let* ((login-page (user-logs-in "The Test Username" "The Test Password"))
+    (let* ((login-page (user-logs-in "person one" "password"))
            (passwd-page (to-password-page login-page))
            (change-passwd-page (call/input-url
                                  passwd-page
@@ -56,12 +71,27 @@
                                  (compose
                                    (post-process-page
                                      (string-append
-                                       "old-password=The+Test+Password&"
-                                       "new-password1=The+Test+Password&"
-                                       "new-password2=The+Test+Password"))
+                                       "old-password=password&"
+                                       "new-password1=password&"
+                                       "new-password2=password"))
                                    form->k-url
                                    pre-process-page))))
       (logout change-passwd-page))
+    ;; A user logs in, selects a course in which he or she is a student,
+    ;; goes to assignments, submits an assignment, logs out.
+    (let* ((login-page (user-logs-in "person one" "password"))
+           (assignments-page (to-assignments-page login-page))
+           (assignments-page2 (call/input-url
+                                assignments-page
+                                get-pure-port
+                                (compose
+                                  (post-process-page
+                                    (string-append
+                                      "file=/etc/passwd&"
+                                      "enctype=multipart/form-data"))
+                                  form->k-url
+                                  pre-process-page))))
+      (logout assignments-page2))
     )
 
   (define (user-logs-in username password)
@@ -84,6 +114,15 @@
       (compose
         (post-process-page "")
         (hyperlink->k-url "Change Password")
+        pre-process-page)))
+
+  (define (to-assignments-page a-url)
+    (call/input-url
+      a-url
+      get-pure-port
+      (compose
+        (post-process-page "")
+        (hyperlink->k-url "Assignments")
         pre-process-page)))
 
   (define (logout a-url)

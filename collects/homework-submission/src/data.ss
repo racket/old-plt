@@ -30,7 +30,7 @@
                         (description-url string?)
                         (grade-type symbol?)
                         (grade-misc string?)
-                        (partner-id (union number? not))
+                        (partner-id number?)
                         (submission-date (union string? not))
                         (submission (union string? not))
                         (grade (union string? not))

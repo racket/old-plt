@@ -9,7 +9,9 @@ exec mzscheme -r "$0" "$@"
 (with-handlers ((exn? (lambda (e) (db-do "ROLLBACK") (raise e))))
   (db-do "BEGIN")
   (cleanup)
+  (db-do "COMMIT")
   (setup)
+  (db-do "BEGIN")
   (db-do "COMMIT")
   )
 

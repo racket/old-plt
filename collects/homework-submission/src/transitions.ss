@@ -244,6 +244,72 @@
                   (format "~s is added as a new partner for this course"
                           username)))) )))
 
+      ;; Action transition to the assignments page.
+      ;; Action: upload the homework and store it in the database.
+      ;; If the student can submit an assignment, store the file on the
+      ;; filesystem and update the database. Send the assignments page.
+      (define-action-transition (transition-submit-assignment session a)
+        (file)
+        (cond
+          ( (schedule (lambda () (backend-can-submit?
+                                   (session-id session)
+                                   (course-id (session-course session)))))
+            (with-handlers
+              ((exn:fail?
+                 (lambda (e)
+                   (send/suspend/callback
+                     (page-student-assignments
+                       (update-course-partnership?/session session)
+                       (schedule (lambda ()
+                                   (backend-assignments/due
+                                     (session-id session)
+                                     (course-id (session-course session)) '>)))
+                       (schedule (lambda ()
+                                   (backend-assignments/due
+                                     (session-id session)
+                                     (course-id (session-course session)) '<)))
+                       (exn-message e))))))
+              (let ((filename (schedule (lambda ()
+                                          (backend-submission-filename
+                                            (session-id session)
+                                            (course-id (session-course session))
+                                            (assignment-id a))))))
+                ;; Not scheduled because it doesn't hit the database
+                (backend-store-submission/file! filename file)
+                (schedule-transaction
+                  (lambda () (backend-store-submission/db!
+                               (assignment-partner-id a)
+                               (assignment-id a)
+                               filename))))
+              (send/suspend/callback
+                (page-student-assignments
+                  (update-course-partnership?/session session)
+                  (schedule (lambda ()
+                              (backend-assignments/due
+                                (session-id session)
+                                (course-id (session-course session)) '>)))
+                  (schedule (lambda ()
+                              (backend-assignments/due
+                                (session-id session)
+                                (course-id (session-course session)) '<)))
+                  "Submitted"))) )
+          ( else (send/suspend/callback
+                   (page-student-assignments
+                     (update-course-partnership?/session session)
+                     (schedule (lambda ()
+                                 (backend-assignments/due
+                                   (session-id session)
+                                   (course-id (session-course session)) '>)))
+                     (schedule (lambda ()
+                                 (backend-assignments/due
+                                   (session-id session)
+                                   (course-id (session-course session)) '<)))
+                     (string-append
+                       "You cannot submit an assignment. This is probably "
+                       "because you do not have the correct number of "
+                       "partners."))
+                   ))))
+
       ;; **** Helpers ****
 
       ;; Go to the main page for the position.

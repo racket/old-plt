@@ -300,6 +300,23 @@ exec mzscheme -r "$0" "$@"
       (reset-partner)
       (reset-partner))
 
+    (make-test-case
+      (string-append
+        "A user logs in, selects a course in which he or she is a student, "
+        "views assignments, submits an assignment, logs out.")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "person one")
+                          (cons 'password "password")))
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Assignments") '())
+              (list form->k-url
+                    (list (cons 'file "/etc/passwd")
+                          (cons 'enctype "multipart/form-data")))
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page)))
+
      ))
 
 ;; reset-partner : ->
@@ -393,7 +410,9 @@ exec mzscheme -r "$0" "$@"
   (db-do "BEGIN")
   (cleanup)
   (setup)
+  (db-do "COMMIT")
   (test/text-ui test-servlet)
+  (db-do "BEGIN")
   (cleanup)
   (db-do "COMMIT")
   )

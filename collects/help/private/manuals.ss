@@ -172,21 +172,20 @@
             (find-doc-directories-in-doc-collection)))
   
   (define (find-info.ss-doc-directories)
-    (let ([collections (find-relevant-collections '(html-docs))])
-      (let loop ([collections collections])
+    (let ([dirs (find-relevant-directories '(html-docs) 'all-available)])
+      (let loop ([dirs dirs])
         (cond
-          [(null? collections) null]
-          [else (let* ([collection (car collections)]
-                       [info (get-info collection)]
-                       [dir (apply collection-path collection)]
-                       [html-doc-paths (info 'html-docs (lambda () #f))]) ;; this call fails if the info domains are out of sync
+          [(null? dirs) null]
+          [else (let* ([dir (car dirs)]
+                       [info (get-info/full dir)]
+                       [html-doc-paths (info 'html-docs (lambda () #f))])
                   (cond
                     [(and (list? html-doc-paths)
                           (andmap path-string? html-doc-paths))
                      (append (map (lambda (x) (build-path dir x)) html-doc-paths)
-                             (loop (cdr collections)))]
+                             (loop (cdr dirs)))]
                     [else
-                     (loop (cdr collections))]))]))))
+                     (loop (cdr dirs))]))]))))
   
   (define (find-doc-directories-in-doc-collection)
     (let loop ([paths (current-library-collection-paths)]

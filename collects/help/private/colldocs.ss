@@ -8,24 +8,24 @@
                          (listof string?)))])
 
   (define (colldocs)
-    (let loop ([collections (find-relevant-collections '(doc.txt) #;'all)]
+    (let loop ([dirs (find-relevant-directories '(doc.txt) 'all-available)]
                [docs null]
                [names null])
       (cond
-        [(null? collections)
+        [(null? dirs)
          (values docs names)]
-        [else (let* ([collection (car collections)]
-                     [info-proc (get-info collection)]
+        [else (let* ([dir (car dirs)]
+                     [info-proc (get-info/full dir)]
                      [doc.txt-path (info-proc 'doc.txt (lambda () #f))]
                      [name (info-proc 'name (lambda () #f))])
                 (if (and (path-string? doc.txt-path)
                          (string? name))
-                    (loop (cdr collections)
-                          (cons (list (apply collection-path collection)
+                    (loop (cdr dirs)
+                          (cons (list dir
                                       (string->path doc.txt-path))
                                 docs)
                           (cons name names))
-                    (loop (cdr collections) docs names)))])))
+                    (loop (cdr dirs) docs names)))])))
                         
   
   ; Gets a list of collections that contain a doc.txt file

@@ -2,14 +2,17 @@
 The _launcherr.ss_ library in the "launcher" collection imports
 mzlib:file^, dynext:compile^, and dynext:link^, and exports the
 following procedures for creating MzScheme and MrEd launcher
-executables:
+executables.
+
+===== Launcher creation ========================================
 
 > (make-mred-launcher args dest [aux]) - Creates the launcher
    `dest'. The `dest' executable (for the current OS platform) will
    start MrEd with the command-line arguments specified as strings in
    the list `args'. Extra arguments passed to the launcher at run-time
    will be appended (modulo special X flag handling, as described
-   below) to this list and passed on to MrEd.
+   below) to this list and passed on to MrEd. If `dest' exists
+   already 9as a file or directory), it is replaced.
 
    `make-mred-launcher' transforms `args' as necessary to avoid
    mutations caused by passing the strings through the
@@ -76,6 +79,18 @@ executables:
    result to `build-aux-from-path'.
 
 
+> (install-mred-program-launcher file collection name) - Calls
+   `make-mred-launcher' with the destintation returned by
+   (mred-program-launcher-path name); the `file' and `collection'
+   arguments are passed on to `make-mred-launcher'.
+
+> (install-mzscheme-program-launcher file collection name) - Calls
+   `make-mzscheme-launcher' with the destintation returned by
+   (mzscheme-program-launcher-path name); the `file' and `collection'
+   arguments are passed on to `make-mzscheme-launcher'.
+
+===== Launcher paths and platform conventions ============================
+
 > (mred-program-launcher-path name) returns a pathname for an executable
    in the current PLT home directory called `name'.  For Windows, the
    ".exe" suffix is automatically appended to `name'. For Unix, `name'
@@ -88,16 +103,26 @@ executables:
    For Mac OS X, the result is the same as for Unix.
 
 
-> (install-mred-program-launcher file collection name) - Calls
-   `make-mred-launcher' with the destintation returned by
-   (mred-program-launcher-path name); the `file' and `collection'
-   arguments are passed on to `make-mred-launcher'.
+> (mred-launcher-is-directory?) - Returns #t if MrEd launchers for the
+  current platform correspond to directories (as on Mac OS X).
 
-> (install-mzscheme-program-launcher file collection name) - Calls
-   `make-mzscheme-launcher' with the destintation returned by
-   (mzscheme-program-launcher-path name); the `file' and `collection'
-   arguments are passed on to `make-mzscheme-launcher'.
+> (mzscheme-launcher-is-directory?) - Returns #t if MzScheme launchers
+  for the current platform correspond to directories.
 
+
+> (mred-launcher-put-file-extension+style+filters) - Returns three
+  values suitable for use as the `extension', `style', and `filters'
+  arguments to `put-file', respectively. If MrEd launchers for this
+  platform are directories, the `style' result is suitable for use
+  with `get-directory', and the `extension' result may be a string
+  indicating a required extension for the directory name (e.g., ".app"
+  for Mac OS X).
+
+> (mzscheme-launcher-put-file-extension+style+filters) - Like
+  `mred-launcher-get-file-extension+style+filters', but for MzScheme
+  launchers.
+
+===== Miscellaneous ========================================
 
 > (mred-launcher-up-to-date? dest [aux]) - Returns #t if the
     launcher `dest' does not need to be updated, assuming

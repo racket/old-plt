@@ -4,10 +4,12 @@
   
   (require "sig.ss")
 
-  (require "embed-unit.ss")
+  (require "embed-unit.ss"
+	   "embed-sig.ss")
 
-  (define-values/invoke-unit/sig (make-embedding-executable)
+  (define-values/invoke-unit/sig compiler:embed^
     compiler:embed@
     #f)
 
-  (provide-signature-elements (make-embedding-executable)))
+  (provide-signature-elements compiler:embed^))
+

@@ -61,8 +61,9 @@
       (define (install-template dest kind mz mr)
 	(define src (build-path (collection-path "launcher")
 				(if (eq? kind 'mzscheme) mz mr)))
-	(when (file-exists? dest)
-	  (delete-file dest))
+	(when (or (file-exists? dest)
+		  (directory-exists? dest))
+	  (delete-directory/files dest))
 	(copy-file src dest))
 
       (define (variant-suffix variant)
@@ -279,7 +280,7 @@
 				(begin
 				  (close-input-port p)
 				  (when (file-exists? dest)
-					(delete-file dest))
+				    (delete-file dest))
 				  (error 
 				   'make-windows-launcher 
 				   (format
@@ -299,7 +300,7 @@
 			(lambda (len s es)
 			  (when (> (string-length s) len)
 				(when (file-exists? dest)
-				      (delete-file dest))
+				  (delete-file dest))
 				(error 
 				 (format	
 				  "~a exceeds limit of ~a characters with ~a characters: ~a"
@@ -432,6 +433,27 @@
 		     (build-path l-home-macosx-mzscheme (unix-sfx name))
 		     (current-launcher-variant))]
 	  [else (mred-program-launcher-path name)]))
+      
+      (define (mred-launcher-is-directory?)
+	(eq? 'macosx (system-type)))
+      (define (mzscheme-launcher-is-directory?)
+	#f)
+
+      ;; Helper:
+      (define (put-file-extension+style+filters type)
+	(case type
+	  [(windows) (values ".exe" null '(("Executable" "*.exe")))]
+	  [(macosx) (values ".app" null #f)]
+	  [else (values #f null null)]))
+
+      (define (mred-launcher-put-file-extension+style+filters)
+	(put-file-extension+style+filters (system-type)))
+
+      (define (mzscheme-launcher-put-file-extension+style+filters)
+	(put-file-extension+style+filters 
+	 (if (eq? 'macosx (system-type))
+	     'unix
+	     (system-type))))
 
       (define mred-launcher-up-to-date?
 	(opt-lambda (dest [aux null])

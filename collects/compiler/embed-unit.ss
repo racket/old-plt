@@ -7,13 +7,23 @@
 	   (lib "thread.ss")
 	   (lib "moddep.ss" "syntax")
 	   (lib "plist.ss" "xml")
+	   "embed-sig.ss"
 	   "private/winicon.ss")
 
   (provide compiler:embed@)
 
   (define compiler:embed@
-    (unit/sig (make-embedding-executable)
+    (unit/sig compiler:embed^
       (import)
+
+      (define (embedding-executable-is-directory? mred?)
+	(eq? 'macosx (system-type)))
+      
+      (define (embedding-executable-put-file-extension+style+filters mred?)
+	(case (system-type)
+	  [(windows) (values ".exe" null '(("Executable" "*.exe")))]
+	  [(macosx) (values ".app" null #f)]
+	  [else (values #f null null)]))
 
       ;; Find executable via (find-system-path 'exec-file), then
       ;;  fixup name to be MrEd or MzScheme because we may

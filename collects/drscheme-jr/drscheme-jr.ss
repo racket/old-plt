@@ -88,10 +88,30 @@
     (define dynamic-error (report-error #f))
     (define internal-error (report-error "internal error"))))
 
+(define parameters@
+  (let ([argv (vector->list argv)])
+    (unit/sig plt:parameters^
+      (import)
+      (define case-sensitive? (not (eq? 'a 'A)))
+      (define unmatched-cond/case-is-error?
+	(with-handlers ((void (lambda (e) #t)))
+		       (cond)
+		       #f))
+      (define allow-set!-on-undefined?
+	(with-handlers ((void (lambda (e) #f)))
+		       (eval `(set! ,(gensym) 5))
+		       #t))
+      (define check-syntax-level (if (null? argv)
+				     'advanced
+				     (car argv)))
+      (define allow-improper-lists? (eq? 'advanced check-syntax-level))
+      (printf "Language: ~a~nImproper lists: ~a~n"
+	      check-syntax-level allow-improper-lists?))))
+
 (define z@
   (compound-unit/sig
       (import)
-    (link [params : plt:parameters^ (plt:mzscheme-parameters@)]
+    (link [params : plt:parameters^ (parameters@)]
 	  [zodiac : zodiac:system^ (zodiac:system@ zodiac:interface params)]
 	  [zodiac:interface : zodiac:interface^ (interface@ zodiac)]
 	  [aries : plt:aries^ (plt:aries@ zodiac zodiac:interface)])

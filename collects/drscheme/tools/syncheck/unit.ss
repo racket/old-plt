@@ -282,7 +282,8 @@
 	     [arrow-root-radius 3.5]
 	     [cursor-arrow (make-object wx:cursor% wx:const-cursor-arrow)])
 	(class-asi (drscheme:parameters:current-definitions-edit%)
-	  (inherit set-cursor get-admin invalidate-bitmap-cache set-position)
+	  (inherit set-cursor get-admin invalidate-bitmap-cache set-position
+		   begin-edit-sequence end-edit-sequence)
 	  (rename
 	   [super-after-insert after-insert]
 	   [super-after-delete after-delete]
@@ -433,8 +434,6 @@
 			  (lambda (event x y)
 			    (let* ([head? (on-head? x y)]
 				   [this-time (or head? (on-root? x y))])
-			      (when this-time
-				(set-cursor cursor-arrow))
 			      (cond
 			       [(send event moving?)
 				(when (void? last)
@@ -442,6 +441,7 @@
 				(when (or (and (not this-time) last)
 					  (and this-time (not last)))
 				  (set! tmp-arrow-on? this-time)
+				  (set-cursor (if this-time cursor-arrow null))
 				  (send brush set-colour
 					(if this-time
 					    color-highlight
@@ -496,7 +496,6 @@
 	    
 	    [on-event
 	     (lambda (event)
-	       (set-cursor '())
 	       (let* ([admin (send this get-admin)]
 		      [root-x (box 0)]
 		      [root-y (box 0)])
@@ -504,14 +503,19 @@
 		 (let ([actual-x (+ (send event get-x) (unbox root-x))]
 		       [actual-y (+ (send event get-y) (unbox root-y))])
 		   
-		   ;; Now try to find a clickback to handle it
-		   (let loop ([graphics graphics-list])
-		     (match graphics
-		       [() (super-on-event event)]
-		       [(($ graphic _ _ _ click-fn) . rest-graphics) 
-			(or (click-fn event actual-x actual-y)
-			    ;; Otherwise try next graphic
-			    (loop rest-graphics))])))))]))))
+		   (dynamic-wind
+		    begin-edit-sequence
+
+		    (lambda ()
+		    ;; Now try to find a clickback to handle it
+		      (let loop ([graphics graphics-list])
+			(match graphics
+			  [() (super-on-event event)]
+			  [(($ graphic _ _ _ click-fn) . rest-graphics) 
+			   (or (click-fn event actual-x actual-y)
+			       ;; Otherwise try next graphic
+			       (loop rest-graphics))])))
+		    end-edit-sequence))))]))))
 
     (define new%
       (class (drscheme:parameters:current-frame%) args
@@ -772,7 +776,7 @@
 			       (drscheme:unit:make-bitmap
 				(build-path mred:constants:plt-home-directory
 					    "icons"
-					    "syncheck.gif")
+					    "syncheck.bmp")
 				(mred:debug:if 'mrslatex
 					       "CS"
 					       "Check Syntax")))])

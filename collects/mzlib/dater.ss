@@ -103,8 +103,8 @@
 		  [(chinese)
 		   (values
 		    (list year "/" num-month "/" day
-			  " xingqi" (case (date-week-day date)
-				      [(0) "ri"]
+			  " libai" (case (date-week-day date)
+				      [(0) "tian"]
 				      [(1) "yi"]
 				      [(2) "er"]
 				      [(3) "san"]
@@ -346,6 +346,4 @@
 				(caddr reversed-digits)
 				(cadr reversed-digits)
 				(car reversed-digits)))
-			(loop (cdr (cdr (cdr reversed-digits))))))))))))
-
-)
+			(loop (cdr (cdr (cdr reversed-digits)))))))))))))

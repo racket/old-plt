@@ -1,7 +1,8 @@
 
 (module head-unit mzscheme
   (require (lib "unitsig.ss")
-	   (lib "date.ss"))
+	   (lib "date.ss")
+	   (lib "string.ss"))
 
   (require "head-sig.ss")
 
@@ -12,26 +13,8 @@
 
       (define empty-header (string #\return #\newline))
 
-      (define (string->ci-regexp s)
-	(list->string
-	 (apply
-	  append
-	  (map
-	   (lambda (c)
-	     (cond 
-	      [(memq c '(#\$ #\| #\\ #\[ #\] #\. #\* #\? #\+ #\( #\) #\^))
-	       (list #\\ c)]
-	      [(char-alphabetic? c)
-	       (list #\[ (char-upcase c) (char-downcase c) #\])]
-	      [else (list c)]))
-	   (string->list s)))))
-
-      (define re:field-start (regexp
-			      (format "^[^~a~a~a~a~a:~a-~a]*:" 
-				      #\space #\tab #\linefeed #\return #\vtab
-				      (integer->char 1)
-				      (integer->char 26))))
-      (define re:continue (regexp (format "^[~a~a~a]" #\space #\tab #\vtab)))
+      (define re:field-start (regexp "^[^ \t\n\r\v:\001-\032\"]*:"))
+      (define re:continue (regexp "^[ \t\v]"))
       
       (define (validate-header s)
 	(let ([len (string-length s)])
@@ -43,7 +26,7 @@
 	     [(= offset len) (error 'validate-header "missing ending CRLF")]
 	     [(or (regexp-match re:field-start s offset)
 		  (regexp-match re:continue s offset))
-	      (let ([m (regexp-match-positions (string #\return #\linefeed) s offset)])
+	      (let ([m (regexp-match-positions #rx"\r\n" s offset)])
 		(if m
 		    (loop (cdar m))
 		    (error 'validate-header "missing ending CRLF")))]
@@ -51,9 +34,7 @@
 			  (substring s offset (string-length s)))]))))
       
       (define (make-field-start-regexp field)
-	(format "(^|[~a][~a])(~a: *)" 
-		#\return #\linefeed 
-		(string->ci-regexp field)))
+	(format "(^|[\r][\n])(~a: *)" (regexp-quote field #f)))
 
       (define (extract-field field header)
 	(let ([m (regexp-match-positions 
@@ -63,15 +44,11 @@
 	       (let ([s (substring header 
 				   (cdaddr m)
 				   (string-length header))])
-		 (let ([m (regexp-match-positions 
-			   (format "[~a][~a][^: ~a~a]*:"
-				   #\return #\linefeed
-				   #\return #\linefeed)
-			   s)])
+		 (let ([m (regexp-match-positions #rx"[\r][\n][^: \r\n\"]*:" s)])
 		   (if m
 		       (substring s 0 (caar m))
 		       ;; Rest of header is this field, but strip trailing CRLFCRLF:
-		       (regexp-replace (format "~a~a~a~a$" #\return #\linefeed #\return #\linefeed)
+		       (regexp-replace #rx"\r\n\r\n$"
 				       s
 				       "")))))))
 
@@ -86,11 +63,7 @@
 		    [s (substring header 
 				  (cdaddr m)
 				  (string-length header))])
-		(let ([m (regexp-match-positions 
-			  (format "[~a][~a][^: ~a~a]*:"
-				  #\return #\linefeed
-				  #\return #\linefeed)
-			  s)])
+		(let ([m (regexp-match-positions #rx"[\r][\n][^: \r\n\"]*:" s)])
 		  (if m
 		      (string-append pre (substring s (+ 2 (caar m)) 
 						    (string-length s)))
@@ -98,10 +71,9 @@
 	      header)))
 
       (define (insert-field field data header)
-	(let ([field (format "~a: ~a~a~a"
+	(let ([field (format "~a: ~a\r\n"
 			     field
-			     data
-			     #\return #\linefeed)])
+			     data)])
 	  (string-append field header)))
 
       (define (append-headers a b)
@@ -111,8 +83,7 @@
 	      (error 'append-headers "first argument is not a header: ~a" a))))
       
       (define (extract-all-fields header)
-	(let ([re (regexp (format "(^|[~a][~a])(([^~a~a:]*): *)" 
-				  #\return #\linefeed #\return #\linefeed))]) 
+	(let ([re #rx"(^|[\r][\n])(([^\r\n:\"]*): *)"])
 	  (let loop ([start 0])
 	    (let ([m (regexp-match-positions re header start)])
 	      (if m
@@ -170,12 +141,12 @@
 		      (cdr l))))))
 
       (define (data-lines->data datas)
-	(splice datas (format "~a~a~a" #\return #\linefeed #\tab)))
+	(splice datas "\r\n\t"))
 
       ;; Extracting Addresses ;;
 
-      (define blank (format "[~a~a~a~a~a]" #\space #\tab #\newline #\return #\vtab))
-      (define nonblank (format "[^~a~a~a~a~a]" #\space #\tab #\newline #\return #\vtab))
+      (define blank "[ \t\n\r\v]")
+      (define nonblank "[^ \t\n\r\v]")
       (define re:all-blank (regexp (format "^~a*$" blank)))
       (define re:quoted (regexp "\"[^\"]*\""))
       (define re:comma (regexp ","))

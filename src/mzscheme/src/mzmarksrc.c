@@ -494,7 +494,8 @@ thread_val {
   gcMARK(pr->print_port);
   
   gcMARK(pr->overflow_reply);
-  
+  MARK_jmpup(&pr->overflow_cont);
+
   gcMARK(pr->tail_buffer);
   
   gcMARK(pr->ku.k.p1);

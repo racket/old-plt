@@ -136,7 +136,7 @@ string=? ; exec mred -magqvf $0
 		    (printf "This interface was automatically generated in order to use mixins.~n")
 		    (printf "For documentation, refer to the corresponding class: \\iscmclass{~a}.~n~n" short)))
 		interface-names)))
-  'truncate)
+  'text 'truncate)
 
 (define (version-check filename)
   `(unless (equal? (version) ,(version))

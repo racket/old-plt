@@ -1,1 +1,346 @@
-@external framework-mred.cdb@interface vertical-panel@super vertical-panelThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{vertical-panel}.@interface vertical-pane@super vertical-paneThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{vertical-pane}.@interface timer@super timerThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{timer}.@interface text-field@super text-fieldThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{text-field}.@interface text@super textThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{text}.@interface tab-snip@super tab-snipThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{tab-snip}.@interface style-list@super style-listThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{style-list}.@interface style-delta@super style-deltaThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{style-delta}.@interface string-snip@super string-snipThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{string-snip}.@interface snip-class@super snip-classThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{snip-class}.@interface snip-admin@super snip-adminThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{snip-admin}.@interface snip@super snipThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{snip}.@interface slider@super sliderThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{slider}.@interface separator-menu-item@super separator-menu-itemThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{separator-menu-item}.@interface scroll-event@super scroll-eventThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{scroll-event}.@interface region@super regionThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{region}.@interface radio-box@super radio-boxThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{radio-box}.@interface ps-setup@super ps-setupThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{ps-setup}.@interface printer-dc@super printer-dcThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{printer-dc}.@interface post-script-dc@super post-script-dcThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{post-script-dc}.@interface popup-menu@super popup-menuThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{popup-menu}.@interface point@super pointThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{point}.@interface pen-list@super pen-listThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{pen-list}.@interface pen@super penThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{pen}.@interface pasteboard@super pasteboardThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{pasteboard}.@interface panel@super panelThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{panel}.@interface pane@super paneThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{pane}.@interface mouse-event@super mouse-eventThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{mouse-event}.@interface message@super messageThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{message}.@interface menu-bar@super menu-barThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{menu-bar}.@interface menu@super menuThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{menu}.@interface list-box@super list-boxThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{list-box}.@interface keymap@super keymapThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{keymap}.@interface key-event@super key-eventThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{key-event}.@interface image-snip@super image-snipThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{image-snip}.@interface horizontal-panel@super horizontal-panelThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{horizontal-panel}.@interface horizontal-pane@super horizontal-paneThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{horizontal-pane}.@interface grow-box-spacer-pane@super grow-box-spacer-paneThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{grow-box-spacer-pane}.@interface gauge@super gaugeThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{gauge}.@interface frame@super frameThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{frame}.@interface font-list@super font-listThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{font-list}.@interface font@super fontThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{font}.@interface event@super eventThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{event}.@interface editor-wordbreak-map@super editor-wordbreak-mapThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-wordbreak-map}.@interface editor-stream-out-string-base@super editor-stream-out-string-baseThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-stream-out-string-base}.@interface editor-stream-out-base@super editor-stream-out-baseThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-stream-out-base}.@interface editor-stream-out@super editor-stream-outThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-stream-out}.@interface editor-stream-in-string-base@super editor-stream-in-string-baseThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-stream-in-string-base}.@interface editor-stream-in-base@super editor-stream-in-baseThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-stream-in-base}.@interface editor-stream-in@super editor-stream-inThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-stream-in}.@interface editor-snip@super editor-snipThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-snip}.@interface editor-data-class-list@super editor-data-class-listThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-data-class-list}.@interface editor-data-class@super editor-data-classThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-data-class}.@interface editor-data@super editor-dataThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-data}.@interface editor-canvas@super editor-canvasThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-canvas}.@interface editor-admin@super editor-adminThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{editor-admin}.@interface dialog@super dialogThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{dialog}.@interface cursor@super cursorThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{cursor}.@interface control-event@super control-eventThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{control-event}.@interface color@super colorThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{color}.@interface clipboard-client@super clipboard-clientThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{clipboard-client}.@interface choice@super choiceThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{choice}.@interface checkable-menu-item@super checkable-menu-itemThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{checkable-menu-item}.@interface check-box@super check-boxThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{check-box}.@interface button@super buttonThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{button}.@interface brush-list@super brush-listThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{brush-list}.@interface brush@super brushThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{brush}.@interface bitmap-dc@super bitmap-dcThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{bitmap-dc}.@interface bitmap@super bitmapThis interface was automatically generated in order to use mixins.For documentation, refer to the corresponding class: \iscmclass{bitmap}.
+@external framework-mred.cdb
+@interface vertical-panel
+@super vertical-panel
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{vertical-panel}.
+
+@interface vertical-pane
+@super vertical-pane
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{vertical-pane}.
+
+@interface timer
+@super timer
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{timer}.
+
+@interface text-field
+@super text-field
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{text-field}.
+
+@interface text
+@super text
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{text}.
+
+@interface tab-snip
+@super tab-snip
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{tab-snip}.
+
+@interface style-list
+@super style-list
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{style-list}.
+
+@interface style-delta
+@super style-delta
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{style-delta}.
+
+@interface string-snip
+@super string-snip
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{string-snip}.
+
+@interface snip-class
+@super snip-class
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{snip-class}.
+
+@interface snip-admin
+@super snip-admin
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{snip-admin}.
+
+@interface snip
+@super snip
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{snip}.
+
+@interface slider
+@super slider
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{slider}.
+
+@interface separator-menu-item
+@super separator-menu-item
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{separator-menu-item}.
+
+@interface scroll-event
+@super scroll-event
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{scroll-event}.
+
+@interface region
+@super region
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{region}.
+
+@interface radio-box
+@super radio-box
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{radio-box}.
+
+@interface ps-setup
+@super ps-setup
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{ps-setup}.
+
+@interface printer-dc
+@super printer-dc
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{printer-dc}.
+
+@interface post-script-dc
+@super post-script-dc
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{post-script-dc}.
+
+@interface popup-menu
+@super popup-menu
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{popup-menu}.
+
+@interface point
+@super point
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{point}.
+
+@interface pen-list
+@super pen-list
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{pen-list}.
+
+@interface pen
+@super pen
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{pen}.
+
+@interface pasteboard
+@super pasteboard
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{pasteboard}.
+
+@interface panel
+@super panel
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{panel}.
+
+@interface pane
+@super pane
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{pane}.
+
+@interface mouse-event
+@super mouse-event
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{mouse-event}.
+
+@interface message
+@super message
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{message}.
+
+@interface menu-bar
+@super menu-bar
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{menu-bar}.
+
+@interface menu
+@super menu
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{menu}.
+
+@interface list-box
+@super list-box
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{list-box}.
+
+@interface keymap
+@super keymap
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{keymap}.
+
+@interface key-event
+@super key-event
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{key-event}.
+
+@interface image-snip
+@super image-snip
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{image-snip}.
+
+@interface horizontal-panel
+@super horizontal-panel
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{horizontal-panel}.
+
+@interface horizontal-pane
+@super horizontal-pane
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{horizontal-pane}.
+
+@interface grow-box-spacer-pane
+@super grow-box-spacer-pane
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{grow-box-spacer-pane}.
+
+@interface gauge
+@super gauge
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{gauge}.
+
+@interface frame
+@super frame
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{frame}.
+
+@interface font-list
+@super font-list
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{font-list}.
+
+@interface font
+@super font
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{font}.
+
+@interface event
+@super event
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{event}.
+
+@interface editor-wordbreak-map
+@super editor-wordbreak-map
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-wordbreak-map}.
+
+@interface editor-stream-out-string-base
+@super editor-stream-out-string-base
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-stream-out-string-base}.
+
+@interface editor-stream-out-base
+@super editor-stream-out-base
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-stream-out-base}.
+
+@interface editor-stream-out
+@super editor-stream-out
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-stream-out}.
+
+@interface editor-stream-in-string-base
+@super editor-stream-in-string-base
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-stream-in-string-base}.
+
+@interface editor-stream-in-base
+@super editor-stream-in-base
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-stream-in-base}.
+
+@interface editor-stream-in
+@super editor-stream-in
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-stream-in}.
+
+@interface editor-snip
+@super editor-snip
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-snip}.
+
+@interface editor-data-class-list
+@super editor-data-class-list
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-data-class-list}.
+
+@interface editor-data-class
+@super editor-data-class
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-data-class}.
+
+@interface editor-data
+@super editor-data
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-data}.
+
+@interface editor-canvas
+@super editor-canvas
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-canvas}.
+
+@interface editor-admin
+@super editor-admin
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{editor-admin}.
+
+@interface dialog
+@super dialog
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{dialog}.
+
+@interface cursor
+@super cursor
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{cursor}.
+
+@interface control-event
+@super control-event
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{control-event}.
+
+@interface color
+@super color
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{color}.
+
+@interface clipboard-client
+@super clipboard-client
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{clipboard-client}.
+
+@interface choice
+@super choice
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{choice}.
+
+@interface checkable-menu-item
+@super checkable-menu-item
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{checkable-menu-item}.
+
+@interface check-box
+@super check-box
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{check-box}.
+
+@interface button
+@super button
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{button}.
+
+@interface brush-list
+@super brush-list
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{brush-list}.
+
+@interface brush
+@super brush
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{brush}.
+
+@interface bitmap-dc
+@super bitmap-dc
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{bitmap-dc}.
+
+@interface bitmap
+@super bitmap
+This interface was automatically generated in order to use mixins.
+For documentation, refer to the corresponding class: \iscmclass{bitmap}.
+

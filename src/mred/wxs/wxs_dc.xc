@@ -342,7 +342,8 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 			 wxBitmap *mask)
 {
   double xs, ys, r, g, b, t, dx, dy, wt, si, sj, a;
-  int i, j, starti, endi, startj, endj, p, xi, xj, sbmw, sbmh, w, h, w2, h2, ispan, jspan;
+  int i, j, starti, endi, startj, endj, p, xi, xj;
+  int sbmw, sbmh, w, h, w2, h2, ispan, jspan;
   unsigned char *s = NULL, *s2 = NULL, *mask_s = NULL;
   wxMemoryDC *srcdc = NULL;
   SETUP_VAR_STACK(7);
@@ -407,6 +408,8 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
   s2 = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w2 * h2 * 4));
   if (mask)
     mask_s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
+  else
+    mask_s = s;
 
 #ifdef wx_msw
   srcdc = (wxMemoryDC *)src->selectedInto;
@@ -481,9 +484,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 	  g += (wt * s[p+2]);
 	  b += (wt * s[p+3]);
 	  t += wt;
-	  if (mask_s) {
-	    a += wt * (mask_s[p+1] + mask_s[p+2] + mask_s[p+3]);
-	  }
+	  a += wt * (mask_s[p+1] + mask_s[p+2] + mask_s[p+3]);
 	}
       }
 
@@ -493,7 +494,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 
       p = ((j * w2) + i) * 4;
 
-      if (mask_s) {
+      if (mask) {
 	a /= (3.0 * 255.0 * t);
 	r = (r * (1 - a)) + ((double)s2[p+1] * a);
 	g = (g * (1 - a)) + ((double)s2[p+2] * a);
@@ -511,7 +512,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 #ifndef SENORA_GC_NO_FREE
   GC_free(s);
   GC_free(s2);
-  if (mask_s)
+  if (mask_s && (mask_s != s))
     GC_free(mask_s);
 #endif
 
@@ -601,13 +602,13 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 @CREATOR ()
 @ARGNAMES
 
-@ "get-pixel" : bool GetPixel(double,double,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","get-pixel")]
-@ "set-pixel" : void SetPixel(double,double,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","set-pixel")]
+@ "get-pixel" : bool GetPixel(double,double,wxColour!) : : /CheckOk[METHODNAME("bitmap-dc%","get-pixel")]
+@ "set-pixel" : void SetPixel(double,double,wxColour!) : : /CheckOk[METHODNAME("bitmap-dc%","set-pixel")]
 
 @ m "get-argb-pixels" : void dcGetARGBPixels(double,double,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
 @ m "set-argb-pixels" : void dcSetARGBPixels(double,double,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
 
-@ m "draw-bitmap-section-smooth" : void ScaleSection(wxBitmap!,double,double,nndouble,nndouble,double,double,nndouble,nndouble,wxBitmap!=NULL)
+@ m "draw-bitmap-section-smooth" : void ScaleSection(wxBitmap!,double,double,nndouble,nndouble,double,double,nndouble,nndouble,wxBitmap^=NULL)
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("bitmap-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();

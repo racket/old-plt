@@ -9,6 +9,7 @@
    (prefix strcst: (lib "string-constant.ss" "string-constants"))
    
    (prefix saav: "snips-and-arrows-view.ss")
+   "labels.ss"
    )
   
   (provide
@@ -28,14 +29,14 @@
                             label-resizable?
                             ; (label -> string)
                             get-name-from-label
-                            ; (label -> (listof label))
-                            get-labels-to-rename-from-label
+                            ; ((listof label) -> (listof label))
+                            get-labels-to-rename-from-labels
                             ; (symbol -> string)
                             get-menu-text-from-snip-type
-                            ; symbol label -> (-> (listof string)) 
-                            get-snip-text-thunk-from-snip-type-and-label
-                            ; (union #f label)
-                            previous-label
+                            ; symbol label -> (listof string)
+                            get-snip-text-from-snip-type-and-label
+                            ; (union #f (listof label))
+                            previous-labels
                             ; boolean
                             ; we need this one to prevent arrows and menus to show up
                             ; before the real analysis part is over
@@ -43,41 +44,56 @@
                             ))
   
   ; MENUS
-  ; gui-state menu% label symbol top -> menu-item%
+  ; gui-state menu% (listof labels) symbol top -> menu-item%
   ; creates a menu entry for a given snip type
-  (define (create-snips-menu-item-by-type gui-state menu label type source)
+  (define (create-snips-menu-item-by-type gui-state menu labels type source)
     (let ([gui-view-state (gui-state-gui-view-state gui-state)]
           [get-menu-text-from-snip-type (gui-state-get-menu-text-from-snip-type gui-state)]
-          [get-snip-strings
-           ((gui-state-get-snip-text-thunk-from-snip-type-and-label gui-state) type label)])
-      (if (saav:label-has-snips-of-this-type? gui-view-state label type)
-          ; delete menu entry
+          [get-snip-text-from-snip-type-and-label
+           (gui-state-get-snip-text-from-snip-type-and-label gui-state)])
+      (if (ormap (lambda (label)
+                   (saav:label-has-snips-of-this-type? gui-view-state label type))
+                 labels)
+          ; at least one label has snips displayed => delete menu entry
           (make-object menu-item%
             (get-menu-text-from-snip-type type 'hide)
             menu
             (lambda (item event)
-              (saav:remove-inserted-snips gui-view-state label type source)))
-          ; show menu entry
-          (let ([snip-strings (get-snip-strings)])
-            (unless (null? snip-strings)
-              (make-object menu-item%
-                (get-menu-text-from-snip-type type 'show)
-                menu
-                (lambda (item event)
-                  (saav:add-snips gui-view-state label type source snip-strings))))))))
+              (for-each (lambda (label)
+                          (when (saav:label-has-snips-of-this-type? gui-view-state label type)
+                            (saav:remove-inserted-snips gui-view-state label type source)))
+                        labels)))
+          ; no label has snips displayed => show menu entry if one of them has snips associated
+          ; with it
+          (unless (andmap (lambda (label)
+                            (null? (get-snip-text-from-snip-type-and-label type label)))
+                          labels)
+            (make-object menu-item%
+              (get-menu-text-from-snip-type type 'show)
+              menu
+              (lambda (item event)
+                (for-each (lambda (label)
+                            (let ([snip-strings (get-snip-text-from-snip-type-and-label type label)])
+                              (unless (null? snip-strings)
+                                (saav:add-snips gui-view-state label type source snip-strings))))
+                          labels)))))))
   
-  ; gui-state menu% label -> menu-item%
+  ; gui-state menu% (listof label) -> menu-item%
   ; create menu entries for arrows
-  (define (create-arrow-menu-items gui-state menu label)
+  (define (create-arrow-menu-items gui-state menu labels)
     (let* ([gui-view-state (gui-state-gui-view-state gui-state)]
            [get-parents-from-label (gui-state-get-parents-from-label gui-state)]
            [get-children-from-label (gui-state-get-children-from-label gui-state)]
-           [parents (get-parents-from-label label)]
-           [parents-max-arrows (length parents)]
-           [parents-tacked-arrows (saav:get-parents-tacked-arrows gui-view-state label)]
-           [children (get-children-from-label label)]
-           [children-max-arrows (length children)]
-           [children-tacked-arrows (saav:get-children-tacked-arrows gui-view-state label)]
+           [parentss (map get-parents-from-label labels)]
+           [parents-max-arrows (apply + (map length parentss))]
+           [parents-tacked-arrows (apply + (map (lambda (label)
+                                                  (saav:get-parents-tacked-arrows gui-view-state label))
+                                                labels))]
+           [childrens (map get-children-from-label labels)]
+           [children-max-arrows (apply + (map length childrens))]
+           [children-tacked-arrows (apply + (map (lambda (label)
+                                                   (saav:get-children-tacked-arrows gui-view-state label))
+                                                 labels))]
            [max-arrows (+ parents-max-arrows children-max-arrows)]
            [tacked-arrows (+ parents-tacked-arrows children-tacked-arrows)])
       (when (< tacked-arrows max-arrows)
@@ -88,20 +104,24 @@
             ; remove all (possibly untacked) arrows and add all arrows, tacked.
             ; we could just add the untacked ones, but what we do here is simple
             ; and efficient enough
-            (saav:remove-arrows gui-view-state label 'all #t)
-            (for-each (lambda (parent-label)
-                        (saav:add-arrow gui-view-state parent-label label #t))
-                      parents)
-            (for-each (lambda (child-label)
-                        (saav:add-arrow gui-view-state label child-label #t))
-                      children)
+            (for-each (lambda (label parents children)
+                        (saav:remove-arrows gui-view-state label 'all #t)
+                        (for-each (lambda (parent-label)
+                                    (saav:add-arrow gui-view-state parent-label label #t))
+                                  parents)
+                        (for-each (lambda (child-label)
+                                    (saav:add-arrow gui-view-state label child-label #t))
+                                  children))
+                      labels parentss childrens)
             (saav:invalidate-all-bitmap-caches gui-view-state))))
       (when (> tacked-arrows 0)
         (make-object menu-item%
           (strcst:string-constant snips-and-arrows-popup-menu-untack-all-arrows)
           menu
           (lambda (item event)
-            (saav:remove-arrows gui-view-state label 'all #t)
+            (for-each (lambda (label)
+                        (saav:remove-arrows gui-view-state label 'all #t))
+                      labels)
             (saav:invalidate-all-bitmap-caches gui-view-state))))))
   
   
@@ -303,46 +323,47 @@
             [(and (send event button-down? 'right)
                   (let-values ([(pos editor) (get-drscheme-pos-and-editor event this)])
                     (if pos
-                        (let ([label (saav:get-related-label-from-drscheme-pos-and-source
-                                      gui-view-state pos editor)])
-                          (if label
-                              (cons label editor)
-                              #f))
+                        (let ([labels (saav:get-related-label-from-drscheme-pos-and-source
+                                       gui-view-state pos editor)])
+                          (if (null? labels)
+                              #f
+                              (cons labels editor))) ; no =>-values so use cons...
                         #f)))
              =>
-             (lambda (label&editor)
+             (lambda (labels&editor)
                (let ([menu (make-object popup-menu%)]
-                     [label (car label&editor)]
-                     [editor (cdr label&editor)])
+                     [labels (car labels&editor)]
+                     [editor (cdr labels&editor)])
                  ; SNIPS
                  (let ([create-snips-menu-item
                         (lambda (snip-type)
-                          (create-snips-menu-item-by-type gui-state menu label snip-type editor))])
+                          (create-snips-menu-item-by-type gui-state menu labels snip-type editor))])
                    (saav:for-each-snip-type gui-view-state create-snips-menu-item))
                  ; ARROWS
-                 (create-arrow-menu-items gui-state menu label)
+                 (create-arrow-menu-items gui-state menu labels)
                  ; RESIZE
-                 (when ((gui-state-label-resizable? gui-state) label)
-                   (let* ([old-name ((gui-state-get-name-from-label gui-state) label)]
-                          [new-name-callback
-                           (lambda (item event)
-                             (let ([new-name
-                                    (fw:keymap:call/text-keymap-initializer
-                                     (lambda ()
-                                       (get-text-from-user
-                                        (strcst:string-constant cs-rename-id)
-                                        (format (strcst:string-constant cs-rename-var-to) old-name)
-                                        #f
-                                        old-name)))])
-                               (for-each (lambda (label)
-                                           ; the label might not be in the same editor, so passing
-                                           ; editor as an argument to user-resize-label is useless
-                                           (saav:user-resize-label gui-view-state label new-name))
-                                         ((gui-state-get-labels-to-rename-from-label gui-state) label))))])
-                     (make-object menu-item%
-                       (strcst:string-constant cs-rename-id)
-                       menu
-                       new-name-callback)))
+                 (let ([label (car labels)])
+                   (when ((gui-state-label-resizable? gui-state) label)
+                     (let* ([old-name ((gui-state-get-name-from-label gui-state) label)]
+                            [new-name-callback
+                             (lambda (item event)
+                               (let ([new-name
+                                      (fw:keymap:call/text-keymap-initializer
+                                       (lambda ()
+                                         (get-text-from-user
+                                          (strcst:string-constant cs-rename-id)
+                                          (format (strcst:string-constant cs-rename-var-to) old-name)
+                                          #f
+                                          old-name)))])
+                                 (for-each (lambda (label)
+                                             ; the label might not be in the same editor, so passing
+                                             ; editor as an argument to user-resize-label is useless
+                                             (saav:user-resize-label gui-view-state label new-name))
+                                           ((gui-state-get-labels-to-rename-from-labels gui-state) labels))))])
+                       (make-object menu-item%
+                         (strcst:string-constant cs-rename-id)
+                         menu
+                         new-name-callback))))
                  ; HIDE ALL SNIPS
                  (when (saav:snips-currently-displayed-in-source? gui-view-state editor)
                    (make-object menu-item%
@@ -355,34 +376,40 @@
                    (send (get-admin) popup-menu menu x y))
                  ))]
             [(send event leaving?)
-             (let ([previous-label (gui-state-previous-label gui-state)])
-               (when previous-label
-                 (saav:remove-arrows gui-view-state previous-label #f #f)
-                 (set-gui-state-previous-label! gui-state #f)
+             (let ([previous-labels (gui-state-previous-labels gui-state)])
+               (when previous-labels
+                 (for-each (lambda (previous-label)
+                             (saav:remove-arrows gui-view-state previous-label #f #f))
+                           previous-labels)
+                 (set-gui-state-previous-labels! gui-state #f)
                  (saav:invalidate-all-bitmap-caches gui-view-state)))]
             [(or (send event moving?)
                  (send event entering?))
              (let*-values ([(pos editor) (get-drscheme-pos-and-editor event this)]
-                           [(label)
+                           [(labels)
                             (if pos
                                 (saav:get-related-label-from-drscheme-pos-and-source
                                  gui-view-state pos editor)
                                 #f)]
-                           [(previous-label) (gui-state-previous-label gui-state)]
-                           [(not-same-label) (not (eq? label previous-label))])
-               (when (and previous-label not-same-label)
-                 (saav:remove-arrows gui-view-state previous-label #f #f))
-               (when (and label not-same-label)
+                           [(previous-labels) (gui-state-previous-labels gui-state)]
+                           [(not-same-labels) (not (eq? labels previous-labels))])
+               (when (and previous-labels not-same-labels)
+                 (for-each (lambda (previous-label)
+                             (saav:remove-arrows gui-view-state previous-label #f #f))
+                           previous-labels))
+               (when (and labels not-same-labels)
                  (let ([get-parents-from-label (gui-state-get-parents-from-label gui-state)]
                        [get-children-from-label (gui-state-get-children-from-label gui-state)])
-                   (for-each (lambda (parent-label)
-                               (saav:add-arrow gui-view-state parent-label label #f))
-                             (get-parents-from-label label))
-                   (for-each (lambda (child-label)
-                               (saav:add-arrow gui-view-state label child-label #f))
-                             (get-children-from-label label))))
-               (when not-same-label
-                 (set-gui-state-previous-label! gui-state label)
+                   (for-each (lambda (label)
+                               (for-each (lambda (parent-label)
+                                           (saav:add-arrow gui-view-state parent-label label #f))
+                                         (get-parents-from-label label))
+                               (for-each (lambda (child-label)
+                                           (saav:add-arrow gui-view-state label child-label #f))
+                                         (get-children-from-label label)))
+                             labels)))
+               (when not-same-labels
+                 (set-gui-state-previous-labels! gui-state labels)
                  (saav:invalidate-all-bitmap-caches gui-view-state)))]
             [else (super-on-event event)]))
         
@@ -406,16 +433,16 @@
            label-resizable?
            ; (label -> string)
            get-name-from-label
-           ; (label -> (listof label))
-           get-labels-to-rename-from-label
+           ; ((listof label) -> (listof label))
+           get-labels-to-rename-from-labels
            ; (label -> style-delta%)
            get-style-delta-from-label
            ; (symbol -> style-delta%)
            get-box-style-delta-from-snip-type
            ; (symbol -> string)
            get-menu-text-from-snip-type
-           ; (symbol label -> (-> (listof string)))
-           get-snip-text-thunk-from-snip-type-and-label
+           ; (symbol label -> (listof string))
+           get-snip-text-from-snip-type-and-label
            ; (listof symbol)
            snip-type-list
            ; boolean
@@ -443,9 +470,9 @@
                        get-children-from-label
                        label-resizable?
                        get-name-from-label
-                       get-labels-to-rename-from-label
+                       get-labels-to-rename-from-labels
                        get-menu-text-from-snip-type
-                       get-snip-text-thunk-from-snip-type-and-label
+                       get-snip-text-from-snip-type-and-label
                        #f
                        #f)])
       (lambda (label)
@@ -479,8 +506,8 @@
                  (get-box-style-delta-from-snip-type error-no-snips)
                  ; (symbol -> string)
                  (get-menu-text-from-snip-type error-no-snips)
-                 ; (symbol syntax-object -> (-> (listof string)))
-                 (get-snip-text-thunk-from-snip-type-and-syntax-object error-no-snips)
+                 ; (symbol syntax-object -> (listof string))
+                 (get-snip-text-from-snip-type-and-syntax-object error-no-snips)
                  ; (listof symbol)
                  (snip-type-list '())
                  
@@ -496,17 +523,25 @@
                  (arrow-pen (send the-pen-list find-or-create-pen "BLUE" 1 'solid)))
       (make-register-label-with-gui
        syntax-source
+       (lambda (x) x)
        syntax-position
        syntax-span
        get-parents-from-syntax-object
        get-children-from-syntax-object
        syntax-object-resizable?
        syntax-object->datum
-       get-syntax-objects-to-rename-from-syntax-object
+       ; this function will get a list of labels, but in the present case the labels are
+       ; directly syntax objects, and register-label-with-gui in the model garantees that
+       ; all the labels correspond to the same syntax object, therefore we know that the
+       ; list contains at least one syntax-object (otherwise this function wouldn't be called)
+       ; and that, if there are more than one syntax object in the list, they are all the
+       ; same.  So we can just apply the function to the first one.
+       (lambda (syntax-objects)
+         (get-syntax-objects-to-rename-from-syntax-object (car syntax-objects)))
        get-style-delta-from-syntax-object
        get-box-style-delta-from-snip-type
        get-menu-text-from-snip-type
-       get-snip-text-thunk-from-snip-type-and-syntax-object
+       get-snip-text-from-snip-type-and-syntax-object
        snip-type-list
        clear-colors-after-user-action?
        tacked-arrow-brush

@@ -20,7 +20,7 @@
    after-user-action ; gui-view-state -> void
    
    register-label-with-gui ; gui-view-state label gui-state -> void
-   get-related-label-from-drscheme-pos-and-source ; gui-view-state non-negative-exact-integer top -> (setof label)
+   get-related-label-from-drscheme-pos-and-source ; gui-view-state non-negative-exact-integer top -> (listof label)
    user-resize-label ; gui-view-state label string -> void
    
    add-arrow ; gui-view-state label label boolean -> void
@@ -101,7 +101,7 @@
                                       arrow-pen))))
   
   ; INTERFACE BETWEEN MODEL AND USER PROGRAM
-  ; gui-view-state non-negative-exact-integer top -> (setof label)
+  ; gui-view-state non-negative-exact-integer top -> (listof label)
   (define (get-related-label-from-drscheme-pos-and-source gui-view-state pos source)
     (saam:get-related-label-from-drscheme-pos-and-source
      (gui-view-state-gui-model-state gui-view-state) pos source))
@@ -118,8 +118,7 @@
   ; (because of disable-evalution), the style changed, the editor re-lock and the bitmap cache
   ; invalidated for each label in turn...
   (define (register-label-with-gui gui-view-state label gui-state)
-    (let ([source
-           (saam:register-label-with-gui (gui-view-state-gui-model-state gui-view-state) label)])
+    (let ([source (saam:register-label-with-gui (gui-view-state-gui-model-state gui-view-state) label)])
       (when source (send source initialize-snips-and-arrows-gui-state gui-state)))
     cst:void)
   
@@ -339,22 +338,25 @@
   ; (box number) (box number) -> number
   (define (average box1 box2)
     (/ (+ (unbox box1) (unbox box2)) 2))
-  
+    
   ; non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer
   ; text% text% text% dc% real real -> void
   ; computes actual locations for arrow and draws it
+  ; Note that we don't do anything to prevent arrows of length zero from being drawn - these
+  ; might show up when using macros that duplicate terms, so arrows of length zero are then
+  ; the correct thing to do as far as I am concerned).
   (define (draw-arrow start-label-pos-left start-label-pos-right
                       end-label-pos-left end-label-pos-right
                       top-source start-source end-source
                       dc dx dy)
-    (let* ([start-sub-ed-left-x-loc (box 0)]
-           [start-sub-ed-top-y-loc (box 0)]
-           [start-sub-ed-right-x-loc (box 0)]
-           [start-sub-ed-bot-y-loc (box 0)]
-           [end-sub-ed-left-x-loc (box 0)]
-           [end-sub-ed-top-y-loc (box 0)]
-           [end-sub-ed-right-x-loc (box 0)]
-           [end-sub-ed-bot-y-loc (box 0)])
+    (let ([start-sub-ed-left-x-loc (box 0)]
+          [start-sub-ed-top-y-loc (box 0)]
+          [start-sub-ed-right-x-loc (box 0)]
+          [start-sub-ed-bot-y-loc (box 0)]
+          [end-sub-ed-left-x-loc (box 0)]
+          [end-sub-ed-top-y-loc (box 0)]
+          [end-sub-ed-right-x-loc (box 0)]
+          [end-sub-ed-bot-y-loc (box 0)])
       (send start-source position-location start-label-pos-left start-sub-ed-left-x-loc start-sub-ed-top-y-loc #t)
       (send start-source position-location start-label-pos-right start-sub-ed-right-x-loc #f #f)
       (send start-source position-location (sub1 start-label-pos-right) #f start-sub-ed-bot-y-loc #f)

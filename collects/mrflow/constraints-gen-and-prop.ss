@@ -35,29 +35,47 @@
   ; debug XXX
   ;read-and-analyze label-case-lambda-exps label-set label-term)
   
-  ;  (define-syntax debug1
-  ;    (let ([counter 1])
-  ;      (lambda (stx)
-  ;        (syntax-case stx ()
-  ;          [(_ args ...)
-  ;           (begin
-  ;             (printf "debug counter: ~a~n" counter)
-  ;             (let* ([stx-args (syntax (args ...))]
-  ;                    [stx-args-list (syntax-e stx-args)]
-  ;                    [stx-out (datum->syntax-object
-  ;                              stx-args
-  ;                              `(#%app debug2 ,counter ,@stx-args-list))])
-  ;               (set! counter (add1 counter))
-  ;               stx-out))]))))
-  ;  
-  ;  (define (debug2 n . args)
-  ;    ;(when (and (label-cst? (cadr args))
-  ;    ;           (number? (label-cst-value (cadr args)))
-  ;    ;           (= 7 (label-cst-value (cadr args))))
-  ;    (printf "debug: ~a args: ~a~n" n args)
-  ;    ;  )
-  ;    (apply (car args) (cdr args)))
+;  (define-syntax debug1
+;    (let ([counter 1])
+;      (lambda (stx)
+;        (syntax-case stx ()
+;          [(_ args ...)
+;           (begin
+;             (printf "debug counter: ~a~n" counter)
+;             (let* ([stx-args (syntax (args ...))]
+;                    [stx-args-list (syntax-e stx-args)]
+;                    [stx-out (datum->syntax-object
+;                              stx-args
+;                              `(#%app debug2 ,counter ,@stx-args-list))])
+;               (set! counter (add1 counter))
+;               stx-out))]))))
+;  
+;  (define (debug2 n . args)
+;    ;(when (and (label-cst? (cadr args))
+;    ;           (number? (label-cst-value (cadr args)))
+;    ;           (= 7 (label-cst-value (cadr args))))
+;    (printf "debug: ~a args: ~a~n" n args)
+;    ;  )
+;    (apply (car args) (cdr args)))
+;    
+;  (define-syntax debug1
+;    (let ([counter 1])
+;      (lambda (stx)
+;        (syntax-case stx ()
+;          [(_ args ...)
+;           (begin
+;             (printf "debug counter: ~a~n" counter)
+;             (let* ([stx-args (syntax (args ...))]
+;                    [stx-args-list (syntax-e stx-args)]
+;                    [stx-out (datum->syntax-object
+;                              stx-args
+;                              `(begin
+;                                 (printf "debug: ~a~n" ,counter)
+;                                 ,stx-args))])
+;               (set! counter (add1 counter))
+;               stx-out))]))))
     
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
   (define-struct arrows (in out tunnel) (make-inspector))
@@ -2235,6 +2253,42 @@
           (lookup-and-bind-top-level-vars sba-state (list bound-label) identifier))
       bound-label))
   
+  
+  ; sba-state syntax-object (listof (cons symbol label)) label (listof label) -> label
+  (define (create-label-from-quote sba-state quoted-term gamma enclosing-lambda-label)
+    (let ([sexp-e (syntax-e quoted-term)])
+      (if (pair? sexp-e)
+          (let loop ([sexp-e sexp-e])
+            (if (null? sexp-e)
+                (let ([null-label
+                       (make-label-cst
+                        #f #f #t
+                        quoted-term
+                        (make-hash-table)
+                        (make-hash-table)
+                        '())])
+                  (initialize-label-set-for-value-source null-label)
+                  null-label)
+                (let ([cons-label
+                       (make-label-cons
+                        #f #f #t
+                        quoted-term
+                        (make-hash-table)
+                        (make-hash-table)
+                        (create-label-from-quote sba-state (car sexp-e) gamma enclosing-lambda-label)
+                        (loop (cdr sexp-e)))])
+                  (initialize-label-set-for-value-source cons-label)
+                  cons-label)))
+          (let ([label (make-label-cst
+                        #f #f #f
+                        quoted-term
+                        (make-hash-table)
+                        (make-hash-table)
+                        sexp-e)])
+            (initialize-label-set-for-value-source label)
+            ((sba-state-register-label-with-gui sba-state) label)
+            label))))
+
   ; sba-state syntax-object (listof (cons symbol label)) label (listof label) -> label
   ; gamma is the binding-variable-name-to-label environment
   ; enclosing-lambda-label is the label for the enclosing lambda, if any. We
@@ -2308,16 +2362,7 @@
         ((sba-state-register-label-with-gui sba-state) label)
         label)]
      [(quote sexp)
-      (let ([label (make-label-cst
-                    #f #f #f
-                    term
-                    (make-hash-table)
-                    (make-hash-table)
-                    ; syntax-e is not enough because of quasiquote
-                    (syntax-object->datum (syntax sexp)))])
-        (initialize-label-set-for-value-source label)
-        ((sba-state-register-label-with-gui sba-state) label)
-        label)]
+      (create-label-from-quote sba-state (syntax sexp) gamma enclosing-lambda-label)]
      [(define-values vars exp)
       (let* (; scheme list of syntax objects
              [vars (syntax-e (syntax vars))]
@@ -2821,7 +2866,7 @@
                              (format "with-continuation-mark not yet implemented"))
         label)]
      [(define-syntaxes foo ...)
-      (let ([label (create-dummy-label term)])
+      (let ([label (create-simple-label sba-state term)])
         (err:error-table-set (sba-state-errors sba-state)
                              (list label)
                              'red

@@ -163,17 +163,13 @@
              [else (error 'get-menu-text-from-type "MrFlow internal error; unknown error action: ~a" action)])]
           [else (error 'get-menu-text-from-type "MrFlow internal error; unknown type: ~a" type)]))
       
-      ; sba-state symbol label -> (-> (listof string))
-      ; given a snip type and a lable, returns a thunk that, when applied, will
-      ; give the content of the snips to be added for that type and label.
+      ; sba-state symbol label -> (listof string)
+      ; given a snip type and a lable, returns the content of the snips to be
+      ; added for that type and label.
       (define (get-snip-text-from-snip-type sba-state type label)
         (case type
-          [(type)
-           (lambda ()
-             (list (sba:pp-type (sba:get-type-from-label sba-state label) 'gui)))]
-          [(error)
-           (lambda ()
-             (map err:sba-error-message (sba:get-errors-from-label sba-state label)))]))
+          [(type) (list (sba:pp-type (sba:get-type-from-label sba-state label) 'gui))]
+          [(error) (map err:sba-error-message (sba:get-errors-from-label sba-state label))]))
       
       ; DEFINITION WINDOW MIXIN
       (drscheme:get/extend:extend-definitions-text
@@ -227,7 +223,7 @@
                                sba:get-children-from-label
                                (lambda (label) #f)
                                (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
-                               (lambda (label) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
+                               (lambda (labels) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
                                (lambda (label) (get-style-delta-from-label sba-state label))
                                get-box-style-delta-from-snip-type
                                get-menu-text-from-snip-type
@@ -280,7 +276,6 @@
                                        (send definitions-text color-all-labels)
                                        )
                                      (begin
-                                       ;(printf "~a~n" (syntax-object->datum syntax-object-or-eof))
                                        (sba:create-label-from-term sba-state syntax-object-or-eof '() #f)
                                        (iter))))))
                             ; get-mrflow-primitives-filename defaults to R5RS

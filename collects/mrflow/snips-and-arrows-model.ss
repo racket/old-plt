@@ -14,6 +14,9 @@
 
 (module snips-and-arrows-model mzscheme
   (require
+   (prefix lst: (lib "list.ss"))
+   
+   "labels.ss"
    
    (prefix cst: "constants.ss")
    ;"set-list.ss"
@@ -26,7 +29,7 @@
    make-gui-model-state ; (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (listof symbol) -> gui-model-state
    
    (rename get-related-label-from-drscheme-new-pos-and-source
-           get-related-label-from-drscheme-pos-and-source) ; gui-model-state non-negative-exact-integer top -> (union label #f)
+           get-related-label-from-drscheme-pos-and-source) ; gui-model-state non-negative-exact-integer top -> (listof label)
    (rename gui-model-state-get-span-from-label
            make-get-span-from-label-from-model-state) ; gui-model-state -> (label -> non-negative-exact-integer)
    
@@ -79,9 +82,8 @@
                                  starting-arrows
                                  ending-arrows))
   
-  ; (assoc-setof label label-gui-data) (assoc-setof non-negative-exact-integer label) exact-non-negative-integer
-  ; Note that, while several labels might have a given position (due to macros), only
-  ; one label can be associated with that position here.
+  ; (assoc-setof label label-gui-data) (assoc-setof non-negative-exact-integer (non-empty-listof label)) exact-non-negative-integer
+  ; Note that several labels might have a given position (due to macros)
   (define-struct source-gui-data (label-gui-data-by-label
                                   labels-by-mzscheme-position
                                   total-number-of-snips))
@@ -189,6 +191,7 @@
   ; but we don't associate any label-gui-data with it yet, to save memory.
   ; We'll associate some label-gui-data with it on the fly, as needed (when
   ; needing to remember some arrows or snips for that label, not before).
+  ; We return the source only the first time a label is registered for it.
   (define (register-label-with-gui gui-model-state label)
     (let* ([source-gui-data-by-source
             (gui-model-state-source-gui-data-by-source gui-model-state)]
@@ -201,17 +204,32 @@
       (if source-gui-data
           (let ([labels-by-mzscheme-position
                  (source-gui-data-labels-by-mzscheme-position source-gui-data)])
-            (if (assoc-set-in? labels-by-mzscheme-position mzscheme-pos)
-                (error 'register-label-with-model
-                       "a label is already registered for position ~a" mzscheme-pos)
-                (begin
-                  (assoc-set-set labels-by-mzscheme-position mzscheme-pos label)
-                  #f)))
+            ; So, in the good old days I used to check whether a given label was already registered
+            ; for the given position, and gave an error when such was the case.  But macros can
+            ; duplicate terms, so in the good not-so-old days I added a test such that an error
+            ; would show up only if the labels didn't represent the same original term.  But Matthew
+            ; then told me that a given term that's duplicated by a macro might be represented by
+            ; two syntax objects that are not eq?.  So at that point I had the choice between
+            ; converting the two syntax-objects into sexprs and using equal? to check whether
+            ; they actually represented the same term (and that would have been only a heurisitc,
+            ; since it would not have detected bugs in a macro that gave the same position to
+            ; two identical source terms), or what I do now: just register all the labels no
+            ; matter what.  This solution also means I don't have to have a get-term-from-label
+            ; in my interface.
+            (begin
+              (assoc-set-set labels-by-mzscheme-position
+                             mzscheme-pos
+                             (cons label
+                                   (assoc-set-get labels-by-mzscheme-position
+                                                  mzscheme-pos
+                                                  cst:thunk-empty))
+                             #f)
+              #f))
           (begin
             (assoc-set-set source-gui-data-by-source source
                            (make-source-gui-data (assoc-set-make)
                                                  (assoc-set-set (assoc-set-make)
-                                                                mzscheme-pos label)
+                                                                mzscheme-pos (list label))
                                                  0))
             source))))
   
@@ -249,12 +267,12 @@
       (when source-gui-data
         (assoc-set-for-each
          (source-gui-data-labels-by-mzscheme-position source-gui-data)
-         (lambda (mzscheme-pos label)
-           (f label))))))
+         (lambda (mzscheme-pos labels)
+           (for-each f labels))))))
   
   
   ; POS AND SOURCE TO LABEL CONVERSIONS
-  ; gui-model-state non-negative-exact-integer top -> (union label #f)
+  ; gui-model-state non-negative-exact-integer top -> (listof label)
   ; finds the label corresponding to a given new-pos. Note that, because we
   ; use get-related-label-from-drscheme-old-pos-and-source for that purpose, we ignore
   ; the presence of snips, so the user will be able to click on the snips
@@ -266,7 +284,7 @@
      (new-pos->old-pos gui-model-state new-pos source)
      source))
   
-  ; gui-model-state non-negative-exact-integer top -> (union label #f)
+  ; gui-model-state non-negative-exact-integer top -> (listof label)
   ; we loop down starting from old-pos, until we find a label. Then we have to check
   ; that the original old-pos falls within the original span of that label.
   (define (get-related-label-from-drscheme-old-pos-and-source gui-model-state old-pos source)
@@ -280,19 +298,19 @@
                 [starting-mzscheme-pos (drscheme-pos->mzscheme-pos old-pos)])
             (let loop ([current-mzscheme-pos starting-mzscheme-pos])
               (if (> 0 current-mzscheme-pos)
-                  #f
-                  (let ([label (assoc-set-get labels-by-mzscheme-position current-mzscheme-pos cst:thunk-false)])
-                    (if label
+                  '()
+                  (let ([labels (assoc-set-get labels-by-mzscheme-position current-mzscheme-pos cst:thunk-false)])
+                    (if labels
                         ; Note that if the label's span is too small, we stop looping.
                         ; This means that in an expression like (abc def), if the mouse
                         ; pointer points at the space character, #f will be returned,
                         ; not the label for the whole expression.
-                        (if (< (- starting-mzscheme-pos current-mzscheme-pos)
-                               (get-original-span-from-label label))
-                            label
-                            #f)
+                        (let ([mouse-distance (- starting-mzscheme-pos current-mzscheme-pos)])
+                          (lst:filter (lambda (label)
+                                        (< mouse-distance (get-original-span-from-label label)))
+                                      labels))
                         (loop (sub1 current-mzscheme-pos)))))))
-          #f)))
+          '())))
   
   
   ; OLD-POS / NEW-POS CONVERSIONS
@@ -488,7 +506,10 @@
                           ; trying to add an untacked arrow when tacked one already exists
                           ; silently ignore
                           cst:void
-                          (error 'add-one-arrow-end "untacked arrow already exists"))))))
+                          ; macros might duplicate terms, so we might end up here
+                          ;(error 'add-one-arrow-end "untacked arrow already exists")
+                          cst:void
+                          )))))
           (associate-label-gui-data-with-label gui-model-state
                                                this-end-label-gui-data-by-label
                                                this-end-label

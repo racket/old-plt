@@ -1,6 +1,20 @@
 ; R5RS
 ; When are we going to be able to compute all this directly from an S-exp version of R5RS ?
 (
+ ; 4.2.6 quasiquotation
+ 
+ ; not part of r5rs, but the expansion of ,@ uses qq-append
+ (qq-append (forall ([b_append top][c_append top])
+                    (case-lambda
+                      [((listof b_append) c_append)
+                       (union c_append
+                              (rec-type
+                               ([improper-list
+                                 (union ()
+                                        (cons b_append
+                                              (union c_append improper-list)))])
+                               improper-list))])))
+ 
  ; 6.1 Equivalence predicates
  
  (eqv? (top top -> boolean))

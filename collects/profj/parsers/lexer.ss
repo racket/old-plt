@@ -342,7 +342,7 @@
      (SyntaxComment (syn-val 'comment lexeme start-pos end-pos))
 
      ;; 3.6
-     ((+ WhiteSpace) (syn-val 'default lexeme start-pos end-pos))
+     ((+ WhiteSpace) (syn-val 'white-space lexeme start-pos end-pos))
 
      ;; 3.5
      ((: (eof) #\032) (values 'eof "eof" start-pos end-pos))

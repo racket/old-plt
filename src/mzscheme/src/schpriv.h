@@ -821,11 +821,14 @@ extern int scheme_global_lock_c;
 #endif
 
 #ifdef MUST_REGISTER_GLOBALS
-void scheme_register_bignum();
-
-#define REGISTER_SO(x)  scheme_register_extension_global((void *)&x, sizeof(x));
+# define REGISTER_SO(x)  scheme_register_extension_global((void *)&x, sizeof(x))
 #else
-#define REGISTER_SO(x) 
+# ifdef GC_MIGHT_USE_REGISTERED_STATICS
+extern void scheme_maybe_register_static(void *, int);
+#  define REGISTER_SO(x) scheme_maybe_register_static((void *)&x, sizeof(x))
+# else
+#  define REGISTER_SO(x) /**/
+# endif
 #endif
 
 int scheme_is_regular_file(char *filename);

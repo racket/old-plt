@@ -732,11 +732,11 @@ signed_word size;
 /* See call in GC_init_inner (misc.c) for details. */
 void GC_register_allch_statics(void)
 {
-#define REG(p) GC_add_roots((char *)&p, (char *)(((char *)&p) + sizeof(p) + 1))
+#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, FALSE)
 
   REG(GC_freehblk_ptr);
   REG(GC_hblkfreelist);
 
   REG(GC_obj_kinds);
-  REG(GC_arrays);
+  /* REG(GC_arrays); */
 }

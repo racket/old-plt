@@ -168,11 +168,7 @@ Scheme_Env *scheme_basic_env ()
    printf("#if 0\nbasic @ %ld\n", scheme_get_process_milliseconds());
 #endif
 
-#ifdef MUST_REGISTER_GLOBALS
   REGISTER_SO(hash_percent_buffer);
-
-  scheme_register_bignum();
-#endif
 
   scheme_starting_up = 1;
 

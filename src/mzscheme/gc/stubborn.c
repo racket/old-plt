@@ -321,7 +321,7 @@ GC_PTR p;
 /* See call in GC_init_inner (misc.c) for details. */
 void GC_register_stubborn_statics(void)
 {
-#define REG(p) GC_add_roots((char *)&p, (char *)(((char *)&p) + sizeof(p) + 1))
+#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, FALSE)
   REG(GC_changing_list_current);
   REG(GC_changing_list_limit);
   REG(GC_changing_list_start);

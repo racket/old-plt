@@ -136,7 +136,6 @@ register int k;
     }
 }   
 
-
 #define GENERAL_MALLOC(lb,k) \
     (GC_PTR)GC_clear_stack(GC_generic_malloc((word)lb, k))
 /* We make the GC_clear_stack_call a tail call, hoping to get more of	*/
@@ -171,9 +170,9 @@ DCL_LOCK_STATE;
         *opp = obj_link(op);
         GC_words_allocd += lw;
         FASTUNLOCK();
-        return((GC_PTR) op);
+	return((GC_PTR) op);
    } else {
-       return(GENERAL_MALLOC((word)lb, PTRFREE));
+        return (GENERAL_MALLOC((word)lb, PTRFREE));
    }
 }
 

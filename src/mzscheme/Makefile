@@ -312,7 +312,9 @@ normal-install:
 	cp $(LIBDIR)/libmzscheme.a ../../collects/mzscheme/lib/$(INSTALLSYS)/libmzscheme.a
 
 cygwin-install:
-	rm -f ../../mzscheme.exe
-	cp $(MZSCHEME).exe ../../mzscheme.exe
-	cd dynsrc; ./gmkmzdyn.bat
-	cp mzstart.exe ../../collects/launcher/mzstart.exe
+	# rm -f ../../mzscheme.exe
+	# cp $(MZSCHEME).exe ../../mzscheme.exe
+	cd dynsrc; command ./gmkmzdyn.bat
+	# cp mzstart.exe ../../collects/launcher/mzstart.exe
+	cp $(LIBDIR)/libgc.a ../../collects/mzscheme/lib/win32/i386/libgc.a
+	cp $(LIBDIR)/libmzscheme.a ../../collects/mzscheme/lib/win32/i386/libmzscheme.a

@@ -294,7 +294,7 @@ static word total_stack_black_listed()
 /* See call in GC_init_inner (misc.c) for details. */
 void GC_register_bl_statics(void)
 {
-#define REG(p) GC_add_roots((char *)&p, (char *)(((char *)&p) + sizeof(p) + 1))
+#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1)
   REG(GC_incomplete_normal_bl);
   REG(GC_incomplete_stack_bl);
   REG(GC_old_normal_bl);

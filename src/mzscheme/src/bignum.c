@@ -66,15 +66,6 @@ static Scheme_Object *bignum_none = NULL;
 static Scheme_Object *bignum_one = NULL;
 static Scheme_Object *decimal_digits[17];
 
-#ifdef MUST_REGISTER_GLOBALS
-void scheme_register_bignum()
-{
-  REGISTER_SO(bignum_none);
-  REGISTER_SO(bignum_one);
-  REGISTER_SO(decimal_digits);
-}
-#endif
-  
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
@@ -493,16 +484,20 @@ Scheme_Object *scheme_bignum_subtract(const Scheme_Object *a, const Scheme_Objec
 
 Scheme_Object *scheme_bignum_add1(const Scheme_Object *n)
 {
-  if (!bignum_one)
+  if (!bignum_one) {
+    REGISTER_SO(bignum_one);
     bignum_one = scheme_make_bignum(1);
+  }
 
   return scheme_bignum_add(n, bignum_one);
 }
 
 Scheme_Object *scheme_bignum_sub1(const Scheme_Object *n)
 {
-  if (!bignum_none)
+  if (!bignum_none) {
+    REGISTER_SO(bignum_none);
     bignum_none = scheme_make_bignum(-1);
+  }
 
   return scheme_bignum_add(n, bignum_none);
 }
@@ -1200,10 +1195,12 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
   if ((radix < 0) || (radix > 16))
     return scheme_false;
 
-  if (!decimal_digits[0])
+  if (!decimal_digits[0]) {
+    REGISTER_SO(decimal_digits);
     for (i = 0; i < 17; i++) {
       decimal_digits[i] = scheme_make_bignum(i);
     }
+  }
 
   negate = 0;
   /* Why would we skip spaces? */

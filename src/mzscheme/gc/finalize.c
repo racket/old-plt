@@ -1003,7 +1003,7 @@ int GC_invoke_finalizers()
 /* See call in GC_init_inner (misc.c) for details. */
 void GC_register_fnl_statics(void)
 {
-#define REG(p) GC_add_roots((char *)&p, (char *)(((char *)&p) + sizeof(p) + 1))
+#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, FALSE);
 
   REG(GC_finalize_now);
   REG(GC_fo_entries);

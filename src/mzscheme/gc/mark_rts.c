@@ -35,6 +35,9 @@ struct roots GC_static_roots[MAX_ROOT_SETS];
 
 static int n_root_sets = 0;
 
+/* MATTHEW: declare GC_use_registered_statics */
+int GC_use_registered_statics = 0;
+
 /* MATTHEW: hook for last roots; need to mark copies of the stack */
 void (*GC_push_last_roots)() = 0;
 
@@ -466,7 +469,9 @@ ptr_t cold_gc_frame;
 #      if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(PCR)) \
            && !defined(SRC_M3)
        GC_remove_tmp_roots();
-       GC_register_dynamic_libraries();
+       /* MATTHEW: check GC_use_registered_statics */
+       if (!GC_use_registered_statics) 
+	 GC_register_dynamic_libraries();
 #      endif
      /* Mark everything in static data areas                             */
        for (i = 0; i < n_root_sets; i++) {

@@ -157,6 +157,10 @@ static int run_from_cmd_line(int argc, char *argv[],
   int no_lib_path = 0;
   FinishArgs *fa;
 
+#ifdef GC_MIGHT_USE_REGISTERED_STATICS
+  GC_use_registered_statics = 1;
+#endif
+
   prog = argv[0];
   argv++;
   --argc;

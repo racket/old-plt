@@ -12,8 +12,8 @@ Version 199.26:
    typical programs (especially ones using `require' or
    `define-struct') will compile as expected.
 
-   The new "toplevel.ss" library in "syntax" provides a
-   general-purpose `eval-compile-time-part-of-top-level' procedure for
+   The new "toplevel.ss" library in "syntax" provides a general-purpose
+   `eval-compile-time-part-of-top-level' procedure for
    mzc-like tools.
 
  * Added `namespace-require/expansion-time', which is like

@@ -106,7 +106,9 @@
        (let ([answer-line (read-line ispell-out)]
              [blank-line (read-line ispell-out)])
          (unless (equal? blank-line "")
-           (fprintf (current-error-port) "expected blank line from ispell, got:\n~a\nrestarting ispell\n\n" blank-line)
+           (fprintf (current-error-port) "expected blank line from ispell, got (word ~s):\n~a\nrestarting ispell\n\n" 
+                    word
+                    blank-line)
            (close-output-port ispell-in)
            (close-input-port ispell-out)
            (close-input-port ispell-err)

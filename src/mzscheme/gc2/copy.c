@@ -13,7 +13,7 @@
 #include <string.h>
 
 #define USE_MMAP 1
-#define GROW_FACTOR 1.5
+#define GROW_FACTOR 1.1
 
 #if defined(sparc) || defined(__sparc) || defined(__sparc__)
 # define ALIGN_DOUBLES 1

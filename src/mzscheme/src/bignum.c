@@ -363,7 +363,7 @@ static Scheme_Object *bignum_copy(const Scheme_Object *n, int copy_array)
     a = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) 
 				       * (c + (copy_array - 1)));
     SCHEME_BIGDIG(o) = a;
-    memcpy(SCHEME_BIGDIG(o), SCHEME_BIGDIG(n), sizeof(bigdig) * c);
+    memcpy(a, SCHEME_BIGDIG(n), sizeof(bigdig) * c);
   } else
     SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);
 
@@ -471,11 +471,15 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
   vl = i + 1;
 
   vp = ap;
-  
+ 
   SCHEME_BIGPOS(o) = vp;
   SCHEME_BIGLEN(o) = vl;
   SCHEME_BIGDIG(o) = va;
 
+  /* In case a or b point to interior: */
+  aa = NULL;
+  ba = NULL;
+  
   if (norm)
     return scheme_bignum_normalize(o);
   else
@@ -518,10 +522,11 @@ static void bignum_double_inplace(Scheme_Object *n, int bs)
   bigdig *na, *naya, carry;
 
   nl = SCHEME_BIGLEN(n);
-  na = SCHEME_BIGDIG(n);
   
   /* Because bignum calculations are not bounded: */
   SCHEME_USE_FUEL(nl);
+
+  na = SCHEME_BIGDIG(n);
 
   carry = 0;
   for (i = 0; i < nl; i++) {
@@ -674,6 +679,8 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
     }
   }
 
+  ba = aa = NULL; /* might be interior */
+
   while (size && !buffer[size - 1]) {
     --size;
   }
@@ -807,7 +814,7 @@ static int setup_binop(const Scheme_Object *a, const Scheme_Object *b,
   *nr_out = no;
 
   if (bneg) {
-    no = na = NULL;
+    no = na = NULL; /* might be interior */
 
     b = bignum_copy(b, 1);
 
@@ -952,6 +959,8 @@ Scheme_Object *scheme_bignum_not(const Scheme_Object *a)
     if (!na[l - 1])
       SCHEME_BIGLEN(a) = l - 1;
   }
+
+  na = NULL; /* might be interior */
 
   return scheme_bignum_normalize(a);
 }

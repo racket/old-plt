@@ -1039,11 +1039,9 @@ void scheme_wrong_return_arity(const char *where,
 			       Scheme_Object **argv,
 			       const char *detail, ...)
 {
-  long len, slen, vlen, blen;
+  long slen, vlen, blen;
   char *s, *buffer;
   char *v;
-
-  buffer = init_buf(&len, &blen);
 
   if (!detail) {
     s = NULL;
@@ -1060,6 +1058,8 @@ void scheme_wrong_return_arity(const char *where,
 
     prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
+
+  buffer = init_buf(NULL, &blen);
 
   if (!got || !argv) {
     v = "";

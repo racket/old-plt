@@ -1058,7 +1058,7 @@ void stop()
    offset to the start of and allocation block) for marking. */
 
 #if CHECKS
-static void **prev_ptr;
+static void **prev_ptr, **prev_prev_ptr, **prev_prev_prev_ptr;
 static void **prev_var_stack;
 #endif
 
@@ -1099,6 +1099,8 @@ static void init_tagged_mpage(void **p, MPage *page)
 	fflush(NULL);
 	CRASH();
       }
+      prev_prev_prev_ptr = prev_prev_ptr;
+      prev_prev_ptr = prev_ptr;
       prev_ptr = p;
       prev_var_stack = GC_variable_stack;
 #endif
@@ -1129,7 +1131,7 @@ static long the_size;
 
 static void init_untagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 1;
+  OffsetTy offset = 0;
   OffsetArrTy *offsets;
   void **top;
 
@@ -1327,14 +1329,15 @@ void GC_mark(const void *p)
 	  page->flags = flags;
 	}
 
-#if CHECKS
 	if (type > MTYPE_TAGGED) {
+#if CHECKS
 	  if (!((long)p & MPAGE_MASK)) {
 	    /* Can't point to beginning of non-tagged block! */
 	    CRASH();
 	  }
-	}
 #endif
+	  p = BYTEPTR(p) - WORD_SIZE;
+	}
 
 	offset = ((long)p & MPAGE_MASK) >> LOG_WORD_SIZE;
 
@@ -1502,13 +1505,13 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
 
 static void propagate_array_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset = 1;
+  OffsetTy offset;
   OffsetArrTy *offsets;
   void **p, **top;
 
   offset = page->gray_start;
-  p = bottom + (offset - 1);
-  top = bottom + (page->gray_end - 1);
+  p = bottom + offset;
+  top = bottom + page->gray_end;
   offsets = page->u.offsets;
 
   while (p <= top) {
@@ -1565,8 +1568,8 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
   void **p, **top;
 
   offset = page->gray_start;
-  p = bottom + (offset - 1);
-  top = bottom + (page->gray_end - 1);
+  p = bottom + offset;
+  top = bottom + page->gray_end;
   offsets = page->u.offsets;
 
   while (p <= top) {
@@ -1638,13 +1641,13 @@ static void propagate_tagged_array_whole_mpage(void **p, MPage *page)
 
 static void propagate_xtagged_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset = 0;
+  OffsetTy offset;
   OffsetArrTy *offsets;
   void **p, **top;
 
   offset = page->gray_start;
-  p = bottom + (offset - 1);
-  top = bottom + (page->gray_end - 1);
+  p = bottom + offset;
+  top = bottom + page->gray_end;
   offsets = page->u.offsets;
 
   while (p <= top) {
@@ -1812,16 +1815,16 @@ static void propagate_all_mpages()
 	break;
 
       case MTYPE_XTAGGED:
-	GC_mark_xtagged((void **)p);
+	GC_mark_xtagged((void **)p + 1);
 	break;
 
       default: /* MTYPE_ARRAY */
 	{
 	  long size, i;
 	  
-	  size = ((long *)p)[-1];
+	  size = ((long *)p)[0];
 	  
-	  for (i = 0; i < size; i++) {
+	  for (i = 1; i <= size; i++) {
 	    gcMARK(((void **)p)[i]);
 	  }
 	}
@@ -2035,7 +2038,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
     }
 #endif
 
-    if (OFFSET_COLOR(offsets, offset+1)) {
+    if (OFFSET_COLOR(offsets, offset)) {
 #if ALIGN_DOUBLES
       long alignment;
       if ((size & 0x1) && !(dest_offset & 0x1))
@@ -2087,7 +2090,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	  memcpy(dest + dest_offset, p, size << LOG_WORD_SIZE);
       }
       
-      OFFSET_SET_SIZE_UNMASKED(offsets, offset+1, dest_offset+1);
+      OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset+1);
       offset += size;
       dest_offset += size;
  
@@ -2217,7 +2220,7 @@ static void freelist_tagged_mpage(void **p, MPage *page)
 
 static void freelist_untagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 1;
+  OffsetTy offset = 0;
   OffsetArrTy *offsets;
   void **free_lists, **top;
   long on_at_start = on_free_list;
@@ -2312,6 +2315,9 @@ static void freelist_all_mpages(int young)
    youngest referenced page */
 
 static int min_referenced_page_age;
+#if CHECKS
+static void *bad_dest_addr;
+#endif
 
 void GC_fixup(void *pp)
 {
@@ -2337,14 +2343,15 @@ void GC_fixup(void *pp)
 	OffsetTy v;
 	void *r;
 
-#if CHECKS
 	if (page->type > MTYPE_TAGGED) {
+#if CHECKS
 	  if (!offset) {
 	    /* Can't point to beginning of non-tagged block! */
 	    CRASH();
 	  }
-	}
 #endif
+	  offset--;
+	}
 
 	v = OFFSET_SIZE(page->u.offsets, offset);
 	if (offset < page->compact_boundary)
@@ -2359,6 +2366,7 @@ void GC_fixup(void *pp)
 
 #if CHECKS
 	if (!(find_page(r)->flags & COLOR_MASK)) {
+	  bad_dest_addr = r;
 	  CRASH();
 	}
 #endif
@@ -2694,6 +2702,11 @@ static void designate_modified(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;
+
+#ifdef CHECK
+  if (during_gc)
+    CRASH();
+#endif
 
   map = mpage_maps[g];
   if (map) {

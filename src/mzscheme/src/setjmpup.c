@@ -370,6 +370,12 @@ int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base,
     b = NULL;
 
     copy_stack((Scheme_Jumpup_Buf *)disguised_b, base, start GC_VAR_STACK_ARG);
+
+    /* Precise GC: ensure that this frame is pushed. */
+    if (0) {
+      base = scheme_malloc(0);
+    }
+
     return 0;
   }
 

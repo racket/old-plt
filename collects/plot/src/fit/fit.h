@@ -1,4 +1,4 @@
-/* $Id: fit.h,v 1.3 2004/10/22 00:16:49 eli Exp $ */
+/* $Id: fit.h,v 1.4 2004/10/26 03:59:54 cozmic Exp $ */
 
 /* GNUPLOT - fit.h */
 
@@ -30,9 +30,9 @@
  *      This software is provided "as is" without express or implied warranty.
  */
 
-/* #include <scheme.h> */
+#include <scheme.h>
 
-/* MZ_DLLEXPORT */
+MZ_DLLEXPORT
 double * do_fit(void * function,
 		int n_values,
 		double * x_values,
@@ -43,14 +43,14 @@ double * do_fit(void * function,
 		double * parameters);
 
 
-//MZ_DLLEXPORT 
+MZ_DLLEXPORT
 double get_rms();
 
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double get_varience();
 
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double * get_asym_error();
 
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double * get_asym_error_percent();

@@ -1490,10 +1490,12 @@ typedef struct closure_and_cif_struct {
 /* free the above */
 void free_cl_cif_args(void *ignored, void *p)
 {
+  /*
   scheme_warning("Releaseing cl+cif+args %V %V (%d)",
                  ignored,
                  (((closure_and_cif*)p)->data),
                  SAME_OBJ(ignored,(((closure_and_cif*)p)->data)));
+  */
 #ifdef MZ_PRECISE_GC
   GC_free_immobile_box((void**)(((closure_and_cif*)p)->data));
 #endif

@@ -143,19 +143,19 @@ double varience = 0;
 double *asym_error;
 double *asym_error_percent;
 
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double get_rms()
 {return rms;}
 
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double get_varience()
 {return varience;}
 
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double * get_asym_error()
 {return asym_error;}
 
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double * get_asym_error_percent()
 {return asym_error_percent;}
 
@@ -705,7 +705,7 @@ lambda	  : %g\n\n%s parameter values\n\n",
 /*****************************************************************
     Interface to scheme
 *****************************************************************/
-//MZ_DLLEXPORT
+MZ_DLLEXPORT
 double * do_fit(void * function,
 		int n_values,
 		double * x_values,

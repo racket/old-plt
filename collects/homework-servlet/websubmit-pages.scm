@@ -104,9 +104,9 @@
         (lambda (student-name student-id message)
           (send/suspend/struct
            simple-student-req/edit (name id [continue? notnull?])
-           (edit-student-title student-name student-id message
-                               simple-student-req/edit-name simple-student-req/edit-id
-                               simple-student-req/edit-continue?))))
+           (simple-student-req/html edit-student-title student-name student-id message
+                                    simple-student-req/edit-name simple-student-req/edit-id
+                                    simple-student-req/edit-continue?))))
         
       (define review-simple-student-req/html
         (lambda (title student-name student-id EDIT-STR CREATE-STR CANCEL-STR)

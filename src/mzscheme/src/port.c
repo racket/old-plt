@@ -982,18 +982,29 @@ scheme_getc (Scheme_Object *port)
 
   if (c != EOF) {
     ip->position++;
-    if (c == '\n' || c == '\r') {
+    if (c == '\r') {
       ip->oldColumn = ip->column;
       ip->charsSinceNewline = 1;
       ip->column = 0;
       ip->lineNumber++;
+      ip->was_cr = 1;
+    } else if (c == '\n') {
+      if (!ip->was_cr) {
+	ip->oldColumn = ip->column;
+	ip->charsSinceNewline = 1;
+	ip->column = 0;
+	ip->lineNumber++;
+      }
+      ip->was_cr = 0;
     } else if (c == '\t') {
       ip->oldColumn = ip->column;
       ip->column = ip->column - (ip->column & 0x7) + 8;
       ip->charsSinceNewline++;
+      ip->was_cr = 0;
     } else {
       ip->charsSinceNewline++;
       ip->column++;
+      ip->was_cr = 0;
     }
   }
 
@@ -1267,10 +1278,15 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       int n = 0;
       ip->charsSinceNewline = c + 1;
       while (i--) {
-	if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r')
+	if (buffer[offset + i] == '\n') {
+	  if (!(i &&( buffer[offset + i - 1] == '\r'))
+	      && !(!i && ip->was_cr))
+	    n++;
+	} else if (buffer[offset + i] == '\r')
 	  n++;
       }
       ip->lineNumber += n;
+      ip->was_cr = (buffer[offset + got - 1] == '\r');
     } else
       ip->charsSinceNewline += c;
 

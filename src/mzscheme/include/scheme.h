@@ -829,7 +829,7 @@ typedef struct Scheme_Input_Port
   int ungotten_count, ungotten_allocated;
   long position, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
-  int count_lines;
+  int count_lines, was_cr;
 #ifdef MZ_REAL_THREADS
   Scheme_Object *sema;
 #endif

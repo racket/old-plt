@@ -2395,4 +2395,73 @@
       advanced
       'call-with-current-continuation
       '("call-with-current-continuation: ((cont -> any) -> any)"
-        "                                to capture the current continuation"))))
+        "                                to capture the current continuation"))
+    (hash-table-put!
+      advanced
+      'turtles
+      '("turtles: (-> void)"
+        "         to toggle the view of the turtles window"))
+    (hash-table-put!
+      advanced
+      'turtles
+      '("turtles: (bool -> void)"
+        "         to open or close the turtles window, based on the argument"))
+    (hash-table-put!
+      advanced
+      'turn
+      '("turn: (number -> void)"
+        "      to turn the turtles by a number of degrees"))
+    (hash-table-put!
+      advanced
+      'turn/radians
+      '("turn/radians: (number -> void)"
+        "              to turn the turtles by a number of radians"))
+    (hash-table-put!
+      advanced
+      'move
+      '("move: (number -> void)" "      to move the turtles forward"))
+    (hash-table-put!
+      advanced
+      'erase
+      '("erase: (number -> void)"
+        "       to erase the path in front of each turtle"))
+    (hash-table-put!
+      advanced
+      'move-offfset
+      '("move-offfset: (number number -> void)"
+        "              to move by a delta-x and delta-y"))
+    (hash-table-put!
+      advanced
+      'draw-offfset
+      '("draw-offfset: (number number -> void)"
+        "              to draw by a delta-x and delta-y"))
+    (hash-table-put!
+      advanced
+      'erase-offfset
+      '("erase-offfset: (number number -> void)"
+        "               to erase by a delta-x and delta-y"))
+    (hash-table-put!
+      advanced
+      'clear
+      '("clear: (-> void)"
+        "       to erase the drawing of the turtles entirely"))
+    (hash-table-put!
+      advanced
+      'save-turtle-bitmap
+      '("save-turtle-bitmap: (string (union (quote xbm) (quote xpm) (quote pict)) -> void)"
+        "                    to save the current turtles to a platform-specific filetype"))
+    (hash-table-put!
+      advanced
+      'splitfn
+      '("splitfn: ((-> void) -> void)"
+        "         to split the turtles (used in the expansion of `split')"))
+    (hash-table-put!
+      advanced
+      'split*fn
+      '("split*fn: ((listof (-> void)) -> void)"
+        "          to split the turtles (used in the expansion of `split*')"))
+    (hash-table-put!
+      advanced
+      'tpromptfn
+      '("tpromptfn: ((-> void) -> void)"
+        "           to set a turtle prompt (used in the expansion of `tprompt')"))))

@@ -178,6 +178,7 @@
   (define inner-line init-error)
   (define inner-wipe-line init-error)
   (define inner-clear-window init-error)
+  (define inner-flip-icons init-error)
   (define inner-save-turtle-bitmap init-error)
 
   (define line
@@ -188,6 +189,7 @@
     (lambda (a b c d)
       (set! lines-in-drawing (cons (make-wipe-line a b c d) lines-in-drawing))
       (inner-wipe-line a b c d)))
+  (define (flip-icons) (inner-flip-icons))
 
   (define clear-window (lambda () (inner-clear-window)))
   (define save-turtle-bitmap (lambda (x y) (inner-save-turtle-bitmap x y)))
@@ -206,7 +208,8 @@
 	(set! inner-line (ivar turtles:window draw-line))
 	(set! inner-wipe-line (ivar turtles:window wipe-line))
 	(set! inner-clear-window (ivar turtles:window clear))
-	(set! inner-save-turtle-bitmap (ivar turtles:window save-turtle-bitmap)))
+	(set! inner-save-turtle-bitmap (ivar turtles:window save-turtle-bitmap))
+	(set! flip-icons (ivar turtles:window flip-icons)))
       (send turtles:window show x)
       (ivar turtles:window canvas)]))
   
@@ -290,8 +293,6 @@
 	(set! turtles-state (walk-turtles turtles-state turtles-cache null))
 	(set! turtles-cache empty-cache))))
   
-  (define (flip-icons) (send turtles:window flip-icons))
-
   (define draw/erase
     (lambda (doit)
       (lambda (n)

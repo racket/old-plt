@@ -21,7 +21,7 @@
                (for-each
                 (lambda (dll)
                   (printf "MysterX: ~a library ~a\n"
-                          (if (eq? 0 (system*/exit-code exe "/RegServer"))
+                          (if (eq? 0 (system*/exit-code regsvr "/s" dll))
                             "Registered" "Unable to register")
                           dll))
                 dlls))]))))

@@ -134,7 +134,7 @@
     (struct compound-unit-form (imports links exports))
     (struct invoke-unit-form (unit variables))
     (struct invoke-open-unit-form (unit name-specifier variables))
-    unit-clauses-vocab))
+    unit-clauses-vocab update-unresolved-attribute))
 
 (define-signature zodiac:scheme-objects+units^
   ())

@@ -14,7 +14,10 @@
 		    (create-lexical-varref r expr))
 		  ((top-level-resolution? r)
 		    (let ((id (z:read-object expr)))
-		      (let ((top-level-space (get-attribute attributes 'top-levels)))
+		      (unless (built-in-name id)
+			(update-unresolved-attribute attributes expr))
+		      (let ((top-level-space (get-attribute attributes
+					       'top-levels)))
 			(if top-level-space
 			  (create-top-level-varref/bind
 			    id

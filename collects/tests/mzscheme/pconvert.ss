@@ -180,6 +180,66 @@
      (make-same-test (lambda () 0) '(lambda () ...))
      
      (make-same-test #'(lambda (x) x) '#'(lambda (x) x))
+
+     (make-same-test (syntax a) '(syntax a))
+     (make-same-test (syntax ()) '(syntax ()))
+     (make-same-test (syntax (a)) '(syntax (a)))
+     (make-same-test (syntax (a . b)) '(syntax (a . b)))
+     (make-same-test (syntax (a . b)) (syntax (a . b)))
+     (make-same-test (syntax (a b . c)) '(syntax (a b . c)))
+
+     ;; sadly, these two tests come out the same 
+     ;; -- there is no way to distinguish them as sexps.
+     (make-same-test (syntax (a . (b))) '(syntax (a b)))
+     (make-same-test (syntax (a b)) '(syntax (a b)))
+
+     ;; sadly, sharing is not preserved in the output 
+     ;; (this would mean that the with-syntax must be
+     ;;  moved to the toplevel, but there is no recursive
+     ;;  syntax-binder so it isn't possible!)
+     (make-same-test
+      (with-syntax ([a (syntax (b))])
+        (syntax (a a)))
+      '(syntax ((b) (b))))
+
+     (make-same-test
+      (with-syntax ([a (lambda (x y) x)])
+        (syntax a))
+      '(with-syntax ([=1= (lambda (a1 a2) ...)])
+         (syntax =1=)))
+
+     (make-same-test
+      (with-syntax ([a (lambda (x y) x)]
+                    [b (lambda (x) x)])
+        (syntax (a b)))
+      '(with-syntax ([=1= (lambda (a1 a2) x)]
+                     [=2= (lambda (a1) x)])
+         (syntax (=1= =2=))))
+
+     (make-same-test
+      (with-syntax ([a (lambda (x y) x)])
+        (with-syntax ([a (vector (syntax (a)))])
+          (syntax (a))))
+      '(with-syntax ([=1= (vector (with-syntax ([=2= (lambda (a1 a2) ...)])
+                                    (syntax (=2=))))])
+         (syntax (=1=))))
+
+     (make-same-test
+      (with-syntax ([b (lambda (x) x)])
+        (syntax (a b c)))
+      '(make-same-test
+        (with-syntax ([=1= (lambda (x) x)])
+          (syntax (a =1= c)))))
+
+     (make-same-test
+      (with-syntax ([a (lambda (x y) x)])
+        (with-syntax ([a (vector (syntax (a)))]
+                      [b (lambda (x) x)])
+          (syntax (a b c))))
+      (with-syntax ([=1= (vector (with-syntax ([=2= (lambda (a1 a2) ...)])
+                                   (syntax (=2=))))]
+                    [=3= (lambda (a1) ...)])
+        (syntax (=1= =3= c))))
      
      (make-same-test xl 'xl)
      (make-same-test (letrec ([xl (lambda () 1)]) xl) '(lambda () ...))

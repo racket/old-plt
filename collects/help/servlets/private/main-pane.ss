@@ -31,10 +31,10 @@
 			(A ((HREF "/servlets/hd-config.ss")
 			    (TARGET "_top"))
 			   ,(string-constant plt:hd:configure))
-			"," ,troubleshooting-link 
+			", " ,troubleshooting-link 
 			,@(if (use-plt-browser?)
 			      `()
-			      `(","
+			      `(", "
 				(A ((HREF "/servlets/toggle-frames.ss")
 				    (TARGET "_top"))
 				   ,(if (use-frames?)
@@ -48,13 +48,13 @@
 	  (BR)
 	  'nbsp 'nbsp 'nbsp 'nbsp 'nbsp 'nbsp
 	  (FONT ((SIZE "-2"))
-		(A ((HREF "/doc/tour/")) "Tour") ","
-		(A ((HREF "/servlets/scheme/what.ss")) "Languages") ","
-		(A ((HREF "/servlets/manuals.ss")) "Manuals") ","
-		(A ((HREF "/servlets/releaseinfo.ss")) "Release") ","
+		(A ((HREF "/doc/tour/")) "Tour") ", "
+		(A ((HREF "/servlets/scheme/what.ss")) "Languages") ", "
+		(A ((HREF "/servlets/manuals.ss")) "Manuals") ", "
+		(A ((HREF "/servlets/releaseinfo.ss")) "Release") ", "
 		,(manual-entry "drscheme"
 			       "frequently asked questions"
-			       "FAQ") ","
+			       "FAQ") ", "
 			       "...")))
 	(UL
 	 (LI
@@ -63,8 +63,8 @@
 	  ": Learning to program in Scheme"             
 	  (BR) 'nbsp 'nbsp 'nbsp 'nbsp 'nbsp 'nbsp 
 	  (FONT ((SIZE "-2"))
-		(A ((HREF "/doc/teachpack/")) "Teachpacks") ","
-		(A ((HREF "/servlets/research/why.ss")) "Why DrScheme?") ","
+		(A ((HREF "/doc/teachpack/")) "Teachpacks") ", "
+		(A ((HREF "/servlets/research/why.ss")) "Why DrScheme?") ", "
 		"...")))
 	
 	(UL
@@ -76,9 +76,9 @@
 	  (BR)
 	  'nbsp 'nbsp 'nbsp 'nbsp 'nbsp 'nbsp 
 	  (FONT ((SIZE "-2"))
-		(A ((HREF "/servlets/resources/teachscheme.ss")) "TeachScheme!") ","
-		(A ((HREF "/servlets/resources/libext.ss")) "Libraries") ","
-		(A ((HREF "/servlets/resources/maillist.ss")) "Mailing Lists") ","
+		(A ((HREF "/servlets/resources/teachscheme.ss")) "TeachScheme!") ", "
+		(A ((HREF "/servlets/resources/libext.ss")) "Libraries") ", "
+		(A ((HREF "/servlets/resources/maillist.ss")) "Mailing Lists") ", "
 		"...")))
 	(P)
 	'nbsp 'nbsp 'nbsp

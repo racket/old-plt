@@ -64,7 +64,7 @@
 	  [($ url scheme host port path params query fragment)
 	   (f:foldr (lambda (both sofar) ;; multiple values suck.
 		      (if (andmap (lambda (x) x) both)
-			  (string-append (first both) (second both) sofar)
+			  (string-append (f:first both) (f:second both) sofar)
 			  sofar))
 		    ""
 		    (list (list scheme "://")

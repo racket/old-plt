@@ -313,6 +313,36 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   
+  (define (dynamic-disable-break/not-killable c f)
+    (mzlib:function:dynamic-disable-break
+     (lambda ()
+       (let* ([result #f]
+	      [t (parameterize ([current-custodian c])
+		   (thread
+		    (lambda ()
+		      (with-handlers ([exn:misc:user-break?
+				       void])
+			 (set! result (f))))))]
+	      [orig-t (current-thread)]
+	      [t2 (parameterize ([current-custodian c])
+		    (thread
+		     (lambda ()
+		       ; If the original thread is killed, break the
+		       ;  work thread.
+		       (thread-wait orig-t)
+		       (break-thread t))))]
+	      [kill-t2 (lambda ()
+			 (parameterize ([current-custodian c])
+			   (kill-thread t2)))])
+	 (with-handlers ([exn:misc:user-break?
+			  (lambda (x)
+			    (break-thread t)
+			    (kill-t2)
+			    (raise x))])
+	     (thread-wait t))
+	 (kill-t2)
+	 result))))
+
   (define make-console-edit%
     (lambda (super%)
       (class super% args
@@ -544,7 +574,9 @@
 	;; to end the edit-sequence at one time.
 	(private
 	  [timer-on #f]
-	  [timer-sema (make-semaphore 1)])
+	  [timer-sema (make-semaphore 1)]
+
+	  [my-custodian (current-custodian)])
 
 	(public
 	  [MAX-CACHE-TIME 4000]
@@ -555,7 +587,8 @@
 	  [generic-write
 	   (let ([first-time? #t])
 	     (lambda (edit s style-func)
-	       (mzlib:function:dynamic-disable-break
+	       (dynamic-disable-break/not-killable
+		my-custodian
 		(lambda ()
 		  (let ([handle-insertion
 			 (lambda ()
@@ -650,7 +683,8 @@
 	  [saved-newline? #f]
 	  [this-out-write
 	   (lambda (s)
-	     (mzlib:function:dynamic-disable-break
+	     (dynamic-disable-break/not-killable
+	      my-custodian
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
 			       [current-error-port orig-stderr])
@@ -678,7 +712,8 @@
 		    (gw s1))))))]
 	  [this-err-write
 	   (lambda (s)
-	     (mzlib:function:dynamic-disable-break
+	     (dynamic-disable-break/not-killable
+	      my-custodian
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
 			       [current-error-port orig-stderr])
@@ -750,22 +785,30 @@
 	       (set! prompt-position (last-position))))]
 	  [init-transparent-io
 	   (lambda (grab-focus?)
-	     (unless transparent-edit
-	       (init-transparent-io-do-work grab-focus?)))]
+	     (if transparent-edit
+		 (when grab-focus?
+		   (let ([a (send transparent-edit get-admin)])
+		     (unless (null? a)
+			(send a grab-caret))))
+		 (init-transparent-io-do-work grab-focus?)))]
 	  [single-threader (make-single-threader)]
 	  [this-in-read
 	   (let* ([g (lambda ()
 		       (init-transparent-io #t)
-		       (send transparent-edit fetch-char))]
-		  [f (lambda () (mzlib:function:dynamic-disable-break g))])
+		       (send transparent-edit fetch-char))])
 	     (lambda ()
-	       (single-threader f)))]
+	       (dynamic-disable-break/not-killable
+		my-custodian
+		(lambda ()
+		  (single-threader g)))))]
 	  [transparent-read
 	   (let* ([g (lambda ()
 		       (init-transparent-io #t)
 		       (send transparent-edit fetch-sexp))]
 		  [f (lambda () 
-		       (mzlib:function:dynamic-disable-break g))])
+		       (dynamic-disable-break/not-killable
+			my-custodian
+			g))])
 	     (lambda ()
 	       (single-threader f)))])
 	(public
@@ -1261,8 +1304,10 @@
 		 (begin0
 		   (cond
 		     [yield/loop?
-		      (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
-		      (loop)]
+		      ((with-handlers ([exn:misc:user-break?
+				       (lambda (x) void)])
+		         (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
+			 loop))]
 		     [answer answer]
 		     [else (void)])
 		   (set-cursor null)))))]
@@ -1300,8 +1345,10 @@
 		     [second-case? 
 		      (found-char prompt-position)]
 		     [third-case?
-		      (wx:yield wait-for-sexp)
-		      (loop)])))))]
+		      ((with-handlers ([exn:misc:user-break?
+					(lambda (x) void)])
+		        (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
+			loop))])))))]
 	  [takeover void]
 	  [get-prompt (lambda () "")]
 	  [on-insert

@@ -1413,9 +1413,19 @@ static Scheme_Object *hash_table_count(int argc, Scheme_Object *argv[])
 static Scheme_Object *hash_table_copy(int argc, Scheme_Object *argv[])
 {
   if (SCHEME_HASHTP(argv[0])) {
-    return (Scheme_Object *)scheme_clone_hash_table((Scheme_Hash_Table *)argv[0]);
+    Scheme_Object *o;
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex,0);
+    o = (Scheme_Object *)scheme_clone_hash_table(t);
+    if (t->mutex) scheme_post_sema(t->mutex);
+    return o;
   } else if (SCHEME_BUCKTP(argv[0])) {
-    return (Scheme_Object *)scheme_clone_bucket_table((Scheme_Bucket_Table *)argv[0]);
+    Scheme_Object *o;
+    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)argv[0];
+    if (t->mutex) scheme_wait_sema(t->mutex,0);
+    o = (Scheme_Object *)scheme_clone_bucket_table(t);
+    if (t->mutex) scheme_post_sema(t->mutex);
+    return o;
   } else {
     scheme_wrong_type("hash-table-copy", "hash-table", 0, argc, argv);
     return NULL;

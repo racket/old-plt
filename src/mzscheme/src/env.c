@@ -2762,6 +2762,7 @@ static Scheme_Object *
 local_exp_time_value(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v, *sym;
+  Scheme_Env *menv;
   Scheme_Comp_Env *env;
   int renamed = 0;
 
@@ -2781,6 +2782,8 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   if (scheme_current_thread->current_local_mark)
     sym = scheme_add_remove_mark(sym, scheme_current_thread->current_local_mark);
 
+  menv = NULL;
+
   while (1) {
     v = scheme_lookup_binding(sym, env,
 			      (SCHEME_NULL_FOR_UNBOUND
@@ -2789,7 +2792,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 			       + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST),
 			      scheme_current_thread->current_local_certs, 
 			      scheme_current_thread->current_local_modidx, 
-			      NULL, NULL);
+			      &menv, NULL);
     
     /* Deref globals */
     if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
@@ -2809,7 +2812,9 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     v = SCHEME_PTR_VAL(v);
     if (SAME_TYPE(SCHEME_TYPE(v), scheme_id_macro_type)) {
       sym = SCHEME_PTR1_VAL(v);
+      sym = scheme_stx_cert(sym, scheme_false, menv, sym);
       renamed = 1;
+      menv = NULL;
       SCHEME_USE_FUEL(1);
     } else
       return v;

@@ -2,6 +2,21 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.14
+Removed fluid-let-syntax
+Added (lib "stxparam.ss"), partly as a replacement for
+ fluid-let-syntax
+Completed syntax-recertify, syntax-recertify-constrained?,
+ and syntax-extend-certificate-env
+Added make-syntax-certificate-env and syntax-certificate-env?
+Added hash-table-copy
+Changed display of paths to drop "#<path:...>" wrapper
+Removed class*/names; the "class.ss" library now exports this,
+ super-new, super-instantiate, and super-make-object
+Changed #; for top-level read; graph assignments are forgotten
+ before reading the next expression
+Added rename-transformer-target
+
 Version 299.13
 Added protect sub-form of provide
 Added current-code-inspector

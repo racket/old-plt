@@ -24,13 +24,19 @@ in several significant ways:
    never produce a string. See the "Paths" section below for more
    details.
 
+ * The new "foreign.ss" library in MzLib provides access to foriegn
+   libraries dynamically and directly in Scheme. See the
+   foreign-interface manual for more information.
+
  * The class system has changed slightly. The `rename' keyword has
    been changed to `rename-super', but the new `super' expression form
    eliminates the need for most `rename' declarations. Also, the class
    system supports methods that cannot be overridden entirely, but
    that can augmented through "inner" methods (as in Beta). Some
    methods in MrEd's classes have been changed to augment-only
-   methods. See the "Classes" section below for more details.
+   methods. Finally, `class*/names' has been eliminated, and `this',
+   `super-new', etc. are all exported by the "class.ss" module. See
+   the "Classes" section below for more details.
 
  * The built-in exception hierarchy has been revised and streamlined
    (again). See the "Exceptions" section below for more details.
@@ -50,8 +56,8 @@ in several significant ways:
    indistinguishable from the old one, except that (1) the body of a
    `parameterize' is in tail position with respect to the entire
    `parameterize' expression, (2) a `parameterize' expression tends to
-   execute much more quickly, while parameter lookup tends to be
-   slightly slower, (3) a `parameterize' has the expected effect if a
+   execute much more quickly, while parameter lookup can be slightly
+   slower, (3) a `parameterize' has the expected effect if a
    continuation is captured during the `parameterize' body and invoked
    in a different thread.
 
@@ -104,6 +110,12 @@ in several significant ways:
    `begin-for-syntax' forms allow macro helper functions to be placed
    closer to macro definitions. See the MzScheme manual for more
    information.
+
+ * Unexported module bindings are more secure, and they can be made
+   completely secure by changing the current code inspector. The new
+   module-security mesaures imply changes to programs that transform
+   the result of `expand' and feed the transformed program back to
+   `eval'.  See the MzScheme manual for more information.
 
 ======================================================================
  Unicode
@@ -230,11 +242,30 @@ pathname under Windows.
  Classes
 ======================================================================
 
-Changes to the `(lib "class.ss")' object system are in two parts: a
-syntactic clean-up for super calls, and new constructs for
-augment-only methods. Meanwhile, keywords such as `public' are now
-bound to syntactic forms that report out-of-context uses (much like
-`unquote' and `unquote-splicing').
+Changes to the `(lib "class.ss")' object system are in three parts: 
+
+ - a syntactic clean-up to eliminate `class*/names',
+ - a syntactic clean-up for super calls, and 
+ - new constructs for augment-only methods.
+
+Meanwhile, keywords such as `public' are now bound to syntactic forms
+that report out-of-context uses (much like `unquote' and
+`unquote-splicing').
+
+The Demise of `class*/names'
+----------------------------
+
+The `class*/names' form allowed the programmer to specify names to be
+bound instead of `this', `super-new', etc. The `class*' and `class'
+forms non-hygienically introduced those names. Macros that would
+naturally expand to `class' or `class*' had to expand to
+`class*/names', instead, because expanding to a non-hygienic macro
+usually does not work.
+
+In v300, `this', `super-new', etc. are exported by `(lib "class.ss")',
+and attempting to use the keywords outside of a `class' or `class*'
+form results in a syntax error. Meanwhile, macros can easily and
+correctly expand to uses of `class' and `class*'.
 
 Super Calls
 -----------

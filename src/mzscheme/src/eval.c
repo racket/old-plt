@@ -1782,7 +1782,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type)) {
 	/* It's a rename. Look up the target name and try again. */
 	name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(val));
-	name = scheme_stx_cert(name, scheme_false, menv, name);
+	name = scheme_stx_cert(name, scheme_false, menv, name);	
 	menv = NULL;
 	SCHEME_USE_FUEL(1);
       } else {

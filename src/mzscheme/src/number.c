@@ -95,7 +95,7 @@ Scheme_Object *scheme_inf_object, *scheme_minus_inf_object, *scheme_nan_object;
 
 Scheme_Object *scheme_zerod, *scheme_nzerod, *scheme_pi, *scheme_half_pi, *scheme_plus_i, *scheme_minus_i;
 #ifdef MZ_USE_SINGLE_FLOATS
-Scheme_Object *scheme_zerof, *scheme_nzerof, *scheme_single_scheme_pi;
+Scheme_Object *scheme_zerof, *scheme_nzerof, *scheme_single_pi;
 Scheme_Object *scheme_single_inf_object, *scheme_single_minus_inf_object, *scheme_single_nan_object;
 #endif
 
@@ -121,7 +121,7 @@ scheme_init_number (Scheme_Env *env)
   REGISTER_SO(scheme_zerod);
   REGISTER_SO(scheme_nzerod);
 #ifdef MZ_USE_SINGLE_FLOATS
-  REGISTER_SO(single_scheme_pi);
+  REGISTER_SO(scheme_single_pi);
   REGISTER_SO(scheme_zerof);
   REGISTER_SO(scheme_nzerof);
 #endif
@@ -190,7 +190,7 @@ scheme_init_number (Scheme_Env *env)
 #ifdef MZ_USE_SINGLE_FLOATS
   scheme_zerof = scheme_make_float(0.0f);
   scheme_nzerof = scheme_make_float(-0.0f);
-  single_scheme_pi = scheme_make_float((float)atan2(0, -1));
+  scheme_single_pi = scheme_make_float((float)atan2(0, -1));
 #endif
   scheme_plus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(1));
   scheme_minus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(-1));
@@ -785,7 +785,11 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
   } else if (SCHEME_FLOATP(n1) || SCHEME_FLOATP(n2)) {
     double i1, i2, a, b, r;
 #ifdef MZ_USE_SINGLE_FLOATS
+# ifdef USE_SINGLE_FLOATS_AS_DEFAULT
     int was_single = !(SCHEME_DBLP(n1) || SCHEME_DBLP(n2));
+# else
+    int was_single = (SCHEME_FLTP(n1) || SCHEME_FLTP(n2));
+# endif
 #endif
 
     if (SCHEME_INTP(n1))
@@ -819,8 +823,13 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
     if (MZ_IS_NAN(a) || MZ_IS_NAN(b))
       return nan_object;
 #endif
-    if (MZ_IS_POS_INFINITY(a))
+    if (MZ_IS_POS_INFINITY(a)) {
+#ifdef MZ_USE_SINGLE_FLOATS
+      if (was_single)
+	return scheme_make_float((float)b);
+#endif
       return scheme_make_double(b);
+    }
     
     r = 1;
     while ((b > 0) && (r > 0)) {
@@ -1053,7 +1062,10 @@ sch_round (int argc, Scheme_Object *argv[])
 }
 
 #ifdef MZ_USE_SINGLE_FLOATS
-static float TO_FLOAT_VAL(const Scheme_Object *n)
+
+#define TO_FLOAT_VAL scheme_get_val_as_float
+
+float TO_FLOAT_VAL(const Scheme_Object *n)
 {
   Scheme_Type t;
 
@@ -1103,12 +1115,13 @@ double TO_DOUBLE_VAL(const Scheme_Object *n)
     return scheme_rational_to_double(n);
   if (t == scheme_complex_izi_type)
     return TO_DOUBLE_VAL(IZI_REAL_PART(n));
+  return 0.0;
 }
 
 Scheme_Object *scheme_TO_DOUBLE(const Scheme_Object *n)
 {
   if (SCHEME_DBLP(n))
-    return n;
+    return (Scheme_Object *)n;
   else
     return scheme_make_double(TO_DOUBLE_VAL(n));
 }
@@ -1154,10 +1167,17 @@ static Scheme_Object *get_frac(char *name, int low_p,
     
     if (MZ_IS_NAN(d))
       return n;
-    else if (MZ_IS_POS_INFINITY(d))
-      return low_p ? scheme_make_double(1.0) : n;
-    else if (MZ_IS_NEG_INFINITY(d))
-      return low_p ? scheme_make_double(1.0) : n;
+    else if (MZ_IS_POS_INFINITY(d)
+	     || MZ_IS_NEG_INFINITY(d)) {
+      if (low_p) {
+#ifdef MZ_USE_SINGLE_FLOATS
+	if (SCHEME_FLTP(n))
+	  return scheme_make_float(1.0);
+#endif
+	return scheme_make_double(1.0);
+      } else
+	return n;
+    }
 
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(n))
@@ -1311,7 +1331,13 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
     return scheme_minus_inf_object;
 
   return scheme_bin_mult(scheme_plus_i,
-			 scheme_bin_mult(scheme_make_double(0.5),
+			 scheme_bin_mult(
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+					 scheme_make_float(0.5)
+#else
+					 scheme_make_double(0.5)
+#endif
+					 ,
 					 un_log(scheme_bin_div(scheme_bin_plus(scheme_plus_i, c),
 							       scheme_bin_plus(scheme_plus_i, 
 									       scheme_bin_minus(zeroi, c))))));
@@ -1344,13 +1370,13 @@ double SCH_LOG(double d) { if (d == 0.0) return scheme_minus_infinity_val; else 
 # define SCH_LOG log
 #endif
 
-GEN_UNARY_OP(exp_prim, exp, exp, scheme_inf_object, scheme_zerod, scheme_nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(log_prim, log, log, scheme_inf_object, scheme_nan_object, scheme_nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
-GEN_UNARY_OP(sin_prim, sin, SCH_SIN, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(cos_prim, cos, cos, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(tan_prim, tan, SCH_TAN, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(asin_prim, asin, SCH_ASIN, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
-GEN_UNARY_OP(acos_prim, acos, acos, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_acos, GEN_ONE_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
+GEN_UNARY_OP(exp_prim, exp, exp, scheme_inf_object, scheme_single_inf_object, scheme_zerod, scheme_zerof, scheme_nan_object, scheme_single_nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(log_prim, log, log, scheme_inf_object, scheme_single_inf_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
+GEN_UNARY_OP(sin_prim, sin, SCH_SIN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(cos_prim, cos, cos, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(tan_prim, tan, SCH_TAN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(asin_prim, asin, SCH_ASIN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
+GEN_UNARY_OP(acos_prim, acos, acos, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_acos, GEN_ONE_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 
 static Scheme_Object *
 atan_prim (int argc, Scheme_Object *argv[])
@@ -1358,7 +1384,13 @@ atan_prim (int argc, Scheme_Object *argv[])
   double v;
   Scheme_Object *n1;
 #ifdef MZ_USE_SINGLE_FLOATS
+# ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+  int dbl = 0;
+# define MZ_USE_SINGLE !dbl
+# else
   int single = 0;
+# define MZ_USE_SINGLE single == 2
+#endif
 #endif
 
   n1 = argv[0];
@@ -1370,12 +1402,17 @@ atan_prim (int argc, Scheme_Object *argv[])
 #ifdef MZ_USE_SINGLE_FLOATS
   else if (SCHEME_FLTP(n1)) {
     v = SCHEME_FLT_VAL(n1);
+# ifndef USE_SINGLE_FLOATS_AS_DEFAULT
     single++;
+# endif
   }
 #endif
-  else if (SCHEME_DBLP(n1))
+  else if (SCHEME_DBLP(n1)) {
+# ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+    dbl++;
+# endif
     v = SCHEME_DBL_VAL(n1);
-  else if (SCHEME_BIGNUMP(n1))
+  } else if (SCHEME_BIGNUMP(n1))
     v = scheme_bignum_to_double(n1);
   else if (SCHEME_RATIONALP(n1))
     v = scheme_rational_to_double(n1);
@@ -1409,12 +1446,17 @@ atan_prim (int argc, Scheme_Object *argv[])
 #ifdef MZ_USE_SINGLE_FLOATS
     else if (SCHEME_FLTP(n2)) {
       v2 = SCHEME_FLT_VAL(n2);
+# ifndef USE_SINGLE_FLOATS_AS_DEFAULT
       single++;
+# endif
     }
 #endif
-    else if (SCHEME_DBLP(n2))
+    else if (SCHEME_DBLP(n2)) {
+# ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      dbl++;
+# endif
       v2 = SCHEME_DBL_VAL(n2);
-    else if (SCHEME_BIGNUMP(n2))
+    } else if (SCHEME_BIGNUMP(n2))
       v2 = scheme_bignum_to_double(n2);
     else if (SCHEME_RATIONALP(n2))
       v2 = scheme_rational_to_double(n2);
@@ -1425,7 +1467,7 @@ atan_prim (int argc, Scheme_Object *argv[])
 
     if ((v == 0.0) && (v2 == 0.0)) {
 #ifdef MZ_USE_SINGLE_FLOATS
-      if (single == 2)
+      if (MZ_USE_SINGLE)
 	return scheme_zerof;
 #endif      
       return scheme_zerod;
@@ -1452,16 +1494,20 @@ atan_prim (int argc, Scheme_Object *argv[])
       v = atan(v);
 
 #ifdef MZ_USE_SINGLE_FLOATS
+# ifndef USE_SINGLE_FLOATS_AS_DEFAULT
     single++;
+# endif
 #endif    
   }
 
 #ifdef MZ_USE_SINGLE_FLOATS
-  if (single == 2)
+  if (MZ_USE_SINGLE)
     return scheme_make_float((float)v);
 #endif
 
   return scheme_make_double(v);
+
+#undef MZ_USE_SINGLE
 }
 
 Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
@@ -1825,11 +1871,26 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
   if (SCHEME_COMPLEXP(o)) {
     Scheme_Object *r = (Scheme_Object *)_scheme_complex_real_part(o);
     Scheme_Object *i = (Scheme_Object *)_scheme_complex_imaginary_part(o);
-    double rd, id;
+    double rd, id, v;
+#ifdef MZ_USE_SINGLE_FLOATS
+# ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+    int was_single = !(SCHEME_DBLP(r) || SCHEME_DBLP(i));
+# else
+    int was_single = (SCHEME_FLTP(r) || SCHEME_FLTP(i));
+# endif
+#endif
+
     id = TO_DOUBLE_VAL(i);
     rd = TO_DOUBLE_VAL(r);
 
-    return scheme_make_double(atan2(id, rd));
+    v = atan2(id, rd);
+
+#ifdef MZ_USE_SINGLE_FLOATS
+    if (was_single)
+      return scheme_make_float((float)v);
+#endif
+
+    return scheme_make_double(v);
   } else {
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(o)) {
@@ -1844,7 +1905,7 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
       if (v > 0)
 	return zeroi;
       else
-	return single_scheme_pi;
+	return scheme_single_pi;
     }
 #endif
     if (SCHEME_DBLP(o)) {
@@ -1866,8 +1927,12 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
       ESCAPED_BEFORE_HERE;
     } else if (SCHEME_TRUEP(scheme_positive_p(1, argv)))
       return zeroi;
-    else
+    else {
+# ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      return scheme_single_pi;
+# endif
       return scheme_pi;
+    }
   }
 }
 
@@ -1877,8 +1942,13 @@ scheme_exact_to_inexact (int argc, Scheme_Object *argv[])
   Scheme_Object *o = argv[0];
   Scheme_Type t;
 
-  if (SCHEME_INTP(o))
+  if (SCHEME_INTP(o)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+    return scheme_make_float(SCHEME_INT_VAL(o));
+#else
     return scheme_make_double(SCHEME_INT_VAL(o));
+#endif
+  }
   t = _SCHEME_TYPE(o);
 #ifdef MZ_USE_SINGLE_FLOATS
   if (t == scheme_float_type)

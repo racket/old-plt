@@ -45,8 +45,6 @@ EXPORTS
  scheme_dynamic_wind
  scheme_make_type
  scheme_get_type_name
- scheme_install_type_reader
- scheme_install_type_writer
  scheme_eof
  scheme_null
  scheme_true

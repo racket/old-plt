@@ -138,7 +138,7 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
 	/* Double-check for NANs with different signs: */
 	float f = SCHEME_FLT_VAL(obj1);
 	if (MZ_IS_NAN(f)) {
-	  f = SCHEME_FTL_VAL(obj2);
+	  f = SCHEME_FLT_VAL(obj2);
 	  if (MZ_IS_NAN(f))
 	    return 1;
 	}

@@ -989,6 +989,37 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
 
 }
 
+static void bignum_double_inplace(Scheme_Object **o)
+{
+  int carry, len;
+  
+  len = SCHEME_BIGLEN(*o);
+
+  if (len == 0)
+    return;
+  
+  carry = mpn_lshift(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
+
+  if (carry)
+    *o = bignum_copy(*o, carry);
+}
+
+static void bignum_add1_inplace(Scheme_Object **o)
+{
+  int carry, len;
+  
+  len = SCHEME_BIGLEN(*o);
+
+  if (len == 0) {
+    *o = bignum_copy(*o, 1);
+    return;
+  }
+  carry = mpn_add_1(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
+
+  if (carry)
+    *o = bignum_copy(*o, carry);
+}
+
 #define USE_FLOAT_BITS 53
 #define FP_TYPE double
 #define IS_FLOAT_INF is_double_inf
@@ -1141,13 +1172,24 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
     if (SCHEME_INTP(n))
       v = (double)SCHEME_INT_VAL(n);
     else {
-      v = scheme_bignum_to_float(n);
-      
-      if (MZ_IS_POS_INFINITY(v))
+      v = scheme_bignum_to_double(n);
+
+      if (MZ_IS_POS_INFINITY(v)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+	return scheme_make_float(v);
+#else
 	return scheme_make_double(v);
+#endif
+      }
     }
     
-    return scheme_make_double(sqrt(v));
+    v = sqrt(v);
+
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+    return scheme_make_float(v);
+#else
+    return scheme_make_double(v);
+#endif
   }
 }
 

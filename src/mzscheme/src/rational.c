@@ -321,7 +321,7 @@ Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme
 
 Scheme_Object *scheme_rational_power(const Scheme_Object *o, const Scheme_Object *p)
 {
-  double b, e;
+  double b, e, v;
 
   if (((Scheme_Rational *)p)->denom == one)
     return scheme_generic_integer_power(o, ((Scheme_Rational *)p)->num);
@@ -329,8 +329,14 @@ Scheme_Object *scheme_rational_power(const Scheme_Object *o, const Scheme_Object
   if (scheme_is_rational_positive(o)) {
     b = scheme_rational_to_double(o);
     e = scheme_rational_to_double(p);
-    
-    return scheme_make_double(pow(b, e));
+
+    v = pow(b, e);
+
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+    return scheme_make_float(v);
+#else
+    return scheme_make_double(v);
+#endif
   } else {
     return scheme_complex_power(scheme_real_to_complex(o),
 				scheme_real_to_complex(p));
@@ -414,6 +420,7 @@ Scheme_Object *scheme_rational_sqrt(const Scheme_Object *o)
 {
   Scheme_Rational *r = (Scheme_Rational *)o;
   Scheme_Object *n, *d;
+  double v;
 
   n = scheme_integer_sqrt(r->num);
   if (!SCHEME_DBLP(n)) {
@@ -422,7 +429,13 @@ Scheme_Object *scheme_rational_sqrt(const Scheme_Object *o)
       return make_rational(n, d, 0);
   }
 
-  return scheme_make_double(sqrt(scheme_rational_to_float(o)));
+  v = sqrt(scheme_rational_to_double(o));
+
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+  return scheme_make_float(v);
+#else
+  return scheme_make_double(v);
+#endif
 }
 
 #define FP_TYPE double
@@ -441,6 +454,7 @@ Scheme_Object *scheme_rational_sqrt(const Scheme_Object *o)
 # undef SCHEME_BIGNUM_TO_FLOAT_INF_INFO
 # undef SCHEME_BIGNUM_FROM_FLOAT
 # undef SCHEME_CHECK_FLOAT
+# undef DO_FLOAT_DIV 
 
 #define FP_TYPE float
 #define SCHEME_RATIONAL_TO_FLOAT scheme_rational_to_float

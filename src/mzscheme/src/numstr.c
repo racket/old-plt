@@ -108,14 +108,14 @@ static Scheme_Object *read_special_number(const char *str, int pos)
 
     if (!strcmp(s, infinity_str)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
-      return single_inf_object;
+      return scheme_single_inf_object;
 #else
       return scheme_inf_object;
 #endif
     }
     else if (!strcmp(s, minus_infinity_str)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
-      return single_minus_inf_object;
+      return scheme_single_minus_inf_object;
 #else
       return scheme_minus_inf_object;
 #endif
@@ -123,7 +123,7 @@ static Scheme_Object *read_special_number(const char *str, int pos)
     else if (!strcmp(s, not_a_number_str)
 	     || !strcmp(s, other_not_a_number_str)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
-      return single_nan_object;
+      return scheme_single_nan_object;
 #else      
       return scheme_nan_object;
 #endif
@@ -681,8 +681,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  div_by_zero,
 				  test_only,
 				  line, col);
-      
-      n2 = TO_DOUBLE(n2);
+
+      n2 = scheme_exact_to_inexact(1, &n2); /* uses default conversion: float or double */
 
       d2 = SCHEME_FLOAT_VAL(n2);
       
@@ -701,7 +701,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return zeroi;
 
       if (!SCHEME_FALSEP(n1))
-	n1 = TO_DOUBLE(n1);
+	n1 = scheme_exact_to_inexact(1, &n1); /* uses default conversion: float or double */
     } else {
       n1 = NULL;
       d2 = 0;
@@ -852,6 +852,9 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   if (has_expt && str[has_expt]) {
     single = str[has_expt];
     single = ((single == 'f') || (single == 'F')
+# ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+	      || (single == 'e') || (single == 'E')
+#endif
 	      || (single == 's') || (single == 'S'));
   } else {
 # ifdef USE_SINGLE_FLOATS_AS_DEFAULT
@@ -896,7 +899,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[delta] == '-') {
 	/* Make sure it's -0.0 */
 #ifdef MZ_USE_SINGLE_FLOATS
-	if (single) return nzerof;
+	if (single) return scheme_nzerof;
 #endif
 	return scheme_nzerod;
       }
@@ -906,7 +909,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[delta] == '-') {
 	/* Make sure it's -0.0 */
 #ifdef MZ_USE_SINGLE_FLOATS
-	if (single) return nzerof;
+	if (single) return scheme_nzerof;
 #endif
 	return scheme_nzerod;
       }
@@ -1174,7 +1177,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     /* Special case: "#i-0" => -0. */
     if ((o == zeroi) && str[delta] == '-') {
 #ifdef MZ_USE_SINGLE_FLOATS
-      if (single) return nzerof;
+      if (single) return scheme_nzerof;
 #endif
       return scheme_nzerod;
     }

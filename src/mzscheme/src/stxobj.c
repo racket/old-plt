@@ -2184,19 +2184,18 @@ static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv)
     return scheme_false;
 }
 
-static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
+				   Scheme_Object *key,
+				   Scheme_Object *val)
 {
   Scheme_Stx *stx;
-  Scheme_Object *key = argv[1], *l;
+  Scheme_Object *l;
 
-  if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-property", "syntax", 0, argc, argv);
-
-  stx = (Scheme_Stx *)argv[0];
+  stx = (Scheme_Stx *)_stx;
 
   if (stx->props) {
     if (SAME_OBJ(stx->props, STX_SRCTAG)) {
-      if (argc > 2)
+      if (val)
 	l = scheme_make_pair(scheme_make_pair(source_symbol, scheme_true),
 			     scheme_null);
       else
@@ -2206,7 +2205,7 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
 
       for (e = stx->props; SCHEME_PAIRP(e); e = SCHEME_CDR(e)) {
 	if (SAME_OBJ(key, SCHEME_CAR(SCHEME_CAR(e)))) {
-	  if (argc > 2)
+	  if (val)
 	    break;
 	  else
 	    return SCHEME_CDR(SCHEME_CAR(e));
@@ -2243,11 +2242,11 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
   } else
     l = scheme_null;
 
-  if (argc > 2) {
+  if (val) {
     Scheme_Object *wraps;
     long lazy_prefix;
     
-    l = scheme_make_pair(scheme_make_pair(key, argv[2]), l);
+    l = scheme_make_pair(scheme_make_pair(key, val), l);
 
     wraps = stx->wraps;
     lazy_prefix = stx->lazy_prefix;
@@ -2260,6 +2259,16 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
     return (Scheme_Object *)stx;
   } else
     return scheme_false;
+}
+
+static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-property", "syntax", 0, argc, argv);
+
+  return scheme_stx_property(argv[0],
+			     argv[1],
+			     (argc > 2) ? argv[2] : NULL);
 }
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)

@@ -119,9 +119,6 @@ Scheme_Object *(*scheme_dynamic_wind)(void (*pre)(void *),
 /*========================================================================*/
 Scheme_Type (*scheme_make_type)(const char *name);
 char *(*scheme_get_type_name)(Scheme_Type type);
-/* Type readers & writers for compiled code data */
-void (*scheme_install_type_reader)(Scheme_Type type, Scheme_Type_Reader f);
-void (*scheme_install_type_writer)(Scheme_Type type, Scheme_Type_Writer f);
 /*========================================================================*/
 /*                              constants                                 */
 /*========================================================================*/

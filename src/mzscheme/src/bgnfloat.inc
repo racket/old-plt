@@ -57,37 +57,6 @@ FP_TYPE SCHEME_BIGNUM_TO_FLOAT(const Scheme_Object *n)
 END_XFORM_SKIP;
 #endif
 
-static void bignum_double_inplace(Scheme_Object **o)
-{
-  int carry, len;
-  
-  len = SCHEME_BIGLEN(*o);
-
-  if (len == 0)
-    return;
-  
-  carry = mpn_lshift(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
-
-  if (carry)
-    *o = bignum_copy(*o, carry);
-}
-
-static void bignum_add1_inplace(Scheme_Object **o)
-{
-  int carry, len;
-  
-  len = SCHEME_BIGLEN(*o);
-
-  if (len == 0) {
-    *o = bignum_copy(*o, 1);
-    return;
-  }
-  carry = mpn_add_1(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
-
-  if (carry)
-    *o = bignum_copy(*o, carry);
-}
-
 Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
 {
   Small_Bignum s1, onesmall;

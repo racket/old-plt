@@ -660,6 +660,8 @@ module_val {
 
   gcMARK(m->accessible);
 
+  gcMARK(m->hints);
+
   gcMARK(m->primitive);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));

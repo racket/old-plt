@@ -66,6 +66,8 @@ static Scheme_Object *top_level_require_resolve(Scheme_Object *data, Resolve_Inf
 static Scheme_Object *write_module(Scheme_Object *obj);
 static Scheme_Object *read_module(Scheme_Object *obj);
 
+static Scheme_Module *module_load(Scheme_Object *modname, Scheme_Env *env, const char *who);
+
 static void eval_defmacro(Scheme_Object *names, int count,
 			  Scheme_Object *expr, Scheme_Comp_Env *env,
 			  int let_depth, Scheme_Bucket_Table *syntax);
@@ -96,7 +98,6 @@ static Scheme_Object *provide_stx;
 static Scheme_Object *set_stx;
 static Scheme_Object *app_stx;
 static Scheme_Object *top_stx;
-static Scheme_Object *quote_stx;
 
 static int num_initial_modules;
 static Scheme_Object **initial_modules;
@@ -313,7 +314,6 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(set_stx);
   REGISTER_SO(app_stx);
   REGISTER_SO(top_stx);
-  REGISTER_SO(quote_stx);
 
   w = scheme_sys_wraps0;
   begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w, 0, 0);
@@ -325,7 +325,6 @@ void scheme_finish_kernel(Scheme_Env *env)
   set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w, 0, 0);
   app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w, 0, 0);
   top_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%top"), scheme_false, w, 0, 0);
-  quote_stx = scheme_datum_to_syntax(scheme_intern_symbol("quote"), scheme_false, w, 0, 0);
 
   REGISTER_SO(prefix_symbol);
   REGISTER_SO(rename_symbol);
@@ -550,7 +549,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     env = env->exp_env;
   }
 
-  m = scheme_module_load(modname, env);
+  m = module_load(modname, env, "dynamic-require");
   srcm = m;
 
   srcmname = NULL;
@@ -1021,7 +1020,7 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
   return modidx;
 }
 
-Scheme_Module *scheme_module_load(Scheme_Object *name, Scheme_Env *env)
+static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const char *who)
 {
   if (name == kernel_symbol)
     return kernel;
@@ -1031,7 +1030,7 @@ Scheme_Module *scheme_module_load(Scheme_Object *name, Scheme_Env *env)
     m = (Scheme_Module *)scheme_hash_get(env->module_registry, name);
 
     if (!m) {
-      scheme_wrong_syntax("require", NULL, name, "unknown module");
+      scheme_wrong_syntax(who ? who : "require", NULL, name, "unknown module");
       return NULL;
     }
 
@@ -1185,7 +1184,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   }
   
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    expstart_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
+    expstart_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
 		    env, 0, 
 		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
   }
@@ -1215,7 +1214,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
   exp_env->link_midx = menv->link_midx;
 
   for (l = menv->module->et_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    start_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
+    start_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
 		 exp_env, 0,
 		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx));
   }
@@ -1254,7 +1253,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
     return;
   
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    start_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
+    start_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
 		 env, 0, 
 		 scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
   }
@@ -1280,13 +1279,13 @@ static void prevent_cyclic_requires(Scheme_Module *m, Scheme_Object *modname, Sc
 
   /* Check et_requires: */
   for (l = m->et_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {    
-    prevent_cyclic_requires(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env),
+    prevent_cyclic_requires(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL),
 			   modname, env);
   }
   
   /* Check requires: */
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {    
-    prevent_cyclic_requires(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env),
+    prevent_cyclic_requires(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL),
 			   modname, env);
   }
 }
@@ -1557,7 +1556,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   /* load the module for the initial require */
-  iim = scheme_module_load(_module_resolve(iidx, ii), menv); 
+  iim = module_load(_module_resolve(iidx, ii), menv, NULL); 
   expstart_module(iim, menv, 0, iidx);
 
   if (scheme_hash_get(menv->module_registry, m->modname)) {
@@ -1645,7 +1644,12 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
     return scheme_make_syntax_compiled(MODULE_EXPD, (Scheme_Object *)m);
   } else {
+    Scheme_Object *hints;
+
     fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
+
+    hints = m->hints;
+    m->hints = NULL;
 
     fm = cons(module_symbol,
 	      cons(nm,
@@ -1653,6 +1657,18 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
     fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
     
+    if (hints) {
+      fm = scheme_stx_property(fm, 
+			       scheme_intern_symbol("module-variable-provides"),
+			       SCHEME_CAR(hints));
+      fm = scheme_stx_property(fm, 
+			       scheme_intern_symbol("module-syntax-provides"),
+			       SCHEME_CADR(hints));
+      fm = scheme_stx_property(fm, 
+			       scheme_intern_symbol("module-kernel-reprovide-hint"),
+			       SCHEME_CADR(SCHEME_CDR(hints)));
+    }
+
     return fm;
   }
 }
@@ -1785,7 +1801,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     Scheme_Object *midx, *nmidx, *vec;
 
     nmidx = SCHEME_CAR(env->genv->module->requires);
-    iim = scheme_module_load(scheme_module_resolve(nmidx), env->genv);
+    iim = module_load(scheme_module_resolve(nmidx), env->genv, NULL);
     exs = iim->provides;
     exsns = iim->provide_src_names;
     exss = iim->provide_srcs;
@@ -2513,11 +2529,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   if (!rec) {
-    /* Add a constant at the start of the body that exposes information
-       about the module:
-         '((export-val-item ...)
-           (export-stx-item ...)
-           kernel-reexport)
+    /* Produce annotations (in the form of properties)
+       for module information:
+         'module-variable-provides = '(export-var-item ...)
+         'module-syntax-provides = '(export-var-item ...)
+         'module-kernel-reprovide-hint = 'kernel-reexport
 
       item = name
            | (def-id . ext-id)
@@ -2587,19 +2603,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       result = scheme_make_pair(e, result);
     }
 
-    /* Drop existing quoted constant from start, if one is there: */
-    if (SCHEME_PAIRP(first)) {
-      a = SCHEME_CAR(first);
-      if (SCHEME_STX_PAIRP(a)) {
-	a = SCHEME_STX_CAR(a);
-	if (scheme_stx_module_eq(a, quote_stx, 0))
-	  first = SCHEME_CDR(first);
-      }
-    }
-    
-    first = scheme_make_pair(scheme_make_pair(quote_stx, 
-					      scheme_make_pair(result, scheme_null)),
-			     first);
+    env->genv->module->hints = result;
   }
 
   if (rec) {
@@ -2787,7 +2791,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 
     name = _module_resolve(idx, idxstx);
 
-    m = scheme_module_load(name, env);
+    m = module_load(name, env, NULL);
     if (redef_modname)
       prevent_cyclic_requires(m, redef_modname, env);
 

@@ -20,6 +20,9 @@ AC_ARG_ENABLE(wbuild, ""  feature: wbuild         compile and use wbuild for .w 
 AC_ARG_ENABLE(gprof, ""  feature: gprof          compile for profiling with gprof (gcc only))
 AC_ARG_ENABLE(gcov, ""  feature: gcov           compile to gather gcov statistics (gcc only))
 
+AC_ARG_ENABLE(float, ""  feature: float          compile to support for single-precision floats)
+AC_ARG_ENABLE(floatinstead, ""  feature: floatinstead   compile to use single-precision by default)
+
 ###### Some flags imply other flags #######
 
 if test "${enable_smalloskit}" = "yes" ; then
@@ -92,6 +95,17 @@ if test "${enable_oskit}" = "yes" ; then
   MZBINTARGET=oskit
 else
   enable_oskit=no
+fi
+
+###### float stuff #######
+
+if test "${enable_floatinstead}" = "yes" ; then
+  enable_float=yes
+  OPTIONS="${OPTIONS} -DUSE_SINGLE_FLOATS_AS_DEFAULT"
+fi
+
+if test "${enable_float}" = "yes" ; then
+  OPTIONS="${OPTIONS} -DUSE_SINGLE_FLOATS"
 fi
 
 ###### Autoconfigure #######

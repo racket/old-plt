@@ -22,7 +22,7 @@
 typedef struct Scheme_Env Link_Info;
 
 /*========================================================================*/
-/*                        mallocation and GC                              */
+/*                         allocation and GC                              */
 /*========================================================================*/
 
 #define MAKE_CLOSED_PRIM(f,v,n,mi,ma) \
@@ -458,6 +458,10 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
+
+Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
+				   Scheme_Object *key,
+				   Scheme_Object *val);
 
 Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 				      Scheme_Object *old_midx, Scheme_Object *new_midx);
@@ -992,6 +996,10 @@ int scheme_check_float(const char *where, float v, const char *dest);
 double scheme_get_val_as_double(const Scheme_Object *n);
 int scheme_minus_zero_p(double d);
 
+#ifdef MZ_USE_SINGLE_FLOATS
+float scheme_get_val_as_float(const Scheme_Object *n);
+#endif
+
 #if !defined(USE_IEEE_FP_PREDS) && !defined(USE_SCO_IEEE_PREDS) && !defined(USE_PALM_INF_TESTS)
 # define MZ_IS_POS_INFINITY(d) ((d) == scheme_infinity_val)
 # define MZ_IS_NEG_INFINITY(d) ((d) == scheme_minus_infinity_val)
@@ -1143,6 +1151,10 @@ int scheme_strncmp(const char *a, const char *b, int len);
 Scheme_Object *scheme_default_eval_handler(int, Scheme_Object *[]);
 Scheme_Object *scheme_default_print_handler(int, Scheme_Object *[]);
 Scheme_Object *scheme_default_prompt_read_handler(int, Scheme_Object *[]);
+
+/* Type readers & writers for compiled code data */
+void scheme_install_type_reader(Scheme_Type type, Scheme_Type_Reader f);
+void scheme_install_type_writer(Scheme_Type type, Scheme_Type_Writer f);
 
 /*========================================================================*/
 /*                          compile and link                              */
@@ -1520,6 +1532,8 @@ typedef struct Scheme_Module
 
   Scheme_Hash_Table *accessible;
 
+  Scheme_Object *hints; /* set by expansion; moved to properties */
+
   Scheme_Env *primitive;
 } Scheme_Module;
 
@@ -1539,7 +1553,6 @@ Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp
 int scheme_is_module_env(Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_module_resolve(Scheme_Object *modidx);
-Scheme_Module *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
 void scheme_module_force_lazy(Scheme_Env *env, int previous);
 

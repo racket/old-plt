@@ -201,7 +201,9 @@
 		     (let ([p (get-pen)]
 			   [b (get-brush)]
 			   [fg (get-text-foreground)])
-                       (let* ([requested-color (send the-color-database find-color (cadr x))]
+                       (let* ([requested-color (if (is-a? (cadr x) color%)
+                                                   (cadr x)
+                                                   (send the-color-database find-color (cadr x)))]
                               [color (or requested-color 
                                          (send the-color-database find-color "BLACK"))])
                          (unless requested-color

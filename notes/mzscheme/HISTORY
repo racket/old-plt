@@ -50,6 +50,7 @@ Inside MzScheme: restricted the format strings accepted by
 Inside MzScheme: added scheme_count_lines; scheme_tell_line
  can return -1 if lines are not counted for a port
 Inside MzScheme: added offset argument to scheme_write_string
+ and scheme_read_bignum
 
 Version 101, October 25, 1999
 Added 'sys-dir to find-system-path

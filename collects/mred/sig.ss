@@ -25,25 +25,26 @@
 
 (define-signature mred:container^
   (const-default-size
-    const-default-posn
-    const-default-spacing
-    frame%
-    dialog-box%
-    button%
-    check-box%
-    choice%
-    ;gauge%
-    list-box%
-    message%
-    radio-box%
-    slider%
-    text-window%
-    text%
-    multi-text%
-    panel%
-    horizontal-panel%
-    vertical-panel%
-    single-panel%))
+   const-default-posn
+   const-default-spacing
+   (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
+   frame%
+   dialog-box%
+   button%
+   check-box%
+   choice%
+   ;gauge%
+   list-box%
+   message%
+   radio-box%
+   slider%
+   text-window%
+   text%
+   multi-text%
+   panel%
+   horizontal-panel%
+   vertical-panel%
+   single-panel%))
 
 
 (define-signature mred:autoload^

@@ -1,9 +1,11 @@
 (define mred:autoload@
-  (unit/s mred:autoload^
-    (import [mred:debug mred:debug^]
-	    [mred:preferences mred:preferences^]
-	    [mzlib:file mzlib:file^])
+  (unit/sig mred:autoload^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:preferences : mred:preferences^]
+	     [unit mzlib:file : mzlib:file^]))
 
+    (mred:debug:printf 'invoke "mred:autoload@")
+	    
    (define autoload-paths (mred:preferences:get-preference 'autoload-paths))
 
    (define make-autoload

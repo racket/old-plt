@@ -1,9 +1,11 @@
 (define mred:find-string@
-  (unit/s mred:find-string^
-    (import [mred:debug mred:debug^] [mred:canvas mred:canvas^]
-	    [mred:edit mred:edit^] [mred:frame mred:frame^])
-
-    (mred:debug:printf "mred:find-string@")
+  (unit/sig mred:find-string^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:canvas : mred:canvas^]
+	     [unit mred:edit : mred:edit^]
+	     [unit mred:frame : mred:frame^]))
+	    
+    (mred:debug:printf 'invoke "mred:find-string@")
 
     (define make-find-frame%
       (lambda (super%) 

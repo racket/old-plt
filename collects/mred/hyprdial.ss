@@ -1,9 +1,12 @@
 ; Dialog box for picking a tag.
 
 (define mred:hyper-dialog@
-  (unit/s mred:hyper-dialog^
-    (import [mred:debug mred:debug^] [mred:hyper-edit mred:hyper-edit^]
-	    [mzlib:file mzlib:file^])
+  (unit/sig mred:hyper-dialog^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:hyper-edit : mred:hyper-edit^]
+	     [unit mzlib:file : mzlib:file^]))
+	    
+    (mred:debug:printf 'invoke "mred:hyper-dialog@")
 
     (define hyper-tag-dialog%
       (class wx:dialog-box% (tags-list)

@@ -1,10 +1,13 @@
 (define mred:group@
-  (unit/s mred:group^
-    (import [mred:debug mred:debug^] [mred:gui-utils mred:gui-utils^]
-	    [mred:exit mred:exit^] [mred:autosave mred:autosave^]
-	    [mred:handler mred:handler^] [mzlib:function mzlib:function^])
-
-    (mred:debug:printf "mred:group@")
+  (unit/sig mred:group^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:gui-utils : mred:gui-utils^]
+	     [unit mred:exit : mred:exit^]
+	     [unit mred:autosave : mred:autosave^]
+	     [unit mred:handler : mred:handler^]
+	     [unit mzlib:function : mzlib:function^]))
+	    
+    (mred:debug:printf 'invoke "mred:group@")
 
     (define buffer-group%
       (let ([untitled-number 0])

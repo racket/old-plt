@@ -1,7 +1,10 @@
 (define mred:gui-utils@
-  (unit/s mred:gui-utils^
-    (import [mred:debug mred:debug^] [mzlib:function mzlib:function^]
-	    [mzlib:trigger mzlib:trigger^])
+  (unit/sig mred:gui-utils^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mzlib:function : mzlib:function^]
+	     [unit mzlib:trigger : mzlib:trigger^]))
+
+    (mred:debug:printf 'invoke "mred:gui-utils@")
 
     (define cursor-delay
       (mzlib:function:make-parameter 0.25))

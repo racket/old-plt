@@ -4,16 +4,22 @@
 ;; desired-height method that returns the desired height in pixels.
 
 (define mred:frame@
-  (unit/s mred:frame^
-    (import [mred:debug mred:debug^] [mred:edit mred:edit^] [mred:canvas mred:canvas^]
-	    [mred:icon mred:icon^] [mred:menu mred:menu^] 
-	    [mred:group mred:group^] [mred:finder mred:finder^]
-	    [mred:handler mred:handler^]
-	    [mred:exit mred:exit^] [mred:autosave mred:autosave^]
-	    [mred:gui-utils mred:gui-utils^]
-	    [mzlib:function mzlib:function^] [mzlib:file mzlib:file^])
-
-    (mred:debug:printf "mred:frame@")
+  (unit/sig mred:frame^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:edit : mred:edit^]
+	     [unit mred:canvas : mred:canvas^]
+	     [unit mred:icon : mred:icon^]
+	     [unit mred:menu : mred:menu^] 
+	     [unit mred:group : mred:group^]
+	     [unit mred:finder : mred:finder^]
+	     [unit mred:handler : mred:handler^]
+	     [unit mred:exit : mred:exit^]
+	     [unit mred:autosave : mred:autosave^]
+	     [unit mred:gui-utils : mred:gui-utils^]
+	     [unit mzlib:function : mzlib:function^]
+	     [unit mzlib:file : mzlib:file^]))
+	    
+    (mred:debug:printf 'invoke "mred:frame@")
 
     (define frame-name "MrEd")
 

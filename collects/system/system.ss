@@ -4,10 +4,8 @@
 (error-print-width 1000)
 
 (define mred:debug@
-  (let ([debug-on? (or (string=? (current-directory)
-				 "/a/santa/aten/robby/plt/system")
-		       (string=? (current-directory)
-				 "/a/santa/jam/cobbe/system"))])
+  (let* ([debug-env (getenv "MREDDEBUG")]
+	 [debug-on? (and debug-env (string=? debug-env "on"))])
     (unit (import)
       (export (dprintf printf) turn-on turn-off
 	      exit? new-console new-eval make-new-console)
@@ -45,7 +43,7 @@
 				 (define q (lambda () (send mred:console-frame show #f)))
 				 (define mred:system-source-directory 
 				   ,(global-defined-value 'mred:system-source-directory))
-				 (invoke-open-unit (,(global-defined-value 'mred:make-invokable-unit))
+				 (invoke-open-unit/sig (,(global-defined-value 'mred:make-invokable-unit))
 						 mred)))))
 	    (lambda () (void)))))))
 
@@ -81,9 +79,13 @@
 (when (not (directory-exists? (current-library-path)))
     (wx:message-box "Cannot find the MzScheme libraries." "Error")
     (error 'mrsystem "cannot find the MzScheme libraries"))
+
+(current-library-path "/home/mflatt/tmp/mzlib")
+
 (define mzlib:constant-lib? #t)
 (require-library "corec.ss")
 (require-library "triggerc.ss")
+(current-library-path (normalize-path (current-library-path)))
 
 (define mred:plt-home-directory
   (if (defined? 'mred:plt-home-directory)
@@ -101,8 +103,7 @@
 	      mred:system-source-directory))))))
 (constant mred:plt-home-directory)
 
-(define-signature mred:debug^ 
-  (printf exit? new-console new-eval make-new-console))
+(define-signature mred:debug^   (printf exit?))
 
 (for-each (lambda (x)
 	    (mred:debug:printf 'startup "Loading ~a..." x)
@@ -132,82 +133,67 @@
 (define mred@ (void))
 (define mred:make-mred@
   (lambda ()
-    (set! mred@
-	  (compound-unit/s mred^
-	    (import (core mzlib:core^)
-		    (trigger mzlib:trigger^)
-		    (application mred:application^))
-	    (link [debug mred:debug^ (mred:debug@)]
-		  [exn mred:exn^ (mred:exn@)]
-		  [preferences mred:preferences^ (mred:preferences@ debug exn ((core function@)))]
-		  [container mred:container^ (mred:container@ debug ((core function@)))]
-		  [autoload mred:autoload^ (mred:autoload@ debug preferences ((core file@)))]
-		  [autosave mred:autosave^ (mred:autosave@ debug preferences)]
-		  [exit mred:exit^ (mred:exit@ debug)]
-		  [mode mred:mode^ (mred:mode@ debug keymap)]
-		  [handler mred:handler^ (mred:handler@ debug group frame finder
-						      ((core file@)))] 
-		  [keymap mred:keymap^ (mred:keymap@ debug finder handler find-string
-						   scheme-paren)]
-		  [match-cache mred:match-cache^ (mred:match-cache@ debug)]
-		  [scheme-paren mred:scheme-paren^ (mred:scheme-paren@ debug paren)]
-		  [paren mred:paren^ (mred:paren@ debug)]
-		  [path-utils mred:path-utils^ (mred:path-utils@ debug)]
-		  [gui-utils mred:gui-utils^ 
-			     (mred:gui-utils@ debug ((core function@)) 
-					    trigger)]
-		  [finder mred:finder^ (mred:finder@ debug ((core string@))
-						   ((core function@)) ((core file@)))]
-		  [icon mred:icon^ (mred:icon@ debug)]
-		  [menu mred:menu^ (mred:menu@ debug ((core function@)))]
-		  [edit mred:edit^ (mred:edit@ debug finder path-utils mode
-					     scheme-paren keymap ((core function@)))]
-		  [group mred:group^ (mred:group@ debug gui-utils exit autosave
-						handler ((core function@)))]
-		  [frame mred:frame^ (mred:frame@ debug edit canvas icon menu
+    (let ([debug/s@ (unit->unit/sig mred:debug@ () mred:debug^)])
+      (set! mred@
+	    (compound-unit/sig (import ([unit core : mzlib:core^]
+					[unit trigger : mzlib:trigger^]
+					[unit application : mred:application^]))
+	    (link [debug : mred:debug^ (debug/s@)]
+		  [exn : mred:exn^ (mred:exn@ debug)]
+		  [preferences : mred:preferences^ (mred:preferences@ debug exn (core function@))]
+		  [container : mred:container^ (mred:container@ debug (core function@))]
+		  [autoload : mred:autoload^ (mred:autoload@ debug preferences (core file@))]
+		  [autosave : mred:autosave^ (mred:autosave@ debug preferences)]
+		  [exit : mred:exit^ (mred:exit@ debug)]
+		  [mode : mred:mode^ (mred:mode@ debug keymap)]
+		  [handler : mred:handler^ (mred:handler@ debug group frame finder (core file@))] 
+		  [keymap : mred:keymap^ (mred:keymap@ debug finder handler find-string scheme-paren)]
+		  [match-cache : mred:match-cache^ (mred:match-cache@ debug)]
+		  [scheme-paren : mred:scheme-paren^ (mred:scheme-paren@ debug paren)]
+		  [paren : mred:paren^ (mred:paren@ debug)]
+		  [path-utils : mred:path-utils^ (mred:path-utils@ debug)]
+		  [gui-utils : mred:gui-utils^ (mred:gui-utils@ debug (core function@) trigger)]
+		  [finder : mred:finder^ (mred:finder@ debug (core string@)
+						     (core function@) (core file@))]
+		  [icon : mred:icon^ (mred:icon@ debug)]
+		  [menu : mred:menu^ (mred:menu@ debug (core function@))]
+		  [edit : mred:edit^ (mred:edit@ debug finder path-utils mode
+					     scheme-paren keymap (core function@))]
+		  [group : mred:group^ (mred:group@ debug gui-utils exit autosave
+						handler (core function@))]
+		  [frame : mred:frame^ (mred:frame@ debug edit canvas icon menu
 						group finder handler exit
 						autosave gui-utils
-						((core function@)) ((core file@)))]
-		  [find-string mred:find-string^ (mred:find-string@ debug canvas
+						(core function@) (core file@))]
+		  [find-string : mred:find-string^ (mred:find-string@ debug canvas
 								  edit frame)]
-		  [canvas mred:canvas^ (mred:canvas@ debug edit ((core file@)))]
-		  [project mred:project^ (mred:project@ debug group gui-utils
-						      exit finder frame handler
-						      ((core file@)) 
-						      ((core function@)))]
-		  [console mred:console^
-			   (mred:console@ debug preferences
-					edit frame exit finder handler
-					gui-utils scheme-mode scheme-paren
-					((core function@)) ((core string@))
-					((core pretty-print@)) 
-					trigger)]
-		  [scheme-mode mred:scheme-mode^
-			       (mred:scheme-mode@ debug
-						  preferences
-						  application
-						  mode
-						  match-cache paren
-						  scheme-paren icon
-						  handler keymap
-						  ((core string@)))]
-		  [hyper-dialog mred:hyper-dialog^
-				(mred:hyper-dialog@ debug hyper-edit ((core file@)))]
-		  [hyper-edit mred:hyper-edit^
+		  [canvas : mred:canvas^ (mred:canvas@ debug edit (core file@))]
+		  [project : mred:project^ (mred:project@ debug group gui-utils exit finder frame handler
+						      (core file@) (core function@))]
+		  [console : mred:console^
+			   (mred:console@ debug preferences edit frame exit finder handler
+					gui-utils scheme-mode scheme-paren (core function@) (core string@)
+					(core pretty-print@) trigger)]
+		  [scheme-mode : mred:scheme-mode^
+			       (mred:scheme-mode@ debug preferences application mode match-cache paren
+						scheme-paren icon handler keymap (core string@))]
+		  [hyper-dialog : mred:hyper-dialog^
+				(mred:hyper-dialog@ debug hyper-edit (core file@))]
+		  [hyper-edit : mred:hyper-edit^
 			      (mred:hyper-edit@ debug edit hyper-dialog
-					      ((core file@)) ((core string@)))]
-		  [hyper-frame mred:hyper-frame^
+					      (core file@) (core string@))]
+		  [hyper-frame : mred:hyper-frame^
 			       (mred:hyper-frame@ debug hyper-edit hyper-dialog
 						frame canvas group handler)])
-	    (export (open exn mred:exn-external^)
-		    (open preferences) (open container)
+	    (export (open (exn : mred:exn-external^))
+		    (open container) (open preferences)
 		    (open autoload) (open autosave) (open exit)
 		    (open gui-utils) (open console) (open path-utils) (open finder)
 		    (open find-string) (open edit) (open canvas) (open frame)
 		    (open group) (open handler) (open icon) (open keymap)
 		    (open match-cache) (open menu) (open mode) (open project)
 		    (open scheme-paren) (open scheme-mode) (open paren)
-		    (open hyper-edit) (open hyper-dialog) (open hyper-frame))))))
+		    (open hyper-edit) (open hyper-dialog) (open hyper-frame)))))))
 (mred:make-mred@)
 
 (mred:debug:printf 'startup "Compounded.")
@@ -215,11 +201,11 @@
 ;; will be redefined by the application
 (define mred:make-application@
   (lambda ()
-    (unit/s mred:application^
-	    (import (mred@ mred^)
-		    (core@ mzlib:core^))
-	    (define console-frame (make-object mred@:console-frame%))
-	    (define eval-string (ivar (ivar console-frame edit) do-eval)))))
+    (unit/sig mred:application^
+      (import ([unit mred@ : mred^]
+	       [unit core@ : mzlib:core^]))
+      (define console-frame (make-object mred@:console-frame%))
+      (define eval-string (ivar (ivar console-frame edit) do-eval)))))
 
 (define mred:non-unit-startup? #f)
 (define mred:load-user-setup? #t)
@@ -227,27 +213,25 @@
 (define mred:make-invokable-unit
   (lambda ()
     (let ([application (mred:make-application@)])
-      (compound-unit/s ((open mred^)
-			(open mred:application^))
-		       (import)
-		       (link [core mzlib:core^ (mzlib:core@)]
-			     [trigger mzlib:trigger^ (mzlib:trigger@)]
-			     [mred mred^ (mred@ core trigger application)]
-			     [application mred:application^
-					  (application mred core)])
-		       (export (open mred) (open application))))))
+      (compound-unit/sig (import ())
+			 (link [core : mzlib:core^ (mzlib:core@)]
+			       [trigger : mzlib:trigger^ (mzlib:trigger@)]
+			       [mred : mred^ (mred@ core trigger application)]
+			       [application : mred:application^
+					    (application mred core)])
+			 (export (open mred) (open application))))))
 
 (define mred:non-unit-startup
   (lambda ()
     (set! mred:non-unit-startup? #t)
     (set! mred:make-application@
 	  (lambda ()
-	    (unit/s mred:application^
-		   (import (mred mred^)
-			   (core mzlib:core^))
-		   (define console-frame (make-object wx:frame% '() "hidden"))
-		   (define eval-string (lambda (string) (void))))))
-    (invoke-open-unit (mred:make-invokable-unit) mred)
+	    (unit/sig mred:application^
+	      (import ([unit mred : mred^]
+		       [unit core : mzlib:core^]))
+	      (define console-frame (make-object wx:frame% '() "hidden"))
+	      (define eval-string (lambda (string) (void))))))
+    (invoke-open-unit/sig (mred:make-invokable-unit) mred)
     (when mred:load-user-setup?
       (mred:user-setup))))
 
@@ -258,7 +242,7 @@
       (cond
 	[(null? args) 
 	 (unless mred:non-unit-startup?
-	   (invoke-open-unit (mred:make-invokable-unit) mred)
+	   (invoke-open-unit/sig (mred:make-invokable-unit) mred)
 	   (when mred:load-user-setup?
 	     (mred:user-setup)))
 	 (for-each mred:edit-file files-to-open)

@@ -1,16 +1,21 @@
 (define mred:console@
-  (unit/s mred:console^
-    (import [mred:debug mred:debug^] 
-	    [mred:preferences mred:preferences^]
-	    [mred:edit mred:edit^]
-	    [mred:frame mred:frame^] [mred:exit mred:exit^]
-	    [mred:finder mred:finder^] [mred:handler mred:handler^]
-	    [mred:gui-utils mred:gui-utils^] [mred:scheme-mode mred:scheme-mode^]
-	    [mred:scheme-paren mred:scheme-paren^]
-	    [mzlib:function mzlib:function^] [mzlib:string mzlib:string^]
-	    [mzlib:pretty-print mzlib:pretty-print^] [mzlib:trigger mzlib:trigger^])
-
-    (mred:debug:printf "mred:console@")
+  (unit/sig mred:console^
+    (import ([unit mred:debug : mred:debug^] 
+	     [unit mred:preferences : mred:preferences^]
+	     [unit mred:edit : mred:edit^]
+	     [unit mred:frame : mred:frame^]
+	     [unit mred:exit : mred:exit^]
+	     [unit mred:finder : mred:finder^]
+	     [unit mred:handler : mred:handler^]
+	     [unit mred:gui-utils : mred:gui-utils^]
+	     [unit mred:scheme-mode : mred:scheme-mode^]
+	     [unit mred:scheme-paren : mred:scheme-paren^]
+	     [unit mzlib:function : mzlib:function^]
+	     [unit mzlib:string : mzlib:string^]
+	     [unit mzlib:pretty-print : mzlib:pretty-print^]
+	     [unit mzlib:trigger : mzlib:trigger^]))
+	    
+    (mred:debug:printf 'invoke "mred:console@")
 
     (define newline-string (string #\newline))
 

@@ -4,16 +4,20 @@
 ; Scheme mode for MrEd.
 
 (define mred:scheme-mode@
-  (unit/s mred:scheme-mode^
-    (import [mred:debug mred:debug^] [mred:preferences mred:preferences^]
-	    [mred:application mred:application^]
-	    [mred:mode mred:mode^]
-	    [mred:match-cache mred:match-cache^] [mred:paren mred:paren^] 
-	    [mred:scheme-paren mred:scheme-paren^] [mred:icon mred:icon^]
-	    [mred:handler mred:handler^] [mred:keymap mred:keymap^]
-	    [mzlib:string mzlib:string^])
-    
-    (mred:debug:printf "mred:scheme-mode@")
+  (unit/sig mred:scheme-mode^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:preferences : mred:preferences^]
+	     [unit mred:application : mred:application^]
+	     [unit mred:mode : mred:mode^]
+	     [unit mred:match-cache : mred:match-cache^]
+	     [unit mred:paren : mred:paren^] 
+	     [unit mred:scheme-paren : mred:scheme-paren^]
+	     [unit mred:icon : mred:icon^]
+	     [unit mred:handler : mred:handler^]
+	     [unit mred:keymap : mred:keymap^]
+	     [unit mzlib:string : mzlib:string^]))
+	    
+    (mred:debug:printf 'invoke "mred:scheme-mode@")
 
     (define newline-string (string #\newline))
 
@@ -62,7 +66,7 @@
 			   class class* class-asi class-asi* define-some
 			   do opt-lambda
 			   local
-			   unit unit/s
+			   unit unit/sig compound-unit/sig 
 			   with-handlers
 			   call-with-input-file with-input-from-file
 			   with-input-from-port call-with-output-file

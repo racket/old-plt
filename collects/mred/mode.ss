@@ -1,8 +1,11 @@
 ; Modes
 
 (define mred:mode@
-  (unit/s mred:mode^
-    (import [mred:debug mred:debug^] [mred:keymap mred:keymap^])
+  (unit/sig mred:mode^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:keymap : mred:keymap^]))
+    
+    (mred:debug:printf 'invoke "mred:mode@")
 
     (define basic-mode%
       (class '() ()

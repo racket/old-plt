@@ -5,8 +5,10 @@
 ; BALANCER ASSUMES THAT QUOTED STRINGS DO NOT SPAN LINES
 
 (define mred:paren@
-  (unit/s mred:paren^
-    (import [mred:debug mred:debug^])
+  (unit/sig mred:paren^
+    (import ([unit mred:debug : mred:debug^]))
+	    
+    (mred:debug:printf 'invoke "mred:paren@")
 
     (define newline-string (string #\newline))
 

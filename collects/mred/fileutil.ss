@@ -1,6 +1,8 @@
 (define mred:path-utils@
-  (unit/s mred:path-utils^
-    (import [mred:debug mred:debug^])
+  (unit/sig mred:path-utils^
+    (import ([unit mred:debug : mred:debug^]))
+	    
+    (mred:debug:printf 'invoke "mred:path-utils@")
 
     (define generate-autosave-name 
       (lambda (name)

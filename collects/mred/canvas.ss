@@ -1,9 +1,10 @@
 (define mred:canvas@
-  (unit/s mred:canvas^
-    (import [mred:debug mred:debug^] [mred:edit mred:edit^]
-	    [mzlib:file mzlib:file^])
-
-    (mred:debug:printf "mred:canvas@")
+  (unit/sig mred:canvas^
+    (import ([unit mred:debug : mred:debug^] 
+	     [unit mred:edit : mred:edit^]
+	     [unit mzlib:file : mzlib:file^]))
+	    
+    (mred:debug:printf 'invoke "mred:canvas@")
 
     (define make-editor-canvas%
       (lambda (super%)

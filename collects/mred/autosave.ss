@@ -1,8 +1,10 @@
 (define mred:autosave@
-  (unit/s mred:autosave^
-    (import [mred:debug mred:debug^]
-	    [mred:preferences mred:preferences^])
-    
+  (unit/sig mred:autosave^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:preferences : mred:preferences^]))
+	    
+    (mred:debug:printf 'invoke "mred:autosave@")
+
     (define autosave-delay (mred:preferences:get-preference 'autosave-delay))
     (define autosaving-on? (mred:preferences:get-preference 'autosaving-on?))
 

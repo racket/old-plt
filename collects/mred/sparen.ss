@@ -2,8 +2,11 @@
 ; Scheme parenthesis wrappers around the general routines
 
 (define mred:scheme-paren@
-  (unit/s mred:scheme-paren^
-    (import [mred:debug mred:debug^] [mred:paren mred:paren^])
+  (unit/sig mred:scheme-paren^
+    (import ([unit mred:debug : mred:debug^]
+	     [unit mred:paren : mred:paren^]))
+	    
+    (mred:debug:printf 'invoke "mred:scheme-paren@")
 
     ;; for now the scheme mode assumes that these are all one character long.
     (define scheme-paren-pairs '(("(" . ")")

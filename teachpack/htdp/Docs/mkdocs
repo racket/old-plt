@@ -1,5 +1,5 @@
 #!/bin/sh
-string=? ; exec mzscheme -r $0 "$@"
+string=? ; exec mzscheme -qr $0 "$@"
 
 ; This list determines the order of libraries in the index file:
 (define libraries

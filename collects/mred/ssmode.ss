@@ -282,126 +282,38 @@
 	     (lambda (edit pos)
 	       0)]
 	    
-	    [dummy
-	     '(begin
-	      (send edit insert (integer->char code))
-	      (let ([pos (mred:scheme-paren:scheme-backward-match edit (add1 here) limit backward-cache)])
-		(if (and pos
-			 (or (not (= quote-code code))
-			     (> 5 
-				(abs (- (send edit position-paragraph 
-					      here)
-					(send edit position-paragraph 
-					      pos))))))
-		    (unless (= (add1 here) pos)
-		      (send edit flash-on pos (add1 pos)))
-		    (when (and (= paren-code code) (match-round-to-square?))
-		      (send* edit 
-			     (begin-edit-sequence)
-			     (insert #\] here (add1 here)));ensure right selection
-		      (let ([round-pos (mred:scheme-paren:scheme-backward-match
-					edit (add1 here)
-					limit backward-cache)])
-			(if round-pos
-			    (send* edit (end-edit-sequence)
-				   (flash-on round-pos
-					     (add1 round-pos)))
-			    (begin
-			      (send* edit
-				     (insert #\) here (add1 here)) 
-				     (end-edit-sequence))
-			      (wx:bell))))))))]
-
-
 	    [balance-parens
-	     ;paren balancing keymap callback
 	     (let-struct string/pos (string pos)
 	       (lambda (edit key)
-		 (let* ([code (send key get-key-code)]
-			[here (send edit get-start-position)]
-			[get-character (ivar edit get-character)] 
+		 (let* ([get-text (ivar edit get-text)]
+			[code (send key get-key-code)]
+			[here (send edit get-start-position)] 
 			[limit (get-limit edit here)]
-			[paren-pairs
-			 (append mred:scheme-paren:scheme-paren-pairs
-				 mred:scheme-paren:scheme-quote-pairs)]
-			[match-left-paren?-return-right-paren
-			 (lambda (left-match-string)
-			   (ormap (lambda (x) (if (string=? left-match-string (car x))
-						  (cdr x)
-						  #f))
-				  paren-pairs))]
-			[match-string
-			 (lambda (position string)
-			   (let loop ([s 0])
-			     (cond
-			       [(<= (string-length string) s) string]
-			       [(char=? (get-character (+ position s))
-					(string-ref string s))
-				(loop (add1 s))]
-			       [else #f])))]
-			[match-delimiters
-			 (lambda (position delim)
-			   (ormap (lambda (d) (or (match-string position (car d))
-						  (match-string position (cdr d))))
-				  delim))]
-			[find-back
-			 (lambda (position p?)
-			   (let loop ([p position])
-			     (cond
-			       [(< p limit) #f]
-			       [(p? p) => (lambda (x) (make-string/pos x p))]
-			       [else (loop (sub1 p))])))])
+			[check-one
+			 (lambda (p)
+			   (lambda (s)
+			     (let ([left (car s)]
+				   [right (cdr s)])
+			       (if (string=? left (get-text (- p (string-length left)) p))
+				   right
+				   #f))))]
+			[get-right-paren (lambda (p) 
+					   (ormap (check-one p) 
+						  mred:scheme-paren:scheme-paren-pairs))])
 		   (if (mred:preferences:get-preference 'mred:paren-match/fixup-parens)
-		       (let* ([back-string-predicate
-			       (lambda (p)
-				 (ormap (lambda (d) (or (match-string p (car d))
-							(match-string p (cdr d))))
-					paren-pairs))]
-			      
-			      ;; first, find the paren that is to the right
-			      ;; it could be either a left or right paren
-			      [back-string/pos (find-back here back-string-predicate)] ;; could be #f
-			      [back-pos (string/pos-pos back-string/pos)]
-			      [back-string (string/pos-string back-string/pos)])
-			 (print-struct #t)
-			 (printf "found: ~a~n" back-string/pos)
+		       (let* ([end-pos (mred:paren:backward-match
+					edit here limit
+					mred:scheme-paren:scheme-paren-pairs
+					mred:scheme-paren:scheme-quote-pairs
+					mred:scheme-paren:scheme-comments
+					#t
+					backward-cache)])
 			 (cond
-			   
-			   ;; if it's a left paren, then just
-			   ;; insert the corresponding right paren
-			   [(match-left-paren?-return-right-paren back-string)
-			    =>
-			    (lambda (x) (send* edit 
-					  (flash-on back-pos (+ back-pos (string-length back-string)))
-					  (insert x)))]
-			   
-			   ;; if we found a right paren then
-			   ;; - jump back one sexp and search for a right paren
-			   [back-string
-			    (let ([contain-match (mred:paren:backward-match
-						edit back-pos limit 
-						mred:scheme-paren:scheme-paren-pairs
-						mred:scheme-paren:scheme-quote-pairs
-						mred:scheme-paren:scheme-comments
-						#t
-						backward-cache)])
-			      (printf "after-match: ~a~n" after-match)
-			      (if after-match
-				  (let* ([2back-predicate
-					  (lambda (p) 
-					    (ormap (lambda (d) (match-string p (car d))) paren-pairs))]
-					 [2back-string/pos (find-back after-match 2back-predicate)]
-					 [2back-pos (string/pos-pos 2back-string/pos)]
-					 [2back-string (string/pos-string 2back-string/pos)]
-					 [2left-string (match-left-paren?-return-right-paren 2back-string)])
-				    (if 2left-string
-					(send* edit 
-					  (insert 2left-string)
-					  (flash-on 2back-pos (+ 2back-pos (string-length 2back-string))))
-					(wx:bell)))
-				  (send edit insert (integer->char code))))]
-			   
-			   ;; otherwise there was no match so we just insert the character
+			   [end-pos
+			    (let ([right-paren-string (get-right-paren end-pos)])
+			      (send* edit 
+				(insert right-paren-string)
+				(flash-on (- end-pos (string-length right-paren-string)) end-pos)))]
 			   [else (send edit insert (integer->char code))]))
 		       (send edit insert (integer->char code)))
 		   #t)))]
@@ -922,8 +834,6 @@
 	  (send keymap map-function ")" "balance-parens")
 	  (send keymap map-function "]" "balance-parens")
 	  (send keymap map-function "}" "balance-parens")
-	  (send keymap map-function "\"" "balance-parens")
-	  (send keymap map-function "|" "balance-parens")
 
 	  (send keymap map-function "c:up" "up-sexp")
 	  (send keymap map-function "s:c:up" "select-up-sexp")

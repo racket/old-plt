@@ -522,7 +522,7 @@
 	    stx
 	    (let ()
 	      (package this-pkg all-defined
-		(open/derived stx #f #,@path))
+		(open/derived #,stx #f #,@path))
 	      (let-syntax ([#,field (lambda (stx)
 				      (raise-syntax-error
 				       #f

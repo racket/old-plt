@@ -2,25 +2,86 @@
   (require (lib "pretty.ss")
 	   (lib "unitsig.ss")
 	   (lib "list.ss")
+           "macro.ss"
 	   (lib "pconvert.ss")
 	   (lib "thread.ss")
-	   (lib "sig.ss" "stepper")
-	   "sig.ss")
-  (provide basis@)
+	   (lib "sig.ss" "stepper"))
 
-  (define basis@
-(unit/sig plt:basis^
-  (import [aries : plt:aries^])
-
-;  (rename [_make-setting/parse make-setting/parse] [_setting/unparse setting/unparse])
+  (provide 
+   initial-line
+   initial-offset
+   initial-column
+   
+   initialize-parameters
+   get-settings
+   get-default-setting
+   get-default-setting-name
+   
+   drscheme-load-handler
+   
+   raw-reader
+   
+   beginner-language?
+   intermediate-language?
+   advanced-language?
+   full-language?
+   
+   error-display/debug-handler
+   current-setting
+   bottom-escape-handler
+   
+   drscheme-print
+   
+   format-source-loc
+   
+   primitive-eval
+   primitive-load
+   
+   process
+   process-file
+   process-sexp
+   
+   (struct process-finish (error?))
+   
+   setting-name->number
+   number->setting
+   setting/unparse
+   (struct setting (key
+                    name
+                    language-defining-module
+                    
+                    read-decimal-as-exact?
+                    case-sensitive?
+                    allow-reader-quasiquote?
+                    disallow-untagged-inexact-numbers
+                    
+                    whole/fractional-exact-numbers
+                    
+                    printing
+                    use-pretty-printer?
+                    sharing-printing?
+                    abbreviate-cons-as-list?
+                    print-tagged-inexact-numbers
+                    print-booleans-as-true/false
+                    print-exact-as-decimal?
+                    print-.-symbols-without-bars
+                    
+                    define-argv?))
+   make-setting/parse
+   
+   teaching-level?
+   
+   find-setting-named
+   add-setting
+   copy-setting
+   
+   r4rs-style-printing?)
   
   (define initial-line 1)
   (define initial-column 1)
   (define initial-offset 0)
   
   (define original-output-port (current-output-port))
-  (define (printf . args)
-    (apply fprintf original-output-port args))
   
   (define (report-error . x) (error 'report-error))
   (define (report-unlocated-error . x) (error 'report-unlocated-error))

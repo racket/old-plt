@@ -1,11 +1,14 @@
 
-(module load-handlers mzscheme
+(module load-handler mzscheme
   (require (lib "mred.ss" "mred")
 	   (lib "unitsig.ss")
+           (lib "class.ss")
 	   "drsig.ss"
+           (lib "sig.ss" "userspce")
+           (lib "etc.ss")
            (lib "framework.ss" "framework")
            (lib "zodiac.ss" "syntax")
-           (lib "basis.ss" "userspce"))
+           (prefix basis: (lib "basis.ss" "userspce")))
   
   (provide load-handler@)
 
@@ -52,7 +55,7 @@
                            [else
                             (set! last
                                   (call-with-values
-                                   (lambda () (basis:syntax-checking-primitive-eval sexp))
+                                   (lambda () (basis:primitive-eval sexp))
                                    (lambda x x)))
                             (recur)])))])
                 (apply values 

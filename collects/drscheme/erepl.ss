@@ -120,6 +120,7 @@
        (lambda (s) (queue-output (lambda () (send repl-buffer output s))))
        (lambda () 'nothing-to-close)))
     
+    (define system-eventspace (current-eventspace))
     (define user-eventspace 'user-eventspace-not-yet-set)
     
     (define (user-space-init dir)
@@ -142,6 +143,9 @@
         (parameterize ((current-eventspace user-eventspace))
           (queue-callback
            (lambda ()
+             (exit-handler (lambda (x) 
+                             (parameterize ([current-eventspace system-eventspace])
+                               (queue-callback (lambda () (do-kill))))))
              (current-directory initial-directory)
              (current-namespace user-namespace)
              (current-output-port user-output-port)

@@ -567,6 +567,7 @@ thread_val {
   gcMARK(pr->ku.k.p2);
   gcMARK(pr->ku.k.p3);
   gcMARK(pr->ku.k.p4);
+  gcMARK(pr->ku.k.p5);
   
   gcMARK(pr->list_stack);
   

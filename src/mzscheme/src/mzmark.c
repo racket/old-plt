@@ -1430,6 +1430,7 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->ku.k.p2);
   gcMARK(pr->ku.k.p3);
   gcMARK(pr->ku.k.p4);
+  gcMARK(pr->ku.k.p5);
   
   gcMARK(pr->list_stack);
   
@@ -1515,6 +1516,7 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->ku.k.p2);
   gcFIXUP(pr->ku.k.p3);
   gcFIXUP(pr->ku.k.p4);
+  gcFIXUP(pr->ku.k.p5);
   
   gcFIXUP(pr->list_stack);
   

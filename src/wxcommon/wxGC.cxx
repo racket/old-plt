@@ -41,15 +41,21 @@ void gc::install_cleanup(void)
   void *old_data;
 
 # ifdef wx_xt
+#  define ALLOW_NON_BASE 0
 #  define CHECK_BASE 1
 # else
+#  define ALLOW_NON_BASE 1
 #  define CHECK_BASE 0
 # endif
 
-# if CHECK_BASE 
+# if CHECK_BASE || ALLOW_NON_BASE
   if (GC_base(this) != (void *)this) {
+#  if ALLOW_NON_BASE
+    return;
+#  else
     printf("Clean-up object is not the base object\n");
     abort();
+#  endif
   }
 # endif
 

@@ -19,6 +19,7 @@ A boolean value which says whether the system openssl library was
 successfully loaded. Calling `ssl-connect', etc.  when this value is
 #f (library not loaded) will raise an error.
 
+
 -- Client procedures ----------------------------------------
 
 > (ssl-connect hostname port-k [ssl-client-context-or-protocol-symbol])
@@ -35,9 +36,11 @@ checked, etc. The argument can be either a client context created by
 `make-client-context' for further details (including the meanings of
 the protocol symbols.)
 
+
 > (ssl-connect/enable-break hostname port-k [protocol-symbol])
 
 Like `ssl-connect', but breaking is enabled while trying to connect. 
+
 
 > (ssl-make-client-context [protocol-symbol])
 
@@ -62,10 +65,12 @@ By default, the context returned by `ssl-make-client-context' does not
 request verification of a server's certificate. Use `ssl-set-verify!'
 to enable such verification.
 
+
 > (ssl-client-context? v)
 
 Returns #t if `v' is a value produced by `ssl-make-client-context', #f
 otherwise.
+
 
 -- Server procedures ----------------------------------------
 
@@ -81,18 +86,22 @@ avoid a _no shared cipher_ error on accepting connections. The file
 calls when testing. Since "test.pem" is public, however, such a test
 configuration obviously provides no security.
 
+
 > (ssl-close ssl-listener)
 > (ssl-listener? v)
 
 Analogous to `tcp-close' and `tcp-listener?'.
 
+
 > (ssl-accept ssl-listener)
 
 Analogous to `tcp-accept'.
 
+
 > (ssl-accept/enable-break ssl-listener)
 
 Analogous to `tcp-accept/enable-break'.
+
 
 -- Certificate procedures ----------------------------------------
 
@@ -107,6 +116,10 @@ or accepts connections. Loading a chain overwrites the old chain. Also
 call `ssl-load-private-key!' to load the certificate's corresponding
 key.
 
+The file "test.pem" is suitable for testing purposes. Since "test.pem"
+is public, such a test configuration obviously provides no security.
+
+
 > (ssl-load-private-key! ssl-client-context-or-listener pathname [rsa? asn1?])
 
 Loads the first private key from `pathname' for the given client
@@ -117,6 +130,10 @@ If `rsa?' is #t (the default), the first RSA key is read (i.e.,
 non-RSA keys are skipped). If `asn1?' is #t (the default is #f), the
 file is parsed as ASN1 format instead of PEM.
 
+The file "test.pem" is suitable for testing purposes. Since "test.pem"
+is public, such a test configuration obviously provides no security.
+
+
 > (ssl-set-verify! ssl-client-context-or-listener boolean)
 
 Enables or disables verification of a connection peer's certificates.
@@ -125,11 +142,17 @@ By default, verification is disabled.
 Enabling verification also requires, at a minimum, designating trusted
 certificate authorities with `ssl-load-verify-root-certificates!'.
 
+
 > (ssl-load-verify-root-certificates! ssl-client-context-or-listener pathname)
 
 Loads a PEM-format file containing trusted certificates that are used
 to verify the certificates of a connection peer. Call this procedure
 multiple times to load multiple sets of trusted certifactes.
+
+The file "test.pem" is suitable for testing purposes where the peer
+identifies itself using "test.pem".  Since "test.pem" is public, such
+a test configuration obviously provides no security.
+
 
 > (ssl-load-suggested-certificate-authorities! ssl-listener pathname)
 
@@ -141,6 +164,10 @@ server trusts.
 Loading the suggested certifcicates does not imply trust, however; any
 certificate presented by the client will be checked using the trusted
 roots loaded by `ssl-load-verify-root-certificates!'.
+
+The file "test.pem" is suitable for testing purposes where the peer
+identifies itself using "test.pem".
+
 
 ==================================================
 

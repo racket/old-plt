@@ -1362,7 +1362,11 @@ ssl_set_verify(int argc, Scheme_Object *argv[])
   else
     ctx = ((mzssl_ctx_t *)(argv[0]))->ctx;
   
-  SSL_CTX_set_verify(ctx, SCHEME_TRUEP(argv[1]) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+  SSL_CTX_set_verify(ctx, 
+		     (SCHEME_TRUEP(argv[1]) 
+		      ? (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
+		      : SSL_VERIFY_NONE),
+		     NULL);
 
   return scheme_void;
 }
@@ -1594,7 +1598,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   GC_register_traversers(ssl_listener_type, listener_SIZE,
 			 listener_MARK, listener_FIXUP,
 			 1, 0);
-  GC_register_traversers(ssl_mzssl_ctx_type, mzssl_ctx_SIZE,
+  GC_register_traversers(ssl_ctx_type, mzssl_ctx_SIZE,
 			 mzssl_ctx_MARK, mzssl_ctx_FIXUP,
 			 1, 1);
   GC_register_traversers(sslplt_type, sslplt_SIZE,

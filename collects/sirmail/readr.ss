@@ -897,11 +897,15 @@
                          (let* ([user-data (send dragging-item user-data)]
                                 [item (assoc user-data mailbox)])
                            (when item
-                             (copy-messages-to (list item) mailbox-name)
-                             (header-changing-action
-                              #f
-                              (lambda ()
-                                (purge-messages (list item))))))
+			     (header-changing-action
+			      #f
+			      (lambda ()
+				(as-background
+				 enable-main-frame
+				 (lambda (bad-break break-ok)
+				   (copy-messages-to (list item) mailbox-name)
+				   (purge-messages (list item)))
+				 void)))))
                          (status ""))))
                  (set! dragging-item #f))]
               [else

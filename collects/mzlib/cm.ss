@@ -3,6 +3,7 @@
 
   (provide make-compilation-manager-load/use-compiled-handler
 	   managed-compile-zo
+	   make-caching-managed-compile-zo
 	   trust-existing-zos
 	   (rename trace manager-trace-handler))
   
@@ -26,9 +27,11 @@
 	      [(symbol? (car l))(loop (cdr l))]
 	      [else (cons (car l) (loop (cdr l)))])))))
   
+  (define re:suffix (regexp "\\..?.?.?$"))
+
   (define (get-compilation-path path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
-      (let ((name (regexp-replace "\\..?.?.?$" name-suffix "")))
+      (let ((name (regexp-replace re:suffix name-suffix "")))
         (cond
           ((eq? 'relative base) (build-path "compiled" name))
           (else (build-path base "compiled" name))))))
@@ -127,25 +130,32 @@
                   stamp)))))))))
   
   (define (managed-compile-zo zo)
-    (parameterize ([current-load/use-compiled (make-compilation-manager-load/use-compiled-handler)])
-       (compile-root (path->complete-path zo) (make-hash-table 'equal))))
+    ((make-caching-managed-compile-zo) zo))
   
+  (define (make-caching-managed-compile-zo)
+    (let ([cache (make-hash-table 'equal)])
+      (lambda (zo)
+	(parameterize ([current-load/use-compiled (make-compilation-manager-load/use-compiled-handler/table cache)])
+	  (compile-root (path->complete-path zo) cache)))))
+
   (define (make-compilation-manager-load/use-compiled-handler)
+    (make-compilation-manager-load/use-compiled-handler/table (make-hash-table 'equal)))
+
+  (define (make-compilation-manager-load/use-compiled-handler/table cache)
     (let ([orig-eval (current-eval)]
 	  [orig-load (current-load)]
 	  [orig-namespace (current-namespace)]
-	  [cache (make-hash-table 'equal)]
 	  [default-handler (current-load/use-compiled)])
-      (let ([compilation-manager-load-handler
-	     (lambda (path mod-name)
-	       ((trace) (format "~aloading: ~a ~a" (indent) path mod-name))
-	       (cond
-		((not mod-name) (default-handler path mod-name))
-		(else 
-		 (unless (or (eq? 'none (use-compiled-file-kinds))
-			     (not (and (eq? orig-eval (current-eval))
-				       (eq? orig-load (current-load))
-				       (eq? orig-namespace (current-namespace)))))
-	            (compile-root path cache))
-		 (default-handler path mod-name))))])
+      (letrec ([compilation-manager-load-handler
+		(lambda (path mod-name)
+		  ((trace) (format "~aloading: ~a ~a" (indent) path mod-name))
+		  (cond
+		   ((not mod-name) (default-handler path mod-name))
+		   (else 
+		    (unless (or (eq? 'none (use-compiled-file-kinds))
+				(not (and (eq? orig-eval (current-eval))
+					  (eq? orig-load (current-load))
+					  (eq? orig-namespace (current-namespace)))))
+		      (compile-root path cache))
+		    (default-handler path mod-name))))])
 	compilation-manager-load-handler))))

@@ -139,7 +139,7 @@
       ;; gets the current mailbox list from the server
       (define (fetch-mailboxes)
         (with-custodian-killing-stop-button
-         "Updating mailbox list..."
+         "Updating folder list..."
          (lambda ()
            (let-values ([(imap msg-count recent-count) (imap-open-connection)]
                         [(root-box) (ROOT-MAILBOX-FOR-LIST)])

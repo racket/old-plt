@@ -492,6 +492,7 @@ please adhere to these guidelines:
  
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Indenting")
+ (indenting-prefs-extra-regexp "Extra regexp")
 
  ; filled with define, lambda, or begin
  (enter-new-keyword "Enter new ~a-like keyword:")

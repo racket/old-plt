@@ -119,6 +119,11 @@
  (ignore "Ignorer")
  (revert "Retourner") ; revenir?
  
+ ;; label for a generic check box, often supported on dialogs
+ ;; that ask a binary choice of the user. If checked, the
+ ;; dialog isn't going to be shown again.
+ (dont-ask-again "Ne jamais redemander (utilisera toujours votre présent choix)")
+
  ;;; important urls
  (web-materials "Sites web apparentés") ;; menu item title
  (tool-web-sites "Sites web d'outils")   ;; menu item title
@@ -280,7 +285,6 @@
     "Les choix que vous faites sont montrés ici si vous avez Javascript et un navigateur récent")
  ;; refreshing manuals
  (plt:hd:refresh-downloading "Téléchargement de ~a")
- (plt:hd:refresh-deleting "Effacement de l'ancienne version de ~a")
  (plt:hd:refresh-installing "Installation de la nouvelle version de ~a")
  (plt:hd:refresh-progress "Progrès du téléchargement des manuels")
  (plt:hd:refresh-done "Fin du téléchargement des manuels par CVS")
@@ -290,14 +294,18 @@
  (plt:hd:refresh-downloading... "T<E9>l<E9>chargement de ~a...")
  (plt:hd:refresh-deleting... "Effacement de l'ancienne version de ~a...")
  (plt:hd:refresh-installing... "Installation de la nouvelle version de ~a...")
+ (plt:hd:refreshing-manuals-finished "Terminé.")  
  (plt:hd:about-help-desk "A propos de l'Aide")
  (plt:hd:help-desk-about-string
   "L'Aide est une source complète d'information à propos des logiciels du PLT, y compris DrScheme, MzScheme et MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT.")
  (plt:hd:help-on-help "Aide de l'Aide")
  (plt:hd:help-on-help-details "Pour obtenir de l'aide sur comment utiliser l'Aide, suivez le lien `How to use Help Desk' à partir de la page principale de l'Aide (pour trouver la page principale, si vous n'y êtes pas déjà, cliquez sur le boutton `Home' qui apparaît en haut de la fenêtre de l'Aide).")
  (reload "Rafraîchir")
-
- ;;; help-desk-specific menus
+ (plt:hd:ask-about-separate-browser
+   "Vous avez sélectionné un lien vers une page sur le world-wide web. Voulez-vous voir cette page en utilisant le navigateur de l'Aide ou voulez-vous utiliser un navigateur séparé ?")
+ (plt:hd:homebrew-browser "Navigateur de l'Aide") ;; choice for the above string (in a button)
+ (plt:hd:separate-browser "Navigateur séparé") ;; other choice for the above string (also in a button)
+ (plt:hd:use-homebrew-browser "Utiliser le navigateur de l'Aide pour les URLs externes")
  (plt:hd:new-help-desk "&Nouvelle Aide")
 
  ; help desk htty proxy

@@ -35,6 +35,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_e(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_line(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_col(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
@@ -140,6 +141,11 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("syntax-column", 
 			     scheme_make_folding_prim(syntax_col,
 						      "syntax-column",
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("syntax-position", 
+			     scheme_make_folding_prim(syntax_pos,
+						      "syntax-position",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("syntax-source", 
@@ -1658,10 +1664,9 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* Re-use rename table or env rename */
       a = scheme_lookup_in_table(rns, (const char *)a);
       if (!a) {
-	scheme_raise_exn(MZEXN_READ,
-			 scheme_false, /* FIXME? should be port, but exn shouldn't happen. */
-			 "read (compiled): unknown rename table index: %d",
-			 SCHEME_INT_VAL(a));
+	scheme_read_err(scheme_false, -1, -1, 0,
+			"read (compiled): unknown rename table index: %d",
+			SCHEME_INT_VAL(a));
       }
       stack = scheme_make_pair(a, stack);
     } else if (SCHEME_PAIRP(a) 
@@ -2093,7 +2098,22 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-column", "syntax", 0, argc, argv);
     
-  if (stx->col < 0)
+  if (stx->line < 0) /* => col, if present, is really position */
+    return scheme_false;
+  else
+    return scheme_make_integer(stx->col);
+}
+
+static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv)
+{
+  Scheme_Stx *stx = (Scheme_Stx *)argv[0];
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-position", "syntax", 0, argc, argv);
+    
+  /* line < 0  => col, if present, is really position */
+
+  if ((stx->line >= 0) || (stx->col < 0))
     return scheme_false;
   else
     return scheme_make_integer(stx->col);

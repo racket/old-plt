@@ -2130,7 +2130,17 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 
   port = scheme_do_open_input_file("default-load-handler", 0, 1, argv);
 
-  scheme_count_lines(port);
+  /* Turn on line/column counting, unless it's a .zo file: */
+  {
+    long len;
+
+    len = SCHEME_STRLEN_VAL(argv[0]);
+    if ((len < 3)
+	|| (SCHEME_STR_VAL(argv[0])[len - 3] != '.')
+	|| (SCHEME_STR_VAL(argv[0])[len - 2] != 'z')
+	|| (SCHEME_STR_VAL(argv[0])[len - 1] != 'o'))
+      scheme_count_lines(port);
+  }
 
   /* Skip over #! at beginning of file */
   if ((ch = scheme_getc(port)) == '#') {

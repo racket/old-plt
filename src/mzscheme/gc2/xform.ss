@@ -371,7 +371,7 @@
   ;; don't need to push any variables:
   '(exit
     scheme_wrong_type scheme_wrong_number scheme_wrong_syntax
-    scheme_wrong_count scheme_wrong_rator
+    scheme_wrong_count scheme_wrong_rator scheme_read_err
     scheme_raise_exn scheme_signal_error
     scheme_raise_out_of_memory
     ))

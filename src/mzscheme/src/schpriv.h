@@ -306,7 +306,6 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
 /*========================================================================*/
 
 #define GLOB_IS_CONST 1
-#define GLOB_IS_KEYWORD 2
 #define GLOB_IS_PRIMITIVE 4
 #define GLOB_IS_PERMANENT 8
 #define GLOB_HAS_REF_ID 16
@@ -1049,7 +1048,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  int radix, int radix_set, 
 				  Scheme_Object *port,
 				  int *div_by_zero,
-				  int test_only);
+				  int test_only,
+				  long line, long col);
 
 Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2);
 Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2);
@@ -1567,6 +1567,10 @@ void scheme_clean_dead_env(Scheme_Env *env);
 /*========================================================================*/
 /*                         errors and exceptions                          */
 /*========================================================================*/
+
+void scheme_read_err(Scheme_Object *port, 
+		     long line, long column, int is_eof,
+		     const char *detail, ...);
 
 void scheme_wrong_syntax(const char *where, 
 			 Scheme_Object *local_form, 

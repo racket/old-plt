@@ -14,8 +14,7 @@ strings are types/comments.
      (user [] "raised by calling \\scmfirst{error}")
      
      (variable [id "symbol" "the unbound variable's global identifier"]
-	       "unbound global variable at run-time"
-	       (*keyword [] "attempt to change the binding of a global keyword"))
+	       "unbound global or module variable at run time")
 
      (application [value "value" "the error-specific inappropriate value"] -
 		  (arity [expected "arity" "the correct procedure arity as returned by \\scmfirst{arity}"]
@@ -26,10 +25,13 @@ strings are types/comments.
 		  (divide-by-zero [] "divide by zero; \\scm{application-value} is always zero")
 		  (*continuation [] "attempt to cross a continuation boundary or apply another thread's continuation"))
      
-     (syntax [expr "S-expression" "illegal expression (or \\scm{\\#f} if unknown)"]
+     (syntax [expr "S-expression" "illegal expression (or \\scheme{#f} if unknown)"]
 	     "syntax error, but not a \\scmfirst{read} error")
      
-     (read [port "input-port" "port being read"] "\\scm{read} parsing error"
+     (read [port "input-port" "port being read"
+		 line "non-negative exact integer or \\scheme{#f}" "source line"
+		 column "non-negative exact integer or \\scheme{#f}" "source column, or position if line is \\scheme{#f}"]
+	   "\\scm{read} parsing error"
 	   (eof [] "unexpected end-of-file"))
      
      (i/o [] -
@@ -38,7 +40,7 @@ strings are types/comments.
 		(write [] "error writing to a port")
 		(closed [] "attempt to operate on a closed port"))
 	  (filesystem [pathname "path" "file or directory pathname"
-				detail "symbol or false" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\scm{\\#f}"] 
+				detail "symbol or \\scheme{#f}" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\scm{\\#f}"] 
 		      "illegal pathname or error manipulating a filesystem object")
 	  (*tcp [] "TCP errors"))
      

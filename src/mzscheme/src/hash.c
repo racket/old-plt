@@ -342,13 +342,6 @@ scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val,
   SCHEME_UNLOCK_MUTEX(table->mutex);
 #endif
 
-  if (table->with_home
-      && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
-      && b->val)
-    scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, key,
-		     "define: cannot redefine constant %S", 
-		     key);
-
   if (val)
     b->val = val;
   if (constant && table->with_home)

@@ -548,7 +548,7 @@
 "(require #%stx #%small-scheme)"
 "(define(stx-memq ssym l)"
 "(ormap(lambda(p)"
-"(and(syntax? P)"
+"(and(syntax? p)"
 "(module-identifier=? ssym p)))"
 " l))"
 "(define(stx-memq-pos ssym l)"

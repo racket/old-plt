@@ -246,7 +246,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    long d;
 	    d = va_arg(args, long);
 	    if (d >= 0) {
-	      sprintf(buf, ", line %ld", d);
+	      sprintf(buf, "%ld.", d);
 	      t = buf;
 	      tlen = strlen(t);
 	    } else {
@@ -958,7 +958,7 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
   line = ((Scheme_Stx *)form)->line;
   col = ((Scheme_Stx *)form)->col;
 
-  if (line >= 0) {
+  if (col >= 0) {
     Scheme_Object *src;
     char *srcstr, *result;
     long srclen, rlen;
@@ -982,7 +982,7 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
     
     result = (char *)scheme_malloc_atomic(srclen + 15);
 
-    rlen = scheme_sprintf(result, srclen + 15, " %t[%ld.%ld]", 
+    rlen = scheme_sprintf(result, srclen + 15, " %t[%L%ld]", 
 			  srcstr, srclen, line, col);
     
     if (len) *len = rlen;
@@ -991,6 +991,38 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
     if (len) *len = 0;
     return NULL;
   }
+}
+
+void scheme_read_err(Scheme_Object *port, 
+		     long line, long column, int is_eof,
+		     const char *detail, ...)
+{
+  va_list args;
+  char *s, *ls, lbuf[30];
+  long slen;
+
+  /* Precise GC: Don't allocate before getting hidden args off stack */
+  s = prepared_buf;
+
+  va_start(args, detail);
+  slen = sch_vsprintf(s, prepared_buf_len, detail, args);
+  va_end(args);
+  
+  prepared_buf = init_buf(NULL, &prepared_buf_len);
+  
+  if (column >= 0) {
+    scheme_sprintf(lbuf, 30, "[%L%ld]", line, column);
+    ls = lbuf;
+  } else
+    ls = "";
+
+  scheme_raise_exn(is_eof ? MZEXN_READ_EOF : MZEXN_READ, 
+		   port ? port : scheme_false, 
+		   (line < 0) ? scheme_false : scheme_make_integer(line),
+		   (column < 0) ? scheme_false : scheme_make_integer(column),
+		   "%t in %s%s", 
+		   s, slen, port ? SCHEME_IPORT_NAME(port) : "UNKNOWN",
+		   ls);
 }
 
 void scheme_wrong_syntax(const char *where, 

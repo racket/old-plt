@@ -310,7 +310,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
     else if (!strcmp("--script", argv[0]))
       argv[0] = "-r";
     else if (!strcmp("--script-cd", argv[0]))
-      argv[0] = "-t";
+      argv[0] = "-i";
     else if (!strcmp("--no-lib-path", argv[0]))
       argv[0] = "-x";
     else if (!strcmp("--version", argv[0]))
@@ -387,7 +387,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  evals_and_loads[num_enl] = argv[0];
 	  is_load[num_enl++] = 1;
 	  break;
-	case 't':
+	case 'i':
 	  script_mode = 1;
 	  no_more_switches = 1;
 	case 'd':
@@ -402,7 +402,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  evals_and_loads[num_enl] = se;
 	  is_load[num_enl++] = 0;
 	  break;
-	case 'i':
+	case 't':
 	  if (argc < 2) {
 	    PRINTF("%s: Missing file name after %s switch.\n", 
 		   prog, real_switch);

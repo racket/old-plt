@@ -452,17 +452,7 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Objec
 void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
 			      int set_undef)
 {
-  if ((((Scheme_Bucket_With_Flags *)b)->flags & (GLOB_IS_CONST | GLOB_IS_KEYWORD))
-      && b->val) {
-    Scheme_Object *key = (Scheme_Object *)b->key;
-    scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, key,
-		     "%s: cannot redefine %s: %S", 
-		     who,
-		     (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
-		     ? "constant"
-		     : "keyword",
-		     (Scheme_Object *)key);
-  } else if (b->val || set_undef)
+  if (b->val || set_undef)
     b->val = val;
   else {
     scheme_raise_exn(MZEXN_VARIABLE, b->key,

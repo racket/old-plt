@@ -25,7 +25,7 @@
   (send* CLICK-DELTA
     (copy WELCOME-DELTA)
     (set-delta-foreground "BLUE")
-    (set-delta wx:const-change-underline 1))
+    (set-delta wx:const-change-underline #t))
   (send* RED-DELTA
     (copy WELCOME-DELTA)
     (set-delta-foreground "RED"))

@@ -81,3 +81,9 @@
 	   (private
 	     [running-message
 	      (make-object wx:message% info-panel sleepy-bitmap)])))))
+
+
+
+
+
+

@@ -199,14 +199,14 @@
 		   (letrec ([d (make-object dialog% "Open URL" f 500)]
 			    [t (make-object text-field% "URL:" d
 					    (lambda (t e)
-					      (send ok enable 
-						    (positive? (send (send t get-editor) 
-								     last-position)))))]
+					      (update-ok)))]
 			    [p (make-object horizontal-panel% d)]
 			    [browse (make-object button% "Browse..." p
 						 (lambda (b e)
 						   (let ([f (get-file)])
-						     (send t set-value (string-append "file:" f)))))]
+						     (when f
+						       (send t set-value (string-append "file:" f))
+						       (update-ok)))))]
 			    [spacer (make-object vertical-pane% p)]
 			    [ok (make-object button% "Open" p
 					     (lambda (b e)
@@ -220,6 +220,9 @@
 						     (send results goto-url url #f)
 						     (send d show #f)))))
 					     '(border))]
+			    [update-ok (lambda () (send ok enable 
+							(positive? (send (send t get-editor) 
+									 last-position))))]
 			    [cancel (make-object button% "Cancel" p 
 						 (lambda (b e) (send d show #f)))])
 		     (send p set-alignment 'right 'center)

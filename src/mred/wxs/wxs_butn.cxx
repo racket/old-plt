@@ -65,6 +65,14 @@ static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {
 }
 
 
+void ButtonSetBorder(wxButton *b, Bool on)
+{
+#ifdef wx_mac
+#else
+  b->SetBorder(on);
+#endif
+}
+
 
 
 
@@ -97,6 +105,7 @@ extern wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *,const c
 extern Scheme_Object *objscheme_bundle_wxCommandEvent(wxCommandEvent *);
 
 static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent *event);
+
 
 
 
@@ -382,6 +391,28 @@ void os_wxButton::OnKillFocus()
   
      READY_TO_RETURN;
   }
+}
+
+static Scheme_Object *os_wxButtonButtonSetBorder(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxButton_class, "set-border in button%", n, p);
+  Bool x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "set-border in button%"));
+
+  
+  WITH_VAR_STACK(ButtonSetBorder(((wxButton *)((Scheme_Class_Object *)p[0])->primdata), x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxButtonSetLabel(int n,  Scheme_Object *p[])
@@ -728,8 +759,9 @@ void objscheme_setup_wxButton(Scheme_Env *env)
 
   wxREGGLOB(os_wxButton_class);
 
-  os_wxButton_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "button%", "item%", (Scheme_Method_Prim *)os_wxButton_ConstructScheme, 7));
+  os_wxButton_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "button%", "item%", (Scheme_Method_Prim *)os_wxButton_ConstructScheme, 8));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-border" " method", (Scheme_Method_Prim *)os_wxButtonButtonSetBorder, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label" " method", (Scheme_Method_Prim *)os_wxButtonSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxButtonOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxButtonPreOnEvent, 2, 2));

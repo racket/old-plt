@@ -12,6 +12,14 @@
 @SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 
+void ButtonSetBorder(wxButton *b, Bool on)
+{
+#ifdef wx_mac
+#else
+  b->SetBorder(on);
+#endif
+}
+
 @CLASSBASE wxButton "button":"item"
 
 @CLASSID wxTYPE_BUTTON
@@ -28,6 +36,8 @@
 
 @ "set-label" : void SetLabel(wxBitmap!) : : /CHECKOK[0.METHODNAME("button%","set-label")] <> bitmap label
 @ "set-label" : void SetLabel(string); <> string label
+
+@ m "set-border" : void ButtonSetBorder(bool)
 
 @END
 

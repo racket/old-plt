@@ -1796,7 +1796,7 @@ void GC_fixup(void *pp)
       } else {
 	if(!marked(p)) {
 	  /* we need to both mark and repair this */
-	  struct objhead *ohead = (struct objhead *)NUM(p - WORD_SIZE);
+	  struct objhead *ohead = (struct objhead *)(NUM(p) - WORD_SIZE);
 	  unsigned short type = ohead->type;
 	  struct mpage *work;
 	  size_t size, sizeb;

@@ -338,7 +338,8 @@
   grow-box-spacer-pane%
 
   horizontal-panel%
-  vertical-panel%
+  (vertical-panel% tab-panel%)
+  tab-panel%
 
   frame%
   dialog%
@@ -403,11 +404,12 @@
   text%
   pasteboard%
 
-  (snip% string-snip% image-snip% editor-snip%)
+  (snip% string-snip% image-snip% editor-snip% readable-snip<%>)
   (string-snip% tab-snip%)
   tab-snip%
   image-snip%
   editor-snip%
+  readable-snip<%>
 
   snip-class%
   snip-class-list<%>
@@ -789,7 +791,7 @@
 			     (when (eq? iv 'set-scale)
 			       (set! args (map (lambda (x) (min x 10)) args)))
 
-			     (send-generic (make-generic (object->interface use) iv) . args))
+			     (send-generic use (make-generic (object->interface use) iv) . args))
 
 			   (apply (global-defined-value iv) args))))))
 	    (loop (cdr l)))))))
@@ -816,10 +818,6 @@
   (create-all-random)
   (create-all-random))
 
-(with-handlers ([void (lambda (x)
-			(printf "Warning: couldn't load classhack.so~n"))])
-  (load-relative-extension "classhack.so"))
-
 (printf " Creating Example Instances~n")  
 
 (define f (make-object frame% "Example Frame 1"))
@@ -832,6 +830,8 @@
 (send horizontal-panel%-example-list add hpl)
 (define vpl (make-object vertical-panel% d))
 (send vertical-panel%-example-list add vpl)
+(define tpl (make-object tab-panel% '("Apple" "Banana" "Coconut") d void))
+(send tab-panel%-example-list add tpl)
 (define hp (make-object horizontal-pane% d))
 (send horizontal-pane%-example-list add hp)
 (define vp (make-object vertical-pane% f))
@@ -917,6 +917,9 @@
 (send image-snip%-example-list add (make-object image-snip%))
 (send editor-snip%-example-list add (make-object editor-snip%))
 
+(require (prefix graph: (lib "graph.ss" "mrdemo")))
+(send readable-snip<%>-example-list add (make-object graph:graph-snip% '(lambda (x) x)))
+
 (send snip-class%-example-list add (make-object snip-class%))
 (send snip-class-list<%>-example-list add (get-the-snip-class-list))
 
@@ -951,16 +954,23 @@
 			     (for-each
 			      (lambda (name method)
 				(if (void? (with-handlers ([void void])
-					     (global-defined-value name)))
+					     (namespace-variable-value name)))
 				    ;; Not there
 				    (printf "No such procedure/value: ~a~n" name)
 				    
-				    (let ([v (global-defined-value name)])
+				    (let ([v (namespace-variable-value name)])
 				      (when (procedure? v)
 					;; check arity
-					(unless (equal? (arity v) (cadr method))
+					(unless (or (equal? (procedure-arity v) (cadr method))
+						    (let ([a (procedure-arity v)]
+							  [b (cadr method)])
+						      (and (list? a)
+							   (list? b)
+							   (andmap integer? a)
+							   (andmap integer? b)
+							   (equal? (quicksort a <) (quicksort b <)))))
 					  (printf "Arity mismatch for ~a, real: ~a documented: ~a~n" 
-						  name (arity v) (cadr method))))))
+						  name (procedure-arity v) (cadr method))))))
 				
 				(set! in-top-level (cons name in-top-level)))
 			      names methods)
@@ -973,7 +983,7 @@
 				 (display key p)
 				 (let ([sp (get-output-string p)]
 				       [ss (let ([s (symbol->string (cadr v))])
-					     (format "#<~a:~a>"
+					     (format "#<struct:~a:~a>"
 						     (if (interface? key) "interface" "class")
 						     s))])
 				   (unless (string=? sp ss)
@@ -1022,9 +1032,14 @@
 
 (let* ([get-all (lambda (n)
 		  (parameterize ([current-namespace n])
-		    (map car (make-global-value-list))))]
-       [expect-n (list* 'mred@ 'mred^ (append (get-all (make-namespace)) in-top-level))]
-       [actual-n (get-all (make-namespace 'mred))])
+		    (namespace-mapped-symbols)))]
+       [expect-n (list* 'mred@ 'mred^ 
+			(append (get-all (let ([n (make-namespace)])
+					   (parameterize ([current-namespace n])
+					     (namespace-require '(lib "class.ss")))
+					   n))
+				in-top-level))]
+       [actual-n (get-all (make-namespace-with-mred))])
   (for-each
    (lambda (i)
      (unless (memq i expect-n)

@@ -368,15 +368,10 @@
 						  (apply values answers))))]
 					 [evaluator
 					  (lambda (exp _ macro)
-					    (printf "evaluator.1: ~a ~a~n" (current-directory) (current-thread))
-					    (begin0 (wait-on-scheme (aries:annotate exp))
-						    (printf "evaluator.2: ~a ~a~n" (current-directory) (current-thread))))]
+					    (wait-on-scheme (aries:annotate exp)))]
 					 [user-macro-body-evaluator
 					  (lambda (x . args)
-					    (printf "user-macro-body-evaluator.1: ~a ~a~n" (current-directory) (current-thread))
-					    (begin0
-					      (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args)))					    
-					      (printf "user-macro-body-evaluator.2: ~a ~a~n" (current-directory) (current-thread))))]
+					    (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
 					 [exp (call/nal zodiac:scheme-expand/nal
 							zodiac:scheme-expand
 							[expression: zodiac-read]
@@ -683,22 +678,19 @@
 		  (error-escape-k (list (void)) #t)))]
 	  [send-scheme 
 	   (lambda (expr)
-	     (printf "send-scheme.1: ~a~n" (current-directory))
-	     (begin0
-	       (let/ec k
-		 (fluid-let ([error-escape-k k])
-			    (call-with-values
-			     (lambda ()
-			       (if (drscheme:language:use-zodiac)
-				   (with-parameterization user-param
-				     (lambda ()
-				       (syntax-checking-primitive-eval expr)))
-				   (with-parameterization user-param
-				     (lambda ()
-				       (drscheme:init:primitive-eval expr)))))
-			     (lambda anss
-			       (values anss #f)))))
-	       (printf "send-scheme.2: ~a~n" (current-directory))))])
+	     (let/ec k
+	       (fluid-let ([error-escape-k k])
+			  (call-with-values
+			   (lambda ()
+			     (if (drscheme:language:use-zodiac)
+				 (with-parameterization user-param
+				   (lambda ()
+				     (syntax-checking-primitive-eval expr)))
+				 (with-parameterization user-param
+				   (lambda ()
+				     (drscheme:init:primitive-eval expr)))))
+			   (lambda anss
+			     (values anss #f))))))])
 	(public
 	  [evaluation-thread #f]
 	  [run-in-evaluation-thread void]
@@ -715,9 +707,7 @@
 				run-function init-eval-thread))])
 		 (set! run-in-evaluation-thread 
 		       (lambda x
-			 (printf "current-directory.1: ~a~n" (current-directory))
-			 (begin0 (apply run-in-evaluation-thread2 x)
-				 (printf "current-directory.2: ~a~n" (current-directory)))))
+			 (apply run-in-evaluation-thread2 x)))
 		 (set! evaluation-thread evaluation-thread2))))])
 	(public
 	  [userspace-load

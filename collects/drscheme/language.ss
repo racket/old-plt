@@ -103,6 +103,8 @@
 	(aries:signal-undefined (setting-signal-undefined pref))
 	(aries:signal-not-boolean (setting-signal-not-boolean pref))
 	
+	((in-parameterization parameterization compile-allow-set!-undefined)
+	 (setting-allow-set!-on-undefined? pref))
 	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? pref))
 	(compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? pref)))
 	

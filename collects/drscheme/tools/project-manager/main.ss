@@ -646,7 +646,8 @@
 ~n~
 ~n   ~a~
 ~n~
-~nShould this file be collection relative?"
+~nShould this file be collection relative~
+~n(that is, loaded with require-library instead of load)?"
 			filename
 			collection
 			collection-dir))
@@ -738,12 +739,14 @@
                  "Loading Project"
                  (format "Resetting language settings to default; saved language settings are from old version")))
 
+            ;; need to update the gui at this point...
             (when loaded-loaded-files-shown?
               (set! loaded-files-shown? (function:second loaded-loaded-files-shown?)))
-            
+            (update-loaded-files-shown)
             (when loaded-to-load-files-shown?
               (set! to-load-files-shown? (function:second loaded-to-load-files-shown?)))
-	    
+	    (update-to-load-files-shown)
+            
             (when loaded-files
 	      (set! files (function:second loaded-files)))
 
@@ -773,40 +776,44 @@
 	     'truncate 'text))))
 
       (define loaded-files-shown? #f)
-      (define (show/hide-loaded-files)
+      (define (update-loaded-files-shown)
 	(send loaded-files-menu-item set-label
 	      (if loaded-files-shown?
-		  "Show Loaded Files"
-		  "Hide Loaded Files"))
+		  "Hide Loaded Files"
+		  "Show Loaded Files"))
 	(send loaded-files-outer-panel change-children
 	      (lambda (l)
 		(if loaded-files-shown?
-		    null
-		    (list loaded-files-panel))))
-	(set! loaded-files-shown? (not loaded-files-shown?))
+		    (list loaded-files-panel)
+		    null)))
+	(send loaded-files-outer-panel stretchable-height loaded-files-shown?))
+      (define (show/hide-loaded-files)
+        (set! loaded-files-shown? (not loaded-files-shown?))
         (is-changed)
+        (update-loaded-files-shown)
         (unless (or to-load-files-shown?
                     loaded-files-shown?)
-          (show/hide-to-load-files))
-	(send loaded-files-outer-panel stretchable-height loaded-files-shown?))
+          (show/hide-to-load-files)))
 
-      (define to-load-files-shown? #f)
-      (define (show/hide-to-load-files)
-	(send to-load-files-menu-item set-label
+      (define to-load-files-shown? #t)
+      (define (update-to-load-files-shown)
+        (send to-load-files-menu-item set-label
 	      (if to-load-files-shown?
-		  "Show Project Files"
-		  "Hide Project Files"))
+		  "Hide Project Files"
+		  "Show Project Files"))
 	(send to-load-files-outer-panel change-children
 	      (lambda (l)
 		(if to-load-files-shown?
-		    null
-		    (list to-load-files-panel))))
+		    (list to-load-files-panel)
+		    null)))
+	(send to-load-files-outer-panel stretchable-height to-load-files-shown?))
+      (define (show/hide-to-load-files)
 	(set! to-load-files-shown? (not to-load-files-shown?))
         (is-changed)
+        (update-to-load-files-shown)
         (unless (or to-load-files-shown?
                     loaded-files-shown?)
-          (show/hide-loaded-files))
-	(send to-load-files-outer-panel stretchable-height to-load-files-shown?))
+          (show/hide-loaded-files)))
 
       (define (hierlist-item-mixin class%)
 	(class/d class% args
@@ -942,13 +949,14 @@
 
       (define show-menu (make-object menu% "Show" mb))
       (define to-load-files-menu-item
-        (make-object menu-item% "Show Project Files" show-menu (lambda xxx (show/hide-to-load-files))))
+        (make-object menu-item% "Hide Project Files" show-menu (lambda xxx (show/hide-to-load-files))))
       (define loaded-files-menu-item
         (make-object menu-item% "Show Loaded Files" show-menu (lambda xxx (show/hide-loaded-files))))
 
       (define project-menu (make-object menu% "Project" mb))
       (add-common-project-menu-items project-menu)
       (make-object separator-menu-item% project-menu)
+      (make-object menu-item% "Execute" project-menu (lambda x (execute-project)) #\t)
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
       (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)))
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))

@@ -27,6 +27,7 @@
      "Cormac Flanagan, "
      "Sebastian Good, "
      "Kathy Gray, "
+     "Bruce Hauman, "
      "Mark Krentel, "
      "Mario Latendresse, "
      "Scott Owens, "

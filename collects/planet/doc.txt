@@ -175,6 +175,11 @@ the planet server. The installed package has path (planet (<owner>
 <plt-file's filename> <maj> <min>)), where maj and min are natural
 numbers and maj is greater than 0.
 
+-c, --create-archive <path>
+
+Create a PLaneT archive in the current directory whose contents are
+the directory <path>
+
 -i, --install <owner> <pkg> <maj> <min>
 
 Download and install the package that 
@@ -336,9 +341,18 @@ listing on the PLaneT web page.
 
 3. BUILD A .PLT FILE
 
-Run the function make-planet-archive from the util.ss module in the 
-planet collection with the name of the directory you've prepared as
-its argument: 
+Use the planet command-line tool in its archive-creation mode to
+create a planet archive:
+
+  planet --create-archive /home/jacob/my-app/
+
+This will create a planet archive named my-app.plt in the current
+directory whose contents are the contents of /home/jacobm/my-app and
+all its subdirectories. 
+
+Alternately, you can run the function make-planet-archive from the
+util.ss module in the planet collection with the name of the directory
+you've prepared as its argument:
 
   (make-planet-archive "/home/jacob/my-app/")
 
@@ -350,18 +364,18 @@ make-planet-archive, located in that same directory.
 You can now test that your .plt file works as intended using the
 planet command-line tool in its install mode:
 
-planet --file <path to your .plt file> <owner name> <maj> <min>
+  planet --file <path to your .plt file> <owner name> <maj> <min>
 
 will install the specified .plt file into your local PLaneT cache as
 though it had been downloaded from the PLaneT server with the given
 owner name and major and minor versions. After you run this command,
 you can require your package on your local machine using
 
-(require (planet (<owner name> <.plt file name without path> <maj> <min>)))
+  (require (planet (<owner name> <.plt file name without path> <maj> <min>)))
 
 to verify everything works. After you do so, you can use
 
-planet --remove <owner name> <.plt file name> <maj> <min>
+  planet --remove <owner name> <.plt file name> <maj> <min>
 
 to remove the test package from your local cache. (Not removing it is
 safe as long as you use the same name and version numbers the package

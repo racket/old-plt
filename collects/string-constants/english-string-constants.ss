@@ -557,9 +557,9 @@
   "Inline the saved program in the executable? If yes, you can copy the executable to another ~a computer but the executable will be quite large. If not, you cannot copy the executable to another computer, but it will be much smaller. Additionally, if not, the executable will load the latest version of the program.")
  (use-mred-binary?
   "Use the mred binary for this executable?\n\nIf yes, your program can use the (lib \"mred.ss\" \"mred\") library. If no, DrScheme will use mzscheme as the binary for this executable and you cannot use that library.\n\nIf unsure, choose yes.")
- (inline-saved-program-in-executable/windows
-  "WARNING: if you copy the executable to another machine, you must also copy llibmred.dll, libmzscheme.dll, and libgc.dll. In addition, your PATH environment variable must also contain the location of the dll files.")
- 
+ (inline-saved-program-in-executable/windows/path
+   "WARNING! The generated executable relies on three DLLs: libmred.dll, libmzsch.gll, and libgc.dll, which are located at\n\n~a\n\nThe executable finds the DLLs either in the executable's directory or through the PATH enviornment variable.\n\nWhen you installed DrScheme, the installer adjusted the user's PATH to include the directory where the DLLs were installed. Beware of configuration or user changes since installation.\n\nIf you move the executable to another machine, you must also copy the DLLs to the other machine --- either to the same directory as the executable, or to a directory in the other machine's PATH.")
+  
  ;;; buttons
  (execute-button-label "Execute") 
  (save-button-label "Save")
@@ -643,13 +643,13 @@
  (full-language "Full") ;; also in the HtDP languages section
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")
- (pretty-big-scheme "Pretty Big Scheme (includes MrEd and Advanced)")
+ (pretty-big-scheme "Pretty Big (includes MrEd and Advanced)")
  (pretty-big-scheme-one-line-summary "Adds syntax and functions from the HtDP languages")
  (r5rs-lang-name "Standard (R5RS)")
  (r5rs-one-line-summary "R5RS, with no frills")
  (unknown-debug-frame "[unknown]")
  
- (module-language-one-line-summary "Execute creates a REPL in the context of the module, including the specified module language")
+ (module-language-one-line-summary "Execute creates a REPL in the context of the module, including the module's declared language")
   
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")

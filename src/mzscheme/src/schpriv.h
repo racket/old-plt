@@ -1244,8 +1244,8 @@ Scheme_Object *scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *en
 Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env, 
 				      Scheme_Comp_Env *upto);
 
-void scheme_add_local_syntax(Scheme_Object *name, Scheme_Object *val, Scheme_Comp_Env *env);
-void scheme_set_local_syntax(Scheme_Object *name, Scheme_Object *val,
+void scheme_add_local_syntax(int cnt, Scheme_Comp_Env *env);
+void scheme_set_local_syntax(int pos, Scheme_Object *name, Scheme_Object *val,
 			     Scheme_Comp_Env *env);
 
 void scheme_env_make_closure_map(Scheme_Comp_Env *frame, short *size, short **map);

@@ -1214,16 +1214,17 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   {
     Scheme_Object *stop;
     stop = scheme_get_stop_expander();
-    scheme_add_local_syntax(begin_stx, stop, xenv);
-    scheme_add_local_syntax(define_values_stx, stop, xenv);
-    scheme_add_local_syntax(define_syntax_stx, stop, xenv);
-    scheme_add_local_syntax(import_stx, stop, xenv);
-    scheme_add_local_syntax(import_for_syntax_stx, stop, xenv);
-    scheme_add_local_syntax(export_stx, stop, xenv);
-    scheme_add_local_syntax(export_indirect_stx, stop, xenv);
-    scheme_add_local_syntax(set_stx, stop, xenv);
-    scheme_add_local_syntax(app_stx, stop, xenv);
-    scheme_add_local_syntax(unbound_stx, stop, xenv);
+    scheme_add_local_syntax(10, xenv);
+    scheme_set_local_syntax(0, begin_stx, stop, xenv);
+    scheme_set_local_syntax(1, define_values_stx, stop, xenv);
+    scheme_set_local_syntax(2, define_syntax_stx, stop, xenv);
+    scheme_set_local_syntax(3, import_stx, stop, xenv);
+    scheme_set_local_syntax(4, import_for_syntax_stx, stop, xenv);
+    scheme_set_local_syntax(5, export_stx, stop, xenv);
+    scheme_set_local_syntax(6, export_indirect_stx, stop, xenv);
+    scheme_set_local_syntax(7, set_stx, stop, xenv);
+    scheme_set_local_syntax(8, app_stx, stop, xenv);
+    scheme_set_local_syntax(9, unbound_stx, stop, xenv);
   }
 
   first = scheme_null;

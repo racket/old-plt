@@ -73,9 +73,10 @@ static Module_Renames *krn;
    A wrap is a list of wrap-elems.
 
    - A wrap-elem <num> is a mark
-   - A wrap-elem (vector <sym> <stx> ... <sym-or-#f> ...) is a lexical rename
-                          env   var      var-resolved
-                                         #f => not yet computed
+   - A wrap-elem (vector <sym> <ht> <stx> ... <sym-or-#f> ...) is a lexical rename
+                          env (sym  var       var-resolved
+                              ->pos)           #f => not yet computed
+                              or #f
    - A wrap-elem <rename-table> is a module rename set
          the hash table maps renamed syms to modname-srcname pairs
    - A wrap-elem (box (vector <num> <midx> <midx>)) is a phase shift
@@ -429,11 +430,17 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
   Scheme_Object *v;
   int i;
 
-  v = scheme_make_vector((2 * c) + 1, NULL);
+  v = scheme_make_vector((2 * c) + 2, NULL);
   SCHEME_VEC_ELS(v)[0] = newname;
+  if (c > 15) {
+    Scheme_Hash_Table *ht;
+    ht = scheme_hash_table(c, SCHEME_hash_ptr, 0, 0);
+    SCHEME_VEC_ELS(v)[1] = (Scheme_Object *)ht;
+  } else 
+    SCHEME_VEC_ELS(v)[1] = scheme_false;
 
   for (i = 0; i < c; i++) {
-    SCHEME_VEC_ELS(v)[c + 1 + i] = scheme_false;
+    SCHEME_VEC_ELS(v)[2 + c + i] = scheme_false;
   }
 
   return v;
@@ -441,7 +448,17 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
 
 void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
 {
-  SCHEME_VEC_ELS(rnm)[pos + 1] = oldname;
+  SCHEME_VEC_ELS(rnm)[2 + pos] = oldname;
+
+  /* Add ht mapping, if there's a hash table: */
+  if (!SCHEME_FALSEP(SCHEME_VEC_ELS(rnm)[1])) {
+    Scheme_Hash_Table *ht;
+    ht = (Scheme_Hash_Table *)SCHEME_VEC_ELS(rnm)[1];
+    if (scheme_lookup_in_table(ht, (char *)oldname))
+      pos = -1; /* -1 means multiple entries matching a name */
+    scheme_add_to_table(ht, (char *)SCHEME_STX_VAL(oldname), 
+			scheme_make_integer(pos), 0);
+  }
 }
 
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
@@ -736,7 +753,7 @@ static Scheme_Object *get_marks(Scheme_Object *awl)
 #define QUICK_STACK_SIZE 10
 
 static Scheme_Object *resolve_env(Scheme_Object *a, long phase, 
-				  int w_mod, int assume_no_lex)
+				  int w_mod, Scheme_Object **assume_nolex_get_name)
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *o_rename_stack = scheme_null;
@@ -784,6 +801,8 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	      mresult = scheme_modidx_shift(mresult,
 					    modidx_shift_from,
 					    modidx_shift_to);
+	    if (assume_nolex_get_name)
+	      *assume_nolex_get_name = SCHEME_CDR(rename);
 	  }
 	}
       }
@@ -796,27 +815,49 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
       if (!modidx_shift_to)
 	modidx_shift_to = SCHEME_VEC_ELS(vec)[2];
       modidx_shift_from = SCHEME_VEC_ELS(vec)[1];
-    } else if (SCHEME_VECTORP(SCHEME_CAR(wraps)) && !assume_no_lex) {
+    } else if (SCHEME_VECTORP(SCHEME_CAR(wraps)) && !assume_nolex_get_name) {
       /* Lexical rename: */
       Scheme_Object *rename, *renamed;
-      int ri, c;
+      int ri, c, istart, iend;
 
       rename = SCHEME_CAR(wraps);
 
-      c = (SCHEME_VEC_SIZE(rename) - 1) >> 1;
+      c = (SCHEME_VEC_SIZE(rename) - 2) >> 1;
 
-      for (ri = 0; ri < c; ri++) {
-	renamed = SCHEME_VEC_ELS(rename)[1+ri];
+      /* Get index from hash table, if there is one: */
+      if (!SCHEME_FALSEP(SCHEME_VEC_ELS(rename)[1])) {
+	void *pos;
+	pos = scheme_lookup_in_table((Scheme_Hash_Table *)(SCHEME_VEC_ELS(rename)[1]),
+				     (char *)SCHEME_STX_VAL(a));
+	if (pos) {
+	  istart = SCHEME_INT_VAL(pos);
+	  if (istart < 0) {
+	    /* -1 indicates multiple slots matching this name. */
+	    istart = 0;
+	    iend = c;
+	  } else
+	    iend = istart + 1;
+	} else {
+	  istart = 0;
+	  iend = 0;
+	}
+      } else {
+	istart = 0;
+	iend = c;
+      }
+
+      for (ri = istart; ri < iend; ri++) {
+	renamed = SCHEME_VEC_ELS(rename)[2+ri];
 	if (SAME_OBJ(SCHEME_STX_VAL(a), SCHEME_STX_VAL(renamed))) {
 	  if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
 	    Scheme_Object *other_env, *envname;
 	    
 	    envname = SCHEME_VEC_ELS(rename)[0];
-	    other_env = SCHEME_VEC_ELS(rename)[1+c+ri];
+	    other_env = SCHEME_VEC_ELS(rename)[2+c+ri];
 	    
 	    if (SCHEME_FALSEP(other_env)) {
-	      other_env = resolve_env(renamed, 0, 0, 0);
-	      SCHEME_VEC_ELS(rename)[1+c+ri] = other_env;
+	      other_env = resolve_env(renamed, 0, 0, NULL);
+	      SCHEME_VEC_ELS(rename)[2+c+ri] = other_env;
 	    }
 	    
 	    /* If it turns out that we're going to return
@@ -838,7 +879,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
   }
 }
 
-static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long phase)
+static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *result;
@@ -848,7 +889,7 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 
   while (1) {
     if (SCHEME_NULLP(wraps)) {
-      if (!result && always)
+      if (!result)
 	return SCHEME_STX_VAL(a);
       else
 	return result;
@@ -908,8 +949,8 @@ int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase)
   if ((a == asym) || (b == bsym))
     return 1;
   
-  a = resolve_env(a, phase, 1, 0);
-  b = resolve_env(b, phase, 1, 0);
+  a = resolve_env(a, phase, 1, NULL);
+  b = resolve_env(b, phase, 1, NULL);
 
   a = scheme_module_resolve(a);
   b = scheme_module_resolve(b);
@@ -926,11 +967,11 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
     return (a == b);
 
   if (SCHEME_STXP(a))
-    asym = get_module_src_name(a, 1, phase);
+    asym = get_module_src_name(a, phase);
   else
     asym = a;
   if (SCHEME_STXP(b))
-    bsym = get_module_src_name(b, 1, phase);
+    bsym = get_module_src_name(b, phase);
   else
     bsym = b;
 
@@ -941,8 +982,8 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
   if ((a == asym) || (b == bsym))
     return 1;
   
-  a = resolve_env(a, phase, 1, 0);
-  b = resolve_env(b, phase, 1, 0);
+  a = resolve_env(a, phase, 1, NULL);
+  b = resolve_env(b, phase, 1, NULL);
 
   a = scheme_module_resolve(a);
   b = scheme_module_resolve(b);
@@ -954,13 +995,12 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase)
 {
   if (SCHEME_STXP(*a)) {
-    Scheme_Object *modname, *exname;
+    Scheme_Object *modname, *exname = NULL;
+
+    modname = resolve_env(*a, phase, 1, &exname);
     
-    exname = get_module_src_name(*a, 0, phase);
     if (exname) {
-      modname = resolve_env(*a, phase, 1, 1);
       *a = exname;
-      
       return modname;
     } else
       return NULL;
@@ -994,12 +1034,12 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
   if (!uid)
     if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps))
       return 0;
-  
-  a = resolve_env(a, phase, 0, 0);
+
+  a = resolve_env(a, phase, 0, NULL);
   if (uid)
     b = uid;
   else
-    b = resolve_env(b, phase, 0, 0);
+    b = resolve_env(b, phase, 0, NULL);
 
   /* Same binding environment? */
   return SAME_OBJ(a, b);
@@ -1013,7 +1053,7 @@ int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 int scheme_stx_has_binder(Scheme_Object *a, long phase)
 {
   if (SCHEME_STXP(a)) {
-    a = resolve_env(a, phase, 0, 0);
+    a = resolve_env(a, phase, 0, NULL);
     return SCHEME_TRUEP(a);
   } else
     return 0;
@@ -1215,13 +1255,13 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	envname = SCHEME_VEC_ELS(a)[0];
 	
 	c = SCHEME_VEC_SIZE(a);
-	c = (c - 1) >> 1;
+	c = (c - 2) >> 1;
 	
 	for (i = 0; i < c; i++) {
-	  other_env = SCHEME_VEC_ELS(a)[1+c+i];
+	  other_env = SCHEME_VEC_ELS(a)[2+c+i];
 	  if (SCHEME_FALSEP(other_env)) {
-	    other_env = resolve_env(SCHEME_VEC_ELS(a)[1+i], 0, 0, 0);
-	    SCHEME_VEC_ELS(a)[1+c+i] = other_env;
+	    other_env = resolve_env(SCHEME_VEC_ELS(a)[2+i], 0, 0, NULL);
+	    SCHEME_VEC_ELS(a)[2+c+i] = other_env;
 	  }
 	}
 	
@@ -1229,10 +1269,10 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	vec = scheme_make_vector(2 + (3 * c), NULL);
 	SCHEME_VEC_ELS(vec)[0] = envname;
 	for (i = 0; i < c; i++) {
-	  SCHEME_VEC_ELS(vec)[1+i] = SCHEME_STX_VAL(SCHEME_VEC_ELS(a)[1+i]);
-	  m = get_marks(((Scheme_Stx *)(SCHEME_VEC_ELS(a)[1+i]))->wraps);
+	  SCHEME_VEC_ELS(vec)[1+i] = SCHEME_STX_VAL(SCHEME_VEC_ELS(a)[2+i]);
+	  m = get_marks(((Scheme_Stx *)(SCHEME_VEC_ELS(a)[2+i]))->wraps);
 	  SCHEME_VEC_ELS(vec)[1+c+i] = m;
-	  SCHEME_VEC_ELS(vec)[1+(2 * c)+i] = SCHEME_VEC_ELS(a)[1+c+i];
+	  SCHEME_VEC_ELS(vec)[1+(2 * c)+i] = SCHEME_VEC_ELS(a)[2+c+i];
 	}
 
 	local_key = scheme_make_integer(rns->count);
@@ -1597,9 +1637,10 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       c = SCHEME_VEC_SIZE(a);
       c = (c - 2) / 3;
 
-      vec = scheme_make_vector(1 + (2 * c), NULL);
+      vec = scheme_make_vector(2 + (2 * c), NULL);
 
       SCHEME_VEC_ELS(vec)[0] = envname;
+      SCHEME_VEC_ELS(vec)[1] = scheme_false;
 
       for (i = 0; i < c; i++) {
 	name = SCHEME_VEC_ELS(a)[1+i];
@@ -1608,8 +1649,8 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	s = scheme_make_stx(name, -1, -1, scheme_false, NULL);
 	((Scheme_Stx *)s)->wraps = marks;
 
-	SCHEME_VEC_ELS(vec)[1+i] = s;
-	SCHEME_VEC_ELS(vec)[1+c+i] = SCHEME_VEC_ELS(a)[1+(2 * c)+i];
+	SCHEME_VEC_ELS(vec)[2+i] = s;
+	SCHEME_VEC_ELS(vec)[2+c+i] = SCHEME_VEC_ELS(a)[1+(2 * c)+i];
       }
 
       local_key = SCHEME_VEC_ELS(a)[1+(3 * c)];
@@ -2141,7 +2182,7 @@ static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[1]) || !SCHEME_STX_SYM(argv[1]))
     scheme_wrong_type("bound-identifier=?", "idenfitier syntax", 1, argc, argv);
 
-  return (scheme_stx_bound_eq(argv[0], argv[1], 
+  return (scheme_stx_bound_eq(argv[0], argv[1],
 			      (p->current_local_env
 			       ? p->current_local_env->genv->phase
 			       : 0))

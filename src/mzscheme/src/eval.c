@@ -3601,6 +3601,7 @@ local_expand(int argc, Scheme_Object **argv)
 {
   Scheme_Comp_Env *env;
   Scheme_Object *l, *local_mark;
+  int cnt, pos;
 
   env = scheme_current_process->current_local_env;
 
@@ -3615,6 +3616,11 @@ local_expand(int argc, Scheme_Object **argv)
   env = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME, env);
   local_mark = scheme_current_process->current_local_mark;
   
+  cnt = scheme_stx_proper_list_length(argv[1]);
+  if (cnt > 0)
+    scheme_add_local_syntax(cnt, env);
+  pos = 0;
+
   for (l = argv[1]; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
     Scheme_Object *i;
     
@@ -3624,7 +3630,8 @@ local_expand(int argc, Scheme_Object **argv)
       return NULL;
     }
     
-    scheme_add_local_syntax(i, stop_expander, env);
+    if (cnt > 0)
+      scheme_set_local_syntax(pos++, i, stop_expander, env);
   }
   if (!SCHEME_NULLP(l)) {
     scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);

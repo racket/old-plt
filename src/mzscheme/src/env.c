@@ -77,13 +77,6 @@ static void register_traversers(void);
 static int set_reference_ids = 0;
 static int builtin_ref_counter = 0;
 
-typedef struct Constant_Binding {
-  MZTAG_IF_REQUIRED
-  Scheme_Object *name;
-  Scheme_Object *val;
-  struct Constant_Binding *next;
-} Constant_Binding;
-
 #define ARBITRARY_USE 1
 #define CONSTRAINED_USE 2
 #define WAS_SET_BANGED 4
@@ -91,7 +84,9 @@ typedef struct Constant_Binding {
 typedef struct Compile_Data {
   char **stat_dists; /* (pos, depth) => used? */
   int *sd_depths;
-  Constant_Binding *constants;
+  int num_const;
+  Scheme_Object **const_names;
+  Scheme_Object **const_vals;
   int *use;
 } Compile_Data;
 
@@ -720,8 +715,6 @@ static void init_compile_data(Scheme_Comp_Env *env)
   for (i = 0; i < c; i++) {
     use[i] = 0;
   }
-
-  data->constants = NULL;
 }
 
 Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
@@ -787,39 +780,26 @@ scheme_add_compilation_binding(int index, Scheme_Object *val, Scheme_Comp_Env *f
   frame->values[index] = val;
 }
 
-void scheme_add_local_syntax(Scheme_Object *name, 
-			     Scheme_Object *val,
-			     Scheme_Comp_Env *env)
+void scheme_add_local_syntax(int cnt, Scheme_Comp_Env *env)
 {
-  Constant_Binding *b;
+  Scheme_Object **ns, **vs;
   
-  b = MALLOC_ONE_RT(Constant_Binding);
-#ifdef MZTAG_REQUIRED
-  b->type = scheme_rt_constant_binding;
-#endif
+  if (cnt) {
+    ns = MALLOC_N(Scheme_Object *, cnt);
+    vs = MALLOC_N(Scheme_Object *, cnt);
 
-  b->next = COMPILE_DATA(env)->constants;
-  b->name = name;
-  b->val = val;
-
-  COMPILE_DATA(env)->constants = b;
+    COMPILE_DATA(env)->num_const = cnt;
+    COMPILE_DATA(env)->const_names = ns;
+    COMPILE_DATA(env)->const_vals = vs;
+  }
 }
 
-void scheme_set_local_syntax(Scheme_Object *name, Scheme_Object *val,
-			    Scheme_Comp_Env *env)
+void scheme_set_local_syntax(int pos,
+			     Scheme_Object *name, Scheme_Object *val,
+			     Scheme_Comp_Env *env)
 {
-  Constant_Binding *b;
-  
-  b = COMPILE_DATA(env)->constants;
-  while (b) {
-    if (scheme_stx_bound_eq(b->name, name, env->genv->phase)) {
-      b->val = val;
-      return;
-    }
-    b = b->next;
-  }
-
-  scheme_signal_error("internal error: scheme_set_local_syntax: not found");
+  COMPILE_DATA(env)->const_names[pos] = name;
+  COMPILE_DATA(env)->const_vals[pos] = val;
 }
 
 Scheme_Comp_Env *
@@ -915,15 +895,12 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
   while (env != upto) {
     if (!(env->flags & (SCHEME_NO_RENAME | SCHEME_CAPTURE_WITHOUT_RENAME))) {
       Scheme_Object *uid;
-      Constant_Binding *c;
       int i, count;
       
       uid = env_frame_uid(env);
       
       count = 0;
-      for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
-	count++;
-      }
+      count += COMPILE_DATA(env)->num_const;
       for (i = env->num_bindings; i--; ) {
 	if (env->values[i])
 	  count++;
@@ -936,8 +913,8 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	  rnm = scheme_make_rename(uid, count);
 	  
 	  count = 0;
-	  for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
-	    scheme_set_rename(rnm, count++, c->name);
+	  for (i = COMPILE_DATA(env)->num_const; i--; ) {
+	    scheme_set_rename(rnm, count++, COMPILE_DATA(env)->const_names[i]);
 	  }
 	  for (i = env->num_bindings; i--; ) {
 	    if (env->values[i])
@@ -1041,31 +1018,35 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   for (frame = env; frame->next != NULL; frame = frame->next) {
     int i;
     Scheme_Object *uid;
-    Constant_Binding *c = COMPILE_DATA(frame)->constants;
     
     if (frame->flags & SCHEME_LAMBDA_FRAME)
       j++;
 
     uid = env_frame_uid(frame);
-
+    
     for (i = frame->num_bindings; i--; ) {
-      if (frame->values[i] && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
-	if (flags & SCHEME_DONT_MARK_USE)
-	  return scheme_make_local(scheme_local_type, 0);
-	else
-	  return (Scheme_Object *)get_frame_loc(frame, i, j, p, flags);
+      if (frame->values[i]) {
+	if (SAME_OBJ(SCHEME_STX_VAL(symbol), SCHEME_STX_VAL(frame->values[i]))
+	    && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
+	  if (flags & SCHEME_DONT_MARK_USE)
+	    return scheme_make_local(scheme_local_type, 0);
+	  else
+	    return (Scheme_Object *)get_frame_loc(frame, i, j, p, flags);
+	}
       }
     }
 
-    while (c) {
+    for (i = COMPILE_DATA(frame)->num_const; i--; ) {
       int issame;
       if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
-	issame = scheme_stx_module_eq(symbol, c->name, phase);
+	issame = scheme_stx_module_eq(symbol, COMPILE_DATA(frame)->const_names[i], phase);
       else
-	issame = scheme_stx_env_bound_eq(symbol, c->name, uid, phase);
-
+	issame = (SAME_OBJ(SCHEME_STX_VAL(symbol), 
+			   SCHEME_STX_VAL(COMPILE_DATA(frame)->const_names[i]))
+		  && scheme_stx_env_bound_eq(symbol, COMPILE_DATA(frame)->const_names[i], uid, phase));
+      
       if (issame) {
-	val = c->val;
+	val = COMPILE_DATA(frame)->const_vals[i];
 	
 	if (!val) {
 	  scheme_wrong_syntax("compile", NULL, symbol,
@@ -1084,8 +1065,6 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
 	return val;
       }
-
-      c = c->next;
     }
 
     p += frame->num_bindings;
@@ -1761,7 +1740,6 @@ START_XFORM_SKIP;
 static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_rt_comp_env, mark_comp_env);
-  GC_REG_TRAV(scheme_rt_constant_binding, mark_const_binding);
   GC_REG_TRAV(scheme_rt_resolve_info, mark_resolve_info);
 }
 

@@ -387,6 +387,7 @@ static void lambda_check(Scheme_Object *form)
 static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *v, *a;
+  DupCheckRecord r;
 
   if (!SCHEME_STX_SYMBOLP(args)) {
     for (v = args; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
@@ -394,26 +395,19 @@ static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *for
       scheme_check_identifier(who, a, NULL, env, form);
     }
 
-    if (!SCHEME_STX_NULLP(v))
+    if (!SCHEME_STX_NULLP(v)) {
       if (!SCHEME_STX_SYMBOLP(v)) {
 	scheme_check_identifier(who, v, NULL, env, form);
       }
+    }
 
     /* Check for duplicate names: */
+    scheme_begin_dup_symbol_check(&r, env);
     for (v = args; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
-      Scheme_Object *name, *rest;
+      Scheme_Object *name;
+
       name = SCHEME_STX_CAR(v);
-      for (rest = SCHEME_STX_CDR(v); !SCHEME_STX_NULLP(rest); rest = SCHEME_STX_CDR(rest)) {
-	Scheme_Object *param;
-	if (!SCHEME_STX_PAIRP(rest))
-	  param = rest;
-	else
-	  param = SCHEME_STX_CAR(rest);
-	if (SCHEME_STX_SYMBOLP(name) && scheme_stx_bound_eq(param, name, env->genv->phase))
-	  scheme_wrong_syntax(who, name, form, "duplicate argument name");
-	if (!SCHEME_STX_PAIRP(rest))
-	  break;
-      }
+      scheme_dup_symbol_check(&r, who, name, "lambda", form);
     }
   }
 }
@@ -2815,6 +2809,7 @@ do_letmacro(char *where, Scheme_Object *formname,
   Scheme_Object *macro;
   Scheme_Comp_Env *env;
   Scheme_Compile_Info mrec;
+  int cnt, i;
 
   form = SCHEME_STX_CDR(forms);
   if (!SCHEME_STX_PAIRP(form))
@@ -2829,6 +2824,11 @@ do_letmacro(char *where, Scheme_Object *formname,
 
   check_form(where, bindings);
   
+  cnt = scheme_stx_proper_list_length(bindings);
+  i = 0;
+  if (cnt > 0)
+    scheme_add_local_syntax(cnt, env);
+
   for (v = bindings; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
     Scheme_Object *a;
 
@@ -2850,10 +2850,14 @@ do_letmacro(char *where, Scheme_Object *formname,
 
     a = SCHEME_STX_CAR(a);
     scheme_check_identifier(where, a, NULL, env, forms);
-    scheme_add_local_syntax(a, NULL, env);
+
+    if (cnt > 0)
+      scheme_set_local_syntax(i++, a, NULL, env);
   }
 
   scheme_prepare_exp_env(env->genv);
+
+  i = 0;
 
   for (v = bindings; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
     Scheme_Object *a, *name;
@@ -2880,7 +2884,7 @@ do_letmacro(char *where, Scheme_Object *formname,
     SCHEME_PTR_VAL(macro) = a;
     scheme_end_stubborn_change((void *)macro);
 
-    scheme_set_local_syntax(name, macro, env);
+    scheme_set_local_syntax(i++, name, macro, env);
   }
 
   body = scheme_add_env_renames(body, env, origenv);

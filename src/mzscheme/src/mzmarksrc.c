@@ -681,18 +681,6 @@ mark_comp_env {
   gcBYTES_TO_WORDS(sizeof(Scheme_Full_Comp_Env));
 }
 
-mark_const_binding {
- mark:
-  Constant_Binding *b = (Constant_Binding *)p;
-    
-  gcMARK(b->name);
-  gcMARK(b->val);
-  gcMARK(b->next);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(Constant_Binding));
-}
-
 mark_resolve_info {
  mark:
   Resolve_Info *i = (Resolve_Info *)p;

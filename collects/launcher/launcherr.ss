@@ -4,7 +4,8 @@
   
   (define plthome
     (with-handlers ([(lambda (x) #t) (lambda (x) #f)])
-      (or (normal-case-path (expand-path (getenv "PLTHOME")))
+      (or (let ([p (getenv "PLTHOME")])
+	    (and p (normal-case-path (expand-path p))))
 	  (let ([dir (collection-path "mzlib")])
 	    (and dir
 		 (let-values ([(base name dir?) (split-path dir)])

@@ -8,5 +8,3 @@
 		     (if (file-exists? f)
 			 f
 			 (error "not there"))))))
-
-;(define startup-url "file:d:/iplt/doc/help/scheme/installed.html")

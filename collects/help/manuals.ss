@@ -49,16 +49,16 @@
        (append
 	(map
 	 (lambda (doc name)
-	   (format "<LI> <A HREF=\"~a\">~a</A>"
-		   (fs-path->file://path (build-path doc "index.htm"))
+	   (format "<LI> <A HREF=\"file:~a\">~a</A>"
+		   (build-path doc "index.htm")
 		   name))
 	 doc-paths
 	 names)
 	(list "</UL><P><UL>")
 	(map
 	 (lambda (collection-doc-file name)
-	   (format "<LI> <A HREF=\"~a\">~a collection</A>"
-		   (fs-path->file://path (apply build-path collection-doc-file))
+	   (format "<LI> <A HREF=\"file:~a\">~a collection</A>"
+		   (apply build-path collection-doc-file)
 		   name))
 	 collections-doc-files
 	 collection-names)

@@ -332,7 +332,7 @@
 					     (send (get-canvas) goto-url 
 						   (string-append
 						    "file:"
-						    (fs-path->file://path (build-path (collection-path "help") "notthere.htm")))
+						    (build-path (collection-path "help") "notthere.htm"))
 						   #f)))))))))))
 			  (k url)
 			  void)))]

@@ -1590,7 +1590,7 @@ char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *l
     gd->length = length;
     gd->sema = sema;
 
-    cb = scheme_make_closed_prim(get_data_from_client, gd);
+    cb = scheme_make_closed_prim((Scheme_Closed_Prim *)get_data_from_client, gd);
 
     MrEdQueueInEventspace(clipOwner->context, cb);
 

@@ -60,14 +60,9 @@ static int mzerrno = 0;
 #include "schfd.h"
 
 #ifdef USE_MAC_TCP
+# define USESROUTINEDESCRIPTORS 1
 # include <MacTCP.h>
 # include "macdnr.inc"
-# define NUM_ALT_ADDRS 10
-typedef struct hostInfo {
-    long            rtnCode;
-    char            cname [255];
-    unsigned long   addr [NUM_ALT_ADDRS];
-};
 #endif
 
 #ifdef USE_UNIX_SOCKETS_TCP
@@ -407,6 +402,9 @@ static pascal void dnr_done(struct hostInfo *hi, int * done)
 }
 
 typedef long ResultUPP;
+enum { uppResultProcInfo = 0x000003C1 };  /* no_return_value Func(4_bytes, 4_bytes) */
+#define NewResultProc(proc) (ResultUPP)mzNewRoutineDescriptor((ProcPtr)proc, uppResultProcInfo, GetCurrentArchitecture())
+
 static ResultUPP u_dnr_done;
 
 static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
@@ -508,19 +506,53 @@ static TCPIOCompletionUPP u_tcp_send_done;
 
 static void tcp_cleanup(void);
 
+static pascal OSErr (*mzPBOpenSync)(ParmBlkPtr paramBlock);
+static pascal OSErr (*mzPBControlSync)(ParmBlkPtr paramBlock);
+static pascal OSErr (*mzPBControlAsync)(ParmBlkPtr paramBlock);
+
 static void TCP_INIT(char *name)
 {
   ParamBlockRec pb;
   short errNo;
-	
+
+  FSSpec spec;
+  CFragConnectionID connID;
+  OSErr err;
+  void (*f)(...);
+
+  if (!scheme_mac_path_to_spec("nethack", &spec))
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "%s: TCP initialization error (can't find nethack)",
+		     name);
+
+  err = GetDiskFragment(&spec, 0, 0, 0, kPrivateCFragCopy, &connID, 0, NULL);
+  if (err != noErr)
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "%s: TCP initialization error (can't load nethack: %e)",
+		     name, err);
+  err = FindSymbol(connID, "\pFillInNetPointers", (Ptr *)&f, 0);
+  if (err != noErr)
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "%s: TCP initialization error (can't get nethack function: %e)",
+		     name, err);
+
+  f(&mzPBOpenSync, &mzPBControlSync, &mzPBControlAsync, 
+    &mzSysEnvirons, &mzGetWDInfo, &mzNewRoutineDescriptor,
+    &mzCallUniversalProc);
+
   pb.ioParam.ioCompletion = 0L; 
   pb.ioParam.ioNamePtr = (StringPtr) "\p.IPP"; 
   pb.ioParam.ioPermssn = fsCurPerm;
   
-  if ((errNo = PBOpenSync(&pb))
-      || (errNo = OpenResolver(NULL))) {
+  if ((errNo = mzPBOpenSync(&pb))) {
     scheme_raise_exn(MZEXN_I_O_TCP,
-		     "%s: TCP initialization error (%e)",
+		     "%s: TCP initialization error (at .IPP; %e)",
+		     name, (int)errNo);
+  }
+
+  if ((errNo = OpenResolver(NULL))) {
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "%s: TCP initialization error (at resolver; %e)",
 		     name, (int)errNo);
   }
 		
@@ -643,7 +675,7 @@ static int mac_tcp_make(TCPiopbX **_xpb, TCPiopb **_pb, Scheme_Tcp **_data)
   
   xpb->data = data;
   
-  if ((errid = PBControlSync((ParamBlockRec*)pb)))
+  if ((errid = mzPBControlSync((ParamBlockRec*)pb)))
     return errid;
 	
   data->tcp.create_pb = (void *)pb;
@@ -669,12 +701,12 @@ static void mac_tcp_close(Scheme_Tcp *data, int cls, int rel)
     pb->csParam.close.validityFlags = timeoutValue | timeoutAction;
     pb->csParam.close.ulpTimeoutValue = 60 /* seconds */;
     pb->csParam.close.ulpTimeoutAction = 1 /* 1:abort 0:report */;
-    PBControlSync((ParamBlockRec*)pb);
+    mzPBControlSync((ParamBlockRec*)pb);
   }
 
   if (rel) {
     pb->csCode = TCPRelease;
-    PBControlSync((ParamBlockRec*)pb);
+    mzPBControlSync((ParamBlockRec*)pb);
 
     {
       TCPiopbX *x, *prev = NULL;
@@ -728,7 +760,7 @@ static int mac_tcp_listen(int id, long host_id, Scheme_Tcp **_data)
     pb->csParam.open.security = 0;
     pb->csParam.open.optionCnt = 0;
 
-    if ((errid = PBControlAsync((ParmBlkPtr)pb))) {
+    if ((errid = mzPBControlAsync((ParmBlkPtr)pb))) {
       data->tcp.state = SOCK_STATE_UNCONNECTED;
       mac_tcp_close(data, 1, 1);
       return errid;
@@ -933,7 +965,7 @@ static int tcp_check_write(Scheme_Object *port)
     pb = (TCPiopb *)xpb;
     
     pb->csCode = TCPStatus;
-    if (PBControlSync((ParamBlockRec*)pb))
+    if (mzPBControlSync((ParamBlockRec*)pb))
       bytes = -1;
     else {
       bytes = pb->csParam.status.sendWindow - pb->csParam.status.amtUnackedData;
@@ -1042,7 +1074,7 @@ static int tcp_char_ready (Scheme_Input_Port *port)
     pb->csCode = TCPStatus;
     pb->ioCompletion = NULL;
 
-    if (PBControlSync((ParamBlockRec*)pb))
+    if (mzPBControlSync((ParamBlockRec*)pb))
       return 1;
       
     if (pb->csParam.status.amtUnreadData)
@@ -1148,7 +1180,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
     
       data->activeRcv = pb;
 
-      PBControlAsync((ParamBlockRec*)pb);
+      mzPBControlAsync((ParamBlockRec*)pb);
     }
 
     BEGIN_ESCAPEABLE(scheme_post_sema, data->tcp.lock);
@@ -1329,7 +1361,7 @@ static long tcp_write_string(Scheme_Output_Port *port,
     pb = (TCPiopb *)xpb;
     
     pb->csCode = TCPStatus;
-    if ((errid = PBControlSync((ParamBlockRec*)pb)))
+    if ((errid = mzPBControlSync((ParamBlockRec*)pb)))
       bytes = 0;
     else {
       bytes = pb->csParam.status.sendWindow - pb->csParam.status.amtUnackedData;
@@ -1396,7 +1428,7 @@ static long tcp_write_string(Scheme_Output_Port *port,
       pb->csParam.send.sendFree = 0;
       pb->csParam.send.sendLength = 0;
       
-      errid = PBControlAsync((ParamBlockRec*)pb);
+      errid = mzPBControlAsync((ParamBlockRec*)pb);
     } else if (!errid) {
       if (bytes) {
       	/* Do partial write: */
@@ -1696,7 +1728,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     pb->csParam.open.security = 0;
     pb->csParam.open.optionCnt = 0;
 
-    if ((errNo = PBControlAsync((ParamBlockRec*)pb))) {
+    if ((errNo = mzPBControlAsync((ParamBlockRec*)pb))) {
       errpart = 3;
       goto tcp_close_and_error;
     }

@@ -31,7 +31,7 @@
 	   [is-c? (regexp-match "[.]c$" base)])
       (cons
        obj
-       (format "~a \304~a ~a\r\t~a ~a ~a -opt off -w off -d FOR_MAC -d WX_CARBON -d __STDC__~a -includes unix -curdir~a -o ~a.o"
+       (format "~a \304~a ~a\r\t~a ~a ~a -opt off -w off -d FOR_MAC -d SILENT -d WX_CARBON -d __STDC__~a -includes unix -curdir~a -o ~a.o"
 	       obj
 	       (if is-c? "" " carbon.dump")
 	       f
@@ -468,10 +468,16 @@
 		(printf "  ~a\266\r" (car p)))
 	      all-srcs)
     
-    (printf "\rall \304 {OBJS}\r")
-    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o MrEd -c 'MrEd' -m __appstart~a\r"
-	    (when debug? " -sym big"))
-    (printf "\tRez ::cw:MrEd.r -o MrEd -append\r")
+    (printf "\r::::nethack \304 nethack.c\r")
+    (printf "\tMrC nethack.c -o nethack.c.o\r")
+    (printf "\tPPCLink nethack.c.o -export FillInNetPointers -o ::::nethack \"{SharedLibraries}InterfaceLib\" -xm s\r\r")
+
+    (printf "\rall \304 ::::MrEd ::::nethack\r\r")
+
+    (printf "\r::::MrEd \304 {OBJS}\r")
+    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o ::::MrEd -c 'MrEd' -m __appstart~a\r"
+	    (if debug? " -sym big" ""))
+    (printf "\tRez ::cw:MrEd.r ::cw:MrEd_classic.r -o ::::MrEd -c MrEd -t APPL -append\r")
     (when debug?
       (printf "\tMakeSym MrEd.xcoff -P -sym big -o MrEd.sym ~a~a\r"
 	      (if (null? debug-only)

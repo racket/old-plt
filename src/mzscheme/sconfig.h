@@ -686,7 +686,7 @@
 # define POW_HANDLES_INF_CORRECTLY
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
 
-/* # define USE_MAC_TCP */
+# define USE_MAC_TCP
 
 # define SIGSET_IS_SIGNAL
 

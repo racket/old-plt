@@ -26,8 +26,8 @@ executables:
       _.icns_ (Mac OS X) - an icons for the executable
  
       _.lch_  (Windows) - creates an old-style launcher that is
-               independent of the MzScheme or MrEd binary; used
-               for "Setup PLT.exe"
+               independent of the MzScheme or MrEd binary, such
+               as "Setup PLT.exe"; the file content is ignored
 
    For Unix/X, the script created by `make-mred-launcher' detects and
    handles X flags specially when they appear as the initial arguments

@@ -41,7 +41,11 @@ class wxBufferDataClassList;
 extern short wxMacDisableMods;
 extern long wxMediaCreatorId;
 # include "simpledrop.h"
+# ifdef OS_X
 extern int wx_in_terminal;
+# else
+int wx_in_terminal; /* dummy */
+# endif
 #endif
 
 #ifdef MPW_CPLUS

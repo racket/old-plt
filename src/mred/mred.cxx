@@ -1744,7 +1744,7 @@ void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner)
   if (c) {
     clipOwner->context = NULL;
 
-    p = scheme_make_closed_prim(call_being_replaced, clipOwner);
+    p = scheme_make_closed_prim(CAST_SCP call_being_replaced, clipOwner);
     
     cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
     cb->context = c;

@@ -342,7 +342,7 @@ The _embed.ss_ library provides a function to embed Scheme code into a
 copy of MzScheme or MrEd, thus creating a (large) _stand-alone_ Scheme
 executable.
 
-> (make-embedding-executable dest-file mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list)
+> (make-embedding-executable dest-file mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list [aux launcher?])
   - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary,
   embedding code into the copied executable to be loaded on startup.
 
@@ -399,6 +399,22 @@ executable.
   "mred.ss" "mred"). Then, if the literal code expect to have MrEd and
   the class library required into the top-level namespace, literal
   `require's for thoselibraries should be included at the start.
+
+   The optional `aux' argument specifies a path to use in finding
+   auxilliary, platform-specific configuration for the executable,
+   such as an icon. The `aux' path is used by adding a suffix to the
+   path, such as ".icns", and checking whether such a file exists. If
+   it does, it is used in a platform- and extension-specific way. The
+   currently supported extensions are as follows:
+
+      _.icns_ (Mac OS X) - an icons for the executable
+
+   If `launcher?' is #t, then no `modules' should be null,
+   `literal-file-list' should be null, `literal-sexp' should be #f,
+   and the platform should be Windows or Mac OS X. The embedding
+   executable is created in such a way that `(find-system-path
+   'exec-file)' produces the source MzScheme or MrEd path instead of
+   the embedding executable.
 
 The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
 that imports nothing and exports `make-embedding-executable'.

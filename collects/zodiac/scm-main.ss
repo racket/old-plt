@@ -370,10 +370,6 @@
 
     (define local-extract-vocab (make-vocabulary))
 
-    (define local-parse-vocab-delta (make-vocabulary))
-
-    (define local-parse-vocab 'undefined:local-parse-vocab)
-
     (add-micro-form 'local scheme-vocabulary
       (let* ((kwd '(local))
 	      (in-pattern `(local (defs ...) ,@expr-pattern))
@@ -383,82 +379,58 @@
 	    (if p-env
 	      (let*
 		((defs (pat:pexpand '(defs ...) p-env kwd))
-		  (vars
-		    (apply append
-		      (map
-			(lambda (e)
-			  (expand-expr e env attributes local-extract-vocab))
-			defs))))
+		  (vars+exprs
+		    (map
+		      (lambda (e)
+			(let ((out
+				(expand-expr e env
+				  attributes local-extract-vocab)))
+			  out))
+		      defs)))
 		(expand-expr
 		  (structurize-syntax
-		    `(let ,(map (lambda (v) `(,v (#%void))) vars)
-		       ,@defs
+		    `(letrec*-values
+		       ,(map (lambda (vars+expr)
+			       `(,(car vars+expr) ,(cdr vars+expr)))
+			  vars+exprs)
 		       ,@(pat:pexpand expr-pattern p-env kwd))
 		    expr)
-		  env
-		  (put-attribute attributes 'local-info
-		    (cons attributes vocab))
-		  local-parse-vocab))
+		  env attributes vocab))
 	      (static-error expr "Malformed local"))))))
 
     ; (define var val)                                          [core]
 
     (let* ((kwd '(define))
-	    (in-pattern-1 '(define var val))
-	    (out-pattern-1 '(define-values (var) val))
-	    (in-pattern-2 `(define (fun . args) ,@expr-pattern))
-	    (out-pattern-2 `(define fun (lambda args ,@expr-pattern)))
+	    (in-pattern-1 `(define (fun . args) ,@expr-pattern))
+	    (out-pattern-1 `(define-values (fun) (lambda args ,@expr-pattern)))
+	    (in-pattern-2 `(define var val))
+	    (out-pattern-2 `(define-values (var) val))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-      (let ((define-helper
-	      (lambda (handler)
-		(lambda (expr env attributes vocab)
-		  (cond
-		    ((pat:match-against m&e-2 expr env)
-		      =>
-		      (lambda (p-env)
-			(expand-expr
-			  (structurize-syntax
-			    (pat:pexpand out-pattern-2 p-env kwd)
-			    expr '(-1))
-			  env attributes vocab)))
-		    ((pat:match-against m&e-1 expr env)
-		      =>
-		      (lambda (p-env)
-			(handler expr env attributes vocab p-env)))
-		    (else (static-error expr "Malformed define")))))))
-	(add-micro-form 'define scheme-vocabulary
-	  (define-helper
-	    (lambda (expr env attributes vocab p-env)
-	      (expand-expr
-		(structurize-syntax
-		  (pat:pexpand out-pattern-1 p-env kwd)
-		  expr '(-1))
-		env attributes vocab))))
-	(add-micro-form
-	  'define
-	  local-extract-vocab
-	  (define-helper
-	    (lambda (expr env attributes vocab p-env)
-	      (let* ((var-p (pat:pexpand 'var p-env kwd))
-		      (_ (valid-syntactic-id? var-p)))
-		(list (z:read-object var-p))))))
-	(add-micro-form
-	  'define
-	  local-parse-vocab-delta
-	  (define-helper
-	    (lambda (expr env attributes vocab p-env)
-	      (let* ((local-info (get-attribute attributes 'local-info))
-		      (attributes (car local-info))
-		      (vocab (cdr local-info)))
-		(expand-expr
-		  (structurize-syntax
-		    `(set! ,(pat:pexpand 'var p-env kwd)
-		       ,(pat:pexpand 'val p-env kwd))
-		    expr '(-1))
-		  env
-		  attributes
-		  vocab)))))))
+      (add-macro-form 'define scheme-vocabulary
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
+	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
+	    (static-error expr "Malformed define"))))
+      (add-micro-form 'define local-extract-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((fun (pat:pexpand 'fun p-env kwd))
+		       (expr (pat:pexpand `(lambda args ,@expr-pattern))))
+		  (valid-syntactic-id? fun)
+		  (cons (list fun) expr))))
+	    ((pat:match-against m&e-2 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd))
+		       (val (pat:pexpand 'val p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (cons (list var) val))))
+	    (else
+	      (static-error expr "Malformed define in local clause"))))))
 
     (let* ((kwd '(define-values))
 	    (in-pattern-1 '(define-values (var ...) val))
@@ -471,42 +443,22 @@
 		      =>
 		      (lambda (p-env)
 			(let* ((vars (pat:pexpand '(var ...) p-env kwd))
-				(_ (map valid-syntactic-id? vars)))
-			  (handler expr env attributes vocab p-env vars))))
+				(_ (map valid-syntactic-id? vars))
+				(val (pat:pexpand 'val p-env kwd)))
+			  (handler expr env attributes vocab vars val))))
 		    (else (static-error expr "Malformed define-values")))))))
 	(add-micro-form 'define-values scheme-vocabulary
 	  (define-values-helper
-	    (lambda (expr env attributes vocab p-env vars)
+	    (lambda (expr env attributes vocab vars val)
 	      (let* ((id-exprs (map (lambda (v)
 				      (expand-expr v env attributes vocab))
 				 vars))
-		      (expr-expr (expand-expr
-				   (pat:pexpand 'val p-env kwd)
-				   env attributes vocab)))
+		      (expr-expr (expand-expr val env attributes vocab)))
 		(create-define-values-form id-exprs expr-expr expr)))))
-    	(add-micro-form 'define-values local-extract-vocab
+	(add-micro-form 'define-values local-extract-vocab
 	  (define-values-helper
-	    (lambda (expr env attributes vocab p-env vars)
-	      (map z:read-object vars))))
-	(add-micro-form 'define-values local-parse-vocab-delta
-	  (define-values-helper
-	    (lambda (expr env attributes vocab p-env vars)
-	      (let* ((local-info (get-attribute attributes 'local-info))
-		      (attributes (car local-info))
-		      (vocab (cdr local-info)))
-		(expand-expr
-		  (structurize-syntax
-		    (if (= 1 (length vars))
-		      `(set! ,(car vars) 
-			 ,(pat:pexpand 'val p-env kwd))
-		      (let ((new-vars (map generate-name vars)))
-			`(let-values
-			   ((,new-vars ,(pat:pexpand 'val p-env kwd)))
-			   ,@(map (lambda (var new-var)
-				    `(set! ,var ,new-var))
-			       vars new-vars))))
-		    expr '(-1))
-		  env attributes vocab)))))))
+	    (lambda (expr env attributes vocab vars val)
+	      (cons vars val))))))
 
     (define extract-type&super
       (let* ((kwd '())
@@ -575,52 +527,36 @@
 	      (in-pattern '(define-struct type-spec (fields ...)))
 	      (m&e-in (pat:make-match&env in-pattern kwd)))
 	(let ((ds-core
-                (lambda (handler)
-                  (lambda (expr env attributes vocab)
-                    (cond
-                      ((pat:match-against m&e-in expr env)
-                        =>
-                        (lambda (p-env)
-                          (handler expr env attributes vocab p-env)))
-                      (else
-                        (static-error expr "Malformed define-struct")))))))
+		(lambda (handler)
+		  (lambda (expr env attributes vocab)
+		    (cond
+		      ((pat:match-against m&e-in expr env)
+			=>
+			(lambda (p-env)
+			  (let ((fields (pat:pexpand '(fields ...) p-env kwd))
+				 (type-spec (pat:pexpand 'type-spec p-env kwd)))
+			    (distinct-valid-syntactic-id/s? fields)
+			    (let*-values
+			      (((type super) (extract-type&super type-spec env))
+				((names) (generate-struct-names type fields expr))
+				((struct-expr)
+				  `(struct ,type-spec ,fields)))
+			      (handler expr env attributes vocab
+				names struct-expr)))))
+		      (else
+			(static-error expr "Malformed define-struct")))))))
 	  (add-micro-form 'define-struct scheme-vocabulary
 	    (ds-core
-	      (lambda (expr env attributes vocab p-env)
-		(let* ((fields (pat:pexpand '(fields ...) p-env kwd))
-			(type-spec (pat:pexpand 'type-spec p-env kwd)))
-		  (distinct-valid-syntactic-id/s? fields)
-		  (let-values (((type super)
-				 (extract-type&super type-spec env)))
-		    (expand-expr
-		      (structurize-syntax
-			`(define-values
-			   ,(generate-struct-names type fields expr)
-			   (struct ,type-spec ,fields))
-			expr)
-		      env attributes vocab))))))
+	      (lambda (expr env attributes vocab names struct-expr)
+		(expand-expr
+		  (structurize-syntax
+		    `(define-values ,names ,struct-expr)
+		    expr)
+		  env attributes vocab))))
 	  (add-micro-form 'define-struct local-extract-vocab
 	    (ds-core
-	      (lambda (expr env attributes values p-env)
-		'())))
-	  (add-micro-form 'define-struct local-parse-vocab-delta
-	    (ds-core
-	      (lambda (expr env attributes vocab p-env)
-		(let* ((local-info (get-attribute attributes 'local-info))
-			(attributes (car local-info))
-			(vocab (cdr local-info)))
-		  (let* ((fields (pat:pexpand '(fields ...) p-env kwd))
-			  (type-spec (pat:pexpand 'type-spec p-env kwd)))
-		    (distinct-valid-syntactic-id/s? fields)
-		    (let-values (((type super)
-				   (extract-type&super type-spec env)))
-		      (expand-expr
-			(structurize-syntax
-			  `(define-values
-			     ,(generate-struct-names type fields expr)
-			     (struct ,type-spec ,fields))
-			  expr)
-			env attributes vocab))))))))))
+	      (lambda (expr env attributes vocab names struct-expr)
+		(cons names struct-expr)))))))
 
     (when (language>=? 'structured)
       (let* ((kwd '(let-struct))
@@ -652,31 +588,7 @@
 			      (struct ,type-spec ,fields)))
 			   ,@body)
 			expr)
-		      env attributes vocab))))))
-	  (add-micro-form 'let-struct local-extract-vocab
-	    (ls-core
-	      (lambda (expr env attributes values p-env)
-		'())))
-	  (add-micro-form 'let-struct local-parse-vocab-delta
-	    (ls-core
-	      (lambda (expr env attributes vocab p-env)
-		(let* ((local-info (get-attribute attributes 'local-info))
-			(attributes (car local-info))
-			(vocab (cdr local-info)))
-		  (let* ((fields (pat:pexpand '(fields ...) p-env kwd))
-			  (type-spec (pat:pexpand 'type-spec p-env kwd))
-			  (body (pat:pexpand '(b ...) p-env kwd)))
-		    (distinct-valid-syntactic-id/s? fields)
-		    (let-values (((type super)
-				   (extract-type&super type-spec env)))
-		      (expand-expr
-			(structurize-syntax
-			  `(let-values
-			     ((,(generate-struct-names type fields expr)
-				(struct ,type-spec ,fields)))
-			     ,@body)
-			  expr)
-			env attributes vocab))))))))))
+		      env attributes vocab)))))))))
 
     ; ----------------------------------------------------------------------
 
@@ -1387,9 +1299,5 @@
     (include "qq.ss")
 
     (include "shared.ss")
-
-    (set! local-parse-vocab
-      (merge-vocabulary (copy-vocabulary scheme-vocabulary)
-	local-parse-vocab-delta))
 
     ))

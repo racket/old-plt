@@ -40,7 +40,10 @@
       ((>>>) (+ (arithmetic-shift left (- right)) (arithmetic-shift 2 (bitwise-not right))))))
  
   ;not-equal: num num -> bool
-  (define (not-equal left right) (not (= left right)))
+  (define (not-equal left right) 
+    (if (number? left)
+        (not (= left right))
+        (not (eq? left right))))
   
   ;bitwise: symbol (U (int int) (bool bool)) -> int
   (define (bitwise op left right)

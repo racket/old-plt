@@ -133,7 +133,6 @@
         (when (field? prog)
           (send type-recs add-interactions-field 
                 (process-field prog '("scheme-interactions") type-recs level)))))
-
   
   ;add-def-info: def (list string) type-records loc bool symbol . (list syntax)-> void
   (define (add-def-info def pname type-recs current-loc look-in-table level . inner-req)

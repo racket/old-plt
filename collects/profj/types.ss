@@ -7,7 +7,8 @@
            (lib "class.ss")
            "ast.ss")
   
-  (provide (all-defined-except sort number-assign-conversions remove-dups meth-member?))
+  (provide (all-defined-except sort number-assign-conversions remove-dups meth-member?
+                               variable-member? java-name->scheme generate-require-spec))
       
   ;; symbol-type = 'null | 'string | 'boolean | 'char | 'byte | 'short | 'int
   ;;             | 'long | 'float | 'double | 'void
@@ -28,6 +29,25 @@
   (define serializable-type (make-ref-type "Serializable" `("java" "io")))
   (define comparable-type (make-ref-type "Comparable" `("java" "lang")))
   (define cloneable-type (make-ref-type "Cloneable" `("java" "lang")))
+  
+;                                                                                                          
+;                                                                                                          
+;                                                   ;                       ;         ;                    
+;                                                   ;                       ;                              
+;  ;;;;;;;                                          ;                       ;                              
+;     ;                                             ;                       ;                              
+;     ;     ;    ;  ; ;;;    ;;;;             ;;;   ; ;;;    ;;;;     ;;;   ;   ;   ;;;     ; ;;;    ;;; ; 
+;     ;      ;   ;  ;;  ;;   ;  ;;           ;   ;  ;;   ;   ;  ;;   ;   ;  ;  ;      ;     ;;   ;  ;;  ;; 
+;     ;      ;  ;   ;    ;  ;    ;          ;       ;    ;  ;    ;  ;       ; ;       ;     ;    ;  ;    ; 
+;     ;      ;  ;   ;    ;  ;;;;;;          ;       ;    ;  ;;;;;;  ;       ;;;       ;     ;    ;  ;    ; 
+;     ;       ; ;   ;    ;  ;               ;       ;    ;  ;       ;       ;  ;      ;     ;    ;  ;    ; 
+;     ;       ;;    ;;  ;;   ;   ;           ;   ;  ;    ;   ;   ;   ;   ;  ;   ;     ;     ;    ;  ;;  ;; 
+;     ;        ;    ; ;;;     ;;;             ;;;   ;    ;    ;;;     ;;;   ;    ;  ;;;;;   ;    ;   ;;; ; 
+;              ;    ;                                                                                    ; 
+;             ;     ;                                                                                ;  ;; 
+;            ;;     ;                                                                                 ;;;  
+;                                                                                                          
+
   
   ;; reference-type: 'a -> boolean
   (define (reference-type? x)
@@ -140,8 +160,31 @@
   (define (type-exists? name path container-class src level type-recs)
     (send type-recs get-class-record (cons name path) container-class
           ((get-importer type-recs) (cons name path) type-recs level src)))
+    
+  ;; is-interface?: (U type (list string) 'string) type-records-> boolean
+  (define (is-interface? t type-recs)
+    (not (class-record-class? 
+          (get-record (send type-recs get-class-record t) type-recs))))
   
+  ;;Is c1 a subclass of c2?
+  ;; is-subclass?: (U type (list string) 'string) ref-type type-records -> boolean
+  (define (is-subclass? c1 c2 type-recs)
+    (let ((cr (get-record (send type-recs get-class-record c1) type-recs)))
+      (member (cons (ref-type-class/iface c2) (ref-type-path c2))
+              (class-record-parents cr))))
 
+  ;; subclass?: (U type (list string) 'string) ref-type type-records -> boolean
+  (define (implements? c1 c2 type-recs)
+    (let ((cr (get-record (send type-recs get-class-record c1) type-recs)))
+      (member (cons (ref-type-class/iface c2) (ref-type-path c2))
+              (class-record-ifaces cr))))
+
+  ;is-eq-subclass: type type type-records -> boolean
+  (define (is-eq-subclass? class1 class2 type-recs)
+    (or (type=? class1 class2)
+        (and (reference-type? class1)
+             (reference-type? class2)
+             (is-subclass? class1 class2 type-recs))))
   
 ;                                                                                                          
 ;                                                                                                          
@@ -181,14 +224,8 @@
   ;;(make-scheme-record string (list string) string (list scheme-val))
   (define-struct scheme-record (name path dir provides))
   
-  ;;(make-scheme-val symbol bool (U #f contract))
-  (define-struct scheme-val (name dynamic? contract))
-  
-  ;;(make-contract (U type function-type))
-  (define-struct contract (type))
-  
-  ;;(make-function-type type (list type))
-  (define-struct function-type (rtype atypes))
+  ;;(make-scheme-val symbol bool (U #f type))
+  (define-struct scheme-val (name dynamic? type))
   
 ;                                                                                      
 ;                                                                            ;;        
@@ -233,7 +270,8 @@
       (define/public (add-to-records key thunk)
         (hash-table-put! records key thunk))
       
-      ;; get-class-record: (U type (list string) 'string) (U (list string) #f) ( -> 'a) -> (U class-record procedure)
+      ;; get-class-record: (U type (list string) 'string) (U (list string) #f) ( -> 'a) -> 
+      ;;                                            (U class-record scheme-record procedure)
       (define/public get-class-record
         (opt-lambda (ctype [container #f] [fail (lambda () null)])
           (let*-values (((key key-path) (normalize-key ctype))
@@ -246,7 +284,8 @@
                            (if (null? path) 
                                (fail)
                                (let ((back-path (reverse path)))
-                                 (search-for-record key (car back-path) (reverse (cdr back-path)) (lambda () #f) fail))))))
+                                 (search-for-record key (car back-path) 
+                                                    (reverse (cdr back-path)) (lambda () #f) fail))))))
             ;(printf "get-class-record: ~a~n" ctype)
             ;(hash-table-for-each records (lambda (k v) (printf "~a -> ~a~n" k v)))
             (cond
@@ -408,6 +447,21 @@
   
   (define get-importer (class-field-accessor type-records importer))
   (define set-importer! (class-field-mutator type-records importer))
+
+;                                                          
+
+;                                                          
+;     ;;;;            ;       ;                            
+;    ;    ;           ;       ;                            
+;   ;        ;;;;   ;;;;;;  ;;;;;;   ;;;;    ; ;;    ;;;;  
+;   ;        ;  ;;    ;       ;      ;  ;;   ;;  ;  ;    ; 
+;   ;    ;; ;    ;    ;       ;     ;    ;   ;      ;;     
+;   ;     ; ;;;;;;    ;       ;     ;;;;;;   ;       ;;;;  
+;   ;     ; ;         ;       ;     ;        ;           ; 
+;    ;    ;  ;   ;    ;       ;      ;   ;   ;      ;    ; 
+;     ;;;;    ;;;      ;;;     ;;;    ;;;    ;       ;;;;  
+;                                                          
+;                                                          
   
   ;get-record: (U class-record procedure) type-records -> class-record
   (define (get-record rec type-recs)
@@ -417,31 +471,6 @@
          (begin0 (rec) 
                  (send type-recs set-location! location))))
       (else rec)))
-  
-  ;; is-interface?: (U type (list string) 'string) type-records-> boolean
-  (define (is-interface? t type-recs)
-    (not (class-record-class? 
-          (get-record (send type-recs get-class-record t) type-recs))))
-  
-  ;;Is c1 a subclass of c2?
-  ;; is-subclass?: (U type (list string) 'string) ref-type type-records -> boolean
-  (define (is-subclass? c1 c2 type-recs)
-    (let ((cr (get-record (send type-recs get-class-record c1) type-recs)))
-      (member (cons (ref-type-class/iface c2) (ref-type-path c2))
-              (class-record-parents cr))))
-
-  ;; subclass?: (U type (list string) 'string) ref-type type-records -> boolean
-  (define (implements? c1 c2 type-recs)
-    (let ((cr (get-record (send type-recs get-class-record c1) type-recs)))
-      (member (cons (ref-type-class/iface c2) (ref-type-path c2))
-              (class-record-ifaces cr))))
-
-  ;is-eq-subclass: type type type-records -> boolean
-  (define (is-eq-subclass? class1 class2 type-recs)
-    (or (type=? class1 class2)
-        (and (reference-type? class1)
-             (reference-type? class2)
-             (is-subclass? class1 class2 type-recs))))
   
   ;; get-field-record: string class-record (-> 'a) -> field-record
   (define (get-field-record fname c fail)
@@ -460,20 +489,23 @@
     (filter (lambda (m)
               (string=? (method-record-name m) mname))
             (class-record-methods c)))
-  
+
+  ;remove-dups: (list method-record) -> (list method-record)
   (define (remove-dups methods)
     (cond
       ((null? methods) methods)
       ((meth-member? (car methods) (cdr methods))
        (remove-dups (cdr methods)))
       (else (cons (car methods) (remove-dups (cdr methods))))))
-  
+
+  ;meth-member? method-record (list method-record) -> bool
   (define (meth-member? meth methods)
     (and (not (null? methods))
          (or (andmap type=? (method-record-atypes meth) 
                             (method-record-atypes (car methods)))
              (meth-member? meth (cdr methods)))))
-  
+
+  ;sort: (list number) -> (list number)
   (define (sort l)
     (quicksort l (lambda (i1 i2) (< (car i1) (car i2)))))
   
@@ -512,7 +544,80 @@
         ((= (car (car assignable-count))
             (car (cadr assignable-count))) (method-conflict-fail))
         (else (car assignable)))))
-      
+
+  ;lookup-scheme: scheme-record string ( -> void) -> scheme-val
+  ;lookup-scheme may raise an exception if variable is not defined in mod-ref
+  (define (lookup-scheme mod-ref variable fail)
+    (let ((var (string->symbol (java-name->scheme variable))))
+      (cond
+        ((variable-member? (scheme-record-provides mod-ref) var) => (lambda (x) x))
+        (else
+         (let ((old-namespace (current-namespace)))
+           (current-namespace (make-namespace))
+           (namespace-require (generate-require-spec (scheme-record-name mod-ref)
+                                                     (scheme-record-path mod-ref)))
+           (begin0
+             (when (namespace-variable-value var #t 
+                                             (lambda () (current-namespace old-namespace)
+                                               (fail)))
+               (let ((val (make-scheme-val var #t #f)))
+                 (set-scheme-record-provides! mod-ref (cons val (scheme-record-provides mod-ref)))
+                 val))
+             (current-namespace old-namespace)))))))
+  
+  ;generate-require-spec: string (list string) -> (list symbol string+)
+  (define (generate-require-spec name path)
+    (let ((mod (string-append name ".ss")))
+      (if (equal? (car path) "lib")
+          `(lib ,mod ,@(cdr path))
+          `(file ,(build-path (apply build-path path) mod)))))  
+  
+  ;java-name->scheme: string -> string
+  (define (java-name->scheme name)
+    (cond
+      ((regexp-match "[a-zA-Z0-9]*To[A-Z0-9]*" name)
+       (java-name->scheme (regexp-replace "To" name "->")))
+      ((regexp-match "[a-zA-Z0-9]+P$" name)
+       (java-name->scheme (regexp-replace "P$" name "?")))
+      ((regexp-match "[a-zA-Z0-9]+Set$" name)
+       (java-name->scheme (regexp-replace "Set$" name "!")))
+      ((regexp-match "[a-zA-Z0-9]+Obj$" name)
+       (java-name->scheme (regexp-replace "Obj%" name "%")))
+      ((regexp-match "[a-z0-9]+->[A-Z]" name) =>
+       (lambda (substring)
+         (let ((char (car (regexp-match "[A-Z]" (car substring)))))
+           (java-name->scheme (regexp-replace (string-append "->" char) name
+                                              (string-append "->" (string (char-downcase (car (string->list char))))))))))
+      ((regexp-match "[a-z0-9]+[A-Z]" name) =>
+       (lambda (substring)
+         (let ((char (car (string->list (car (regexp-match "[A-Z]" (car substring))))))
+               (remainder (car (regexp-match "[a-z0-9]+" (car substring)))))
+           (java-name->scheme (regexp-replace (car substring) name 
+                                              (string-append remainder "-" (string (char-downcase char))))))))
+      (else name)))
+
+  ;variable-member? (list scheme-val) symbol -> scheme-val
+  (define (variable-member? known-vars lookup)
+    (and (not (null? known-vars))
+         (or (and (eq? (scheme-val-name (car known-vars)) lookup)
+                  (car known-vars))
+             (variable-member? (cdr known-vars) lookup))))
+  
+;                                          
+;             ;                ;;          
+;                             ;            
+;     ;;;                     ;            
+;       ;                     ;            
+;       ;   ;;;     ; ;;;   ;;;;;    ;;;;  
+;       ;     ;     ;;   ;    ;     ;;  ;; 
+;       ;     ;     ;    ;    ;     ;    ; 
+;       ;     ;     ;    ;    ;     ;    ; 
+;       ;     ;     ;    ;    ;     ;    ; 
+;   ;  ;;     ;     ;    ;    ;     ;;  ;; 
+;    ;;;    ;;;;;   ;    ;    ;      ;;;;  
+;                                          
+
+  
   (define type-version "version1")
   (define type-length 10)
   

@@ -2040,8 +2040,26 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
       id = id + 96;
     }
     // Map id 28 to ctl+backslash
-    if ((id == 28) && tempControlDown) {
-      id = '\\';
+    if (tempControlDown) {
+      switch (id) {
+      case 27:
+	id = '[';
+	break;
+      case 28:
+	id = '\\';
+	break;
+      case 29:
+	id = ']';
+	break;
+      case 30:
+	id = '^';
+	break;
+      case 31:
+	id = '_';
+	break;
+      default:
+	break;
+      }
     }
     
     /* Ignore character created by numpad, since it's
@@ -2074,30 +2092,32 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
   } else {
     if ((id = wxCharCodeMSWToWX(wParam)) == 0) {
       if (tempControlDown) {
+	int sd;
+	sd = (::GetKeyState(VK_SHIFT) >> 1);
 	switch(wParam) {
 	case VK_OEM_1:
-	  id = ';';
+	  id = (sd ? ':' : ';');
 	  break;
 	case VK_OEM_2:
-	  id = '/';
+	  id = (sd ? '|' : -1);
 	  break;
 	case VK_OEM_3:
-	  id = '`';
+	  id = (sd ? '~' : '`');
 	  break;
 	case VK_OEM_7:
-	  id = '\'';
+	  id = (sd ? '"' : '\'');
 	  break;
 	case VK_OEM_PLUS:
-	  id = '+';
+	  id = (sd ? '+' : '=');
 	  break;
 	case VK_OEM_MINUS:
-	  id = '-';
+	  id = (sd ? -1 : '-');
 	  break;
 	case VK_OEM_PERIOD:
-	  id = '.';
+	  id = (sd ? '>' : '.');
 	  break;
 	case VK_OEM_COMMA:
-	  id = ',';
+	  id = (sd ? '<' : ',');
 	  break;
 	default:
 	  id = -1;

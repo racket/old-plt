@@ -22,6 +22,12 @@
 # define GENERATIONS 0
 #endif
 
+#ifdef OS_X
+/* In 10.2, SIGBUS handling doesn't work right. */
+# undef GENERATIONS
+# define GENERATIONS 0
+#endif
+
 #define USE_FREELIST 0
 
 /* When USE_FREELIST is on: */
@@ -3115,6 +3121,7 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
   designate_modified(si->si_addr);
 #  define NEED_SIGACTION
+#  define USE_SIGACTON_SIGNAL_KIND SIGSEGV
 # else
   /* The old code. If didn't work for the 2.4.20 x86 kernel, though. */
 #  if (defined(powerpc) || defined(__powerpc__))
@@ -3148,6 +3155,7 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
   designate_modified(si->si_addr);
 }
 # define NEED_SIGACTION
+# define USE_SIGACTON_SIGNAL_KIND SIGSEGV
 #endif
 
 /* Windows signal handler: */
@@ -3168,11 +3176,12 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 /* Mac OS X signal handler: */
 #if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
 # include <signal.h>
-void fault_handler(int sn, siginfo_t *si)
+# include "osx_addr.inc"
+void fault_handler(int sn, int code, struct sigcontext *sc)
 {
-  designate_modified(si->si_addr);
+  designate_modified(get_fault_addr(sc));
 }
-# define NEED_OSX_SIGACTION
+# define NEED_OSX_SIGBUS
 #endif
 
 #endif /* GENERATIONS */
@@ -3375,22 +3384,23 @@ static void init(void)
 # ifdef NEED_SIGBUS
     signal(SIGBUS, (void (*)(int))fault_handler);
 # endif
-# ifdef NEED_SIGACTION
-    {
-      struct sigaction act, oact;
-      act.sa_sigaction = fault_handler;
-      sigemptyset(&act.sa_mask);
-      act.sa_flags = SA_SIGINFO;
-      sigaction(SIGSEGV, &act, &oact);
-    }
-# endif
-# ifdef NEED_OSX_SIGACTION
+# ifdef NEED_OSX_SIGBUS
     {
       struct sigaction act, oact;
       act.sa_handler = fault_handler;
       sigemptyset(&act.sa_mask);
-      act.sa_flags = SA_SIGINFO;
+      act.sa_flags = SA_RESTART;
       sigaction(SIGBUS, &act, &oact);
+    }
+# endif
+# ifdef NEED_SIGACTION
+    {
+      struct sigaction act, oact;
+      memset(&act, sizeof(sigaction), 0);
+      act.sa_sigaction = fault_handler;
+      sigemptyset(&act.sa_mask);
+      act.sa_flags = SA_SIGINFO;
+      sigaction(USE_SIGACTON_SIGNAL_KIND, &act, &oact);
     }
 # endif
 # ifdef NEED_SIGWIN

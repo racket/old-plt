@@ -2694,10 +2694,10 @@ static void wxScheme_Install(Scheme_Env *global_env)
 
 
 /****************************************************************************/
-/*                         phantom MzLib tool                               */
+/*                            phantom tool                                  */
 /****************************************************************************/
 
-extern wxBitmap *wx_get_alternate_icon(int small);
+extern wxBitmap *wx_get_alternate_icon(int little);
 
 static unsigned char check_phantom_module[] = {
 40,109,111,100,117,108,101,32,35,37,99,104,101,99,107,45,112,104,97,110,116,
@@ -2783,6 +2783,7 @@ static unsigned char phantom_tool_module[] = {
 114,97,109,101,37,32,35,102,41,41,41,41,10,  };
 
 static int checked = 0;
+static const char interesting_coll[6] = { 109, 122, 108, 105, 98, 0 };
 
 static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
 {
@@ -2796,15 +2797,40 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
     dr = scheme_builtin_value("dynamic-require");
     v = _scheme_apply(dr, 2, a);
     if (SCHEME_FALSEP(v)) {
-      scheme_mzlib_info_hook = NULL;
-      if (c == 1) 
-	return v;
-      else
-	return NULL;
+      scheme_module_demand_hook = NULL;
+      return NULL;
     }
   }
 
   if (c == 1) {
+    /* Mode 1 => interesting info file? */
+    v = argv[0];
+    if (SCHEME_SYM_VAL(v)[0] == ',') {
+      GC_CAN_IGNORE char *s;
+      int depth;
+
+      depth = SCHEME_SYM_LEN(v);
+      s = SCHEME_SYM_VAL(v);
+      if ((depth > 11) && !strcmp("info", s + depth - 4)) {
+	int skipped_one = 0;
+	depth -= 4;
+	while ((depth > 6)
+	       && ((s[depth - 1] == '/')
+		   || (s[depth - 1] == '\\')
+		   || (s[depth - 1] == ':'))) {
+	  depth--;
+	  skipped_one = 1;
+	}
+	if (skipped_one 
+	    && (depth > 6) 
+	    && !memcmp(interesting_coll, s + depth - 5, 5)) {
+	  return scheme_intern_symbol("#%info-lookup");
+	}
+      }
+    }
+    return NULL;
+  } else if (c == 3) {
+    /* Mode 3 => wrap info content */
     v = argv[0];
     scheme_eval_string((char *)wrapper_module, scheme_get_env(scheme_config));
     a[0] = scheme_intern_symbol("#%info-wrapper");
@@ -2815,6 +2841,7 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
     a[0] = v;
     return _scheme_apply(wrap, 1, a);
   } else {
+    /* Mode 2 => dynamic require remap */
     if (SCHEME_SYMBOLP(argv[1]) 
 	&& (SCHEME_SYM_LEN(argv[1]) == 5)
 	&& !strcmp(SCHEME_SYM_VAL(argv[1]), "tool@")) {
@@ -2836,7 +2863,7 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
 	      s = SCHEME_CAR(ak);
 	      if (SCHEME_STRINGP(s)
 		  && (SCHEME_STRTAG_VAL(s) == 5)
-		  && !strcmp(SCHEME_STR_VAL(s), "mzlib")) {
+		  && !strcmp(SCHEME_STR_VAL(s), interesting_coll)) {
 		s = scheme_true;
 	      } else
 		s = NULL;
@@ -2844,16 +2871,16 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
 	      s = NULL;
 
 	    if (s) {
-	      wxBitmap *big, *small;
+	      wxBitmap *big, *little;
 	      big = wx_get_alternate_icon(0);
-	      small = wx_get_alternate_icon(1);
+	      little = wx_get_alternate_icon(1);
 	      scheme_eval_string((char *)phantom_tool_module, scheme_get_env(scheme_config));
 	      dr = scheme_builtin_value("dynamic-require");
 	      a[0] = scheme_intern_symbol("#%mk-tool");
 	      a[1] = scheme_intern_symbol("mk-tool@");
 	      v = scheme_apply(dr, 2, a);
 	      a[0] = objscheme_bundle_wxBitmap(big);
-	      a[1] = objscheme_bundle_wxBitmap(small);
+	      a[1] = objscheme_bundle_wxBitmap(little);
 	      return _scheme_apply(v, 2, a);
 	    }
 	  }
@@ -2867,16 +2894,43 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
 
 void wxscheme_prepare_hooks(int argc, char **argv)
 {
-  int i;
+  /* Check whether we're running a certain popular PLT program.
+     Install a MzScheme hook if so. */
+  int i, delta, ender;
   char *s;
+
   for (i = 0; i < argc; i++) {
     s = argv[i];
-    if ((s[0] == 100) && (s[1] == 114)
-	&& (s[2] == 115) && (s[3] == 99)
-	&& (s[4] == 104) && (s[5] == 101)
-	&& (s[6] == 109) && (s[7] == 101)
-	&& !s[8]) {
-      scheme_mzlib_info_hook = CAST_SP phantom_tool_hook;
+    
+    ender = 0;
+    if (!i) {
+      delta = strlen(s);
+#ifdef wx_msw
+      if ((delta >= 12) && (s[delta-4] == '.')
+	  && (s[delta-3] == 'e') && (s[delta-2] == 'x')
+	  && (s[delta-1] == 'e')) {
+	delta -= 12;
+	ender = '.';
+      } else
+	delta = 0;
+#endif
+#ifdef wx_mac
+      if (delta >= 8)
+	delta -= 8;
+      else
+	delta = 0;
+#endif
+    } else
+      delta = 0;
+
+    if (((s[delta+0] == 100)  || (s[delta+0] == 68))
+	&& (s[delta+1] == 114)
+	&& ((s[delta+2] == 115)  || (s[delta+2] == 83))
+	&& (s[delta+3] == 99)
+	&& (s[delta+4] == 104) && (s[delta+5] == 101)
+	&& (s[delta+6] == 109) && (s[delta+7] == 101)
+	&& (s[delta+8] == ender)) {
+      scheme_module_demand_hook = CAST_SP phantom_tool_hook;
       break;
     }
   }

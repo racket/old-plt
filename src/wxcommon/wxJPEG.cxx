@@ -869,13 +869,13 @@ static unsigned char alternate_icon[] = {
 89,69,73,88,70,73,87,72,73,87,72,73,87,70,74,88,69,75,91,69,76,
 112,89,76  };
 
-wxBitmap *wx_get_alternate_icon(int small)
+wxBitmap *wx_get_alternate_icon(int little)
 {
   wxBitmap *bm;
   wxMemoryDC *dc;
   int i, j, step, unstep, dx, dy;
 
-  bm = new wxBitmap((small ? 20 : 64), (small ? 20 : 64), 0);
+  bm = new wxBitmap((little ? 20 : 64), (little ? 20 : 64), 0);
 
   dc = new wxMemoryDC();
   dc->SelectObject(bm);
@@ -890,7 +890,7 @@ wxBitmap *wx_get_alternate_icon(int small)
     the_color = new wxColour(0, 0, 0);
   }
 
-  if (small) {
+  if (little) {
     step = 4;
     unstep = 2;
     dx = 2;

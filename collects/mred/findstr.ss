@@ -11,8 +11,7 @@
     (define make-find-frame%
       (lambda (super%) 
 	(class super% (canvas [in-edit ()] [x -1] [y -1] [flags ()])
-	  (inherit set-size show center make-modal
-		   capture-mouse release-mouse panel)
+	  (inherit set-size show center make-modal panel)
 	  (public
 	    [HEIGHT 100]
 	    [canvas% mred:canvas:editor-canvas%]
@@ -21,8 +20,7 @@
 	    [edit (if (null? in-edit)
 		      (send canvas get-media)
 		      in-edit)]
-	    [allow-carriage-returns #f]
-	    [use-capture? (eq? wx:platform 'unix)])
+	    [allow-carriage-returns #f])
 
 	  (public
 	    [finder-keymap
@@ -70,9 +68,7 @@
 	    [on-close
 	     (lambda ()
 	       (send canvas force-display-focus #f)
-	       (if use-capture?
-		   (release-mouse)
-		   (make-modal #f))
+	       (make-modal #f)
 	       #t)]
 	    
 	    [show-replace-panel
@@ -275,13 +271,7 @@
 	    (show #t)
 	    (send canvas force-display-focus #t)
 	    
-	    ; The problem with make-modal in X is that it does
-	    ; not let the current focus-owning Widget to get
-	    ; an unfocus event. capture-mouse does what we
-	    ; really want in X, but not in Windows
-	    (if use-capture?
-		(capture-mouse)
-		(make-modal #t))
+	    (make-modal #t)
 	    
 	    (send find-canvas set-focus)))))
 

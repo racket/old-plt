@@ -23,13 +23,15 @@ class wxTabChoice : public wxItem
   int   Number(void);
   void  SetSelection(int n);
 
-  void Append(char *s);
+  void Append(char *s, int new_sel = -1);
   void Delete(int i);
 
   virtual void DoShow(Bool show);
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
 
   virtual char *GetLabel();
+
+  void SetLabel(int i, char *s);
 
   virtual void Refresh(void);
 

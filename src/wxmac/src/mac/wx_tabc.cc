@@ -22,7 +22,8 @@ static int OS_103 = -1;
 #define TAB_CONTROL_HEIGHT (OS_103 ? 25 : 30)
 #define TAB_CONTENT_MARGIN 2
 #define TAB_BOTTOM_EXTRA_MARGIN 3
-#define TAB_TITLE_SPACE 20
+#define TAB_TITLE_SPACE 24
+#define TAB_BASE_SIDE_SPACE 16
 #define TAB_PANE_OVERLAP (OS_103 ? 6 : 7)
 #define TAB_PANE_CLIP_OVERLAP (OS_103 ? 9 : 3)
 
@@ -104,7 +105,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   cWindowHeight = r.bottom - r.top;
 #else
   cWindowHeight = TAB_TOP_SPACE + TAB_CONTROL_HEIGHT + TAB_CONTENT_MARGIN + TAB_BOTTOM_EXTRA_MARGIN + 5;
-  cWindowWidth = TAB_TITLE_SPACE;
+  cWindowWidth = TAB_TITLE_SPACE + TAB_BASE_SIDE_SPACE;
   for (i = 0; i < N; i++) {
     double x, y;
     font->GetTextExtent(wxItemStripLabel(Choices[i]), 0, &x, &y, NULL, NULL, TRUE);
@@ -291,13 +292,16 @@ int wxTabChoice::Number(void) {
   return tab_count;
 }
 
-void wxTabChoice::Append(char *s)
+void wxTabChoice::Append(char *s, int new_sel)
 {
   char **new_choices;
   int i;  
   Rect r;
   ControlHandle naya;
   int ox, oy;
+
+  if (new_sel < 0)
+    new_sel = GetSelection();
 
   if (s) {
     new_choices = new char*[tab_count + 1];
@@ -338,16 +342,33 @@ void wxTabChoice::Append(char *s)
 #endif
   }
 
+  if (new_sel >= 0)
+    SetSelection(new_sel);
+
   OnClientAreaDSize(1, 1, 1, 1);
 }
 
 void wxTabChoice::Delete(int i)
 {
   if ((i >= 0) && (i < tab_count)) {
+    int sel;
+
+    sel = GetSelection();
+    sel = ((sel <= i) ? sel : (sel ? sel - 1 : 0));
+
     for (i++; i < tab_count; i++) {
       tab_labels[i - 1] = tab_labels[i];
     }
     --tab_count;
+
+    Append(NULL, sel); /* refreshes the control */
+  }
+}
+
+void wxTabChoice::SetLabel(int i, char *s)
+{
+  if ((i >= 0) && (i < tab_count)) {
+    tab_labels[i] = s;
     Append(NULL); /* refreshes the control */
   }
 }

@@ -47,5 +47,18 @@ STDMETHODIMP CTestControl::FloatTest(double n1, double n2, double *n3)
 {
   *n3 = n2 - n1;
 
-	return S_OK;
+  return S_OK;
+}
+
+STDMETHODIMP CTestControl::get_Numprop(long ndx,long *pVal) {
+  *pVal = the_value;
+  return S_OK;
+}
+
+STDMETHODIMP CTestControl::put_Numprop(long ndx,long newVal) {
+  if (ndx > 21)
+    the_value = 42;
+  else
+    the_value = 99;
+  return S_OK;
 }

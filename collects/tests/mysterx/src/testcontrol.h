@@ -31,9 +31,12 @@ class ATL_NO_VTABLE CTestControl :
 	public CComCoClass<CTestControl, &CLSID_TestControl>,
 	public CProxy_ITestControlEvents< CTestControl >
 {
+private:
+  long the_value;
 public:
 	CTestControl()
 	{
+	  the_value = 0L;
 	}
 
 DECLARE_REGISTRY_RESOURCEID(IDR_TESTCONTROL)
@@ -105,6 +108,8 @@ public:
 	STDMETHOD(ShortTest)(short int n1,short int n2,/*[out,retval]*/short int *n3);
 	STDMETHOD(StringTest)(BSTR s1,BSTR s2,/*[out,retval]*/BSTR *s3);
 	STDMETHOD(AddTest)(long n1,long *n2,/*[out,retval]*/long *n3);
+	STDMETHOD(get_Numprop)(long ndx,long *retVal);
+	STDMETHOD(put_Numprop)(long ndx,long newVal);
 
 	HRESULT OnDraw(ATL_DRAWINFO& di)
 	{

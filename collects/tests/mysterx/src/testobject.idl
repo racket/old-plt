@@ -26,6 +26,8 @@ import "ocidl.idl";
 		[id(2), helpstring("method StringTest")] HRESULT StringTest(BSTR s1,BSTR s2,[out,retval]BSTR *s3);
 		[id(3), helpstring("method ShortTest")] HRESULT ShortTest(short int n1,short int n2,[out,retval]short int *n3);
 		[id(4), helpstring("method FloatTest")] HRESULT FloatTest(double n1,double n2,[out,retval]double *n3);
+		[propget, id(5), helpstring("property Numprop")] HRESULT Numprop(long ndx,[out, retval] long *pVal);
+		[propput, id(5), helpstring("property Numprop")] HRESULT Numprop(long ndx,[in] long newVal);
 	};
 
 [

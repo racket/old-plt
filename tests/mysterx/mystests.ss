@@ -27,6 +27,16 @@
 	   (set! errors? #t)))
  '(25 -22 -1 -233344433 177000000 859489222))
 
+
+(define (test-numprop ndx retval)
+	(com-set-property! ctrl (list "Numprop" ndx) 55)
+	(unless (= (com-get-property ctrl (list "Numprop" ndx)) retval)
+		(printf "Error in setting Numprop")	
+		(set! errors? #t)))
+
+(test-numprop 26 42)
+(test-numprop 10 99)
+
 (print-struct #t)
 
 (let ([date (seconds->date (current-seconds))])

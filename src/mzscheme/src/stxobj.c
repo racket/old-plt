@@ -1224,11 +1224,13 @@ Scheme_Object *scheme_stx_strip_module_context(Scheme_Object *_stx)
 /*========================================================================*/
 
 static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier, int b_ignore_barrier)
-/* Compares the marks in two wraps lists */
+/* Compares the marks in two wraps lists. A result of 2 means that the
+   result depended on a macrk barrier. */
 {
   WRAP_POS awl;
   WRAP_POS bwl;
   Scheme_Object *acur_mark, *bcur_mark;
+  int used_barrier = 0;
 
   WRAP_POS_COPY(awl, *_awl);
   WRAP_POS_COPY(bwl, *_bwl);
@@ -1252,6 +1254,7 @@ static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier, int 
 	}
       } else if (!a_ignore_barrier && SAME_OBJ(WRAP_POS_FIRST(awl), barrier_symbol)) {
 	WRAP_POS_INIT_END(awl);
+	used_barrier = 1;
       } else {
 	WRAP_POS_INC(awl);
       }
@@ -1273,6 +1276,7 @@ static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier, int 
 	}
       } else if (!b_ignore_barrier && SAME_OBJ(WRAP_POS_FIRST(bwl), barrier_symbol)) {
 	WRAP_POS_INIT_END(bwl);
+	used_barrier = 1;
       } else {
 	WRAP_POS_INC(bwl);
       }
@@ -1284,7 +1288,7 @@ static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier, int 
 
     /* Done if both reached the end: */
     if (WRAP_POS_END_P(awl) && WRAP_POS_END_P(bwl))
-      return 1;
+      return used_barrier + 1;
   }
 }
 
@@ -1490,7 +1494,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 		SCHEME_VEC_ELS(rename)[2+c+ri] = other_env;
 	      }
 
-	      if (SCHEME_FALSEP(other_env)) {
+	      if ((same == 2) && SCHEME_FALSEP(other_env)) {
 		/* The rename target itself was never renamed, so
 		   mark barriers don't count. The same_marks check
 		   may have used mark barriers when it shouldn't,
@@ -1949,6 +1953,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
   Scheme_Object *stack = scheme_null, *key, *old_key;
   Scheme_Object *v, *v2, *v2l, *stx, *name;
   long size, vsize, psize, i, j, pos;
+  int same;
 
   /* Although it makes no sense to simplify the rename table itself,
      we can simplify it in the context of a particular wrap suffix.
@@ -2025,7 +2030,8 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	  name = SCHEME_STX_VAL(stx);
 	  SCHEME_VEC_ELS(v2)[2+pos] = name;
 	  WRAP_POS_INIT(w2, ((Scheme_Stx *)stx)->wraps);
-	  if (same_marks(&w2, &w, 0, 0)) {
+	  same = same_marks(&w2, &w, 0, 0);
+	  if (same) {
 	    /* Either this name is in prev, in which case the answer
 	       must match this rename's target, or this rename's
 	       answer applies. */
@@ -2041,7 +2047,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 		SCHEME_VEC_ELS(v)[2+vsize+i] = other_env;
 	      }
 
-	      if (SCHEME_FALSEP(other_env)) {
+	      if ((same == 2) && SCHEME_FALSEP(other_env)) {
 		/* Double-check marks ignoring barrieris. */
 		if (!same_marks(&w2, &w, 1, 1)) {
 		  other_env = NULL;

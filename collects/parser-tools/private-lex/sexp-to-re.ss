@@ -98,6 +98,7 @@
                       (symbol->string obj)
                       obj))))
          (cond
+           ((= 0 (length l)) (make-epsilon))
            ((= 1 (length l)) (make-syms l -1))
            (else (parse-assoc make-concat 
                               (map (lambda (x) (make-syms (list x) -1)) l))))))

@@ -699,6 +699,9 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_waitable_set_type, hash_general);
   PROC(scheme_udp_type, hash_general);
   PROC(scheme_udp_waitable_type, hash_general);
+  PROC(scheme_wrapped_waitable_type, hash_general);
+  PROC(scheme_nack_waitable_type, hash_general);
+  PROC(scheme_semaphore_repost_type, hash_general);
 #undef PROC
 }
 

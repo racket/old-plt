@@ -184,10 +184,10 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_udp_waitable_type, "<udp-socket-waitable>");
 
   set_name(scheme_waitable_set_type, "<waitable-set>");
+  set_name(scheme_wrapped_waitable_type, "<waitable>");
+  set_name(scheme_nack_waitable_type, "<waitable>");
+  set_name(scheme_semaphore_repost_type, "<semaphore-repost-waitable>");
 
-  set_name(scheme_reserved_1_type, "<reserved1>");
-  set_name(scheme_reserved_2_type, "<reserved2>");
-  set_name(scheme_reserved_3_type, "<reserved3>");
   set_name(scheme_reserved_4_type, "<reserved4>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -431,6 +431,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_thread_type, thread_val);
   GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);
   GC_REG_TRAV(scheme_sema_type, sema_val);
+  GC_REG_TRAV(scheme_semaphore_repost_type, small_object);
   GC_REG_TRAV(scheme_hash_table_type, hash_table_val);
   GC_REG_TRAV(scheme_bucket_table_type, bucket_table_val);
   GC_REG_TRAV(scheme_namespace_type, namespace_val);

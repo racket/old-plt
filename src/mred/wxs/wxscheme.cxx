@@ -1590,35 +1590,13 @@ static Scheme_Object *wxEventspaceHandlerThread(int argc, Scheme_Object **argv)
   }
 
   scheme_wrong_type("eventspace-handler-thread", "eventspace", 0, argc, argv);
+  return NULL;
 }
 
 static Scheme_Object *queue_callback(int argc, Scheme_Object **argv)
 {
   MrEd_add_q_callback("queue-callback", argc, argv);
   return scheme_void;
-}
-
-static int check_sema(void *s, Scheme_Schedule_Info *sinfo)
-{
-  if (!*(void **)s)
-    return 1;
-  else {
-    if (!scheme_wait_on_waitable(*(Scheme_Object **)s, 1, sinfo)) {
-      if (sinfo->target == *(Scheme_Object **)s)
-	sinfo->target = NULL;
-      return 0;
-    }
-    if (!sinfo->potentially_false_positive)
-      *(void **)s = NULL;
-    return 1;
-  }
-}
-
-static void sema_needs_wakeup(void *s, void *fds)
-{
-  if (*(void **)s) {
-    scheme_waitable_needs_wakeup(*(Scheme_Object **)s, fds);
-  }
 }
 
 Bool wxSchemeYield(void *sema)
@@ -1632,15 +1610,10 @@ Bool wxSchemeYield(void *sema)
     mred_wait_eventspace();
     return 1;
   } else if (sema) {
-    void **s;
-
     if (!scheme_is_waitable((Scheme_Object *)sema))
       scheme_wrong_type("yield", "waitable or 'wait", -1, 0, (Scheme_Object **)&sema);
 
-    s = new void*;
-    *s = sema;
-
-    wxDispatchEventsUntilWakeable(check_sema, sema_needs_wakeup, s);
+    wxDispatchEventsUntilWaitable(NULL, NULL, sema);
 
     return 1;
   } else

@@ -308,6 +308,20 @@ typedef struct Scheme_Security_Guard {
   Scheme_Object *network_proc; /* who-symbol host-string-or-'listen port-k -> void */
 } Scheme_Security_Guard;
 
+/* Always allocated on the stack: */
+typedef struct {
+  int false_positive_ok;  /* non-zero => return 1 to swap in thread rather than running Scheme code */
+  int potentially_false_positive; /* => returning 1 to swap thread in, but truth may be 0 */
+  Scheme_Object *current_waiting;
+  int w_i;
+  int spin;
+} Scheme_Schedule_Info;
+
+void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
+			    Scheme_Object *wrap, Scheme_Object *nack);
+
+typedef int (*Scheme_Ready_Fun_FPC)(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+
 /*========================================================================*/
 /*                       hash tables and globals                          */
 /*========================================================================*/

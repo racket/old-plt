@@ -21,6 +21,11 @@
 
 #define PROP_USE_HT_COUNT 5
 
+/* globals */
+Scheme_Object *scheme_arity_at_least, *scheme_date;
+
+/* locals */
+
 typedef enum {
   SCHEME_CONSTR = 1, 
   SCHEME_PRED, 
@@ -37,10 +42,19 @@ typedef struct {
   mzshort field;
 } Struct_Proc_Info;
 
-/* globals */
-Scheme_Object *scheme_arity_at_least, *scheme_date;
+typedef struct {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Object *waitable;
+  Scheme_Object *wrapper;
+} Wrapped_Waitable;
 
-/* locals */
+typedef struct {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Object *maker;
+} Nack_Waitable;
+
 static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *inspector_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[]);
@@ -54,8 +68,8 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *struct_transact(int argc, Scheme_Object *argv[]);
-static Scheme_Object *struct_transact_break(int argc, Scheme_Object *argv[]);
+static Scheme_Object *wrap_waitable(int argc, Scheme_Object *argv[]);
+static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -77,8 +91,10 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const 
 
 static Scheme_Object *waitable_property;
 static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static void waitable_struct_needs_wakeup(Scheme_Object *, void *);
 static int is_waitable_struct(Scheme_Object *);
+
+static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -176,10 +192,17 @@ scheme_init_struct (Scheme_Env *env)
     scheme_add_global_constant("prop:waitable", waitable_property, env);
 
     scheme_add_waitable(scheme_structure_type,
-			waitable_struct_is_ready,
-			waitable_struct_needs_wakeup,
+			(Scheme_Ready_Fun)waitable_struct_is_ready,
+			NULL,
 			is_waitable_struct, 1);
   }
+
+  scheme_add_waitable(scheme_wrapped_waitable_type,
+		      (Scheme_Ready_Fun)wrapped_waitable_is_ready,
+		      NULL, NULL, 1);
+  scheme_add_waitable(scheme_nack_waitable_type,
+		      (Scheme_Ready_Fun)nack_waitable_is_ready,
+		      NULL, NULL, 1);
 
   /*** basic interface ****/
 
@@ -208,15 +231,15 @@ scheme_init_struct (Scheme_Env *env)
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("struct-transact",
-			     scheme_make_prim_w_arity(struct_transact,
-						      "struct-transact",
-						      6, 6),
+  scheme_add_global_constant("make-wrapped-waitable",
+			     scheme_make_prim_w_arity(wrap_waitable,
+						      "make-wrapped-waitable",
+						      2, 2),
 			     env);
-  scheme_add_global_constant("struct-transact/enable-break",
-			     scheme_make_prim_w_arity(struct_transact_break,
-						      "struct-transact/enable-break",
-						      6, 6),
+  scheme_add_global_constant("make-nack-waitable",
+			     scheme_make_prim_w_arity(nack_waitable,
+						      "make-nack-waitable",
+						      1, 1),
 			     env);
 
 
@@ -572,22 +595,6 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   return v;
 }
 
-static void pre_sync(void *e)
-{
-  SCHEME_CAR((Scheme_Object *)e) = scheme_get_param(scheme_config, MZCONFIG_ENABLE_BREAK);
-  scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_false);
-}
-
-static void post_sync(void *e)
-{
-  scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, SCHEME_CAR((Scheme_Object *)e));
-}
-
-static Scheme_Object *do_sync(void *e)
-{
-  return scheme_apply(SCHEME_CDR((Scheme_Object *)e), 0, NULL);
-}
-
 static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *v;
@@ -598,13 +605,8 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
     v = ((Scheme_Structure *)o)->slots[SCHEME_INT_VAL(v)];
 
   if (scheme_is_waitable(v)) {
-    v = scheme_wait_on_waitable(v, 1, sinfo);
-    if (v) {
-      if (SCHEME_SEMAP(v))
-	scheme_post_sema(v);
-      return 1;
-    } else
-      return 0;
+    scheme_set_wait_target(sinfo, v, NULL, NULL);
+    return 0;
   }
 
   if (SCHEME_PROCP(v)) {
@@ -613,49 +615,26 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
       return 1;
     }
 
-    if (scheme_check_proc_arity(NULL, 0, 0, 1, &v)) {
-      /* we loop calling the procedure, but give up if
-	 the procedure keeps returning ready waitables */
-      int loop_count = 1;
-      Scheme_Object *f = v;
+    if (scheme_check_proc_arity(NULL, 1, 0, 1, &v)) {
+      Scheme_Object *f = v, *result, *a[1];
 
-      while (loop_count) {
-	/* Call f with breaks disabled, in case we're
-	   called by object-wait-multiple/enable-break,
-	   in which case a non-semaphore result should
-	   lead to an unbroken accept. */
-	v = scheme_dynamic_wind(pre_sync, do_sync, post_sync,
-				NULL, scheme_make_pair(scheme_true, f));
-	
-	if (scheme_is_waitable(v)) {
-	  v = scheme_wait_on_waitable(v, 1, sinfo);
-	  if (v) {
-	    if (SCHEME_SEMAP(v))
-	      scheme_post_sema(v);
-	    sinfo->target = NULL;
-	    /* loop to check the proc again */
-	    --loop_count;
-	    sinfo->target = NULL;
-	  } else
-	    return 0;
-	} else
-	  return 1;
+      a[0] = o;
+      result = scheme_apply(f, 1, a);
+
+      if (scheme_is_waitable(result)) {
+	scheme_set_wait_target(sinfo, result, NULL, NULL);
+	return 0;
       }
 
-      /* If we get here, then we gave up checking whether the
-	 waitable is ready. Don't let MzScheme sleep! */
-      sinfo->spin = 1;
+      /* non-waitable => ready and result is self */
+      scheme_set_wait_target(sinfo, o, o, NULL);
+      sinfo->w_i++; /* undo rewind */
+
+      return 1;
     }
   }
 
   return 0;
-}
-
-static void waitable_struct_needs_wakeup(Scheme_Object *s, void *fds)
-{
-  /* If there's an associated waitable that needs a wakeup, then we
-     shouldn't get here. The target use above should take care of
-     it. */
 }
 
 static int is_waitable_struct(Scheme_Object *o)
@@ -1252,99 +1231,61 @@ static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[])
 }
 
 /*========================================================================*/
-/*                           transactions                                 */
+/*                           wraps and nacks                              */
 /*========================================================================*/
 
-static void pre_transact(void *e)
+static Scheme_Object *wrap_waitable(int argc, Scheme_Object *argv[])
 {
-  scheme_push_kill_action((Scheme_Kill_Action_Func)scheme_post_sema, 
-			  SCHEME_CAR((Scheme_Object *)e));
+  Wrapped_Waitable *ww;
+
+  if (!scheme_is_waitable(argv[0]))
+    scheme_wrong_type("make-wrapped-waitable", "waitable-object", 0, argc, argv);
+  scheme_check_proc_arity("make-wrapped-waitable", 1, 1, argc, argv);
+
+  ww = MALLOC_ONE_TAGGED(Wrapped_Waitable);
+  ww->type = scheme_wrapped_waitable_type;
+  ww->waitable = argv[0];
+  ww->wrapper = argv[1];
+
+  return (Scheme_Object *)ww;
 }
 
-static void post_transact(void *e)
+static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[])
 {
-  scheme_pop_kill_action();
+  Nack_Waitable *nw;
+
+  scheme_check_proc_arity("make-nack-waitable", 1, 0, argc, argv);
+
+  nw = MALLOC_ONE_TAGGED(Nack_Waitable);
+  nw->type = scheme_nack_waitable_type;
+  nw->maker = argv[0];
+
+  return (Scheme_Object *)nw;
 }
 
-static Scheme_Object *do_transact(void *e)
+static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Object *a[1];
+  Wrapped_Waitable *ww = (Wrapped_Waitable *)o;
 
-  a[0] = SCHEME_CDDR((Scheme_Object *)e);
-
-  return _scheme_apply(SCHEME_CADR((Scheme_Object *)e), 1, a);
+  scheme_set_wait_target(sinfo, ww->waitable, ww->wrapper, NULL);
+  return 0;
 }
 
-static Scheme_Object *do_struct_transact(const char *name, int argc, Scheme_Object *argv[], int w_break)
+static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Struct_Proc_Info *i;
-  Scheme_Object *v;
+  Nack_Waitable *nw = (Nack_Waitable *)o;
+  Scheme_Object *sema, *a[1], *result;
 
-  if (!STRUCT_PROCP(argv[0], SCHEME_PRIM_IS_STRUCT_SETTER)
-      || (((Scheme_Closed_Primitive_Proc *)argv[0])->mina != 2)) {
-    scheme_wrong_type(name, "field-specific mutator procedure", 0, argc, argv);
-    return NULL;
-  }
+  sema = scheme_make_sema(0);
+  a[0] = sema;
+  result = scheme_apply(nw->maker, 1, a);
 
-  if (!scheme_is_waitable(argv[2])) {
-    scheme_wrong_type(name, "waitable", 2, argc, argv);
-    return NULL;
-  }
-
-  if (!SCHEME_SEMAP(argv[3])) {
-    scheme_wrong_type(name, "semaphore", 3, argc, argv);
-    return NULL;
-  }
-
-  if (!SCHEME_SEMAP(argv[4])) {
-    scheme_wrong_type(name, "semaphore", 4, argc, argv);
-    return NULL;
-  }
-
-  scheme_check_proc_arity(name, 1, 5, argc, argv);
-
-  i = (Struct_Proc_Info *)((Scheme_Closed_Primitive_Proc *)argv[0])->data;
-  if (!SCHEME_STRUCTP(argv[1])
-      || !STRUCT_TYPEP(i->struct_type, ((Scheme_Structure *)argv[1]))) {
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		     argv[1],
-		     "struct-transact: procedure %s cannot mutate object: %V", 
-		     i->func_name,
-		     argv[1]);
-    return NULL;
-  }
-
-  if (w_break) {
-    Scheme_Object *a[2];
-    a[0] = scheme_false;
-    a[1] = argv[2];
-    v = scheme_object_wait_multiple_enable_break(2, a);
-  } else {
-    Scheme_Schedule_Info sinfo;
-    scheme_init_schedule_info(&sinfo, 0);
-    v = scheme_wait_on_waitable(argv[2], 0, &sinfo);
-  }
-
-  v = scheme_dynamic_wind(pre_transact, do_transact, post_transact,
-			  NULL, scheme_make_pair(argv[4], scheme_make_pair(argv[5], v)));
-
-  /* These two happen atomicly */
-  ((Scheme_Structure *)argv[1])->slots[i->field] = v;
-  scheme_post_sema(argv[3]);
-
-  return scheme_void;
+  if (scheme_is_waitable(result)) {
+    scheme_set_wait_target(sinfo, result, NULL, sema);
+    return 0;
+  } else
+    return 1; /* Non-waitable => ready */
 }
-
-static Scheme_Object *struct_transact(int argc, Scheme_Object *argv[])
-{
-  return do_struct_transact("struct-transact", argc, argv, 0);
-}
-
-static Scheme_Object *struct_transact_break(int argc, Scheme_Object *argv[])
-{
-  return do_struct_transact("struct-transact/enable-break", argc, argv, 1);
-}
-
 
 /*========================================================================*/
 /*                          struct op maker                               */
@@ -2257,6 +2198,9 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 
   GC_REG_TRAV(scheme_inspector_type, mark_inspector);
+
+  GC_REG_TRAV(scheme_wrapped_waitable_type, mark_wrapped_waitable);
+  GC_REG_TRAV(scheme_nack_waitable_type, mark_nack_waitable);
 
   GC_REG_TRAV(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }

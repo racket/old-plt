@@ -216,12 +216,18 @@ static wxTimer *mred_timers;
 int mred_eventspace_param;
 int mred_event_dispatch_param;
 Scheme_Type mred_eventspace_type;
+Scheme_Type mred_nested_wait_type;
 static Scheme_Type mred_eventspace_hop_type;
 static Scheme_Object *def_dispatch;
 int mred_ps_setup_param;
 #ifdef NEED_HET_PARAM
 int mred_het_param;
 #endif
+
+typedef struct Nested_Wait {
+  Scheme_Type type;
+  Scheme_Object *wait_on;
+} Nested_Wait;
 
 typedef struct Context_Custodian_Hop {
   Scheme_Type type;
@@ -309,6 +315,29 @@ static int fixup_eventspace_val(void *p)
   gcFIXUP_TYPED(Scheme_Custodian_Reference *, c->mref);
 
   return gcBYTES_TO_WORDS(sizeof(MrEdContext));
+}
+
+static int size_nested_wait_val(void *)
+{
+  return gcBYTES_TO_WORDS(sizeof(Nested_Wait));
+}
+
+static int mark_nested_wait_val(void *p)
+{
+  Nested_Wait *c = (Nested_Wait *)p;
+
+  gcMARK_TYPED(MrEdContext *, c->wait_on);
+
+  return gcBYTES_TO_WORDS(sizeof(Nested_Wait));
+}
+
+static int fixup_nested_wait_val(void *p)
+{
+  Nested_Wait *c = (Nested_Wait *)p;
+
+  gcFIXUP_TYPED(MrEdContext *, c->wait_on);
+
+  return gcBYTES_TO_WORDS(sizeof(Nested_Wait));
 }
 
 static int size_eventspace_hop_val(void *)
@@ -835,10 +864,13 @@ void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
   return data;
 }
 
-static int check_eventspace_inactive(void *_c, Scheme_Schedule_Info *)
+static int check_eventspace_inactive(void *_c)
 {
   MrEdContext *c = (MrEdContext *)_c;
   wxTimer *timer = mred_timers;
+
+  if (c->nested_avail)
+    return 0;
 
   /* Any callbacks prepared for this eventspace? */
   if (check_q_callbacks(0, MrEdSameContext, c, 1)
@@ -876,7 +908,7 @@ void mred_wait_eventspace(void)
   MrEdContext * volatile c;
   c = MrEdGetContext();
   if (c && (c->handler_running == scheme_current_thread)) {
-    wxDispatchEventsUntilWakeable(check_eventspace_inactive, NULL, c);
+    wxDispatchEventsUntilWaitable(check_eventspace_inactive, c, NULL);
   }
 }
 
@@ -932,7 +964,7 @@ static void DoTimer(wxTimer *timer)
     timer->Start(timer->interval, FALSE);
 }
 
-static int check_for_nested_event(Scheme_Object *cx, Scheme_Schedule_Info *sinfo)
+static int do_check_for_nested_event(Scheme_Object *cx)
 {
   MrEdContext *c = (MrEdContext *)cx;
 
@@ -940,38 +972,17 @@ static int check_for_nested_event(Scheme_Object *cx, Scheme_Schedule_Info *sinfo
     return 1;
 
   if (c->alternate) {
-    if (c->alt_target) {
-      if (scheme_wait_on_waitable(c->alt_target, 1, sinfo)) {
-	if (!sinfo->potentially_false_positive) {
-	  if (SCHEME_SEMAP(c->alt_target))
-	    scheme_post_sema(c->alt_target);
-	  c->alt_target = 0;
-	  /* And go back to checking normal */
-	} else
-	  return 1;
-      } else
-	return 0;
-    }
-
-    if (c->alternate(c->alt_data, sinfo))
+    if (c->alternate(c->alt_data))
       return 1;
-
-    if (sinfo->target) {
-      c->alt_target = sinfo->target;
-      sinfo->target = NULL;
-    }
 
     return 0;
   } else
     return 0;
 }
 
-static void wakeup_nested_event(Scheme_Object *o, void *fds)
+static int check_for_nested_event(Scheme_Object *cx)
 {
-  MrEdContext *c = (MrEdContext *)o;
-
-  if (c->alternate_wakeup)
-    c->alternate_wakeup(c->alt_data, fds);
+  return do_check_for_nested_event(((Nested_Wait *)cx)->wait_on);
 }
 
 static int MrEdSameContext(MrEdContext *c, MrEdContext *testc)
@@ -1053,13 +1064,18 @@ static void DoTheEvent(MrEdContext *c)
     GoAhead(c);
 }
 
-void MrEdDoNextEvent(MrEdContext *c, 
-		     wxDispatch_Check_Fun_FPC alt, wxDispatch_Needs_Wakeup_Fun alt_wakeup, 
-		     void *altdata)
+static void reset_nested_wait(MrEdContext *c)
+{
+  c->ready = 0;
+  c->waiting_for_nested = 0;
+  c->alternate = NULL;
+  c->alt_data = NULL;
+}
+
+static int MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altdata, Scheme_Object *alt_wait)
 {
   wxTimer *timer;
   MrEdEvent evt;
-  Scheme_Schedule_Info sinfo;
   int restricted = 0;
 
 #ifdef NEED_HET_PARAM
@@ -1068,10 +1084,27 @@ void MrEdDoNextEvent(MrEdContext *c,
     restricted = 1;
 #endif
 
-  scheme_init_schedule_info(&sinfo, 0);
+  if (alt) {
+    if (alt(altdata)) {
+      /* Do nothing, since alt fired. */
+      return 1;
+    }
+  }
+  if (alt_wait) {
+    Scheme_Object *a[2], *r;
+    a[0] = scheme_make_integer(0);
+    a[1] = alt_wait;
+    r = scheme_object_wait_multiple(2, a);
 
-  if (alt && alt(altdata, &sinfo)) {
-    /* did nothing since alt fired */
+    if (SCHEME_TRUEP(r)) {
+      /* Do nothing, since alt fired. */
+      return 1;
+    }
+  }
+
+  if (c->nested_avail) {
+    c->nested_avail = 0;
+    DoTheEvent(c);
   } else if (check_q_callbacks(2, MrEdSameContext, c, 1)) {
     c->q_callback = 3;
     DoTheEvent(c);
@@ -1089,29 +1122,52 @@ void MrEdDoNextEvent(MrEdContext *c,
     c->q_callback = 1;
     DoTheEvent(c);
   } else if (c != mred_main_context) {
+    int result = 0;
+
     c->ready = 1;
     c->waiting_for_nested = 1;
 
     c->alternate = alt;
-    c->alternate_wakeup = alt_wakeup;
     c->alt_data = altdata;
 
-    scheme_block_until((Scheme_Ready_Fun)check_for_nested_event,
-		       wakeup_nested_event, 
-		       (Scheme_Object *)c, 0.0);
+    if (alt_wait) {
+      Nested_Wait *nw;
+      Scheme_Object *a[3], *v;
+
+      nw = (Nested_Wait *)scheme_malloc_tagged(sizeof(Nested_Wait));
+      nw->type = mred_nested_wait_type;
+      nw->wait_on = (Scheme_Object *)c;
+
+      a[0] = scheme_false;
+      a[1] = alt_wait;
+      a[2] = (Scheme_Object *)nw;
+
+      /* Running arbitrary Scheme code here. */
+      BEGIN_ESCAPEABLE(reset_nested_wait, c);
+      v = scheme_object_wait_multiple(3, a);
+      END_ESCAPEABLE();
+
+      if (!SAME_OBJ(v, a[2]))
+	result = 1;
+    } else {
+      scheme_block_until((Scheme_Ready_Fun)do_check_for_nested_event, NULL,
+			 (Scheme_Object *)c, 0.0);
+    }
 
     c->alternate = NULL;
-    c->alternate_wakeup = NULL;
     c->alt_data = NULL;
-    c->alt_target = NULL;
 
     if (c->waiting_for_nested) {
-      /* Alternate condition fired. Do nothing. */
+      /* Alternate condition fired. Clear waiting flag. */
       c->ready = 0;
       c->waiting_for_nested = 0;
-    } else
-      DoTheEvent(c);
+      result = 1;
+    }
+
+    return result;
   }
+
+  return 0;
 }
 
 void wxDoNextEvent()
@@ -1134,7 +1190,9 @@ int MrEdEventReady(MrEdContext *c)
     restricted = 1;
 #endif
 
-  return (TimerReady(c) || (!restricted && MrEdGetNextEvent(1, 1, NULL, NULL))
+  return (c->nested_avail 
+	  || TimerReady(c) 
+	  || (!restricted && MrEdGetNextEvent(1, 1, NULL, NULL))
 	  || (!restricted && check_q_callbacks(2, MrEdSameContext, c, 1))
 	  || check_q_callbacks(1, MrEdSameContext, c, 1)
 	  || check_q_callbacks(0, MrEdSameContext, c, 1));
@@ -1156,7 +1214,6 @@ static void WaitForAnEvent_OrDie(MrEdContext *c)
   c->waiting_for_nested = 1;
   c->alternate = NULL;
   c->alt_data = NULL;
-  c->alt_target = NULL;
 
   /* Suspend the thread. If another event is found for the eventspace, the
      thread will be resumed. */
@@ -1197,11 +1254,11 @@ static void on_handler_killed(Scheme_Thread *p)
   c->handler_running = NULL;
   c->ready = 0;
   c->waiting_for_nested = 0;
+  c->nested_avail = 0;
   c->q_callback = 0;
   c->timer = NULL;
   c->alternate = NULL;
   c->alt_data = NULL;
-  c->alt_target = NULL;
   c->ready_to_go = 0;
 }
 
@@ -1258,11 +1315,12 @@ static void event_found(MrEdContext *c)
   c->ready = 0;
   
   if (c->waiting_for_nested) {
+    c->waiting_for_nested = 0;
+    c->nested_avail = 1;
     if (c->suspended) {
       c->suspended = 0;
       scheme_weak_resume_thread(c->handler_running);
     }
-    c->waiting_for_nested = 0;
   } else {
     Scheme_Object *cp;
 
@@ -1426,7 +1484,7 @@ void wxDoEvents()
     do {
       scheme_current_thread->block_descriptor = -1;
       scheme_current_thread->blocker = NULL;
-      scheme_current_thread->block_check = (Scheme_Ready_Fun_FPC)try_dispatch;
+      scheme_current_thread->block_check = try_dispatch;
       scheme_current_thread->block_needs_wakeup = CAST_WU wakeup_on_dispatch;
 
       scheme_thread_block(0);
@@ -1439,7 +1497,7 @@ void wxDoEvents()
   }
 }
 
-void wxDispatchEventsUntilWakeable(wxDispatch_Check_Fun_FPC f, wxDispatch_Needs_Wakeup_Fun wu, void *data)
+void wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data, Scheme_Object *w)
 {
   MrEdContext *c;
   c = MrEdGetContext();
@@ -1448,16 +1506,18 @@ void wxDispatchEventsUntilWakeable(wxDispatch_Check_Fun_FPC f, wxDispatch_Needs_
       || (c->handler_running != scheme_current_thread)) {
     /* This is not the handler thread or an event still hasn't been
        dispatched. Wait. */
-    scheme_block_until((Scheme_Ready_Fun)f, (Scheme_Needs_Wakeup_Fun)wu,
-		       (Scheme_Object *)data, 0.0);
+    if (w) {
+      Scheme_Object *a[2];
+      a[0] = scheme_false;
+      a[1] = w;
+      scheme_object_wait_multiple(2, a);
+    } else {
+      scheme_block_until((Scheme_Ready_Fun)f, NULL, (Scheme_Object *)data, 0.0);
+    }
   } else {
     /* This is the main thread. Handle events */
-    Scheme_Schedule_Info sinfo;
-
     do {
-      MrEdDoNextEvent(c, f, wu, data);
-      scheme_init_schedule_info(&sinfo, 0);
-      if (f(data, &sinfo))
+      if (MrEdDoNextEvent(c, f, data, w))
 	break;
     } while (1);
   }
@@ -1465,7 +1525,7 @@ void wxDispatchEventsUntilWakeable(wxDispatch_Check_Fun_FPC f, wxDispatch_Needs_
 
 void wxDispatchEventsUntil(wxDispatch_Check_Fun f, void *data)
 {
-  wxDispatchEventsUntilWakeable((wxDispatch_Check_Fun_FPC)f, NULL, data);
+  wxDispatchEventsUntilWaitable(f, NULL, data);
 }
 
 static SLEEP_PROC_PTR mzsleep;
@@ -2833,12 +2893,18 @@ wxFrame *MrEdApp::OnInit(void)
   wxInitSnips(); /* and snip classes */
 
   mred_eventspace_type = scheme_make_type("<eventspace>");
+  mred_nested_wait_type = scheme_make_type("<eventspace-nested-wait>");
 #ifdef MZ_PRECISE_GC
   mred_eventspace_hop_type = scheme_make_type("<internal:eventspace-hop>");
   GC_register_traversers(mred_eventspace_type, 
 			 size_eventspace_val, 
 			 mark_eventspace_val, 
 			 fixup_eventspace_val,
+			 1, 0);
+  GC_register_traversers(mred_nested_wait_type, 
+			 size_nested_wait_val, 
+			 mark_nested_wait_val, 
+			 fixup_nested_wait_val,
 			 1, 0);
   GC_register_traversers(mred_eventspace_hop_type, 
 			 size_eventspace_hop_val,
@@ -2848,7 +2914,11 @@ wxFrame *MrEdApp::OnInit(void)
 #endif
 
   scheme_add_waitable(mred_eventspace_type,
-		      (Scheme_Ready_Fun_FPC)check_eventspace_inactive,
+		      (Scheme_Ready_Fun)check_eventspace_inactive,
+		      NULL,
+		      NULL, 0);
+  scheme_add_waitable(mred_nested_wait_type,
+		      check_for_nested_event,
 		      NULL,
 		      NULL, 0);
 

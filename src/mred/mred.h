@@ -58,16 +58,14 @@ typedef struct MrEdContext {
 
   short ready_to_go;
 
-  short ready, waiting_for_nested;
+  short ready, waiting_for_nested, nested_avail;
   short q_callback;
   wxTimer *timer;
   MrEdEvent event;
 
   /* Alternate condition for nested event loop pending some condition */
-  wxDispatch_Check_Fun_FPC alternate;
-  wxDispatch_Needs_Wakeup_Fun alternate_wakeup;
+  wxDispatch_Check_Fun alternate;
   void *alt_data;
-  Scheme_Object *alt_target;
 
   /* Used to chain active contexts while reading events: */
   struct MrEdContext *next;

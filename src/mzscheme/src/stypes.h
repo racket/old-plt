@@ -114,10 +114,10 @@ enum {
   scheme_udp_waitable_type,
   scheme_id_macro_type,  
   scheme_waitable_set_type,
+  scheme_wrapped_waitable_type,
+  scheme_nack_waitable_type, /* 100 */
+  scheme_semaphore_repost_type,
 
-  scheme_reserved_1_type,
-  scheme_reserved_2_type, /* 100 */
-  scheme_reserved_3_type,
   scheme_reserved_4_type,
 
 #ifdef MZTAG_REQUIRED
@@ -180,7 +180,6 @@ enum {
   scheme_rt_compact_port,
   scheme_rt_read_special_dw,
   scheme_rt_regwork, /* 160 */
-  scheme_rt_sinfo,
   scheme_rt_buf_holder,
 #endif
 

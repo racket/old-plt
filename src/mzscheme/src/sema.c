@@ -27,6 +27,7 @@ static Scheme_Object *hit_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_p(int n, Scheme_Object **p);
 static Scheme_Object *block_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p);
+static Scheme_Object *make_sema_repost(int n, Scheme_Object **p);
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -37,6 +38,12 @@ static Scheme_Object *sema_identity(Scheme_Object *s, int *repost)
 {
   *repost = 0;
   return s;
+}
+
+static Scheme_Object *sema_for_repost(Scheme_Object *s, int *repost)
+{
+  *repost = 1;
+  return SCHEME_PTR_VAL(s);
 }
 
 void scheme_init_sema(Scheme_Env *env)
@@ -76,8 +83,14 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
-  scheme_add_waitable_through_sema(scheme_sema_type, sema_identity, NULL);
+  scheme_add_global_constant("make-semaphore-repost-waitable", 
+			     scheme_make_prim_w_arity(make_sema_repost,
+						      "make-semaphore-repost-waitable", 
+						      1, 1), 
+			     env);
 
+  scheme_add_waitable_through_sema(scheme_sema_type, sema_identity, NULL);
+  scheme_add_waitable_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
 }
 
 Scheme_Object *scheme_make_sema(long v)
@@ -114,6 +127,20 @@ static Scheme_Object *make_sema(int n, Scheme_Object **p)
   return scheme_make_sema(v);
 }
 
+static Scheme_Object *make_sema_repost(int n, Scheme_Object **p)
+{
+  Scheme_Object *o;
+
+  if (!SCHEME_SEMAP(p[0]))
+    scheme_wrong_type("make-semaphore-repost-waitable", "semaphore", 0, n, p);
+  
+  o = scheme_alloc_small_object();
+  o->type = scheme_semaphore_repost_type;
+  SCHEME_PTR_VAL(o) = p[0];
+
+  return o;
+}
+
 static Scheme_Object *semap(int n, Scheme_Object **p)
 {
   return SCHEME_SEMAP(p[0]) ? scheme_true : scheme_false;
@@ -124,6 +151,8 @@ void scheme_post_sema(Scheme_Object *o)
   Scheme_Sema *t = (Scheme_Sema *)o;
 
   int v;
+
+  if (t->value < 0) return;
 
   v = t->value + 1;
   if (v > t->value) {
@@ -151,6 +180,16 @@ void scheme_post_sema(Scheme_Object *o)
 
   scheme_raise_exn(MZEXN_MISC,
 		   "semaphore-post: the maximum post count has already been reached");
+}
+
+void scheme_post_sema_all(Scheme_Object *o)
+{
+  Scheme_Sema *t = (Scheme_Sema *)o;
+
+  while (t->first) {
+    scheme_post_sema(o);
+  }
+  t->value = -1;
 }
 
 static Scheme_Object *hit_sema(int n, Scheme_Object **p)
@@ -266,7 +305,8 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
     Scheme_Sema *sema = semas[0];
     if (just_try > 0) {
       if (sema->value) {
-	--sema->value;
+	if (sema->value > 0)
+	  --sema->value;
 	v = 1;
       } else
 	v = 0;
@@ -290,7 +330,8 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
   } else {
     for (i = 0; i < n; i++) {
       if (semas[i]->value) {
-	--semas[i]->value;
+	if (semas[i]->value > 0)
+	  --semas[i]->value;
 	break;
       }
     }
@@ -345,7 +386,8 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
 	  if (!ws[i]->in_line) {
 	    out_of_a_line = 1;
 	    if (semas[i]->value) {
-	      --(semas[i]->value);
+	      if (semas[i]->value > 0)
+		--(semas[i]->value);
 	      /* If we get the post, we must return WITHOUT BLOCKING. 
 		 MrEd, for example, depends on this special property, which insures
 		 that the thread can't be broken or killed between
@@ -383,7 +425,8 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
 	      if (semas[j]->value) {
 		/* Consume the value and repost, because no one else
 		   has been told to go, and we're accepting a different post. */
-		--semas[j]->value;
+		if (semas[j]->value > 0)
+		  --semas[j]->value;
 		scheme_post_sema((Scheme_Object *)(semas[j]));
 	      }
 	    }

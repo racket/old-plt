@@ -1047,12 +1047,13 @@ static int output_ready(Scheme_Object *port, Scheme_Schedule_Info *sinfo)
   if (op->closed)
     return 1;
 
-  if (sinfo->false_positive_ok && SAME_OBJ(scheme_user_output_port_type, op->sub_type)) {
+  if (SAME_OBJ(scheme_user_output_port_type, op->sub_type)) {
     /* We can't call the normal ready because that might run Scheme
        code, and this function is called by the scheduler when
        false_pos_ok is true. So, in that case, we asume that if the
        port's waitable is ready, then the port is ready. (After
-       all, false positives are ok in that mode.) */
+       all, false positives are ok in that mode.) Even when the
+       scheduler isn't requesting the status, we need sinfo. */
     return scheme_user_port_write_probably_ready(op, sinfo);
   }
 
@@ -1084,12 +1085,13 @@ static int char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 {
   Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
 
-  if (sinfo->false_positive_ok && SAME_OBJ(scheme_user_input_port_type, ip->sub_type)) {
+  if (SAME_OBJ(scheme_user_input_port_type, ip->sub_type)) {
     /* We can't call the normal char_ready because that runs Scheme
        code, and this function is called by the scheduler when
        false_pos_ok is true. So, in that case, we asume that if the
        port's waitable is ready, then the port is ready. (After
-       all, false positives are ok in that mode.) */
+       all, false positives are ok in that mode.) Even when the
+       scheduler isn't requesting the status, we need sinfo. */
     return scheme_user_port_char_probably_ready(ip, sinfo);
   } else
     return scheme_char_ready(p);
@@ -1098,10 +1100,10 @@ static int char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 static void register_port_wait()
 {
   scheme_add_waitable(scheme_input_port_type,
-		      char_ready_or_user_port_ready, scheme_need_wakeup, 
+		      (Scheme_Ready_Fun)char_ready_or_user_port_ready, scheme_need_wakeup, 
 		      waitable_input_port_p, 1);
   scheme_add_waitable(scheme_output_port_type,
-		      output_ready, output_need_wakeup, 
+		      (Scheme_Ready_Fun)output_ready, output_need_wakeup, 
 		      waitable_output_port_p, 1);
 }
 
@@ -5064,8 +5066,7 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
 static void register_subprocess_wait()
 {
 #if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
-  scheme_add_waitable(scheme_subprocess_type, 
-		      (Scheme_Ready_Fun_FPC)subp_done, 
+  scheme_add_waitable(scheme_subprocess_type, subp_done, 
 		      subp_needs_wakeup, NULL, 0);
 #endif
 }

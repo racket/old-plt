@@ -301,7 +301,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-custom-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
 						      "make-custom-input-port", 
-						      4, 4), 
+						      3, 3), 
 			     env);
   scheme_add_global_constant("make-custom-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
@@ -786,16 +786,16 @@ typedef struct User_Input_Port {
   Scheme_Object *close_proc;
   Scheme_Object *peeked;
   Scheme_Object *closed_sema;
-  int block_count;
 } User_Input_Port;
 
 static long 
 user_get_or_peek_string(Scheme_Input_Port *port, 
 			char *buffer, long offset, long size,
 			int nonblock,
-			int peek, Scheme_Object *peek_skip)
+			int peek, Scheme_Object *peek_skip,
+			Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Object *fun, *val, *waitable, *a[3];
+  Scheme_Object *fun, *val, *a[3];
   char *vb;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
@@ -814,41 +814,6 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       return SCHEME_SPECIAL;
     } else
       return EOF;
-  }
-
-  waitable = uip->waitable;
-  if (SCHEME_TRUEP(waitable)) {
-    /* If we're going to block on the waitable, but be prepared for a
-       close while we wait: */
-    uip->block_count++;
-    a[0] = nonblock ? scheme_make_integer(0) : scheme_false;
-    a[1] = waitable;
-    a[2] = uip->closed_sema;
-    val = scheme_object_wait_multiple(3, a);
-    --uip->block_count;
-
-    if (SCHEME_FALSEP(val)) {
-      /* Assert: nonblock is nonzero */
-      return 0;
-    } else if (!SAME_OBJ(val, uip->closed_sema)) {
-      if (SCHEME_SEMAP(val))
-	scheme_post_sema(val);
-
-      /* Port may have been closed, or may have been peeked while we
-         were waiting: */
-      if (port->closed) {
-	/* Another thread closed the input port while we were waiting. */
-	/* Call scheme_getc to signal the error */
-	scheme_getc((Scheme_Object *)port);
-      }
-      if (uip->peeked)
-	goto try_again;
-    } else {
-      /* Another thread closed the input port while we were waiting. */
-      /* Call scheme_getc to signal the error */
-      scheme_getc((Scheme_Object *)port);
-      return 0; /* doesn't get here */
-    }
   }
 
   if (peek)
@@ -872,26 +837,25 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       } else if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
 	port->special = val;
 	return SCHEME_SPECIAL;
-      } else if (peek && scheme_is_waitable(val)) {
-	/* A peek failed, and we were given a waitable that unblocks
+      } else if (scheme_is_waitable(val)) {
+	/* A peek/read failed, and we were given a waitable that unblocks
 	   when the peek (at some offset) might succeed. */
-	if (nonblock)
+	if (nonblock) {
+	  if (sinfo) {
+	    a[0] = val;
+	    a[1] = uip->closed_sema;
+	    val = scheme_make_waitable_set(2, a);
+	    scheme_set_wait_target(sinfo, val, (Scheme_Object *)port, NULL);
+	  }
 	  return 0;
-	else {
-	  /* Wait on the given waitable.  (Probably we're trying to
-	     peek ahead.) */
-	  waitable = val;
-	  uip->block_count++;
+	} else {
+	  /* Wait on the given waitable. */
 	  a[0] = scheme_false;
-	  a[1] = waitable;
+	  a[1] = val;
 	  a[2] = uip->closed_sema;
 	  val = scheme_object_wait_multiple(3, a);
-	  --uip->block_count;
 	  
 	  if (!SAME_OBJ(val, uip->closed_sema)) {
-	    if (SCHEME_SEMAP(val))
-	      scheme_post_sema(val);
-
 	    /* Port may have been closed while we were waiting: */
 	    if (port->closed) {
 	      /* Another thread closed the input port while we were waiting. */
@@ -929,8 +893,11 @@ user_get_or_peek_string(Scheme_Input_Port *port,
     } else {
       scheme_thread_block(0.0); /* penalty for inaccuracy? */
       /* but don't loop forever due to inaccurracy */
-      if (nonblock)
+      if (nonblock) {
+	if (sinfo)
+	  sinfo->spin = 1;
 	return 0;
+      }
       goto try_again;
     }
   }
@@ -942,7 +909,7 @@ user_get_string(Scheme_Input_Port *port,
 		int nonblock)
 {
   return user_get_or_peek_string(port, buffer, offset, size, nonblock, 
-				 0, NULL);
+				 0, NULL, NULL);
 }
 
 static long 
@@ -951,11 +918,11 @@ user_peek_string(Scheme_Input_Port *port,
 		 Scheme_Object *skip,
 		 int nonblock)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 1, skip);
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 1, skip, NULL);
 }
 
 static int
-user_char_ready(Scheme_Input_Port *port)
+user_char_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
 {
   int c, can_peek;
   char s[1];
@@ -969,7 +936,8 @@ user_char_ready(Scheme_Input_Port *port)
   can_peek = (uip->peek_proc ? 1 : 0);
 
   c = user_get_or_peek_string(port, s, 0, 1, 1, 
-			      can_peek, scheme_make_integer(0));
+			      can_peek, scheme_make_integer(0),
+			      sinfo);
 
   if (c == EOF) {
     if (!can_peek)
@@ -987,54 +955,45 @@ user_char_ready(Scheme_Input_Port *port)
     return 0;
 }
 
+static int
+user_char_ready(Scheme_Input_Port *port)
+{
+  return user_char_ready_sinfo(port, NULL);
+}
+
 int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo)
 {
   User_Input_Port *uip = (User_Input_Port *)ip->port_data;
-  Scheme_Object *waitable, *val;
 
   if (uip->peeked)
     return 1;
 
-  waitable = uip->waitable;
-  if (SCHEME_TRUEP(waitable)) {
-    val = scheme_wait_on_waitable(waitable, 1, sinfo);
-    if (val) {
-      if (SCHEME_SEMAP(val))
-	scheme_post_sema(val);
-
-      if (sinfo->false_positive_ok)
-	sinfo->potentially_false_positive = 1;
-      return 1;
-    } else
-      return 0;
-  } else
+  if (sinfo->false_positive_ok) {
+    /* Causes the thread to swap in: */
+    sinfo->potentially_false_positive = 1;
     return 1;
+  } else {
+    return user_char_ready_sinfo(ip, sinfo);
+  }
 }
 
 static void
 user_needs_wakeup_input (Scheme_Input_Port *port, void *fds)
 {
-  User_Input_Port *uip = (User_Input_Port *)port->port_data;
-
-  if (SCHEME_TRUEP(uip->waitable)) {  
-    scheme_waitable_needs_wakeup(uip->waitable, fds);
-  }
+  /* Nothing... */
 }
 
 static void
 user_close_input(Scheme_Input_Port *port)
 {
-  int v;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
   scheme_apply_multi(uip->close_proc, 0, NULL);
 
   /* Wake up anyone who's blocked on the port.  We rely on the fact
      that port_sema doesn't swap anything in (because port->closed
-     isn't set, yet. */
-  for (v = uip->block_count; v--;) {
-    scheme_post_sema(uip->closed_sema);
-  }
+     isn't set, yet). */
+  scheme_post_sema_all(uip->closed_sema);
 }
 
 /*========================================================================*/
@@ -1043,31 +1002,35 @@ user_close_input(Scheme_Input_Port *port)
 
 typedef struct User_Output_Port {
   MZTAG_IF_REQUIRED
-  Scheme_Object *waitable;
+  Scheme_Object *proc_for_waitable;
   Scheme_Object *write_proc;
   Scheme_Object *flush_proc;
   Scheme_Object *close_proc;
   Scheme_Object *closed_sema;
-  int block_count;
 } User_Output_Port;
 
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Object *waitable, *val;
+  Scheme_Object *proc_for_waitable, *val;
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
 
   if (port->closed)
     return 1;
 
-  waitable = uop->waitable;
-  if (SCHEME_TRUEP(waitable)) {
-    val = scheme_wait_on_waitable(waitable, 1, sinfo);
-    if (val) {
-      if (SCHEME_SEMAP(val))
-	scheme_post_sema(val);
+  proc_for_waitable = uop->proc_for_waitable;
+  if (SCHEME_TRUEP(proc_for_waitable)) {
+    if (sinfo->false_positive_ok) {
+      sinfo->potentially_false_positive = 1;
       return 1;
-    } else
+    }
+    
+    val = scheme_apply(proc_for_waitable, 0, NULL);
+
+    if (scheme_is_waitable(val)) {
+      scheme_set_wait_target(sinfo, val, (Scheme_Object *)port, NULL);
       return 0;
+    } else
+      return 1; /* non-waitable => ready */
   }
 
   return 1;
@@ -1076,13 +1039,10 @@ int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Sched
 static int
 user_write_ready(Scheme_Output_Port *port)
 {
-  /* If we ready-checking as a waitable, then 
-     scheme_user_port_write_probably_ready is called instead. */
-  Scheme_Schedule_Info sinfo;
-  
-  scheme_init_schedule_info(&sinfo, 0);
-
-  return scheme_user_port_write_probably_ready(port, &sinfo);
+  /* This function should never be called. If we are ready-checking as 
+     a waitable, then scheme_user_port_write_probably_ready is called,
+     instead. */
+  return 1;
 }
 
 static long
@@ -1153,30 +1113,31 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
 
   /* Assert: rarely_block == 1, and we haven't written anything. */
   {
-    Scheme_Object *waitable;
+    Scheme_Object *proc_for_waitable;
 
     scheme_thread_block(0.0);
 
-    waitable = uop->waitable;
-    if (SCHEME_TRUEP(waitable)) {
-      /* We're going to block on the waitable, so be prepared
-	 for a close while we wait: */
-      uop->block_count++;
-      p[0] = scheme_false;
-      p[1] = waitable;
-      p[2] = uop->closed_sema;
-      val = scheme_object_wait_multiple(3, p);
-      --uop->block_count;
+    proc_for_waitable = uop->proc_for_waitable;
+    if (SCHEME_TRUEP(proc_for_waitable)) {
+      Scheme_Object *waitable;
 
-      if (!SAME_OBJ(val, uop->waitable)) {
-	if (SCHEME_SEMAP(val))
-	  scheme_post_sema(val);
-      }
+      waitable = scheme_apply(proc_for_waitable, 0, NULL);
 
+      /* close while getting a waitable? */
       if (port->closed)
 	return 0;
 
-      /* Assert: SAME_OBJ(val, waitable) */
+      if (scheme_is_waitable(waitable)) {
+	/* We're going to block on the waitable, so be prepared
+	   for a close while we wait: */
+	p[0] = scheme_false;
+	p[1] = waitable;
+	p[2] = uop->closed_sema;
+	val = scheme_object_wait_multiple(3, p);
+	
+	if (port->closed)
+	  return 0;
+      }
     }
 
     goto try_again;
@@ -1187,27 +1148,20 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
 static void
 user_needs_wakeup_output (Scheme_Output_Port *port, void *fds)
 {
-  User_Output_Port *uop = (User_Output_Port *)port->port_data;
-
-  if (SCHEME_TRUEP(uop->waitable)) {  
-    scheme_waitable_needs_wakeup(uop->waitable, fds);
-  }
+  /* Nothing needed. */
 }
 
 static void
 user_close_output (Scheme_Output_Port *port)
 {
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
-  int v;
 
   scheme_apply_multi(uop->close_proc, 0, NULL);
 
   /* Wake up anyone who's blocked on the port.  We rely on the fact
      that port_sema doesn't swap anything in (because port->closed
      isn't set, yet. */
-  for (v = uop->block_count; v--;) {
-    scheme_post_sema(uop->closed_sema);
-  }
+  scheme_post_sema_all(uop->closed_sema);
 }
 
 /*========================================================================*/
@@ -1677,27 +1631,23 @@ make_input_port(int argc, Scheme_Object *argv[])
   User_Input_Port *uip;
   Scheme_Object *s;
 
-  if (!SCHEME_FALSEP(argv[0]) && !scheme_is_waitable(argv[0]))
-    scheme_wrong_type("make-custom-input-port", "waitable or #f", 0, argc, argv);
-  scheme_check_proc_arity("make-custom-input-port", 1, 1, argc, argv);
-  if (SCHEME_TRUEP(argv[2])) {
-    if (!scheme_check_proc_arity(NULL, 2, 2, argc, argv))
-      scheme_wrong_type("make-custom-input-port", "procedure (arity 2) or #f", 2, argc, argv);
+  scheme_check_proc_arity("make-custom-input-port", 1, 0, argc, argv);
+  if (SCHEME_TRUEP(argv[1])) {
+    if (!scheme_check_proc_arity(NULL, 2, 1, argc, argv))
+      scheme_wrong_type("make-custom-input-port", "procedure (arity 2) or #f", 1, argc, argv);
   }
-  scheme_check_proc_arity("make-custom-input-port", 0, 3, argc, argv);
+  scheme_check_proc_arity("make-custom-input-port", 0, 2, argc, argv);
   
   uip = MALLOC_ONE_RT(User_Input_Port);
 #ifdef MZTAG_REQUIRED
   uip->type = scheme_rt_user_input;
 #endif
 
-  uip->waitable = argv[0];
-  uip->read_proc = argv[1];
-  uip->peek_proc = argv[2];
-  uip->close_proc = argv[3];
+  uip->read_proc = argv[0];
+  uip->peek_proc = argv[1];
+  uip->close_proc = argv[2];
   s = scheme_make_sema(0);
   uip->closed_sema = s;
-  uip->block_count = 0;
 
   if (!SCHEME_TRUEP(uip->peek_proc))
     uip->peek_proc = NULL;
@@ -1725,8 +1675,10 @@ make_output_port (int argc, Scheme_Object *argv[])
   User_Output_Port *uop;
   Scheme_Object *s;
 
-  if (!SCHEME_FALSEP(argv[0]) && !scheme_is_waitable(argv[0]))
-    scheme_wrong_type("make-custom-output-port", "waitable or #f", 0, argc, argv);
+  if (SCHEME_TRUEP(argv[0])) {
+    if (!scheme_check_proc_arity(NULL, 0, 0, argc, argv))
+      scheme_wrong_type("make-custom-output-port", "procedure (arity 0) or #f", 0, argc, argv);
+  }
   scheme_check_proc_arity("make-custom-output-port", 4, 1, argc, argv);
   scheme_check_proc_arity("make-custom-output-port", 0, 2, argc, argv);
   scheme_check_proc_arity("make-custom-output-port", 0, 3, argc, argv);
@@ -1736,13 +1688,12 @@ make_output_port (int argc, Scheme_Object *argv[])
   uop->type = scheme_rt_user_output;
 #endif
 
-  uop->waitable = argv[0];
+  uop->proc_for_waitable = argv[0];
   uop->write_proc = argv[1];
   uop->flush_proc = argv[2];
   uop->close_proc = argv[3];
   s = scheme_make_sema(0);
   uop->closed_sema = s;
-  uop->block_count = 0;
 
   op = scheme_make_output_port(scheme_user_output_port_type,
 			       uop,

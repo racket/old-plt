@@ -48,16 +48,14 @@
   scheme_extension_table->scheme_add_waitable = scheme_add_waitable;
   scheme_extension_table->scheme_add_waitable_through_sema = scheme_add_waitable_through_sema;
   scheme_extension_table->scheme_is_waitable = scheme_is_waitable;
-  scheme_extension_table->scheme_wait_on_waitable = scheme_wait_on_waitable;
-  scheme_extension_table->scheme_waitable_needs_wakeup = scheme_waitable_needs_wakeup;
   scheme_extension_table->scheme_object_wait_multiple = scheme_object_wait_multiple;
   scheme_extension_table->scheme_object_wait_multiple_enable_break = scheme_object_wait_multiple_enable_break;
+  scheme_extension_table->scheme_make_waitable_set = scheme_make_waitable_set;
   scheme_extension_table->scheme_add_swap_callback = scheme_add_swap_callback;
   scheme_extension_table->scheme_call_enable_break = scheme_call_enable_break;
   scheme_extension_table->scheme_close_should_force_port_closed = scheme_close_should_force_port_closed;
   scheme_extension_table->scheme_push_kill_action = scheme_push_kill_action;
   scheme_extension_table->scheme_pop_kill_action = scheme_pop_kill_action;
-  scheme_extension_table->scheme_init_schedule_info = scheme_init_schedule_info;
   scheme_extension_table->scheme_signal_error = scheme_signal_error;
   scheme_extension_table->scheme_raise_exn = scheme_raise_exn;
   scheme_extension_table->scheme_warning = scheme_warning;
@@ -194,6 +192,7 @@
 #ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_make_sema = scheme_make_sema;
   scheme_extension_table->scheme_post_sema = scheme_post_sema;
+  scheme_extension_table->scheme_post_sema_all = scheme_post_sema_all;
   scheme_extension_table->scheme_wait_sema = scheme_wait_sema;
   scheme_extension_table->scheme_wait_semas = scheme_wait_semas;
 #endif

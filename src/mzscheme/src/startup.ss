@@ -2961,6 +2961,15 @@
 
   (define (not-break-exn? x) (not (exn:break? x)))
 
+  (define-values (struct:guard make-guard guard? guard-ref guard-set!)
+    (make-struct-type 'waitable #f 1 0 #f (list (cons prop:waitable 0)) (make-inspector) #f '(0)))
+
+  (define (make-guard-waitable proc)
+    (unless (and (procedure? proc)
+		 (procedure-arity-includes? proc 0))
+      (raise-type-error 'make-guard-waitable "procedure (arity 0)" proc))
+    (make-guard proc))
+
   ;; -------------------------------------------------------------------------
 
   (define interaction-environment (lambda () (current-namespace)))
@@ -3032,7 +3041,7 @@
 	   load-relative load-relative-extension
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled current-load/use-compiled
-	   port? not-break-exn?
+	   port? not-break-exn? make-guard-waitable
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment
 	   standard-module-name-resolver))

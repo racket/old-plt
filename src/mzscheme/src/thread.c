@@ -1689,7 +1689,7 @@ static Scheme_Object *thread_wait(int argc, Scheme_Object *args[])
 static void register_thread_wait()
 {
   scheme_add_waitable(scheme_thread_type, 
-		      (Scheme_Ready_Fun_FPC)thread_wait_done, 
+		      thread_wait_done, 
 		      NULL, NULL, 0);
 }
 
@@ -2166,13 +2166,13 @@ END_XFORM_SKIP;
 
 #endif
 
-#define FALSE_POS_OK_INIT 10
+#define FALSE_POS_OK_INIT 1
 
-void scheme_init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok)
+static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok)
 {
   sinfo->false_positive_ok = false_pos_ok;
   sinfo->potentially_false_positive = 0;
-  sinfo->target = NULL;
+  sinfo->current_waiting = NULL;
   sinfo->spin = 0;
 }
 
@@ -2219,7 +2219,7 @@ static void raise_break(Scheme_Thread *p)
 {
   int block_descriptor;
   Scheme_Object *blocker; /* semaphore or port */
-  Scheme_Ready_Fun_FPC block_check;
+  Scheme_Ready_Fun block_check;
   Scheme_Needs_Wakeup_Fun block_needs_wakeup;
   Scheme_Object *a[1];
 
@@ -2376,9 +2376,9 @@ void scheme_thread_block(float sleep_time)
       } else {
 	if (next->block_descriptor == -1) {
 	  if (next->block_check) {
-	    Scheme_Ready_Fun_FPC f = next->block_check;
+	    Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)next->block_check;
 	    Scheme_Schedule_Info sinfo;
-	    scheme_init_schedule_info(&sinfo, FALSE_POS_OK_INIT);
+	    init_schedule_info(&sinfo, FALSE_POS_OK_INIT);
 	    if (f(next->blocker, &sinfo))
 	      break;
 	  }
@@ -2487,9 +2487,9 @@ void scheme_thread_block(float sleep_time)
 	 not ready (because maybe that's why we were swapped back in!) */
       if (p->block_descriptor == -1) {
 	if (p->block_check) {
-	  Scheme_Ready_Fun_FPC f = p->block_check;
+	  Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)p->block_check;
 	  Scheme_Schedule_Info sinfo;
-	  scheme_init_schedule_info(&sinfo, FALSE_POS_OK_INIT);
+	  init_schedule_info(&sinfo, FALSE_POS_OK_INIT);
 	  if (f(p->blocker, &sinfo)) {
 	    sleep_time = 0;
 	  }
@@ -2536,33 +2536,26 @@ void scheme_making_progress()
   scheme_current_thread->ran_some = 1;
 }
 
-int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf, 
+int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
 		       Scheme_Object *data, float delay)
 {
   int result;
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)_f;
   Scheme_Schedule_Info sinfo;
-  Scheme_Object *target;
 
-  scheme_init_schedule_info(&sinfo, 0);
+  /* We make an sinfo to be polite, but we also assume
+     that f will not generate any redirections! */
+  init_schedule_info(&sinfo, 0);
 
   while (!(result = f((Scheme_Object *)data, &sinfo))) {
-    if (sinfo.target) {
-      target = sinfo.target;
-      sinfo.target = NULL;
-      target = scheme_wait_on_waitable(target, 0, &sinfo);
-      if (SCHEME_SEMAP(target))
-	scheme_post_sema(target);
-    }
-
     if (sinfo.spin) {
-      sinfo.spin = 0;
+      init_schedule_info(&sinfo, 0);
       scheme_thread_block(0.0);
     } else {
       p->block_descriptor = -1;
       p->blocker = (Scheme_Object *)data;
-      p->block_check = f;
+      p->block_check = (Scheme_Ready_Fun)f;
       p->block_needs_wakeup = fdf;
       
       scheme_thread_block(delay);
@@ -2817,28 +2810,24 @@ typedef struct Waitable_Set {
   int argc;
   Scheme_Object **argv; /* no waitable sets; nested sets get flattened */
   struct Waitable **ws;
-
-  Scheme_Object **ts;
-  struct Waitable **tws;
-
-  Scheme_Object *result;
 } Waitable_Set;
-
-static Scheme_Object *waitable_set_ready(Waitable_Set *waitable_set, Scheme_Schedule_Info *sinfo);
 
 #define SCHEME_WAITSETP(o) SAME_TYPE(SCHEME_TYPE(o), scheme_waitable_set_type)
 
 typedef struct Waiting {
   MZTAG_IF_REQUIRED
   Waitable_Set *set;
-  Scheme_Object *result;
+  int result;
   long start_time;
   float timeout;
+
+  Scheme_Object **wrapss;
+  Scheme_Object **nackss;
+
   Scheme_Thread *disable_break; /* when result is set */
 } Waiting;
 
 static void waiting_needs_wakeup(Scheme_Object *s, void *fds);
-static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo);
 
 typedef struct Waitable {
   MZTAG_IF_REQUIRED
@@ -2854,7 +2843,7 @@ typedef struct Waitable {
 static Waitable *waitables;
 
 void scheme_add_waitable(Scheme_Type type,
-			 Scheme_Ready_Fun_FPC ready, 
+			 Scheme_Ready_Fun ready, 
 			 Scheme_Needs_Wakeup_Fun wakeup, 
 			 Scheme_Wait_Filter_Fun filter,
 			 int can_redirect)
@@ -2870,7 +2859,7 @@ void scheme_add_waitable(Scheme_Type type,
   waitables->type = scheme_rt_waitable;
 #endif
   waitables->wait_type = type;
-  waitables->ready = ready;
+  waitables->ready = (Scheme_Ready_Fun_FPC)ready;
   waitables->needs_wakeup = wakeup;
   waitables->filter = filter;
   waitables->can_redirect = can_redirect;
@@ -2930,271 +2919,175 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, long sta
   return waiting;
 }
 
-static int block_on_waitable(Waitable *w, Scheme_Object *o, int just_try, Scheme_Schedule_Info *sinfo)
+static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
 {
-  if (w->ready) {
-    if (just_try) {
-      Scheme_Ready_Fun_FPC r;
-      r = w->ready;
-      return r(o, sinfo);
-    } else {
-      scheme_block_until((Scheme_Ready_Fun)w->ready, w->needs_wakeup, o, 0.0);
-      return 1;
-    }
-  } else if (w->get_sema) {
-    int repost = 0, ok;
-    Scheme_Wait_Sema_Fun get_sema = w->get_sema;
-    Scheme_Object *sema;
-    
-    sema = get_sema(o, &repost);
-    ok = scheme_wait_sema(sema, just_try);
-    if (ok && repost)
-      scheme_post_sema(sema);
-    return ok;
-  } else
-    return 1;
+  void **r;
+  
+  r = MALLOC_N(void*, al + bl);
+
+  if (a)
+    memcpy(r, a, i * sizeof(void*));
+  if (b)
+    memcpy(r + i, b, bl * sizeof(void*));
+  if (a)
+    memcpy(r + (i + bl), a + (i + 1), (al - i - 1) * sizeof(void*));
+
+  return r;
 }
 
-void scheme_waitable_needs_wakeup(Scheme_Object *o, void *fds)
+void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
+			    Scheme_Object *wrap, Scheme_Object *nack)
+/* Not ready, deferred to target. */
 {
-  Waitable *w;
-
-  if (SCHEME_WAITSETP(o)) {
-    Waiting static_w;
-    static_w.set = (Waitable_Set *)o;
-    waiting_needs_wakeup((Scheme_Object *)&static_w, fds);
-    return;
-  }
-
-  w = find_waitable(o);
-  if (w && w->needs_wakeup) {
-    w->needs_wakeup(o, fds);
-  }
-}
-
-#ifdef DO_STACK_CHECK
-static Scheme_Object *wait_on_waitable_k(void)
-{
-  Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
-  Scheme_Schedule_Info *sinfo = (Scheme_Schedule_Info *)p->ku.k.p2;
-
-  p->ku.k.p1 = NULL;
-  p->ku.k.p2 = NULL;
-
-  o = scheme_wait_on_waitable(o, p->ku.k.i1, sinfo);
-  if (!o)
-    return scheme_false;
-  else
-    return o;
-}
-#endif
-
-Scheme_Object *scheme_wait_on_waitable(Scheme_Object *o, int just_try, Scheme_Schedule_Info *sinfo)
-{
-  Waitable *w;
-
-  if (sinfo->false_positive_ok) {
-    if (sinfo->false_positive_ok == 1) {
-      /* false_pos_ok started at FALSE_POS_OK_INIT, 
-	 but we're run through a long chain. Don't
-	 follow the chain any farther, because we're
-	 currently in the scheduler! */
-      sinfo->potentially_false_positive = 1;
-      return scheme_true;
-    }
-    --sinfo->false_positive_ok;
-  } else {
-#ifdef DO_STACK_CHECK
-    {
-# include "mzstkchk.h"
-      {
-	Scheme_Thread *p = scheme_current_thread;
-	Scheme_Schedule_Info *sinfo_copy;
-
-	/* sinfo might be on the stack; copy it out */
-	sinfo_copy = MALLOC_ONE_RT(Scheme_Schedule_Info);
-	memcpy(sinfo_copy, sinfo, sizeof(Scheme_Schedule_Info));
-#  ifdef MZTAG_REQUIRED
-	sinfo_copy->type = scheme_rt_sinfo;
-#  endif
-
-	p->ku.k.p1 = (void *)o;
-	p->ku.k.p2 = (void *)sinfo_copy;
-	p->ku.k.i1 = just_try;
-	o = scheme_handle_stack_overflow(wait_on_waitable_k);
-
-	/* copy result back into sinfo: */
-	memcpy(sinfo, sinfo_copy, sizeof(Scheme_Schedule_Info));
-
-	if (SCHEME_FALSEP(o))
-	  o = NULL;
-
-	return o;
-      }
-    }
-#endif
-    
-    SCHEME_USE_FUEL(1);
-  }
-
-  sinfo->target = o;
-
-  if (SCHEME_WAITSETP(o)) {
-    if (just_try) {
-      Scheme_Object *v;
-      v = waitable_set_ready((Waitable_Set *)o, sinfo);
-      if (v && SCHEME_FALSEP(v))
-	return o; /* potential false positive; no semaphore waited */
-      else
-	return v;
-    } else {
-      Waiting *waiting;
-      waiting = make_waiting((Waitable_Set *)o, -1.0, 0);
-      scheme_block_until((Scheme_Ready_Fun)waiting_ready, waiting_needs_wakeup, 
-			 (Scheme_Object *)waiting, 0.0);
-      return waiting->result;
-    }
-  } else {
-    w = find_waitable(o);
-    if (w && block_on_waitable(w, o, just_try, sinfo)) {
-      if (sinfo->potentially_false_positive)
-	return scheme_true;
-      else
-	return o;
-    }
-    return NULL;
-  }
-}
-
-static Scheme_Object *waitable_set_ready(Waitable_Set *waitable_set, Scheme_Schedule_Info *sinfo)
-{
+  Waiting *waiting = (Waiting *)sinfo->current_waiting;
+  Waitable_Set *waitable_set;
   int i;
-  Waitable *w;
-  Scheme_Object *o;
-  Scheme_Schedule_Info r_sinfo;
 
-  /* FIXME: need stack overflow check */
+  waitable_set = waiting->set;
+  i = sinfo->w_i;
 
-  /* We must handle target redirections in the objects on which we're
-     waiting. We never have to redirect the waitable_set itself, but
-     a waitable_set can show up as a target. */
-
-  /* Anything ready? */
-  for (i = 0; i < waitable_set->argc; i++) {
-    while (1) { /* loop for redirect ends */
-      Scheme_Ready_Fun_FPC ready;
-
-      /* Has this item been redirected to another target? */
-      if (waitable_set->ts[i]) {
-	/* Yes... */
-	o = waitable_set->ts[i];
-	if (SCHEME_WAITSETP(o)) {
-	  w = NULL;
-	  ready = NULL;
-	} else {
-	  w = waitable_set->tws[i];
-	  ready = w->ready;
-	}
-      } else {
-	/* No */
-	o = waitable_set->argv[i];
-	w = waitable_set->ws[i];
-	ready = w->ready;
-      }
-
-      if (ready || !w) {
-	int yep;
-
-	scheme_init_schedule_info(&r_sinfo, sinfo->false_positive_ok);
-
-	if (ready)
-	  yep = ready(o, &r_sinfo);
-	else {
-	  o = waitable_set_ready((Waitable_Set *)o, &r_sinfo);
-	  yep = !!o;
-	}
-
-	if (yep) {
-	  if (waitable_set->ts[i]) {
-	    if (r_sinfo.potentially_false_positive) {
-	      /* keep redirection */
-	      sinfo->potentially_false_positive = 1;
-	      return scheme_false;
-	    } else {
-	      /* Target redirect succeeded. Go back to normal mode. */
-	      if (SCHEME_SEMAP(o))
-		scheme_post_sema(o);
-	      waitable_set->ts[i] = NULL;
-	      waitable_set->tws[i] = NULL;
-	      /* redirect-end loop */
-	    }
-	  } else {
-	    /* If it was a potentially false positive,
-	       don't set result permanently. Otherwise,
-	       propagate the false-positive indicator.*/
-	    if (!r_sinfo.potentially_false_positive)
-	      return o;
-	    else {
-	      sinfo->potentially_false_positive = 1;
-	      return scheme_false;
-	    }
-	  }
-	} else if (r_sinfo.target) {
-	  /* Not ready, and it won't be ready until target is
-	     ready. Assert: !waitable_set->ts[i]. */
-	  waitable_set->ts[i] = r_sinfo.target;
-	  if (!SCHEME_WAITSETP(r_sinfo.target)) {
-	    Waitable *ww;
-	    ww = find_waitable(r_sinfo.target);
-	    waitable_set->tws[i] = ww;
-	  }
-	  break;
-	} else {
-	  if (r_sinfo.spin)
-	    sinfo->spin = 1;
-	  break; /* no redirect-end loop */
-	}
-      } else if (w->get_sema) {
-	int repost = 0;
-	Scheme_Wait_Sema_Fun get_sema = w->get_sema;
-	Scheme_Object *sema;
-      
-	sema = get_sema(o, &repost);
-	if (scheme_wait_sema(sema, 1)) {
-	  if (repost)
-	    scheme_post_sema(sema);
-	  if (waitable_set->ts[i]) {
-	    waitable_set->ts[i] = NULL;
-	    waitable_set->tws[i] = NULL;
-	    /* redirect-end loop */
-	  } else
-	    return o;
-	} else
-	  break; /* no redirect-end loop */
-      }
+  if (wrap) {
+    if (!waiting->wrapss) {
+      Scheme_Object **wrapss;
+      wrapss = MALLOC_N(Scheme_Object*, waitable_set->argc);
+      waiting->wrapss = wrapss;
     }
+    if (!waiting->wrapss[i])
+      waiting->wrapss[i] = scheme_null;
+    wrap = scheme_make_pair(wrap, waiting->wrapss[i]);
+    waiting->wrapss[i] = wrap;
   }
 
-  return NULL;
+  if (nack) {
+    if (!waiting->nackss) {
+      Scheme_Object **nackss;
+      nackss = MALLOC_N(Scheme_Object*, waitable_set->argc);
+      waiting->nackss = nackss;
+    }
+    if (!waiting->nackss[i])
+      waiting->nackss[i] = scheme_null;
+    nack = scheme_make_pair(nack, waiting->nackss[i]);
+    waiting->nackss[i] = nack;
+  }
+
+  if (SCHEME_WAITSETP(target)) {
+    /* Flatten the set into this one */
+    Waitable_Set *wts = (Waitable_Set *)target;
+    if (wts->argc == 1) {
+      /* 1 thing in set? Flattening is easy! */
+      waitable_set->argv[i] = wts->argv[0];
+      waitable_set->ws[i] = wts->ws[0];
+    } else {
+      /* Inline the set (in place) */
+      Scheme_Object **argv;
+      Waitable **ws;
+       
+      argv = (Scheme_Object **)splice_ptr_array((void **)waitable_set->argv, 
+						waitable_set->argc,
+						(void **)wts->argv, 
+						wts->argc,
+						i);
+      ws = (Waitable **)splice_ptr_array((void **)waitable_set->ws, 
+					 waitable_set->argc,
+					 (void **)wts->ws, 
+					 wts->argc,
+					 i);
+      
+      waitable_set->argv = argv;
+      waitable_set->ws = ws;
+    }
+  } else {
+    Waitable *ww;
+    waitable_set->argv[i] = target;
+    ww = find_waitable(target);
+    waitable_set->ws[i] = ww;
+  }
+  
+  /* Rewind one step to try new ones (or continue
+     if the set was empty). */
+  sinfo->w_i--;
 }
 
 static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 {
+  int i, redirections = 0;
+  Waitable *w;
+  Scheme_Object *o;
+  Scheme_Schedule_Info r_sinfo;
   Waiting *waiting = (Waiting *)s;
-  Scheme_Object *v;
+  Waitable_Set *waitable_set;
 
   if (waiting->result)
     return 1;
 
-  v = waitable_set_ready(waiting->set, sinfo);
-  if (v) {
-    if (!SCHEME_FALSEP(v)) {
-      waiting->result = v;
-      if (waiting->disable_break)
-	scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+  /* We must handle target redirections in the objects on which we're
+     waiting. We never have to redirect the waitable_set itself, but
+     a waitable_set can show up as a target, and we inline it in
+     that case. */
+
+  waitable_set = waiting->set;
+
+  /* Anything ready? */
+  for (i = 0; i < waitable_set->argc; i++) {
+    Scheme_Ready_Fun_FPC ready;
+
+    o = waitable_set->argv[i];
+    w = waitable_set->ws[i];
+    ready = w->ready;
+
+    if (ready) {
+      int yep;
+
+      init_schedule_info(&r_sinfo, sinfo->false_positive_ok);
+
+      r_sinfo.current_waiting = (Scheme_Object *)waiting;
+      r_sinfo.w_i = i;
+
+      yep = ready(o, &r_sinfo);
+
+      if ((i < r_sinfo.w_i) && sinfo->false_positive_ok) {
+	/* There was a redirection. Assert: !yep. 
+	   Give up if we've chained too much. */
+	redirections++;
+	if (redirections > 10) {
+	  sinfo->potentially_false_positive = 1;
+	  return 1;
+	}
+      }
+
+      i = r_sinfo.w_i;
+
+      if (yep) {
+	/* If it was a potentially false positive,
+	   don't set result permanently. Otherwise,
+	   propagate the false-positive indicator.*/
+	if (!r_sinfo.potentially_false_positive) {
+	  waiting->result = i + 1;
+	  if (waiting->disable_break)
+	    scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	  return 1;
+	} else {
+	  sinfo->potentially_false_positive = 1;
+	  return 1;
+	}
+      } else if (r_sinfo.spin) {
+	sinfo->spin = 1;
+      }
+    } else if (w->get_sema) {
+      int repost = 0;
+      Scheme_Wait_Sema_Fun get_sema = w->get_sema;
+      Scheme_Object *sema;
+      
+      sema = get_sema(o, &repost);
+      if (scheme_wait_sema(sema, 1)) {
+	if (repost)
+	  scheme_post_sema(sema);
+	waiting->result = i + 1;
+	if (waiting->disable_break)
+	  scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	return 1;
+      }
     }
-    return 1;
   }
 
   if (waiting->timeout >= 0.0) {
@@ -3212,21 +3105,13 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 static void waiting_needs_wakeup(Scheme_Object *s, void *fds)
 {
   int i;
-  Waitable_Set *waitable_set = ((Waiting *)s)->set;
   Scheme_Object *o;
   Waitable *w;
+  Waitable_Set *waitable_set = ((Waiting *)s)->set;
 
   for (i = 0; i < waitable_set->argc; i++) {
-    /* Has this item been redirected to another target? */
-    if (waitable_set->ts[i]) {
-      /* Yes... */
-      o = waitable_set->ts[i];
-      w = waitable_set->tws[i];
-    } else {
-      /* No */
-      o = waitable_set->argv[i];
-      w = waitable_set->ws[i];
-    }
+    o = waitable_set->argv[i];
+    w = waitable_set->ws[i];
 
     if (w->needs_wakeup) {
       Scheme_Needs_Wakeup_Fun nw = w->needs_wakeup;
@@ -3248,8 +3133,6 @@ Waitable_Set *make_waitable_set(const char *name, int argc, Scheme_Object **argv
   Waitable *w, **iws, **ws;
   Waitable_Set *waitable_set, *subset;
   Scheme_Object **args;
-  Scheme_Object **ts;
-  Waitable **tws;
   int i, j, count = 0;
 
   iws = MALLOC_N(Waitable*, argc-delta);
@@ -3300,12 +3183,33 @@ Waitable_Set *make_waitable_set(const char *name, int argc, Scheme_Object **argv
   waitable_set->ws = ws;
   waitable_set->argv = args;
 
-  ts = MALLOC_N(Scheme_Object*, count);
-  waitable_set->ts = ts;
-  tws = MALLOC_N(Waitable*, count);
-  waitable_set->tws = tws;
-
   return waitable_set;
+}
+
+Scheme_Object *scheme_make_waitable_set(int argc, Scheme_Object **argv)
+{
+  return (Scheme_Object *)make_waitable_set("internal-make-waitable-set", argc, argv, 0);
+}
+
+static void post_waiting_nacks(Waiting *waiting)
+{
+  int i, c;
+  Scheme_Object *l;
+
+  if (waiting->nackss) {
+    c = waiting->set->argc;
+
+    for (i = 0; i < c; i++) {
+      if ((i + 1) != waiting->result) {
+	l = waiting->nackss[i];
+	if (l) {
+	  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	    scheme_post_sema(SCHEME_CAR(l));
+	  }
+	}
+      }
+    }
+  }
 }
 
 static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Object *argv[], int with_break)
@@ -3334,25 +3238,26 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
     return argv[1];
   }
 
-  /* Special case: one non-waitable-set argument, no timeout, no break disabling */
-  if ((argc == 2) && SCHEME_FALSEP(argv[0]) && !SCHEME_WAITSETP(argv[1]) && !with_break) {
-    Scheme_Schedule_Info sinfo;
-    Waitable *w;
+  waitable_set = NULL;
 
-    w = find_waitable(argv[1]);
-    if (!w) {
-      scheme_wrong_type(name, "waitable", 1, argc, argv);
-      return NULL;
+  /* Special case: only argument is an immutable waitable set: */
+  if ((argc == 2) && SCHEME_WAITSETP(argv[1])) {
+    int i;
+    waitable_set = (Waitable_Set *)argv[1];
+    for (i = waitable_set->argc; i--; ) {
+      if (waitable_set->ws[i]->can_redirect) {
+	/* Need to copy this set to handle redirections. */
+	waitable_set = NULL;
+	break;
+      }
     }
-
-    scheme_init_schedule_info(&sinfo, 0);
-    block_on_waitable(w, argv[1], 0, &sinfo);
-    return argv[1];
   }
 
-  waitable_set = make_waitable_set(name, argc, argv, 1);
+  if (!waitable_set)
+    waitable_set = make_waitable_set(name, argc, argv, 1);
 
   /* Check for another special case: waiting on a set of semaphores without a timeout. */
+  /* (Note that we check for this after waitable-set flattening.) */
   if (timeout < 0.0) {
     int i;
     for (i = waitable_set->argc; i--; ) {
@@ -3377,12 +3282,31 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
   if (with_break)
     waiting->disable_break = scheme_current_thread;
 
+  BEGIN_ESCAPEABLE(post_waiting_nacks, waiting);
   scheme_block_until((Scheme_Ready_Fun)waiting_ready, waiting_needs_wakeup, 
 		     (Scheme_Object *)waiting, timeout);
+  END_ESCAPEABLE();
 
-  if (waiting->result)
-    return waiting->result;
-  else
+  post_waiting_nacks(waiting);
+
+  if (waiting->result) {
+    /* Apply wraps functions to the selected waitable: */
+    Scheme_Object *o, *l, *a;
+    o = waitable_set->argv[waiting->result - 1];
+    if (waiting->wrapss) {
+      l = waiting->wrapss[waiting->result - 1];
+      if (l) {
+	for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	  a = SCHEME_CAR(l);
+	  if (SCHEME_PROCP(a))
+	    o = scheme_apply(a, 1, &o);
+	  else
+	    o = a;
+	}
+      }
+    }
+    return o;
+  } else
     return scheme_false;
 }
 
@@ -4373,7 +4297,6 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_will_registration, mark_will_registration);
   GC_REG_TRAV(scheme_rt_waitable, mark_waitable);
   GC_REG_TRAV(scheme_rt_waiting, mark_waiting);
-  GC_REG_TRAV(scheme_rt_sinfo, mark_sinfo);
 }
 
 END_XFORM_SKIP;

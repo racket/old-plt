@@ -917,10 +917,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   }
 #endif
 
-  /* Built-in functions, exception types, eof, object%, ... */
+  /* Built-in functions, exception types, eof, prop:waitable, ... */
   if (compact && (SCHEME_PROCP(obj) 
 		  || SCHEME_STRUCT_TYPEP(obj) 
-		  || SCHEME_EOFP(obj))) {
+		  || SCHEME_EOFP(obj)
+		  || SAME_TYPE(scheme_struct_property_type, SCHEME_TYPE(obj)))) {
     /* Check whether this is a global constant */
     Scheme_Object *val;
     val = scheme_hash_get(global_constants_ht, obj);

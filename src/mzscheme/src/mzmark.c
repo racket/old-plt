@@ -2569,7 +2569,6 @@ int mark_user_input_SIZE(void *p) {
 int mark_user_input_MARK(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcMARK(uip->waitable);
   gcMARK(uip->read_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
@@ -2582,7 +2581,6 @@ int mark_user_input_MARK(void *p) {
 int mark_user_input_FIXUP(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcFIXUP(uip->waitable);
   gcFIXUP(uip->read_proc);
   gcFIXUP(uip->peek_proc);
   gcFIXUP(uip->close_proc);
@@ -2604,7 +2602,7 @@ int mark_user_output_SIZE(void *p) {
 int mark_user_output_MARK(void *p) {
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcMARK(uop->waitable);
+  gcMARK(uop->proc_for_waitable);
   gcMARK(uop->write_proc);
   gcMARK(uop->flush_proc);
   gcMARK(uop->close_proc);
@@ -2616,7 +2614,7 @@ int mark_user_output_MARK(void *p) {
 int mark_user_output_FIXUP(void *p) {
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcFIXUP(uop->waitable);
+  gcFIXUP(uop->proc_for_waitable);
   gcFIXUP(uop->write_proc);
   gcFIXUP(uop->flush_proc);
   gcFIXUP(uop->close_proc);
@@ -3346,7 +3344,8 @@ int mark_waiting_MARK(void *p) {
   Waiting *w = (Waiting *)p;
  
   gcMARK(w->set);
-  gcMARK(w->result);
+  gcMARK(w->wrapss);
+  gcMARK(w->nackss);
   gcMARK(w->disable_break);
 
   return
@@ -3357,7 +3356,8 @@ int mark_waiting_FIXUP(void *p) {
   Waiting *w = (Waiting *)p;
  
   gcFIXUP(w->set);
-  gcFIXUP(w->result);
+  gcFIXUP(w->wrapss);
+  gcFIXUP(w->nackss);
   gcFIXUP(w->disable_break);
 
   return
@@ -3378,8 +3378,6 @@ int mark_waitable_set_MARK(void *p) {
  
   gcMARK(w->ws);
   gcMARK(w->argv);
-  gcMARK(w->ts);
-  gcMARK(w->tws);
 
   return
   gcBYTES_TO_WORDS(sizeof(Waitable_Set));
@@ -3390,8 +3388,6 @@ int mark_waitable_set_FIXUP(void *p) {
  
   gcFIXUP(w->ws);
   gcFIXUP(w->argv);
-  gcFIXUP(w->ts);
-  gcFIXUP(w->tws);
 
   return
   gcBYTES_TO_WORDS(sizeof(Waitable_Set));
@@ -3399,33 +3395,6 @@ int mark_waitable_set_FIXUP(void *p) {
 
 #define mark_waitable_set_IS_ATOMIC 0
 #define mark_waitable_set_IS_CONST_SIZE 1
-
-
-int mark_sinfo_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
-}
-
-int mark_sinfo_MARK(void *p) {
-  Scheme_Schedule_Info *sinfo = (Scheme_Schedule_Info *)p;
- 
-  gcMARK(sinfo->target);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
-}
-
-int mark_sinfo_FIXUP(void *p) {
-  Scheme_Schedule_Info *sinfo = (Scheme_Schedule_Info *)p;
- 
-  gcFIXUP(sinfo->target);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
-}
-
-#define mark_sinfo_IS_ATOMIC 0
-#define mark_sinfo_IS_CONST_SIZE 1
 
 
 #endif  /* THREAD */
@@ -3748,6 +3717,62 @@ int mark_struct_property_FIXUP(void *p) {
 
 #define mark_struct_property_IS_ATOMIC 0
 #define mark_struct_property_IS_CONST_SIZE 1
+
+
+int mark_wrapped_waitable_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+}
+
+int mark_wrapped_waitable_MARK(void *p) {
+  Wrapped_Waitable *ww = (Wrapped_Waitable *)p;
+
+  gcMARK(ww->waitable);
+  gcMARK(ww->wrapper);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+}
+
+int mark_wrapped_waitable_FIXUP(void *p) {
+  Wrapped_Waitable *ww = (Wrapped_Waitable *)p;
+
+  gcFIXUP(ww->waitable);
+  gcFIXUP(ww->wrapper);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+}
+
+#define mark_wrapped_waitable_IS_ATOMIC 0
+#define mark_wrapped_waitable_IS_CONST_SIZE 1
+
+
+int mark_nack_waitable_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
+}
+
+int mark_nack_waitable_MARK(void *p) {
+  Nack_Waitable *nw = (Nack_Waitable *)p;
+
+  gcMARK(nw->maker);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
+}
+
+int mark_nack_waitable_FIXUP(void *p) {
+  Nack_Waitable *nw = (Nack_Waitable *)p;
+
+  gcFIXUP(nw->maker);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
+}
+
+#define mark_nack_waitable_IS_ATOMIC 0
+#define mark_nack_waitable_IS_CONST_SIZE 1
 
 
 #endif  /* STRUCT */

@@ -1012,7 +1012,6 @@ mark_user_input {
  mark:
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcMARK(uip->waitable);
   gcMARK(uip->read_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
@@ -1026,7 +1025,7 @@ mark_user_output {
  mark:
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcMARK(uop->waitable);
+  gcMARK(uop->proc_for_waitable);
   gcMARK(uop->write_proc);
   gcMARK(uop->flush_proc);
   gcMARK(uop->close_proc);
@@ -1330,7 +1329,8 @@ mark_waiting {
   Waiting *w = (Waiting *)p;
  
   gcMARK(w->set);
-  gcMARK(w->result);
+  gcMARK(w->wrapss);
+  gcMARK(w->nackss);
   gcMARK(w->disable_break);
 
  size:
@@ -1343,21 +1343,9 @@ mark_waitable_set {
  
   gcMARK(w->ws);
   gcMARK(w->argv);
-  gcMARK(w->ts);
-  gcMARK(w->tws);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Waitable_Set));
-}
-
-mark_sinfo {
- mark:
-  Scheme_Schedule_Info *sinfo = (Scheme_Schedule_Info *)p;
- 
-  gcMARK(sinfo->target);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
 }
 
 END thread;
@@ -1493,6 +1481,27 @@ mark_struct_property {
   gcMARK(i->guard);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
+}
+
+mark_wrapped_waitable {
+ mark:
+  Wrapped_Waitable *ww = (Wrapped_Waitable *)p;
+
+  gcMARK(ww->waitable);
+  gcMARK(ww->wrapper);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+}
+
+mark_nack_waitable {
+ mark:
+  Nack_Waitable *nw = (Nack_Waitable *)p;
+
+  gcMARK(nw->maker);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Nack_Waitable));
 }
 
 END struct;

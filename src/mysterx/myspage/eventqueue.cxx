@@ -62,7 +62,7 @@ STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
 
   while (1) {
 
-    whyWait = MsgWaitForMultipleObjects(1,&proxyReadSem,FALSE,INFINITE,QS_ALLEVENTS);
+    whyWait = MsgWaitForMultipleObjects(1,&readSem,FALSE,INFINITE,QS_ALLEVENTS);
 
     if (whyWait == WAIT_OBJECT_0) {
       break;
@@ -74,50 +74,26 @@ STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
     }
   }
     
-  WaitForSingleObject(proxyMutex,INFINITE);
+  WaitForSingleObject(mutex,INFINITE);
 
   *ppEvent = theQueue[readerNdx];
 
   readerNdx = ++readerNdx % MAXQUEUELENGTH;
   queueLength--;
 
-  ReleaseSemaphore(proxyMutex,1,NULL);
+  ReleaseSemaphore(mutex,1,NULL);
 
 	return S_OK;
 }
  
-
-STDMETHODIMP CEventQueue::SetProxySemaphores(void) {
-  HANDLE proxyHandle;
-  BOOL result;
-
-  proxyHandle = OpenProcess(PROCESS_ALL_ACCESS,FALSE,GetCurrentProcessId());
-  
-  result = DuplicateHandle(stubHandle,mutex,(HANDLE)proxyHandle,&proxyMutex,SEMAPHORE_ALL_ACCESS,FALSE,0);
-
-  if (result == FALSE) {
-    ::failureBox("Can't create proxy mutex");
-  }
- 
-  result = DuplicateHandle(stubHandle,readSem,(HANDLE)proxyHandle,&proxyReadSem,SEMAPHORE_ALL_ACCESS,FALSE,0);
-  
-  if (result == FALSE) {
-    ::failureBox("Can't create proxy read semaphore");
-  }
-
-  CloseHandle(stubHandle);  
-  CloseHandle(proxyHandle);  
-  
-	return S_OK;
-}
 
 STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
 
-  WaitForSingleObject(proxyMutex,INFINITE);
+  WaitForSingleObject(mutex,INFINITE);
   
   *pVal = (queueLength == 0) ? 0 : -1; 
 
-  ReleaseSemaphore(proxyMutex,1,NULL);
+  ReleaseSemaphore(mutex,1,NULL);
 
 	return S_OK;
 }

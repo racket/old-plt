@@ -30,10 +30,10 @@ mysterx.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) $(LINK32_FLAGS) --ld mysterx.dll $(LINK32_OBJS) $(LINK32_LIBS)
 
 comtypes.obj : comtypes.cxx mysterx.h
+
 event.obj : event.cxx mysterx.h
+
 htmlutil.obj : htmlutil.cxx mysterx.h
+
 mysterx.obj : mysterx.cxx mysterx.h
-
-
-
 

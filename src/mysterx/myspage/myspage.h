@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Wed Dec 23 16:38:20 1998
+/* at Fri Jan 08 12:15:04 1999
  */
 /* Compiler settings for myspage.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -150,6 +150,12 @@ EXTERN_C const IID IID_IDHTMLPage;
     IDHTMLPage : public IDispatch
     {
     public:
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE marshalWebBrowserToStream( 
+            IStream __RPC_FAR *__RPC_FAR *__MIDL_0015) = 0;
+        
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE marshalEventQueueToStream( 
+            IStream __RPC_FAR *__RPC_FAR *__MIDL_0016) = 0;
+        
     };
     
 #else 	/* C style interface */
@@ -198,6 +204,14 @@ EXTERN_C const IID IID_IDHTMLPage;
             /* [out] */ EXCEPINFO __RPC_FAR *pExcepInfo,
             /* [out] */ UINT __RPC_FAR *puArgErr);
         
+        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *marshalWebBrowserToStream )( 
+            IDHTMLPage __RPC_FAR * This,
+            IStream __RPC_FAR *__RPC_FAR *__MIDL_0015);
+        
+        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *marshalEventQueueToStream )( 
+            IDHTMLPage __RPC_FAR * This,
+            IStream __RPC_FAR *__RPC_FAR *__MIDL_0016);
+        
         END_INTERFACE
     } IDHTMLPageVtbl;
 
@@ -234,11 +248,41 @@ EXTERN_C const IID IID_IDHTMLPage;
     (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)
 
 
+#define IDHTMLPage_marshalWebBrowserToStream(This,__MIDL_0015)	\
+    (This)->lpVtbl -> marshalWebBrowserToStream(This,__MIDL_0015)
+
+#define IDHTMLPage_marshalEventQueueToStream(This,__MIDL_0016)	\
+    (This)->lpVtbl -> marshalEventQueueToStream(This,__MIDL_0016)
+
 #endif /* COBJMACROS */
 
 
 #endif 	/* C style interface */
 
+
+
+/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IDHTMLPage_marshalWebBrowserToStream_Proxy( 
+    IDHTMLPage __RPC_FAR * This,
+    IStream __RPC_FAR *__RPC_FAR *__MIDL_0015);
+
+
+void __RPC_STUB IDHTMLPage_marshalWebBrowserToStream_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
+
+
+/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IDHTMLPage_marshalEventQueueToStream_Proxy( 
+    IDHTMLPage __RPC_FAR * This,
+    IStream __RPC_FAR *__RPC_FAR *__MIDL_0016);
+
+
+void __RPC_STUB IDHTMLPage_marshalEventQueueToStream_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
 
 
 
@@ -396,10 +440,10 @@ EXTERN_C const IID IID_IEvent;
             /* [in] */ EVENT_TYPE newVal) = 0;
         
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_srcTag( 
-            /* [retval][out] */ BSTR __RPC_FAR *__MIDL_0015) = 0;
+            /* [retval][out] */ BSTR __RPC_FAR *__MIDL_0017) = 0;
         
         virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_srcTag( 
-            /* [in] */ BSTR __MIDL_0016) = 0;
+            /* [in] */ BSTR __MIDL_0018) = 0;
         
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_srcId( 
             /* [retval][out] */ BSTR __RPC_FAR *pVal) = 0;
@@ -525,11 +569,11 @@ EXTERN_C const IID IID_IEvent;
         
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_srcTag )( 
             IEvent __RPC_FAR * This,
-            /* [retval][out] */ BSTR __RPC_FAR *__MIDL_0015);
+            /* [retval][out] */ BSTR __RPC_FAR *__MIDL_0017);
         
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *put_srcTag )( 
             IEvent __RPC_FAR * This,
-            /* [in] */ BSTR __MIDL_0016);
+            /* [in] */ BSTR __MIDL_0018);
         
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_srcId )( 
             IEvent __RPC_FAR * This,
@@ -661,11 +705,11 @@ EXTERN_C const IID IID_IEvent;
 #define IEvent_put_eventType(This,newVal)	\
     (This)->lpVtbl -> put_eventType(This,newVal)
 
-#define IEvent_get_srcTag(This,__MIDL_0015)	\
-    (This)->lpVtbl -> get_srcTag(This,__MIDL_0015)
+#define IEvent_get_srcTag(This,__MIDL_0017)	\
+    (This)->lpVtbl -> get_srcTag(This,__MIDL_0017)
 
-#define IEvent_put_srcTag(This,__MIDL_0016)	\
-    (This)->lpVtbl -> put_srcTag(This,__MIDL_0016)
+#define IEvent_put_srcTag(This,__MIDL_0018)	\
+    (This)->lpVtbl -> put_srcTag(This,__MIDL_0018)
 
 #define IEvent_get_srcId(This,pVal)	\
     (This)->lpVtbl -> get_srcId(This,pVal)
@@ -766,7 +810,7 @@ void __RPC_STUB IEvent_put_eventType_Stub(
 
 /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE IEvent_get_srcTag_Proxy( 
     IEvent __RPC_FAR * This,
-    /* [retval][out] */ BSTR __RPC_FAR *__MIDL_0015);
+    /* [retval][out] */ BSTR __RPC_FAR *__MIDL_0017);
 
 
 void __RPC_STUB IEvent_get_srcTag_Stub(
@@ -778,7 +822,7 @@ void __RPC_STUB IEvent_get_srcTag_Stub(
 
 /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE IEvent_put_srcTag_Proxy( 
     IEvent __RPC_FAR * This,
-    /* [in] */ BSTR __MIDL_0016);
+    /* [in] */ BSTR __MIDL_0018);
 
 
 void __RPC_STUB IEvent_put_srcTag_Stub(
@@ -1071,13 +1115,11 @@ EXTERN_C const IID IID_IEventQueue;
     IEventQueue : public IDispatch
     {
     public:
-        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE SetProxySemaphores( void) = 0;
-        
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE GetEvent( 
-            IEvent __RPC_FAR *__RPC_FAR *__MIDL_0017) = 0;
+            IEvent __RPC_FAR *__RPC_FAR *__MIDL_0019) = 0;
         
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE QueueEvent( 
-            IEvent __RPC_FAR *__MIDL_0018) = 0;
+            IEvent __RPC_FAR *__MIDL_0020) = 0;
         
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_EventAvailable( 
             /* [retval][out] */ VARIANT_BOOL __RPC_FAR *pVal) = 0;
@@ -1130,16 +1172,13 @@ EXTERN_C const IID IID_IEventQueue;
             /* [out] */ EXCEPINFO __RPC_FAR *pExcepInfo,
             /* [out] */ UINT __RPC_FAR *puArgErr);
         
-        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *SetProxySemaphores )( 
-            IEventQueue __RPC_FAR * This);
-        
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetEvent )( 
             IEventQueue __RPC_FAR * This,
-            IEvent __RPC_FAR *__RPC_FAR *__MIDL_0017);
+            IEvent __RPC_FAR *__RPC_FAR *__MIDL_0019);
         
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *QueueEvent )( 
             IEventQueue __RPC_FAR * This,
-            IEvent __RPC_FAR *__MIDL_0018);
+            IEvent __RPC_FAR *__MIDL_0020);
         
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_EventAvailable )( 
             IEventQueue __RPC_FAR * This,
@@ -1181,14 +1220,11 @@ EXTERN_C const IID IID_IEventQueue;
     (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)
 
 
-#define IEventQueue_SetProxySemaphores(This)	\
-    (This)->lpVtbl -> SetProxySemaphores(This)
+#define IEventQueue_GetEvent(This,__MIDL_0019)	\
+    (This)->lpVtbl -> GetEvent(This,__MIDL_0019)
 
-#define IEventQueue_GetEvent(This,__MIDL_0017)	\
-    (This)->lpVtbl -> GetEvent(This,__MIDL_0017)
-
-#define IEventQueue_QueueEvent(This,__MIDL_0018)	\
-    (This)->lpVtbl -> QueueEvent(This,__MIDL_0018)
+#define IEventQueue_QueueEvent(This,__MIDL_0020)	\
+    (This)->lpVtbl -> QueueEvent(This,__MIDL_0020)
 
 #define IEventQueue_get_EventAvailable(This,pVal)	\
     (This)->lpVtbl -> get_EventAvailable(This,pVal)
@@ -1200,20 +1236,9 @@ EXTERN_C const IID IID_IEventQueue;
 
 
 
-/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_SetProxySemaphores_Proxy( 
-    IEventQueue __RPC_FAR * This);
-
-
-void __RPC_STUB IEventQueue_SetProxySemaphores_Stub(
-    IRpcStubBuffer *This,
-    IRpcChannelBuffer *_pRpcChannelBuffer,
-    PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
-
-
 /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_GetEvent_Proxy( 
     IEventQueue __RPC_FAR * This,
-    IEvent __RPC_FAR *__RPC_FAR *__MIDL_0017);
+    IEvent __RPC_FAR *__RPC_FAR *__MIDL_0019);
 
 
 void __RPC_STUB IEventQueue_GetEvent_Stub(
@@ -1225,7 +1250,7 @@ void __RPC_STUB IEventQueue_GetEvent_Stub(
 
 /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_QueueEvent_Proxy( 
     IEventQueue __RPC_FAR * This,
-    IEvent __RPC_FAR *__MIDL_0018);
+    IEvent __RPC_FAR *__MIDL_0020);
 
 
 void __RPC_STUB IEventQueue_QueueEvent_Stub(

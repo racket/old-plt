@@ -1,4 +1,4 @@
-// comtypes.cxx
+// comtypes.cpp
 
 #include "stdafx.h"
 

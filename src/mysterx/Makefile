@@ -1,6 +1,6 @@
 all : 
 	cd myspage
-	nmake myspage.mak
+        nmake /f myspage.mak
 	cd ..
-	nmake mysterx.mak
+        nmake /f mysterx.mak
 

@@ -7,6 +7,9 @@
 #define MX_DEFAULT_WIDTH  (400)
 #define MX_DEFAULT_HEIGHT (400)
 
+#define DOCHWND_TRIES 40
+#define DOCDISPATCH_TRIES 60
+
 // temp !!! until dont_gc_ptr fixed
 
 #ifdef scheme_dont_gc_ptr
@@ -60,6 +63,7 @@ typedef struct _mx_com_data_ {
 
 typedef struct _com_document_ {
   Scheme_Type type;
+  HWND hwnd;
   IHTMLDocument2 *pIHTMLDocument2;
   IEventQueue *pIEventQueue;
 } MX_Document_Object;
@@ -80,6 +84,26 @@ typedef enum _mx_html_where_ {
   insert,append
 } MX_HTML_WHERE;
   
+typedef struct _document_window_ { // parameters a la MrEd frame% class
+  char *label;
+  int width;
+  int height;
+  int x;
+  int y;
+  DWORD style;
+} DOCUMENT_WINDOW;
+
+typedef struct _document_window_init_ {
+  DOCUMENT_WINDOW docWindow;
+  IStream **ppIStream; // for passing COM interface back to main thread
+} DOCUMENT_WINDOW_INIT;
+
+typedef struct _document_window_style_option {
+  char *name;
+  DWORD bits;
+  BOOL enable;
+} DOCUMENT_WINDOW_STYLE_OPTION;
+
 #define MX_COM_OBJP(o) (o->type == mx_com_object_type)
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
 
@@ -127,7 +151,6 @@ Scheme_Object *mx_make_scode(SCODE);
 Scheme_Object *mx_make_idispatch(IDispatch *);
 Scheme_Object *mx_make_iunknown(IUnknown *);
 
-MX_PRIM_DECL(mx_connect_to_document);
 MX_PRIM_DECL(mx_com_invoke);
 MX_PRIM_DECL(mx_com_set_property);
 MX_PRIM_DECL(mx_com_get_property);
@@ -140,8 +163,7 @@ MX_PRIM_DECL(mx_com_set_property_type);
 MX_PRIM_DECL(mx_all_controls);
 MX_PRIM_DECL(mx_all_objects);
 MX_PRIM_DECL(mx_document_objects);
-MX_PRIM_DECL(mx_insert_object);
-MX_PRIM_DECL(mx_append_object);
+MX_PRIM_DECL(mx_object_to_html);
 MX_PRIM_DECL(mx_insert_html);
 MX_PRIM_DECL(mx_append_html);
 MX_PRIM_DECL(mx_get_event);
@@ -177,12 +199,13 @@ MX_PRIM_DECL(mx_event_dblclick_pred);
 MX_PRIM_DECL(mx_event_error_pred);
 MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_event_available);
+MX_PRIM_DECL(mx_make_document);
+MX_PRIM_DECL(mx_show_document);
   
 void mx_register_com_object(Scheme_Object *,IUnknown *);
 IHTMLElementCollection *getBodyObjects(IHTMLElement *);
 IDispatch *getObjectInCollection(IHTMLElementCollection *,int);
 Scheme_Object *BSTRToSchemeString(BSTR);
 void initEventNames(void);
-
 
 

@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mshtml.h>
-#include <mapiutil.h>
 
 #define sizeray(a) (sizeof(a)/sizeof(*a))
 
@@ -98,7 +97,8 @@ public:
 // IDHTMLPageUI
 
 public:
-
+ STDMETHOD(marshalEventQueueToStream)(IStream **);
+ STDMETHOD(marshalWebBrowserToStream)(IStream **);
  CComPtr<IWebBrowser2> m_spBrowser;
  IEventQueue *pIEventQueue;
  LRESULT OnCreate(UINT,WPARAM,LPARAM,BOOL&);

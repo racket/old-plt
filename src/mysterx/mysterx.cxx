@@ -1,4 +1,4 @@
-// mysterx.cxx : COM/ActiveX/DHTML extension for MzScheme
+// mysterx.cpp : COM/ActiveX/DHTML extension for MzScheme
 // Author: Paul Steckler
 
 #include "stdafx.h"
@@ -14,13 +14,31 @@
 #include <initguid.h>
 #include <winnls.h>
 #include <exdisp.h>
-#include <mapiutil.h>
+#include <shellapi.h>
+
+#include "resource.h"
 
 #include "escheme.h"
+
+// ATL support
+
+#include <atlbase.h>
+extern CComModule _Module;
+#include <atlcom.h>
+#include <atlhost.h>
+CComModule _Module;
+
+// end ATL support
 
 #include "myspage.h"
 #include "myspage_i.c"
 #include "mysterx.h"
+
+static HINSTANCE hInstance;
+static HICON hIcon;
+static HWND documentHwnd;
+static HANDLE documentHwndMutex;
+static HANDLE createHwndSem;
 
 static MX_TYPE_TBL_ENTRY *methodTable[TYPE_TBL_SIZE];
 
@@ -41,9 +59,7 @@ static MX_PRIM mxPrims[] = {
   { mx_all_controls,"all-controls",0,0 },
   { mx_all_objects,"all-objects",0,0 },
   { mx_document_objects,"document-objects",1,1 },
-  { mx_connect_to_document,"connect-to-document",0,0 },
-  { mx_insert_object,"insert-object",2,4 },
-  { mx_append_object,"append-object",2,4 },
+  { mx_object_to_html,"object->html",1,3 },
   { mx_insert_html,"insert-html",2,2 },
   { mx_append_html,"append-HTML",2,2 },
   { mx_document_pred,"document?",1,1 },
@@ -66,8 +82,22 @@ static MX_PRIM mxPrims[] = {
   { mx_event_click_pred,"event-click?",1,1},
   { mx_event_dblclick_pred,"event-dblclick?",1,1},
   { mx_event_error_pred,"event-error?",1,1},
-//  { mx_block_until_event,"block-until-event",1,1},
-  { mx_event_available,"event-available?",1,1}
+  { mx_event_available,"event-available?",1,1},
+  { mx_make_document,"make-document",0,6},
+  { mx_show_document,"show-document",2,2},
+};
+
+DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
+
+  // keep alphabetic for bsearch()
+
+  // { symbol,Win32 constant,add/remove } 
+
+  { "iconize",WS_ICONIC,TRUE },
+  { "maximize",WS_MAXIMIZE,TRUE },
+  { "no-caption",WS_CAPTION,FALSE },
+  { "no-system-menu",WS_CAPTION | WS_SYSMENU,FALSE },
+  { "no-thick-border",WS_THICKFRAME,FALSE },
 };
 
 void scheme_release_com_object(void *comObject,void *pIUnknown) {
@@ -177,7 +207,7 @@ void scheme_add_prim_to_env(Scheme_Env *env,
 			    char *name,
 			    short minArgs,short maxArgs) {
   Scheme_Object *pobj;
-	
+
   pobj = scheme_make_prim_w_arity(f,name,minArgs,maxArgs);
     
   scheme_add_global(name,pobj,env);
@@ -225,7 +255,7 @@ METHODDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
   }
 
   count = MultiByteToWideChar(CP_ACP,(DWORD)0,name,strlen(name) + 1,
-			       unicodeName,UNICODE_BUFFER_SIZE);
+			      unicodeName,UNICODE_BUFFER_SIZE);
 
   if (count == 0) {
     scheme_signal_error("Error translating function name % to Unicode",name);
@@ -339,9 +369,9 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
     if (pFuncDesc->invkind == invKind) {
       pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&count);
       WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,SysStringLen(bstr) + 1,
-		                      buff,sizeof(buff) - 1,
-		                      NULL,NULL);
-     retval = scheme_make_pair(scheme_make_string(buff),retval);
+			  buff,sizeof(buff) - 1,
+			  NULL,NULL);
+      retval = scheme_make_pair(scheme_make_string(buff),retval);
       SysFreeString(bstr);
     }
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
@@ -396,14 +426,12 @@ Scheme_Object *makeBoxType(Scheme_Object *theType) {
 }
 
 Scheme_Object *newTypeSymbol(char *s) {
-   Scheme_Object *retval;
-   retval = scheme_intern_symbol(s);
-   scheme_register_extension_global(retval,sizeof(*retval));
+  Scheme_Object *retval;
+  retval = scheme_intern_symbol(s);
+  scheme_register_extension_global(retval,sizeof(Scheme_Object));
 
-   return retval;
+  return retval;
 }
-
-
 
 Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef) {
   static char buff[256];
@@ -555,15 +583,15 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef) {
   default :
 
     { char buff[32];
-      sprintf(buff,"COM-0x%X",vt);
-      return scheme_intern_symbol(buff);
+    sprintf(buff,"COM-0x%X",vt);
+    return scheme_intern_symbol(buff);
     }
   }
 }
 
 
 Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
-					 Scheme_Object *returnType) {
+				     Scheme_Object *returnType) {
   Scheme_Object *arrow;
 
   arrow = scheme_intern_symbol("->");
@@ -575,7 +603,7 @@ Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
 }
 
 Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
-                                             INVOKEKIND invKind) {
+				     INVOKEKIND invKind) {
   IDispatch *pIDispatch;
   METHODDESC *pMethodDesc;
   FUNCDESC *pFuncDesc;
@@ -632,7 +660,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     }
     else {
       returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE);
-     }
+    }
     break;
   }
 
@@ -815,7 +843,7 @@ BSTR schemeStringToBSTR(Scheme_Object *o) {
   scheme_dont_gc_ptr(unicodeString);
 
   hr = MultiByteToWideChar(CP_ACP,(DWORD)0,SCHEME_STR_VAL(o),len + 1,
-			       unicodeString,UNICODE_BUFFER_SIZE);
+			   unicodeString,len + 1);
 
   scheme_gc_ptr_ok(unicodeString);
 
@@ -1234,7 +1262,7 @@ void unmarshallVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   default :
 
-      ;   
+    ;   
     
     // no unmarshalling or cleanup needed
 
@@ -1242,7 +1270,7 @@ void unmarshallVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 }
 
 static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
-					   INVOKEKIND invKind) {
+				   INVOKEKIND invKind) {
   METHODDESC *pMethodDesc;
   FUNCDESC *pFuncDesc;
   DISPPARAMS methodArguments; 
@@ -1294,9 +1322,9 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     scheme_wrong_count(errBuff,numNeededParams+2,numNeededParams+2,argc,argv);
   }
   else if ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_PROPERTYPUT) &&
-      numNeededParams
+	   numNeededParams
     
-    ) {
+	   ) {
 
   }
 
@@ -1342,9 +1370,9 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   }
 
   if (numNeededParams > 0) {
-      methodArguments.rgvarg = 
-	(VARIANTARG *)scheme_malloc(numNeededParams * sizeof(VARIANTARG));
-      scheme_dont_gc_ptr(methodArguments.rgvarg);
+    methodArguments.rgvarg = 
+      (VARIANTARG *)scheme_malloc(numNeededParams * sizeof(VARIANTARG));
+    scheme_dont_gc_ptr(methodArguments.rgvarg);
   }
 
   // marshall Scheme argument list into COM argument list
@@ -1368,11 +1396,11 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   // invoke requested method
 
   hr = pIDispatch->Invoke(pMethodDesc->memID,IID_NULL,LOCALE_SYSTEM_DEFAULT,
-                              invKind,
-                              &methodArguments,
-			      (invKind == INVOKE_PROPERTYPUT) ? NULL : &methodResult,
-                              &exnInfo,
-                              &errorIndex);
+			  invKind,
+			  &methodArguments,
+			  (invKind == INVOKE_PROPERTYPUT) ? NULL : &methodResult,
+			  &exnInfo,
+			  &errorIndex);
 
   if (hr == DISP_E_EXCEPTION) {
     char errBuff[2048];
@@ -1414,7 +1442,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   }
  
   if (numNeededParams > 0) {
-     scheme_gc_ptr_ok(methodArguments.rgvarg);
+    scheme_gc_ptr_ok(methodArguments.rgvarg);
   }  
   
   if (invKind == INVOKE_PROPERTYPUT) {
@@ -1570,7 +1598,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   MX_COM_Object *com_object;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-create-control","mx-document",0,argc,argv) ;
+    scheme_wrong_type("document_objects","mx-document",0,argc,argv) ;
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]); 
@@ -1608,85 +1636,6 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-Scheme_Object *mx_connect_to_document(int argc,Scheme_Object **argv) {
-  HRESULT hr;
-  IStream *pIStream;
-  MAPIINIT_0 MAPIINIT= { 0, MAPI_MULTITHREAD_NOTIFICATIONS } ;
-  char envBuff[256];
-  char streamFile[256];
-  IWebBrowser2 *pIWebBrowser2;
-  IDispatch *pIDispatch;
-  IHTMLDocument2 *pIHTMLDocument2;
-  IEventQueue *pIEventQueue;
-  MX_Document_Object *currentDocument;
-  
-  if (GetEnvironmentVariable("PLTHOME",envBuff,sizeof(envBuff)) == 0) {
-    scheme_signal_error("PLTHOME not in environment");
-  }
-
-  wsprintf(streamFile,"%s\\mysterx.stream",envBuff);
-
-  // use MAPI to get an IStream from a file -- hack
-
-  hr = MAPIInitialize (&MAPIINIT); 
-  
-  if (hr != S_OK) {
-    scheme_signal_error("Error initializing DCOM stream layer");
-  }
-    
-  hr = OpenStreamOnFile(MAPIAllocateBuffer,MAPIFreeBuffer,STGM_SHARE_DENY_NONE,
-                        streamFile,NULL,&pIStream);
-
-  MAPIUninitialize();
-
-  if (pIStream == NULL) {
-   scheme_signal_error("Error opening DCOM stream");
-  } 
-
-  hr = CoUnmarshalInterface(pIStream,IID_IWebBrowser2,(void **)&pIWebBrowser2);
-
-  if (hr != S_OK || pIWebBrowser2 == NULL) {
-    pIStream->Release();
-    unlink(streamFile);
-    scheme_signal_error("Error retrieving WebBrowser2 interface");
-  }
- 
-  hr = CoUnmarshalInterface(pIStream,IID_IEventQueue,(void **)&pIEventQueue);
-
-  pIStream->Release();
-  unlink(streamFile);
-
-  if (hr != S_OK || pIEventQueue == NULL) {
-    scheme_signal_error("Error retrieving EventQueue interface");
-  }
-
-  pIWebBrowser2->get_Document(&pIDispatch);
-
-  pIWebBrowser2->Release();
-
-  if (pIDispatch == NULL) {
-    scheme_signal_error("Error retrieving DHTML dispatch interface");
-  }
-
-  pIDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
-
-  pIDispatch->Release();
-
-  if (pIHTMLDocument2 == NULL) {
-    scheme_signal_error("Error retrieving DHTML document interface");
-  }
-
-  pIEventQueue->SetProxySemaphores();
-
-  currentDocument = (MX_Document_Object *)scheme_malloc(sizeof(MX_Document_Object));
-    
-  currentDocument->type = mx_document_type;
-  currentDocument->pIHTMLDocument2 = pIHTMLDocument2;
-  currentDocument->pIEventQueue = pIEventQueue;
-
-  return (Scheme_Object *)currentDocument;
-}
-
 CLSID getCLSIDFromString(char const *name) {  // linear search through Registry
   HKEY hkey,hsubkey;
   LONG result;
@@ -1717,7 +1666,7 @@ CLSID getCLSIDFromString(char const *name) {  // linear search through Registry
 
 	
   if (result != ERROR_SUCCESS) {
-      scheme_signal_error("Error while searching Windows registry");
+    scheme_signal_error("Error while searching Windows registry");
   }	    
 
   // enumerate subkeys until we find the one we want
@@ -1823,71 +1772,39 @@ CLSID getCLSIDFromString(char const *name) {  // linear search through Registry
   return clsid;
 }
 
-Scheme_Object *mx_stuff_control(int argc,Scheme_Object **argv,
-                                        MX_HTML_WHERE cwhere,char *scheme_name) {
-  IHTMLDocument2 *pDocument; 
-  IHTMLElement *pBody;
+Scheme_Object *mx_object_to_html(int argc,Scheme_Object **argv) {
   char *controlName;
-  BSTR where,html;
   LPOLESTR clsidString;
-  OLECHAR buff[512];
+  char buff[512];
   CLSID clsid;
   static CLSID emptyClsid;
   int width,height;
-  long numObjects;
-  IHTMLElementCollection *pObjectsCollection;
-  IDispatch *pObjectDispatch;
-  MX_COM_Object *com_object;
-  OLECHAR *oleWhere;
-  int retrieveNdx;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type(scheme_name,"mx-document",0,argc,argv) ;
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("object->html","string",0,argc,argv) ;
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(scheme_name,"string",1,argc,argv) ;
-  }
-
-  if (argc == 3 || argc == 4) {
-    if (SCHEME_INTP(argv[2]) == FALSE) {
-      scheme_wrong_type(scheme_name,"int",2,argc,argv) ;
+  if (argc == 2 || argc == 3) {
+    if (SCHEME_INTP(argv[1]) == FALSE) {
+      scheme_wrong_type("object->html","int",1,argc,argv) ;
     }
-    width = SCHEME_INT_VAL(argv[2]);
+    width = SCHEME_INT_VAL(argv[1]);
   }
   else {
     width = MX_DEFAULT_WIDTH;
   }
 
-  if (argc == 4) {
-    if (SCHEME_INTP(argv[3]) == FALSE) {
-      scheme_wrong_type(scheme_name,"int",3,argc,argv) ;
+  if (argc == 3) {
+    if (SCHEME_INTP(argv[2]) == FALSE) {
+      scheme_wrong_type("object->html","int",2,argc,argv) ;
     }
-    height = SCHEME_INT_VAL(argv[3]);
+    height = SCHEME_INT_VAL(argv[2]);
   }
   else {
     height = MX_DEFAULT_HEIGHT;
   }
 
-  pDocument = MX_DOCUMENT_VAL(argv[0]);
-  controlName = SCHEME_STR_VAL(argv[1]);
-
-  pDocument->get_body(&pBody);
-
-  if (pBody == NULL) {
-    scheme_signal_error("Can't find document body");
-  }
-
-  if (cwhere == insert) {
-    oleWhere = L"AfterBegin";
-
-  }
-  else if (cwhere == append) {
-    oleWhere = L"BeforeEnd";
-  }
-  else { // this can't happen
-    scheme_signal_error("Unknown insertion location");
-  }
+  controlName = SCHEME_STR_VAL(argv[0]);
 
   clsid = getCLSIDFromString(controlName);
 
@@ -1903,71 +1820,30 @@ Scheme_Object *mx_stuff_control(int argc,Scheme_Object **argv,
     scheme_signal_error("Can't convert control CLSID to string");
   }
 
-  swprintf(buff,L"<OBJECT ID=\"%S\" CLASSID=\"clsid:%s\"\n"
-                L"WIDTH = %d\n"
-                L"HEIGHT = %d>\n"
-                L"</OBJECT><p>",
-                controlName,              
-                clsidString + 1,
-	        width,height);
+  sprintf(buff,
+	  "<OBJECT ID=\"%s\" CLASSID=\"clsid:%S\"\n"
+	  "WIDTH = %d\n"
+	  "HEIGHT = %d>\n"
+	  "</OBJECT>",
+	  controlName,              
+	  clsidString + 1,
+	  width,height);
 
-  html = SysAllocString(buff);
-  where = SysAllocString(oleWhere);
-
-  pBody->insertAdjacentHTML(where,html);
-  
-  SysFreeString(where);			    
-  SysFreeString(html);			    
-
-  /* retrieve control */
-
-  pObjectsCollection = getBodyObjects(pBody);
-  
-  pBody->Release(); 
-
-  pObjectsCollection->get_length(&numObjects);
-
-  if (cwhere == insert) {
-    retrieveNdx = 0;
-
-  }
-  else if (cwhere == append) {
-    retrieveNdx = numObjects - 1;
-  }
-
-  pObjectDispatch = getObjectInCollection(pObjectsCollection,retrieveNdx);
-
-  com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
-  com_object->type = mx_com_object_type; 
-  com_object->pIDispatch = pObjectDispatch;
-
-  mx_register_com_object((Scheme_Object *)com_object,pObjectDispatch);
-
-  pObjectsCollection->Release();
-
-  return (Scheme_Object *)com_object;
-}
-
-Scheme_Object *mx_insert_object(int argc,Scheme_Object **argv) {
-  return mx_stuff_control(argc,argv,insert,"mx-insert-object");
-}
-
-Scheme_Object *mx_append_object(int argc,Scheme_Object **argv) {
-  return mx_stuff_control(argc,argv,append,"mx-append-object");
+  return (Scheme_Object *)scheme_make_string(buff);
 }
 
 Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
-				     WCHAR *oleWhere,char *scheme_name) {
+			     WCHAR *oleWhere,char *scheme_name) {
   IHTMLDocument2 *pDocument; 
   IHTMLElement *pBody;
   BSTR where,html;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-insert-control","mx-object",0,argc,argv) ;
+    scheme_wrong_type(scheme_name,"mx-document",0,argc,argv) ;
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("mx-insert-control","string",1,argc,argv) ;
+    scheme_wrong_type(scheme_name,"string",1,argc,argv) ;
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]);
@@ -1982,7 +1858,7 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
   where = SysAllocString(oleWhere);
 
   pBody->insertAdjacentHTML(where,html);
-  
+
   SysFreeString(where);			    
   SysFreeString(html);			    
 
@@ -1998,14 +1874,296 @@ Scheme_Object *mx_append_html(int argc,Scheme_Object **argv) {
   return mx_stuff_html(argc,argv,L"BeforeEnd","mx-append-HTML");
 }
 
+DWORD WINAPI docHwndMsgLoop(LPVOID p) {
+  HRESULT hr;
+  MSG msg;
+  HWND hwnd;
+  IUnknown *pIUnknown;
+  DOCUMENT_WINDOW_INIT *pDocWindowInit;
+
+  pDocWindowInit = (DOCUMENT_WINDOW_INIT *)p;
+
+  hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
+		      WS_VISIBLE|pDocWindowInit->docWindow.style,
+		      pDocWindowInit->docWindow.x,pDocWindowInit->docWindow.y,
+		      pDocWindowInit->docWindow.width,pDocWindowInit->docWindow.height,
+		      NULL,NULL,hInstance,NULL);
+
+  if (hwnd == NULL) {
+    scheme_signal_error("Can't create document window");
+  }
+
+  documentHwnd = hwnd;
+
+  SetClassLong(hwnd,GCL_HICON,(LONG)hIcon);
+  
+  SetWindowText(hwnd,pDocWindowInit->docWindow.label);
+  ShowWindow(hwnd,SW_SHOW);
+  SetForegroundWindow(hwnd);
+
+  pIUnknown = NULL;
+
+  while (IsWindow(hwnd)) {
+
+    if (pIUnknown == NULL) {
+      AtlAxGetControl(hwnd,&pIUnknown);
+      if (pIUnknown) {
+
+        hr = CoMarshalInterThreadInterfaceInStream(IID_IUnknown,pIUnknown,
+						   pDocWindowInit->ppIStream);
+
+        if (hr != S_OK) {
+          ::MessageBox(NULL,"Can't marshal document interface","MysterX",MB_OK);
+          DestroyWindow(hwnd);
+          ReleaseSemaphore(createHwndSem,1,NULL);
+          return 0;
+        }
+
+        ReleaseSemaphore(createHwndSem,1,NULL);
+      }
+    }
+
+    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    }
+  }
+
+  return 0;
+}
+
+int cmpDwso(char *key,DOCUMENT_WINDOW_STYLE_OPTION *dwso) {
+  return strcmp(key,dwso->name);
+}
+
+Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  DWORD threadId;
+  IUnknown *pIUnknown;
+  IDispatch *pIDispatch;
+  IDHTMLPage *pIDHTMLPage;
+  IStream *pIStream,*pDocumentStream;
+  IWebBrowser2 *pIWebBrowser2;
+  IHTMLDocument2 *pIHTMLDocument2;
+  IEventQueue *pIEventQueue;
+  MX_Document_Object *doc;
+  DOCUMENT_WINDOW_INIT docWindowInit;
+  DOCUMENT_WINDOW_STYLE_OPTION *pDwso;
+  int i;
+
+  // mutex to protect association between new window and pIUnknown pointer to DHTML control
+
+  WaitForSingleObject(documentHwndMutex,INFINITE);
+
+  if (argc >= 1) {
+    if (SCHEME_STRINGP(argv[0]) == FALSE) {
+      scheme_wrong_type("make-document","string",1,argc,argv) ;
+    }
+
+    docWindowInit.docWindow.label = SCHEME_STR_VAL(argv[0]);
+  }
+  else {
+    docWindowInit.docWindow.label = "MysterX";
+  }
+
+  if (argc >= 2) {
+    if (SCHEME_INTP(argv[1]) == FALSE) {
+      scheme_wrong_type("make-document","int",2,argc,argv) ;
+    }
+
+    docWindowInit.docWindow.width = SCHEME_INT_VAL(argv[1]);
+  }
+  else {
+    docWindowInit.docWindow.width = CW_USEDEFAULT;
+  }
+
+  if (argc >= 3) {
+    if (SCHEME_INTP(argv[2]) == FALSE) {
+      scheme_wrong_type("make-document","int",3,argc,argv) ;
+    }
+
+    docWindowInit.docWindow.height = SCHEME_INT_VAL(argv[2]);
+  }
+  else {
+    docWindowInit.docWindow.height = CW_USEDEFAULT;
+  }
+
+  if (argc >= 4) {
+    if (SCHEME_INTP(argv[3]) == FALSE) {
+      scheme_wrong_type("make-document","int",4,argc,argv) ;
+    }
+
+    docWindowInit.docWindow.x = SCHEME_INT_VAL(argv[3]);
+  }
+  else {
+    docWindowInit.docWindow.x = CW_USEDEFAULT;
+  }
+
+
+  if (argc >= 5) {
+    if (SCHEME_INTP(argv[4]) == FALSE) {
+      scheme_wrong_type("make-document","int",5,argc,argv);
+    }
+
+    docWindowInit.docWindow.y = SCHEME_INT_VAL(argv[4]);
+  }
+  else {
+    docWindowInit.docWindow.y = CW_USEDEFAULT;
+  }
+
+  docWindowInit.docWindow.style = WS_OVERLAPPEDWINDOW;
+
+  if (argc >= 6) {
+    Scheme_Object *pSyms,*currSym;
+    char *currStyleOption;
+
+    if (SCHEME_PAIRP(argv[5]) == FALSE) {
+      scheme_wrong_type("make-document","list of symbols",5,argc,argv);
+    }
+
+    pSyms = argv[5];
+
+    while (pSyms != scheme_null) {
+      currSym = SCHEME_CAR(pSyms);
+
+      if (SCHEME_SYMBOLP(currSym) == FALSE) {
+	scheme_wrong_type("make-document","list of symbols",5,argc,argv);
+      }
+ 
+      currStyleOption = SCHEME_SYM_VAL(currSym);
+
+      pDwso = (DOCUMENT_WINDOW_STYLE_OPTION *)bsearch(currStyleOption,
+						      styleOptions,
+						      sizeray(styleOptions),
+						      sizeof(styleOptions[0]),
+						      (int (*)(const void *,const void *))cmpDwso);
+
+      if (pDwso == NULL) {
+	scheme_signal_error("Invalid document window style option: %s",currStyleOption);
+      }
+      
+      if (pDwso->enable) {
+	docWindowInit.docWindow.style |= pDwso->bits;
+      }
+      else {
+	docWindowInit.docWindow.style &= ~(pDwso->bits);
+      }
+
+      pSyms = SCHEME_CDR(pSyms);
+      
+    }
+  }
+
+  docWindowInit.ppIStream = &pDocumentStream;
+
+  CreateThread(NULL,0,docHwndMsgLoop,(void *)&docWindowInit,0L,&threadId);
+
+  // wait until the window is created
+  
+  WaitForSingleObject(createHwndSem,INFINITE);
+
+  hr = CoGetInterfaceAndReleaseStream(pDocumentStream,IID_IUnknown,(void **)&pIUnknown);
+
+  doc = (MX_Document_Object *)scheme_malloc(sizeof(MX_Document_Object));
+  doc->type = mx_document_type;
+  doc->hwnd = documentHwnd;
+
+  ReleaseSemaphore(documentHwndMutex,1,NULL);
+
+  if (hr != S_OK || pIUnknown == NULL) {
+    DestroyWindow(documentHwnd);
+    scheme_signal_error("Can't get document unknown interface, code: %X",hr);
+  }
+
+  pIUnknown->QueryInterface(IID_IDHTMLPage,(void **)&pIDHTMLPage);
+
+  if (pIDHTMLPage == NULL) {
+    scheme_signal_error("Can't get document interface");
+  }
+
+  // workaround for inability to use exdisp.idl or mshtml.idl
+  
+  pIStream = NULL;
+  pIDHTMLPage->marshalWebBrowserToStream(&pIStream);
+  
+  if (pIStream == NULL) {
+    scheme_signal_error("Can't get stream for Web browser");
+  }
+
+  hr = CoGetInterfaceAndReleaseStream(pIStream,IID_IWebBrowser2,(void **)&pIWebBrowser2);
+
+  if (hr != S_OK || pIWebBrowser2 == NULL) {
+    scheme_signal_error("Can't get web browser interface, code %X",hr);
+  }
+
+  pIStream = NULL;
+  pIDHTMLPage->marshalEventQueueToStream(&pIStream);
+  
+  if (pIStream == NULL) {
+    scheme_signal_error("Can't get stream for event queue");
+  }
+
+  hr = CoGetInterfaceAndReleaseStream(pIStream,IID_IEventQueue,(void **)&pIEventQueue);
+
+  if (hr != S_OK || pIEventQueue == NULL) {
+    scheme_signal_error("Can't get event queue interface, code %X",hr);
+  }
+
+  // may have to wait for document to be created
+  
+  for (i = 0; i < DOCDISPATCH_TRIES; i++) {
+
+    pIWebBrowser2->get_Document(&pIDispatch);
+
+    if (pIDispatch) {
+      break;
+    }
+
+    Sleep(500);
+  }
+
+  pIWebBrowser2->Release();
+
+  if (pIDispatch == NULL) {
+    scheme_signal_error("Error retrieving DHTML dispatch interface");
+  }
+
+  hr = pIDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
+
+  pIDispatch->Release();
+
+  if (pIHTMLDocument2 == NULL) {
+    scheme_signal_error("Error retrieving DHTML document interface, code %X",hr);
+  }
+
+  doc->pIHTMLDocument2 = pIHTMLDocument2;
+  doc->pIEventQueue = pIEventQueue;
+
+  return (Scheme_Object *)doc;
+}
+
+Scheme_Object *mx_show_document(int argc,Scheme_Object **argv) {
+  MX_Document_Object *pDoc;
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("show-document","mx-document",0,argc,argv) ;
+  }
+
+  pDoc = (MX_Document_Object *)argv[0];
+
+  ShowWindow(pDoc->hwnd,
+	     argv[1] == scheme_false ? SW_HIDE : SW_SHOW);
+
+  return scheme_void;
+}
+
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
   int i;
-  
+
   mx_com_object_type = scheme_make_type("<com-object>");
   mx_event_type = scheme_make_type("<mx-event>");
   mx_document_type = scheme_make_type("<mx-document>");
-	
   mx_com_cy_type = scheme_make_type("<com-currency>");
   mx_com_date_type = scheme_make_type("<com-date>");
   mx_com_boolean_type = scheme_make_type("<com-bool>");
@@ -2016,7 +2174,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   mx_com_array_type = scheme_make_type("<com-array>");
 
   hr = CoInitialize(NULL);
-  
+
   // S_OK means success, S_FALSE means COM already loaded
 
   if (hr != S_OK && hr != S_FALSE) {
@@ -2025,7 +2183,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   // make type hash table uncollectable
 
-  scheme_register_extension_global(methodTable,TYPE_TBL_SIZE);
+  scheme_register_extension_global(methodTable,TYPE_TBL_SIZE * sizeof(MX_TYPE_TBL_ENTRY *));
 
   for (i = 0; i < sizeray(mxPrims); i++) {
     scheme_add_prim_to_env(env,
@@ -2046,3 +2204,28 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 Scheme_Object *scheme_reload(Scheme_Env *env) {
   return scheme_initialize(env); /* reloading COM is OK */
 }
+
+BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
+
+  if (reason == DLL_PROCESS_ATTACH) {
+
+    hInstance = (HINSTANCE)hModule;
+
+    documentHwndMutex = CreateSemaphore(NULL,1,1,NULL);
+    createHwndSem = CreateSemaphore(NULL,0,1,NULL);
+
+    hIcon = (HICON)LoadImage(hInstance,
+			     MAKEINTRESOURCE(MYSTERX_ICON),
+			     IMAGE_ICON,0,0,0);
+    
+    _Module.Init(NULL,hInstance);
+    AtlAxWinInit();
+  
+  }
+  else if (reason == DLL_PROCESS_DETACH) {
+    _Module.Term();
+  }
+
+  return TRUE;
+}
+

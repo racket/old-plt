@@ -172,46 +172,6 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 
     SysFreeString(idAttr);
 
-/*    switch(eventEntry->eventType) {
-
-    case click :
-      puts("click");
-      break;
-
-      case dblclick :
-      puts("dblclick");
-    break;
-  case error :
-    puts("error");
-    break;
-  case keydown :
-    puts("keydown");
-    break;
-  case keypress :
-    puts("keypress");
-    break;
-  case keyup :
-    puts("keyup");
-    break;
-  case mousedown :
-    puts("mousedown");
-    break;
-  case mousemove :
-    puts("mousemove");
-    break;
-  case mouseout :
-    puts("mouseout");
-    break;
-  case mouseover :
-    puts("mouseover");
-    break;
-  case mouseup :
-    puts("mouseup");
-    break;
-  }
-
-*/
-
     pIEventQueue->QueueEvent(pEvent); 
 
     pIHTMLEventObj->Release();
@@ -222,19 +182,7 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
      CAxWindow wnd(m_hWnd);
      HRESULT hr;
-     IWebBrowser2 *pIWebBrowser2;
-     IStream *pIStream;
-     MAPIINIT_0 MAPIINIT= { 0, MAPI_MULTITHREAD_NOTIFICATIONS};
-     char streamFile[256];
-     char envBuff[256];
      
-     if (GetEnvironmentVariable("PLTHOME",envBuff,sizeof(envBuff)) == 0) {
-       ::failureBox("PLTHOME not in environment");
-       return -1;
-     }
-
-     wsprintf(streamFile,"%s\\mysterx.stream",envBuff);
-
      hr = wnd.CreateControl(IDH_DHTMLPAGE);
 
      if (SUCCEEDED(hr) == FALSE) {
@@ -254,57 +202,40 @@ LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
         return -1;
      }
   
-     pIWebBrowser2 = (IWebBrowser2 *)(m_spBrowser);
-     if (pIWebBrowser2 == NULL) {
-       ::failureBox("Can't find browser contol");
-       return -1;
-     }
-
      hr = CoCreateInstance(CLSID_EventQueue,NULL,CLSCTX_ALL,IID_IEventQueue,(void **)&pIEventQueue);
 
      if (SUCCEEDED(hr) == FALSE || pIEventQueue == NULL) {
        ::failureBox("Can't create event queue");
        return -1;
      }
-     
-     // we really want the DHTML doc, not the browser
-     // but the browser won't return the DHTML doc
-     // using get_Document until this function returns
-
-     hr = MAPIInitialize (&MAPIINIT); 
-
-     if (SUCCEEDED(hr) == FALSE) {
-       ::failureBox("Can't initialize DCOM stream layer");
-       return -1;
-     }
-    
-     hr = OpenStreamOnFile(MAPIAllocateBuffer,MAPIFreeBuffer,STGM_READWRITE | STGM_CREATE | STGM_SHARE_DENY_NONE,
-                           streamFile,NULL,&pIStream);
-
-     MAPIUninitialize();
-
-     if (SUCCEEDED(hr) == FALSE || pIStream == NULL) {
-       ::failureBox("Can't create DCOM stream");
-       return -1;
-     }
-
-     hr = CoMarshalInterface(pIStream,IID_IWebBrowser2,pIWebBrowser2,MSHCTX_LOCAL,NULL,MSHLFLAGS_NORMAL);
-
-     if (SUCCEEDED(hr) == FALSE) {
-       ::failureBox("Can't marshall WebBrowser2 interface");
-       return -1;
-     }
-
-     hr = CoMarshalInterface(pIStream,IID_IEventQueue,pIEventQueue,MSHCTX_LOCAL,NULL,MSHLFLAGS_NORMAL);
-
-     if (SUCCEEDED(hr) == FALSE) {
-       ::failureBox("Can't marshall EventQueue interface");
-       return -1;
-     }
-
-     pIStream->Release();
-
-     ::MessageBox(NULL, "DHTML support loaded", "MysterX", MB_OK);
 
      return 0;
+}
+
+
+STDMETHODIMP CDHTMLPage::marshalWebBrowserToStream(IStream **ppIStream) {
+  HRESULT hr;
+
+  hr = CoMarshalInterThreadInterfaceInStream(IID_IWebBrowser2,m_spBrowser,ppIStream);
+
+  if (hr != S_OK) {
+    failureBox("Can't marshall Web browser");
+    return hr;
+  }
+  
+	return S_OK;
+}
+
+STDMETHODIMP CDHTMLPage::marshalEventQueueToStream(IStream **ppIStream)
+{
+  HRESULT hr;
+
+  hr = CoMarshalInterThreadInterfaceInStream(IID_IEventQueue,pIEventQueue,ppIStream);
+
+  if (hr != S_OK) {
+    failureBox("Can't marshall event queue");
+    return hr;
+  }
+  
+	return S_OK;
 }

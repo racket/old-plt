@@ -1,4 +1,6 @@
-// event.cxx -- event-related functions
+// event.cpp -- event-related functions
+
+#include "stdafx.h"
 
 #include <objbase.h>
 #include <mshtml.h>
@@ -187,7 +189,7 @@ Scheme_Object *mx_event_type_pred(int argc,Scheme_Object **argv,WCHAR *evType) {
   EVENT_TYPE actualType;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-<event-type>?");
+  pEvent = getEventInterface(argv[0],"event-<event-type>?");
 
   pEvent->get_eventType(&actualType);
 

@@ -1,4 +1,6 @@
-// htmlutil.cxx
+// htmlutil.cpp
+
+#include "stdafx.h"
 
 #include <objbase.h>
 #include <mshtml.h>

@@ -6,7 +6,6 @@
 #include "resource.h"       // main symbols
 
 #define MAXQUEUELENGTH 25
-#define STREAM_EVENT_SIZE 68  
 
 void failureBox(const char *s);
 
@@ -21,7 +20,6 @@ class ATL_NO_VTABLE CEventQueue :
 private:
   HANDLE stubHandle;
   HANDLE readSem,mutex;
-  HANDLE proxyReadSem,proxyMutex;
   int readerNdx,writerNdx;
   int queueLength;
   IEvent *theQueue[MAXQUEUELENGTH];
@@ -43,7 +41,6 @@ public:
 	  STDMETHOD(get_EventAvailable)(VARIANT_BOOL *pVal);
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
-	  STDMETHOD(SetProxySemaphores)(void);
 };
 
 #endif //__EVENTQUEUE_H_

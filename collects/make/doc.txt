@@ -1,0 +1,26 @@
+
+make.ss provides a `make' macro and a `make*' procedure.
+ (make
+   ((target (depend ...) command ...) ...)
+   argv)
+expands to
+  (make*
+     (list (list target (list depend ...) (lambda () command ...)) ...)
+      argv)
+
+(make* spec argv) performs a make according to `spec' and using `argv'
+as command-line arguments selecting one or more targets.  `argv' can
+either be a string or a vector of strings.
+
+`spec' is a MAKE-SPEC:
+
+  MAKE-SPEC = (list MAKE-LINE ...)
+  MAKE-LINE = (list TARGET-STRING (list DEPEND-STRING ...) COMMAND-THUNK)
+
+To make a target, make* is first called on each of the target's
+dependencies. If a target is not in the spec and it exists, then the
+target is considered made. If a target is older than any of its
+dependencies, the corresponding COMMAND-THUNK is invoked.
+
+`make*' does not specially capture any exception, so an exception
+raised by a COMMAND-THUNK will terminate the make.

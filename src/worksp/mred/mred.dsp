@@ -129,15 +129,6 @@ SOURCE=..\..\mred\MRED.cxx
 # Begin Source File
 
 SOURCE=.\Mred.rc
-
-!IF  "$(CFG)" == "mred - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 

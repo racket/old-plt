@@ -90,7 +90,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\wxs\Release\wxs.lib ..\wxutils\Release\wxutils.lib ..\wxwin\Release\wxwin.lib ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\mred.exe" 
+LINK32_FLAGS=..\wxs\Release\wxs.lib ..\wxutils\Release\wxutils.lib ..\wxwin\Release\wxwin.lib ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\MrEd.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
@@ -222,7 +222,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=libcmt.lib ..\wxs\Debug\wxs.lib ..\wxutils\Debug\wxutils.lib ..\wxwin\Debug\wxwin.lib ..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcmtd.lib" /out:"$(OUTDIR)\mred.exe" 
+LINK32_FLAGS=libcmt.lib ..\wxs\Debug\wxs.lib ..\wxutils\Debug\wxutils.lib ..\wxwin\Debug\wxwin.lib ..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcmtd.lib" /out:"$(OUTDIR)\MrEd.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
@@ -354,7 +354,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=..\wxs\SGC\wxs.lib ..\wxutils\SGC\wxutils.lib ..\wxwin\SGC\wxwin.lib ..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib libc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\mred.exe" 
+LINK32_FLAGS=..\wxs\SGC\wxs.lib ..\wxutils\SGC\wxutils.lib ..\wxwin\SGC\wxwin.lib ..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib libc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\MrEd.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \

@@ -21,7 +21,7 @@
 		 (let ([orig-path (if (and wrt (not (complete-path? path)))
 				      (path->complete-path path wrt)
 				      path)])
-		   (let loop ([full-path orig-path])
+		   (let loop ([full-path orig-path][seen-paths (list orig-path)])
 		     (let ([resolved (resolve-path full-path)])
 		       (if (string=? resolved full-path)
 			   (do-normalize-path resolved #f)
@@ -31,9 +31,17 @@
 					      base)
 					    resolved)
 					   resolved)])
-			     (if (string=? path orig-path)
+			     (if (member path seen-paths)
 				 (error 'normalize-path "circular reference at ~s" path)
-				 (loop path))))))))]
+				 (let ([spath
+					;; Use simplify-path to get rid of ..s, which can
+					;;  allow the path to grow indefinitely in a cycle.
+					;; An exception must mean a cycle of links.
+					(with-handlers ([void
+							 (lambda (x)
+							   (error 'normalize-path "circular reference at ~s" path))])
+					  (simplify-path path))])
+				   (loop spath (cons path seen-paths))))))))))]
 	      [resolve
 	       (lambda (path)
 		 (if (string=? path (resolve-path path))

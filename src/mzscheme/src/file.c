@@ -2676,6 +2676,9 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
       }
     }
 
+    cycle_check = scheme_make_pair(scheme_make_sized_string(s, len, 0), 
+				   cycle_check);
+
     /* Split the path into a list. */
     while (1) {
       file = scheme_split_pathname(s, len, &base, &isdir);
@@ -2702,38 +2705,39 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
     accum = SCHEME_CDR(accum);
     /* Build up path, watching for links just before a ..: */
     while (!SCHEME_NULLP(accum)) {
-      Scheme_Object *a[2];
-      a[0] = result;
-      a[1] = SCHEME_CAR(accum);
-      result = scheme_build_pathname(2, a);
-      accum = SCHEME_CDR(accum);
-      if (SCHEME_PAIRP(accum) && SAME_OBJ(SCHEME_CAR(accum), up_symbol)) {
-	/* Just before a ..; resolve links: */
-	Scheme_Object *new_result;
-	a[0] = result;
-	new_result = resolve_path(1, a);
+      if (SAME_OBJ(SCHEME_CAR(accum), up_symbol)) {
+	/* Look for symlink in result-so-far. */
+	Scheme_Object *new_result, *a[1];
 
-	/* Was it a link? */
-	if (result != new_result) {
-	  /* It was a link. Is the new result relative? */
-	  if (!scheme_is_complete_path(SCHEME_STR_VAL(new_result),
-				       SCHEME_STRTAG_VAL(new_result))) {
-	    Scheme_Object *aa[2], *result_base;
-	    /* Yes - resolve it relative to result's base: */
-	    scheme_split_pathname(SCHEME_STR_VAL(result),
-				  SCHEME_STRTAG_VAL(result),
-				  &result_base,
-				  &isdir);
-	    aa[0] = result_base;
-	    aa[1] = new_result;
-	    new_result = scheme_build_pathname(2, aa);
-	  }
-	  
-	  /* Simplify the new result */
-	  result = do_simplify_path(new_result, scheme_make_pair(new_result, cycle_check));
+	while (1) {
+	  a[0] = result;
+	  new_result = resolve_path(1, a);
+	
+	  /* Was it a link? */
+	  if (result != new_result) {
+	    /* It was a link. Is the new result relative? */
+	    if (!scheme_is_complete_path(SCHEME_STR_VAL(new_result),
+					 SCHEME_STRTAG_VAL(new_result))) {
+	      Scheme_Object *aa[2], *result_base;
+	      /* Yes - resolve it relative to result's base: */
+	      scheme_split_pathname(SCHEME_STR_VAL(result),
+				    SCHEME_STRTAG_VAL(result),
+				    &result_base,
+				    &isdir);
+	      aa[0] = result_base;
+	      aa[1] = new_result;
+	      new_result = scheme_build_pathname(2, aa);
+	    }
+	    
+	    /* Simplify the new result */
+	    result = do_simplify_path(new_result, cycle_check);
+	    cycle_check = scheme_make_pair(new_result, cycle_check);
+	  } else
+	    break;
 	}
 	
-	while (SAME_OBJ(SCHEME_CAR(accum), up_symbol)) {
+	/* Do one 'up: */
+	{
 	  Scheme_Object *next, *file;
 	  accum = SCHEME_CDR(accum);
 	  file = scheme_split_pathname(SCHEME_STR_VAL(result),
@@ -2745,6 +2749,13 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	  } else
 	    result = next;
 	}
+      } else {
+	/* Add path element onto the result: */
+	Scheme_Object *a[2];
+	a[0] = result;
+	a[1] = SCHEME_CAR(accum);
+	result = scheme_build_pathname(2, a);
+	accum = SCHEME_CDR(accum);
       }
     }
 

@@ -73,9 +73,9 @@
 		     (and (> len 6)
 			  (string=? (substring x (- len 6) len) "macros")))))])
     (current-load (lambda (f)
-		    (let ([file (if (relative-path? f)
-				    (build-path (current-directory) f)
-				    f)])
+		    (let* ([file (if (relative-path? f)
+				     (build-path (current-directory) f)
+				     f)])
 		      (mred:debug:printf 'load "~aLoading ~a..." indent-string file)
 		      (let* ([answer
 			      (dynamic-wind (lambda ()

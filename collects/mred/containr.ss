@@ -163,16 +163,15 @@
 	    min-height
 
 	    ; default-x: gets/sets default x position.  Errors out if new
-	    ; value is not a non-negative real number; forces a redraw upon
-	    ; a set.
+	    ; value is not a real number; forces a redraw upon a set.
 	    [default-x
-	      (make-item-param 0 non-negative-number?
+	      (make-item-param 0 real?
 		(lambda (val)
 		  (error 'default-x
 		    "Expected a non-negative real; received ~s" val)))]
 
 	    [default-y
-	      (make-item-param 0 non-negative-number?
+	      (make-item-param 0 real?
 		(lambda (val)
 		  (error 'default-y
 		    "Expected a non-negative real; received ~s" val)))]

@@ -227,7 +227,7 @@ class wxStyleList : public wxList /* should be private */
   int StyleToIndex(wxStyle *);
 
   Bool WriteToFile(class wxMediaStreamOut *f);
-  wxStyle *MapIndexToStyle(wxMediaStream *f, int i);
+  wxStyle *MapIndexToStyle(wxMediaStream *f, int i, long listId);
 };
 
 extern wxStyleList *wxTheStyleList;
@@ -240,7 +240,7 @@ class wxMediaStream;
 
 /* Internal use only */
 Bool wxmbWriteStylesToFile(wxStyleList *styleList, class wxMediaStreamOut *f);
-wxStyleList *wxmbReadStylesFromFile(wxStyleList *, class wxMediaStreamIn *f, Bool overwritename);
+wxStyleList *wxmbReadStylesFromFile(wxStyleList *, class wxMediaStreamIn *f, Bool overwritename, long *listId);
 void wxmbSetupStyleReadsWrites(wxMediaStream *);
 void wxmbDoneStyleReadsWrites(wxMediaStream *);
 

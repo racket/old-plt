@@ -136,6 +136,7 @@ class wxStyleListLink
   int listId;
   wxStyle **styleMap;
   int numMappedStyles;
+  wxStyle *basic; /* used to detect clearing */
 
   wxStyleListLink *next;
 };

@@ -47,8 +47,13 @@ void wxMediaIOCheckLSB(void)
 
 wxMediaStream::wxMediaStream()
 {
-  scl = &wxTheSnipClassList;
-  bdl = &wxTheBufferDataClassList;
+  wxStandardSnipClassList *_scl;
+  wxBufferDataClassList *_bdl;
+
+  _scl = &wxTheSnipClassList;
+  scl = _scl;
+  _bdl = &wxTheBufferDataClassList;
+  bdl = _bdl;
 }
 
 wxMediaStream::~wxMediaStream()

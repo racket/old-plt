@@ -890,7 +890,7 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn *f)
 
 Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylename)
 {
-  long len, numHeaders, numSnips, i;
+  long len, numHeaders, numSnips, i, listId;
   int styleIndex;
   short n;
   wxStyleList *newList;
@@ -901,7 +901,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
   if (!ReadHeadersFooters(f, TRUE))
     return FALSE;
 
-  if (!(newList = wxmbReadStylesFromFile(styleList, f, overwritestylename)))
+  if (!(newList = wxmbReadStylesFromFile(styleList, f, overwritestylename, &listId)))
     return FALSE;
 
   if (PTRNE(newList, styleList))
@@ -975,7 +975,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	if ((snip = sclass->Read(f))) {
 	  if (snip->flags & wxSNIP_OWNED)
 	    snip->flags -= wxSNIP_OWNED;
-	  snip->style = styleList->MapIndexToStyle(f, styleIndex);
+	  snip->style = styleList->MapIndexToStyle(f, styleIndex, listId);
 	  if (!snip->style) {
 	    wxStyle *bs;
 	    bs = styleList->BasicStyle();

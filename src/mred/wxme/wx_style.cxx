@@ -889,6 +889,8 @@ void wxStyleList::Clear(void)
   }
 
   basic = new wxStyle;
+  /* Note: The file-reader relies on having a new `basic' when the
+     list is cleared: */
 
   basic->styleList = this;
 
@@ -1282,12 +1284,14 @@ Bool wxStyleList::WriteToFile(class wxMediaStreamOut *f)
   return wxmbWriteStylesToFile(this, f);
 }
 
-wxStyle *wxStyleList::MapIndexToStyle(wxMediaStream *s, int i)
+wxStyle *wxStyleList::MapIndexToStyle(wxMediaStream *s, int i, long listId)
 {
   wxStyleListLink *ssl;
 
   for (ssl = s->ssl; ssl; ssl = ssl->next) {
-    if (ssl->styleList == this) {
+    if (ssl->listId == listId
+	// If basic changes, that means list was cleared
+	&& ssl->basic == basic) {
       if (ssl->styleMap && i < ssl->numMappedStyles)
 	return ssl->styleMap[i];
       else
@@ -1303,9 +1307,11 @@ wxStyle *wxStyleList::MapIndexToStyle(wxMediaStream *s, int i)
 wxStyleList *wxReadStyleList(class wxMediaStreamIn *f)
 {
   wxStyleList *l;
+  long listId;
+
   l = new wxStyleList;
 
-  return wxmbReadStylesFromFile(l, f, 0);
+  return wxmbReadStylesFromFile(l, f, 0, &listId);
 }
 
 void wxmbSetupStyleReadsWrites(wxMediaStream *s)
@@ -1448,7 +1454,8 @@ static int AlignThisToStandard(int v)
 
 wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList, 
 				    wxMediaStreamIn *f, 
-				    Bool overwritename)
+				    Bool overwritename,
+				    long *_listId)
 {
 #define MAX_STYLE_NAME 256
   int baseIndex, shiftIndex;
@@ -1463,6 +1470,8 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 
   f->Get(&listId);
   
+  *_listId = listId;
+
   for (ssl = f->ssl; ssl; ssl = ssl->next) {
     if (ssl->listId == listId)
       return ssl->styleList;

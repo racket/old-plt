@@ -1050,6 +1050,7 @@ wxMediaPasteboard *wxsMakeMediaPasteboard()
 static Scheme_Object *SetMediaSnipMaker(int, Scheme_Object *a[])
 {
   wxREGGLOB(make_media_snip);
+  wxREGGLOB(none_symbol);
   make_media_snip = a[0];
   none_symbol = scheme_intern_symbol("none");
   return scheme_void;

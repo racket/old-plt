@@ -77,7 +77,6 @@ CLEAN :
 	-@erase "$(INTDIR)\Struct.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
-	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
 	-@erase "$(INTDIR)\unitsig.obj"
@@ -132,6 +131,7 @@ LIB32_FLAGS=/nologo /out:"$(OUTDIR)\mzsrc.lib"
 LIB32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
+	"$(INTDIR)\builtin.obj" \
 	"$(INTDIR)\Char.obj" \
 	"$(INTDIR)\Complex.obj" \
 	"$(INTDIR)\Dynext.obj" \
@@ -144,9 +144,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
 	"$(INTDIR)\mzsj86.obj" \
+	"$(INTDIR)\network.obj" \
+	"$(INTDIR)\numarith.obj" \
 	"$(INTDIR)\Number.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
 	"$(INTDIR)\Object.obj" \
 	"$(INTDIR)\Port.obj" \
+	"$(INTDIR)\portfun.obj" \
 	"$(INTDIR)\Print.obj" \
 	"$(INTDIR)\Process.obj" \
 	"$(INTDIR)\Promise.obj" \
@@ -160,18 +166,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\Struct.obj" \
 	"$(INTDIR)\Symbol.obj" \
 	"$(INTDIR)\Syntax.obj" \
-	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\numarith.obj" \
-	"$(INTDIR)\numcomp.obj" \
-	"$(INTDIR)\numstr.obj" \
-	"$(INTDIR)\objclass.obj" \
-	"$(INTDIR)\portfun.obj" \
-	"$(INTDIR)\builtin.obj" \
-	"$(INTDIR)\network.obj"
+	"$(INTDIR)\Vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -227,7 +225,6 @@ CLEAN :
 	-@erase "$(INTDIR)\Struct.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
-	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
 	-@erase "$(INTDIR)\unitsig.obj"
@@ -282,6 +279,7 @@ LIB32_FLAGS=/nologo /out:"$(OUTDIR)\mzsrc.lib"
 LIB32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
+	"$(INTDIR)\builtin.obj" \
 	"$(INTDIR)\Char.obj" \
 	"$(INTDIR)\Complex.obj" \
 	"$(INTDIR)\Dynext.obj" \
@@ -294,9 +292,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
 	"$(INTDIR)\mzsj86.obj" \
+	"$(INTDIR)\network.obj" \
+	"$(INTDIR)\numarith.obj" \
 	"$(INTDIR)\Number.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
 	"$(INTDIR)\Object.obj" \
 	"$(INTDIR)\Port.obj" \
+	"$(INTDIR)\portfun.obj" \
 	"$(INTDIR)\Print.obj" \
 	"$(INTDIR)\Process.obj" \
 	"$(INTDIR)\Promise.obj" \
@@ -310,18 +314,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\Struct.obj" \
 	"$(INTDIR)\Symbol.obj" \
 	"$(INTDIR)\Syntax.obj" \
-	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\numarith.obj" \
-	"$(INTDIR)\numcomp.obj" \
-	"$(INTDIR)\numstr.obj" \
-	"$(INTDIR)\objclass.obj" \
-	"$(INTDIR)\portfun.obj" \
-	"$(INTDIR)\builtin.obj" \
-	"$(INTDIR)\network.obj"
+	"$(INTDIR)\Vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -377,7 +373,6 @@ CLEAN :
 	-@erase "$(INTDIR)\Struct.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
-	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
 	-@erase "$(INTDIR)\unitsig.obj"
@@ -432,6 +427,7 @@ LIB32_FLAGS=/nologo /out:"$(OUTDIR)\mzsrc.lib"
 LIB32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
+	"$(INTDIR)\builtin.obj" \
 	"$(INTDIR)\Char.obj" \
 	"$(INTDIR)\Complex.obj" \
 	"$(INTDIR)\Dynext.obj" \
@@ -444,9 +440,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
 	"$(INTDIR)\mzsj86.obj" \
+	"$(INTDIR)\network.obj" \
+	"$(INTDIR)\numarith.obj" \
 	"$(INTDIR)\Number.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
 	"$(INTDIR)\Object.obj" \
 	"$(INTDIR)\Port.obj" \
+	"$(INTDIR)\portfun.obj" \
 	"$(INTDIR)\Print.obj" \
 	"$(INTDIR)\Process.obj" \
 	"$(INTDIR)\Promise.obj" \
@@ -460,18 +462,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\Struct.obj" \
 	"$(INTDIR)\Symbol.obj" \
 	"$(INTDIR)\Syntax.obj" \
-	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\numarith.obj" \
-	"$(INTDIR)\numcomp.obj" \
-	"$(INTDIR)\numstr.obj" \
-	"$(INTDIR)\objclass.obj" \
-	"$(INTDIR)\portfun.obj" \
-	"$(INTDIR)\builtin.obj" \
-	"$(INTDIR)\network.obj"
+	"$(INTDIR)\Vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -527,7 +521,6 @@ CLEAN :
 	-@erase "$(INTDIR)\Struct.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
-	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
 	-@erase "$(INTDIR)\unitsig.obj"
@@ -582,6 +575,7 @@ LIB32_FLAGS=/nologo /out:"$(OUTDIR)\mzsrc.lib"
 LIB32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
+	"$(INTDIR)\builtin.obj" \
 	"$(INTDIR)\Char.obj" \
 	"$(INTDIR)\Complex.obj" \
 	"$(INTDIR)\Dynext.obj" \
@@ -594,9 +588,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
 	"$(INTDIR)\mzsj86.obj" \
+	"$(INTDIR)\network.obj" \
+	"$(INTDIR)\numarith.obj" \
 	"$(INTDIR)\Number.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
 	"$(INTDIR)\Object.obj" \
 	"$(INTDIR)\Port.obj" \
+	"$(INTDIR)\portfun.obj" \
 	"$(INTDIR)\Print.obj" \
 	"$(INTDIR)\Process.obj" \
 	"$(INTDIR)\Promise.obj" \
@@ -610,18 +610,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\Struct.obj" \
 	"$(INTDIR)\Symbol.obj" \
 	"$(INTDIR)\Syntax.obj" \
-	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\numarith.obj" \
-	"$(INTDIR)\numcomp.obj" \
-	"$(INTDIR)\numstr.obj" \
-	"$(INTDIR)\objclass.obj" \
-	"$(INTDIR)\portfun.obj" \
-	"$(INTDIR)\builtin.obj" \
-	"$(INTDIR)\network.obj"
+	"$(INTDIR)\Vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -677,7 +669,6 @@ CLEAN :
 	-@erase "$(INTDIR)\Struct.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
-	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
 	-@erase "$(INTDIR)\unitsig.obj"
@@ -732,6 +723,7 @@ LIB32_FLAGS=/nologo /out:"$(OUTDIR)\mzsrc.lib"
 LIB32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
+	"$(INTDIR)\builtin.obj" \
 	"$(INTDIR)\Char.obj" \
 	"$(INTDIR)\Complex.obj" \
 	"$(INTDIR)\Dynext.obj" \
@@ -744,9 +736,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\image.obj" \
 	"$(INTDIR)\List.obj" \
 	"$(INTDIR)\mzsj86.obj" \
+	"$(INTDIR)\network.obj" \
+	"$(INTDIR)\numarith.obj" \
 	"$(INTDIR)\Number.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
 	"$(INTDIR)\Object.obj" \
 	"$(INTDIR)\Port.obj" \
+	"$(INTDIR)\portfun.obj" \
 	"$(INTDIR)\Print.obj" \
 	"$(INTDIR)\Process.obj" \
 	"$(INTDIR)\Promise.obj" \
@@ -760,18 +758,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\Struct.obj" \
 	"$(INTDIR)\Symbol.obj" \
 	"$(INTDIR)\Syntax.obj" \
-	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\numarith.obj" \
-	"$(INTDIR)\numcomp.obj" \
-	"$(INTDIR)\numstr.obj" \
-	"$(INTDIR)\objclass.obj" \
-	"$(INTDIR)\portfun.obj" \
-	"$(INTDIR)\builtin.obj" \
-	"$(INTDIR)\network.obj"
+	"$(INTDIR)\Vector.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -2446,60 +2436,6 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Syntax.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ENDIF 
-
-SOURCE=..\..\Mzscheme\Src\Tsymbol.c
-
-!IF  "$(CFG)" == "mzsrc - Win32 Release"
-
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
-
-"$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
-
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-"$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
-
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-"$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
-
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-"$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
-
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
-
-"$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
   $(CPP_SWITCHES) $(SOURCE)
 <<

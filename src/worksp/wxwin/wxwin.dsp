@@ -158,10 +158,6 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_MF.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Base\WB_MGSTR.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Base\WB_OBJ.cxx
 # End Source File
 # Begin Source File
@@ -175,10 +171,6 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_PRINT.cxx
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Src\Base\WB_PS.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WB_RES.cxx
 # End Source File
 # Begin Source File
 

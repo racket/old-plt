@@ -52,12 +52,10 @@ CLEAN :
 	-@erase "$(INTDIR)\WB_LIST.obj"
 	-@erase "$(INTDIR)\WB_MAIN.obj"
 	-@erase "$(INTDIR)\WB_MF.obj"
-	-@erase "$(INTDIR)\WB_MGSTR.obj"
 	-@erase "$(INTDIR)\WB_OBJ.obj"
 	-@erase "$(INTDIR)\WB_PANEL.obj"
 	-@erase "$(INTDIR)\WB_PRINT.obj"
 	-@erase "$(INTDIR)\WB_PS.obj"
-	-@erase "$(INTDIR)\WB_RES.obj"
 	-@erase "$(INTDIR)\WB_STDEV.obj"
 	-@erase "$(INTDIR)\WB_SYSEV.obj"
 	-@erase "$(INTDIR)\WB_TIMER.obj"
@@ -147,12 +145,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\WB_LIST.obj" \
 	"$(INTDIR)\WB_MAIN.obj" \
 	"$(INTDIR)\WB_MF.obj" \
-	"$(INTDIR)\WB_MGSTR.obj" \
 	"$(INTDIR)\WB_OBJ.obj" \
 	"$(INTDIR)\WB_PANEL.obj" \
 	"$(INTDIR)\WB_PRINT.obj" \
 	"$(INTDIR)\WB_PS.obj" \
-	"$(INTDIR)\WB_RES.obj" \
 	"$(INTDIR)\WB_STDEV.obj" \
 	"$(INTDIR)\WB_SYSEV.obj" \
 	"$(INTDIR)\WB_TIMER.obj" \
@@ -215,12 +211,10 @@ CLEAN :
 	-@erase "$(INTDIR)\WB_LIST.obj"
 	-@erase "$(INTDIR)\WB_MAIN.obj"
 	-@erase "$(INTDIR)\WB_MF.obj"
-	-@erase "$(INTDIR)\WB_MGSTR.obj"
 	-@erase "$(INTDIR)\WB_OBJ.obj"
 	-@erase "$(INTDIR)\WB_PANEL.obj"
 	-@erase "$(INTDIR)\WB_PRINT.obj"
 	-@erase "$(INTDIR)\WB_PS.obj"
-	-@erase "$(INTDIR)\WB_RES.obj"
 	-@erase "$(INTDIR)\WB_STDEV.obj"
 	-@erase "$(INTDIR)\WB_SYSEV.obj"
 	-@erase "$(INTDIR)\WB_TIMER.obj"
@@ -310,12 +304,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\WB_LIST.obj" \
 	"$(INTDIR)\WB_MAIN.obj" \
 	"$(INTDIR)\WB_MF.obj" \
-	"$(INTDIR)\WB_MGSTR.obj" \
 	"$(INTDIR)\WB_OBJ.obj" \
 	"$(INTDIR)\WB_PANEL.obj" \
 	"$(INTDIR)\WB_PRINT.obj" \
 	"$(INTDIR)\WB_PS.obj" \
-	"$(INTDIR)\WB_RES.obj" \
 	"$(INTDIR)\WB_STDEV.obj" \
 	"$(INTDIR)\WB_SYSEV.obj" \
 	"$(INTDIR)\WB_TIMER.obj" \
@@ -379,12 +371,10 @@ CLEAN :
 	-@erase "$(INTDIR)\WB_LIST.obj"
 	-@erase "$(INTDIR)\WB_MAIN.obj"
 	-@erase "$(INTDIR)\WB_MF.obj"
-	-@erase "$(INTDIR)\WB_MGSTR.obj"
 	-@erase "$(INTDIR)\WB_OBJ.obj"
 	-@erase "$(INTDIR)\WB_PANEL.obj"
 	-@erase "$(INTDIR)\WB_PRINT.obj"
 	-@erase "$(INTDIR)\WB_PS.obj"
-	-@erase "$(INTDIR)\WB_RES.obj"
 	-@erase "$(INTDIR)\WB_STDEV.obj"
 	-@erase "$(INTDIR)\WB_SYSEV.obj"
 	-@erase "$(INTDIR)\WB_TIMER.obj"
@@ -474,12 +464,10 @@ LIB32_OBJS= \
 	"$(INTDIR)\WB_LIST.obj" \
 	"$(INTDIR)\WB_MAIN.obj" \
 	"$(INTDIR)\WB_MF.obj" \
-	"$(INTDIR)\WB_MGSTR.obj" \
 	"$(INTDIR)\WB_OBJ.obj" \
 	"$(INTDIR)\WB_PANEL.obj" \
 	"$(INTDIR)\WB_PRINT.obj" \
 	"$(INTDIR)\WB_PS.obj" \
-	"$(INTDIR)\WB_RES.obj" \
 	"$(INTDIR)\WB_STDEV.obj" \
 	"$(INTDIR)\WB_SYSEV.obj" \
 	"$(INTDIR)\WB_TIMER.obj" \
@@ -602,12 +590,6 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_MF.cxx
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
-SOURCE=..\..\Wxwindow\Src\Base\WB_MGSTR.cxx
-
-"$(INTDIR)\WB_MGSTR.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
 SOURCE=..\..\Wxwindow\Src\Base\WB_OBJ.cxx
 
 "$(INTDIR)\WB_OBJ.obj" : $(SOURCE) "$(INTDIR)"
@@ -629,12 +611,6 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_PRINT.cxx
 SOURCE=..\..\Wxwindow\Src\Base\WB_PS.cxx
 
 "$(INTDIR)\WB_PS.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-SOURCE=..\..\Wxwindow\Src\Base\WB_RES.cxx
-
-"$(INTDIR)\WB_RES.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

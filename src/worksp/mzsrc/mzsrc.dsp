@@ -848,28 +848,6 @@ SOURCE=..\..\Mzscheme\Src\Syntax.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Mzscheme\Src\Tsymbol.c
-
-!IF  "$(CFG)" == "mzsrc - Win32 Release"
-
-# ADD CPP /O2
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
-
-!ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
-
-# ADD BASE CPP /O2
-# ADD CPP /O2
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Mzscheme\Src\Type.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"

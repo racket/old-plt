@@ -1701,6 +1701,9 @@ void wxMediaPasteboard::CheckRecalc()
 
   dc = admin->GetDC();
 
+  if (!dc)
+    return;
+
   if (needResize) {
     /* Find right & bottom */
     r = b = 0;
@@ -1836,8 +1839,12 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
 void wxMediaPasteboard::UpdateLocation(wxSnipLocation *loc)
 {
   if (admin) {
-    if (loc->needResize)
-      loc->Resize(admin->GetDC());
+    if (loc->needResize) {
+      wxDC *dc = admin->GetDC();
+      if (dc)
+	loc->Resize(dc);
+      /* otherwise, still need resize... */
+    }
     Update(loc->x - HALF_DOT_WIDTH, loc->y - HALF_DOT_WIDTH, 
 	   loc->w + DOT_WIDTH, loc->h + DOT_WIDTH);
   }

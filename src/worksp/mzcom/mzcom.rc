@@ -107,19 +107,19 @@ IDR_MZOBJ               REGISTRY DISCARDABLE    "MzObj.rgs"
 // Dialog
 //
 
-ABOUTBOX DIALOG DISCARDABLE  0, 0, 192, 95
+ABOUTBOX DIALOG DISCARDABLE  0, 0, 203, 97
 STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_CAPTION
 CAPTION "MzCOM"
 FONT 8, "MS Sans Serif"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,69,69,50,14,BS_CENTER
-    CTEXT           "MzCOM v. 200",IDC_STATIC,64,11,61,8
-    CTEXT           "Copyright (c) 2001 PLT (Paul Steckler)",IDC_STATIC,44,
-                    22,126,9
-    CTEXT           "MzScheme v. 200",IDC_STATIC,55,36,75,8
+    DEFPUSHBUTTON   "OK",IDOK,76,69,50,14,BS_CENTER
+    CTEXT           "MzCOM v. 200",IDC_STATIC,71,8,61,8
+    CTEXT           "Copyright (c) 2000-2001 PLT (Paul Steckler)",IDC_STATIC,
+                    41,20,146,9
+    CTEXT           "MzScheme v. 200",IDC_STATIC,64,35,75,8
     CTEXT           "Copyright (c) 1995-2001 PLT (Matthew Flatt)",IDC_STATIC,
-                    27,47,143,8
-    ICON            MZICON,IDC_STATIC,14,16,20,20
+                    30,47,143,8
+    ICON            MZICON,IDC_STATIC,11,16,21,20
 END
 
 
@@ -134,9 +134,9 @@ BEGIN
     ABOUTBOX, DIALOG
     BEGIN
         LEFTMARGIN, 1
-        RIGHTMARGIN, 190
+        RIGHTMARGIN, 201
         TOPMARGIN, 1
-        BOTTOMMARGIN, 94
+        BOTTOMMARGIN, 96
     END
 END
 #endif    // APSTUDIO_INVOKED

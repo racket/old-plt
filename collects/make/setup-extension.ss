@@ -28,6 +28,7 @@
 		       find-windows-libs
 		       unix-libs
 		       windows-libs
+		       force-symbols
 		       extra-depends
 		       last-chance-k)
     (parameterize ([current-directory collection-dir])
@@ -108,7 +109,7 @@
 				(file-exists? (build-path sys-path "lib" (format "lib~a.dylib" lib)))))
 			  find-unix-libs))
 	      (case mach-id
-		[(sparc-solaris i386-solaris) (list "-u" "rl_readline_name")]
+		[(sparc-solaris i386-solaris) (apply append (map (lambda (i) (list "-u" i)) force-symbols))]
 		[(i386-linux i386-freebsd sparc-linux) (list "--whole-archive")]
 		[(win32\\i386) null]
 		[else (fprintf (current-error-port)

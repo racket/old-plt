@@ -112,13 +112,18 @@
   ; ndx is index into the manual
   ; txt is the link text
   (define (manual-entry man ndx txt)
-    (with-handlers 
-     ([void (lambda _
-	      (color-with "red" 
-			  `(B "[Bad manual entry: "
-			      ,man "::" ,ndx "]")))])
-     `(A ((HREF ,(finddoc-page man ndx)))
-	 ,txt)))
+    `(A ((HREF 
+	  ,(with-handlers
+	    ([void (lambda _
+		     (format "/servlets/missing-manual.ss?manual=~a&name=~a"
+			     man 
+			     (hexify-string
+			      (let ([pr (assoc man known-docs)])
+				(or (and pr
+					 (cdr pr))
+				    man)))))])
+	    (finddoc-page man ndx))))
+	,txt))
 
   (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\>))
   ; string -> string

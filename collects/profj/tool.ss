@@ -36,11 +36,11 @@
       (add-to-colorer-prefs "Java" styles)
       
       (drscheme:modes:add-mode "Java mode"
-                               (new (colorer mode:surrogate-text%)
-				    (port-wrapper (lambda (x) x))
-                                    (get-token get-syntax-token)
-                                    (prefix "Java"))
-                               ;#f
+                               ;(new (colorer mode:surrogate-text%)
+			;	    (port-wrapper (lambda (x) x))
+                         ;           (get-token get-syntax-token)
+                          ;          (prefix "Java"))
+                               #f
                                (lambda (text prompt-position) 
                                  (let ((is-if? #f)
                                        (is-string? #f)

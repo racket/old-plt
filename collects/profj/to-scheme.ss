@@ -228,7 +228,7 @@
            (full-defs (if (null? (packages)) (package-defs program) (append (packages) (package-defs program))))
            (dependent-defs (find-dependent-defs full-defs type-recs))
            (modules (map (lambda (defs)
-                           (let-values (((translated-defs reqs) (translate-defs defs type-recs)))
+                           (let-values (((translated-defs reqs) (translate-defs (order-defs defs) type-recs)))
                              (make-compilation-unit (map (lambda (def) (id-string (def-name def))) defs)
                                                     translated-defs
                                                     (map def-file defs)
@@ -326,6 +326,41 @@
                       (set! cycles (cons cyc cycles)))))
                 defs)
       cycles))
+  
+  ;order-defs: (list def) -> (list def)
+  (define (order-defs defs)
+    (reverse
+     (let loop ((ordered-defs null)
+                (local-defs defs))
+       (cond
+         ((null? local-defs) ordered-defs)
+         ((add-def? (car defs) local-defs ordered-defs)
+          (loop (cons (car defs) ordered-defs)
+                (remove-def (car defs) local-defs)))
+         (else
+          (loop ordered-defs (append (cdr local-defs) (list (car defs)))))))))
+  
+  ;remove-def: def (list def) -> (list def)
+  (define (remove-def def defs)
+    (cond
+      ((null? defs) null)
+      ((eq? (car defs) def) (cdr defs))
+      (else (cons (car defs) (remove-def (cdr defs))))))
+  
+  ;add-def? def (list def) (list def) -> bool
+  (define (add-def? def local-defs ordered-defs)
+    (andmap (lambda (e)
+              (satisfied-extend? e local-defs ordered-defs))
+            (append (header-extends (def-header def))
+                    (header-implements (def-header def)))))
+  
+  ;satisified-extend? id (list def) (list def) -> bool
+  (define (satisfied-extend? extend local-defs ordered-defs)
+    (or (null? extend)
+        (not (member (id-string (name-id extend)) 
+                     (map id-string (map def-name local-defs))))
+        (member (id-string (name-id extend))
+                (map id-string (map def-name ordered-defs)))))
   
   
   (define (make-composite-name d)

@@ -85,7 +85,8 @@
       (execution? #f)
       
       ;Add package information to environment
-      (add-my-package type-recs pname (package-defs prog) current-loc level)
+      (when (memq level '(advanced full))
+        (add-my-package type-recs pname (package-defs prog) current-loc level))
       
       ;Add import information
       (for-each (lambda (imp) (process-import type-recs imp level)) (package-imports prog))

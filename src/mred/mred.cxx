@@ -782,9 +782,10 @@ static int try_dispatch(Scheme_Object *do_it)
       if (c->waiting_for_nested)
 	c->waiting_for_nested = 0;
       else
-	scheme_thread(scheme_make_closed_prim(handle_events,
-					      c), 
-		      c->main_config);
+	scheme_thread_w_manager(scheme_make_closed_prim(handle_events, c), 
+				c->main_config,
+				(Scheme_Manager *)scheme_get_param(c->main_config, 
+								   MZCONFIG_MANAGER));
     }
 
     return 1;
@@ -1854,8 +1855,6 @@ wxFrame *MrEdApp::OnInit(void)
 
   mzsleep = scheme_sleep;
   scheme_sleep = MrEdSleep;
-
-  scheme_exit = MrEdExit;
 
 #if ADD_OBJ_DUMP
   scheme_add_global("dump-object-stats", 

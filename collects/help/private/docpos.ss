@@ -55,7 +55,7 @@
       ("profj-intermediate" "ProfessorJ Intermediate Language" -9)
       ("profj-advanced" "ProfessorJ Advanced Language" -8)
       
-      ("tour" "A Brief Tour of DrScheme version 206" 0)
+      ("tour" "A Brief Tour of DrScheme version 207" 0)
       ("drscheme" "PLT DrScheme: Programming Environment Manual" 1)
       
       ("srfi" "SRFI documents inside PLT" 3)

@@ -1294,7 +1294,11 @@
 	      [(#%eq? n 5) (#%let ([n (copy-env (#%append r5 r4))])
 			     (#%with-handlers ([#%void #%void])
 				(#%parameterize ([#%current-namespace n])
-				  (#%require-library "synrule.ss")))
+				  (#%global-defined-value
+				   'begin-elaboration-time
+				   (#%global-defined-value '#%begin-elaboration-time))
+				  (#%require-library "synrule.ss")
+				  (#%undefine 'begin-elaboration-time)))
 			     n)]
 	      [(#%eq? n 4) (copy-env r4)]
 	      [(#%and (#%number? n) (#%integer? n) (#%positive? n))

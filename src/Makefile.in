@@ -7,6 +7,8 @@ all: mz @MAKE_MRED@
 
 install: @MAKE_COPYTREE@ mzinstall @MAKE_MREDINSTALL@ lib-finish @MAKE_FINISH@
 
+install-3m: install mzinstall3m @MAKE_MREDINSTALL3M@ 
+
 clean:
 	cd mzscheme; $(MAKE) clean
 	if [ -d mred ] ; then cd mred; $(MAKE) clean; fi
@@ -26,8 +28,14 @@ mr3m:
 mzinstall:
 	cd mzscheme; $(MAKE) install
 
+mzinstall3m:
+	cd mzscheme; $(MAKE) install-3m
+
 mrinstall:
 	cd mred; $(MAKE) install
+
+mrinstall3m:
+	cd mred; $(MAKE) install-3m
 
 lib-finish:
 	@LIBFINISH@ @prefix@/lib

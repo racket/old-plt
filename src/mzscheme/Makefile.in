@@ -198,6 +198,9 @@ clean:
 install:
 	$(MAKE) @MZINSTALLTARGET@
 
+install-3m:
+	cd ..; cp mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
+
 LIBIDIR=$(prefix)/lib
 BUILDINFO=$(LIBIDIR)/buildinfo
 ICP=@ICP@

@@ -155,3 +155,5 @@ install:
 	$(MAKE) all
 	cd gc2; $(MAKE) 3m
 
+install-3m:
+	cd ..; cp mred/mred3m $(prefix)/bin/

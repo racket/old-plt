@@ -203,10 +203,16 @@ static long signal_fddone(void *fds)
 void MrEdMSWSleep(float secs, void *fds)
 {
   win_extended_fd_set *r, *w, *e;
- 
+  DWORD msecs;
+
   if (wxCheckMousePosition())
     return;
  
+  if (secs > 0)
+    msecs = (DWORD)(secs * 1000);
+  else
+    msecs = 0;
+
   if (fds) {
     r = (win_extended_fd_set *)fds;
     w = ((win_extended_fd_set *)fds) + 1;
@@ -250,7 +256,7 @@ void MrEdMSWSleep(float secs, void *fds)
       th2 = NULL;
 
     result = MsgWaitForMultipleObjects(num_handles, handles, FALSE, 
-				       secs ? (DWORD)(secs * 1000) : INFINITE,
+				       secs ? msecs : INFINITE,
 				       QS_ALLINPUT);
 
     if ((result >= WAIT_OBJECT_0) && (result < WAIT_OBJECT_0 + num_handles)) {
@@ -267,7 +273,7 @@ void MrEdMSWSleep(float secs, void *fds)
     UINT id;
     
     if (secs)
-      id = SetTimer(NULL, 0, secs * 1000, NULL);
+      id = SetTimer(NULL, 0, msecs, NULL);
     else
       id = 0;
   

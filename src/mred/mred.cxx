@@ -698,7 +698,7 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     scheme_current_process->block_check = check_for_nested_event;
     do {
       scheme_process_block(0);
-    } while (!check_for_nested_event((Scheme_Object *)c));
+	} while (!check_for_nested_event((Scheme_Object *)c));
     scheme_current_process->block_descriptor = 0;
     scheme_current_process->ran_some = 1;
 
@@ -1062,12 +1062,12 @@ static void (*mzsleep)(float secs, void *fds);
 
 static void MrEdSleep(float secs, void *fds)
 {
-  unsigned long now;
+  double now;
 
   if (!(KEEP_GOING))
     return;
   
-  now = (unsigned long)scheme_get_milliseconds();
+  now = (double)scheme_get_milliseconds();
   {
     wxTimer *timer = mred_timers;
     
@@ -1075,9 +1075,8 @@ static void MrEdSleep(float secs, void *fds)
       timer = timer->next;
     
     if (timer) {
-      unsigned long done = timer->expiration;
-      float diff;
-      diff = done - now;
+      double done = (double)timer->expiration;
+      float diff = done - now;
       
       diff /= 1000;
       if (diff <= 0)

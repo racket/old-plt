@@ -5559,6 +5559,7 @@ static int tcp_addr(char *address, struct hostInfo *info)
   info->rtnCode = 0;
   if (StrToAddr(address, info, u_dnr_done, (char *)done) == cacheFault) {
     while (!*done) { scheme_process_block(0.25); }
+    scheme_current_process->ran_some = 1;
   }
   if (info->rtnCode == cacheFault) {
     if (--tries)

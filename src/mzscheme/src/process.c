@@ -1778,6 +1778,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
     p->external_break = 0;
     make_unblocked(p);
+    p->ran_some = 1;
     scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
   }
   
@@ -1936,6 +1937,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
     p->external_break = 0;
     make_unblocked(p);
+    p->ran_some = 1;
     scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
   }
   
@@ -1995,8 +1997,10 @@ void scheme_start_atomic(void)
 void scheme_end_atomic(void)
 {
   --do_atomic;
-  if (!do_atomic && missed_context_switch)
+  if (!do_atomic && missed_context_switch) {
     scheme_process_block(0.0);
+    scheme_current_process->ran_some = 1;    
+  }
 }
 #endif
 
@@ -2073,6 +2077,7 @@ sch_sleep(int argc, Scheme_Object *args[])
     t = 0;
 
   scheme_process_block(t);
+  scheme_current_process->ran_some = 1;
 
   return scheme_void;
 }

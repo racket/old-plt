@@ -205,18 +205,15 @@
 				      '(class ...)))]
 			       [build-named
 				(lambda (build-unnamed string-name beginning-offset)
-				  (let ([str (format "~a" expr)])
-				    (if (string=? str string-name)
-					(build-unnamed)
-					(let ([answer (string->symbol (substring str
-										 beginning-offset
-										 (- (string-length str) 1)))])
-					  (if (eq? (with-handlers ([(lambda (x) #t)
-								    (lambda (x) #f)])
-						     (global-defined-value answer))
-						   expr)
-					      answer
-					      (build-unnamed))))))])
+				  (let ([answer (inferred-name expr)])
+				    (if answer
+					(if (eq? (with-handlers ([(lambda (x) #t)
+								  (lambda (x) #f)])
+						   (global-defined-value answer))
+						 expr)
+					    answer
+					    (build-unnamed))
+					(build-unnamed))))])
 			  (lambda ()
 			    (cond
 			      [(hooks@:before-test? expr) (hooks@:before-convert expr recur)]

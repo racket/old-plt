@@ -45,7 +45,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p14a")
+(define *tex2page-version* "4p14b")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -1351,7 +1351,7 @@
       (emit-newline)
       (bgroup)
       (tex-def "\\\\" '() "{}" #f #f)
-      (tex-def "\\thanks" #t "\\TIIPgobblegroup" #f #f)
+      (tex-def "\\thanks" ':prim "\\TIIPgobblegroup" #f #f)
       (tex2page-string (or *title* *jobname*))
       (emit-newline)
       (egroup)
@@ -1429,7 +1429,7 @@
     (bgroup)
     (tex-def "\\\\" '() "\\break" #f #f)
     (tex-def "\\and" '() "\\break" #f #f)
-    (tex-def "\\thanks" #t "\\symfootnote" #f #f)
+    (tex-def "\\thanks" ':prim "\\symfootnote" #f #f)
     (output-title "\\TIIPtitle")
     (do-para)
     (do-end-para)
@@ -1479,7 +1479,7 @@
   (lambda ()
     (unless *css-port*
       (let* ((f (string-append *jobname* *css-file-suffix* ".css"))
-             (real-f (if *aux-dir* (string-append *aux-dir/* f) f)))
+             (real-f (string-append *aux-dir/* f)))
         (when (null? *stylesheets*) (flag-missing-piece 'stylesheets))
         (write-aux `(!stylesheet ,f))
         (ensure-file-deleted real-f)
@@ -6263,19 +6263,12 @@
 
 (define ensure-url-reachable
   (lambda (f)
-    (if (and (not (fully-qualified-url? f)) *aux-dir*)
-      (let ((real-f
-              (string-append
-                *aux-dir*
-                (if (eq? *operating-system* 'windows) "\\" "/")
-                f)))
-        (when (and
-               (file-exists? f)
-               (not (file-exists? real-f))
-               (not (substring? "/" f)))
+    (if (and *aux-dir* (not (fully-qualified-url? f)) (not (substring? "/" f)))
+      (let ((real-f (string-append *aux-dir/* f)))
+        (when (and (file-exists? f) (not (file-exists? real-f)))
           (case *operating-system*
             ((unix) (system (string-append "cp -p " f " " real-f)))
-            ((windows) (system (string-append "copy/b " f " " real-f)))))
+            ((windows) (system (string-append "copy/b " f " " *aux-dir*)))))
         real-f)
       f)))
 

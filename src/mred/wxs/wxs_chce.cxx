@@ -344,7 +344,7 @@ wxChoice::OnKillFocus();
 static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
   int x0;
 
@@ -399,7 +399,7 @@ static Scheme_Object *os_wxChoiceSetSelection(Scheme_Object *obj, int n,  Scheme
 static Scheme_Object *os_wxChoiceGetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
 
   

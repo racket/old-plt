@@ -328,7 +328,7 @@ void wxSnip::GetText(char *s, long offset, long num)
   char *str;
 
   if (num <= 0)
-    return "";
+    return;
   str = GetText(offset, num, FALSE);
   if (!str)
     memset(s, '.', num);

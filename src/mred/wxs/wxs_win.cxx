@@ -523,7 +523,7 @@ static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Objec
 static Scheme_Object *os_wxWindowGetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
 
   

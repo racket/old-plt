@@ -17,6 +17,22 @@
 #include "wxscomon.h"
 
 
+static Scheme_Object* GetSelectionList(wxListBox *l)
+{
+  int c, *v;
+
+  c = l->GetSelections(&v);
+
+  Scheme_Object *cdr = scheme_null, *obj;
+
+  while (c--) {
+    obj = scheme_make_integer(v[c]);
+    cdr = scheme_make_pair(obj, cdr);
+  }
+  
+  return cdr;
+}
+
 static int unbundle_symset_kind(Scheme_Object *v, const char *where) {
   long vi;
   long orig_vi;
@@ -214,18 +230,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-
-Scheme_Object *MakeIntList(int *v, int c)
-{
-  Scheme_Object *cdr = scheme_null, *obj;
-
-  while (c--) {
-    obj = scheme_make_integer(v[c]);
-    cdr = scheme_make_pair(obj, cdr);
-  }
-  
-  return cdr;
-}
 
 
 
@@ -538,28 +542,20 @@ static Scheme_Object *os_wxListBoxSet(Scheme_Object *obj, int n,  Scheme_Object 
 }
 
 #pragma argsused
-static Scheme_Object *os_wxListBoxGetSelections(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxListBoxGetSelectionList(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
+  Scheme_Object* r;
   objscheme_check_valid(obj);
-  int* _x0;
-  int** x0 = &_x0;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:list-box%::get-selections", "non-null", (0 - 0), n, p);
-  else
-    *x0 = NULL;
 
   
-  r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->GetSelections(x0);
+  r = GetSelectionList(((wxListBox *)((Scheme_Class_Object *)obj)->primdata));
 
   
-  if (n > 0)
-    objscheme_set_box(p[0], MakeIntList(*x0, r));
   
-  return scheme_make_integer(r);
+  return ((Scheme_Object *)r);
 }
 
 #pragma argsused
@@ -1043,7 +1039,7 @@ if (os_wxListBox_class) {
  scheme_add_method_w_arity(os_wxListBox_class, "set-string-selection", os_wxListBoxSetStringSelection, 1, 1);
  scheme_add_method(os_wxListBox_class, "set-first-item", os_wxListBoxSetFirstItem);
  scheme_add_method_w_arity(os_wxListBox_class, "set", os_wxListBoxSet, 1, 1);
- scheme_add_method_w_arity(os_wxListBox_class, "get-selections", os_wxListBoxGetSelections, 1, 1);
+ scheme_add_method_w_arity(os_wxListBox_class, "get-selections", os_wxListBoxGetSelectionList, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "get-first-item", os_wxListBoxGetFirstItem, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "number-of-visible-items", os_wxListBoxNumberOfVisibleItems, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "number", os_wxListBoxNumber, 0, 0);

@@ -7,6 +7,22 @@
 
 @HEADER
 
+static Scheme_Object* GetSelectionList(wxListBox *l)
+{
+  int c, *v;
+
+  c = l->GetSelections(&v);
+
+  Scheme_Object *cdr = scheme_null, *obj;
+
+  while (c--) {
+    obj = scheme_make_integer(v[c]);
+    cdr = scheme_make_pair(obj, cdr);
+  }
+  
+  return cdr;
+}
+
 @BEGINSYMBOLS kind > SINGLE
 @SYM "single" : wxSINGLE       
 @SYM "multiple" : wxMULTIPLE     
@@ -57,23 +73,9 @@
 @ "number-of-visible-items" : int NumberOfVisibleItems();
 @ "get-first-item" : int GetFirstItem();
 
-@MACRO ubArrayBox = NULL
-@MACRO cArrayBox = SCHEME_BOXP({x})
-@MACRO boxArrayResult = MakeIntList(*x0, r)
+@MACRO bundleAny = ((Scheme_Object *){x})
 
-Scheme_Object *MakeIntList(int *v, int c)
-{
-  Scheme_Object *cdr = scheme_null, *obj;
-
-  while (c--) {
-    obj = scheme_make_integer(v[c]);
-    cdr = scheme_make_pair(obj, cdr);
-  }
-  
-  return cdr;
-}
-
-@ "get-selections" : int GetSelections(int**/boxArrayResult/ubArrayBox/cArrayBox);
+@ m "get-selections" : Scheme_Object*/bundleAny GetSelectionList();
 
 @ "set" : void Set(-int,string[]/bList/ubList/cList); : : /glueListSet[string.0.1.0."wx:list%::set"]//
 @ "set-first-item" : void SetFirstItem(int); : : /RANGE[0] <> index

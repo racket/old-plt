@@ -94,6 +94,24 @@ in several important ways:
    to a structure type. (For example, using properties,
    structure-based classes can be implemented more efficiently.)
 
+ * The `process', `process*', `process/ports', `process*/ports',
+   `system', and `system*' functions have been moved to a new MzLib
+   library, "process.ss". 
+
+   MzScheme's new built-in form is `subprocess', which takes the same
+   arguments as `process*/ports'. It treturns four values: a
+   subprocess value, an input port or false (the subprocess's stdout,
+   if one was created), an output port or false (the subprocess's
+   stdin), and an input port (the subprocess's stderr). The new
+   `subprocess-status' procedure gets the status or return code of the
+   subprocess, and `subprocess-pid' gets its process id.
+   
+   The `process', etc. functions are implemented in terms of
+   `subprocess'. Consequently, old bugs and gaps in support for
+   Windows have been eliminated.
+
+   The `execute' and `execute*' procedures were eliminated entirely.
+
  * All #% names are gone, since they are unnecessary with the new
    syntax system.
 
@@ -114,3 +132,5 @@ MzLib changes:
 
  * "defstru.ss" was roughly re-implemented in "compat.ss" (and the
     re-implementation matches the Chez form)
+
+ * "process.ss" is new

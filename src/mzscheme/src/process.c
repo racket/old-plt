@@ -63,7 +63,19 @@
 #endif
 
 #if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
+# ifndef NO_STDIO_THREADS
+#  include <windows.h>
 extern HANDLE scheme_break_semaphore;
+# endif
+#endif
+
+#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP) \
+	 || ((defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)) \
+	     && !defined(NO_STDIO_THREADS))
+# define USING_FDS
+# if !defined(USE_WINSOCK_TCP) && !defined(FILES_HAVE_FDS)
+#  include <sys/types.h>
+# endif
 #endif
 
 #include "schfd.h"
@@ -144,7 +156,9 @@ static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
 
 #ifndef NO_SCHEME_THREADS
 static Scheme_Object *sch_thread(int argc, Scheme_Object *args[]);
+#endif
 static Scheme_Object *sch_sleep(int argc, Scheme_Object *args[]);
+#ifndef NO_SCHEME_THREADS
 static Scheme_Object *process_weight(int argc, Scheme_Object *args[]);
 static Scheme_Object *processp(int argc, Scheme_Object *args[]);
 static Scheme_Object *process_running_p(int argc, Scheme_Object *args[]);
@@ -152,6 +166,7 @@ static Scheme_Object *process_wait(int argc, Scheme_Object *args[]);
 static Scheme_Object *sch_current(int argc, Scheme_Object *args[]);
 static Scheme_Object *kill_thread(int argc, Scheme_Object *args[]);
 static Scheme_Object *break_thread(int argc, Scheme_Object *args[]);
+#endif
 
 static Scheme_Object *make_manager(int argc, Scheme_Object *argv[]);
 static Scheme_Object *manager_p(int argc, Scheme_Object *argv[]);
@@ -174,7 +189,6 @@ static Scheme_Object *config_branch_handler(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defshare, Scheme_Object *clist, Scheme_Object *sharef);
 
 static void adjust_manager_family(void *pr, void *ignored);
-#endif
 
 static Scheme_Object *current_will_executor(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_will_executor(int argc, Scheme_Object *args[]);
@@ -287,7 +301,6 @@ void scheme_init_process(Scheme_Env *env)
 #endif
 #endif
 
-#ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("make-namespace",
 			     scheme_make_prim_w_arity(scheme_make_namespace,
 						      "make-namespace",
@@ -303,11 +316,13 @@ void scheme_init_process(Scheme_Env *env)
 						      "make-parameterization-with-sharing",
 						      4, 4),
 			     env);
+#ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("thread",
 			     scheme_make_prim_w_arity(sch_thread,
 						      "thread",
 						      1, 1),
 			     env);
+#endif
   
   scheme_add_global_constant("sleep",
 			     scheme_make_prim_w_arity(sch_sleep,
@@ -321,6 +336,7 @@ void scheme_init_process(Scheme_Env *env)
 						      2, 2),
 			     env);
 
+#ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("thread-weight",
 			     scheme_make_prim_w_arity(process_weight,
 						      "thread-weight",
@@ -358,6 +374,7 @@ void scheme_init_process(Scheme_Env *env)
 						      "break-thread", 
 						      1, 1), 
 			     env);
+#endif
 
   scheme_add_global_constant("make-custodian",
 			     scheme_make_prim_w_arity(make_manager,
@@ -423,7 +440,6 @@ void scheme_init_process(Scheme_Env *env)
 						      "parameter-procedure=?", 
 						      2, 2), 
 			     env);
-#endif
 
   scheme_add_global_constant("make-will-executor", 
 			     scheme_make_prim_w_arity(make_will_executor,
@@ -464,11 +480,9 @@ void scheme_init_process(Scheme_Env *env)
     REGISTER_SO(port_semas);
     REGISTER_SO(param_ext_recs);
 
-#ifndef NO_SCHEME_THREADS
 #ifdef MZ_REAL_THREADS
     make_namespace_mutex = SCHEME_MAKE_MUTEX();
     will_mutex = SCHEME_MAKE_MUTEX();
-#endif
 #endif
 
     REGISTER_SO(constants_symbol);
@@ -934,10 +948,12 @@ static Scheme_Process *do_close_managed(Scheme_Manager *m)
       --m->count;
 
       if (SCHEME_PROCESSP(o)) {
+#ifndef NO_SCHEME_THREADS
 	Scheme_Process *p = (Scheme_Process *)o;
 
 	if (do_kill_thread(p))
 	  kill_self = p;
+#endif
       } else {
 	f(o, data);
       }
@@ -956,10 +972,12 @@ void scheme_close_managed(Scheme_Manager *m)
 {
   Scheme_Process *p;
 
+#ifndef NO_SCHEME_THREADS
   if ((p = do_close_managed(m))) {
     /* Kill self */
     scheme_kill_thread(p);
   }
+#endif
 }
 
 void scheme_set_tail_buffer_size(int s)
@@ -996,8 +1014,6 @@ Scheme_Process *scheme_get_current_process()
   return scheme_current_process;
 }
 #endif
-
-#ifndef NO_SCHEME_THREADS
 
 #ifndef MZ_REAL_THREADS
 
@@ -1231,8 +1247,10 @@ void scheme_break_thread(Scheme_Process *p)
   if (p == scheme_current_process)
     scheme_fuel_counter = 0;
 # if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
+#  ifndef NO_STDIO_THREADS
   if (!p->next)
     ReleaseSemaphore(scheme_break_semaphore, 1, NULL);
+#  endif
 # endif
 #else
   p->fuel_counter = 0;
@@ -1339,9 +1357,6 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   return (Scheme_Object *)env;
 }
 
-#endif
-/* NO_SCHEME_THREADS */
-
 void scheme_add_sema_callback(Scheme_Sema_Callback *cb)
 {
   cb->next = NULL;
@@ -1444,7 +1459,7 @@ static int check_sleep(int need_activity, int sleep_now)
   Scheme_Sema_From_Port *pt;
   int end_with_act;
   
-#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP)
+#if defined(USING_FDS)
   DECL_FDSET(set, 3);
   fd_set *set1, *set2;
 #endif
@@ -1485,7 +1500,7 @@ static int check_sleep(int need_activity, int sleep_now)
     if (have_activity && scheme_notify_multithread)
       scheme_notify_multithread(0);
     
-#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP)
+#if defined(USING_FDS)
     INIT_DECL_FDSET(set, 3);
     set1 = (fd_set *) MZ_GET_FDSET(set, 1);
     set2 = (fd_set *) MZ_GET_FDSET(set, 2);
@@ -1967,7 +1982,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
       goto swap_or_sleep;
   }
 
-#if defined(MZ_REAL_THREADS) && (defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP))
+#if defined(MZ_REAL_THREADS) && (defined(USING_FDS))
   if ((p->block_descriptor == PORT_BLOCKED)
       || (p->block_descriptor == -1)) {
     DECL_FDSET(set, 3);
@@ -1998,8 +2013,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;
 }
-
-#ifndef NO_SCHEME_THREADS
 
 Scheme_Object *scheme_branch_config(void)
 {
@@ -2111,6 +2124,7 @@ static int do_kill_thread(Scheme_Process *p)
   return kill_self;
 }
 
+#ifndef NO_SCHEME_THREADS
 void scheme_kill_thread(Scheme_Process *p)
 {
   if (do_kill_thread(p)) {
@@ -2153,6 +2167,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
 
   return scheme_void;
 }
+#endif
 
 static Scheme_Object *process_weight(int argc, Scheme_Object *args[])
 {
@@ -2260,9 +2275,6 @@ void *scheme_tls_get(int pos)
   else
     return p->user_tls[pos];
 }
-
-#endif
-/* NO_SCHEME_THREADS */
 
 static Scheme_Object *make_manager(int argc, Scheme_Object *argv[])
 {

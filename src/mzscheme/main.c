@@ -542,8 +542,8 @@ int actual_main(int argc, char *argv[])
     printf("Warning: read-eval-print-loop or read on stdin may block threads.\n");
 #endif
 #ifdef DOS_FILE_SYSTEM
-#if !defined(DETECT_WIN32_CONSOLE_STDIN)
-    printf("Warning: read-eval-print-loop or read on stdin may block threads.\n");
+#if !defined(DETECT_WIN32_CONSOLE_STDIN) || defined(NO_STDIN_THREADS)
+    printf("Warning: read-eval-print-loop or read on stdin or process port may block threads.\n");
 #endif
 #endif
   }

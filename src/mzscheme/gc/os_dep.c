@@ -298,7 +298,10 @@ void GC_enable_signals()
  * With threads, GC_mark_roots needs to know how to do this.
  * Called with allocator lock held.
  */
-# ifdef MSWIN32
+# if defined(MSWIN32) || defined(CYGWIN32)
+#  ifdef CYGWIN32
+#  include <windows.h>
+#  endif
 
 /* Get the page size.	*/
 word GC_page_size = 0;
@@ -343,7 +346,7 @@ ptr_t GC_get_stack_base()
 {
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);
-    ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_getpagesize() - 1));
+	ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_getpagesize() - 1));
     word size = GC_get_writable_length(trunc_sp, 0);
    
     return(trunc_sp + size);

@@ -5,6 +5,10 @@
 # 'make lib' - make libmzscheme.a
 # 'make dynlib' - make mzdyn.o, for use in extending MzScheme
 
+EXPORT= CC='$(CC)' CXX='$(CXX)' AS='$(AS)' RANLIB='$(RANLIB)' DEBUGFLAGS='$(DEBUGFLAGS)' OPTIONS='$(OPTIONS) $(THREADFLAGS)' DYNOPTIONS='$(DYNOPTIONS)' WARN='$(WARN)' OPT='$(OPT)' OBJDIR='$(OBJDIR)' GCDIR='$(GCDIR)' LIBS='$(LIBS)' GCLIBMAKEEXTRA='$(GCLIBMAKEEXTRA)'
+
+XMAKE = $(MAKE) $(EXPORT)
+
 CFLAGS_NODBG = $(OPT) $(WARN) $(OPTIONS) $(THREADFLAGS) -I../include
 CFLAGS = $(DEBUGFLAGS) $(CFLAGS_NODBG)
 
@@ -80,8 +84,8 @@ wrong:
 	# Make from the directory above this one
 
 all: objects $(OBJDIR)
-	$(MAKE) mzheaders
-	$(MAKE) mzobjects
+	$(XMAKE) mzheaders
+	$(XMAKE) mzobjects
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
@@ -93,25 +97,25 @@ mzheaders: schemex.h schemexm.h schemex.inc schexn.h $(OBJDIR)/schsys.h ../inclu
 mzobjects: $(OBJS)
 
 macro.inc : macro.ss sstoinc
-	sstoinc < macro.ss > macro.inc
+	./sstoinc < macro.ss > macro.inc
 
 unitsig.inc : unitsig.ss sstoinc
-	sstoinc < unitsig.ss > unitsig.inc
+	./sstoinc < unitsig.ss > unitsig.inc
 
 schemex.h : schemef.h makex
-	makex < schemef.h > schemex.h
+	./makex < schemef.h > schemex.h
 
 schemexm.h : schemef.h makex
-	makex -list < schemef.h > schemexm.h
+	./makex -list < schemef.h > schemexm.h
 
 schemex.inc : schemef.h makex
-	makex -assign < schemef.h > schemex.inc
+	./makex -assign < schemef.h > schemex.inc
 
 ../include/mzscheme.exp : schemef.h makex
-	makex -exports < schemef.h > ../include/mzscheme.exp
+	./makex -exports < schemef.h > ../include/mzscheme.exp
 
 schexn.h : exnsrc.ss makeexn
-	makeexn < exnsrc.ss > schexn.h
+	./makeexn < exnsrc.ss > schexn.h
 
 $(OBJDIR)/schsys.h : sysname
 	echo -n "#define SCHEME_PLATFORM_LIBRARY_SUBPATH " > $(OBJDIR)/schsys.h

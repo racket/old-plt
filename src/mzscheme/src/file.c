@@ -117,7 +117,9 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[]);
 static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *absolute_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv);
+#endif
 static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv);
+#ifndef NO_FILE_SYSTEM_UTILS
 static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *expand_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_drive(int argc, Scheme_Object *argv[]);
@@ -136,9 +138,9 @@ static Scheme_Object *current_directory(int argc, Scheme_Object *argv[]);
 static char get_cur_drive_id(void);
 #endif
 
-#ifndef NO_FILE_SYSTEM_UTILS
 static Scheme_Object *up_symbol, *relative_symbol;
 static Scheme_Object *same_symbol;
+#ifndef NO_FILE_SYSTEM_UTILS
 static Scheme_Object *read_symbol, *write_symbol, *execute_symbol;
 
 # ifdef MACINTOSH_EVENTS
@@ -153,17 +155,20 @@ void (*scheme_handle_aewait_event)(EventRecord *e);
 void scheme_init_file(Scheme_Env *env)
 {
   if (scheme_starting_up) {
-#ifndef NO_FILE_SYSTEM_UTILS
     REGISTER_SO(up_symbol);
     REGISTER_SO(relative_symbol);
     REGISTER_SO(same_symbol);
+#ifndef NO_FILE_SYSTEM_UTILS
     REGISTER_SO(read_symbol);
     REGISTER_SO(write_symbol);
     REGISTER_SO(execute_symbol);
+#endif
     
     up_symbol = scheme_intern_symbol("up");
     relative_symbol = scheme_intern_symbol("relative");
     same_symbol = scheme_intern_symbol("same");
+
+#ifndef NO_FILE_SYSTEM_UTILS
 
     read_symbol = scheme_intern_symbol("read");
     write_symbol = scheme_intern_symbol("write");
@@ -319,6 +324,27 @@ void scheme_init_file(Scheme_Env *env)
 char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
 #endif
 
+#ifdef USE_GET_CURRENT_DIRECTORY
+static char *getcwd(char *s, int l)
+{
+ int need_l;
+  
+ need_l = GetCurrentDirectory(l, s);
+
+ if (need_l > l) {
+	if (l)
+	  return NULL;
+	s = scheme_malloc_atomic(need_l);
+	need_l = GetCurrentDirectory(need_l, s);
+ }
+
+ if (!need_l)
+  return NULL;
+
+ return s;
+}
+#endif
+
 char *scheme_getcwd(char *buf, int buflen, int *actlen, int noexn)
 {
 #ifdef USE_MAC_FILE_TOOLBOX
@@ -437,17 +463,6 @@ Scheme_Object *scheme_get_file_directory(const char *filename)
   scheme_split_pathname(1, &v);
   return scheme_current_process->ku.multiple.array[0];
 }
-
-#if 0
-char *scheme_make_complete_path(const char *filename)
-{
-  Scheme_Object *v = scheme_make_sized_string((char *)filename, strlen(filename), 0);
-  
-  v = path_to_complete_path(1, &v);
-
-  return SCHEME_STR_VAL(v);
-}
-#endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
 static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int findfile,
@@ -1041,13 +1056,31 @@ int scheme_file_exists(char *filename)
 #endif
 }
 
+#ifndef USE_WINDOWS_FIND_FIRST
+# define FIND_FIRST _findfirst
+# define FIND_NEXT _findnext
+# define FIND_CLOSE _findclose
+# define FF_TYPE struct _finddata_t
+# define FF_HANDLE_TYPE long
+# define FIND_FAILED(h) (h < 0)
+# define GET_FF_ATTRIBS(fd) (fd.attrib)
+#else
+# define FIND_FIRST FindFirstFile
+# define FIND_NEXT FindNextFile
+# define FIND_CLOSE FindClose
+# define FF_TYPE WIN32_FIND_DATA
+# define FF_HANDLE_TYPE HANDLE
+# define FIND_FAILED(h) (h == INVALID_HANDLE_VALUE)
+# define _A_RDONLY FILE_ATTRIBUTE_READONLY
+# define GET_FF_ATTRIBS(fd) (fd.dwFileAttributes)
+#endif
 
 #ifdef DOS_FILE_SYSTEM
 static int UNC_dir_exists(char *dirname, int len, int *flags)
 {
   char *copy;
-  struct _finddata_t fd;
-  long fh;
+  FF_TYPE fd;
+  FF_HANDLE_TYPE fh;
   
   copy = scheme_malloc_atomic(len + 10);
   memcpy(copy, dirname, len);
@@ -1056,13 +1089,13 @@ static int UNC_dir_exists(char *dirname, int len, int *flags)
     len++;
   }
   memcpy(copy + len, "*.*", 4);
-  fh = _findfirst(copy, &fd);
-  if (fh < 0)
+  fh = FIND_FIRST(copy, &fd);
+  if (FIND_FAILED(fh))
     return 0;
   else {
     if (flags)
-      *flags = fd.attrib;
-    _findclose(fh);
+      *flags = GET_FF_ATTRIBS(fd);
+    FIND_CLOSE(fh);
     return 1;
   }
 }
@@ -1207,280 +1240,60 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 #endif
 }
 
-#ifndef NO_FILE_SYSTEM_UTILS
-
-static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
-{
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("delete-file", "string", 0, argc, argv);
-
-#ifdef USE_MAC_FILE_TOOLBOX
-  {
-    FSSpec spec;
-    char *file;
-    
-    file = SCHEME_STR_VAL(argv[0]);
-    if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
-      raise_null_error("delete-file", argv[0], "");
-    
-    if (!find_mac_file(file, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
-      return scheme_false;
-
-    if (FSpDelete(&spec))
-      return scheme_false;
-    else
-      return scheme_true;
-  }
-#endif
-
-  if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-					      SCHEME_STRTAG_VAL(argv[0]),
-					      "delete-file",
-					      NULL)))
-    return scheme_true;
-  else
-    return scheme_false;
-}
-
-static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
-{
-  char *src, *dest;
-#ifdef USE_MAC_FILE_TOOLBOX
-  FSSpec srcspec, destspec;
-  int swas_dir, sexists, dexists;
-#endif
-
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("rename-file", "string", 0, argc, argv);
-  if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("rename-file", "string", 1, argc, argv);
-
-#ifdef USE_MAC_FILE_TOOLBOX
-  src = SCHEME_STR_VAL(argv[0]);
-  if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
-	raise_null_error("rename-file", argv[0], "");
-  dest = SCHEME_STR_VAL(argv[1]);
-  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
-	raise_null_error("rename-file", argv[1], "");
-#else
-  src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-			       SCHEME_STRTAG_VAL(argv[0]),
-			       "rename-file",
-			       NULL);
-  dest = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
-				SCHEME_STRTAG_VAL(argv[1]),
-				"rename-file",
-				NULL);
-#endif
-
-#ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(src, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
-      && sexists) {
-    if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
-      /* Directory already exists or different volumes => failure */
-      if (!dexists && (srcspec.vRefNum == destspec.vRefNum)) {
-        int rename;
-        
-        if (swas_dir) {
-          /* Get parent of directory to be moved: */
-          CInfoPBRec pb;
-          
-          pb.hFileInfo.ioNamePtr = srcspec.name;
-          pb.hFileInfo.ioVRefNum = srcspec.vRefNum;
-          pb.hFileInfo.ioFDirIndex = -1;
-          pb.hFileInfo.ioDirID = srcspec.parID;
-          if (PBGetCatInfo(&pb, 0))
-            return scheme_false;
-            
-          srcspec.parID = pb.dirInfo.ioDrParID;
-        }
-        
-        rename = ((destspec.name[0] != srcspec.name[0])
-                  || memcmp(destspec.name, srcspec.name, destspec.name[0] + 1));
-        
-        if (srcspec.parID != destspec.parID) {
-          CMovePBRec mv;
-          mv.ioNamePtr = srcspec.name;
-          mv.ioVRefNum = srcspec.vRefNum;
-          mv.ioDirID = srcspec.parID;
-          mv.ioNewName = NULL;
-          mv.ioNewDirID = destspec.parID;
-          if (PBCatMove(&mv, 0))
-            return scheme_false;
-        }
-        
-        if (rename) {
-          srcspec.parID = destspec.parID;
-          if (FSpRename(&srcspec, destspec.name))
-            return scheme_false;
-      	}
-      	
-        return scheme_true;
-      }
-    }
-  }
-  
-  return scheme_false;
-#else
-  if (scheme_file_exists(dest) || scheme_directory_exists(dest))
-    return scheme_false;
-  
-  if (!rename(src, dest))
-    return scheme_true;
-  else
-    return scheme_false;
-#endif
-}
-
-#ifdef MAC_FILE_SYSTEM
-static int xCopyFile(short dest, short src) {
-  long i, j;
-  char buffer[256]; 
-  
-  do {
-    i = 256;
-    FSRead(src, &i, buffer);
-    j = i;
-    FSWrite(dest, &i, buffer);
-    if (j != i) return 0;
-  } while (i);
-  
-  return 1;
-}
-#endif
-
-static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
-{
-  char *src, *dest;
-
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("copy-file", "string", 0, argc, argv);
-  if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("copy-file", "string", 1, argc, argv);
-
-#ifdef MAC_FILE_SYSTEM
-  src = SCHEME_STR_VAL(argv[0]);
-  if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
-	raise_null_error("copy-file", argv[0], "");
-  dest = SCHEME_STR_VAL(argv[1]);
-  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
-	raise_null_error("copy-file", argv[1], "");
-#else
-  src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-			       SCHEME_STRTAG_VAL(argv[0]),
-			       "copy-file",
-			       NULL);
-  dest = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
-				SCHEME_STRTAG_VAL(argv[1]),
-				"copy-file",
-				NULL);
-#endif
-
-#ifdef UNIX_FILE_SYSTEM
-  {
-# define COPY_BUFFER_SIZE 2048
-    FILE *s, *d;
-    char b[COPY_BUFFER_SIZE];
-    long len;
-    int ok;
-    struct stat buf;
-
-    if (stat(src, &buf) || S_ISDIR(buf.st_mode))
-      return scheme_false;
-
-    if (!stat(dest, &buf))
-      return scheme_false;
-
-    s = fopen(src, "rb");
-    if (!s)
-      return scheme_false;
-
-    d = fopen(dest, "wb");
-    if (!d) {
-      fclose(s);
-      return scheme_false;
-    }
-    
-    ok = 1;
-    while ((len = fread(b, 1, COPY_BUFFER_SIZE, s))) {
-      if (fwrite(b, 1, len, d) != len) {
-	ok = 0;
-	break;
-      }
-    }
-    if (!feof(s))
-      ok = 0;
-
-    fclose(s);
-    fclose(d);
-
-    if (ok) {
-      if (chmod(dest, buf.st_mode))
-	return scheme_false;
-      return scheme_true;
-    } else
-      return scheme_false;
-  }
-#endif
 #ifdef DOS_FILE_SYSTEM
-  return CopyFile(src, dest, TRUE) ? scheme_true : scheme_false;
+static char get_cur_drive_id(void)
+{
+#ifdef USE_GETDRIVE
+  char cwd[1];
+  int drive = _getdrive();
+  cwd[0] = 'a' + (drive -1);
+#else
+  char buffer[256], *cwd;
+  
+  if (!(cwd = scheme_getcwd(buffer, 256, NULL, 0)))
+    return 'c';
 #endif
-#ifdef MAC_FILE_SYSTEM
-  { 
-  	FInfo finfo;
-    FSSpec srcspec, destspec;
-    int exists;
-    static OSErr en;
-   
-    if (find_mac_file(src, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
-      if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &exists, NULL, NULL, NULL, NULL, NULL)
-      	  && !exists) {
-        CopyParam rec;
-        
-        /* Try CopyFile first: */
-        rec.ioVRefNum = srcspec.vRefNum;
-        rec.ioDstVRefNum = destspec.vRefNum;
-        rec.ioDirID = srcspec.parID;
-        rec.ioNewDirID = destspec.parID;
-        rec.ioNamePtr = srcspec.name;
-        rec.ioNewName = destspec.name;
-        rec.ioCopyName = NULL;
-        if (!(en = PBHCopyFileSync((HParmBlkPtr)&rec)))
-          return scheme_true;
-        else {
-          /* Try the old-fashioned way: */
-          short sdf, srf, ddf, drf;
-          if (!FSpOpenDF(&srcspec, fsRdPerm, &sdf)) {
-            if (!FSpOpenRF(&srcspec, fsRdPerm, &srf)) {
-              if (!FSpCreate(&destspec, finfo.fdCreator, finfo.fdType, smSystemScript)) {
-                if (!FSpOpenDF(&destspec, fsWrPerm, &ddf)) {
-                  if (!FSpOpenRF(&destspec, fsWrPerm, &drf)) {
-                    if (xCopyFile(ddf, sdf)) {
-                      if (xCopyFile(drf, srf)) {
-	                    FSClose(drf);
-	                    FSClose(ddf);
-	                    FSClose(srf);
-	                    FSClose(sdf);
-	                    return scheme_true;
-	                  }
-	                }
-	                FSClose(drf);
-                  }
-                  FSClose(ddf);
-                }
-                FSpDelete(&destspec);
-              }
-              FSClose(srf);
-            }
-            FSClose(sdf);
-          }
-        }
-      }
-    }
-  }
+  return cwd[0];
+}
 #endif
 
-  return scheme_false;
+char *scheme_getdrive()
+{
+#ifdef DOS_FILE_SYSTEM
+  char *drive = MALLOC_N(char, 4);
+
+  drive[0] = get_cur_drive_id();
+  drive[1] = ':';
+  drive[2] = '\\';
+  drive[3] = 0;
+
+  return drive;
+#else
+  return "";
+#endif
+}
+
+char *scheme_normal_path_case(char *si, int len)
+{
+#ifndef UNIX_FILE_SYSTEM
+  int i;
+  char *s;
+
+  s = MALLOC_N_ATOMIC(char, len + 1);
+  memcpy(s, si, len + 1);
+
+  for (i = 0; i < len; i++) {
+    s[i] = tolower(s[i]);
+#ifdef DOS_FILE_SYSTEM
+    if (s[i] == '/')
+      s[i] = '\\';
+#endif
+  }
+
+  return s;
+#else
+  return si;
+#endif
 }
 
 Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
@@ -1934,25 +1747,6 @@ int scheme_is_relative_path(const char *s, long len)
 #endif
 }
 
-static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv)
-{
-  char *s;
-  int len;
-
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("relative-path?", "string", 0, argc, argv);
-
-  s = SCHEME_STR_VAL(argv[0]);
-  len = SCHEME_STRTAG_VAL(argv[0]);
-
-  if (has_null(s, len))
-    return scheme_false;
-
-  return (scheme_is_relative_path(s, len)
-	  ? scheme_true
-	  : scheme_false);
-}
-
 int scheme_is_complete_path(const char *s, long len)
 {
   if (!len)
@@ -2068,6 +1862,300 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
     return p;
 }
 
+#ifndef NO_FILE_SYSTEM_UTILS
+
+static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("delete-file", "string", 0, argc, argv);
+
+#ifdef USE_MAC_FILE_TOOLBOX
+  {
+    FSSpec spec;
+    char *file;
+    
+    file = SCHEME_STR_VAL(argv[0]);
+    if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
+      raise_null_error("delete-file", argv[0], "");
+    
+    if (!find_mac_file(file, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+      return scheme_false;
+
+    if (FSpDelete(&spec))
+      return scheme_false;
+    else
+      return scheme_true;
+  }
+#endif
+
+  if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
+					      SCHEME_STRTAG_VAL(argv[0]),
+					      "delete-file",
+					      NULL)))
+    return scheme_true;
+  else
+    return scheme_false;
+}
+
+static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
+{
+  char *src, *dest;
+#ifdef USE_MAC_FILE_TOOLBOX
+  FSSpec srcspec, destspec;
+  int swas_dir, sexists, dexists;
+#endif
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("rename-file", "string", 0, argc, argv);
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("rename-file", "string", 1, argc, argv);
+
+#ifdef USE_MAC_FILE_TOOLBOX
+  src = SCHEME_STR_VAL(argv[0]);
+  if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
+	raise_null_error("rename-file", argv[0], "");
+  dest = SCHEME_STR_VAL(argv[1]);
+  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
+	raise_null_error("rename-file", argv[1], "");
+#else
+  src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
+			       SCHEME_STRTAG_VAL(argv[0]),
+			       "rename-file",
+			       NULL);
+  dest = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
+				SCHEME_STRTAG_VAL(argv[1]),
+				"rename-file",
+				NULL);
+#endif
+
+#ifdef USE_MAC_FILE_TOOLBOX
+  if (find_mac_file(src, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
+      && sexists) {
+    if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
+      /* Directory already exists or different volumes => failure */
+      if (!dexists && (srcspec.vRefNum == destspec.vRefNum)) {
+        int rename;
+        
+        if (swas_dir) {
+          /* Get parent of directory to be moved: */
+          CInfoPBRec pb;
+          
+          pb.hFileInfo.ioNamePtr = srcspec.name;
+          pb.hFileInfo.ioVRefNum = srcspec.vRefNum;
+          pb.hFileInfo.ioFDirIndex = -1;
+          pb.hFileInfo.ioDirID = srcspec.parID;
+          if (PBGetCatInfo(&pb, 0))
+            return scheme_false;
+            
+          srcspec.parID = pb.dirInfo.ioDrParID;
+        }
+        
+        rename = ((destspec.name[0] != srcspec.name[0])
+                  || memcmp(destspec.name, srcspec.name, destspec.name[0] + 1));
+        
+        if (srcspec.parID != destspec.parID) {
+          CMovePBRec mv;
+          mv.ioNamePtr = srcspec.name;
+          mv.ioVRefNum = srcspec.vRefNum;
+          mv.ioDirID = srcspec.parID;
+          mv.ioNewName = NULL;
+          mv.ioNewDirID = destspec.parID;
+          if (PBCatMove(&mv, 0))
+            return scheme_false;
+        }
+        
+        if (rename) {
+          srcspec.parID = destspec.parID;
+          if (FSpRename(&srcspec, destspec.name))
+            return scheme_false;
+      	}
+      	
+        return scheme_true;
+      }
+    }
+  }
+  
+  return scheme_false;
+#else
+  if (scheme_file_exists(dest) || scheme_directory_exists(dest))
+    return scheme_false;
+  
+  if (!rename(src, dest))
+    return scheme_true;
+  else
+    return scheme_false;
+#endif
+}
+
+#ifdef MAC_FILE_SYSTEM
+static int xCopyFile(short dest, short src) {
+  long i, j;
+  char buffer[256]; 
+  
+  do {
+    i = 256;
+    FSRead(src, &i, buffer);
+    j = i;
+    FSWrite(dest, &i, buffer);
+    if (j != i) return 0;
+  } while (i);
+  
+  return 1;
+}
+#endif
+
+static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
+{
+  char *src, *dest;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("copy-file", "string", 0, argc, argv);
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("copy-file", "string", 1, argc, argv);
+
+#ifdef MAC_FILE_SYSTEM
+  src = SCHEME_STR_VAL(argv[0]);
+  if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
+	raise_null_error("copy-file", argv[0], "");
+  dest = SCHEME_STR_VAL(argv[1]);
+  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
+	raise_null_error("copy-file", argv[1], "");
+#else
+  src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
+			       SCHEME_STRTAG_VAL(argv[0]),
+			       "copy-file",
+			       NULL);
+  dest = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
+				SCHEME_STRTAG_VAL(argv[1]),
+				"copy-file",
+				NULL);
+#endif
+
+#ifdef UNIX_FILE_SYSTEM
+  {
+# define COPY_BUFFER_SIZE 2048
+    FILE *s, *d;
+    char b[COPY_BUFFER_SIZE];
+    long len;
+    int ok;
+    struct stat buf;
+
+    if (stat(src, &buf) || S_ISDIR(buf.st_mode))
+      return scheme_false;
+
+    if (!stat(dest, &buf))
+      return scheme_false;
+
+    s = fopen(src, "rb");
+    if (!s)
+      return scheme_false;
+
+    d = fopen(dest, "wb");
+    if (!d) {
+      fclose(s);
+      return scheme_false;
+    }
+    
+    ok = 1;
+    while ((len = fread(b, 1, COPY_BUFFER_SIZE, s))) {
+      if (fwrite(b, 1, len, d) != len) {
+	ok = 0;
+	break;
+      }
+    }
+    if (!feof(s))
+      ok = 0;
+
+    fclose(s);
+    fclose(d);
+
+    if (ok) {
+      if (chmod(dest, buf.st_mode))
+	return scheme_false;
+      return scheme_true;
+    } else
+      return scheme_false;
+  }
+#endif
+#ifdef DOS_FILE_SYSTEM
+  return CopyFile(src, dest, TRUE) ? scheme_true : scheme_false;
+#endif
+#ifdef MAC_FILE_SYSTEM
+  { 
+  	FInfo finfo;
+    FSSpec srcspec, destspec;
+    int exists;
+    static OSErr en;
+   
+    if (find_mac_file(src, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
+      if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &exists, NULL, NULL, NULL, NULL, NULL)
+      	  && !exists) {
+        CopyParam rec;
+        
+        /* Try CopyFile first: */
+        rec.ioVRefNum = srcspec.vRefNum;
+        rec.ioDstVRefNum = destspec.vRefNum;
+        rec.ioDirID = srcspec.parID;
+        rec.ioNewDirID = destspec.parID;
+        rec.ioNamePtr = srcspec.name;
+        rec.ioNewName = destspec.name;
+        rec.ioCopyName = NULL;
+        if (!(en = PBHCopyFileSync((HParmBlkPtr)&rec)))
+          return scheme_true;
+        else {
+          /* Try the old-fashioned way: */
+          short sdf, srf, ddf, drf;
+          if (!FSpOpenDF(&srcspec, fsRdPerm, &sdf)) {
+            if (!FSpOpenRF(&srcspec, fsRdPerm, &srf)) {
+              if (!FSpCreate(&destspec, finfo.fdCreator, finfo.fdType, smSystemScript)) {
+                if (!FSpOpenDF(&destspec, fsWrPerm, &ddf)) {
+                  if (!FSpOpenRF(&destspec, fsWrPerm, &drf)) {
+                    if (xCopyFile(ddf, sdf)) {
+                      if (xCopyFile(drf, srf)) {
+	                    FSClose(drf);
+	                    FSClose(ddf);
+	                    FSClose(srf);
+	                    FSClose(sdf);
+	                    return scheme_true;
+	                  }
+	                }
+	                FSClose(drf);
+                  }
+                  FSClose(ddf);
+                }
+                FSpDelete(&destspec);
+              }
+              FSClose(srf);
+            }
+            FSClose(sdf);
+          }
+        }
+      }
+    }
+  }
+#endif
+
+  return scheme_false;
+}
+
+static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv)
+{
+  char *s;
+  int len;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("relative-path?", "string", 0, argc, argv);
+
+  s = SCHEME_STR_VAL(argv[0]);
+  len = SCHEME_STRTAG_VAL(argv[0]);
+
+  if (has_null(s, len))
+    return scheme_false;
+
+  return (scheme_is_relative_path(s, len)
+	  ? scheme_true
+	  : scheme_false);
+}
 
 static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv)
 {
@@ -2149,39 +2237,6 @@ static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[])
     return scheme_make_sized_string(filename, strlen(filename), 1);
 }
 
-#ifdef DOS_FILE_SYSTEM
-static char get_cur_drive_id(void)
-{
-#ifdef USE_GETDRIVE
-  char cwd[1];
-  int drive = _getdrive();
-  cwd[0] = 'a' + (drive -1);
-#else
-  char buffer[256], *cwd;
-  
-  if (!(cwd = scheme_getcwd(buffer, 256, NULL, 0)))
-    return 'c';
-#endif
-  return cwd[0];
-}
-#endif
-
-char *scheme_getdrive()
-{
-#ifdef DOS_FILE_SYSTEM
-  char *drive = MALLOC_N(char, 4);
-
-  drive[0] = get_cur_drive_id();
-  drive[1] = ':';
-  drive[2] = '\\';
-  drive[3] = 0;
-
-  return drive;
-#else
-  return "";
-#endif
-}
-
 static Scheme_Object *current_drive(int argc, Scheme_Object *argv[])
 {
 #ifdef DOS_FILE_SYSTEM
@@ -2232,29 +2287,6 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
     return argv[0];
   else
     return scheme_make_sized_string(filename, strlen(filename), 1);
-}
-
-char *scheme_normal_path_case(char *si, int len)
-{
-#ifndef UNIX_FILE_SYSTEM
-  int i;
-  char *s;
-
-  s = MALLOC_N_ATOMIC(char, len + 1);
-  memcpy(s, si, len + 1);
-
-  for (i = 0; i < len; i++) {
-    s[i] = tolower(s[i]);
-#ifdef DOS_FILE_SYSTEM
-    if (s[i] == '/')
-      s[i] = '\\';
-#endif
-  }
-
-  return s;
-#else
-  return si;
-#endif
 }
 
 static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[])
@@ -2376,7 +2408,8 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     memcpy(pattern + len, "*.*", 4);
   }
 
-  if ((hfile = _findfirst(pattern, &info)) < 0)
+  hfile = FIND_FIRST(pattern, &info);
+  if (FIND_FAILED(hfile))
     return scheme_null;
 
   do {
@@ -2396,8 +2429,8 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     counter++;
     if (!(counter & 0x15))
       scheme_process_block(0);
-  } while (!_findnext(hfile, &info));
-  _findclose(hfile);
+  } while (!FIND_NEXT(hfile, &info));
+  FIND_CLOSE(hfile);
 
   return first;
 #else

@@ -59,12 +59,12 @@ extern int *scheme_fuel_counter_ptr;
 #endif
 #endif
 
-#ifndef NO_SCHEME_THREADS
 Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[]);
+#ifndef NO_SCHEME_THREADS
 Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config);
-void scheme_break_thread(Scheme_Process *p);
 void scheme_kill_thread(Scheme_Process *p);
 #endif
+void scheme_break_thread(Scheme_Process *p);
 
 #ifndef MZ_REAL_THREADS
 void scheme_process_block(float sleep_time);
@@ -259,9 +259,9 @@ Scheme_Object *scheme_make_promise(Scheme_Object *expr, Scheme_Env *env);
 Scheme_Object *scheme_make_promise_from_thunk(Scheme_Object *expr);
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *scheme_make_sema(long v);
-#endif
 void scheme_post_sema(Scheme_Object *o);
 int scheme_wait_sema(Scheme_Object *o, int just_try);
+#endif
 extern Scheme_Object **scheme_char_constants;
 
 int scheme_get_int_val(Scheme_Object *o, long *v);
@@ -548,7 +548,9 @@ char *scheme_version(void);
 int scheme_check_proc_arity(const char *where, int a,
 			    int which, int argc, Scheme_Object **argv);
 
+#ifndef NO_SCHEME_EXNS
 void scheme_secure_exceptions(Scheme_Env *env);
+#endif
 
 char *scheme_make_provided_string(Scheme_Object *o, int count, int *len);
 char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv);

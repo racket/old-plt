@@ -22,8 +22,8 @@
   scheme_extension_table->scheme_fuel_counter_ptr = scheme_fuel_counter_ptr;
 #endif
 #endif
-#ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_make_namespace = scheme_make_namespace;
+#ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_thread = scheme_thread;
   scheme_extension_table->scheme_break_thread = scheme_break_thread;
   scheme_extension_table->scheme_kill_thread = scheme_kill_thread;
@@ -149,9 +149,9 @@
   scheme_extension_table->scheme_make_promise_from_thunk = scheme_make_promise_from_thunk;
 #ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_make_sema = scheme_make_sema;
-#endif
   scheme_extension_table->scheme_post_sema = scheme_post_sema;
   scheme_extension_table->scheme_wait_sema = scheme_wait_sema;
+#endif
   scheme_extension_table->scheme_char_constants = scheme_char_constants;
   scheme_extension_table->scheme_get_int_val = scheme_get_int_val;
   scheme_extension_table->scheme_get_unsigned_int_val = scheme_get_unsigned_int_val;
@@ -325,7 +325,9 @@
   scheme_extension_table->scheme_banner = scheme_banner;
   scheme_extension_table->scheme_version = scheme_version;
   scheme_extension_table->scheme_check_proc_arity = scheme_check_proc_arity;
+#ifndef NO_SCHEME_EXNS
   scheme_extension_table->scheme_secure_exceptions = scheme_secure_exceptions;
+#endif
   scheme_extension_table->scheme_make_provided_string = scheme_make_provided_string;
   scheme_extension_table->scheme_make_args_string = scheme_make_args_string;
   scheme_extension_table->scheme_no_dumps = scheme_no_dumps;

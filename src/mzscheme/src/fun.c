@@ -1201,12 +1201,14 @@ static Scheme_Object *inferred_name(int argc, Scheme_Object **argv)
     type = SCHEME_TYPE(argv[0]);
     
     switch(type) {
+#ifndef NO_OBJECT_SYSTEM
     case scheme_class_type:
       s = scheme_get_class_name(argv[0], &len);
       break;
     case scheme_interface_type:
       s = scheme_get_interface_name(argv[0], &len);
       break;
+#endif
     case scheme_unit_type:
       s = scheme_get_unit_name(argv[0], &len);
       break;

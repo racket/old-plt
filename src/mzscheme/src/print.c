@@ -1034,6 +1034,7 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       }
       closed = 1;
     }
+#endif
   else if (SCHEME_UNITP(obj))
     {
       if (compact)
@@ -1046,7 +1047,6 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       }
       closed = 1;
     }
-#endif
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), SCHEME_VARIABLE_TYPE)
 	   && (((Scheme_Bucket_With_Const_Flag *)obj)->flags & GLOB_HAS_REF_ID))
     {

@@ -514,8 +514,10 @@ Scheme_Env *scheme_top_level_env(void)
     scheme_init_rep(env);
   }
 
+#ifndef NO_SCHEME_EXNS
   if (scheme_secure_primitive_exn)
     scheme_secure_leftover_exceptions(env);
+#endif
 
   DONE_TIME(macro);
 

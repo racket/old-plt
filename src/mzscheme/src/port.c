@@ -57,9 +57,13 @@ static int mzerrno = 0;
 #include "schfd.h"
 
 #if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
-# define WIN32_FD_HANDLES
-# include <process.h>
-# include <signal.h>
+# ifdef NO_STDIO_THREADS 
+#  undef DETECT_WIN32_CONSOLE_STDIN
+# else
+#  define WIN32_FD_HANDLES
+#  include <process.h>
+#  include <signal.h>
+# endif
 #endif
 
 typedef struct Scheme_Indexed_String {
@@ -97,6 +101,10 @@ typedef struct {
 # else
 #  define TCP_NONBLOCKING FNDELAY
 # endif
+#endif
+
+#if defined(WIN32_FD_HANDLES) || defined(WINDOWS_PROCESSES)
+# include <windows.h>
 #endif
 
 #ifdef USE_WINSOCK_TCP
@@ -1828,6 +1836,9 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
   tip->ready_sema = CreateSemaphore(NULL, 0, 1, NULL);
   tip->try_sema = CreateSemaphore(NULL, 0, 1, NULL);
 
+#ifdef NO_NEED_FOR_BEGINTHREAD
+# define _beginthreadex CreateThread
+#endif
   tip->th = _beginthreadex(NULL, 5000, 
 			   (LPTHREAD_START_ROUTINE)read_for_tested_file,
 			   tip, 0, &id);
@@ -3732,11 +3743,24 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
 #ifdef PROCESS_FUNCTION
 
 #ifdef WINDOWS_PROCESSES
-#include <Process.h>
-#include <fcntl.h>
-#define _EXTRA_PIPE_ARGS , 256, _O_BINARY
+# ifdef USE_CREATE_PIPE
+#  define _EXTRA_PIPE_ARGS
+static int pipe(int *ph) {
+	HANDLE r, w;
+	if (CreatePipe(&r, &w, NULL, 0)) {
+		ph[0] = (int)r;
+		ph[1] = (int)w;
+		return 0;
+	} else
+		return 1;
+}
+# else
+#  include <Process.h>
+#  include <fcntl.h>
+#  define _EXTRA_PIPE_ARGS , 256, _O_BINARY
+# endif
 #else
-#define _EXTRA_PIPE_ARGS
+# define _EXTRA_PIPE_ARGS
 #endif
 
 #endif
@@ -3808,7 +3832,9 @@ static int subp_done(Scheme_Object *sci)
 static void subp_needs_wakeup(Scheme_Object *sci, void *fds)
 {
 #ifdef WINDOWS_PROCESSES
+# ifndef NO_STDIO_THREADS
   add_fd_handle((HANDLE)sci, fds, 0);
+# endif
 #endif
 }
 
@@ -3922,7 +3948,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   }
 
 #ifdef WINDOWS_PROCESSES
-  MSC_IZE(flushall)();
+  fflush(NULL);
 
   if (shell)
     spawn_status = system(command);
@@ -3949,7 +3975,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       MSC_IZE(dup2)(err_subprocess[1], 2);
     }
 
-    spawn_status = MSC_IZE(spawnv)(type, command, argv);
+    spawn_status = MSC_IZE(spawnv)(type, command, (const char * const *)argv);
 
     if (!synchonous) {
       /* Restore stdin and stdout */
@@ -5378,7 +5404,9 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #else
 	int size = TCP_SOCKSENDBUF_SIZE;
 	fcntl(s, F_SETFL, TCP_NONBLOCKING);
+# ifndef CANT_SET_SOCKET_BUFSIZE
 	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
+# endif
 #endif
 	status = connect(s, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
 #ifdef USE_UNIX_SOCKETS_TCP
@@ -5726,7 +5754,9 @@ tcp_accept(int argc, Scheme_Object *argv[])
     
 #ifdef USE_UNIX_SOCKETS_TCP
     int size = TCP_SOCKSENDBUF_SIZE;
+# ifndef CANT_SET_SOCKET_BUFSIZE
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
+# endif
 #endif
 
     v[0] = make_named_tcp_input_port(tcp, "TCP");

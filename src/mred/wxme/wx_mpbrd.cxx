@@ -1674,8 +1674,8 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     pen = dc->GetPen();
     brush = dc->GetBrush();
     font = dc->GetFont();
-    fg = dc->GetTextForeground();
-    bg = dc->GetTextBackground();
+    fg.CopyFrom(dc->GetTextForeground());
+    bg.CopyFrom(dc->GetTextBackground());
 
 #ifndef NO_GET_CLIPPING_REGION
     wxRegion *rgn;

@@ -31,7 +31,7 @@ void *operator new(size_t size)
 #endif
 }
 
-void operator delete(void */*obj*/)
+void operator delete(void * /*obj*/)
 {
 }
 
@@ -94,7 +94,7 @@ void* operator new[](size_t size)
 #endif
 }
   
-void operator delete[](void */*obj*/)
+void operator delete[](void * /*obj*/)
 {
 }
 

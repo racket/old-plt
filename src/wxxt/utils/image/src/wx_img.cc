@@ -51,15 +51,15 @@ void wxImage::Resize(int w, int h)
 
   clptr = NULL;  cxarrp = NULL;  cy = 0;  /* shut up compiler */
   /* force w,h into valid ranges */
-  RANGE(w,1,dispWIDE);  RANGE(h,1,dispHIGH);
+  RANGE(w,1,(int)dispWIDE);  RANGE(h,1,(int)dispHIGH);
 
   /* if same size, and Ximage created, do nothing */
-  if (w==eWIDE && h==eHIGH && theImage!=NULL) return;
+  if (w == (int)eWIDE && h == (int)eHIGH && theImage!=NULL) return;
 
   if (imgDEBUG) fprintf(stderr,"wxImage: Resize(%d,%d)  eSIZE=%d,%d  cSIZE=%d,%d\n",
 		     w,h,eWIDE,eHIGH,cWIDE,cHIGH);
 
-  if (w==cWIDE && h==cHIGH) {  /* 1:1 expansion.  point epic at cpic */
+  if (w == (int)cWIDE && h == (int)cHIGH) {  /* 1:1 expansion.  point epic at cpic */
     if (epic != cpic && epic!=NULL) free(epic);
     epic = cpic;  eWIDE = cWIDE;  eHIGH = cHIGH;
   }
@@ -87,14 +87,14 @@ void wxImage::Resize(int w, int h)
 
     cxarr = (int *) malloc(eWIDE * sizeof(int));
     if (!cxarr) FatalError("unable to allocate cxarr");
-    for (ex=0; ex<eWIDE; ex++) cxarr[ex] = (cWIDE * ex) / eWIDE;
+    for (ex=0; ex < (int)eWIDE; ex++) cxarr[ex] = (cWIDE * ex) / eWIDE;
 
     elptr = epptr = epic;
-    for (ey=0;  ey<eHIGH;  ey++, elptr+=eWIDE) {
+    for (ey=0;  ey < (int)eHIGH;  ey++, elptr+=eWIDE) {
       cy = (cHIGH * ey) / eHIGH;
       epptr = elptr;
       clptr = cpic + (cy * cWIDE);
-      for (ex=0, cxarrp = cxarr;  ex<eWIDE;  ex++, epptr++) 
+      for (ex=0, cxarrp = cxarr;  ex < (int)eWIDE;  ex++, epptr++) 
 	*epptr = clptr[*cxarrp++];
     }
     free(cxarr);
@@ -573,13 +573,13 @@ void wxImage::RotatePic(byte *pic, unsigned int *wp, unsigned int *hp, int dir)
 
   /* do the rotation */
   if (dir==0) {
-    for (i=0; i<w; i++)        /* CW */
+    for (i=0; i < (int)w; i++)        /* CW */
       for (j=h-1, pix=pic+(h-1)*w + i; j>=0; j--, pix1++, pix-=w) 
 	*pix1 = *pix;
   }
   else {
     for (i=w-1; i>=0; i--)     /* CCW */
-      for (j=0, pix=pic+i; j<h; j++, pix1++, pix+=w) 
+      for (j=0, pix=pic+i; j < (int)h; j++, pix1++, pix+=w) 
 	*pix1 = *pix;
   }
 
@@ -617,7 +617,7 @@ void wxImage::FloydDitherize8(byte *image)
 
 
 /************************/
-void wxImage::FloydDitherize1(XImage *ximage)
+void wxImage::FloydDitherize1(XImage * /* ximage */)
 {
   /* same as FloydDitherize8, but output is a 1-bit per pixel XYBitmap,
      packed 8 pixels per byte */
@@ -648,12 +648,12 @@ void wxImage::FloydDitherize1(XImage *ximage)
   dp = dithpic;
   pp = image;
 
-  for (i=0; i<eHIGH; i++) {
+  for (i=0; i<(int)eHIGH; i++) {
     pp = image + i*bperln;
 
     if (order==LSBFirst) {
       bit = pix8 = 0;
-      for (j=0; j<eWIDE; j++,dp++) {
+      for (j=0; j<(int)eWIDE; j++,dp++) {
 	if (*dp<128) { err = *dp;     pix8 |= b8; }
 	        else { err = *dp-255; pix8 |= w8; }
 
@@ -662,12 +662,12 @@ void wxImage::FloydDitherize1(XImage *ximage)
 	}
 	else { pix8 >>= 1;  bit++; }
 
-	if (j<eWIDE-1) dp[1] += ((err*7)/16);
+	if (j < (int)eWIDE-1) dp[1] += ((err*7)/16);
 
-	if (i<eHIGH-1) {
+	if (i < (int)eHIGH-1) {
 	  dp[eWIDE] += ((err*5)/16);
-	  if (j>0)       dp[eWIDE-1] += ((err*3)/16);
-	  if (j<eWIDE-1) dp[eWIDE+1] += (err/16);
+	  if (j > 0)       dp[eWIDE-1] += ((err*3)/16);
+	  if (j < (int)eWIDE-1) dp[eWIDE+1] += (err/16);
 	}
       }
       if (bit) *pp++ = pix8>>(7-bit);  /* write partial byte at end of line */
@@ -675,7 +675,7 @@ void wxImage::FloydDitherize1(XImage *ximage)
 
     else {   /* order==MSBFirst */
       bit = pix8 = 0;
-      for (j=0; j<eWIDE; j++,dp++) {
+      for (j=0; j < (int)eWIDE; j++,dp++) {
 	if (*dp<128) { err = *dp;     pix8 |= b; }
 	        else { err = *dp-255; pix8 |= w; }
 
@@ -684,12 +684,12 @@ void wxImage::FloydDitherize1(XImage *ximage)
 	}
 	else { pix8 <<= 1; bit++; }
 
-	if (j<eWIDE-1) dp[1] += ((err*7)/16);
+	if (j < (int)eWIDE-1) dp[1] += ((err*7)/16);
 
-	if (i<eHIGH-1) {
+	if (i < (int)eHIGH-1) {
 	  dp[eWIDE] += ((err*5)/16);
 	  if (j>0)       dp[eWIDE-1] += ((err*3)/16);
-	  if (j<eWIDE-1) dp[eWIDE+1] += (err/16);
+	  if (j < (int)eWIDE-1) dp[eWIDE+1] += (err/16);
 	}
       }
       if (bit) *pp++ = pix8<<(7-bit);  /* write partial byte at end of line */
@@ -871,8 +871,8 @@ void wxImage::CreateXImage()
 	FloydDitherize8(dith);
 
 	if (theImage->bits_per_pixel == 4) {
-	  for (i=0, pp=dith, lip=imagedata; i<eHIGH; i++, lip+=bperline)
-	    for (j=0, ip=lip, half=0; j<eWIDE; j++,pp++,half++) {
+	  for (i=0, pp=dith, lip=imagedata; i < (int)eHIGH; i++, lip+=bperline)
+	    for (j=0, ip=lip, half=0; j < (int)eWIDE; j++,pp++,half++) {
 	      if (half&1) { *ip = *ip + ((*pp&0x0f)<<4);  ip++; }
 	      else *ip = *pp&0x0f;
 	    }
@@ -891,8 +891,8 @@ void wxImage::CreateXImage()
 
       else {     /* don't ditherize */
 	if (theImage->bits_per_pixel == 4) {
-	  for (i=0, pp=epic, lip=imagedata; i<eHIGH; i++, lip+=bperline) {
-	    for (j=0, ip=lip, half=0; j<eWIDE; j++,pp++,half++) {
+	  for (i=0, pp=epic, lip=imagedata; i < (int)eHIGH; i++, lip+=bperline) {
+	    for (j=0, ip=lip, half=0; j < (int)eWIDE; j++,pp++,half++) {
 	      if (half&1) { *ip = *ip + ((cols[*pp]&0x0f)<<4);  ip++; }
 	      else *ip = cols[*pp]&0x0f;
 	    }
@@ -958,8 +958,8 @@ void wxImage::CreateXImage()
   int i, j;
   unsigned long white = WhitePixelOfScreen(DefaultScreenOfDisplay(theDisp));
   
-  for (j = 0; j < eHIGH; j++) {
-    for (i = 0; i < eWIDE; i++, pp++) {
+  for (j = 0; j < (int)eHIGH; j++) {
+    for (i = 0; i < (int)eWIDE; i++, pp++) {
       unsigned long pixel;
       if (numcols)
 	pixel = cols[*pp];
@@ -1000,80 +1000,6 @@ void wxImage::FreeMostResources()
   if (!theDisp) return;   /* called before connection opened */
 
   XFlush(theDisp);
-}
-
-
-/***************************************************/
-
-static int timerdone;
-
-#if 0
-/*******/
-static void onalarm()
-/*******/
-{
-  timerdone=1;
-}
-#endif
-
-/*******/
-void wxImage::Timer(int n)   /* waits for 'n' milliseconds */
-{
-#if 0
-// +++start steve161(09.04.1995): the original code doesn't work under VMS
-#ifdef VMS
-  // don't know anything better :-)
-  if(n>1000) sleep(n/1000); 
-  else{
-    double a=1.23;
-    for(int i=0; i<n*10; i++){
-      a += 0.23;
-    }
-  }
-#else
-  long usec;
-  struct itimerval it;
-
-  if (!n) return;
-
-#ifdef sco
-  if (!n) return;
-  nap(n);
-  return;
-#endif /* sco */
-
-#ifdef USLEEP
-  usleep(n);
-  return;
-#endif
-
-#ifdef NOTIMER
-  return;
-#endif
-
-  usec = (long) n * 1000;
-  
-  memset(&it, 0, sizeof(it));
-  if (usec>=1000000L) {  /* more than 1 second */
-    it.it_value.tv_sec = usec / 1000000L;
-    usec %= 1000000L;
-  }
-
-  it.it_value.tv_usec = usec;
-  timerdone=0;
-  signal(SIGALRM,(void(*)(int))onalarm);
-  setitimer(ITIMER_REAL, &it, (struct itimerval *)0);
-  while (1) {
-    HOLD_SIG;                    /* note:  have to block, so that ALRM */
-    if (timerdone) break;        /* doesn't occur between 'if (timerdone)' */
-    else PAUSE_SIG;              /* and calling PAUSE_SIG */
-  }
-
-  RELEASE_SIG;                   /* turn ALRM blocking off */
-  signal(SIGALRM,(void (*)(int))SIG_DFL);
-#endif
-  // ifdef VMS
-#endif
 }
 
 void xvDestroyImage(XImage *image)

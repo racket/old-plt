@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: TempFile.cc,v 1.1 1996/01/10 14:56:57 markus Exp $
+ * $Id: TempFile.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
  *
  * Purpose: filename for temporary files
  *
@@ -33,24 +33,31 @@ char *wxGetTempFileName(char *prefix, char *dest)
     static short last_temp = 0;	// cache last to speed things a bit
     // At most 1000 temp files to a process! We use a ring count.
     char buf[64];
+    short suffix;
 
-    for (short suffix = last_temp + 1; suffix != last_temp; ++suffix %= 1000) {
-	sprintf (buf, "/tmp/%s%d.%03x", prefix, (int) getpid (), (int) suffix);
-	if (!wxFileExists (buf)) {
-	    // Touch the file to create it (reserve name)
-	    FILE *fd = fopen (buf, "w");
-	    if (fd)
-		fclose (fd);
-	    last_temp = suffix;
-	    if (dest)
-		strcpy(dest, buf);
-	    else
-		dest = copystring(buf);
-	    return dest;
+    for (suffix = last_temp + 1; suffix != last_temp; ++suffix %= 1000) {
+      int pid;
+      pid = (int)getpid();
+      sprintf (buf, "/tmp/%s%d.%03x", prefix, pid, (int)suffix);
+      if (!wxFileExists(buf)) {
+	// Touch the file to create it (reserve name)
+	FILE *fd;
+	fd = fopen (buf, "w");
+	if (fd)
+	  fclose (fd);
+	last_temp = suffix;
+	if (dest)
+	  strcpy(dest, buf);
+	else {
+	  dest = copystring(buf);
+	}
+	return dest;
 	}
     }
+    
     wxError("wxWindows: error finding temporary file name.");
     if (dest) dest[0] = 0;
+
     return NULL;
 }
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: TypeTree.cc,v 1.3 1999/11/04 17:25:32 mflatt Exp $
+ * $Id: TypeTree.cc,v 1.4 1999/11/19 22:02:37 mflatt Exp $
  *
  * Purpose: type tree
  *
@@ -103,27 +103,21 @@ wxTypeTree::wxTypeTree(void) : wxHashTable(wxKEY_INTEGER)
   unsigned int i;
 
   // Define explicit type hierarchy
-  for (i = 0; i < wxNumberOf(init_types); i++)
+  for (i = 0; i < wxNumberOf(init_types); i++) {
     AddType(init_types[i].my_type,
 	    init_types[i].parent_type,
 	    init_types[i].my_name);
+  }
 }
 
 wxTypeTree::~wxTypeTree(void)
 {
-    // Cleanup wxTypeDef allocated
-    BeginFind();
-    wxNode *node = Next();
-    while (node) {
-	wxTypeDef *typ = (wxTypeDef *)node->Data();
-	delete typ;
-	node = Next();
-    }
 }
 
 void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)
 {
-    wxTypeDef *typ = DEBUG_NEW wxTypeDef;
+    wxTypeDef *typ;
+    typ = DEBUG_NEW wxTypeDef;
     typ->type   = type;
     typ->parent = parent;
     typ->name   = copystring(name);
@@ -136,26 +130,31 @@ void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)
 
 Bool wxSubType(WXTYPE type1, WXTYPE type2)
 {
-    if (type1 == type2)
-	return TRUE;
+  WXTYPE t;
 
-    WXTYPE t = type1;
-    while (TRUE) {
-	wxTypeDef *typ = (wxTypeDef*)wxAllTypes->Get((long)t);
-	if (!typ)
-	    return FALSE;
-	if (type2 == typ->parent)
-	    return TRUE;
-	t = typ->parent;
-    }
+  if (type1 == type2)
+    return TRUE;
+  
+  t = type1;
+  while (TRUE) {
+    wxTypeDef *typ;
+    typ = (wxTypeDef*)wxAllTypes->Get((long)t);
+    if (!typ)
+      return FALSE;
+    if (type2 == typ->parent)
+      return TRUE;
+    t = typ->parent;
+  }
 }
 
 char *wxGetTypeName(WXTYPE type)
 {
-    if (type == wxTYPE_ANY)
-	return "any";
-    wxTypeDef *typ = (wxTypeDef *)wxAllTypes->Get((long)type);
-    if (!typ)
-	return NULL;
-    return typ->name;
+  wxTypeDef *typ;
+
+  if (type == wxTYPE_ANY)
+    return "any";
+  typ = (wxTypeDef *)wxAllTypes->Get((long)type);
+  if (!typ)
+    return NULL;
+  return typ->name;
 }

@@ -49,9 +49,13 @@ void wxRegion::Cleanup()
 
 void wxRegion::SetRectangle(float x, float y, float width, float height)
 {
+  float xw, yh;
+  int ix, iy, iw, ih;
+
   Cleanup();
 
-  float xw = x + width, yh = y + height;
+  xw = x + width;
+  yh = y + height;
   x = dc->FLogicalToDeviceX(x);
   y = dc->FLogicalToDeviceY(y);
   width = dc->FLogicalToDeviceX(xw) - x;
@@ -71,8 +75,6 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
     y  = -y;
   }
 
-  int ix, iy, iw, ih;
-
   ix = (int)floor(x);
   iy = (int)floor(y);
   iw = ((int)floor(x + width)) - ix;
@@ -82,13 +84,15 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
   rgn = CreateRectRgn(ix, iy, ix + iw, iy + ih);
 #endif
 #ifdef wx_x
-  rgn = XCreateRegion();
-  XRectangle r;
-  r.x = ix;
-  r.y = iy;
-  r.width = iw;
-  r.height = ih;
-  XUnionRectWithRegion(&r, rgn, rgn);
+  {
+    XRectangle r;
+    rgn = XCreateRegion();
+    r.x = ix;
+    r.y = iy;
+    r.width = iw;
+    r.height = ih;
+    XUnionRectWithRegion(&r, rgn, rgn);
+  }
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
@@ -98,6 +102,10 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
 
 void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, float radius)
 {
+  wxRegion *lt, *rt, *lb, *rb, *w, *h, *r;
+  int ix, iy, iw, ih;
+  float xw, yh;
+
   Cleanup();
 
   // A negative radius value is interpreted to mean
@@ -115,13 +123,13 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 #ifndef wx_x
   if (is_ps) {
 #endif
-    wxRegion *lt = new wxRegion(dc);
-    wxRegion *rt = new wxRegion(dc);
-    wxRegion *lb = new wxRegion(dc);
-    wxRegion *rb = new wxRegion(dc);
-    wxRegion *w = new wxRegion(dc);
-    wxRegion *h = new wxRegion(dc);
-    wxRegion *r;
+
+    lt = new wxRegion(dc);
+    rt = new wxRegion(dc);
+    lb = new wxRegion(dc);
+    rb = new wxRegion(dc);
+    w = new wxRegion(dc);
+    h = new wxRegion(dc);
 
     lt->SetEllipse(x, y, 2 * radius, 2 * radius);
     rt->SetEllipse(x + width - 2 * radius, y, 2 * radius, 2 * radius);
@@ -147,7 +155,8 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   }
 #endif
 
-  float xw = x + width, yh = y + height;
+  xw = x + width;
+  yh = y + height;
   x = dc->FLogicalToDeviceX(x);
   y = dc->FLogicalToDeviceY(y);
   width = dc->FLogicalToDeviceX(xw) - x;
@@ -156,8 +165,6 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   int xradius = dc->FLogicalToDeviceXRel(radius);
   int yradius = dc->FLogicalToDeviceYRel(radius);
 #endif
-
-  int ix, iy, iw, ih;
 
   ix = (int)floor(x);
   iy = (int)floor(y);
@@ -186,9 +193,12 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 
 void wxRegion::SetEllipse(float x, float y, float width, float height)
 {
+  float xw, yh;
+
   Cleanup();
 
-  float xw = x + width, yh = y + height;
+  xw = x + width;
+  yh = y + height;
   x = dc->FLogicalToDeviceX(x);
   y = dc->FLogicalToDeviceY(y);
   width = dc->FLogicalToDeviceX(xw) - x;
@@ -209,7 +219,7 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
 
 #if defined(wx_msw) || defined(wx_mac)
   int ix, iy, iw, ih;
-
+  
   ix = (int)floor(x);
   iy = (int)floor(y);
   iw = ((int)floor(x + width)) - ix;
@@ -229,29 +239,37 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
 #endif
 
 #ifdef wx_x
-  int iwidth = (int)width + 2;
-  int is_odd = iwidth & 0x1;
-  int x_extent = (int)((iwidth + 1) / 2) + is_odd, i;
-  float w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
-  XPoint *p = new XPoint[(4 * x_extent) - (2 * is_odd)];
+  {
+    int iwidth = (int)width + 2;
+    int is_odd = iwidth & 0x1;
+    int x_extent = (int)((iwidth + 1) / 2) + is_odd, i;
+    float w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
+    XPoint *p;
 
-  dx = x + width / 2;
-  dy = y + height / 2;
+#ifdef MZ_PRECISE_GC
+    p = (XPoint *)GC_malloc_atomic(sizeof(XPoint) * ((4 * x_extent) - (2 * is_odd)));
+#else
+    p = new XPoint[(4 * x_extent) - (2 * is_odd)];
+#endif
 
-  for (i = 0; i < x_extent; i++) {
-    float y = (height / width) * sqrt(w2 - (i * i));
-    p[i].x = (int)floor(i + dx);
-    p[i].y = (int)floor(y + dy);
-    p[2 * x_extent - i - 1].x = (int)floor(i + dx);
-    p[2 * x_extent - i - 1].y = (int)floor(-y + dy);
-    p[2 * x_extent + i - is_odd].x = (int)floor(-i + dx);
-    p[2 * x_extent + i - is_odd].y = (int)floor(-y + dy);
-    if (i || !is_odd) {
-      p[4 * x_extent - i - 1 - 2 * is_odd].x = (int)floor(-i + dx);
-      p[4 * x_extent - i - 1 - 2 * is_odd].y = (int)floor(y + dy);
+    dx = x + width / 2;
+    dy = y + height / 2;
+    
+    for (i = 0; i < x_extent; i++) {
+      float y = (height / width) * sqrt(w2 - (i * i));
+      p[i].x = (int)floor(i + dx);
+      p[i].y = (int)floor(y + dy);
+      p[2 * x_extent - i - 1].x = (int)floor(i + dx);
+      p[2 * x_extent - i - 1].y = (int)floor(-y + dy);
+      p[2 * x_extent + i - is_odd].x = (int)floor(-i + dx);
+      p[2 * x_extent + i - is_odd].y = (int)floor(-y + dy);
+      if (i || !is_odd) {
+	p[4 * x_extent - i - 1 - 2 * is_odd].x = (int)floor(-i + dx);
+	p[4 * x_extent - i - 1 - 2 * is_odd].y = (int)floor(y + dy);
+      }
     }
+    rgn = XPolygonRegion(p, 4 * x_extent, WindingRule);
   }
-  rgn = XPolygonRegion(p, 4 * x_extent, WindingRule);
 #endif
 }
 
@@ -267,33 +285,43 @@ typedef struct { float x, y; } FPoint;
 
 void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset, int fillStyle)
 {
+  POINT *cpoints;
+  FPoint *fpoints;
+  int i, v;
+  float vf;
+
   Cleanup();
 
   if (n < 2)
     return;
 
-  POINT *cpoints = new POINT[n];
-  FPoint *fpoints = (is_ps ? new FPoint[n] : (FPoint *)NULL);
-  int i;
+  cpoints = new POINT[n];
+  fpoints = (is_ps ? new FPoint[n] : (FPoint *)NULL);
   for (i = 0; i < n; i++) {
-    cpoints[i].x = dc->LogicalToDeviceX(points[i].x + xoffset);
-    cpoints[i].y = dc->LogicalToDeviceY(points[i].y + yoffset);
+    v = dc->LogicalToDeviceX(points[i].x + xoffset);
+    cpoints[i].x = v;
+    v = dc->LogicalToDeviceY(points[i].y + yoffset);
+    cpoints[i].y = v;
     if (fpoints) {
-      fpoints[i].x = dc->FLogicalToDeviceX(points[i].x + xoffset);
-      fpoints[i].y = dc->FLogicalToDeviceY(points[i].y + yoffset);
+      vf = dc->FLogicalToDeviceX(points[i].x + xoffset);
+      fpoints[i].x = vf;
+      vf = dc->FLogicalToDeviceY(points[i].y + yoffset);
+      fpoints[i].y = vf;
     }
   }
 
   if (is_ps) {
     ps = new wxPSRgn_Atomic("", "poly");
     *this << fpoints[0].x << " " << fpoints[0].y  << " moveto\n";
-    for (i = 1; i < n; i++)
+    for (i = 1; i < n; i++) {
       *this << fpoints[i].x << " " << fpoints[i].y  << " lineto\n";
+    }
     *this << "closepath\n";
 
     /* So bitmap-based region is right */
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++) {
       cpoints[i].y = -cpoints[i].y;
+    }
   }
 
 #ifdef wx_msw
@@ -315,13 +343,19 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
 
 void wxRegion::SetArc(float x, float y, float w, float h, float start, float end)
 {
+  wxRegion *r;
+  static double pi;
+  int saw_start = 0, saw_end = 0, closed = 0;
+  float cx, cy;
+  wxPoint a[20];
+  int n;
+
   SetEllipse(x, y, w, h);
 
   if (start == end) return;
 
-  wxRegion *r = new wxRegion(dc);
+  r = new wxRegion(dc);
 
-  static double pi;
   if (!pi)
     pi = 2 * asin((double)1.0);
 
@@ -332,11 +366,8 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   if (end < 0)
     end += 2*pi;
 
-  float cx = x + w/2;
-  float cy = y + h/2;
-
-  wxPoint a[20];
-  int n;
+  cx = x + w/2;
+  cy = y + h/2;
 
   a[0].x = (w / 2) * cos(end) + cx;
   a[0].y = (h / 2) * (-sin(end)) + cy;
@@ -348,8 +379,6 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   a[2].y = (h / 2) * (-sin(start)) + cy;
 
   n = 3;
-
-  int saw_start = 0, saw_end = 0, closed = 0;
 
   if (!saw_start && (start < (pi / 2)))
     saw_start = 1;
@@ -460,8 +489,9 @@ void wxRegion::Union(wxRegion *r)
   if (is_ps) {
     if (!ps)
       ps = r->ps;
-    else
+    else {
       ps = new wxPSRgn_Union(ps, r->ps);
+    }
   }
 
 #ifdef wx_msw
@@ -472,8 +502,9 @@ void wxRegion::Union(wxRegion *r)
     CombineRgn(rgn, r->rgn, rgn, RGN_OR);
 #endif
 #ifdef wx_x
-  if (!rgn)
+  if (!rgn) {
     rgn = XCreateRegion();
+  }
   XUnionRegion(rgn, r->rgn, rgn);
 #endif
 #ifdef wx_mac
@@ -508,8 +539,9 @@ void wxRegion::Intersect(wxRegion *r)
   if (Empty()) {
     Cleanup();
     ps = NULL;
-  } else if (is_ps)
+  } else if (is_ps) {
     ps = new wxPSRgn_Intersect(ps, r->ps);
+  }
 }
 
 void wxRegion::Subtract(wxRegion *r)
@@ -535,7 +567,9 @@ void wxRegion::Subtract(wxRegion *r)
     ps = NULL;
   } else if (is_ps) {
     /* wxPSRgn_Diff is only half a subtract; the result must be intersected with the first part */
-    ps = new wxPSRgn_Intersect(ps, new wxPSRgn_Diff(ps, r->ps));
+    wxPSRgn *rd;
+    rd = new wxPSRgn_Diff(ps, r->ps);
+    ps = new wxPSRgn_Intersect(ps, rd);
   }
 }
 
@@ -545,6 +579,7 @@ void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
     *x = *y = *w = *h = 0;
     return;
   } else {
+    float v;
 #ifdef wx_msw
     RECT r;
 
@@ -577,19 +612,23 @@ void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
       *y = -(*y);
     }
     
-    *x = dc->DeviceToLogicalX((int)*x);
-    *y = dc->DeviceToLogicalY((int)*y);
-    *w = dc->DeviceToLogicalXRel((int)*w);
-    *h = dc->DeviceToLogicalYRel((int)*h);
+    v = dc->DeviceToLogicalX((int)*x);
+    *x = v;
+    v = dc->DeviceToLogicalY((int)*y);
+    *y = v;
+    v = dc->DeviceToLogicalXRel((int)*w);
+    *w = v;
+    v = dc->DeviceToLogicalYRel((int)*h);
+    *h = v;
   }
 }
 
 Bool wxRegion::Empty()
 {
 #ifdef wx_msw
+  RECT r;
   if (!rgn) return TRUE;
 
-  RECT r;
   return (GetRgnBox(rgn, &r) == NULLREGION);
 #endif
 #ifdef wx_x
@@ -604,10 +643,13 @@ Bool wxRegion::Empty()
 
 wxRegion& wxRegion::operator<<(const char *s)
 {
-  long l = strlen(s);
-  long psl = strlen(((wxPSRgn_Atomic *)ps)->s);
+  long l, psl;
+  char *naya;
 
-  char *naya = new WXGC_ATOMIC char[l + psl + 1];
+  l = strlen(s);
+  psl = strlen(((wxPSRgn_Atomic *)ps)->s);
+
+  naya = new WXGC_ATOMIC char[l + psl + 1];
   memcpy(naya, ((wxPSRgn_Atomic *)ps)->s, psl);
   memcpy(naya + psl, s, l);
   naya[psl + l] = 0;
@@ -633,12 +675,19 @@ char *wxPSRgn_Union::GetString()
 
 char *wxPSRgn_Composite::MakeString(const char *prefix, const char *infix, const char *suffix)
 {
-  char *sa = a->GetString();
-  char *sb = b->GetString();
-  int plen = strlen(prefix), ilen = strlen(infix), slen = strlen(suffix);
-  int alen = strlen(sa);
-  int blen = strlen(sb);
-  char *sr = new WXGC_ATOMIC char[alen + blen + plen + ilen + slen + 1];
+  char *sa, *sb;
+  int plen, ilen, slen;
+  int alen, blen;
+  char *sr;
+
+  sa = a->GetString();
+  sb = b->GetString();
+  plen = strlen(prefix);
+  ilen = strlen(infix);
+  slen = strlen(suffix);
+  alen = strlen(sa);
+  blen = strlen(sb);
+  sr = new WXGC_ATOMIC char[alen + blen + plen + ilen + slen + 1];
 
   memcpy(sr, prefix, plen);
   memcpy(sr + plen, sa, alen);
@@ -665,10 +714,12 @@ int wxPSRgn_Composite::FlattenIntersects(wxPSRgn **l, wxPSRgn *r, int i)
 
 wxPSRgn *wxPSRgn_Union::Lift()
 {
-  wxPSRgn *la = a->Lift();
-  wxPSRgn *lb = b->Lift();
+  wxPSRgn *la, *lb;
   wxPSRgn *r = NULL, **al, **bl;
   int na, nb, i, j;
+
+  la = a->Lift();
+  lb = b->Lift();
 
   if (!la->is_intersect
       && !lb->is_intersect
@@ -710,8 +761,10 @@ char *wxPSRgn_Intersect::GetString()
 
 wxPSRgn *wxPSRgn_Intersect::Lift()
 {
-  wxPSRgn *la = a->Lift();
-  wxPSRgn *lb = b->Lift();
+  wxPSRgn *la, *lb;
+
+  la = a->Lift();
+  lb = b->Lift();
 
   if ((la == a) && (lb == b))
     return this;
@@ -727,10 +780,12 @@ char *wxPSRgn_Diff::GetString()
 
 wxPSRgn *wxPSRgn_Diff::Lift()
 {
-  wxPSRgn *la = a->Lift();
-  wxPSRgn *lb = b->Lift();
+  wxPSRgn *la, *lb;
   wxPSRgn *r = NULL, **al, **bl;
   int na, nb, i;
+
+  la = a->Lift();
+  lb = b->Lift();
 
   if (!la->is_intersect
       && !lb->is_intersect
@@ -744,10 +799,11 @@ wxPSRgn *wxPSRgn_Diff::Lift()
     FlattenIntersects(bl, lb, 0);
     
     for (i = 0; i < nb; i++) {
-      wxPSRgn *s = new wxPSRgn_Diff(la, bl[i]);
-      if (r)
+      wxPSRgn *s;
+      s = new wxPSRgn_Diff(la, bl[i]);
+      if (r) {
 	r = new wxPSRgn_Union(r, s);
-      else
+      } else
 	r = s;
     }
 
@@ -759,10 +815,11 @@ wxPSRgn *wxPSRgn_Diff::Lift()
     FlattenIntersects(al, la, 0);
     
     for (i = 0; i < na; i++) {
-      wxPSRgn *s = new wxPSRgn_Diff(al[i], lb);
-      if (r)
+      wxPSRgn *s;
+      s = new wxPSRgn_Diff(al[i], lb);
+      if (r) {
 	r = new wxPSRgn_Intersect(r, s);
-      else
+      } else
 	r = s;
     }
 

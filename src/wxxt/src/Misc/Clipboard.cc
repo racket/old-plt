@@ -4,7 +4,7 @@
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: Clipboard.cc,v 1.2 1999/11/04 17:25:35 mflatt Exp $
+ * RCS_ID:      $Id: Clipboard.cc,v 1.3 1999/11/19 22:02:37 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -29,24 +29,41 @@ wxClipboard *wxTheClipboard;
 
 static Widget clipWindow;
 
-#define ATOM(atom) XInternAtom(XtDisplay(wxAPP_TOPLEVEL), atom, FALSE)
+#ifdef MZ_PRECISE_GC
+Atom ATOM(char *atom) 
+{
+  Widget wgt;
+  wgt = wxAPP_TOPLEVEL;
+  return XInternAtom(XtDisplay(wgt), atom, FALSE);
+}
+#else
+# define ATOM(atom) XInternAtom(XtDisplay(wxAPP_TOPLEVEL), atom, FALSE)
+#endif
 #define VALUE_TYPE void*
 
 Atom xa_text, xa_targets;
+
+static wxFrame *clipboard_frame;
 
 void wxInitClipboard(void)
 {
   if (!clipWindow) {
     /* Hack: We need a window for clipboard stuff */
-    static wxFrame *frame = new wxFrame(NULL, "clipboard", 0, 0, 10, 10);
-    XtRealizeWidget(frame->GetHandle()->frame);
+    wxWindow_Xintern *fh;
+    wxREGGLOB(clipboard_frame);
+    clipboard_frame = new wxFrame(NULL, "clipboard", 0, 0, 10, 10);
+    fh = clipboard_frame->GetHandle();
+    XtRealizeWidget(fh->frame);
     /* Not in any specific context! */
-    frame->context = NULL;
-    clipWindow = frame->GetHandle()->frame;
+    clipboard_frame->context = NULL;
+    clipWindow = fh->frame;
   }
 
-  if (!wxTheClipboard)
+  if (!wxTheClipboard) {
+    wxREGGLOB(wxTheClipboard);
     wxTheClipboard = new wxClipboard;
+  }
+
   xa_text = ATOM("TEXT");
   xa_targets = ATOM("TARGETS");
 }
@@ -86,8 +103,11 @@ static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
       extra = (cb->clipOwner->formats->Member("TEXT")) ? 1 : 0;
       cb->receivedTargets = new Atom[count + extra];
       formats = cb->clipOwner->formats->ListToArray(FALSE);
-      for (i = 0; i < count; i++)
-	((Atom *)cb->receivedTargets)[i] = ATOM(formats[i]);
+      for (i = 0; i < count; i++) {
+	Atom atm;
+	atm = ATOM(formats[i]);
+	((Atom *)cb->receivedTargets)[i] = atm;
+      }
       if (extra)
 	((Atom *)cb->receivedTargets)[count] = XA_STRING;
     } else {
@@ -128,7 +148,9 @@ static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
   *format_return = 8;
   if (cb->clipOwner) {
     long sz = 0;
-    cb->sentString = cb->clipOwner->GetData(formats[i], &sz);
+    char *s;
+    s = cb->clipOwner->GetData(formats[i], &sz);
+    cb->sentString = s;
     *length_return = sz;
     *value_return = (VALUE_TYPE)cb->sentString;
   } else {
@@ -284,6 +306,9 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     else
       return NULL;
   } else {
+    Atom xa;
+    long i;
+
     receivedString = NULL;
     receivedTargets = NULL;
 
@@ -292,16 +317,14 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 
     wxDispatchEventsUntil(CheckReady, &receivedTargets);
 
-    Atom xa;
-    long i;
-
     xa = ATOM(format);
 
-    for (i = 0; i < receivedLength; i++)
+    for (i = 0; i < receivedLength; i++) {
       if (((Atom *)receivedTargets)[i] == xa
 	  || (((Atom *)receivedTargets)[i] == XA_STRING
 	      && xa == xa_text))
 	break;
+    }
 
     if (receivedLength)
       delete[] receivedTargets;

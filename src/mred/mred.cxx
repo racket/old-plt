@@ -2261,7 +2261,7 @@ wxFrame *MrEdApp::OnInit(void)
     mmc->topLevelWindowList = cl;
   }
   {
-    wxSnipClassList *scl;
+    wxStandardSnipClassList *scl;
     scl = wxMakeTheSnipClassList();
     mmc->snipClassList = scl;
   }

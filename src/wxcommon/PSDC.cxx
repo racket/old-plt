@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cxx,v 1.3 1999/11/19 22:02:46 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cxx,v 1.4 1999/11/21 00:09:16 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -199,6 +199,10 @@ wxPostScriptDC::wxPostScriptDC (Bool interactive)
 
 Bool wxPostScriptDC::Create(Bool interactive)
 {
+  wxPrintSetupData *wxThePrintSetupData;
+  char *paperType;
+  wxPrintPaperType *paper;
+
   if (!pie)
     pie = 2 * asin((double)1.0);
 
@@ -254,7 +258,8 @@ Bool wxPostScriptDC::Create(Bool interactive)
   clipw = -1;
   cliph = -1;
 
-  if ((ok = PrinterDialog(interactive)) == FALSE)
+  ok = PrinterDialog(interactive);
+  if (!ok)
     return FALSE;
 
   currentRed = 0;
@@ -263,16 +268,16 @@ Bool wxPostScriptDC::Create(Bool interactive)
 
   Colour = TRUE;
   
-  wxPrintSetupData *wxThePrintSetupData = wxGetThePrintSetupData();
+  wxThePrintSetupData = wxGetThePrintSetupData();
 
   level2ok = wxThePrintSetupData->GetLevel2();
   afm_path = wxThePrintSetupData->GetAFMPath();
 
-  char *paperType = wxThePrintSetupData->GetPaperName();
+  paperType = wxThePrintSetupData->GetPaperName();
   if (!paperType)
     paperType = DEFAULT_PAPER;
 
-  wxPrintPaperType *paper = wxThePrintPaperDatabase->FindPaperType(paperType);
+  paper = wxThePrintPaperDatabase->FindPaperType(paperType);
   if (!paper)
     paper = wxThePrintPaperDatabase->FindPaperType(DEFAULT_PAPER);
   if (paper) {
@@ -286,7 +291,10 @@ Bool wxPostScriptDC::Create(Bool interactive)
   if (wxThePrintSetupData) {
     wxThePrintSetupData->GetPrinterTranslation(&paper_x, &paper_y);
     wxThePrintSetupData->GetPrinterScaling(&paper_x_scale, &paper_y_scale);
-    landscape = (wxThePrintSetupData->GetPrinterOrientation() == PS_LANDSCAPE);
+    if (wxThePrintSetupData->GetPrinterOrientation() == PS_LANDSCAPE)
+      landscape = 1;
+    else
+      landscape = 0;
   } else {
     paper_x = paper_y = 0;
     paper_x_scale = paper_y_scale = 1;
@@ -324,33 +332,40 @@ wxPostScriptDC::~wxPostScriptDC (void)
 
 Bool wxPostScriptDC::PrinterDialog(Bool interactive)
 {
+  wxPrintSetupData *wxThePrintSetupData;
+  char *s;
+
   if (interactive) {
     ok = XPrinterDialog(NULL);
     if (!ok)
       return FALSE;
   } else
     ok = TRUE;
-
-  wxPrintSetupData *wxThePrintSetupData = wxGetThePrintSetupData();
+  
+  wxThePrintSetupData = wxGetThePrintSetupData();
 
   mode = wxThePrintSetupData->GetPrinterMode();
-  preview_cmd = copystring(wxThePrintSetupData->GetPrintPreviewCommand());
-  print_cmd = copystring(wxThePrintSetupData->GetPrinterCommand());
-  print_opts = copystring(wxThePrintSetupData->GetPrinterOptions());
+  s = wxThePrintSetupData->GetPrintPreviewCommand();
+  preview_cmd = copystring(s);
+  s = wxThePrintSetupData->GetPrinterCommand();
+  print_cmd = copystring(s);
+  s = wxThePrintSetupData->GetPrinterOptions();
+  print_opts = copystring(s);
 
   if ((mode == PS_PREVIEW) || (mode == PS_PRINTER)) {
     // For PS_PRINTER action this depends on a Unix-style print spooler
     // since the wx_printer_file can be destroyed during a session
     // @@@ TODO: a Windows-style answer for non-Unix
     char userId[256];
-    wxGetUserId (userId, sizeof (userId) / sizeof (char));
     char tmp[256];
+    wxGetUserId (userId, sizeof (userId) / sizeof (char));
     strcpy (tmp, "/tmp/preview_");
     strcat (tmp, userId);
     strcat (tmp, ".ps");
     filename = copystring(tmp);
   } else if (mode == PS_FILE) {
-    char *file = interactive ? (char *)NULL : wxThePrintSetupData->GetPrinterFile();
+    char *file;
+    file = interactive ? (char *)NULL : wxThePrintSetupData->GetPrinterFile();
     if (!file)
       file = wxSaveFileSelector("PostScript", "ps");
     if (!file) {
@@ -366,10 +381,12 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive)
 
 void wxPostScriptDC::SetClippingRect(float cx, float cy, float cw, float ch)
 {
+  wxRegion *r;
+
   if (!pstream)
     return;
 
-  wxRegion *r = new wxRegion(this);
+  r = new wxRegion(this);
   r->SetRectangle(cx, cy, cw, ch);
 
   SetClippingRegion(r);
@@ -397,8 +414,13 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 
   if (r) {
     pstream->Out("newpath\n");
-    if (r->ps) /* => non-empty region */
-      pstream->Out(r->ps->Lift()->GetString());
+    if (r->ps) { /* => non-empty region */
+      wxPSRgn *rl;
+      char *s;
+      rl = r->ps->Lift();
+      s = rl->GetString();
+      pstream->Out(s);
+    }
     pstream->Out("clip\n");
 
     clipping = r;
@@ -407,22 +429,27 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 
 void wxPostScriptDC::Clear(void)
 {
-  unsigned char red = current_background_color.Red();
-  unsigned char blue = current_background_color.Blue();
-  unsigned char green = current_background_color.Green();
-  float redPS = (float) (((int) red) / 255.0);
-  float bluePS = (float) (((int) blue) / 255.0);
-  float greenPS = (float) (((int) green) / 255.0);
-  
-  /* Fill with current background */
-  pstream->Out("gsave newpath\n");
-  pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
-  pstream->Out(0); pstream->Out(" "); pstream->Out(0); pstream->Out(" moveto\n");
-  pstream->Out(0); pstream->Out(" "); pstream->Out(paper_h); pstream->Out(" lineto\n");
-  pstream->Out(paper_w); pstream->Out(" "); pstream->Out(paper_h); pstream->Out(" lineto\n");
-  pstream->Out(paper_w); pstream->Out(" "); pstream->Out(0); pstream->Out(" lineto\n");
-  pstream->Out("closepath\n");
-  pstream->Out("fill grestore\n");
+  unsigned char red, blue, green;
+
+  red = current_background_color.Red();
+  blue = current_background_color.Blue();
+  green = current_background_color.Green();
+
+  {
+    float redPS = (float) (((int) red) / 255.0);
+    float bluePS = (float) (((int) blue) / 255.0);
+    float greenPS = (float) (((int) green) / 255.0);
+    
+    /* Fill with current background */
+    pstream->Out("gsave newpath\n");
+    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+    pstream->Out(0); pstream->Out(" "); pstream->Out(0); pstream->Out(" moveto\n");
+    pstream->Out(0); pstream->Out(" "); pstream->Out(paper_h); pstream->Out(" lineto\n");
+    pstream->Out(paper_w); pstream->Out(" "); pstream->Out(paper_h); pstream->Out(" lineto\n");
+    pstream->Out(paper_w); pstream->Out(" "); pstream->Out(0); pstream->Out(" lineto\n");
+    pstream->Out("closepath\n");
+    pstream->Out("fill grestore\n");
+  }
 }
 
 void wxPostScriptDC::FloodFill(float WXUNUSED(x), float WXUNUSED(y), wxColour * WXUNUSED(col), int WXUNUSED(style))
@@ -465,6 +492,8 @@ void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, f
     return;
 
   if (start != end) {
+    float a1, a2, radius, xscale;
+
     /* Before we scale: */
     CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
     CalcBoundingBox(XSCALEBND(x + w), YSCALEBND(y + h));
@@ -474,11 +503,11 @@ void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, f
     w = XSCALEREL(w);
     h = YSCALEREL(h);
 
-    float radius = (h / 2);
-    float xscale = (w / h);
+    radius = (h / 2);
+    xscale = (w / h);
 
-    float a1 = start * (180 / pie);
-    float a2 = end * (180 / pie);
+    a1 = start * (180 / pie);
+    a2 = end * (180 / pie);
 
     pstream->Out("gsave\n");
     pstream->Out((x + w/2)); pstream->Out(" "); pstream->Out((paper_h - (y + h/2))); pstream->Out(" translate\n");
@@ -534,15 +563,17 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], float xoffset, float 
     {
       if (current_brush && current_brush->GetStyle () != wxTRANSPARENT)
 	{
+	  int i;
+	  float xx, yy;
+
 	  SetBrush (current_brush);
 	  pstream->Out("newpath\n");
 
-	  float xx = points[0].x + xoffset;
-	  float yy = (points[0].y + yoffset);
+	  xx = points[0].x + xoffset;
+	  yy = (points[0].y + yoffset);
 	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
 	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
-	  int i;
 	  for (i = 1; i < n; i++)
 	    {
 	      xx = points[i].x + xoffset;
@@ -555,15 +586,17 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], float xoffset, float 
 
       if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
 	{
+	  int i;
+	  float xx, yy;
+
 	  SetPen (current_pen);
 	  pstream->Out("newpath\n");
 
-	  float xx = points[0].x + xoffset;
-	  float yy = (points[0].y + yoffset);
+	  xx = points[0].x + xoffset;
+	  yy = (points[0].y + yoffset);
 	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
 	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
-	  int i;
 	  for (i = 1; i < n; i++)
 	    {
 	      xx = points[i].x + xoffset;
@@ -587,19 +620,20 @@ void wxPostScriptDC::DrawLines (int n, wxIntPoint points[], int xoffset, int yof
 {
   if (!pstream)
     return;
-  if (n > 0)
-    {
+  if (n > 0) {
+    int i;
+    float xx, yy;
+
       if (current_pen)
 	SetPen (current_pen);
 
       pstream->Out("newpath\n");
 
-      float xx = (float) (points[0].x + xoffset);
-      float yy = (float) (points[0].y + yoffset);
+      xx = (float) (points[0].x + xoffset);
+      yy = (float) (points[0].y + yoffset);
       pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
       CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
-      int i;
       for (i = 1; i < n; i++)
 	{
 	  xx = (float) (points[i].x + xoffset);
@@ -615,19 +649,20 @@ void wxPostScriptDC::DrawLines (int n, wxPoint points[], float xoffset, float yo
 {
   if (!pstream)
     return;
-  if (n > 0)
-    {
+  if (n > 0) {
+    int i;
+    float xx, yy;
+
       if (current_pen)
 	SetPen (current_pen);
 
       pstream->Out("newpath\n");
 
-      float xx = points[0].x + xoffset;
-      float yy = (points[0].y + yoffset);
+      xx = points[0].x + xoffset;
+      yy = (points[0].y + yoffset);
       pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
       CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
-      int i;
       for (i = 1; i < n; i++)
 	{
 	  xx = points[i].x + xoffset;
@@ -643,12 +678,17 @@ void wxPostScriptDC::DrawLines (int n, wxPoint points[], float xoffset, float yo
 
 void wxPostScriptDC::DrawLines(wxList *list, float xoffset, float yoffset)
 {
-  int n = list->Number();
-  wxPoint *points = new wxPoint[n];
+  int n, i;
+  wxPoint *points;
+  wxNode *node;
 
-  int i = 0;
-  for(wxNode *node = list->First(); node; node = node->Next()) {
-    wxPoint *point = (wxPoint *)node->Data();
+  n = list->Number();
+  points = new wxPoint[n];
+
+  i = 0;
+  for (node = list->First(); node; node = node->Next()) {
+    wxPoint *point;
+    point = (wxPoint *)node->Data();
     points[i].x = point->x;
     points[i++].y = point->y;
   }
@@ -658,12 +698,17 @@ void wxPostScriptDC::DrawLines(wxList *list, float xoffset, float yoffset)
 
 void wxPostScriptDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle)
 {
-  int n = list->Number();
-  wxPoint *points = new wxPoint[n];
+  int n, i;
+  wxPoint *points;
+  wxNode *node;
 
-  int i = 0;
-  for(wxNode *node = list->First(); node; node = node->Next()) {
-    wxPoint *point = (wxPoint *)node->Data();
+  n = list->Number();
+  points = new wxPoint[n];
+
+  i = 0;
+  for(node = list->First(); node; node = node->Next()) {
+    wxPoint *point;
+    point = (wxPoint *)node->Data();
     points[i].x = point->x;
     points[i++].y = point->y;
   }
@@ -711,6 +756,8 @@ void wxPostScriptDC::DrawRectangle (float x, float y, float width, float height)
 
 void wxPostScriptDC::DrawRoundedRectangle (float x, float y, float width, float height, float radius)
 {
+  float ascale;
+
   if (!pstream)
     return;
 
@@ -726,7 +773,7 @@ void wxPostScriptDC::DrawRoundedRectangle (float x, float y, float width, float 
       radius = (float) (-radius * smallest);
     }
 
-  float ascale = (user_scale_x < user_scale_y) ? user_scale_x : user_scale_y;
+  ascale = (user_scale_x < user_scale_y) ? user_scale_x : user_scale_y;
 
   if (current_brush && current_brush->GetStyle () != wxTRANSPARENT)
     {
@@ -826,6 +873,9 @@ void wxPostScriptDC::DrawEllipse (float x, float y, float width, float height)
 
 void wxPostScriptDC::SetFont (wxFont * the_font)
 {
+  char *name;
+  int Family, Style, Weight, size;
+
   if (!pstream)
     return;
   if ((current_font == the_font) && !(resetFont & RESET_FONT))
@@ -834,17 +884,17 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   resetFont -= (resetFont & RESET_FONT);
 
   current_font = the_font;
-  char *name;
-  int Family = current_font->GetFontId();
-  int Style = current_font->GetStyle();
-  int Weight = current_font->GetWeight();
+  Family = current_font->GetFontId();
+  Style = current_font->GetStyle();
+  Weight = current_font->GetWeight();
 
   name = wxTheFontNameDirectory->GetPostScriptName(Family, Weight, Style);
   if (!name)
     name = "Times-Roman";
 
   pstream->Out("/"); pstream->Out(name); pstream->Out(" findfont\n");
-  pstream->Out(YSCALEREL(current_font->GetPointSize())); pstream->Out(" scalefont setfont\n");
+  size = current_font->GetPointSize();
+  pstream->Out(YSCALEREL(size)); pstream->Out(" scalefont setfont\n");
 }
 
 static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int rop, wxColour *col)
@@ -872,9 +922,17 @@ static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int
 
 void wxPostScriptDC::SetPen (wxPen * pen)
 {
+  static char *dotted = "[2 5] 2";
+  static char *short_dashed = "[4 4] 2";
+  static char *long_dashed = "[4 8] 2";
+  static char *dotted_dashed = "[6 6 2 6] 4";
+  wxPen *oldPen = current_pen;
+  char *psdash = NULL;
+  unsigned char red, blue, green;
+  int width;
+
   if (!pstream)
     return;
-  wxPen *oldPen = current_pen;
 
   if (current_pen) current_pen->Lock(-1);
   if (pen) pen->Lock(1);
@@ -883,33 +941,24 @@ void wxPostScriptDC::SetPen (wxPen * pen)
     return;			/* NIL */
 
   // Line width
-  pstream->Out(pen->GetWidth ()); pstream->Out(" setlinewidth\n");
+  width = pen->GetWidth();
+  pstream->Out(width);
+  pstream->Out(" setlinewidth\n");
 
   if (level2ok) {
-    wxBitmap *stipple = pen->GetStipple();
+    wxBitmap *stipple;
+    stipple = pen->GetStipple();
     if (stipple && stipple->Ok()) {
-      set_pattern(this, pstream, stipple, pen->GetStyle(), pen->GetColour());
+      int ps;
+      wxColour *pc;
+      ps = pen->GetStyle();
+      pc = pen->GetColour();
+      set_pattern(this, pstream, stipple, ps, pc);
       resetFont |= RESET_COLOR;
       return;
     }
   }
 
-  // Line style - WRONG: 2nd arg is OFFSET
-  /*
-     Here, I'm afraid you do not conceive meaning of parameters of 'setdash'
-     operator correctly. You should look-up this in the Red Book: the 2nd parame-
-     ter is not number of values in the array of the first one, but an offset
-     into this description of the pattern. I mean a real *offset* not index
-     into array. I.e. If the command is [3 4] 1 setdash   is used, then there
-     will be first black line *2* units long, then space 4 units, then the
-     pattern of *3* units black, 4 units space will be repeated.
-   */
-  static char *dotted = "[2 5] 2";
-  static char *short_dashed = "[4 4] 2";
-  static char *long_dashed = "[4 8] 2";
-  static char *dotted_dashed = "[6 6 2 6] 4";
-
-  char *psdash = NULL;
   switch (pen->GetStyle ())
     {
     case wxDOT:
@@ -935,9 +984,9 @@ void wxPostScriptDC::SetPen (wxPen * pen)
   }
 
   // Line colour
-  unsigned char red = pen->GetColour()->Red();
-  unsigned char blue = pen->GetColour()->Blue();
-  unsigned char green = pen->GetColour()->Green();
+  red = pen->GetColour()->Red();
+  blue = pen->GetColour()->Blue();
+  green = pen->GetColour()->Green();
 
   if (!Colour)
     {
@@ -976,6 +1025,10 @@ static char *ps_brush_hatch[] = { " 0 0 moveto 8 8",
 
 void wxPostScriptDC::SetBrush(wxBrush * brush)
 {
+  unsigned char red, blue, green;
+  int hatch_id;
+  float redPS, bluePS, greenPS;
+
   if (!pstream)
     return;
 
@@ -986,18 +1039,23 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     return; 
 
   if (level2ok) {
-    wxBitmap *stipple = brush->GetStipple();
+    wxBitmap *stipple;
+    stipple = brush->GetStipple();
     if (stipple && stipple->Ok()) {
-      set_pattern(this, pstream, stipple, brush->GetStyle(), brush->GetColour());
+      int bs;
+      wxColour *bc;
+      bs = brush->GetStyle();
+      bc = brush->GetColour();
+      set_pattern(this, pstream, stipple, bs, bc);
       resetFont |= RESET_COLOR;
       return;
     }
   }
 
   // Brush colour
-  unsigned char red = brush->GetColour()->Red();
-  unsigned char blue = brush->GetColour()->Blue();
-  unsigned char green = brush->GetColour()->Green();
+  red = brush->GetColour()->Red();
+  blue = brush->GetColour()->Blue();
+  green = brush->GetColour()->Green();
 
   if (!Colour) {
     // Anything not black is white
@@ -1009,7 +1067,7 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     }
   }
 
-  int hatch_id = -1;
+  hatch_id = -1;
   switch (brush->GetStyle()) {
   case wxBDIAGONAL_HATCH:
     hatch_id = 0;
@@ -1031,9 +1089,9 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     break;
   }
 
-  float redPS = (float) (((int) red) / 255.0);
-  float bluePS = (float) (((int) blue) / 255.0);
-  float greenPS = (float) (((int) green) / 255.0);
+  redPS = (float) (((int) red) / 255.0);
+  bluePS = (float) (((int) blue) / 255.0);
+  greenPS = (float) (((int) green) / 255.0);
 
   if (hatch_id > -1) {
     pstream->Out("7 dict\n");
@@ -1077,37 +1135,46 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
 void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
 			       Bool WXUNUSED(use16))
 {
+  float tw, th;
+  int i, len, size;
+
   if (!pstream)
     return;
   if (current_font)
     SetFont (current_font);
 
-  float tw, th;
   GetTextExtent(text, &tw, &th);
 
   if (current_bk_mode == wxSOLID) {
-    unsigned char red = current_text_background.Red();
-    unsigned char blue = current_text_background.Blue();
-    unsigned char green = current_text_background.Green();
-    float redPS = (float) (((int) red) / 255.0);
-    float bluePS = (float) (((int) blue) / 255.0);
-    float greenPS = (float) (((int) green) / 255.0);
-
-    pstream->Out("gsave newpath\n");
-    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); 
-    pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
-    pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
-    pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
-    pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y + th)); pstream->Out(" lineto\n");
-    pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + th)); pstream->Out(" lineto\n");
-    pstream->Out("closepath\n");
-    pstream->Out("fill grestore\n");
+    unsigned char red, blue, green;
+    
+    red = current_text_background.Red();
+    blue = current_text_background.Blue();
+    green = current_text_background.Green();
+    
+    {
+      float redPS = (float) (((int) red) / 255.0);
+      float bluePS = (float) (((int) blue) / 255.0);
+      float greenPS = (float) (((int) green) / 255.0);
+      
+      pstream->Out("gsave newpath\n");
+      pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); 
+      pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+      pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
+      pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
+      pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y + th)); pstream->Out(" lineto\n");
+      pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + th)); pstream->Out(" lineto\n");
+      pstream->Out("closepath\n");
+      pstream->Out("fill grestore\n");
+    }
   }
 
   if (current_text_foreground.Ok ()) {
-    unsigned char red = current_text_foreground.Red ();
-    unsigned char blue = current_text_foreground.Blue ();
-    unsigned char green = current_text_foreground.Green ();
+    unsigned char red, blue, green;
+
+    red = current_text_foreground.Red ();
+    blue = current_text_foreground.Blue ();
+    green = current_text_foreground.Green ();
     
     if (!Colour) {
       // Anything not white is black
@@ -1134,15 +1201,14 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
     }
   }
   
-  int size = 10;
+  size = 10;
   if (current_font)
     size = current_font->GetPointSize();
 
   pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + size)); pstream->Out(" moveto\n");
 
   pstream->Out("(");
-  int len = strlen (text);
-  int i;
+  len = strlen (text);
   for (i = 0; i < len; i++)
     {
       char ch = text[i];
@@ -1213,6 +1279,8 @@ ellipsedict /mtrx matrix put\n\
 
 Bool wxPostScriptDC::StartDoc (char *message)
 {
+  char userID[256];
+
   if (device == wxDEVICE_EPS) {
     pstream = new PSStream(filename);
 
@@ -1232,10 +1300,9 @@ Bool wxPostScriptDC::StartDoc (char *message)
   pstream->Out("%%CreationDate: "); pstream->Out(wxNow()); pstream->Out("\n");
 
   // User Id information
-  char userID[256];
   if (wxGetEmailAddress(userID, sizeof(userID))) {
-    pstream->Out("%%For: "); pstream->Out((char *)userID);
     char userName[245];
+    pstream->Out("%%For: "); pstream->Out((char *)userID);
     if (wxGetUserName(userName, sizeof(userName))) {
       pstream->Out(" ("); pstream->Out((char *)userName); pstream->Out(")");
     }
@@ -1256,8 +1323,9 @@ Bool wxPostScriptDC::StartDoc (char *message)
   SetPen(wxBLACK_PEN);
 
   page_number = 1;
-  if (message)
+  if (message) {
     title = copystring (message);
+  }
 
   return TRUE;
 }
@@ -1268,6 +1336,11 @@ extern void wxsExecute(char **);
 
 void wxPostScriptDC::EndDoc (void)
 {
+  float llx;
+  float lly;
+  float urx;
+  float ury;
+
   if (!pstream)
     return;
   if (clipping) {
@@ -1277,11 +1350,6 @@ void wxPostScriptDC::EndDoc (void)
 
   // Compute the bounding box.  Note that it is in the default user
   // coordinate system, thus we have to convert the values.
-  float llx;
-  float lly;
-  float urx;
-  float ury;
-
   // If we're landscape, our sense of "x" and "y" is reversed.
   if (landscape) {
     llx = min_y * paper_y_scale + paper_y;
@@ -1331,9 +1399,11 @@ void wxPostScriptDC::EndDoc (void)
 	case PS_PRINTER:
 	{
           char *argv[4];
+	  char *opts;
+	  int i;
           argv[0] = print_cmd;
-	  int i = 1;
-	  char *opts = print_opts;
+	  i = 1;
+	  opts = print_opts;
 	  if (opts && *opts)
 	    argv[i++] = opts;
 	  argv[i++] = filename;
@@ -1406,12 +1476,18 @@ Bool wxPostScriptDC::
 Blit (float xdest, float ydest, float fwidth, float fheight,
       wxMemoryDC *src, float xsrc, float ysrc, int rop, wxColour *dcolor)
 {
-  if (!pstream)
-    return FALSE;
+  int mono;
+  long j, i;
+  wxColour c;
+  int pixel;
+  int pr, pg, pb;
 
   wxCanvasDC *source = (wxCanvasDC *)src;
   long width, height, x, y;
   Bool asColour = level2ok;
+
+  if (!pstream)
+    return FALSE;
 
   width = (long)floor(fwidth);
   height = (long)floor(fheight);
@@ -1455,12 +1531,6 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   }
 
   /* Output data as hex digits: */
-  int mono;
-  long j, i;
-  wxColour c;
-  int pixel;
-  int pr, pg, pb;
-
   mono = (src->GetObject()->GetDepth() == 1);
 
   if (mono && dcolor) {
@@ -1472,9 +1542,10 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 
   for (j = 0; j < height; j++) {
     for (i = 0; i < width; i++) {
+      int red, green, blue;
+
       source->GetPixel(i, j, &c);
 
-      int red, green, blue;
       red = c.Red();
       green = c.Green();
       blue = c.Blue();
@@ -1528,12 +1599,14 @@ static wxMemoryDC *temp_mdc;
 Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight,
       wxBitmap *bm, float xsrc, float ysrc, int rop, wxColour *c)
 {
+  Bool v;
+
   if (!temp_mdc)
     temp_mdc = new wxMemoryDC(1);
-
+  
   temp_mdc->SelectObject(bm);
-  Bool v = Blit(xdest, ydest, fwidth, fheight,
-		temp_mdc, xsrc, ysrc, rop, c);
+  v = Blit(xdest, ydest, fwidth, fheight,
+	   temp_mdc, xsrc, ysrc, rop, c);
   temp_mdc->SelectObject(NULL);
 
   return v;
@@ -1557,7 +1630,25 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
 				    Bool WXUNUSED(use16))
 {
+  // these static vars are for storing the state between calls
+  static int lastFamily= INT_MIN;
+  static int lastSize= INT_MIN;
+  static int lastStyle= INT_MIN;
+  static int lastWeight= INT_MIN;
+  static int lastDescender = INT_MIN;
+  static int capHeight = -1;
+  static int lastWidths[256]; // widths of the characters
+
   wxFont *fontToUse = theFont;
+  int Family;
+  int Size;
+  int Style;
+  int Weight;
+
+  float widthSum = 0.0;
+  float height = (float)Size;
+  unsigned char *p;
+
   if (!fontToUse)
     fontToUse = current_font;
     
@@ -1578,26 +1669,21 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // currently i have only files for the roman font family.
   // i try to get files for the other ones!
 
-  // these static vars are for storing the state between calls
-  static int lastFamily= INT_MIN;
-  static int lastSize= INT_MIN;
-  static int lastStyle= INT_MIN;
-  static int lastWeight= INT_MIN;
-  static int lastDescender = INT_MIN;
-  static int capHeight = -1;
-  static int lastWidths[256]; // widths of the characters
-
   // get actual parameters
-  const int Family = fontToUse->GetFontId();
-  const int Size =   fontToUse->GetPointSize();
-  const int Style =  fontToUse->GetStyle();
-  const int Weight = fontToUse->GetWeight();
-
+  Family = fontToUse->GetFontId();
+  Size =   fontToUse->GetPointSize();
+  Style =  fontToUse->GetStyle();
+  Weight = fontToUse->GetWeight();
+  
   // if we have a new font, read the font-metrics
   if (Family != lastFamily 
       || Size != lastSize 
       || Style != lastStyle
       || Weight != lastWeight) {
+    char *name;
+    char *afmName;
+    FILE *afmFile;
+
     // store cached values
     lastFamily = Family;
     lastSize =   Size;
@@ -1607,9 +1693,6 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     // read in new font metrics **************************************
 
     // 1. construct filename ******************************************
-    char *name;
-    char *afmName;
-
     name = wxTheFontNameDirectory->GetAFMName(Family, Weight, Style);
     if (name && afm_path) {
       int len = strlen(afm_path);
@@ -1648,26 +1731,28 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     // when the font has changed, we read in the right AFM file and store the
     // character widths in an array, which is processed below (see point 3.).
 
-    FILE *afmFile = (afmName ? fopen(afmName,"r") : (FILE *)NULL);
+    afmFile = (afmName ? fopen(afmName,"r") : (FILE *)NULL);
 
     if (afmFile==NULL) {
+      int i;
       wxDebugMsg("GetTextExtent: can't open AFM file '%s'\n",afmName);
       wxDebugMsg("               using approximate values\n");
-      int i;
       for (i = 0; i < 256; i++) {
 	lastWidths[i] = 500; // an approximate value
       }
       lastDescender = -150; // dito.
     } else {
-      int i;
-      // init the widths array
-      for (i = 0; i < 256; i++) {
-	lastWidths[i] = INT_MIN;
-      }
       // some variables for holding parts of a line
       char cString[256], semiString[256], WXString[256], descString[256];
       char line[256];
       int ascii, cWidth;
+      int i;
+
+      // init the widths array
+      for (i = 0; i < 256; i++) {
+	lastWidths[i] = INT_MIN;
+      }
+
       // read in the file and parse it
       while (fgets(line,sizeof(line),afmFile)) {
         if (!strncmp(line, "Descender ", 10)) {
@@ -1713,9 +1798,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // this is done by adding the widths of the characters in the
   // string. they are given in 1/1000 of the size!
 
-  float widthSum = 0.0;
-  float height = (float)Size;
-  unsigned char *p;
+  height = (float)Size;
   for (p = (unsigned char *)string; *p; p++) {
     if (lastWidths[*p] == INT_MIN) {
       wxDebugMsg("GetTextExtent: undefined width for character '%c' (%d)\n",
@@ -1908,29 +1991,15 @@ wxPrintSetupData::wxPrintSetupData(void)
 
 wxPrintSetupData::~wxPrintSetupData(void)
 {
-    if (printer_command)
-	delete[] printer_command;
-    if (preview_command)
-	delete[] preview_command;
-    if (printer_flags)
-	delete[] printer_flags;
-    if (afm_path)
-	delete[] afm_path;
-    if (paper_name)
-	delete[] paper_name;
-    if (printer_file)
-	delete[] printer_file;
 }
 
 void wxPrintSetupData::SetPrinterCommand(char *cmd)
 {
     if (cmd == printer_command)
 	return;
-    if (printer_command)
-	delete[] printer_command;
-    if (cmd)
+    if (cmd) {
 	printer_command = copystring(cmd);
-    else
+    } else
 	printer_command = NULL;
 }
 
@@ -1938,47 +2007,39 @@ void wxPrintSetupData::SetPrintPreviewCommand(char *cmd)
 {
     if (cmd == preview_command)
 	return;
-    if (preview_command)
-	delete[] preview_command;
-    if (cmd)
+    if (cmd) {
 	preview_command = copystring(cmd);
-    else
+    } else
 	preview_command = NULL;
 }
 
 void wxPrintSetupData::SetPaperName(char *name)
 {
-    if (name == paper_name)
-	return;
-    if (paper_name)
-	delete[] paper_name;
-    if (name)
-	paper_name = copystring(name);
-    else
-	paper_name = NULL;
+  if (name == paper_name)
+    return;
+  if (name) {
+    paper_name = copystring(name);
+  } else
+    paper_name = NULL;
 }
 
 void wxPrintSetupData::SetPrinterOptions(char *flags)
 {
     if (printer_flags == flags)
-	return;
-    if (printer_flags)
-	delete[] printer_flags;
-    if (flags)
-	printer_flags = copystring(flags);
-    else
-	printer_flags = NULL;
+      return;
+    if (flags) {
+      printer_flags = copystring(flags);
+    } else
+      printer_flags = NULL;
 }
 
 void wxPrintSetupData::SetPrinterFile(char *f)
 {
     if (f == printer_file)
 	return;
-    if (printer_file)
-	delete[] printer_file;
-    if (f)
+    if (f) {
 	printer_file = copystring(f);
-    else
+    } else
 	printer_file = NULL;
 }
 
@@ -1998,26 +2059,34 @@ void wxPrintSetupData::SetAFMPath(char *f)
   
     if (f == afm_path)
 	return;
-    if (afm_path)
-	delete[] afm_path;
-    if (f)
-	afm_path = copystring(f);
-    else
+    if (f) {
+      afm_path = copystring(f);
+    } else
 	afm_path = NULL;
 }
 
 void wxPrintSetupData::copy(wxPrintSetupData* data)
 {
   float x, y;
+  char *s;
+  int i;
   
-  SetPrinterCommand(data->GetPrinterCommand());
-  SetPrintPreviewCommand(data->GetPrintPreviewCommand());
-  SetPrinterOptions(data->GetPrinterOptions());
-  SetPrinterOrientation(data->GetPrinterOrientation());
-  SetPrinterMode(data->GetPrinterMode());
-  SetAFMPath(data->GetAFMPath());
-  SetPaperName(data->GetPaperName());
-  SetColour(data->GetColour());
+  s = data->GetPrinterCommand();
+  SetPrinterCommand(s);
+  s = data->GetPrintPreviewCommand();
+  SetPrintPreviewCommand(s);
+  s = data->GetPrinterOptions();
+  SetPrinterOptions(s);
+  i = data->GetPrinterOrientation();
+  SetPrinterOrientation(i);
+  i = data->GetPrinterMode();
+  SetPrinterMode(i);
+  s = data->GetAFMPath();
+  SetAFMPath(s);
+  s = data->GetPaperName();
+  SetPaperName(s);
+  i = data->GetColour();
+  SetColour(i);
   
   data->GetPrinterTranslation(&x, &y);
   SetPrinterTranslation(x, y);
@@ -2109,15 +2178,17 @@ void wxPrintPaperDatabase::ClearDatabase(void)
 void wxPrintPaperDatabase::AddPaperType(char *name, int wmm, int hmm,
 					int wp, int hp)
 {
-    Append(name, new wxPrintPaperType(name, wmm, hmm, wp, hp));
+  wxPrintPaperType *ppt;
+  ppt = new wxPrintPaperType(name, wmm, hmm, wp, hp);
+  Append(name, ppt);
 }
 
 wxPrintPaperType *wxPrintPaperDatabase::FindPaperType(char *name)
 {
   wxNode *node;
 
-    if ((node = Find(name)))
-	return (wxPrintPaperType*)node->Data();
-    else
-	return NULL;
+  if ((node = Find(name)))
+    return (wxPrintPaperType*)node->Data();
+  else
+    return NULL;
 }

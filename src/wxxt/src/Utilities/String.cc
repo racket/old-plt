@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: String.cc,v 1.3 1998/12/05 01:08:21 mflatt Exp $
+ * $Id: String.cc,v 1.4 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: string copy and conversion
  *
@@ -34,18 +34,22 @@
 
 char *copystring(const char *s)
 {
-    if (s == NULL) s = "";
-    size_t len = strlen (s) + 1;
-    char *news = new WXGC_ATOMIC char[len];
-    memcpy(news, s, len);        // Should be the fastest
-    return news;
+  size_t len;
+  char *news;
+
+  if (s == NULL) s = "";
+  len = strlen (s) + 1;
+  news = new WXGC_ATOMIC char[len];
+  memcpy(news, s, len);        // Should be the fastest
+  return news;
 }
 
 void wxGetLabelAndKey(char *label, char **clean_label, char **clean_key)
 {
-    char *key;
+    char *key, *s;
 
-    *clean_label = copystring(label); // make private copy
+    s = copystring(label); // make private copy
+    *clean_label = s;
 #if 0
     char *amp;
     if ((amp = strchr(*clean_label, '&'))) { // is there an ampersand? -> erase
@@ -60,26 +64,30 @@ void wxGetLabelAndKey(char *label, char **clean_label, char **clean_key)
 
 char *wxStripMenuCodes(char *in, char *out)
 {
-    if (!in)
-	return NULL;
-    if (!out)
+  char *tmpOut;
+
+  if (!in)
+    return NULL;
+  if (!out) {
 	out = copystring(in);
-    char *tmpOut = out;
+  }
+  tmpOut = out;
   
-    while (*in)  {
-	if (*in == '&') {
-	    // Check && -> &, &x -> x
-	    if (*++in == '&')
-		*out++ = *in++;
-	} else if (*in == '\t') {
-	    // Remove all stuff after \t in X mode, and let the stuff as is
-	    // in Windows mode.
-	    // Accelerators are handled in wx_item.cc for Motif, and are not
-	    // YET supported in XView
-	    break;
-	} else
-	    *out++ = *in++;
-    }
-    *out = '\0';
-    return tmpOut;
+  while (*in)  {
+    if (*in == '&') {
+      // Check && -> &, &x -> x
+      if (*++in == '&')
+	*out++ = *in++;
+    } else if (*in == '\t') {
+      // Remove all stuff after \t in X mode, and let the stuff as is
+      // in Windows mode.
+      // Accelerators are handled in wx_item.cc for Motif, and are not
+      // YET supported in XView
+      break;
+    } else
+      *out++ = *in++;
+  }
+
+  *out = '\0';
+  return tmpOut;
 }

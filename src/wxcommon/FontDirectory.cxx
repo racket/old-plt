@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cxx,v 1.3 1999/11/12 22:50:37 mflatt Exp $
+ * $Id: FontDirectory.cxx,v 1.4 1999/11/19 22:02:46 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -191,9 +191,11 @@ class wxSuffixMap {
 
 wxSuffixMap::wxSuffixMap() {
   int i, j;
-  for (i = 0; i < wxNUM_WEIGHTS; i++)
-    for (j = 0; j < wxNUM_STYLES; j++)
+  for (i = 0; i < wxNUM_WEIGHTS; i++) {
+    for (j = 0; j < wxNUM_STYLES; j++) {
       map[i][j] = NULL;
+    }
+  }
 }
 
 class wxFontNameItem : public wxObject
@@ -257,7 +259,7 @@ int wxFontNameDirectory::GetNewFontId(void)
 static void SearchResource(const char *prefix, const char **names, int count, char **v)
 {
   int k, i, j;
-  char resource[1024], **defaults, *internal;
+  char resource[1024], **defaults, *internal, *cn;
 
   k = 1 << count;
 
@@ -273,7 +275,8 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 	strcat(resource, "_");
     }
 
-    if (wxGetResource(GET_CLASS_NAME, (char *)resource, v) && **v)
+    cn = GET_CLASS_NAME;
+    if (wxGetResource(cn, (char *)resource, v) && **v)
       return;
 
     if (!internal) {
@@ -306,15 +309,12 @@ void wxInitializeFontNameDirectory(void)
   wxTheFontNameDirectory->Initialize(wxSYMBOL, wxSYMBOL, "Symbol");
 }
 
-typedef char *a_charptr;
-
 void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 			     int wt, int st)
 {
   const char *weight, *style;
   char *v = NULL, *rname;
   int i;
-  const char *names[3];
 
   {
     switch (wt) {
@@ -329,6 +329,9 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
       weight = "Bold";
     }
     {
+      int len, closer = 0, startpos = 0;
+      const char *rnames[3];
+
       switch (st) {
       case wxSTYLE_NORMAL:
 	style = "Straight";
@@ -341,18 +344,16 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	style = "Slant";
       }
 
-      names[0] = resname;
-      names[1] = weight;
-      names[2] = style;
+      rnames[0] = resname;
+      rnames[1] = weight;
+      rnames[2] = style;
       
-      SearchResource(devresname, names, 3, &v);
+      SearchResource(devresname, rnames, 3, &v);
 
       /* Expand macros in the found string: */
     found:
-      int len, closer = 0, startpos = 0;
-
       len = (v ? strlen(v) : 0);
-      for (i = 0; i < len; i++)
+      for (i = 0; i < len; i++) {
 	if (v[i] == '$' && ((v[i+1] == '[') || (v[i+1] == '{'))) {
 	  startpos = i;
 	  if (v[i+1] == '[')
@@ -372,27 +373,30 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    int i, count, len;
 	    char **names;
 
-	    for (i = 0, count = 1; name[i]; i++)
+	    for (i = 0, count = 1; name[i]; i++) {
 	      if (name[i] == ',')
 		count++;
+	    }
 	    
 	    len = i;
 
-	    names = new a_charptr[count];
+	    names = new char*[count];
 	    names[0] = name;
-	    for (i = 0, count = 1; i < len; i++)
+	    for (i = 0, count = 1; i < len; i++) {
 	      if (name[i] == ',') {
 		names[count++] = name + i + 1;
 		name[i] = 0;
 	      }
+	    }
 
 	    SearchResource("", (const char **)names, count, (char **)&r);
 	    delete[] names;
 
 	    if (!r) {
-	      for (i = 0; i < len; i++)
+	      for (i = 0; i < len; i++) {
 		if (!name[i])
 		  name[i] = ',';
+	      }
 	      r = "";
 	      printf("Bad resource name \"%s\" in font lookup\n", name);
 	    }
@@ -418,6 +422,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 
 	  goto found;
 	}
+      }
 
       rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
 
@@ -441,13 +446,14 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	  src = (v ? v : (char *)rname);
 	  len = strlen(src);
 	  if (src[0] == '-') {
+	    char *prefix;
 	    int c = 0;
-	    for (i = 0; i < len; i++)
+	    for (i = 0; i < len; i++) {
 	      if (src[i] == '-')
 		c++;
+	    }
 	    
 	    v = new char[len + 40];
-	    char *prefix;
 	    if (c < 2)
 	      prefix = "-*";
 	    else
@@ -504,9 +510,11 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 
 void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname)
 {
-  wxFontNameItem *item = new wxFontNameItem;
+  wxFontNameItem *item;
   char *fam, resource[256];
   
+  item = new wxFontNameItem;
+
   item->id = fontid;
   item->family = family;
   item->isfamily = (resname[0] != '@');
@@ -543,12 +551,13 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
 int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
 {
   int id;
+  char *s;
 
   if ((id = GetFontId(name)))
     return id;
 
   id = GetNewFontId();
-  char *s = new char[strlen(name) + 2];
+  s = new char[strlen(name) + 2];
   strcpy(s + 1, name);
   s[0] = '@';
   Initialize(id, family, s);
@@ -558,12 +567,16 @@ int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
 
 char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  int wt, st;
+  wxFontNameItem *item;
+
+  item = (wxFontNameItem *)table->Get(fontid);
   
   if (!item)
     return NULL;
 
-  int wt = WCoordinate(weight), st = SCoordinate(style);
+  wt = WCoordinate(weight);
+  st = SCoordinate(style);
 
   /* Check for init */
   if (!item->screen.map[wt][st])
@@ -574,28 +587,34 @@ char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
 
 void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char *s)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  int wt, st;
+  wxFontNameItem *item;
+
+  item = (wxFontNameItem *)table->Get(fontid);
   
   if (!item)
     return;
 
-  int wt = WCoordinate(weight), st = SCoordinate(style);
+  wt = WCoordinate(weight);
+  st = SCoordinate(style);
 
 #ifdef wx_x
-  /* Safety: name must be less than 500 chars, and must not contain %
-     except maybe one instance of %d. */
-  int i, found_d = 0;
-  for (i = 0; s[i]; i++) {
-    if (i > 500) {
-      s = NULL;
-      break;
-    }
-    if (s[i] == '%') {
-      if (found_d || (s[i+1] != 'd')) {
+  {
+    /* Safety: name must be less than 500 chars, and must not contain %
+       except maybe one instance of %d. */
+    int i, found_d = 0;
+    for (i = 0; s[i]; i++) {
+      if (i > 500) {
 	s = NULL;
 	break;
-      } else
-	found_d = 1;
+      }
+      if (s[i] == '%') {
+	if (found_d || (s[i+1] != 'd')) {
+	  s = NULL;
+	  break;
+	} else
+	  found_d = 1;
+      }
     }
   }
 
@@ -608,12 +627,16 @@ void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char 
 
 char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  int wt, st;
+  wxFontNameItem *item;
+
+  item = (wxFontNameItem *)table->Get(fontid);
 
   if (!item)
     return NULL;
 
-  int wt = WCoordinate(weight), st = SCoordinate(style);
+  wt = WCoordinate(weight);
+  st = SCoordinate(style);
 
   /* Check for init */
   if (!item->printing.map[wt][st])
@@ -624,24 +647,32 @@ char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
 
 void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, char *s)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  int wt, st;
+  wxFontNameItem *item;
+
+  item = (wxFontNameItem *)table->Get(fontid);
 
   if (!item)
     return;
 
-  int wt = WCoordinate(weight), st = SCoordinate(style);
+  wt = WCoordinate(weight);
+  st = SCoordinate(style);
 
   item->printing.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  int wt, st;
+  wxFontNameItem *item;
+
+  item = (wxFontNameItem *)table->Get(fontid);
 
   if (!item)
     return NULL;
 
-  int wt = WCoordinate(weight), st = SCoordinate(style);
+  wt = WCoordinate(weight);
+  st = SCoordinate(style);
 
   /* Check for init */
   if (!item->afm.map[wt][st])
@@ -652,19 +683,24 @@ char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
 
 void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  wxFontNameItem *item;
+  int wt, st;
+
+  item = (wxFontNameItem *)table->Get(fontid);
 
   if (!item)
     return;
 
-  int wt = WCoordinate(weight), st = SCoordinate(style);
+  wt = WCoordinate(weight);
+  st = SCoordinate(style);
 
   item->afm.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetFontName(int fontid)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  wxFontNameItem *item;
+  item = (wxFontNameItem *)table->Get(fontid);
   
   if (!item)
     return NULL;
@@ -682,7 +718,8 @@ int wxFontNameDirectory::GetFontId(const char *name)
   table->BeginFind();
 
   while ((node = table->Next())) {
-    wxFontNameItem *item = (wxFontNameItem *)node->Data();
+    wxFontNameItem *item;
+    item = (wxFontNameItem *)node->Data();
     if (!item->isfamily && !strcmp(name, item->name+1))
       return item->id;
   }
@@ -692,7 +729,8 @@ int wxFontNameDirectory::GetFontId(const char *name)
 
 int wxFontNameDirectory::GetFamily(int fontid)
 {
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  wxFontNameItem *item;
+  item = (wxFontNameItem *)table->Get(fontid);
   
   if (!item)
     return wxDEFAULT;

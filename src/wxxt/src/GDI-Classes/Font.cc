@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.9 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: Font.cc,v 1.10 1999/11/19 22:02:37 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -101,10 +101,13 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style,
 
 wxFont::~wxFont(void)
 {
-    wxNode *node = scaled_xfonts->First();
+    wxNode *node;
+    node = scaled_xfonts->First();
     while (node) {
-	XFontStruct *xfont = (XFontStruct*)node->Data();
-	wxNode *next = node->Next();
+	XFontStruct *xfont;
+	wxNode *next;
+	xfont = (XFontStruct*)node->Data();
+	next = node->Next();
 	XFreeFont(wxAPP_DISPLAY, xfont);
 	node = next;
     }
@@ -136,7 +139,7 @@ char *wxFont::GetFaceString(void)
 
 void *wxFont::GetInternalFont(float scale)
 {
-    long        int_scale = long(scale * 100.0 + 0.5); // key for fontlist
+    long        int_scale = (long)(scale * 100.0 + 0.5); // key for fontlist
     int         point_scale = (point_size * 10 * int_scale) / 100;
     wxNode      *node=NULL;
     XFontStruct *xfont;
@@ -183,7 +186,8 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, int FontIdOrFamily,
   int i = 0;
   
   while ((node = list->NextNode(i))) {
-    wxFont *each_font = (wxFont*)node->Data();
+    wxFont *each_font;
+    each_font = (wxFont*)node->Data();
     if (each_font &&
 	each_font->GetPointSize() == PointSize &&
 	each_font->GetStyle() == Style &&
@@ -206,9 +210,11 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 				     int Family, int Style, int Weight, 
 				     Bool underline)
 {
+  int id;
+  id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
+
   return FindOrCreateFont(PointSize,
-			  wxTheFontNameDirectory->FindOrCreateFontId(Face, 
-								     Family),
+			  id,
 			  Style,
 			  Weight,
 			  underline);
@@ -223,14 +229,17 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
 				    int si_try_again)
 {
   char buffer[512];
-  char *name = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
+  char *name;
+  XFontStruct *s;
+
+  name = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
 
   if (!name)
     name = "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*";
 
   sprintf(buffer, name, point_size);
 
-  XFontStruct *s = XLoadQueryFont(wxAPP_DISPLAY, buffer);
+  s = XLoadQueryFont(wxAPP_DISPLAY, buffer);
 
   if (!s && si_try_again && ((style == wxSLANT) || (style == wxITALIC))) {
     /* Try slant/italic instead of italic/slant: */

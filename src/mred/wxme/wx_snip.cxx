@@ -621,7 +621,7 @@ void wxTextSnip::GetExtent(wxDC *dc,
     *ho = th;
   }
   if (dso) {
-    int td;
+    float td;
     td = style->GetTextDescent(dc);
     *dso = td;
   }

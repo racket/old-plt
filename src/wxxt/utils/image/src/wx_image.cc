@@ -76,7 +76,7 @@ byte           r[256],g[256],b[256];  /* colormap */
 
 /* used in XResource reading... */
 static char *def_str;
-static int   def_int;
+static long int   def_int;
 
 
 wxImage::wxImage(void)
@@ -529,12 +529,10 @@ void wxImage::closePic()
      this would include the window, any allocated colors, pic, epic, 
      theImage, etc. */
 
-  int i;
-
-#if 0 /* MATTHEW: don't free any colors */
+#if 0 /* Don't free any colors */
   if (LocalCmap) {
- // Should be destroyed by ~wxColourMap
-//    XFreeColormap(theDisp,LocalCmap);
+    // Should be destroyed by ~wxColourMap
+    //    XFreeColormap(theDisp,LocalCmap);
     LocalCmap = 0;
   }
   else if (!brokeFreeCols) {
@@ -596,7 +594,7 @@ void wxImage::FixAspect(int grow,int *w,int *h)
 
 
   /* shrink to fit screen without changing aspect ratio */
-  if (*w>dispWIDE) {
+  if ((unsigned)*w > dispWIDE) {
     int i;
     a = (float) *w / dispWIDE;
     *w = dispWIDE;
@@ -604,7 +602,7 @@ void wxImage::FixAspect(int grow,int *w,int *h)
     *h = i;
   }
 
-  if (*h>dispHIGH) {
+  if ((unsigned)*h > dispHIGH) {
     a = (float) *h / dispHIGH;
     *h = dispHIGH;
     *w = (int) (*w / a + .5);
@@ -623,8 +621,10 @@ int wxImage::rd_int(char *name)
 {
   /* returns '1' if successful.  result in def_int */
 
-  if (def_str = XGetDefault(theDisp, PROGNAME, name)) {
-    if (sscanf(def_str, "%ld", &def_int) == 1) return 1;
+  def_str = XGetDefault(theDisp, PROGNAME, name);
+  if (def_str) {
+    if (sscanf(def_str, "%ld", &def_int) == 1)
+      return 1;
     else {
       fprintf(stderr, "wxImage: couldn't read integer value for %s resource\n", 
 	      name);
@@ -640,7 +640,8 @@ int wxImage::rd_str(char *name)
 {
   /* returns '1' if successful.  result in def_str */
   
-  if (def_str = XGetDefault(theDisp, PROGNAME, name)) return 1;
+  def_str = XGetDefault(theDisp, PROGNAME, name);
+  if (def_str) return 1;
   else return 0;
 
 }
@@ -650,7 +651,8 @@ int wxImage::rd_flag(char *name)
 {
   /* returns '1' if successful.  result in def_str */
   
-  if (def_str = XGetDefault(theDisp, PROGNAME, name)) {
+  def_str = XGetDefault(theDisp, PROGNAME, name);
+  if (def_str) {
     def_int = (strcmp(def_str, "on")==0) || 
               (strcmp(def_str, "1")==0) ||
 	      (strcmp(def_str, "true")==0) ||

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Directory.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: Directory.cc,v 1.2 1999/11/04 17:25:36 mflatt Exp $
  *
  * Purpose: basic file and directory handling
  *
@@ -39,10 +39,10 @@ Bool wxFileExists(char *filename)
 {
     struct stat stbuf;
 
-    return (filename && stat((char *)filename, &stbuf) == 0);
+    return (filename && !stat((char *)filename, &stbuf));
 }
 
 Bool wxRemoveFile(char *file)
 {
-    return Bool((unlink(file) == 0));
+    return !unlink(file);
 }

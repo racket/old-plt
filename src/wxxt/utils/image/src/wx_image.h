@@ -145,7 +145,6 @@ class wxImage: public wxObject
   void FSDither(byte *, int, int, byte *);
   void CreateXImage(void);
   void FatalError(char *);
-  void Timer(int);
 
   /*************************** XV24TO8.C **************************/
   int  Conv24to8(byte *, int, int, int);

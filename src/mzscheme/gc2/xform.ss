@@ -92,7 +92,7 @@
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
      (when file-out
-       '(delete-file file-out))
+       (delete-file file-out))
      (eh))))
 
 (define exit-with-error? #f)
@@ -121,6 +121,7 @@
 (printf "#define NEW_ARRAY(t, array) (new t array)~n")
 (printf "#define NEW_ATOM(t) (new (AtomicGC) t)~n")
 (printf "#define NEW_ATOM_ARRAY(t, array) (new (AtomicGC) t array)~n")
+(printf "#define NEW_PTR_ARRAY(t, array) (new t* array)~n")
 (printf "#define DELETE(x) (delete x)~n")
 (printf "#define DELETE_ARRAY(x) (delete[] x)~n")
 (printf "#define CURRENT_NEW_THIS GC_get_current_new()~n")
@@ -167,6 +168,7 @@
 (define NEW_ARRAY (string->symbol "NEW_ARRAY"))
 (define NEW_ATOM (string->symbol "NEW_ATOM"))
 (define NEW_ATOM_ARRAY (string->symbol "NEW_ATOM_ARRAY"))
+(define NEW_PTR_ARRAY (string->symbol "NEW_PTR_ARRAY"))
 (define DELETE (string->symbol "DELETE"))
 (define DELETE_ARRAY (string->symbol "DELETE_ARRAY"))
 (define CURRENT_NEW_THIS (string->symbol "CURRENT_NEW_THIS"))
@@ -571,12 +573,13 @@
 			 (eq? base 'union))
 		     1
 		     0)]
-	 [non-ptr-base (case (tok-n (car e))
-			 [(int long short double float char) (list (tok-n (car e)))]
-			 [(unsigned)
-			  (if (memq (tok-n (cadr e)) '(int long char))
-			      (list 'unsigned (tok-n (cadr e))))]
-			 [else #f])])
+	 [non-ptr-base (cond
+			[(eq? 'unsigned  (tok-n (car e)))
+			 (if (memq (tok-n (cadr e)) '(int long char))
+			     (list 'unsigned (tok-n (cadr e))))]
+			[(memq (tok-n (car e)) non-pointer-types)
+			 (list (tok-n (car e)))]
+			[else #f])])
     (let loop ([l (- (length e) 2)][array-size #f][pointers null][non-pointers null])
       (if (<= l minpos)
 	  (values pointers non-pointers)
@@ -735,9 +738,10 @@
       (cons sube l))
     null)))
 
-(define (type->decl x)
+(define (type->decl x where-v)
   (cond
-   [(non-pointer-type? x)
+   [(and (non-pointer-type? x)
+	 (non-pointer-type-base x))
     (map (lambda (x) (make-tok x #f #f #f)) (non-pointer-type-base x))]
    [(and (pointer-type? x) (pointer-type-base x))
     (append (map (lambda (x) (make-tok x #f #f #f)) (pointer-type-base x))
@@ -745,7 +749,8 @@
 	      (if (zero? n)
 		  null
 		  (cons (make-tok '* #f #f #f) (loop (sub1 n))))))]
-   [else (log-error "[TYPE]: Can't render type declaration for ~a"
+   [else (log-error "[TYPE] ~a in ~a: Can't render type declaration for ~a"
+		    (tok-line where-v) (tok-file where-v)
 		    x)
 	 (list (make-tok '??? #f #f #f))]))
    
@@ -813,11 +818,12 @@
 			    (make-braces
 			     "{" #f #f #f "}"
 			     (make-mark-body (or super 'gc_marking)
-					     (c++-class-top-vars cl)))))))
+					     (c++-class-top-vars cl)
+					     (car e)))))))
 		     (cdr e)))
 	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
 
-(define (make-mark-body super vars)
+(define (make-mark-body super vars where-v)
   (let ([pointers (filter (lambda (x)
 			    (not (non-pointer-type? (cdr x))))
 			  vars)])
@@ -847,7 +853,7 @@
 		    (make-parens
 		     "(" #f #f #f ")"
 		     (append
-		      (type->decl (cdr x))
+		      (type->decl (cdr x) where-v)
 		      (list (make-tok '|,| #f #f #f)
 			    (make-tok (car x) #f #f #f))))
 		    (make-tok semi #f #f #f)))
@@ -1027,8 +1033,7 @@
 		     ((if arr? cdddr cddr) e))
 		    #t
 		    paren-arrows?))]
-	   [(and (eq? (tok-n v) 'new)
-		 (not (parens? (cadr e))))
+	   [(eq? (tok-n v) 'new)
 	    ;; Make `new' expression look like a function call
 	    (let* ([t (cadr e)]
 		   [obj? (find-c++-class (tok-n t) #f)]
@@ -1037,27 +1042,44 @@
 		(log-error "[NEW] ~a in ~a: New used on non-class"
 			   (tok-line (car e)) (tok-file (car e))))
 	      
-	      (if (and (pair? (cddr e))
-		       (seq? (caddr e)))
-		  (loop (list*
-			 (make-tok (if (brackets? (caddr e)) 
-				       (if atom? NEW_ATOM_ARRAY NEW_ARRAY)
-				       (if atom? NEW_ATOM NEW_OBJECT))
-				   (tok-line v) (tok-file v) (tok-col v))
-			 (make-parens
-			  "(" (tok-line v) (tok-col v) (tok-file v) ")"
-			  (list (cadr e) (make-tok '|,| #f #f #f) (caddr e)))
-			 (cdddr e))
-			#t
-			paren-arrows?)
-		  (loop (list*
-			 (make-tok (if atom? NEW_ATOM NEW_OBJ) (tok-line v) (tok-file v) (tok-col v))
-			 (make-parens
-			  "(" (tok-line v) (tok-col v) (tok-file v) ")"
-			  (list (cadr e)))
-			 (cddr e))
-			#t
-			paren-arrows?)))]
+	      (cond
+	       [(and (pair? (cddr e))
+		     (eq? '* (tok-n (caddr e)))
+		     (pair? (cdddr e))
+		     (brackets? (cadddr e)))
+		(loop (list*
+		       (make-tok NEW_PTR_ARRAY
+				 (tok-line v) (tok-file v) (tok-col v))
+		       (make-parens
+			"(" (tok-line v) (tok-col v) (tok-file v) ")"
+			(list (cadr e) 
+			      (make-tok '|,| #f #f #f) 
+			      (cadddr e)))
+		       (cddddr e))
+		      #t
+		      paren-arrows?)]
+	       [(and (pair? (cddr e))
+		     (seq? (caddr e)))
+		(loop (list*
+		       (make-tok (if (brackets? (caddr e)) 
+				     (if atom? NEW_ATOM_ARRAY NEW_ARRAY)
+				     (if atom? NEW_ATOM NEW_OBJECT))
+				 (tok-line v) (tok-file v) (tok-col v))
+		       (make-parens
+			"(" (tok-line v) (tok-col v) (tok-file v) ")"
+			(list (cadr e) (make-tok '|,| #f #f #f) (caddr e)))
+		       (cdddr e))
+		      #t
+		      paren-arrows?)]
+	       [else
+		(loop (list*
+		       (make-tok (if atom? NEW_ATOM NEW_OBJ) (tok-line v) (tok-file v) (tok-col v))
+		       (make-parens
+			"(" (tok-line v) (tok-col v) (tok-file v) ")"
+			(list (cadr e)))
+		       (cddr e))
+		      #t
+		      paren-arrows?)]))]
 	   [(and can-convert?
 		 (pair? (cdr e))
 		 (parens? (cadr e))
@@ -1650,7 +1672,7 @@
 			     (live-var-info-maxpush live-vars)
 			     (live-var-info-vars live-vars)
 			     ;; Add newly-created vars for lifting to declaration set
-			     (cons (append (type->decl special-case-type)
+			     (cons (append (type->decl special-case-type v)
 					   (list
 					    (make-tok new-var #f #f #f)
 					    (make-tok semi #f #f #f)))

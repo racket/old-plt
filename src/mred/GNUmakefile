@@ -187,8 +187,84 @@ gc2/Menu.cc: $(WXDIR)/src/Windows/Menu.cc
 gc2/Panel.cc: $(WXDIR)/src/Windows/Panel.cc
 	$(XFORM) $< $@
 
+gc2/DC.cc: $(WXDIR)/src/DeviceContexts/DC.cc
+	$(XFORM) $< $@
 gc2/WindowDC.cc: $(WXDIR)/src/DeviceContexts/WindowDC.cc
 	$(XFORM) $< $@
+gc2/MemoryDC.cc: $(WXDIR)/src/DeviceContexts/MemoryDC.cc
+	$(XFORM) $< $@
+gc2/PSDC.cc: $(WXDIR)/src/DeviceContexts/PSDC.cc
+	$(XFORM) $< $@
+
+gc2/Object.cc: $(WXDIR)/src/DataStructures/Object.cc
+	$(XFORM) $< $@
+gc2/TypeTree.cc: $(WXDIR)/src/DataStructures/TypeTree.cc
+	$(XFORM) $< $@
+gc2/wb_list.cc: $(WXDIR)/src/DataStructures/wb_list.cc
+	$(XFORM) $< $@
+gc2/wb_hash.cc: $(WXDIR)/src/DataStructures/wb_hash.cc
+	$(XFORM) $< $@
+
+gc2/AppMain.cc: $(WXDIR)/src/Application/AppMain.cc
+	$(XFORM) $< $@
+gc2/GlobalData.cc: $(WXDIR)/src/Application/GlobalData.cc
+	$(XFORM) $< $@
+
+gc2/FileDialog.cc: $(WXDIR)/src/Dialogs/FileDialog.cc
+	$(XFORM) $< $@
+gc2/MessageBox.cc: $(WXDIR)/src/Dialogs/MessageBox.cc
+	$(XFORM) $< $@
+
+gc2/EvtHandler.cc: $(WXDIR)/src/EventHandling/EvtHandler.cc
+	$(XFORM) $< $@
+gc2/wb_sysev.cc: $(WXDIR)/src/EventHandling/wb_sysev.cc
+	$(XFORM) $< $@
+gc2/wb_stdev.cc: $(WXDIR)/src/EventHandling/wb_stdev.cc
+	$(XFORM) $< $@
+
+gc2/Bitmap.cc: $(WXDIR)/src/GDI-Classes/Bitmap.cc
+	$(XFORM) $< $@
+gc2/Colour.cc: $(WXDIR)/src/GDI-Classes/Colour.cc
+	$(XFORM) $< $@
+gc2/Font.cc: $(WXDIR)/src/GDI-Classes/Font.cc
+	$(XFORM) $< $@
+gc2/FontDirectory.cc: $(WXDIR)/src/GDI-Classes/FontDirectory.cc
+	$(XFORM) $< $@
+gc2/Pen+Brush.cc: $(WXDIR)/src/GDI-Classes/Pen+Brush.cc
+	$(XFORM) $< $@
+
+gc2/Clipboard.cc: $(WXDIR)/src/Misc/Clipboard.cc
+	$(XFORM) $< $@
+gc2/Timer.cc: $(WXDIR)/src/Misc/Timer.cc
+	$(XFORM) $< $@
+
+gc2/Assert.cc: $(WXDIR)/src/Utilities/Assert.cc
+	$(XFORM) $< $@
+gc2/BusyCursor.cc: $(WXDIR)/src/Utilities/BusyCursor.cc
+	$(XFORM) $< $@
+gc2/Date+Time.cc: $(WXDIR)/src/Utilities/Date+Time.cc
+	$(XFORM) $< $@
+gc2/Dierctory.cc: $(WXDIR)/src/Utilities/Directory.cc
+	$(XFORM) $< $@
+gc2/Error.cc: $(WXDIR)/src/Utilities/Error.cc
+	$(XFORM) $< $@
+gc2/GDI.cc: $(WXDIR)/src/Utilities/GDI.cc
+	$(XFORM) $< $@
+gc2/Home.cc: $(WXDIR)/src/Utilities/Home.cc
+	$(XFORM) $< $@
+gc2/Misc.cc: $(WXDIR)/src/Utilities/Misc.cc
+	$(XFORM) $< $@
+gc2/Net.cc: $(WXDIR)/src/Utilities/Net.cc
+	$(XFORM) $< $@
+gc2/Path.cc: $(WXDIR)/src/Utilities/Path.cc
+	$(XFORM) $< $@
+gc2/Resources.cc: $(WXDIR)/src/Utilities/Resources.cc
+	$(XFORM) $< $@
+gc2/String.cc: $(WXDIR)/src/Utilities/String.cc
+	$(XFORM) $< $@
+gc2/TempFile.cc: $(WXDIR)/src/Utilities/TempFile.cc
+	$(XFORM) $< $@
+
 
 gc2/wx_media.cc: wxme/wx_media.cxx
 	$(XFORM) $< $@
@@ -242,7 +318,50 @@ XSRCS = gc2/Window.cc \
   gc2/Item.cc \
   gc2/Menu.cc \
   gc2/Panel.cc \
+\
+  gc2/DC.cc \
   gc2/WindowDC.cc \
+  gc2/MemoryDC.cc \
+  gc2/PSDC.cc \
+\
+  gc2/Object.cc \
+  gc2/TypeTree.cc \
+  gc2/wb_list.cc \
+  gc2/wb_hash.cc \
+\
+  gc2/AppMain.cc \
+  gc2/GlobalData.cc \
+\
+  gc2/FileDialog.cc \
+  gc2/MessageBox.cc \
+\
+  gc2/EvtHandler.cc \
+  gc2/wb_sysev.cc \
+  gc2/wb_stdev.cc \
+\
+  gc2/Bitmap.cc \
+  gc2/Colour.cc \
+  gc2/Font.cc \
+  gc2/FontDirectory.cc \
+  gc2/Pen+Brush.cc \
+\
+  gc2/Clipboard.cc \
+  gc2/Timer.cc \
+\
+  gc2/Assert.cc \
+  gc2/BusyCursor.cc \
+  gc2/Date+Time.cc \
+  gc2/Dierctory.cc \
+  gc2/Error.cc \
+  gc2/GDI.cc \
+  gc2/Home.cc \
+  gc2/Misc.cc \
+  gc2/Net.cc \
+  gc2/Path.cc \
+  gc2/Resources.cc \
+  gc2/String.cc \
+  gc2/TempFile.cc \
+\
   gc2/wx_media.cc \
   gc2/wx_mpriv.cc \
   gc2/wx_snip.cc \
@@ -252,6 +371,7 @@ XSRCS = gc2/Window.cc \
   gc2/wx_keym.cc \
   gc2/wx_medio.cc \
   gc2/wx_style.cc \
+\
   gc2/mred.cc \
   gc2/mredx.cc
 

@@ -246,6 +246,7 @@ static int check_sleep(int need_activity, int sleep_now);
 #endif
 
 static void remove_process(Scheme_Process *r);
+static void exit_or_escape(Scheme_Process *p);
 
 static Scheme_Config *initial_config;
 
@@ -1537,8 +1538,10 @@ void scheme_break_thread(Scheme_Process *p)
   p->external_break = 1;
 
 #ifndef MZ_REAL_THREADS
-  if (p == scheme_current_process)
-    scheme_fuel_counter = 0;
+  if (p == scheme_current_process) {
+    if (scheme_can_break(p, p->config))
+      scheme_fuel_counter = 0;
+  }
   scheme_weak_resume_thread(p);
 # if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
 #  ifndef NO_STDIO_THREADS
@@ -2339,6 +2342,12 @@ static Scheme_Object *break_thread(int argc, Scheme_Object *args[])
 
   scheme_break_thread(p);
 
+#ifndef MZ_REAL_THREADS
+  /* In case p == scheme_current_process */
+  if (!scheme_fuel_counter)
+    scheme_process_block(0.0);
+#endif
+
   return scheme_void;
 }
 
@@ -2403,7 +2412,7 @@ void scheme_kill_thread(Scheme_Process *p)
 
 #ifndef MZ_REAL_THREADS
   /* Give killed threads time to die: */
-  scheme_process_block(0);
+  scheme_process_block(0.0);
 #endif
 }
 

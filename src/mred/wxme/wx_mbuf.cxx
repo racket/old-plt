@@ -1797,7 +1797,7 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
     }
     pb->Copy(TRUE, 0);
     for (n = unselect->First(); n; n = n->Next()) {
-      wSnip *snp;
+      wxSnip *snp;
       snp = (wxSnip *)n->Data();
       pb->RemoveSelected(snp);
     }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.cc,v 1.6 1999/08/05 21:45:31 mflatt Exp $
+ * $Id: EvtHandler.cc,v 1.7 1999/11/04 17:25:34 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -140,29 +140,39 @@ static key_equiv key_translation[] = {
 
 int CharCodeXToWX(KeySym key_sym)
 {
-    // first try translation
-    for (int i=0; i < wxNumberOf(key_translation); ++i)
-	if (key_sym == key_translation[i].x)
-	    return key_translation[i].wx;
-    // try displayable keysyms
-    if (key_sym <= 255)
-	return int(key_sym);
-    // keysym not handled by wx
-    return 0; /* MATTHEW: I use -1. */
+  // first try translation
+  int i;
+
+  for (i=0; i < wxNumberOf(key_translation); ++i) {
+    if (key_sym == key_translation[i].x)
+      return key_translation[i].wx;
+  }
+
+  // try displayable keysyms
+  if (key_sym <= 255)
+    return int(key_sym);
+
+  // keysym not handled by wx
+  return 0;
 }
 
 KeySym CharCodeWXToX(int id)
 {
+  int i;
+  
   if (!id)
     return 0;
 
-  // fisrt try translation
-  for (int i=0; i < wxNumberOf(key_translation); ++i)
+  // first try translation
+  for (i=0; i < wxNumberOf(key_translation); ++i) {
     if (id == key_translation[i].wx)
       return key_translation[i].x;
+  }
+
   // try displayable keysyms
   if (id <= 255)
     return KeySym(id);
+
   // keysym not handled by wx
   return 0;
 }
@@ -173,5 +183,6 @@ Bool wxIsAlt(KeySym key_sym)
       || (key_sym == XK_Meta_L) || (key_sym == XK_Meta_R)) {
     return TRUE;
   }
+
   return FALSE;
 }

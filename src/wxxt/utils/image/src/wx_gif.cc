@@ -98,7 +98,7 @@ static int EGApalette[16][3] = {
 int filesize;
 
 /*****************************/
-int wxImage::LoadGIF(char *fname,int nc)
+int wxImage::LoadGIF(char *fname, int /* nc */)
 {
   register byte  ch, ch1;
   register byte *ptr, *ptr1, *picptr;

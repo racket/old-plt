@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.8 1999/11/12 17:27:47 mflatt Exp $
+ * $Id: Pen+Brush.cc,v 1.9 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -184,7 +184,8 @@ wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
     return NULL;
   
   while ((node = list->NextNode(i))) {
-    wxPen *each_pen = (wxPen*)node->Data();
+    wxPen *each_pen;
+    each_pen = (wxPen*)node->Data();
     if (each_pen &&
 	each_pen->GetWidth() == w &&
 	each_pen->GetStyle() == style &&
@@ -203,7 +204,8 @@ wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
 
 wxPen *wxPenList::FindOrCreatePen(char *colour, int width, int style)
 {
-  wxColour *the_colour = wxTheColourDatabase->FindColour(colour);
+  wxColour *the_colour;
+  the_colour = wxTheColourDatabase->FindColour(colour);
   if (the_colour)
     return FindOrCreatePen(the_colour, width, style);
   return NULL;
@@ -239,7 +241,8 @@ wxBrush *wxBrushList::FindOrCreateBrush(wxColour *colour, int style)
     return NULL;
 
   while ((node = list->NextNode(i))) {
-    wxBrush *each_brush = (wxBrush*)node->Data();
+    wxBrush *each_brush;
+    each_brush = (wxBrush*)node->Data();
     if (each_brush &&
 	each_brush->GetStyle() == style &&
 	each_brush->GetColour()->Red() == colour->Red() &&
@@ -257,7 +260,8 @@ wxBrush *wxBrushList::FindOrCreateBrush(wxColour *colour, int style)
 
 wxBrush *wxBrushList::FindOrCreateBrush(char *colour, int style)
 {
-  wxColour *the_colour = wxTheColourDatabase->FindColour(colour);
+  wxColour *the_colour;
+  the_colour = wxTheColourDatabase->FindColour(colour);
   if (the_colour)
     return FindOrCreateBrush(the_colour, style);
   return NULL;

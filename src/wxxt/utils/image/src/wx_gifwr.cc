@@ -112,7 +112,7 @@ int wxImage::WriteGIF(FILE *fp, byte *pic, int w, int h, byte *rmap, byte *gmap,
 
   if (imgDEBUG) 
     fprintf(stderr,"WrGIF: pic=%lx, w,h=%dx%d, numcols=%d, Bits%d,Cmap=%d\n",
-	    pic, w,h,numcols,BitsPerPixel,ColorMapSize);
+	    (long)pic, w,h,numcols,BitsPerPixel,ColorMapSize);
 
   fwrite("GIF87a", 1, 6, fp);    /* the GIF magic number */
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.8 1999/11/19 22:02:37 mflatt Exp $
+ * $Id: DC.cc,v 1.9 1999/11/21 00:08:47 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -179,18 +179,19 @@ void wxDC::DrawSpline(float x1, float y1, float x2, float y2,
 		      float x3,float y3)
 {
     wxList *list;
+    wxPoint *point1, *point2, *point3;
 
     list = new wxList;
 
-    wxPoint *point1 = new wxPoint;
+    point1 = new wxPoint;
     point1->x = x1; point1->y = y1;
     list->Append((wxObject*)point1);
 
-    wxPoint *point2 = new wxPoint;
+    point2 = new wxPoint;
     point2->x = x2; point2->y = y2;
     list->Append((wxObject*)point2);
 
-    wxPoint *point3 = new wxPoint;
+    point3 = new wxPoint;
     point3->x = x3; point3->y = y3;
     list->Append((wxObject*)point3);
 
@@ -205,8 +206,8 @@ void wxDC::DrawSpline(float x1, float y1, float x2, float y2,
 
 // defines and static declarations for DrawOpenSpline
 
-#define half(z1,z2)	float((z1+z2)/2.0)
-#define wx_round(a)	float(int(a+0.5))
+#define half(z1,z2)	(float)((z1+z2)/2.0)
+#define wx_round(a)	(float)((int)(a+0.5))
 
 static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
 				float a3, float b3, float a4, float b4);
@@ -225,8 +226,9 @@ void wxDC::DrawOpenSpline(wxList *pts)
     wxPoint *p;
     float  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
     float  x1,  y1,  x2 , y2;
+    wxNode *node;
 
-    wxNode *node = pts->First();
+    node = pts->First();
     p = (wxPoint*)node->Data();
     x1 = p->x; y1 = p->y;
 

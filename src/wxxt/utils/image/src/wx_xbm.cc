@@ -40,7 +40,7 @@
  
 
 /*******************************************/
-int wxImage::LoadXBM(char *fname, int nc)
+int wxImage::LoadXBM(char *fname, int /* nc */)
 /*******************************************/
 {
   FILE  *fp;

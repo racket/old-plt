@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.9 1999/11/18 16:35:06 mflatt Exp $
+ * $Id: Colour.cc,v 1.10 1999/11/21 00:08:47 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -92,12 +92,13 @@ wxColour::wxColour(wxColour *col)
 wxColour::wxColour(const char *col)
 : wxObject(COLOR_CLEANUP)
 {
+    wxColour *the_colour;
+
     __type = wxTYPE_COLOUR;
 
     locked = 0;
 
-    wxColour *the_colour
-	= wxTheColourDatabase->FindColour(col); // find colour by name
+    the_colour = wxTheColourDatabase->FindColour(col); // find colour by name
 
     if (the_colour) {
 	X  = new wxColour_Xintern; // create new X representation
@@ -199,17 +200,20 @@ unsigned char wxColour::Blue(void)
 static int alloc_close_color(Display *display, Colormap cmap, XColor *xc)
 {
   XColor ctab[256];
-  int ncells = DisplayCells(display, DefaultScreen(display)), j;
+  int ncells, j;
+  int d, mdist, close;
+  
+
+  ncells = DisplayCells(display, DefaultScreen(display));
 
   ncells = (ncells < 256) ? ncells : 256;
   
-  for (j = 0; j < ncells; j++)
+  for (j = 0; j < ncells; j++) {
     ctab[j].pixel = j;
+  }
 
   XQueryColors(display, cmap, ctab, ncells);
 
-  int           d, mdist, close;
-  
   mdist = 0;   close = -1;
   
   for (j = 0; j < ncells; j++) {
@@ -261,12 +265,15 @@ unsigned long wxColour::GetPixel(wxColourMap *cmap, Bool is_color, Bool fg)
 
     if (X) {
 	if (!X->have_pixel) {
+	  XColor xcol;
+	  Colormap cm;
+
 	    // no pixel value or wrong colourmap
 	    FreePixel(FALSE); // free pixel value if any
-	    X->xcolormap = GETCOLORMAP(cmap); // colourmap to use
-	    // allocate pixel
-	    XColor xcol;
+	    cm = GETCOLORMAP(cmap); // colourmap to use
+	    X->xcolormap = cm;
 
+	    // allocate pixel
 	    /* Copy color b/c XAllocColour sets RGB values */
 	    xcol.red = X->xcolor.red;
 	    xcol.green = X->xcolor.green;
@@ -319,10 +326,13 @@ void wxColour::FreePixel(Bool del)
 
 wxColourDatabase::~wxColourDatabase (void)
 {
-  wxNode *node = First();
+  wxNode *node;
+  node = First();
   while (node) {
-    wxColour *col = (wxColour*)node->Data();
-    wxNode *next = node->Next();
+    wxColour *col;
+    wxNode *next;
+    col  = (wxColour*)node->Data();
+    next = node->Next();
     delete col;
     node = next;
   }
@@ -331,13 +341,17 @@ wxColourDatabase::~wxColourDatabase (void)
 wxColour *wxColourDatabase::FindColour(const char *colour)
 {
   wxNode *node;
+  XColor xcolor;
+  wxColour *col;
+  Colormap cm;
 
   // Force capital so lc matches as in X
   char uc_colour[256];
   int i;
 
-  for (i = 0; colour[i] && i < 255; i++)
+  for (i = 0; colour[i] && i < 255; i++) {
     uc_colour[i] = toupper(colour[i]);
+  }
   uc_colour[i] = 0;
   colour = uc_colour;
 
@@ -423,11 +437,9 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
     APPEND_C ("YELLOW GREEN", new wxColour (153, 204, 50));
   }
 
-  XColor xcolor;
-  wxColour *col;
-
   // use wxAPP_DISPLAY and wxAPP_COLOURMAP as default
-  if (XParseColor(wxAPP_DISPLAY, GETCOLORMAP(wxAPP_COLOURMAP), colour, &xcolor)) {
+  cm = GETCOLORMAP(wxAPP_COLOURMAP);
+  if (XParseColor(wxAPP_DISPLAY, cm, colour, &xcolor)) {
     // new colour found: add to list as found, but only if it's in the standard set
     col = (wxColour *)aux->Get(colour);
     if (col) {
@@ -449,10 +461,12 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
 char *wxColourDatabase::FindName(wxColour *colour)
 {
   if (colour->Ok()) {
-    unsigned char red   = colour->Red();
-    unsigned char green = colour->Green();
-    unsigned char blue  = colour->Blue();
     wxNode *node;
+    unsigned char red, green, blue;
+
+    red   = colour->Red();
+    green = colour->Green();
+    blue  = colour->Blue();
     
     for (node = First(); node; node = node->Next()) {
       wxColour *col;

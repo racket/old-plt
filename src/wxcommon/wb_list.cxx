@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.3 1999/11/12 22:50:37 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.4 1999/11/21 00:09:16 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -133,17 +133,18 @@ wxList::wxList (void)
 
 wxList::wxList (int N, wxObject * Objects[])
 {
-  __type = wxTYPE_LIST;
   wxNode *last = NULL;
-
   int i;
-  for (i = 0; i < N; i++)
-    {
-      wxNode *next = new wxNode (this, last, NULL, Objects[i]);
-      last = next;
-      if (i == 0)
-	first_node = next;
-    }
+
+  __type = wxTYPE_LIST;
+
+  for (i = 0; i < N; i++) {
+    wxNode *next;
+    next = new wxNode (this, last, NULL, Objects[i]);
+    last = next;
+    if (i == 0)
+      first_node = next;
+  }
   last_node = last;
   n = N;
   key_type = wxKEY_NONE;
@@ -163,15 +164,16 @@ wxList::wxList(KeyType the_key_type, Bool clean_up)
 wxList::~wxList (void)
 {
   wxNode *each = first_node;
-  while (each)
-    {
-      wxNode *next = each->Next ();
+  while (each) {
+      wxNode *next;
+      
+      next = each->Next ();
 
       each->Kill(this);
       delete each;
-
+      
       each = next;
-    }
+  }
 
   first_node = last_node = NULL;
 }
@@ -179,20 +181,20 @@ wxList::~wxList (void)
 wxNode *wxList::Nth (int i)
 {
   int j = 0;
-  for (wxNode * current = First (); current; current = current->Next ())
-    {
-      if (j++ == i)
-	return current;
-    }
+  wxNode * current;
+  for (current = First (); current; current = current->Next ()) {
+    if (j++ == i)
+      return current;
+  }
   return NULL;			// No such element
 
 }
 
 wxNode *wxList::Find (long key)
 {
-  wxNode *current = First();
-  while (current)
-  {
+  wxNode *current;
+  current = First();
+  while (current) {
     if (current->integer_key == key)
       return current;
     current = current->Next();
@@ -203,17 +205,16 @@ wxNode *wxList::Find (long key)
 
 wxNode *wxList::Find (const char *key)
 {
-  wxNode *current = First();
-  while (current)
-  {
-      if (!current->string_key)
-	{
-	  wxFatalError ("wxList: string key not present, probably did not Append correctly!");
-	  break;
-	}
-      if (strcmp (current->string_key, key) == 0)
-	return current;
-      current = current->Next();
+  wxNode *current;
+  current = First();
+  while (current) {
+    if (!current->string_key) {
+      wxFatalError ("wxList: string key not present, probably did not Append correctly!");
+      break;
+    }
+    if (strcmp (current->string_key, key) == 0)
+      return current;
+    current = current->Next();
   }
 
   return NULL;			// Not found!
@@ -222,46 +223,45 @@ wxNode *wxList::Find (const char *key)
 
 wxNode *wxList::Member (wxObject * object)
 {
-  for (wxNode * current = First (); current; current = current->Next ())
-    {
-      wxObject *each = current->Data ();
-      if (each == object)
-	return current;
-    }
+  wxNode * current;
+  for (current = First (); current; current = current->Next ()) {
+    wxObject *each;
+    each = current->Data ();
+    if (each == object)
+      return current;
+  }
   return NULL;
 }
 
 Bool wxList::DeleteNode (wxNode * node)
 {
-  if (node)
-    {
-      node->Kill(this);
-      delete node;
-      return TRUE;
-    }
+  if (node) {
+    node->Kill(this);
+    delete node;
+    return TRUE;
+  }
   return FALSE;
 }
 
 Bool wxList::DeleteObject (wxObject * object)
 {
+  wxNode * current;
   // Search list for object
-  for (wxNode * current = first_node; current; current = current->Next ())
-    {
-      if (current->Data () == object)
-	{
-	  current->Kill(this);
-	  delete current;
-	  return TRUE;
-	}
+  for (current = first_node; current; current = current->Next ()) {
+    if (current->Data () == object) {
+      current->Kill(this);
+      delete current;
+      return TRUE;
     }
+  }
   return FALSE;			// Did not find the object
-
 }
 
 
 wxNode *wxList::Append(wxObject *object)
 {
-  wxNode *node = new wxNode(this, last_node, NULL, object);
+  wxNode *node;
+  node = new wxNode(this, last_node, NULL, object);
   if (!first_node)
     first_node = node;
   last_node = node;
@@ -272,10 +272,13 @@ wxNode *wxList::Append(wxObject *object)
 // Insert new node at front of list
 wxNode *wxList::Insert (wxObject * object)
 {
-  wxNode *node = new wxNode (this, NULL, First (), object);
+  wxNode *node;
+
+  node = First();
+  node = new wxNode(this, NULL, node, object);
   first_node = node;
 
-  if (!(node->Next ()))
+  if (!(node->Next()))
     last_node = node;
 
   n++;
@@ -287,15 +290,15 @@ wxNode *wxList::Insert (wxObject * object)
 wxNode *wxList::Insert (wxNode * position, wxObject * object)
 {
   wxNode *prev = NULL;
+  wxNode *node;
   if (position)
     prev = position->Previous ();
 
-  wxNode *node = new wxNode (this, prev, position, object);
-  if (!first_node)
-    {
+  node = new wxNode (this, prev, position, object);
+  if (!first_node) {
       first_node = node;
       last_node = node;
-    }
+  }
   if (!prev)
     first_node = node;
 
@@ -306,7 +309,8 @@ wxNode *wxList::Insert (wxNode * position, wxObject * object)
 // Keyed append
 wxNode *wxList::Append (long key, wxObject * object)
 {
-  wxNode *node = new wxNode (this, last_node, NULL, object, key);
+  wxNode *node;
+  node = new wxNode (this, last_node, NULL, object, key);
   if (!first_node)
     first_node = node;
   last_node = node;
@@ -316,7 +320,8 @@ wxNode *wxList::Append (long key, wxObject * object)
 
 wxNode *wxList::Append (const char *key, wxObject * object)
 {
-  wxNode *node = new wxNode (this, last_node, NULL, object, key);
+  wxNode *node;
+  node = new wxNode (this, last_node, NULL, object, key);
   if (!first_node)
     first_node = node;
   last_node = node;
@@ -326,13 +331,14 @@ wxNode *wxList::Append (const char *key, wxObject * object)
 
 void wxList::Clear (void)
 {
-  wxNode *current = first_node;
-  while (current)
-    {
-      wxNode *next = current->Next ();
-      delete current;
-      current = next;
-    }
+  wxNode *current, *next;
+
+  current = first_node;
+  while (current) {
+    next = current->Next ();
+    delete current;
+    current = next;
+  }
   first_node = NULL;
   last_node = NULL;
   n = 0;
@@ -387,8 +393,9 @@ long wxList::MemoryUse(void)
   wxNode *node;
   long s = 0;
 
-  for (node = First(); node; node = node->Next())
+  for (node = First(); node; node = node->Next()) {
     s += sizeof(wxNode);
+  }
   
   return s + wxObject::MemoryUse();
 }
@@ -396,65 +403,72 @@ long wxList::MemoryUse(void)
 
 wxStringList::~wxStringList (void)
 {
-  wxNode *each = first_node;
-  while (each)
-    {
-      char *s = (char *) each->Data ();
-      delete[]s;
-      wxNode *next = each->Next ();
-      delete each;
-      each = next;
-    }
+  wxNode *each, *next;
+
+  each = first_node;
+  while (each) {
+    char *s;
+    s = (char *)each->Data();
+    next = each->Next();
+    delete each;
+    each = next;
+  }
 }
 
 wxNode *wxStringList::Add (const char *s)
 {
-  return Append ((wxObject *) (copystring (s)));
+  s = copystring(s);
+  return Append ((wxObject *)s);
 }
 
 void wxStringList::Delete (const char *s)
 {
-  for (wxNode * node = First (); node; node = node->Next ())
-    {
-      char *string = (char *) node->Data ();
-      if (string == s || strcmp (string, s) == 0)
-	{
-	  delete[]string;
-	  delete node;
-	  break;		// Done!
-
-	}
-    }				// for
-
+  wxNode * node;
+  for (node = First (); node; node = node->Next ()) {
+    char *string;
+    string = (char *) node->Data ();
+    if (string == s || strcmp (string, s) == 0) {
+      delete node;
+      break;		// Done!
+    }
+  }
 }
 
 // Only makes new strings if arg is TRUE
 char **wxStringList::ListToArray (Bool new_copies)
 {
-  char **string_array = new char *[Number ()];
-  wxNode *node = First ();
-  int i;
-  for (i = 0; i < n; i++)
-    {
-      char *s = (char *) node->Data ();
-      if (new_copies)
-	string_array[i] = copystring (s);
-      else
-	string_array[i] = s;
-      node = node->Next ();
-    }
+  char **string_array;
+  wxNode *node;
+  int i, nbr;
+
+  nbr = Number();
+  string_array = new char *[nbr];
+  node = First ();
+  for (i = 0; i < n; i++) {
+    char *s;
+    s = (char *) node->Data ();
+    if (new_copies) {
+      char *ss;
+      ss = copystring(s);
+      string_array[i] = ss;
+    } else
+      string_array[i] = s;
+    node = node->Next();
+  }
   return string_array;
 }
 
 // Checks whether s is a member of the list
 Bool wxStringList::Member (const char *s)
 {
-  for (wxNode * node = First (); node; node = node->Next ())
-    {
-      const char *s1 = (const char *) node->Data ();
-      if (s == s1 || strcmp (s, s1) == 0)
-	return TRUE;
-    }
+  wxNode * node;
+  for (node = First (); node; node = node->Next ()) {
+    const char *s1;
+    s1 = (const char *) node->Data ();
+    if (s == s1 || strcmp (s, s1) == 0)
+      return TRUE;
+  }
+
   return FALSE;
 }
 
@@ -495,23 +509,27 @@ wxChildList::~wxChildList()
 void wxChildList::Append(wxObject *object)
 {
   int i;
-  wxChildNode *cn = new wxChildNode, **naya;
+  wxChildNode *cn, **naya;
+
+  cn = new wxChildNode;
 
   cn->owner = this;
   cn->strong = object;
   cn->weak = NULL;
   
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     if (!nodes[i]) {
       nodes[i] = cn;
       n++;
       return;
     }
+  }
 
   size = (size * 2) + 20;
   naya = new wxChildNode* [size];
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     naya[i] = nodes[i];
+  }
 
   nodes = naya;
   nodes[n++] = cn;
@@ -521,7 +539,7 @@ Bool wxChildList::DeleteObject(wxObject *object)
 {
   int i;
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     if (nodes[i] && (nodes[i]->Data() == object)) {
       nodes[i]->strong = NULL;
       nodes[i]->weak = NULL;
@@ -530,6 +548,7 @@ Bool wxChildList::DeleteObject(wxObject *object)
 
       return TRUE;
     }
+  }
 
   return FALSE;
 }
@@ -538,7 +557,7 @@ Bool wxChildList::DeleteNode(wxChildNode *node)
 {
   int i;
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     if (nodes[i] == node) {
       nodes[i]->strong = NULL;
       nodes[i]->weak = NULL;
@@ -547,6 +566,7 @@ Bool wxChildList::DeleteNode(wxChildNode *node)
 
       return TRUE;
     }
+  }
 
   return FALSE;
 }
@@ -556,9 +576,10 @@ wxChildNode *wxChildList::FindNode(wxChildNode *after)
   int i;
 
   if (after) {
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
       if (nodes[i] == after)
 	break;
+    }
     i++;
   } else
     i = 0;
@@ -572,7 +593,8 @@ wxChildNode *wxChildList::NextNode(int &pos)
 
   for (i = pos; i < size; i++) {
     if (nodes[i]) {
-      wxChildNode *node = nodes[i];
+      wxChildNode *node;
+      node = nodes[i];
       
       if (node->Data()) {
 	pos = i + 1;
@@ -593,9 +615,10 @@ void wxChildList::Show(wxObject *object, int show)
 {
   int i;
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     if (nodes[i] && (nodes[i]->Data() == object)) {
-      wxChildNode *node = nodes[i];
+      wxChildNode *node;
+      node = nodes[i];
 
       if (show > 0) {
 	if (node->strong)
@@ -603,29 +626,40 @@ void wxChildList::Show(wxObject *object, int show)
 	node->strong = object;
 	node->weak = NULL;
       } else {
+	wxObject **weak;
 	if (node->weak)
 	  return;
-	node->weak = new WXGC_ATOMIC wxObject*;
+#ifdef MZ_PRECISE_GC
+	/* FIXME: needs to be a weak box */
+	weak = (wxObject **)GC_malloc(sizeof(wxObject *));
+#else
+	weak = new WXGC_ATOMIC wxObject*;
+#endif
+	node->weak = weak;
 	*node->weak = object;
+#ifndef MZ_PRECISE_GC
 	if (show < 0)
 	  GC_general_register_disappearing_link((void **)node->weak, object);
+#endif
 	node->strong = NULL;
       }
       return;
     }
+  }
 }
 
 Bool wxChildList::IsShown(wxObject *object)
 {
   int i;
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     if (nodes[i] && (nodes[i]->Data() == object)) {
-      wxChildNode *node = nodes[i];
+      wxChildNode *node;
+      node = nodes[i];
 
       return (node->strong) ? TRUE : FALSE;
     }
+  }
 
   return FALSE;
 }
-

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.9 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.10 1999/11/21 00:08:47 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -57,12 +57,7 @@ public:
     int          x_hot, y_hot;		// hotspot of bitmap
     Pixmap       x_pixmap;		// the displayable pixmap
     // Optional stuff for different bitmaps
-    union {
-#if USE_XPM
-	XpmAttributes* xpm;		// for XPM pixmaps
-#endif
-	int dummy;			// for savety
-    } ext;
+    XpmAttributes* xpm;		// for XPM pixmaps
 };
 
 class wxCursor_Xintern {
@@ -100,13 +95,11 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
     Xbitmap->y_hot  = 0;
 
     // create pixmap with depth 1
-    if (((Xbitmap->x_pixmap
-	  = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, bits, w, h)))
-	== None)
-    {
-	// create failed
-	delete Xbitmap;
-	Xbitmap = NULL;
+    Xbitmap->x_pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, bits, w, h);
+    if (Xbitmap->x_pixmap == None) {
+      // create failed
+      delete Xbitmap;
+      Xbitmap = NULL;
     }
 
     WXGC_IGNORE(selectedTo);
@@ -131,34 +124,44 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 // create bitmap from xpm-data
 wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOTIF
 {
+    int ErrorStatus;
+
     __type = wxTYPE_BITMAP;
 
     cmap    = wxAPP_COLOURMAP;
     Xbitmap = new wxBitmap_Xintern;
     // what I want to get from XPM
-    Xbitmap->ext.xpm = new XpmAttributes;
-    Xbitmap->ext.xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness;
-    Xbitmap->ext.xpm->closeness = 40000;
+#ifdef MZ_PRECISE_GC
+    /* FIXME: double-check atomic: */
+    {
+      XpmAttributes *attr;
+      attr = (XpmAttributes *)GC_malloc_atomic(sizeof(XpmAttributes));
+      Xbitmap->xpm = attr;
+    }
+#else
+    Xbitmap->xpm = new XpmAttributes;
+#endif
+    Xbitmap->xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness;
+    Xbitmap->xpm->closeness = 40000;
     // create pixmap
-    int ErrorStatus
-	= XpmCreatePixmapFromData(wxAPP_DISPLAY, wxAPP_ROOT,
-				  data, &(Xbitmap->x_pixmap),
-				  (Pixmap*)NULL, Xbitmap->ext.xpm);
+    ErrorStatus = XpmCreatePixmapFromData(wxAPP_DISPLAY, wxAPP_ROOT,
+					  data, &(Xbitmap->x_pixmap),
+					  (Pixmap*)NULL, Xbitmap->xpm);
     if (ErrorStatus == XpmSuccess) {
+	int sdummy; unsigned int udummy; Window wdummy;
 	// create pixmap successful
 	Xbitmap->type   = __BITMAP_XPM;
-	Xbitmap->width  = Xbitmap->ext.xpm->width;
-	Xbitmap->height = Xbitmap->ext.xpm->height;
-	Xbitmap->x_hot  = Xbitmap->ext.xpm->x_hotspot;
-	Xbitmap->y_hot  = Xbitmap->ext.xpm->y_hotspot;
+	Xbitmap->width  = Xbitmap->xpm->width;
+	Xbitmap->height = Xbitmap->xpm->height;
+	Xbitmap->x_hot  = Xbitmap->xpm->x_hotspot;
+	Xbitmap->y_hot  = Xbitmap->xpm->y_hotspot;
 	// get depth of pixmap
-	int sdummy; unsigned int udummy; Window wdummy;
 	XGetGeometry(wxAPP_DISPLAY, Xbitmap->x_pixmap, &wdummy, &sdummy, &sdummy,
 		     &udummy, &udummy, &udummy, &(Xbitmap->depth));
     } else {
 	// create failed: free all memory
-	XpmFreeAttributes(Xbitmap->ext.xpm);
-	delete Xbitmap->ext.xpm;
+	XpmFreeAttributes(Xbitmap->xpm);
+	delete Xbitmap->xpm;
 	delete Xbitmap;
 	Xbitmap = NULL;
     }
@@ -197,9 +200,13 @@ static int FlagError(Display*, XErrorEvent*)
   return 0;
 }
 
+typedef int (*X_Err_Handler)(Display*, XErrorEvent*);
+
 // create empty bitmap with dimensions w,h,d
 Bool wxBitmap::Create(int w, int h, int d)
 {
+    X_Err_Handler old_handler;
+
     Destroy(); // destroy old bitmap if any
 
     /* MATTHEW: [5] */
@@ -211,9 +218,10 @@ Bool wxBitmap::Create(int w, int h, int d)
 	int i;
 	depths = XListDepths(wxAPP_DISPLAY, n, &c);
 
-	for (i = 0; i < c; i++)
+	for (i = 0; i < c; i++) {
 	  if (depths[i] == d)
 	    break; /* good depth */
+	}
 
 	if (i >= c)
 	  break; /* bad depth */
@@ -228,12 +236,15 @@ Bool wxBitmap::Create(int w, int h, int d)
     Xbitmap->type   = __BITMAP_NORMAL;
     Xbitmap->width  = w;
     Xbitmap->height = h;
-    Xbitmap->depth  = d < 1 ? wxDisplayDepth() : d;
+    if (d < 1) {
+      Xbitmap->depth = wxDisplayDepth();
+    } else {
+      Xbitmap->depth = d;
+    }
     Xbitmap->x_hot  = 0;
     Xbitmap->y_hot  = 0;
     // create pixmap
 
-    int (*old_handler)(Display*, XErrorEvent*);
     old_handler = XSetErrorHandler(FlagError);
     errorFlagged = 0;
 
@@ -261,17 +272,18 @@ void wxBitmap::Destroy(void)
     if (Xbitmap) {
 	XFreePixmap(wxAPP_DISPLAY, Xbitmap->x_pixmap); // free pixmap
 	switch (Xbitmap->type) { // free type specific data
-#if USE_XPM
 	case __BITMAP_XPM:
+	  {
 	    // free XPM data
-	    XFreeColors(wxAPP_DISPLAY, *((Colormap*)(cmap->GetHandle())),
-			Xbitmap->ext.xpm->pixels, Xbitmap->ext.xpm->npixels, 0);
-	    XpmFreeAttributes(Xbitmap->ext.xpm);
-	    delete Xbitmap->ext.xpm;
-	    break;
-#endif
+	    Colormap cm;
+	    cm = *((Colormap*)(cmap->GetHandle()));
+	    XFreeColors(wxAPP_DISPLAY, cm, Xbitmap->xpm->pixels, Xbitmap->xpm->npixels, 0);
+	    XpmFreeAttributes(Xbitmap->xpm);
+	    delete Xbitmap->xpm;
+	  }
+	  break;
 	default:
-	    break; // no other formats so far
+	  break; // no other formats so far
 	}
 	delete Xbitmap;
     }
@@ -315,31 +327,40 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
     else if (flags & wxBITMAP_TYPE_XPM) { // XPM file format
       Xbitmap = new wxBitmap_Xintern;
 
-	// what I want to get
-	Xbitmap->ext.xpm = new XpmAttributes;
-	Xbitmap->ext.xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness | XpmDepth;
-	Xbitmap->ext.xpm->closeness = 40000;
-        Xbitmap->ext.xpm->depth = DefaultDepth(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
-
-	if (XpmReadFileToPixmap(wxAPP_DISPLAY, wxAPP_ROOT, fname,
-				&(Xbitmap->x_pixmap), (Pixmap*)NULL, Xbitmap->ext.xpm)
-	    == XpmSuccess)
+      // what I want to get
+#ifdef MZ_PRECISE_GC
+      /* FIXME: double-check atomic: */
+      {
+	XpmAttributes *attr;
+	attr = (XpmAttributes *)GC_malloc_atomic(sizeof(XpmAttributes));
+	Xbitmap->xpm = attr;
+      }
+#else
+      Xbitmap->xpm = new XpmAttributes;
+#endif
+      Xbitmap->xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness | XpmDepth;
+      Xbitmap->xpm->closeness = 40000;
+      Xbitmap->xpm->depth = DefaultDepth(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
+      
+      if (XpmReadFileToPixmap(wxAPP_DISPLAY, wxAPP_ROOT, fname,
+			      &(Xbitmap->x_pixmap), (Pixmap*)NULL, Xbitmap->xpm)
+	  == XpmSuccess)
 	{
-	    // read pixmap ok!
-	    Xbitmap->type   = __BITMAP_XPM;
-	    Xbitmap->width  = Xbitmap->ext.xpm->width;
-	    Xbitmap->height = Xbitmap->ext.xpm->height;
-	    Xbitmap->x_hot  = Xbitmap->ext.xpm->x_hotspot;
-	    Xbitmap->y_hot  = Xbitmap->ext.xpm->y_hotspot;
-	    int sdummy; unsigned int udummy; Window wdummy;
-	    XGetGeometry(wxAPP_DISPLAY, Xbitmap->x_pixmap, &wdummy, &sdummy, &sdummy,
-			 &udummy, &udummy, &udummy, &(Xbitmap->depth));
+	  // read pixmap ok!
+	  int sdummy; unsigned int udummy; Window wdummy;
+	  Xbitmap->type   = __BITMAP_XPM;
+	  Xbitmap->width  = Xbitmap->xpm->width;
+	  Xbitmap->height = Xbitmap->xpm->height;
+	  Xbitmap->x_hot  = Xbitmap->xpm->x_hotspot;
+	  Xbitmap->y_hot  = Xbitmap->xpm->y_hotspot;
+	  XGetGeometry(wxAPP_DISPLAY, Xbitmap->x_pixmap, &wdummy, &sdummy, &sdummy,
+		       &udummy, &udummy, &udummy, &(Xbitmap->depth));
 	} else {
-	    // read failed: free all memory
-	    XpmFreeAttributes(Xbitmap->ext.xpm);
-	    delete Xbitmap->ext.xpm;
-	    delete Xbitmap;
-	    Xbitmap = NULL;
+	  // read failed: free all memory
+	  XpmFreeAttributes(Xbitmap->xpm);
+	  delete Xbitmap->xpm;
+	  delete Xbitmap;
+	  Xbitmap = NULL;
 	}
     }
 #endif
@@ -374,8 +395,10 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
 {
   char *data, *pos;
   int rw, ok, i, j;
+  XImage *img;
+  Pixmap bm;
 
-  XImage *img = XGetImage(display, pm, 0, 0, width, height, AllPlanes, ZPixmap);
+  img = XGetImage(display, pm, 0, 0, width, height, AllPlanes, ZPixmap);
 
   rw = ((width + 1) >> 3);
 
@@ -417,7 +440,7 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
       *row = v;
   }
 
-  Pixmap bm = XCreateBitmapFromData(display, pm, data, width, height);
+  bm = XCreateBitmapFromData(display, pm, data, width, height);
 
   ok = (XWriteBitmapFile(display, fname, bm, width, height, 0, 0)
 	== BitmapSuccess);
@@ -432,34 +455,32 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
 // save bitmaps
 Bool wxBitmap::SaveFile(char *fname, int type, wxColourMap *WXUNUSED(cmap))
 {
-    if (Xbitmap) {
-      if (selectedTo)
-	selectedTo->EndSetPixel();
-
-	switch (type) {
-	case wxBITMAP_TYPE_XBM:
-	    if (Xbitmap->depth == 1)
-		return (XWriteBitmapFile(wxAPP_DISPLAY, fname, Xbitmap->x_pixmap,
-					 Xbitmap->width, Xbitmap->height,
-					 Xbitmap->x_hot, Xbitmap->y_hot)
-			== BitmapSuccess);
-	    else {
-	      return write_pixmap_as_bitmap(wxAPP_DISPLAY, Xbitmap->x_pixmap,  fname, 
-					    Xbitmap->width, Xbitmap->height);
-	    }
-	    break; // write failed or depth != 1
-#if USE_XPM
-	case wxBITMAP_TYPE_XPM:
-	    return (XpmWriteFileFromPixmap(wxAPP_DISPLAY, fname, Xbitmap->x_pixmap,
-					   (Pixmap)NULL, (XpmAttributes*)NULL)
-		    == XpmSuccess);
-	    break; // write failed
-#endif
-	default:
-	    break; // no other save methods so far
-	}
+  if (Xbitmap) {
+    if (selectedTo)
+      selectedTo->EndSetPixel();
+    
+    switch (type) {
+    case wxBITMAP_TYPE_XBM:
+      if (Xbitmap->depth == 1)
+	return (XWriteBitmapFile(wxAPP_DISPLAY, fname, Xbitmap->x_pixmap,
+				 Xbitmap->width, Xbitmap->height,
+				 Xbitmap->x_hot, Xbitmap->y_hot)
+		== BitmapSuccess);
+      else {
+	return write_pixmap_as_bitmap(wxAPP_DISPLAY, Xbitmap->x_pixmap,  fname, 
+				      Xbitmap->width, Xbitmap->height);
+      }
+      break; // write failed or depth != 1
+    case wxBITMAP_TYPE_XPM:
+      return (XpmWriteFileFromPixmap(wxAPP_DISPLAY, fname, Xbitmap->x_pixmap,
+				     (Pixmap)NULL, (XpmAttributes*)NULL)
+	      == XpmSuccess);
+      break; // write failed
+    default:
+      break; // no other save methods so far
     }
-    return FALSE;
+  }
+  return FALSE;
 }
 
 // retrieve infos
@@ -552,34 +573,32 @@ wxCursor::wxCursor(int cursor_type) : wxBitmap()
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
 
-    __type = wxTYPE_CURSOR;
-
     Pixmap pixmap;
     
+    __type = wxTYPE_CURSOR;
+
     Xcursor = new wxCursor_Xintern;
 
     switch (cursor_type) {
     case wxCURSOR_BLANK:
-	pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, blank_data, 16, 16);
-	Xcursor->x_cursor
-	    = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, pixmap, &black, &black, 8, 8);
-	XFreePixmap(wxAPP_DISPLAY, pixmap);
-	break;
+      pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, blank_data, 16, 16);
+      Xcursor->x_cursor = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, pixmap, &black, &black, 8, 8);
+      XFreePixmap(wxAPP_DISPLAY, pixmap);
+      break;
     case wxCURSOR_CHAR:
-	pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, char_data, 16, 16);
-	Xcursor->x_cursor
-	    = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, pixmap, &black, &black, 0, 13);
-	XFreePixmap(wxAPP_DISPLAY, pixmap);
-	break;
+      pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, char_data, 16, 16);
+      Xcursor->x_cursor = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, pixmap, &black, &black, 0, 13);
+      XFreePixmap(wxAPP_DISPLAY, pixmap);
+      break;
     default:
-	if (wxFIRST_X11_CURSOR <= cursor_type && cursor_type <= wxLAST_X11_CURSOR)
-	    Xcursor->x_cursor
-		= XCreateFontCursor(wxAPP_DISPLAY, x_cursor_id[cursor_type]);
-	break;
+      if (wxFIRST_X11_CURSOR <= cursor_type && cursor_type <= wxLAST_X11_CURSOR) {
+	Xcursor->x_cursor = XCreateFontCursor(wxAPP_DISPLAY, x_cursor_id[cursor_type]);
+      }
+      break;
     }
     if (!Xcursor->x_cursor) {
-	delete Xcursor;
-	Xcursor = NULL;
+      delete Xcursor;
+      Xcursor = NULL;
     }
 }
 

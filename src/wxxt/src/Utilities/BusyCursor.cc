@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: BusyCursor.cc,v 1.6 1998/09/08 15:07:57 mflatt Exp $
+ * $Id: BusyCursor.cc,v 1.7 1999/02/27 04:38:44 mflatt Exp $
  *
  * Purpose: busy cursor
  *
@@ -38,6 +38,8 @@ extern void wxSetBusyState(int);
 void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
 {
   Cursor c;
+  Cursor cc;
+  wxChildNode *node;
 
   if (cursor || !win->cursor)
     c = None;
@@ -46,7 +48,6 @@ void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
 
   win->user_edit_mode = !!cursor;
 
-  Cursor cc;
   XtVaGetValues(win->X->handle, XtNcursor, &cc, NULL);
   if (cc != c) {
     XtVaSetValues(win->X->handle, XtNcursor, c, NULL);
@@ -55,8 +56,9 @@ void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
     }
   }
   
-  for(wxChildNode *node = win->GetChildren()->First(); node; node = node->Next()) {
-    wxWindow *child = (wxWindow *) node->Data ();
+  for(node = win->GetChildren()->First(); node; node = node->Next()) {
+    wxWindow *child;
+    child = (wxWindow *) node->Data ();
     wxXSetNoCursor(child, cursor);
   }
 }
@@ -64,6 +66,7 @@ void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
 void wxXSetBusyCursor(wxWindow *win, wxCursor *cursor)
 {
   Cursor c;
+  wxChildNode *node;
 
   if (cursor)
     c = GETCURSOR(cursor);
@@ -79,8 +82,9 @@ void wxXSetBusyCursor(wxWindow *win, wxCursor *cursor)
     XtVaSetValues(XtParent(win->X->handle), XtNcursor, c, NULL);
   }
 
-  for(wxChildNode *node = win->GetChildren()->First(); node; node = node->Next()) {
-    wxWindow *child = (wxWindow *) node->Data ();
+  for (node = win->GetChildren()->First(); node; node = node->Next()) {
+    wxWindow *child;
+    child = (wxWindow *) node->Data ();
     if (wxSubType(child->__type, wxTYPE_FRAME))
       wxXSetBusyCursor(child, cursor);
     else
@@ -90,16 +94,22 @@ void wxXSetBusyCursor(wxWindow *win, wxCursor *cursor)
 
 void wxBeginBusyCursor(wxCursor * cursor)
 {
+  wxChildNode *node;
+
   wxCursorBusy = wxGetBusyState();
   wxCursorBusy++;
   wxSetBusyState(wxCursorBusy);
 
-  if (wxCursorBusy == 1)
-    for(wxChildNode *node = wxTopLevelFrames(NULL)->First(); node; node = node->Next()) {
-      wxWindow *win = (wxWindow *)node->Data();
+  if (wxCursorBusy == 1) {
+    wxChildList *cl;
+    cl = wxTopLevelFrames(NULL);
+    for (node = cl->First(); node; node = node->Next()) {
+      wxWindow *win;
+      win = (wxWindow *)node->Data();
       if (win)
 	wxXSetBusyCursor(win, cursor);
     }
+  }
 
   XFlush(wxAPP_DISPLAY);
 }
@@ -108,18 +118,24 @@ void wxBeginBusyCursor(wxCursor * cursor)
 void 
 wxEndBusyCursor (void)
 {
+  wxChildNode *node;
+
   wxCursorBusy = wxGetBusyState();
   if (wxCursorBusy == 0)
     return;
   wxCursorBusy--;
   wxSetBusyState(wxCursorBusy);
 
-  if (wxCursorBusy == 0)
-    for(wxChildNode *node = wxTopLevelFrames(NULL)->First(); node; node = node->Next()) {
-      wxWindow *win = (wxWindow *)node->Data();
+  if (wxCursorBusy == 0) {
+    wxChildList *cl;
+    cl = wxTopLevelFrames(NULL);
+    for (node = cl->First(); node; node = node->Next()) {
+      wxWindow *win;
+      win = (wxWindow *)node->Data();
       if (win)
 	wxXSetBusyCursor(win, NULL);
     }
+  }
 
   XFlush(wxAPP_DISPLAY);
 }

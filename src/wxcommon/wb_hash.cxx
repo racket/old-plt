@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_hash.cxx,v 1.2 1999/11/12 22:33:04 mflatt Exp $
+ * RCS_ID:	$Id: wb_hash.cxx,v 1.3 1999/11/13 02:30:26 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -27,87 +27,115 @@
 
 wxHashTable::wxHashTable (int, int size)
 {
+  int i;
+  wxList **ll;
+
   __type = wxTYPE_HASH_TABLE;
   n = size;
   current_position = -1;
   current_node = NULL;
 
-  hash_table = new wxList *[size];
-  int i;
-  for (i = 0; i < size; i++)
+  ll = new wxList *[size];
+  hash_table = ll;
+  for (i = 0; i < size; i++) {
     hash_table[i] = NULL;
+  }
 }
 
 wxHashTable::~wxHashTable (void)
 {
   int i;
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     if (hash_table[i])
       delete hash_table[i];
+  }
   delete[] hash_table;
 }
 
 void wxHashTable::Put (long key, long value, wxObject * object)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
-  if (!hash_table[position])
-    hash_table[position] = new wxList (wxKEY_INTEGER, FALSE);
+  position = (int) (key % n);
+  if (!hash_table[position]) {
+    wxList *l;
+    l = new wxList (wxKEY_INTEGER, FALSE);
+    hash_table[position] = l;
+  }
 
   hash_table[position]->Append (value, object);
 }
 
 void wxHashTable::Put (long key, char *value, wxObject * object)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
-  if (!hash_table[position])
-    hash_table[position] = new wxList (wxKEY_INTEGER, FALSE);
+  position = (int) (key % n);
+  if (!hash_table[position]) {
+    wxList *l;
+    l = new wxList (wxKEY_INTEGER, FALSE);
+    hash_table[position] = l;
+  }
 
   hash_table[position]->Append (value, object);
 }
 
 void wxHashTable::Put (long key, wxObject * object)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
-  if (!hash_table[position])
-    hash_table[position] = new wxList (wxKEY_INTEGER, FALSE);
+  position = (int) (key % n);
+  if (!hash_table[position]) {
+    wxList *l;
+    l = new wxList (wxKEY_INTEGER, FALSE);
+    hash_table[position] = l;
+  }
 
   hash_table[position]->Append (key, object);
 }
 
 void wxHashTable::Put (const char *key, wxObject * object)
 {
-  int position = (int) (MakeKey (key) % n);
+  int position;
 
-  if (!hash_table[position])
-    hash_table[position] = new wxList (wxKEY_STRING, FALSE);
+  position = (int) (MakeKey (key) % n);
+
+  if (!hash_table[position]) {
+    wxList *l;
+    l = new wxList (wxKEY_STRING, FALSE);
+    hash_table[position] = l;
+  }
 
   hash_table[position]->Append (key, object);
 }
 
 wxObject *wxHashTable::Get (long key, long value)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
+  position = (int) (key % n);
   if (!hash_table[position])
     return NULL;
   else
     {
-      wxNode *node = hash_table[position]->Find (value);
+      wxNode *node;
+      node = hash_table[position]->Find (value);
       if (node)
 	return node->Data ();
       else
@@ -117,16 +145,19 @@ wxObject *wxHashTable::Get (long key, long value)
 
 wxObject *wxHashTable::Get (long key, char *value)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
+  position = (int) (key % n);
   if (!hash_table[position])
     return NULL;
   else
     {
-      wxNode *node = hash_table[position]->Find (value);
+      wxNode *node;
+      node = hash_table[position]->Find (value);
       if (node)
 	return node->Data ();
       else
@@ -136,48 +167,57 @@ wxObject *wxHashTable::Get (long key, char *value)
 
 wxObject *wxHashTable::Get (long key)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
+  position = (int) (key % n);
   if (!hash_table[position])
     return NULL;
   else
     {
-      wxNode *node = hash_table[position]->Find (key);
+      wxNode *node;
+      node = hash_table[position]->Find (key);
       return node ? node->Data() : (wxObject *)NULL;
     }
 }
 
 wxObject *wxHashTable::Get (const char *key)
 {
-  int position = (int) (MakeKey (key) % n);
+  int position;
+  position = (int) (MakeKey (key) % n);
 
   if (!hash_table[position])
     return NULL;
   else
     {
-      wxNode *node = hash_table[position]->Find (key);
+      wxNode *node;
+      node = hash_table[position]->Find (key);
       return node ? node->Data() : (wxObject *)NULL;
     }
 }
 
 wxObject *wxHashTable::Delete (long key)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
+  position = (int) (key % n);
   if (!hash_table[position])
     return NULL;
   else
     {
-      wxNode *node = hash_table[position]->Find (key);
+      wxNode *node;
+      node = hash_table[position]->Find (key);
       if (node)
 	{
-	  wxObject *data = node->Data ();
+	  wxObject *data;
+	  data = node->Data ();
 	  delete node;
 	  return data;
 	}
@@ -188,77 +228,73 @@ wxObject *wxHashTable::Delete (long key)
 
 wxObject *wxHashTable::Delete (const char *key)
 {
-  int position = (int) (MakeKey (key) % n);
+  int position;
+  position = (int) (MakeKey (key) % n);
   if (!hash_table[position])
     return NULL;
   else
     {
-      wxNode *node = hash_table[position]->Find (key);
-      if (node)
-	{
-	  wxObject *data = node->Data ();
+      wxNode *node;
+      node = hash_table[position]->Find (key);
+      if (node) {
+	  wxObject *data;
+	  data = node->Data ();
 	  delete node;
 	  return data;
-	}
-      else
+      } else
 	return NULL;
     }
 }
 
 wxObject *wxHashTable::Delete (long key, int value)
 {
+  int position;
+
   // Should NEVER be
   if (key < 0)
     key = -key;
 
-  int position = (int) (key % n);
+  position = (int) (key % n);
   if (!hash_table[position])
     return NULL;
-  else
-    {
-      wxNode *node = hash_table[position]->Find (value);
-      if (node)
-	{
-	  wxObject *data = node->Data ();
-	  delete node;
-	  return data;
-	}
-      else
-	return NULL;
-    }
+  else {
+    wxNode *node;
+    node = hash_table[position]->Find (value);
+    if (node) {
+      wxObject *data;
+      data = node->Data ();
+      delete node;
+      return data;
+    } else
+      return NULL;
+  }
 }
 
 wxObject *wxHashTable::Delete (long key, char *value)
 {
-/*
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
-*/
-
   int position = (int) (key % n);
   if (!hash_table[position])
     return NULL;
-  else
-    {
-      wxNode *node = hash_table[position]->Find (value);
-      if (node)
-	{
-	  wxObject *data = node->Data ();
-	  delete node;
-	  return data;
-	}
-      else
-	return NULL;
-    }
+  else {
+    wxNode *node;
+    node = hash_table[position]->Find (value);
+    if (node) {
+      wxObject *data;
+      data = node->Data ();
+      delete node;
+      return data;
+    } else
+      return NULL;
+  }
 }
 
 long wxHashTable::MakeKey (const char *string)
 {
   long int_key = 0;
 
-  while (*string)
+  while (*string) {
     int_key += (unsigned char) *string++;
+  }
 
 /* // Don't need this since int_key >= 0) 
   if (int_key < 0)
@@ -277,53 +313,43 @@ wxNode *wxHashTable::Next (void)
 {
   wxNode *found = NULL;
   Bool end = FALSE;
-  while (!end && !found)
-    {
-      if (!current_node)
-	{
-	  current_position++;
-	  if (current_position >= n)
-	    {
-	      current_position = -1;
-	      current_node = NULL;
-	      end = TRUE;
-	    }
-	  else
-	    {
-	      if (hash_table[current_position])
-		{
-		  current_node = hash_table[current_position]->First ();
-		  found = current_node;
-		}
-	    }
-	}
-      else
-	{
-	  current_node = current_node->Next ();
+  while (!end && !found) {
+    if (!current_node) {
+      current_position++;
+      if (current_position >= n) {
+	current_position = -1;
+	current_node = NULL;
+	end = TRUE;
+      } else {
+	if (hash_table[current_position]) {
+	  current_node = hash_table[current_position]->First ();
 	  found = current_node;
 	}
+      }
+    } else {
+      current_node = current_node->Next ();
+      found = current_node;
     }
+  }
   return found;
 }
 
 void wxHashTable::DeleteContents (Bool flag)
 {
   int i;
-  for (i = 0; i < n; i++)
-    {
-      if (hash_table[i])
-	hash_table[i]->DeleteContents (flag);
+  for (i = 0; i < n; i++) {
+    if (hash_table[i])
+      hash_table[i]->DeleteContents (flag);
     }
 }
 
 void wxHashTable::Clear (void)
 {
   int i;
-  for (i = 0; i < n; i++)
-    {
-      if (hash_table[i])
-	hash_table[i]->Clear ();
-    }
+  for (i = 0; i < n; i++) {
+    if (hash_table[i])
+      hash_table[i]->Clear ();
+  }
 }
 
 
@@ -353,8 +379,9 @@ wxNonlockingHashTable::wxNonlockingHashTable()
 
   numbuckets = 1001;
   buckets = (Bucket *)GC_MALLOC_ATOMIC(sizeof(Bucket) * numbuckets);
-  for (i = 0; i < numbuckets; i++)
+  for (i = 0; i < numbuckets; i++) {
     buckets[i].widget = 0;
+  }
   numwidgets = 0;
 }
 
@@ -376,17 +403,19 @@ void wxNonlockingHashTable::Put(long widget, wxObject *object)
     buckets = (Bucket *)GC_MALLOC_ATOMIC(sizeof(Bucket) * numbuckets);
 
     numwidgets = 0;
-    for (i = 0; i < oldnumbuckets; i++)
+    for (i = 0; i < oldnumbuckets; i++) {
       if (oldbuckets[i].widget && oldbuckets[i].object)
 	Put(oldbuckets[i].widget, oldbuckets[i].object);
+    }
     GC_FREE(oldbuckets);
   }
 
   i = HASH(widget);
   /* MATTHEW: [10] Added equality check (shouldn't happen, though). */
   while (buckets[i].widget && buckets[i].object
-	 && (buckets[i].widget != widget))
+	 && (buckets[i].widget != widget)) {
     i = (i + 1) % numbuckets;
+  }
   buckets[i].widget = widget;
   buckets[i].object = object;
   numwidgets++; /* Fix counter */
@@ -397,9 +426,9 @@ wxObject *wxNonlockingHashTable::Get(long widget)
   long i;
 
   i = HASH(widget);
-  /* MATTHEW: [10] Don't check object! */
-  while ((buckets[i].widget != widget) && buckets[i].widget)
+  while ((buckets[i].widget != widget) && buckets[i].widget) {
     i = (i + 1) % numbuckets;
+  }
 
   if (buckets[i].widget == widget)
     return buckets[i].object;
@@ -412,8 +441,9 @@ void wxNonlockingHashTable::Delete(long widget)
   long i;
 
   i = HASH(widget);
-  while ((buckets[i].widget != widget) && buckets[i].widget)
+  while ((buckets[i].widget != widget) && buckets[i].widget) {
     i = (i + 1) % numbuckets;
+  }
 
   if (buckets[i].widget == widget)
   {
@@ -427,8 +457,9 @@ void wxNonlockingHashTable::DeleteObject(wxObject *o)
 {
   long i;
   
-  for (i = 0; i < numbuckets; i++)
+  for (i = 0; i < numbuckets; i++) {
     if (buckets[i].widget && buckets[i].object == o)
       Delete(buckets[i].widget);
+  }
 }
 

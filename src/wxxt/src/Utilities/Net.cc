@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Net.cc,v 1.1 1996/01/10 14:56:54 markus Exp $
+ * $Id: Net.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
  *
  * Purpose: host and user net info
  *
@@ -55,7 +55,8 @@ Bool wxGetHostName(char *buf, int sz)
     if ((gethostname(name, sizeof(name)/sizeof(char)-1)) == -1)
 	return FALSE;
     // Get official full name of host
-    strncpy(buf, (h=gethostbyname(name))!=NULL ? h->h_name : name, sz-1);
+    h = gethostbyname(name);
+    strncpy(buf, h != NULL ? h->h_name : name, sz-1);
     return TRUE;
 #endif
 }
@@ -64,13 +65,13 @@ Bool wxGetEmailAddress(char *address, int maxSize)
 {
     char host[65];
     char user[65];
+    char tmp[130];
 
     if (wxGetHostName(host, 64) == FALSE)
 	return FALSE;
     if (wxGetUserId(user, 64) == FALSE)
 	return FALSE;
 
-    char tmp[130];
     strcpy(tmp, user);
     strcat(tmp, "@");
     strcat(tmp, host);

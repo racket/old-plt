@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.11 1999/11/19 22:02:37 mflatt Exp $
+ * $Id: AppMain.cc,v 1.12 1999/11/21 00:08:47 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -115,9 +115,10 @@ int filter_x_readable(char **argv, int argc)
   int pos = 1, i;
 
   while (pos < argc) {
-    for (i = 0; X_flags[i].flag; i++)
+    for (i = 0; X_flags[i].flag; i++) {
       if (!strcmp(X_flags[i].flag, argv[pos]))
 	break;
+    }
 
     if (!X_flags[i].flag)
       return pos;
@@ -137,44 +138,48 @@ int filter_x_readable(char **argv, int argc)
 
 int wxEntry(int argc, char *argv[])
 {
-    if (!wxTheApp) {
-	wxFatalError("You have to define an instance of wxApp!");
-    }
+  int xargc, ate;
 
-    // init private and public data
-    /* Set if not set... */
-    if (!wxAPP_CLASS) wxAPP_CLASS = wxFileNameFromPath(argv[0]);
-    if (!wxAPP_NAME)  wxAPP_NAME  = wxFileNameFromPath(argv[0]);
+  if (!wxTheApp) {
+    wxFatalError("You have to define an instance of wxApp!");
+  }
 
-    int xargc = filter_x_readable(argv, argc), ate;
-    ate = xargc - 1;
+  // init private and public data
+  /* Set if not set... */
+  if (!wxAPP_CLASS)
+    wxAPP_CLASS = wxFileNameFromPath(argv[0]);
+  if (!wxAPP_NAME)
+    wxAPP_NAME  = wxFileNameFromPath(argv[0]);
 
-    wxPutAppToplevel(XtAppInitialize(
-	&wxAPP_CONTEXT, wxAPP_CLASS,
-	NULL, 0,
-	&xargc, argv,				// command line arguments
-	NULL,					// fallback resources
-	NULL, 0));				// argument override for app-shell
+  xargc = filter_x_readable(argv, argc);
+  ate = xargc - 1;
+  
+  wxPutAppToplevel(XtAppInitialize(&wxAPP_CONTEXT, wxAPP_CLASS,
+				   NULL, 0,
+				   &xargc, argv, // command line arguments
+				   NULL,         // fallback resources
+				   NULL, 0));    // argument override for app-shell
 
-    if (xargc != 1) {
-      printf("%s: standard X Window System flag \"%s\" was rejected\n",
-	     argv[0], argv[1]);
-      exit(-1);
-    }
-
-    for (int i = ate + 1; i < argc; i++)
-      argv[i - ate] = argv[i];
-    argc -= ate;
-
-    wxTheApp->argc = argc;
-    wxTheApp->argv = argv;
-
-    // initialize global data
-    wxCommonInit();
-
-    wxTheApp->OnInit();
-
-    return 0;
+  if (xargc != 1) {
+    printf("%s: standard X Window System flag \"%s\" was rejected\n",
+	   argv[0], argv[1]);
+    exit(-1);
+  }
+  
+  for (int i = ate + 1; i < argc; i++) {
+    argv[i - ate] = argv[i];
+  }
+  argc -= ate;
+  
+  wxTheApp->argc = argc;
+  wxTheApp->argv = argv;
+  
+  // initialize global data
+  wxCommonInit();
+  
+  wxTheApp->OnInit();
+  
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

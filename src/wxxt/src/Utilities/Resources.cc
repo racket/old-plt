@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Resources.cc,v 1.5 1999/11/12 17:27:50 mflatt Exp $
+ * $Id: Resources.cc,v 1.6 1999/11/19 22:02:37 mflatt Exp $
  *
  * Purpose: read/write .Xdefaults
  *
@@ -51,8 +51,10 @@ static char *GetResourcePath(char *buf, char *name, Bool create = FALSE)
       strcpy(buf, name);
     if (create) {
       // Touch the file to create it
-      FILE *fd = fopen(buf, "w");
-      if (fd) fclose(fd);
+      FILE *fd;
+      fd = fopen(buf, "w");
+      if (fd)
+	fclose(fd);
     }
     return buf;
 }
@@ -86,18 +88,18 @@ static void wxXMergeDatabases(void)
 {
     XrmDatabase homeDB, serverDB, applicationDB, userDB;
     char filenamebuf[1024];
-
     char *filename = &filenamebuf[0];
     char *environment;
     char *classname = wxAPP_CLASS;
     char name[256];
+    char *home, *dest;
+
     (void)strcpy(name, "/usr/lib/X11/app-defaults/");
-    /* MATTHEW: */
-    (void)strcat(name, classname ? classname : "wxWindows");
+    strcat(name, classname ? classname : "wxWindows");
 
     // Get application defaults file, if any 
     if ((applicationDB = wxXrmGetFileDatabase(name)))
-      (void)XrmMergeDatabases(applicationDB, &wxResourceDatabase);
+      XrmMergeDatabases(applicationDB, &wxResourceDatabase);
 
     // Merge server defaults, created by xrdb, loaded as a property of the root
     // window when the server initializes and loaded into the display
@@ -107,7 +109,7 @@ static void wxXMergeDatabases(void)
 	serverDB = XrmGetStringDatabase(XResourceManagerString(wxAPP_DISPLAY));
     } else {
       // Get X defaults file, if any 
-      char *home = wxGetUserHome(NULL), *dest;
+      home = wxGetUserHome(NULL);
       if (home) {
 	dest = new char[strlen(home) + 20];
 	
@@ -131,9 +133,9 @@ static void wxXMergeDatabases(void)
       environment = GetIniFile(filename, NULL);
       len = strlen(environment);
 #if !defined(SVR4) || defined(__sgi)
-      (void)gethostname(environment + len, 1024 - len);
+      gethostname(environment + len, 1024 - len);
 #else
-      (void)sysinfo(SI_HOSTNAME, environment + len, 1024 - len);
+      sysinfo(SI_HOSTNAME, environment + len, 1024 - len);
 #endif
     }
     if ((homeDB = wxXrmGetFileDatabase(environment)))
@@ -141,7 +143,7 @@ static void wxXMergeDatabases(void)
 
 
     // Get user defaults file, if any 
-    char *home = wxGetUserHome(NULL), *dest;
+    home = wxGetUserHome(NULL);
     if (home) {
       dest = new char[strlen(home) + 20];
       
@@ -160,21 +162,25 @@ static void wxXMergeDatabases(void)
 //-----------------------------------------------------------------------------
 void wxFlushResources(void)
 {
-    char nameBuffer[512];
+  char nameBuffer[512];
+  wxNode *node;
 
-    wxNode *node = wxResourceCache->First();
-    while (node) {
-	char *file = node->string_key;
-	// If file doesn't exist, create it first.
-	(void)GetResourcePath(nameBuffer, file, TRUE);
+  node = wxResourceCache->First();
+  while (node) {
+    XrmDatabase database;
+    char *file = node->string_key;
+    wxNode *next;
 
-	XrmDatabase database = (XrmDatabase)node->Data();
-	XrmPutFileDatabase(database, nameBuffer);
-	XrmDestroyDatabase(database);
-	wxNode *next = node->Next();
-	delete node;
-	node = next;
-    }
+    // If file doesn't exist, create it first.
+    (void)GetResourcePath(nameBuffer, file, TRUE);
+
+    database = (XrmDatabase)node->Data();
+    XrmPutFileDatabase(database, nameBuffer);
+    XrmDestroyDatabase(database);
+    next = node->Next();
+    delete node;
+    node = next;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -184,26 +190,28 @@ Bool wxWriteResource(const char *section, const char *entry, char *value,
 		     const char *file)
 {
     char buffer[500];
+    char resName[300];
+    int isnull;
+    XrmDatabase database;
+    wxNode *node;
 
     if (!entry)
       return FALSE;
 
     (void)GetIniFile(buffer, file);
 
-    XrmDatabase database;
-    wxNode *node = wxResourceCache->Find(buffer);
+    node = wxResourceCache->Find(buffer);
     if (node)
       database = (XrmDatabase)node->Data();
     else {
       database = wxXrmGetFileDatabase(buffer);
       node = wxResourceCache->Append(buffer, (wxObject *)database);
     }
-    char resName[300];
     strcpy(resName, section ? section : "wxWindows");
     strcat(resName, ".");
     strcat(resName, entry);
 
-    int isnull = !database;
+    isnull = !database;
     XrmPutStringResource(&database, resName, value);
     if (isnull) {
       if (node)
@@ -246,15 +254,22 @@ Bool wxWriteResource(const char *section, const char *entry, int value,
 Bool wxGetResource(const char *section, const char *entry, char **value,
 		   const char *file)
 {
+    XrmValue xvalue;
+    char *str_type[20];
+    char buf[150];
+    Bool success;
+    XrmDatabase database;
+
     if (!wxResourceDatabase)
 	wxXMergeDatabases();
 
-    XrmDatabase database;
     if (file) {
       char buffer[500];
+      wxNode *node;
+
       (void)GetIniFile(buffer, file);
       
-      wxNode *node = wxResourceCache->Find(buffer);
+      node = wxResourceCache->Find(buffer);
       if (node)
 	database = (XrmDatabase)node->Data();
       else {
@@ -264,18 +279,15 @@ Bool wxGetResource(const char *section, const char *entry, char **value,
     } else
       database = wxResourceDatabase;
     
-    XrmValue xvalue;
-    char *str_type[20];
-    char buf[150];
     strcpy(buf, section);
     strcat(buf, ".");
     strcat(buf, entry);
 
-    Bool success = XrmGetResource(database, buf, "*", str_type, &xvalue);
+    success = XrmGetResource(database, buf, "*", str_type, &xvalue);
     if (success) {
-      if (*value)
-	delete[] *value;
-      *value = new char[xvalue.size + 1];
+      char *v;
+      v = new char[xvalue.size + 1];
+      *value = v;
       strncpy(*value, xvalue.addr, (int)xvalue.size);
       return TRUE;
     }
@@ -285,34 +297,39 @@ Bool wxGetResource(const char *section, const char *entry, char **value,
 Bool wxGetResource(const char *section, const char *entry, float *value,
 		   const char *file)
 {
-    char *s = NULL;
-    Bool succ = wxGetResource(section, entry, &s, file);
-    if (succ) {
-	*value = (float)strtod(s, NULL);
-	delete[]s;
-	return TRUE;
-    } else
-	return FALSE;
+  char *s = NULL;
+  Bool succ;
+  succ = wxGetResource(section, entry, &s, file);
+  if (succ) {
+    float v;
+    v = (float)strtod(s, NULL);
+    *value = v;
+    return TRUE;
+  } else
+    return FALSE;
 }
 
 Bool wxGetResource(const char *section, const char *entry, long *value,
 		   const char *file)
 {
-    char *s = NULL;
-    Bool succ = wxGetResource(section, entry, &s, file);
-    if (succ) {
-	*value = strtol(s, NULL, 10);
-	delete[]s;
-	return TRUE;
-    } else
-	return FALSE;
+  char *s = NULL;
+  Bool succ;
+  succ = wxGetResource(section, entry, &s, file);
+  if (succ) {
+    long v;
+    v = strtol(s, NULL, 10);
+    *value = v;
+    return TRUE;
+  } else
+    return FALSE;
 }
 
 Bool wxGetResource(const char *section, const char *entry, int *value,
 		   const char *file)
 {
     char *s = NULL;
-    Bool succ = wxGetResource(section, entry, &s, file);
+    Bool succ;
+    succ = wxGetResource(section, entry, &s, file);
     if (succ) {
 	// Handle True, False here 
 	// True, Yes, Enables, Set or  Activated 
@@ -322,9 +339,11 @@ Bool wxGetResource(const char *section, const char *entry, int *value,
 	else if (*s == 'F' || *s == 'N' || *s == 'D' || *s == 'R' || *s == 'C')
 	    *value = FALSE;
 	// Handle as Integer
-	else
-	    *value = (int)strtol(s, NULL, 10);
-	delete[]s;
+	else {
+	  int v;
+	  v = (int)strtol(s, NULL, 10);
+	  *value = v;
+	}
 	return TRUE;
     } else
 	return FALSE;

@@ -28,7 +28,7 @@
 /*========================================================================*/
 
 MZ_EXTERN void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b);
-MZ_EXTERN int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base, 
+MZ_EXTERN int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base,
 				       void * volatile start, Scheme_Jumpup_Buf *cont);
 MZ_EXTERN void scheme_longjmpup(Scheme_Jumpup_Buf *b);
 MZ_EXTERN void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b);
@@ -52,7 +52,7 @@ MZ_EXTERN int scheme_new_param(void);
 
 MZ_EXTERN Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 					     int argc, Scheme_Object **argv,
-					     int arity, 
+					     int arity,
 					     Scheme_Prim *check, char *expected,
 					     int isbool);
 MZ_EXTERN Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which);
@@ -98,8 +98,8 @@ MZ_EXTERN void scheme_tls_set(int pos, void *v);
 MZ_EXTERN void *scheme_tls_get(int pos);
 
 MZ_EXTERN Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *);
-MZ_EXTERN Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Object *o, 
-							 Scheme_Close_Custodian_Client *f, void *data, 
+MZ_EXTERN Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Object *o,
+							 Scheme_Close_Custodian_Client *f, void *data,
 							 int strong);
 MZ_EXTERN void scheme_remove_managed(Scheme_Custodian_Reference *m, Scheme_Object *o);
 MZ_EXTERN void scheme_close_managed(Scheme_Custodian *m);
@@ -109,12 +109,12 @@ MZ_EXTERN void scheme_add_custodian_extractor(Scheme_Type t, Scheme_Custodian_Ex
 MZ_EXTERN void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f);
 
 MZ_EXTERN void scheme_add_waitable(Scheme_Type type,
-				   Scheme_Ready_Fun ready, 
-				   Scheme_Needs_Wakeup_Fun wakeup, 
+				   Scheme_Ready_Fun ready,
+				   Scheme_Needs_Wakeup_Fun wakeup,
 				   Scheme_Wait_Filter_Fun filter,
 				   int can_redirect);
 MZ_EXTERN void scheme_add_waitable_through_sema(Scheme_Type type,
-						Scheme_Wait_Sema_Fun sema, 
+						Scheme_Wait_Sema_Fun sema,
 						Scheme_Wait_Filter_Fun filter);
 MZ_EXTERN int scheme_is_waitable(Scheme_Object *o);
 MZ_EXTERN Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[]);
@@ -142,16 +142,16 @@ MZ_EXTERN void scheme_raise(Scheme_Object *exn);
 
 MZ_EXTERN void scheme_wrong_count(const char *name, int minc, int maxc,
 				  int argc, Scheme_Object **argv);
-MZ_EXTERN void scheme_wrong_count_m(const char *name, int minc, int maxc, 
+MZ_EXTERN void scheme_wrong_count_m(const char *name, int minc, int maxc,
 				    int argc, Scheme_Object **argv,
 				    int is_method);
-MZ_EXTERN void scheme_case_lambda_wrong_count(const char *name, int argc, 
+MZ_EXTERN void scheme_case_lambda_wrong_count(const char *name, int argc,
 					      Scheme_Object **argv, int is_method, int count, ...);
-MZ_EXTERN void scheme_wrong_type(const char *name, const char *expected, 
+MZ_EXTERN void scheme_wrong_type(const char *name, const char *expected,
 				 int which, int argc,
 				 Scheme_Object **argv);
 MZ_EXTERN void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o);
-MZ_EXTERN void scheme_wrong_return_arity(const char *where, 
+MZ_EXTERN void scheme_wrong_return_arity(const char *where,
 					 int expected, int got,
 					 Scheme_Object **argv,
 					 const char *context_detail, ...);
@@ -159,7 +159,7 @@ MZ_EXTERN void scheme_unbound_global(Scheme_Bucket *b);
 
 MZ_EXTERN Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 					     Scheme_Object *(* volatile act)(void *),
-					     void (* volatile post)(void *), 
+					     void (* volatile post)(void *),
 					     Scheme_Object *(*jmp_handler)(void *),
 					     void * volatile data);
 
@@ -239,7 +239,7 @@ MZ_EXTERN Scheme_Object *scheme_current_continuation_marks(void);
 /* Internal */
 MZ_EXTERN Scheme_Object *scheme_do_eval(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);
 
-MZ_EXTERN Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *expr, Scheme_Env *env, 
+MZ_EXTERN Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *expr, Scheme_Env *env,
 							 long shift, Scheme_Object *modidx);
 MZ_EXTERN Scheme_Object *scheme_load_compiled_stx_string(const char *str, long len);
 MZ_EXTERN Scheme_Object *scheme_compiled_stx_symbol(Scheme_Object *stx);
@@ -287,9 +287,9 @@ MZ_EXTERN void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), voi
 MZ_EXTERN void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
 MZ_EXTERN void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data);
 MZ_EXTERN void scheme_add_scheme_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
-MZ_EXTERN void scheme_register_finalizer(void *p, 
+MZ_EXTERN void scheme_register_finalizer(void *p,
 					 void (*f)(void *p, void *data), void *data,
-					 void (**oldf)(void *p, void *data), 
+					 void (**oldf)(void *p, void *data),
 					 void **olddata);
 MZ_EXTERN void scheme_remove_all_finalization(void *p);
 
@@ -334,17 +334,17 @@ MZ_EXTERN Scheme_Object *scheme_make_noneternal_prim(Scheme_Prim *prim);
 MZ_EXTERN Scheme_Object *scheme_make_closed_prim(Scheme_Closed_Prim *prim, void *data);
 MZ_EXTERN Scheme_Object *scheme_make_prim_w_arity(Scheme_Prim *prim, const char *name,
 					mzshort mina, mzshort maxa);
-MZ_EXTERN Scheme_Object *scheme_make_folding_prim(Scheme_Prim *prim, 
+MZ_EXTERN Scheme_Object *scheme_make_folding_prim(Scheme_Prim *prim,
 					const char *name,
 					mzshort mina, mzshort maxa,
 					short functional);
-MZ_EXTERN Scheme_Object *scheme_make_noneternal_prim_w_arity(Scheme_Prim *prim, 
-						   const char *name, 
+MZ_EXTERN Scheme_Object *scheme_make_noneternal_prim_w_arity(Scheme_Prim *prim,
+						   const char *name,
 						   mzshort mina, mzshort maxa);
-MZ_EXTERN Scheme_Object *scheme_make_closed_prim_w_arity(Scheme_Closed_Prim *prim, 
+MZ_EXTERN Scheme_Object *scheme_make_closed_prim_w_arity(Scheme_Closed_Prim *prim,
 					       void *data, const char *name,
 					       mzshort mina, mzshort maxa);
-MZ_EXTERN Scheme_Object *scheme_make_folding_closed_prim(Scheme_Closed_Prim *prim, 
+MZ_EXTERN Scheme_Object *scheme_make_folding_closed_prim(Scheme_Closed_Prim *prim,
 					       void *data, const char *name,
 					       mzshort mina, mzshort maxa,
 					       short functional);
@@ -479,9 +479,9 @@ MZ_EXTERN int scheme_char_ready(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_is_ungetc(Scheme_Object *port);
 MZ_EXTERN void scheme_need_wakeup(Scheme_Object *port, void *fds);
 MZ_EXTERN long scheme_get_string(const char *who,
-				 Scheme_Object *port, 
+				 Scheme_Object *port,
 				 char *buffer, long offset, long size,
-				 int only_avail, 
+				 int only_avail,
 				 int peek, Scheme_Object *peek_skip);
 MZ_EXTERN long scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset);
 MZ_EXTERN long scheme_tell(Scheme_Object *port);
@@ -567,7 +567,7 @@ MZ_EXTERN void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_
 MZ_EXTERN void scheme_require_from_original_env(Scheme_Env *env, int syntax_only);
 
 MZ_EXTERN void scheme_add_global(const char *name, Scheme_Object *val, Scheme_Env *env);
-MZ_EXTERN void scheme_add_global_symbol(Scheme_Object *name, Scheme_Object *val, 
+MZ_EXTERN void scheme_add_global_symbol(Scheme_Object *name, Scheme_Object *val,
 			      Scheme_Env *env);
 
 MZ_EXTERN Scheme_Object *scheme_make_envunbox(Scheme_Object *value);
@@ -592,11 +592,11 @@ MZ_EXTERN void scheme_save_initial_module_set(Scheme_Env *env);
 MZ_EXTERN Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env);
 MZ_EXTERN void scheme_finish_primitive_module(Scheme_Env *env);
 
-MZ_EXTERN Scheme_Object *scheme_make_modidx(Scheme_Object *path, 
+MZ_EXTERN Scheme_Object *scheme_make_modidx(Scheme_Object *path,
 				  Scheme_Object *base,
 				  Scheme_Object *resolved);
 
-MZ_EXTERN Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc ivk, 
+MZ_EXTERN Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc ivk,
 				     Scheme_Invoke_Proc sivk, void *data, Scheme_Env *env);
 
 /*========================================================================*/
@@ -604,11 +604,11 @@ MZ_EXTERN Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invo
 /*========================================================================*/
 
 MZ_EXTERN Scheme_Object *scheme_intern_symbol(const char *name);
-MZ_EXTERN Scheme_Object *scheme_intern_exact_symbol(const char *name, int len);
+MZ_EXTERN Scheme_Object *scheme_intern_exact_symbol(const char *name, unsigned int len);
 MZ_EXTERN Scheme_Object *scheme_make_symbol(const char *name); /* Make uninterned */
-MZ_EXTERN Scheme_Object *scheme_make_exact_symbol(const char *name, int len); /* Exact case */
+MZ_EXTERN Scheme_Object *scheme_make_exact_symbol(const char *name, unsigned int len); /* Exact case */
 MZ_EXTERN const char *scheme_symbol_name(Scheme_Object *sym);
-MZ_EXTERN const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *l, int flags);
+MZ_EXTERN const char *scheme_symbol_name_and_size(Scheme_Object *sym, unsigned int *l, int flags);
 MZ_EXTERN char *scheme_symbol_val(Scheme_Object *sym);
 
 /*========================================================================*/
@@ -618,11 +618,11 @@ MZ_EXTERN char *scheme_symbol_val(Scheme_Object *sym);
 MZ_EXTERN Scheme_Object **scheme_make_struct_values(Scheme_Object *struct_type,
 					  Scheme_Object **names,
 					  int count, int flags);
-MZ_EXTERN Scheme_Object **scheme_make_struct_names(Scheme_Object *base, 
+MZ_EXTERN Scheme_Object **scheme_make_struct_names(Scheme_Object *base,
 					 Scheme_Object *field_names,
 					 int flags, int *count_out);
-MZ_EXTERN Scheme_Object *scheme_make_struct_type(Scheme_Object *base, 
-				       Scheme_Object *parent, 
+MZ_EXTERN Scheme_Object *scheme_make_struct_type(Scheme_Object *base,
+				       Scheme_Object *parent,
 				       Scheme_Object *inspector,
 				       int num_fields, int num_uninit_fields,
 				       Scheme_Object *uninit_val,

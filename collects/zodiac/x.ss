@@ -223,15 +223,21 @@
   (define expand
     (lambda/nal zodiac:expand/nal
       (set! zodiac-user-parameterization params)
-      (expand-expr expr (make-new-environment) attr vocab)))
+      (begin0
+	(expand-expr expr (make-new-environment) attr vocab)
+	(set! zodiac-user-parameterization #f) ; for GC
+	)))
 
   (define expand-program
     (lambda/nal zodiac:expand-program/nal
       (set! zodiac-user-parameterization params)
       (put-attribute attr 'top-levels (make-hash-table))
-      (map (lambda (expr)
-	     (expand-expr expr (make-new-environment) attr vocab))
-	exprs)))
+      (begin0
+	(map (lambda (expr)
+	       (expand-expr expr (make-new-environment) attr vocab))
+	  exprs)
+	(set! zodiac-user-parameterization #f) ; for GC
+	)))
 
   ; ----------------------------------------------------------------------
 

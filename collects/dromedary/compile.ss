@@ -75,6 +75,7 @@
      (define current-compile-context (make-parameter #f))
 
      (define (compile-ml stmt context)
+;       (pretty-print (format "compile-ml: ~a" stmt))
        (match stmt
 	      [($ ast:expression desc src)
 	       (compile-expr desc src context)]

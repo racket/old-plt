@@ -3918,6 +3918,58 @@ static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **ar
 }
 #endif
 
+#ifdef WINDOWS_PROCESSES
+static char *cmdline_protect(char *s)
+{
+  char *naya;
+  int has_space = 0, has_quote = 0, was_slash = 0;
+  
+  for (naya = s; *naya; naya++) {
+    if (isspace(*naya) || (*naya == '\'')) {
+      has_space = 1;
+      was_slash = 0;
+    } else if (*naya == '"') {
+      has_quote += 1 + (2 * was_slash);
+      was_slash = 0;
+    } else if (*naya == '\\') {
+      was_slash++;
+    } else
+      was_slash = 0;
+  }
+  
+  if (has_space || has_quote) {
+    char *p;
+    int wrote_slash = 0;
+    
+    naya = malloc(strlen(s) + 3 + 3*has_quote);
+    naya[0] = '"';
+    for (p = naya + 1; *s; s++) {
+      if (*s == '"') {
+	while (wrote_slash--)
+	  *(p++) = '\\';
+	*(p++) = '"'; /* endquote */
+	*(p++) = '\\';
+	*(p++) = '"'; /* protected */
+	*(p++) = '"'; /* start quote again */
+	wrote_slash = 0;
+      } else if (*s == '\\') {
+	*(p++) = '\\';
+	wrote_slash++;
+      } else {
+	*(p++) = *s;
+	wrote_slash = 0;
+      }
+    }
+    *(p++) = '"';
+    *p = 0;
+    
+    return naya;
+  }
+
+  return s;
+}
+#endif /* WINDOWS_PROCESSES */
+
 static Scheme_Object *process(int c, Scheme_Object *args[], 
 			      char *name, int shell, int synchonous, 
 			      int as_child)
@@ -4016,6 +4068,10 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       MSC_IZE(dup2)(from_subprocess[1], 1);
       MSC_IZE(dup2)(err_subprocess[1], 2);
     }
+
+    /* spawnv is too stupid to protect spaces, etc. in the arguments: */
+    for (i = 0; i < c; i++)
+      argv[i] = cmdline_protect(argv[i]);
 
     /* Set real CWD - and hope no other thread changes it! */
     scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);

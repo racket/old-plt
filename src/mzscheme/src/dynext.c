@@ -304,7 +304,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       fail_err_symbol,
-		       "load-extension: could not load \"%s\" (%ld)",
+		       "load-extension: could not load \"%s\" (%e)",
 		       filename, GetLastError());
     
     handle = (void *)dl;
@@ -317,7 +317,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       fail_err_symbol,
-		       "load-extension: \"%s\" is not an extension (%ld)",
+		       "load-extension: \"%s\" is not an extension (%e)",
 		       filename, err);
     }
     

@@ -27,7 +27,7 @@
     resolve resolve-in-env
     macro-resolution? micro-resolution? top-level-resolution?
     introduce-identifier introduce-fresh-identifier introduce-bound-id
-    create-vocabulary))
+    create-vocabulary append-vocabulary))
 
 (define-signature zodiac:scheme-core^
   (name-eq? marks-equal?
@@ -126,7 +126,8 @@
     (struct compound-unit-form (imports links exports))
     (struct invoke-unit-form (unit variables))
     (struct invoke-open-unit-form (unit name-specifier variables))
-    unit-clauses-vocab update-unresolved-attribute))
+    unit-clauses-vocab-delta update-unresolved-attribute
+    ))
 
 (define-signature zodiac:scheme-objects+units^
   ())

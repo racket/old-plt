@@ -272,7 +272,10 @@
 		      (lambda (p-env)
 			(let ((top-level? (get-top-level-status attributes))
 			       (old-top-level
-				 (get-attribute attributes 'top-levels)))
+				 (get-attribute attributes 'top-levels))
+			       (unit-clauses-vocab
+				 (append-vocabulary unit-clauses-vocab-delta
+				   vocab 'unit-clauses-vocab)))
 			  (set-top-level-status attributes #t)
 			  (when old-top-level
 			    (put-attribute attributes 'top-levels (make-hash-table)))
@@ -315,7 +318,7 @@
     (unit-helper 'unit)
     (unit-helper '#%unit))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define c-unit-link-import-vocab
     (create-vocabulary 'c-unit-link-import-vocab))
@@ -498,7 +501,7 @@
     (compound-unit-helper 'compound-unit)
     (compound-unit-helper '#%compound-unit))
 
-					; --------------------------------------------------------------------
+  ; --------------------------------------------------------------------
 
   (let ((invoke-unit-helper
 	  (lambda (i-kwd)
@@ -635,10 +638,10 @@
 	   ,(invoke-open-unit-form-name-specifier expr)
 	   ,@(map p->r (invoke-open-unit-form-variables expr))))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
-  (define unit-clauses-vocab
-    (create-vocabulary 'unit-clauses-vocab scheme-vocabulary))
+  (define unit-clauses-vocab-delta
+    (create-vocabulary 'unit-clauses-vocab-delta))
 
   (let ((define-values-helper
 	  (lambda (d-kwd)
@@ -667,7 +670,7 @@
 				    top-level?)
 				  out)))
 			    (else (static-error expr "Malformed define-values")))))))
-		(add-micro-form d-kwd unit-clauses-vocab
+		(add-micro-form d-kwd unit-clauses-vocab-delta
 		  (define-values-helper
 		    (lambda (expr env attributes vocab p-env vars)
 		      (register-definitions vars attributes)
@@ -712,7 +715,7 @@
 
   (let ((set!-helper
 	  (lambda (s-kwd)
-	    (add-micro-form s-kwd unit-clauses-vocab
+	    (add-micro-form s-kwd unit-clauses-vocab-delta
 	      (let* ((kwd (list s-kwd))
 		      (in-pattern `(,s-kwd var val))
 		      (m&e (pat:make-match&env in-pattern kwd)))
@@ -737,7 +740,7 @@
 
   (let ((if-handler
 	  (lambda (i-kwd)
-	    (add-micro-form i-kwd unit-clauses-vocab
+	    (add-micro-form i-kwd unit-clauses-vocab-delta
 	      (let* ((kwd (list i-kwd))
 		      (in-pattern-1 `(,i-kwd test then))
 		      (in-pattern-2 `(,i-kwd test then else))
@@ -777,7 +780,7 @@
     (if-handler 'if)
     (if-handler '#%if))
 
-  (add-sym-micro unit-clauses-vocab
+  (add-sym-micro unit-clauses-vocab-delta
     (lambda (expr env attributes vocab)
       (let ((r (resolve expr env vocab)))
 	(cond

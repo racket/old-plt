@@ -6,13 +6,13 @@
     zodiac:scheme-core^
     zodiac:interface^)
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define-struct resolutions ())
   (define-struct (micro-resolution struct:resolutions) (rewriter))
   (define-struct (macro-resolution struct:resolutions) (rewriter))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define-struct vocabulary-record (name this rest))
 
@@ -22,6 +22,17 @@
     (opt-lambda (name (root #f))
       (let ((h (make-hash-table)))
 	(make-vocabulary-record name h root))))
+
+  (define append-vocabulary
+    (opt-lambda (new old (name #f))
+      (let loop ((new new) (first? #t))
+	(let ((name (if (and first? name) name
+		      (vocabulary-record-name new))))
+	  (make-vocabulary-record name
+	    (vocabulary-record-this new)
+	    (if (vocabulary-record-rest new)
+	      (loop (vocabulary-record-rest new) #f)
+	      old))))))
 
   (define add-micro/macro-form
     (lambda (constructor)
@@ -176,7 +187,7 @@
 	     (expand-expr expr (make-new-environment) attr vocab))
 	exprs)))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define make-attributes make-hash-table)
   (define put-attribute

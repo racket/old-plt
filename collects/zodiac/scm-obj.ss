@@ -664,7 +664,7 @@
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed make-generic")))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (when (language>=? 'side-effecting)
     (let ((set!-handler

@@ -45,6 +45,6 @@
 		(else
 		  (internal-error expr "Invalid resolution in ou: ~s" r)))))))
     (add-sym-micro scheme-vocabulary handler)
-    (add-sym-micro unit-clauses-vocab handler))
+    (add-sym-micro unit-clauses-vocab-delta handler))
 
   )

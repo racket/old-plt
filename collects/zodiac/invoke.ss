@@ -87,3 +87,37 @@
 			  (zodiac:parsed->raw e)
 			  e)))))
 		(read-eval-print-loop)))))))))
+
+(define zodiac:spidey-see
+  (opt-lambda ((show-raw? #t))
+    (zodiac:invoke-system)
+    (let ([peval (current-eval)])
+      (let ((system-params (current-parameterization)))
+	(let ((new-params (make-parameterization)))
+	  (with-parameterization new-params
+	    (lambda ()
+	      (parameterize
+		((current-prompt-read
+		   (lambda ()
+		     (newline)
+		     (display "e> ")
+		     (flush-output)
+		     (let ([read ((zodiac:read))])
+		       (newline)
+		       (flush-output)
+		       (if (zodiac:eof? read)
+			 eof
+			 read))))
+		  (current-eval
+		    (lambda (in)
+		      (let ((e (car
+				 (with-parameterization system-params
+				   (lambda ()
+				     (zodiac:expand-program
+				       (list in)
+				       (zodiac:make-attributes)
+				       zodiac:mrspidey-vocabulary))))))
+			(if show-raw?
+			  (zodiac:parsed->raw e)
+			  e)))))
+		(read-eval-print-loop)))))))))

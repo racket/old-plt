@@ -90,7 +90,7 @@
 			clear-undos
 			insert
 			delete
-			change-style styles-fixed?
+			change-style styles-fixed? split-snip
 			scroll-to-position
 			last-position
 			get-start-position
@@ -321,7 +321,8 @@
 		
 		[do-save-and-eval-or-read-avail
 		 (lambda (start end)
-		   (change-style (make-object wx:style-delta%) start end)
+		   (split-snip start)
+		   (split-snip end)
 		   (let ([snips (let loop ([snip (find-snip start wx:const-snip-after-or-null)]
 					   [snips null])
 				  (cond

@@ -57,7 +57,7 @@
  (bug-report-field-tools "Outils")
  (bug-report-field-docs-installed "Documentations installées")
  (bug-report-field-language "Language")
- (bug-report-field-teachpacks "TeachPacks")
+ (bug-report-field-teachpacks "Teachpacks")
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Language humain")
  (bug-report-field-version "Version")
@@ -593,18 +593,18 @@
  (show-fraction-view "Montrer sous forme de fraction")
  (show-more-decimal-places "Montrer plus de décimales")
  
- ;;; TeachPack messages
- (select-a-teachpack "Sélectionner un TeachPack")
- (clear-teachpack "Enlever le TeachPack ~a")
- (teachpack-error-label "DrScheme - erreur avec un TeachPack.")
- (teachpack-dne/cant-read "Le fichier TeachPack ~a n'existe pas ou n'est pas lisible.")
- (teachpack-didnt-load "Le fichier TeachPack ~a n'a pas été correctement chargé.")
- (teachpack-error-invoke "Le fichier TeachPack ~a a produit une erreur au moment de son invocation.")
- (add-teachpack-menu-item-label "Ajouter un TeachPack...")
- (clear-all-teachpacks-menu-item-label "Enlever tous les TeachPacks")
- (teachpack-not-only-one-import "La unit/sig du TeachPack dans ~a doit avoir exactement un import.")
- (drscheme-teachpack-message-title "DrScheme TeachPack")
- (already-added-teachpack "Le TeachPack ~a a déjà été ajouté.")
+ ;;; Teachpack messages
+ (select-a-teachpack "Sélectionner un teachpack")
+ (clear-teachpack "Enlever le teachpack ~a")
+ (teachpack-error-label "DrScheme - erreur avec un teachpack.")
+ (teachpack-dne/cant-read "Le fichier teachpack ~a n'existe pas ou n'est pas lisible.")
+ (teachpack-didnt-load "Le fichier teachpack ~a n'a pas été correctement chargé.")
+ (teachpack-error-invoke "Le fichier teachpack ~a a produit une erreur au moment de son invocation.")
+ (add-teachpack-menu-item-label "Ajouter un teachpack...")
+ (clear-all-teachpacks-menu-item-label "Enlever tous les teachpacks")
+ (teachpack-not-only-one-import "La unit/sig du teachpack dans ~a doit avoir exactement un import.")
+ (drscheme-teachpack-message-title "DrScheme teachpack")
+ (already-added-teachpack "Le teachpack ~a a déjà été ajouté.")
  
  ;;; Language dialog
  (introduction-to-language-dialog
@@ -707,7 +707,7 @@
  ;;; welcoming message in repl
  (language "Language")
  (custom "personnalisé")
- (teachpack "TeachPack")
+ (teachpack "Teachpack")
  (welcome-to "Bienvenue dans")
  (version "version")
  

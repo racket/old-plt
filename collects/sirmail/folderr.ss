@@ -131,7 +131,7 @@
                                      (map loop (cadddr rd)))])))
             (make-deep-folder (ROOT-MAILBOX-FOR-LIST)
                               (ROOT-MAILBOX-FOR-LIST)
-                              #f ;; until update
+                              #f ;; arbitrary
                               null)))
 
       
@@ -146,8 +146,7 @@
              (make-deep-folder
               root-box
               root-box
-              (not (memq 'no-select (map imap-flag->symbol
-                                         (imap-mailbox-flags imap root-box))))
+              #f ;; arbitrary
               (let loop ([mailbox-name root-box])
                 (let ([mailbox-name-length (string-length mailbox-name)]
                       [get-child-mailbox-name (lambda (item) (format "~a" (second item)))]
@@ -231,12 +230,15 @@
         (send (send top-list get-editor) begin-edit-sequence)
         (for-each (lambda (x) (send top-list delete-item x))
                   (send top-list get-items))
-        (let loop ([hl top-list]
-                   [mbf orig-mbf])
-          (let ([new-item (add-child hl mbf)])
-            (when (deep-folder? mbf)
-              (for-each (lambda (child) (loop new-item child))
-                        (deep-folder-children mbf)))))
+	(for-each (lambda (mbf)
+		    (let loop ([hl top-list]
+			       [mbf mbf])
+		      (let ([new-item (add-child hl mbf)])
+			(when (deep-folder? mbf)
+			  (for-each (lambda (child) (loop new-item child))
+				    (deep-folder-children mbf))))))
+		  (cons (make-flat-folder mailbox-name mailbox-name #t)
+			(deep-folder-children orig-mbf)))
         (send (send top-list get-editor) end-edit-sequence))
       
       (define folders-frame%
@@ -349,7 +351,7 @@
       
       (define refresh-mailbox-button
         (instantiate button% ()
-          (label "Update Mailbox List")
+          (label "Update Folder List")
           (parent top-panel)
           (callback (lambda (x y)
                       (refresh-mailboxes)))))
@@ -400,9 +402,9 @@
         (send frame set-icon icon icon-mask 'both))
       
       (define file-menu (make-object menu% "&File" (send frame get-menu-bar)))
-      (make-object menu-item% "&Add Mailbox..." file-menu
+      (make-object menu-item% "&Add Folder..." file-menu
         (lambda (i e)
-          (let ([t (get-text-from-user "New Mailbox" "New mailbox name:" frame)])
+          (let ([t (get-text-from-user "New Folder" "New folder name:" frame)])
             (when t
               (when (with-custodian-killing-stop-button
                      (format "Creating ~a" t)

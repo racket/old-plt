@@ -724,7 +724,7 @@
             (make-object menu-item% "&Help" menu
               (lambda (i e)
                 (let* ([f (instantiate frame% ("Help")
-                            [width 400]
+                            [width 500]
                             [height 300])]
                        [e (make-object text%)]
                        [c (make-object editor-canvas% f e)])
@@ -905,7 +905,12 @@
                          (status ""))))
                  (set! dragging-item #f))]
               [else
-               (when dragging-item
+               (when (and dragging-item
+			  (not (and (or (send evt leaving?)
+					(send evt entering?))
+				    (or (send evt get-left-down)
+					(send evt get-middle-down)
+					(send evt get-right-down)))))
                  (set! dragging-item #f)
                  (send (get-editor) set-cursor plain-cursor)
                  (status ""))])

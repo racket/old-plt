@@ -10,6 +10,9 @@ from a mailbox before purging marked messages. This prevents SirMail
 from accidentally removing messages that you didn't mark within
 SirMail (on the local machine).
 
+Terminology: The GUI uses the term "Folder" everywhere instead of
+"Mailbox". The latter term matches the IMAP specification.
+
 ------------------------------------------------------------
 
 Configure SirMail options by visiting Edit | Preferences in a

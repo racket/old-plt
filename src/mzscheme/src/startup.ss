@@ -668,7 +668,7 @@
 	       [match-head (m&e p-head p-head #t)])
 	  (if just-vars?
 	      (map list nestings)
-	      (let ([nest-vars (flatten-nestings nestings)])
+	      (let ([nest-vars (flatten-nestings nestings (lambda (x) #t))])
 		`(lambda (e esc)
 		   (if (stx-list? e)
 		       (let ([l ,(let ([b (app-e-esc match-head)])
@@ -838,6 +838,7 @@
 	(let* ([p-head (stx-car p)]
 	       [nestings (get-ellipsis-nestings p-head k)])
 	  (when (null? nestings)
+	    (printf "ack~n")
 	    (apply
 	     raise-syntax-error 
 	     'syntax
@@ -845,27 +846,57 @@
 	     (pick-specificity
 	      top
 	      local-top)))
-	  (let* ([flat-nestings (flatten-nestings nestings)]
-		 [proto-rr (and proto-r
-				(map (lambda (nesting)
-				       (ellipsis-sub-env nesting proto-r top local-top))
-				     nestings))]
+	  (let* ([proto-rr+deep?s (and proto-r
+				       (map (lambda (nesting)
+					      (ellipsis-sub-env nesting proto-r top local-top))
+					    nestings))]
+		 [proto-rr-deep (and proto-r
+				     (let loop ([l proto-rr+deep?s])
+				       (cond
+					[(null? l) null]
+					[(cdar l) (loop (cdr l))]
+					[else (cons (caar l) (loop (cdr l)))])))]
+		 [proto-rr-shallow (and proto-r
+					(let loop ([l proto-rr+deep?s])
+					  (cond
+					   [(null? l) null]
+					   [(cdar l) (cons (caar l) (loop (cdr l)))]
+					   [else (loop (cdr l))])))]
+		 [flat-nestings-deep (and proto-r (extract-vars proto-rr-deep))]
+		 [flat-nestings-shallow (and proto-r (extract-vars proto-rr-shallow))]
+		 [_ (unless (null? proto-rr-shallow)
+		      (when (null? proto-rr-deep)
+			(apply
+			 raise-syntax-error 
+			 'syntax
+			 "too many ellipses"
+			 (pick-specificity
+			  top
+			  local-top))))]
 		 [rest (expander (stx-cdr (stx-cdr p)) proto-r local-top #t)]
-		 [ehead (expander p-head proto-rr p-head #t)])
+		 [ehead (expander p-head (and proto-r (append proto-rr-shallow proto-rr-deep)) p-head #t)])
 	    (if proto-r
-		(let ([quoted-flat-nestings (cons 'list
-						  (map (lambda (fn) `(quote-syntax ,fn)) 
-						       flat-nestings))])
-		  `(lambda (r)
-		     ,(let ([pre `(map 
-				   (lambda vals (,ehead vals))
-				   ,@(map (lambda (var)
-					    `(list-ref r ,(stx-memq*-pos var proto-r)))
-					  flat-nestings))]
-			    [post (apply-to-r rest)])
-			(if (eq? post 'null)
-			    pre
-			    `(append ,pre ,post)))))
+		`(lambda (r)
+		   ,(let ([pre (let ([deeps
+				      `(map 
+					(lambda vals (,ehead 
+						      ,(if (null? flat-nestings-shallow)
+							   'vals
+							   '(append shallows vals))))
+					,@(map (lambda (var)
+						 `(list-ref r ,(stx-memq*-pos var proto-r)))
+					       flat-nestings-deep))])
+				 (if (null? flat-nestings-shallow)
+				     deeps
+				     `(let ([shallows
+					     (list ,@(map (lambda (var)
+							    `(list-ref r ,(stx-memq*-pos var proto-r)))
+							  flat-nestings-shallow))])
+					,deeps)))]
+			  [post (apply-to-r rest)])
+		      (if (eq? post 'null)
+			  pre
+			  `(append ,pre ,post))))
 		(append! ehead rest))))]
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
@@ -1022,29 +1053,35 @@
 	      (list p))]
 	 [else '()]))))
 
-  ;; Checks whether the given nesting matches a nesting in
-  ;; the environment prototype, returning the prototype entry
-  ;; unwrapped by one if it is found, and signalling an error
-  ;; otherwise.
+  ;; Checks whether the given nesting matches a nesting in the
+  ;; environment prototype, returning the prototype entry if it is
+  ;; found, and signalling an error otherwise. If the prototype 
+  ;; entry can be unwrapped by one, it is, and the resulting
+  ;; prototype is paired with #f. Otherwise, the prototype is left
+  ;; alone and paird with #t.
   (define ellipsis-sub-env
     (lambda (nesting proto-r src detail-src)
       (let ([v (ormap (lambda (proto)
-			(and (pair? proto)
-			     (let loop ([c (car proto)][n nesting])
-			       (cond
-				[(and (pair? c) (pair? n))
-				 (loop (car c) (car n))]
-				[(and (syntax? c) (syntax? n))
-				 (if (module-identifier=? c n)
-				     (car proto)
-				     #f)]
-				[else #f]))))
+			(let ([start (if (pair? proto)
+					 (car proto)
+					 proto)])
+			  (let loop ([c start] [n nesting])
+			    (cond
+			     [(and (pair? c) (pair? n))
+			      (loop (car c) (car n))]
+			     [(pair? n)
+			      (loop c (car n))]
+			     [(and (syntax? c) (syntax? n))
+			      (if (module-identifier=? c n)
+				  (cons start (identifier? proto))
+				  #f)]
+			     [else #f]))))
 		      proto-r)])
 	(unless v
 	  (apply
 	   raise-syntax-error 
 	   'syntax
-	   "wrong ellipsis depth for pattern variable"
+	   "too few ellipses for pattern variable"
 	   (pick-specificity
 	    src
 	    (let loop ([n nesting])
@@ -1052,6 +1089,14 @@
 		  n
 		  (loop (car n)))))))
 	v)))
+
+  (define (extract-vars proto-r)
+    (map (lambda (i)
+	   (let loop ([i i])
+	     (if (syntax? i)
+		 i
+		 (loop (car i)))))
+	 proto-r))
 
   ;; Checks that a variable is not in the prototype
   ;; environment, and specifically not an ellipsed
@@ -1079,13 +1124,17 @@
 
   ;; Takes an environment prototype and removes
   ;; the ellipsis-nesting information.
-  (define (flatten-nestings nestings)
-    (map (lambda (nesting)
-	   (let loop ([nesting nesting])
-	     (if (syntax? nesting)
-		 nesting
-		 (loop (car nesting)))))
-	 nestings))
+  (define (flatten-nestings nestings filter?)
+    (let loop ([nestings nestings])
+      (if (null? nestings)
+	  null
+	  (if (filter? (car nestings))
+	      (cons (let loop ([nesting (car nestings)])
+		      (if (syntax? nesting)
+			  nesting
+			  (loop (car nesting))))
+		    (loop (cdr nestings)))
+	      (loop (cdr nestings))))))
 
   (define (multiple-ellipsis-vars? proto-r)
     (let loop ([proto-r proto-r])

@@ -106,6 +106,7 @@
 	       exn))
 	  v))
       
+      ;; collection->cc : listof path -> cc
       (define (collection->cc collection-p)
         (let ([root-dir (ormap (lambda (p)
                                  (parameterize ([current-library-collection-paths
@@ -621,23 +622,23 @@
                                                            [all-ok? #f])
                                                        (when (list? l)
                                                          (set! all-ok? #t)
-                                                         (for-each (lambda (i)
-                                                                     (if (and (list? i)
-                                                                              (= 4 (length i)))
-                                                                         (let ([a (car i)]
-                                                                               [b (cadr i)]
-                                                                               [c (caddr i)]
-                                                                               [d (cadddr i)])
-                                                                           (if (and (bytes? a)
-                                                                                    (list? b)
-                                                                                    (andmap symbol? b)
-                                                                                    (file-exists? (build-path
-                                                                                                   (bytes->path a)
-                                                                                                   "info.ss")))
-                                                                               (hash-table-put! t a (list b c d))
-                                                                               (set! all-ok? #f)))
-                                                                         (set! all-ok? #f)))
-                                                                   l))
+                                                         (for-each 
+                                                          (lambda (i)
+                                                            (match i
+                                                              [((? (lambda (a) 
+                                                                       (and (bytes? a)
+                                                                            (file-exists? (build-path 
+                                                                                           (bytes->path a)
+                                                                                           "info.ss"))))
+                                                                   a)
+                                                                ((? symbol? b) ...) 
+                                                                c
+                                                                (? integer? d)
+                                                                (? integer? e))
+                                                               (hash-table-put! t a (list b c d e))]
+                                                              [_ 
+                                                               (set! all-ok? #f)]))
+                                                          l))
                                                        ;; Record the table loaded for this collection root
                                                        ;; in the all-roots table:
                                                        (hash-table-put! ht (cc-info-path cc) t)

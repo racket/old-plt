@@ -2,7 +2,7 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.3 2004/08/10 15:54:04 cobbe Exp $
+;; $Id: parser.ss,v 1.4 2004/08/10 15:55:58 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
 ;; ClassicJava.
@@ -45,6 +45,10 @@
   ;; Temp-Class ::= (make-temp-class Class-Name (Union Class-Name #f)
   ;;                                 (Listof Field) (Listof Method))
 
+  ;; display the parse exception in human-readable form (for debugging)
+  ;; USAGE: (expand-parse-exn body)
+  ;;    Evaluates to result of body.  If body throws an exn:aj:parse, evaluates
+  ;;    to structure describing exception.
   (define-syntax expand-parse-exn
     (syntax-rules ()
       [(_ expr)

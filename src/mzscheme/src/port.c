@@ -335,6 +335,10 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
 static int tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
 
+Scheme_Object *
+_scheme_make_named_file_input_port(FILE *fp, const char *filename, 
+				   int regfile);
+
 static void default_sleep(float v, void *fds);
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);

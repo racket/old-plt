@@ -341,10 +341,10 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 #define GEN_RETURN_N2(x) x return (Scheme_Object *)n2;
 #define GEN_SINGLE_SUBTRACT_N2(x) x if SCHEME_FLOATP(n2) return minus(1, (Scheme_Object **)&n2);
 
-#define GEN_SAME_INF(x) ((SCHEME_TRUEP(positive_p(1, (Scheme_Object **)&x))) ? inf_object : minus_inf_object)
-#define GEN_OPP_INF(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? inf_object : minus_inf_object)
-#define GEN_MAKE_PZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? nzerod : zerod)
-#define GEN_MAKE_NZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? zerod : nzerod)
+#define GEN_SAME_INF(x) ((SCHEME_TRUEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_inf_object : scheme_minus_inf_object)
+#define GEN_OPP_INF(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_inf_object : scheme_minus_inf_object)
+#define GEN_MAKE_PZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_nzerod : scheme_zerod)
+#define GEN_MAKE_NZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_zerod : scheme_nzerod)
 #define GEN_MAKE_ZERO_Z(x, y) (minus_zero_p(y) ? GEN_MAKE_NZERO(x) : GEN_MAKE_PZERO(x))
 #define GEN_SAME_INF_Z(x, y) (minus_zero_p(y) ?  GEN_OPP_INF(x) : GEN_SAME_INF(x))
 

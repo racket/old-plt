@@ -27,6 +27,7 @@ OBJS =  salloc.o \
 	image.o \
 	list.o \
 	number.o \
+	numstr.o \
         objclass.o \
         object.o \
 	port.o \
@@ -64,6 +65,7 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/image.c \
 	$(srcdir)/list.c \
 	$(srcdir)/number.c \
+	$(srcdir)/numstr.c \
 	$(srcdir)/objclass.c \
 	$(srcdir)/object.c \
 	$(srcdir)/port.c \
@@ -163,6 +165,8 @@ list.o: $(srcdir)/list.c
 	$(CC) $(CFLAGS) -c $(srcdir)/list.c -o list.o
 number.o: $(srcdir)/number.c
 	$(CC) $(CFLAGS) -c $(srcdir)/number.c -o number.o
+numstr.o: $(srcdir)/numstr.c
+	$(CC) $(CFLAGS) -c $(srcdir)/numstr.c -o numstr.o
 objclass.o: $(srcdir)/objclass.c
 	$(CC) $(CFLAGS) -c $(srcdir)/objclass.c -o objclass.o
 object.o: $(srcdir)/object.c
@@ -242,6 +246,8 @@ list.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/s
         $(srcdir)/../src/stypes.h  
 number.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h $(srcdir)/random.inc
+numstr.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
+         $(srcdir)/../src/stypes.h
 objclass.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h \
           $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG)
 object.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h \

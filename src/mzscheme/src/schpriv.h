@@ -871,6 +871,15 @@ extern int scheme_both_nan(double a, double b);
 # endif
 #endif
 
+extern double scheme_infinity_val, scheme_minus_infinity_val;
+extern double scheme_floating_point_zero;
+extern double scheme_floating_point_nzero;
+extern Scheme_Object *scheme_zerod, *scheme_nzerod, *scheme_pi, *scheme_half_pi, *scheme_plus_i, *scheme_minus_i;
+#ifdef MZ_USE_SINGLE_FLOATS
+extern Scheme_Object *scheme_zerof, *scheme_nzerof, *scheme_single_scheme_pi;
+#endif
+extern Scheme_Object *scheme_inf_object, *scheme_minus_inf_object;
+
 /****** General numeric ******/
 
 Scheme_Object *scheme_read_number(const char *str, long len,
@@ -881,6 +890,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  Scheme_Object *port,
 				  int *div_by_zero,
 				  int test_only);
+Scheme_Object *scheme_read_special_number(const char *str, int pos);
 
 Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2);
 Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2);
@@ -900,6 +910,13 @@ Scheme_Object *scheme_odd_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_expt(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_modulo(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_sqrt(int argc, Scheme_Object *argv[]);
+
+Scheme_Object *scheme_inexact_to_exact(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_exact_to_inexact(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_TO_DOUBLE(const Scheme_Object *n);
+Scheme_Object *scheme_zero_p(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_negative_p(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_make_polar (int argc, Scheme_Object *argv[]);
 
 Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);
 

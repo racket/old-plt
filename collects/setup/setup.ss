@@ -80,14 +80,21 @@
 					       (escape (lambda ()
 							 ;; Try again without .zo
 							 (loop #t)))))])
-			   ;; Here's the main dynamic load of "cm.ss":
-			   (let ([mk
-				  (dynamic-require '(lib "cm.ss") 
-						   'make-compilation-manager-load/use-compiled-handler)]
-				 [trust-zos
-				  (dynamic-require '(lib "cm.ss") 'trust-existing-zos)])
-			     ;; Return the two extracted functions:
-			     (lambda () (values mk trust-zos)))))))])
+		           ;; Other things could go wrong, such as a version mismatch.
+		           ;; If something goes wrong, of course, give up on .zo files.
+                           (with-handlers ([exn:fail? (lambda (exn)
+							(if skip-zo?
+							    (raise exn)
+							    (escape
+							     (lambda () (loop #t)))))])
+			     ;; Here's the main dynamic load of "cm.ss":
+			     (let ([mk
+				    (dynamic-require '(lib "cm.ss") 
+						     'make-compilation-manager-load/use-compiled-handler)]
+				   [trust-zos
+				    (dynamic-require '(lib "cm.ss") 'trust-existing-zos)])
+			       ;; Return the two extracted functions:
+			       (lambda () (values mk trust-zos))))))))])
 	(when (on? 'trust-existing-zos values)
 	  (trust-zos #t))
 	(current-load/use-compiled (mk))))

@@ -11,7 +11,7 @@
      (current-load slatex)
      
      (for-each slatex (vector->list argv))]
-    [(windows unix)
+    [(windows unix macosx)
      (when (eq? (vector) argv)
        (error 'slatex "expected a file on the command line~n"))
      (parameterize ([error-escape-handler exit])

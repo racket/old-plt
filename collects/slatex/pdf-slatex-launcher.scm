@@ -9,7 +9,7 @@
      
      ;; set up drag and drop
      (error 'slatex "pdf-slatex not supported under Mac OS Classic")]
-    [(windows unix)
+    [(windows unix macosx)
      (when (eq? (vector) argv)
        (error 'slatex "expected a file on the command line~n"))
      (parameterize ([error-escape-handler exit])

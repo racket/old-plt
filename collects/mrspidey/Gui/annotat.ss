@@ -40,9 +40,6 @@
  (define offsets-load-menu-src-jump   (cons -25 35))
  (define offsets-load-menu-dest-jump  (cons -25 35))
 
- (define LOAD-NONLOCAL-FILE  9)
- (define ZOOM-TO-FILE  10)
-
  ;; ------------------------------------------------------------
 
  (define highlight
@@ -750,8 +747,8 @@
             (send edit local-to-global xb yb)
             (pretty-debug-gui `(local-to-global returns ,xb ,yb))
             (send (ivar edit canvas) popup-menu menu 
-              (inexact->exact (unbox xb))
-	      (inexact->exact (+ (unbox yb) offset-menu)))))]
+		  (max 0 (inexact->exact (unbox xb)))
+		  (max 0 (inexact->exact (+ (unbox yb) offset-menu))))))]
 
       [menu-callback 
         (lambda (menu command)
@@ -857,22 +854,23 @@
         (lambda (edit offsets where direction filename)
           ;; direction is "parent" or "child"
           (assert (not (send main filename->edit filename)))
-          (let* ( [menu-callback 
-                    (lambda (menu command)
-                      (wrap-busy-cursor
-                        (lambda ()
-                          (send main add-frame 
+          (let ([menu-callback 
+		 (lambda (menu command)
+		   (wrap-busy-cursor
+		    (lambda ()
+		      (send main add-frame 
                             (send main filename->fileinfo filename)
                             #t))))]
-                  [menu (make-object popup-menu% "")] 
-					; menu-callback)]
-                  [xb (box 0)]
-                  [yb (box 0)])
-            (send menu append
-              LOAD-NONLOCAL-FILE
-              (format "Load ~s containing ~a"
-                (file-name-from-path filename) direction))
-       
+		[menu (make-object popup-menu% #f)] 
+		[xb (box 0)]
+		[yb (box 0)])
+
+	    (make-object menu-item% 
+			 (format "Load ~s containing ~a"
+				 (file-name-from-path filename) direction)
+			 menu
+			 menu-callback)
+
             ;; Get global location of expr
             (send edit position-location 
               (send edit real-start-position where)
@@ -881,30 +879,33 @@
             (pretty-debug-gui `(local-to-global returns ,xb ,yb))
 
             (send (ivar edit canvas) popup-menu menu 
-              (inexact->exact (+ (unbox xb) (car offsets)))
-              (inexact->exact (+ (unbox yb) (cdr offsets))))))]
+		  (max 0 (inexact->exact (+ (unbox xb) (car offsets))))
+		  (max 0 (inexact->exact (+ (unbox yb) (cdr offsets)))))))]
 
       [popup-zoom-menu
         (lambda (edit offsets where to direction)
 
           ;; direction is "parent" or "child"
-          (let* ( [menu-callback 
-                    (lambda (menu command)
-                      (wrap-busy-cursor
-                        (lambda ()
-                          (send to arrow-zoom))))]
-                  [menu (make-object popup-menu% "")]
-                  [xb (box 0)]
-                  [yb (box 0)])
+          (let ([menu-callback 
+		 (lambda (menu command)
+		   (wrap-busy-cursor
+		    (lambda ()
+		      (send to arrow-zoom))))]
+		[menu (make-object popup-menu% #f)]
+		[xb (box 0)]
+		[yb (box 0)])
+
             (set! last-arrow-popup
               (lambda () 
                 (send this popup-zoom-menu edit offsets where to direction)))
-            (send menu append
-              ZOOM-TO-FILE
+
+	    (make-object menu-item% 
               (format "Zoom to ~a in ~s" 
                 direction
                 (file-name-from-path
-                  (send (ivar to edit) get-filename))))
+                  (send (ivar to edit) get-filename)))
+	      menu
+	      menu-callback)
        
             ;; Get global location of expr
             (send edit position-location 
@@ -914,9 +915,8 @@
             (pretty-debug-gui `(local-to-global returns ,xb ,yb))
 
             (send (ivar edit canvas) popup-menu menu 
-              (inexact->exact (+ (unbox xb) (car offsets)))
-              (inexact->exact (+ (unbox yb) (cdr offsets))))))]
-      )
+		  (max 0 (inexact->exact (+ (unbox xb) (car offsets))))
+		  (max 0 (inexact->exact (+ (unbox yb) (cdr offsets)))))))])
 
     (sequence
 

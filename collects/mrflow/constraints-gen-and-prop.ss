@@ -108,12 +108,11 @@
   
   ; struct = label-struct
   ; rest-arg?s = (listof boolean), req-args = (listof number), argss = (listof (listof label)),
-  ; exps = (listof label), top-free-varss = (listof (listof labels)),
-  ; app-thunks = (listof (-> void))
+  ; exps = (listof label), app-thunks = (listof (-> void))
   ; Each "level" of the six lists represents the args and body labels of a given clause in the
   ; case-lambda. At a given level, rest-arg? tells whether this clause has a rest argument,
   ; and req-args gives the number of required arguments, so it only has to be computed once.
-  ; top-free-varss are the labels of the top level free variables in the corresponding clause.
+  ; XXX top-free-varss are the labels of the top level free variables in the corresponding clause.
   ; This field is updated as a side effect when analyzing top level variable references inside
   ; the body of a lambda. Edges flowing into these free variables must be created when the
   ; clause is applied. app-thunk is a thunk that is used to delay the transformation of the
@@ -124,7 +123,7 @@
   ; struct is just a placeholder to tell the type of structure a given structure-processing
   ; function is supposed to deal with.
   (define-struct (label-case-lambda label)
-                 (struct rest-arg?s req-args argss exps top-free-varss&app-thunks) (make-inspector))
+                 (struct rest-arg?s req-args argss exps effects) (make-inspector))
   
   ; label = label (a label-cons based list of labels)
   ; used to simulate multiple values. So this label is going to flow around and work pretty
@@ -704,8 +703,7 @@
                                   [req-args-in (label-case-lambda-req-args inflowing-case-lambda-label)]
                                   [argss-labelss-in (label-case-lambda-argss inflowing-case-lambda-label)]
                                   [exps-labels-in (label-case-lambda-exps inflowing-case-lambda-label)]
-                                  [top-free-varss-labelss&app-thunks-in
-                                   (label-case-lambda-top-free-varss&app-thunks inflowing-case-lambda-label)])
+                                  [effects-in (label-case-lambda-effects inflowing-case-lambda-label)])
                                  (if (null? rest-arg?s-in)
                                      ; No match found.
                                      (begin
@@ -740,9 +738,9 @@
                                           ; rest args, it's the same
                                           (lambda ()
                                             ;(when (lookup-and-bind-top-level-vars
-                                            ;       (car top-free-varss-labelss-in) term)
+                                            ;       (car effects-in) term)
                                             ; make internal apps flow and top level vars looked up
-                                            ((car top-free-varss-labelss&app-thunks-in))
+                                            ((car effects-in))
                                             ;(set-car! app-thunks-in *dummy-thunk*)
                                             (let args-loop-in
                                               ([args-labels-in (car argss-labelss-in)]
@@ -766,9 +764,9 @@
                                           ; the rest argument.
                                           (lambda ()
                                             ;(when (lookup-and-bind-top-level-vars
-                                            ;       (car top-free-varss-labelss-in) term)
+                                            ;       (car effects-in) term)
                                             ; make internal apps flow
-                                            ((car top-free-varss-labelss&app-thunks-in))
+                                            ((car effects-in))
                                             ;(set-car! app-thunks-in *dummy-thunk*)
                                             (let args-loop-in
                                               ([args-labels-in (car argss-labelss-in)]
@@ -928,9 +926,9 @@
                                                                             req-arg-in))
                                                                      (begin
                                                                        ;(when (lookup-and-bind-top-level-vars
-                                                                       ;       (car top-free-varss-labelss-in) term)
+                                                                       ;       (car effects-in) term)
                                                                        ; make internal apps flow
-                                                                       ((car top-free-varss-labelss&app-thunks-in))
+                                                                       ((car effects-in))
                                                                        ;(set-car! app-thunks-in *dummy-thunk*)
                                                                        (add-edge-and-propagate-set-through-edge
                                                                         inflowing-label
@@ -1053,9 +1051,9 @@
                                                                             req-arg-in))
                                                                      (begin
                                                                        ;(when (lookup-and-bind-top-level-vars
-                                                                       ;       (car top-free-varss-labelss-in) term)
+                                                                       ;       (car effects-in) term)
                                                                        ; make internal apps flow
-                                                                       ((car top-free-varss-labelss&app-thunks-in))
+                                                                       ((car effects-in))
                                                                        ;(set-car! app-thunks-in *dummy-thunk*)
                                                                        (add-edge-and-propagate-set-through-edge
                                                                         inflowing-label
@@ -1106,9 +1104,9 @@
                                                (< req-arg-in req-arg-around))
                                           (lambda ()
                                             ;(when (lookup-and-bind-top-level-vars
-                                            ;       (car top-free-varss-labelss-in) term)
+                                            ;       (car effects-in) term)
                                             ; make internal apps flow
-                                            ((car top-free-varss-labelss&app-thunks-in))
+                                            ((car effects-in))
                                             ;(set-car! app-thunks-in *dummy-thunk*)
                                             (let args-loop-in
                                               ([args-labels-in (car argss-labelss-in)]
@@ -1163,7 +1161,7 @@
                                           (loop-clauses-in
                                            (cdr rest-arg?s-in) (cdr req-args-in)
                                            (cdr argss-labelss-in) (cdr exps-labels-in)
-                                           (cdr top-free-varss-labelss&app-thunks-in))]))))])
+                                           (cdr effects-in))]))))])
                           (if top-in-thunk
                               (loop-clauses-around (lambda ()
                                                      ; connect the current around clause
@@ -2226,12 +2224,9 @@
                    ; list, so we know where to find this element when we need it (we need to
                    ; update the top free vars for the current clause in the #%top case, and
                    ; the application thunk for the current clause in the #%app case).
-                   (set-label-case-lambda-top-free-varss&app-thunks!
-                    ;label
-                    ;(cons '() (label-case-lambda-top-free-varss label)))
-                    ;(set-label-case-lambda-app-thunks!
+                   (set-label-case-lambda-effects!
                     label
-                    (cons cst:dummy-thunk (label-case-lambda-top-free-varss&app-thunks label)))
+                    (cons cst:dummy-thunk (label-case-lambda-effects label)))
                    (kern:kernel-syntax-case
                     args #f
                     [(args ...)
@@ -2327,13 +2322,12 @@
         ; If the app is inside a lambda, we delay the addition of the edge until the enclosing
         ; lambda is itself applied.
         (if enclosing-lambda-label
-            (let* ([enclosing-lambda-top-free-varss&app-thunks
-                    (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
+            (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
                    ; has to be evaluated now, not inside the thunk, otherwise we might have an
                    ; infinite loop (if there's only one clause in the lambda) or complete
                    ; non-sense (if there's several clauses).
-                   [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
-              (set-car! enclosing-lambda-top-free-varss&app-thunks
+                   [current-thunk (car enclosing-lambda-effects)])
+              (set-car! enclosing-lambda-effects
                         (lambda ()
                           ; the order in which we evaluate the thunks here is normally
                           ; insignificant, but it is *very* important to have it in this
@@ -2792,15 +2786,13 @@
         (if enclosing-lambda-label
             ; free var inside a lambda, so add it to the list of free variables, don't do
             ; any lookup now (will be done when the enclosing lambda is applied)
-            (let* ([enclosing-lambda-top-free-varss&app-thunks
-                    (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
-                   [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
-              (set-car! enclosing-lambda-top-free-varss&app-thunks
+            (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
+                   [current-thunk (car enclosing-lambda-effects)])
+              (set-car! enclosing-lambda-effects
                         (lambda ()
                           (current-thunk)
                           (lookup-and-bind-top-level-vars (list bound-label) identifier)
                           )))
-            ;(cons bound-label (car enclosing-lambda-top-free-varss))))
             ; top level
             (lookup-and-bind-top-level-vars (list bound-label) identifier))
         bound-label)]
@@ -2810,6 +2802,7 @@
              [var-name (syntax-e var-stx)]
              [var-label (create-simple-label var-stx)]
              [var-edge (create-simple-edge var-label)]
+             [binding-label (lookup-env var-stx gamma)]
              [exp-label
               (create-label-from-term (syntax exp) gamma enclosing-lambda-label)]
              [set!-label (create-simple-label term)]
@@ -2820,61 +2813,72 @@
                                          (make-hash-table)
                                          (void))])
         (initialize-label-set-for-value-source void-label)
-        (if (lookup-env var-stx gamma)
+        (if binding-label
             ; lexical variable
-            (if enclosing-lambda-label
-                (let* ([enclosing-lambda-top-free-varss&app-thunks
-                        (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
-                       [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
-                  (set-car! enclosing-lambda-top-free-varss&app-thunks
-                            (lambda ()
-                              (current-thunk)
-                              (search-and-replace gamma var-name var-label)
-                              (add-edge-and-propagate-set-through-edge
-                               exp-label var-edge)
-                              (add-edge-and-propagate-set-through-edge
-                               void-label set!-edge))))
-                (begin
-                  (search-and-replace gamma var-name var-label)
-                  (add-edge-and-propagate-set-through-edge
-                   exp-label var-edge)
-                  (add-edge-and-propagate-set-through-edge
-                   void-label set!-edge)))
-            (if (or (lookup-top-level-name var-name)
-                    (eq? var-name 'make-struct-type)
-                    (eq? var-name 'make-struct-field-accessor)
-                    (eq? var-name 'make-struct-field-mutator)
-                    (eq? var-name 'set-car!)
-                    (eq? var-name 'set-cdr!)
-                    (eq? var-name 'string-set!)
-                    (eq? var-name 'string-fill!)
-                    (eq? var-name 'vector-set!)
-                    (eq? var-name 'vector-fill!))
-                ; top level var
-                (if enclosing-lambda-label
-                    (let* ([enclosing-lambda-top-free-varss&app-thunks
-                            (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
-                           [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
-                      (set-car! enclosing-lambda-top-free-varss&app-thunks
-                                (lambda ()
-                                  (current-thunk)
-                                  (add-top-level-name var-stx var-label)
-                                  (add-edge-and-propagate-set-through-edge
-                                   exp-label var-edge)
-                                  (add-edge-and-propagate-set-through-edge
-                                   void-label set!-edge))))
-                    (begin
-                      (add-top-level-name var-stx var-label)
-                      (add-edge-and-propagate-set-through-edge
-                       exp-label var-edge)
-                      (add-edge-and-propagate-set-through-edge
-                       void-label set!-edge)))
-                (set! *errors*
-                      (cons (list (list term)
-                                  'red
-                                  (format "set!: cannot set undefined identifier: ~a" var-name))
-                            *errors*))))
-        set!-label)]
+            (let ([binding-edge (create-simple-edge binding-label)])
+              (if enclosing-lambda-label
+                  (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
+                         [current-thunk (car enclosing-lambda-effects)])
+                    (set-car! enclosing-lambda-effects
+                              (lambda ()
+                                (current-thunk)
+                                ;(search-and-replace gamma var-name var-label)
+                                (add-edge-and-propagate-set-through-edge
+                                 exp-label var-edge)
+                                (add-edge-and-propagate-set-through-edge
+                                 var-label binding-edge)
+                                (add-edge-and-propagate-set-through-edge
+                                 void-label set!-edge))))
+                  (begin
+                    ;(search-and-replace gamma var-name var-label)
+                    (add-edge-and-propagate-set-through-edge
+                     exp-label var-edge)
+                    (add-edge-and-propagate-set-through-edge
+                     var-label binding-edge)
+                    (add-edge-and-propagate-set-through-edge
+                     void-label set!-edge)))
+              )
+            (let ([binding-label (lookup-top-level-name var-name)])
+              (if (or binding-label
+                      (eq? var-name 'make-struct-type)
+                      (eq? var-name 'make-struct-field-accessor)
+                      (eq? var-name 'make-struct-field-mutator)
+                      (eq? var-name 'set-car!)
+                      (eq? var-name 'set-cdr!)
+                      (eq? var-name 'string-set!)
+                      (eq? var-name 'string-fill!)
+                      (eq? var-name 'vector-set!)
+                      (eq? var-name 'vector-fill!))
+                  ; top level var
+                  (let ([binding-edge (create-simple-edge binding-label)]) 
+                    (if enclosing-lambda-label
+                        (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
+                               [current-thunk (car enclosing-lambda-effects)])
+                          (set-car! enclosing-lambda-effects
+                                    (lambda ()
+                                      (current-thunk)
+                                      ;(add-top-level-name var-stx var-label)
+                                      (add-edge-and-propagate-set-through-edge
+                                       exp-label var-edge)
+                                      (add-edge-and-propagate-set-through-edge
+                                       var-label binding-edge)
+                                      (add-edge-and-propagate-set-through-edge
+                                       void-label set!-edge))))
+                        (begin
+                          ;(add-top-level-name var-stx var-label)
+                          (add-edge-and-propagate-set-through-edge
+                           exp-label var-edge)
+                          (add-edge-and-propagate-set-through-edge
+                           var-label binding-edge)
+                          (add-edge-and-propagate-set-through-edge
+                           void-label set!-edge)))
+                    )
+                  (set! *errors*
+                        (cons (list (list term)
+                                    'red
+                                    (format "set!: cannot set undefined identifier: ~a" var-name))
+                              *errors*)))))
+            set!-label)]
      [(quote-syntax foo ...)
       (set! *errors*
             (cons (list (list term)
@@ -2947,10 +2951,10 @@
                   ; Note that this means we have to redo a lookup later to get the right binder,
                   ; which will have changed if a set! has occured (explicitely, or because
                   ; the lambda is in a letrec clause (see letrec))
-                  (let* ([enclosing-lambda-top-free-varss&app-thunks
-                          (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
-                         [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
-                    (set-car! enclosing-lambda-top-free-varss&app-thunks
+                  (let* ([enclosing-lambda-effects
+                          (label-case-lambda-effects enclosing-lambda-label)]
+                         [current-thunk (car enclosing-lambda-effects)])
+                    (set-car! enclosing-lambda-effects
                               (lambda ()
                                 (current-thunk)
                                 (let ([binding-label (lookup-env var-stx gamma)])
@@ -4330,7 +4334,8 @@
   
   ; syntax-object label -> void
   (define (associate-label-with-term-position label term)
-    (hash-table-put! *position->label* (syntax-position term) label))
+    (when (syntax-original? term)
+      (hash-table-put! *position->label* (syntax-position term) label)))
   
   ; number -> (union label #f)
   (define (lookup-label-from-position position)
@@ -4740,17 +4745,28 @@
   ; ((cons (listof label) (listof label)) -> (listof label)) -> (label -> (listof label))
   ; returns list of labels from which label went in or out, depending on selector
   (define (get-parents/children selector)
-    (lambda (label)
-      (list:foldr
-       (lambda (edges edgess)
-         (let ([edges (list:filter (lambda (label)
-                                     (not (label-prim? label)))
-                                   edges)])
-           (merge-lists edges edgess)))
-       '()
-       (hash-table-map (label-set label)
-                       (lambda (label arrows)
-                         (selector arrows))))))
+    (letrec ([get (lambda (label)
+                    (list:foldr
+                     (lambda (unfiltered-parents-for-current-set-element filtered-parentss-so-far)
+                       (let* ([direct-parents-without-primitive-labels
+                               (list:filter (lambda (label)
+                                              (not (label-prim? label)))
+                                            unfiltered-parents-for-current-set-element)]
+                              [direct-or-indirect-original-parents
+                               (list:foldr
+                                (lambda (direct-parent original-parents-so-far)
+                                  (if (syntax-original? (label-term direct-parent))
+                                      (cons direct-parent original-parents-so-far)
+                                      (merge-lists (get direct-parent)
+                                                   original-parents-so-far)))
+                                '()
+                                direct-parents-without-primitive-labels)])
+                         (merge-lists direct-or-indirect-original-parents filtered-parentss-so-far)))
+                     '()
+                     (hash-table-map (label-set label)
+                                     (lambda (label arrows)
+                                       (selector arrows)))))])
+      get))
   
   ; label -> (listof label)
   (define parents (get-parents/children arrows-in))

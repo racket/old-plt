@@ -10,6 +10,8 @@
    id
    select-right
    select-left
+   ;car!
+   ;cdr!
    )
   
   (define dummy (void))
@@ -22,4 +24,10 @@
   (define id (lambda (x) x))
   (define select-right (lambda (x y) y))
   (define select-left (lambda (x y) x))
+  ;(define car! (case-lambda
+  ;               [(pair) (car pair)]
+  ;               [(pair val) (set-car! pair val)]))
+  ;(define cdr! (case-lambda
+  ;               [(pair) (cdr pair)]
+  ;               [(pair val) (set-cdr! pair val)]))
   )

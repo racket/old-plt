@@ -21,18 +21,26 @@
    (unit/sig drscheme:tool-exports^
      (import drscheme:tool^)
 
-     (define mrflow-render-value<%> (interface () render-value-set))
-     (define (add-render-value-set-mixin %)
-       (class* % (mrflow-render-value<%>)
+     (define mrflow-language-extension-interface<%>
+       (interface ()
+         render-value-set
+         get-mrflow-primitives-filename))
+     (define (mrflow-default-implementation-mixin %)
+       (class* % (mrflow-language-extension-interface<%>)
          (define/public (render-value-set val) "render-value-set-mixin")
+         (define/public (get-mrflow-primitives-filename)
+           (build-path (collection-path "mrflow")
+                       "primitives"
+                       "r5rs.ss")) ; default language for MrFlow
          (super-instantiate ())))
      
      (define (phase1) 
        (drscheme:language:extend-language-interface
-        mrflow-render-value<%>
-        add-render-value-set-mixin))
-     (define (phase2) (void))
+        mrflow-language-extension-interface<%>
+        mrflow-default-implementation-mixin))
 
+     (define (phase2) (void))
+       
      ; used for clickable locations in the program
      (define can-click-style (make-object style-delta% 'change-weight 'bold))
      (send can-click-style set-delta-foreground "purple")
@@ -416,24 +424,27 @@
             (callback
              (lambda (button evt)
                (clear-annotations)
-               (let ([start (current-milliseconds)]
-                     [language (frame:preferences:get
-                                (drscheme:language-configuration:get-settings-preferences-symbol))])
+               (let* ([start (current-milliseconds)]
+                      [language-settings
+                       (frame:preferences:get
+                        (drscheme:language-configuration:get-settings-preferences-symbol))])
                  (mrflow:reset-all)
                  ; note: we have to do this each time, because the user might have changed
                  ; the language between analyses.
-                 ; XXX should interogate the language to get the filename
+                 ; XXX we should catch the exception if the file doesn't exist
                  (mrflow:initialize-primitive-type-schemes
-                  (build-path (collection-path "mrflow")
-                              "primitives"
-                              "r5rs.ss"))
+                  (send
+                   ; the language object
+                   (drscheme:language-configuration:language-settings-language
+                    language-settings)
+                   get-mrflow-primitives-filename))
                  (send (get-interactions-text)
                        expand-program
                        (drscheme:language:make-text/pos (get-definitions-text) 
                                                         0
                                                         (send (get-definitions-text)
                                                               last-position))
-                       language
+                       language-settings
                        (lambda (exception? syntax-object/exception run-in-expansion-thread loop)
                          (if exception?
                              (let ([message (car syntax-object/exception)]
@@ -459,20 +470,21 @@
                                  [else
                                   (message-box "unknown exception"
                                                (format "unknown exception: ~a" exn))]))
-                           (unless (eof-object? syntax-object/exception)
-                             ;(printf "~a~n~n" (syntax-object->datum syntax-object/exception))
-                             (mrflow:create-label-from-term syntax-object/exception '() #f)))
+                             (unless (eof-object? syntax-object/exception)
+                               ;(printf "~a~n~n" (syntax-object->datum syntax-object/exception))
+                               (mrflow:create-label-from-term syntax-object/exception '() #f)))
                          (loop)))
                  (mrflow:check-primitive-types)
+                 
                  ;(printf "time: ~a ms~n" (- (current-milliseconds) start))
-                 )
-               
-               ; XXX perf analysis
-               ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n"
-               ;        mrflow:ast-nodes mrflow:graph-nodes mrflow:graph-edges)
-               ;(printf "ast-nodes: ~a~n" mrflow:ast-nodes)
-               
-               (send (get-definitions-text) run-analysis))))])
+                 
+                 ; XXX perf analysis
+                 ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n"
+                 ;        mrflow:ast-nodes mrflow:graph-nodes mrflow:graph-edges)
+                 ;(printf "ast-nodes: ~a~n" mrflow:ast-nodes)
+                 
+                 (send (get-definitions-text) run-analysis)
+                 ))))])
          ;(sequence
          (send (get-button-panel) change-children
                (lambda (l)

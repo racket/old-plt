@@ -1516,15 +1516,16 @@ static void *compile_k(void)
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *form;
   int writeable, for_eval, rename;
-  Scheme_Comp_Env *env;
+  Scheme_Env *genv;
   Scheme_Compile_Info rec;
   Scheme_Object *o, *tl_queue;
   Scheme_Compilation_Top *top;
   Resolve_Prefix *rp;
   Scheme_Object *gval;
+  Scheme_Comp_Env *cenv;
 
   form = (Scheme_Object *)p->ku.k.p1;
-  env = (Scheme_Comp_Env *)p->ku.k.p2;
+  genv = (Scheme_Env *)p->ku.k.p2;
   writeable = p->ku.k.i1;
   for_eval = p->ku.k.i2;
   rename = p->ku.k.i3;
@@ -1539,14 +1540,14 @@ static void *compile_k(void)
 
   /* Renamings for requires: */
   if (rename) {
-    if (env->genv->rename)
-      form = scheme_add_rename(form, env->genv->rename);
-    if (env->genv->exp_env && env->genv->exp_env->rename)
-      form = scheme_add_rename(form, env->genv->exp_env->rename);
-    if (env->genv->module) {
+    if (genv->rename)
+      form = scheme_add_rename(form, genv->rename);
+    if (genv->exp_env && genv->exp_env->rename)
+      form = scheme_add_rename(form, genv->exp_env->rename);
+    if (genv->module) {
       form = scheme_stx_phase_shift(form, 0, 
-				    env->genv->module->src_modidx, 
-				    env->genv->module->self_modidx);
+				    genv->module->src_modidx, 
+				    genv->module->self_modidx);
     }
   }
 
@@ -1555,8 +1556,10 @@ static void *compile_k(void)
 
   while (1) {
     rec.dont_mark_local_use = 0;
-    rec.resolve_module_ids = !writeable && !env->genv->module;
+    rec.resolve_module_ids = !writeable && !genv->module;
     rec.value_name = NULL;
+
+    cenv = scheme_new_comp_env(genv, SCHEME_TOPLEVEL_FRAME);
 
     if (for_eval) {
       /* Need to look for top-level `begin', and if we
@@ -1564,7 +1567,7 @@ static void *compile_k(void)
 	 before the rest. */
       while (1) {
 	form = scheme_check_immediate_macro(form, 
-					    env, &rec, 0,
+					    cenv, &rec, 0,
 					    0, scheme_false, 
 					    0, &gval, NULL);
 	if (SAME_OBJ(gval, scheme_begin_syntax)) {
@@ -1581,9 +1584,9 @@ static void *compile_k(void)
       }
     }
       
-    o = scheme_compile_expr(form, env, &rec, 0);
+    o = scheme_compile_expr(form, cenv, &rec, 0);
     
-    rp = scheme_resolve_prefix(0, env->prefix, 1);
+    rp = scheme_resolve_prefix(0, cenv->prefix, 1);
     
     o = scheme_resolve_expr(o, scheme_resolve_info_create(rp));
 
@@ -1596,7 +1599,7 @@ static void *compile_k(void)
     if (SCHEME_PAIRP(tl_queue)) {
       /* This compile is interleaved with evaluation,
 	 and we need to eval now before compiling more. */
-      _scheme_eval_compiled_multi((Scheme_Object *)top, env->genv);
+      _scheme_eval_compiled_multi((Scheme_Object *)top, genv);
 
       form = SCHEME_CAR(tl_queue);
       tl_queue = SCHEME_CDR(tl_queue);
@@ -1609,7 +1612,6 @@ static void *compile_k(void)
 
 static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeable, int for_eval, int eb, int rename)
 {
-  Scheme_Comp_Env *cenv;
   Scheme_Thread *p = scheme_current_thread;
 
   if (SAME_TYPE(SCHEME_TYPE(form), scheme_compilation_top_type))
@@ -1620,10 +1622,8 @@ static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeab
       return SCHEME_STX_VAL(form);
   }
 
-  cenv = scheme_new_comp_env(env, SCHEME_TOPLEVEL_FRAME);
-
   p->ku.k.p1 = form;
-  p->ku.k.p2 = cenv;
+  p->ku.k.p2 = env;
   p->ku.k.i1 = writeable;
   p->ku.k.i2 = for_eval;
   p->ku.k.i3 = rename;

@@ -11,7 +11,9 @@
 	   copy-port
 	   input-port-append
 	   convert-stream
-	   make-limited-input-port)
+	   make-limited-input-port
+	   reencode-input-port
+	   reencode-output-port)
 
   (define (exact-non-negative-integer? i)
     (and (number? i) (exact? i) (integer? i) (i . >= . 0)))
@@ -1056,4 +1058,329 @@
     (wrap-evt
      (regexp-match-evt #rx#"^$" input-port)
      (lambda (x)
-       eof))))
+       eof)))
+
+  ;; --------------------------------------------------
+  
+  (define reencode-input-port
+    (opt-lambda (port encoding [error-bytes #f] [close? #f] [name (object-name port)])
+      (let ([c (bytes-open-converter encoding "UTF-8")]
+	    [ready-bytes (make-bytes 1024)]
+	    [ready-start 0]
+	    [ready-end 0]
+	    [buf (make-bytes 1024)]
+	    [buf-start 0]
+	    [buf-end 0]
+	    [buf-eof? #f]
+	    [buf-eof-result #f])
+	;; Main reader entry:
+	(define (read-it s)
+	  (cond
+	   [(> ready-end ready-start)
+	    ;; We have leftover converted bytes:
+	    (let ([cnt (min (bytes-length s)
+			    (- ready-end ready-start))])
+	      (bytes-copy! s 0 ready-bytes ready-start (+ ready-start cnt))
+	      (set! ready-start (+ ready-start cnt))
+	      cnt)]
+	   [else
+	    ;; Try converting already-read bytes:
+	    (let-values ([(got-c used-c status) (if (= buf-start buf-end)
+						    (values 0 0 'aborts)
+						    (bytes-convert c buf buf-start buf-end s))])
+	      (cond
+	       [(positive? got-c)
+		;; We converted some bytes into s.
+		(set! buf-start (+ used-c buf-start))
+		got-c]
+	       [(eq? status 'aborts)
+		(if buf-eof?
+		    ;; Had an EOF or special in the stream.
+		    (if (= buf-start buf-end)
+			(begin0
+			 buf-eof-result
+			 (set! buf-eof? #f)
+			 (set! buf-eof-result #f))
+			(handle-error s))
+		    ;; Need more bytes.
+		    (begin
+		      (when (positive? buf-start)
+			(bytes-copy! buf 0 buf buf-start buf-end)
+			(set! buf-end (- buf-end buf-start))
+			(set! buf-start 0))
+		      (let* ([amt (bytes-length s)]
+			     [c (read-bytes-avail!* buf port buf-end (+ buf-end amt))])
+			(cond
+			 [(or (eof-object? c) 
+			      (procedure? c))
+			  ;; Got EOF/procedure
+			  (set! buf-eof? #t)
+			  (set! buf-eof-result c)
+			  (read-it s)]
+			 [(zero? c)
+			  ;; No bytes ready --- try again later.
+			  (wrap-evt port (lambda (v) 0))]
+			 [else
+			  ;; Got some bytes; loop to decode.
+			  (set! buf-end (+ buf-end c))
+			  (read-it s)]))))]
+	       [(eq? status 'error)
+		(handle-error s)]
+	       [(eq? status 'continues)
+		;; Need more room to make progress at all.
+		;; Decode into ready-bytes.
+		(let-values ([(got-c used-c status) (bytes-convert c buf buf-start buf-end ready-bytes)])
+		  (unless (memq status '(continues complete))
+		    (error 'reencode-input-port-read
+			   "unable to make decoding progress: ~e"
+			   port))
+		  (set! ready-start 0)
+		  (set! ready-end got-c)
+		  (set! buf-start (+ used-c buf-start))
+		  (read-it s))]))]))
+
+	;; Raise exception or discard first buffered byte.
+	;;  We assume that read-bytes is empty
+	(define (handle-error s)
+	  (if error-bytes
+	      (begin
+		(set! buf-start (add1 buf-start))
+		(let ([cnt (min (bytes-length s)
+				(bytes-length error-bytes))])
+		  (bytes-copy! s 0 error-bytes 0 cnt)
+		  (bytes-copy! ready-bytes 0 error-bytes cnt)
+		  (set! ready-start 0)
+		  (set! ready-end (- (bytes-length error-bytes) cnt))
+		  cnt))
+	      (error
+	       'converting-input-port
+	       "decoding error in input stream: ~e"
+	       port)))
+
+	(unless c
+	  (error 'reencode-input-port 
+		 "could not create converter from ~e to UTF-8"
+		 encoding))
+	
+	(make-input-port/read-to-peek
+	 name 
+	 read-it
+	 #f
+	 (lambda ()
+	   (when close?
+	     (close-input-port port))
+	   (bytes-close-converter c))))))
+  
+  ;; --------------------------------------------------
+  
+  (define reencode-output-port
+    (opt-lambda (port encoding [error-bytes #f] [close? #f] [name (object-name port)])
+      (let ([c (bytes-open-converter encoding "UTF-8")]
+	    [ready-bytes (make-bytes 1024)]
+	    [ready-start 0]
+	    [ready-end 0]
+	    [out-bytes (make-bytes 1024)]
+	    [out-start 0]
+	    [out-end 0])
+	
+	;; The main writing entry point:
+	(define (write-it s start end no-buffer&block? enable-break?)
+	  (cond
+	   [(= start end)
+	    ;; This is a flush request; no-buffer&block? must be #f
+	    ;; Note: we could get stuck because only half an encoding
+	    ;;  is available in out-bytes.
+	    (flush-some #f enable-break?)
+	    (if (buffer-flushed?)
+		0
+		(write-it s start end no-buffer&block? enable-break?))]
+	   [no-buffer&block?
+	    (case (flush-all)
+	      [(not-done)
+	       ;; We couldn't flush right away, so give up.
+	       #f]
+	      [(done)
+	       (non-blocking-write s start end)]
+	      [(stuck)
+	       ;; We need more bytes to make progress.
+	       ;;  Add out-bytes and s into one string for non-blocking-write.
+	       (let ([s2 (bytes-append (subbytes out-bytes out-start out-end)
+				       (subbytes s start end))]
+		     [out-len (- out-end out-start)])
+		 (let ([c (non-blocking-write s2 0 (bytes-length s2))])
+		   (and c
+			(begin
+			  (set! out-start 0)
+			  (set! out-end 0)
+			  (- c out-len)))))])]
+	   [else
+	    (when (or (> ready-end ready-start)
+		      (< (- (bytes-length out-bytes) out-end) 100))
+	      ;; Make room for conversion.
+	      (flush-some #f enable-break?))
+	    ;; Make room in buffer
+	    (when (positive? out-start)
+	      (bytes-copy! out-bytes 0 out-bytes out-start out-end)
+	      (set! out-end (- out-end out-start))
+	      (set! out-start 0))
+	    ;; Buffer some bytes:
+	    (let ([cnt (min (- end start)
+			    (- (bytes-length out-bytes) out-end))])
+	      (if (zero? cnt)
+		  ;; No room --- try flushing again:
+		  (write-it s start end #f enable-break?)
+		  ;; Buffer and report success:
+		  (begin
+		    (bytes-copy! out-bytes out-end s start (+ start cnt))
+		    (set! out-end (+ cnt out-end))
+		    cnt)))]))
+	   
+	(define (non-blocking-write s start end)
+	  ;; For now, everything that we can flushed is flushed.
+	  ;;  Try to write the minimal number of bytes, and hope for the
+	  ;;  best. If none of all of the minimal bytes get written,
+	  ;;  everyone is happy enough. If some of the bytes get written,
+	  ;;  the we will have buffered bytes when we shouldn't have.
+	  ;;  That probably won't happen, but we can't guarantee it.
+	  (let loop ([len 1])
+	    (let-values ([(got-c used-c status) (bytes-convert c s start (+ start len) ready-bytes)])
+	      (cond
+	       [(positive? got-c)
+		(try-flush-ready got-c used-c)]
+	       [(eq? status 'aborts)
+		(if (< len (- end start))
+		    ;; Try converting a bigger chunk
+		    (loop (add1 len))
+		    ;; We can't flush half an encoding, so just buffer it.
+		    (let ([cnt (- start end)])
+		      (when (> (- end start) (bytes-length out-bytes))
+			(raise-insane-decoding-length))
+		      (bytes-copy out-bytes 0 s start end)
+		      (set! out-start 0)
+		      (set! out-end cnt)
+		      cnt))]
+	       [(eq? status 'continues)
+		;; Not enough room in ready-bytes!? We give up.
+		(raise-insane-decoding-length)]
+	       [else
+		;; Encoding error. Try to flush error bytes.
+		(let ([cnt (bytes-length error-bytes)])
+		  (bytes-copy! ready-bytes 0 error-bytes)
+		  (try-flush-ready cnt 1))]))))
+
+	(define (write-special-it v no-buffer&block? enable-break?)
+	  (cond
+	   [(buffer-flushed?)
+	    ((if no-buffer&block?
+		 write-special-avail*
+		 (if enable-break?
+		     (lambda (v p)
+		       (parameterize-break #t (write-special v p)))
+		     write-special))
+	     v port)]
+	   [else
+	    ;; Note: we could get stuck because only half an encoding
+	    ;;  is available in out-bytes.
+	    (flush-some no-buffer&block? enable-break?)
+	    (if (or (buffer-flushed?)
+		    (not no-buffer&block?))
+		(write-special-it v no-buffer&block? enable-break?)
+		#f)]))
+	
+	;; flush-all : -> 'done, 'not-done, or 'stuck
+	(define (flush-all)
+	  (let ([orig-none-ready? (= ready-start ready-end)]
+		[orig-out-start out-start]
+		[orig-out-end out-end])
+	    (flush-some #t #f)
+	    (if (buffer-flushed?)
+		'done
+		;; Couldn't flush everything. One possibility is that we need
+		;;  more bytes to convert before a flush.
+		(if (and orig-none-ready?
+			 (= ready-start ready-end)
+			 (= orig-out-start out-start)
+			 (= orig-out-end out-end))
+		    'stuck
+		    'not-done))))
+	
+	(define (buffer-flushed?)
+	  (and (= ready-start ready-end)
+	       (= out-start out-end)))
+	
+	;; Try to flush immediately a certain number of bytes
+	(define (try-flush-ready got-c used-c)
+	  (let ([c (write-bytes-avail* ready-bytes port 0 got-c)])
+	    (if (zero? c)
+		;; Didn't flush any - give up:
+		#f
+		;; Hopefully, we flushed them all, but set ready-start and ready-end,
+		;;  just in case.
+		(begin	    
+		  (set! ready-start c)
+		  (set! ready-end got-c)
+		  used-c))))
+
+	;; Try to make progress flushing buffered bytes
+	(define (flush-some non-block? enable-break?)
+	  (unless (= ready-start ready-end)
+	    ;; Flush converted bytes:
+	    (let ([cnt ((cond
+			 [non-block? write-bytes-avail*]
+			 [enable-break? write-bytes-avail/enable-break]
+			 [else write-bytes-avail])
+			ready-bytes port ready-start ready-end)])
+	      (set! ready-start (+ ready-start cnt))))
+	  (when (= ready-start ready-end)
+	    ;; Convert more, if available:
+	    (set! ready-start 0)
+	    (set! ready-end 0)
+	    (when (> out-end out-start)
+	      (let-values ([(got-c used-c status) (bytes-convert c out-bytes out-start out-end ready-bytes)])
+		(set! ready-end got-c)
+		(set! out-start (+ out-start used-c))
+		(when (and (eq? status 'continues)
+			   (zero? used-c))
+		  ;; Yikes! Size of ready-bytes isn't enough room for progress!?
+		  (raise-insane-decoding-length))
+		(when (and (eq? status 'error)
+			   (zero? used-c))
+		  ;; No progress before an encoding error.
+		  (if error-bytes
+		      ;; Write error bytes and drop an output byte:
+		      (begin
+			(set! out-start (add1 out-start))
+			(bytes-copy! ready-bytes 0 error-bytes)
+			(set! ready-end (bytes-length error-bytes)))
+		      ;; Raise an exception:
+		      (begin
+			(set! out-start (add1 out-start))
+			(error
+			 'reencode-output-port
+			 "error decoding output to stream: ~e"
+			 port))))))))
+
+	;; This error is used when decoding wants more bytes to make progress even
+	;;  though we've supplied hundreds of bytes
+	(define (raise-insane-decoding-length)
+	  (error 'reencode-output-port-write
+		 "unable to make decoding progress: ~e"
+		 port))
+
+	;; Check that a decoder is available:
+	(unless c
+	  (error 'reencode-output-port 
+		 "could not create converter from ~e to UTF-8"
+		 encoding))
+
+	(make-output-port
+	 name
+	 port
+	 write-it
+	 (lambda ()
+	   ;; Flush output
+	   (write-it #"" 0 0 #f #f)
+	   (when close?
+	     (close-output-port port))
+	   (bytes-close-converter c))
+	 write-special-it)))))

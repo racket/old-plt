@@ -56,9 +56,10 @@
 
   (check-check-syntax "'(a . b)" "improper lists are not allowed")
 
-  ; from pr-246 -- this is still broken
+  ; from pr-246 
+  ; execute says "cons: second argument must be of type <list>, given 1 and 2")
 
-  (check-check-syntax "(cons 1 2)" "cons: second argument must be of type <list>, given 1 and 2")
+  (check-check-syntax "(cons 1 2)" "")
 
   ; end pr-246
 

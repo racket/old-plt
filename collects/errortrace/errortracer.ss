@@ -318,11 +318,12 @@
           [errortrace-exception-handler
            (lambda (x)
              (if (exn? x)
-                 (let ([p (current-error-port)])
+                 (let ([p (open-output-string)])
                    (display (exn-message x) p)
                    (newline p)
                    (print-error-trace p x)
-                   ((error-escape-handler)))
+		   ((error-display-handler) (get-output-string P))
+		   ((error-escape-handler)))
                  (orig x)))])
      errortrace-exception-handler))
   

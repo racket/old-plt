@@ -36,7 +36,7 @@ Rough BNF
 (define (test tag expected t)
   (let ([got 
 	 (with-handlers ([(lambda (x) #t)
-			  (lambda (x) x)])
+			  (lambda (x) (exn-message x))])
 	   (eval t))])
     (unless (equal? expected got)
       (error 'test "~a: expected ~s got ~s" tag expected got))))

@@ -5,7 +5,6 @@
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
 			   [text : drscheme:text^]
-			   [language : drscheme:language^]
 			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
 			   [graph : drscheme:graph^]
@@ -53,7 +52,16 @@
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^
 		    ((require-relative-library "params.ss") 
-		     mred unit frame rep mzlib)])
+		     mred unit frame rep mzlib)]
+	[language : drscheme:language^
+		  ((require-relative-library "language.ss")
+		   mred framework
+		   unit
+		   aries zodiac
+		   basis
+		   (mzlib function) 
+		   (mzlib file)
+		   print-convert)])
   (export (unit interface)
           (unit basis)
 	  (unit frame)
@@ -61,4 +69,5 @@
 	  (unit program)
 	  (unit get/extend)
 	  (unit rep)
-	  (unit help-desk)))
+	  (unit help-desk)
+	  (unit language)))

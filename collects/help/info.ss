@@ -12,5 +12,6 @@
     [(compile-elaboration-zos) (list "sig.ss" "search-sig.ss" "help-raw-sig.ss")]
     [(mred-launcher-libraries) (list "help.ss")]
     [(mred-launcher-names) (list "Help Desk")]
+    [(project-filename) "help.proj"]
     [else (failure)]))
 

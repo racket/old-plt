@@ -1,3 +1,5 @@
+(require-library "errortrace.ss" "errortrace")
+
 (unit/sig ()
   (import mred^
 	  mzlib:core^
@@ -53,9 +55,55 @@
   (define project-frame%
     (class/d frame:standard-menus% (filename)
 
-      ((inherit get-area-container get-menu-bar))
+      ((inherit get-area-container get-menu-bar)
+       (override file-menu:save file-menu:save-as))
+
+      (define project-name
+	(if filename
+	    (let-values ([(base top __) (split-path filename)])
+	      top)
+	    "Untitled"))
+
+      (define (file-menu:save . xxx)
+	(if filename
+	    (save-file filename)
+	    (file-menu:save-as)))
+
+      (define (file-menu:save-as . xxx)
+	(let ([new-fn (get-file "Choose a project filename" this)])
+	  (when new-fn
+	    (set! filename new-fn)
+	    (save-file filename))))
+
 
       (define files null)
+      (define language-settings (preferences:get 'drscheme:settings))
+
+      (define project-custodian (make-custodian))
+
+      (define drs-eventspace (current-eventspace))
+
+      (define (execute-project)
+	(custodian-shutdown-all project-custodian)
+	(set! project-custodian (make-custodian))
+	(parameterize ([current-custodian project-custodian])
+	  (parameterize ([current-eventspace (make-eventspace)])
+	    (queue-callback
+	     (lambda ()
+	       (drscheme:basis:initialize-parameters project-custodian language-settings)
+	       (error-display-handler
+		(lambda (string)
+		  (parameterize ([current-eventspace drs-eventspace])
+		    (message-box (format "Error running project ~a" project-name) string))))
+	       (for-each
+		(lambda (file)
+		  (cond
+		   [(string? file) (load file)]
+		   [else (apply require-library/proc file)]))
+		files))))))
+
+      (define (configure-language)
+	(set! language-settings (drscheme:language:language-dialog language-settings)))
 
       (define (refresh-files-list-box)
 	(send files-list-box clear)
@@ -67,6 +115,32 @@
 		  [(pair? file) (format "coll: ~s" file)]
 		  [else (format "huh?: ~s" file)])))
 	 files))
+
+      (define (move-file-down) (void))
+
+      (define (move-file-up)
+	(let ([selection (car (send files-list-box get-selections))])
+	  (let loop ([n selection]
+		     [files files]
+		     [previous-pair #f])
+	    (cond
+	     [(zero? n)
+	      (let ([tmp (car previous-pair)])
+		(set-car! previous-pair (car files))
+		(set-car! files tmp))
+	      (refresh-files-list-box)
+	      (send files-list-box select (- selection 1))]
+	     [else
+	      (loop (- n 1)
+		    (cdr files)
+		    files)]))))
+
+      (define (files-list-box-callback selection)
+	(case selection
+	  [(list-box-dclick) '(open-file (send files-list-box get-selection) ...)]
+	  [(list-box-click)
+	   ;; update button status
+	   (void)]))
 
       (define (nth-cdr n l)
 	(cond
@@ -190,26 +264,45 @@
 					(format "~a" (if (exn? x)
 							 (exn-message x)
 							 (format "~s" x)))))])
-	  (let* ([all (call-with-input-file filename read)]
-		 [files (function:first all)])
-	    (set! files files))
+	  (let* ([all (call-with-input-file filename read 'text)]
+		 [loaded-files (function:first all)]
+		 [loaded-language-settings (function:second all)])
 
-	  (refresh-files-list-box)))
+	    (if (= (arity drscheme:basis:make-setting)
+		   (length loaded-language-settings))
+		(set! language-settings
+		      (apply drscheme:basis:make-setting loaded-language-settings))
+		(message-box "Loading Project"
+			     "Ignoring out of date language settings (from previous version)"))
 
-      (super-init (if (string? filename) filename "Project") #f 400)
+	    (set! files loaded-files)
+	    (refresh-files-list-box))))
+
+      (define (save-file filename)
+	(call-with-output-file filename
+	  (lambda (port)
+	    (write (list files (cdr (vector->list (struct->vector language-settings))))
+		   port))
+	  'truncate 'text))
+
+      (super-init project-name #f 400 450)
 
       (define mb (get-menu-bar))
       (define project-menu (make-object menu% "Project" mb))
       (make-object menu-item% "New Project" project-menu (lambda x (new-project)))
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
+      (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)))
 
-      (make-object button% "Execute" (get-area-container) void)
+      (make-object button% "Execute" (get-area-container) (lambda x (execute-project)))
       (define top-panel (make-object horizontal-panel% (get-area-container)))
-      (define files-list-box (make-object list-box% #f null top-panel void '(single)))
+      (define files-list-box (make-object list-box% #f null top-panel
+					  (lambda (lb evt)
+					    (files-list-box-callback (send evt get-type)))
+					  '(single)))
       (define button-panel (make-object vertical-panel% top-panel))
-      (make-object button% "Up" button-panel void)
+      (make-object button% "Up" button-panel (lambda x (move-file-up)))
       (make-object button% "Open" button-panel void)
-      (make-object button% "Down" button-panel void)
+      (make-object button% "Down" button-panel (lambda x (move-file-down)))
       (send button-panel stretchable-width #f)
 
       (when (and filename
@@ -221,7 +314,5 @@
 
   (define (new-project)
     (send (make-object project-frame% #f) show #t))
-
-  (new-project)
 
   (drscheme:get/extend:extend-unit-frame make-project-aware-unit-frame))

@@ -19,17 +19,11 @@
       [else (error 'drscheme:language:update-to "got: ~a as printing style"
 		   printing-setting)]))
 
-  (define (language-dialog)
+  (define (language-dialog original-settings)
     (letrec
-	([dialog% (class mred:dialog% (name)
-		    (override
-		      [on-close
-		       (lambda ()
-			 (when (procedure? unregister-callback)
-			   (unregister-callback)))])
-		    (sequence (super-init name)))]
+	([settings (basis:copy-setting original-settings)]
 	 [language-levels (map basis:setting-name basis:settings)]
-	 [f (make-object dialog% "Language")]
+	 [f (make-object mred:dialog% "Language")]
 	 [main (make-object mred:vertical-pane% f)]
 	 [language-panel (make-object mred:horizontal-panel% main '(border))]
 	 [customization-panel (make-object mred:horizontal-panel% main)]
@@ -80,14 +74,14 @@
          [full-scheme-radio-box #f]
          [full-scheme-radio-box-callback
 	  (lambda ()
-	    (fw:preferences:set
-	     'drscheme:settings
-	     (basis:copy-setting
-	      (basis:find-setting-named
-               (cadr
-		(list-ref
-		 full-scheme-radio-box-label-map
-		 (send full-scheme-radio-box get-selection)))))))]
+	    (set! settings
+		  (basis:copy-setting
+		   (basis:find-setting-named
+		    (cadr
+		     (list-ref
+		      full-scheme-radio-box-label-map
+		      (send full-scheme-radio-box get-selection))))))
+	    (update-to settings))]
          [close-full-scheme-radio-box
           (lambda ()
             (when full-scheme-radio-box
@@ -122,15 +116,15 @@
 	    (lambda (choice evt)
 	      (cond
 	       [(string=? full-scheme (send choice get-string-selection))
-		(open-full-scheme-radio-box (fw:preferences:get 'drscheme:settings))
+		(open-full-scheme-radio-box settings)
 		(full-scheme-radio-box-callback)]
 	       [else
 		(close-full-scheme-radio-box)
-		(fw:preferences:set
-		 'drscheme:settings
-		 (basis:copy-setting
-		  (basis:number->setting
-		   (send choice get-selection))))])))]
+		(set! settings
+		      (basis:copy-setting
+		       (basis:number->setting
+			(send choice get-selection))))
+		(update-to settings)])))]
 	 [custom-message (make-object mred:message% "Custom" language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)
@@ -142,14 +136,15 @@
 	  (lambda (set-setting! setting name panel)
 	    (right-align
 	     (lambda (hp)
-	       (make-object mred:check-box%
-		 name
-		 hp
-		 (lambda (check-box evt)
-		   (let ([i (send check-box get-value)]
-			 [s (fw:preferences:get 'drscheme:settings)])
-		     (set-setting! s i)
-		     (fw:preferences:set 'drscheme:settings s)))))
+	       (let ([cb (make-object mred:check-box%
+			   name
+			   hp
+			   (lambda (check-box evt)
+			     (let ([i (send check-box get-value)])
+			       (set-setting! settings i)
+			       (update-to settings))))])
+		 (send cb set-value (setting settings))
+		 cb))
 	     panel))]
 	 
 	 [case-sensitive? (make-check-box basis:set-setting-case-sensitive?!
@@ -184,10 +179,9 @@
 	       main
 	       (lambda (box evt)
 		 (let* ([which (send box get-selection)]
-			[setting (fw:preferences:get 'drscheme:settings)]
 			[symbol-which (printer-number->symbol which)])
-		   (basis:set-setting-printing! setting symbol-which)
-		   (fw:preferences:set 'drscheme:settings setting)))))
+		   (basis:set-setting-printing! settings symbol-which)
+		   (update-to settings)))))
 	   output-syntax-panel)]
 	 [sharing-printing?
 	  (make-check-box basis:set-setting-sharing-printing?!
@@ -219,16 +213,12 @@
 			  ok-panel
 			  (lambda (button evt) 
 			    (send f show #f)
-			    (fw:preferences:read)
-			    (when (procedure? unregister-callback)
-			      (unregister-callback))))]
+			    (set! settings original-settings)))]
 	 [ok-button (make-object mred:button%
 		      "OK"
 		      ok-panel
 		      (lambda (button evt) 
-			(send f show #f)
-			(when (procedure? unregister-callback)
-			  (unregister-callback)))
+			(send f show #f))
 		      '(border))]
 	 ;[spacer (make-object mred:grow-box-spacer-pane% ok-panel)]
 	 [compare-setting-to-gui
@@ -303,24 +293,20 @@
 		    (not (eq? (basis:setting-vocabulary-symbol v) 'beginner)))
 	      (send signal-undefined enable zodiac?)
 
-	      (reset-choice)))]
-	 [unregister-callback
-	  (fw:preferences:add-callback 'drscheme:settings 
-				       (lambda (p v) (update-to v)))])
+	      (reset-choice)))])
       (send f stretchable-width #f)
       (send f stretchable-height #f)
       (send language-choice stretchable-width #f)
       (send printing stretchable-width #t)
-      (update-to (fw:preferences:get 'drscheme:settings))
+      (update-to settings)
       (show-specifics (not (ormap compare-setting-to-gui basis:settings)))
       (for-each (lambda (x) (send x stretchable-height #f))
 		(list language-panel ok-panel main))
       (send language-panel set-alignment 'center 'center)
       (send ok-button min-width (send cancel-button get-width))
-      (fw:preferences:save)
       (send f center 'both)
       (send f show #t)
-      f))
+      settings))
 
   ; object to remember last teachpack directory
   (define teachpack-directory 
@@ -335,7 +321,10 @@
     (make-object mred:menu-item%
       "Choose Language..."
       language-menu
-      (lambda (_1 _2) (language-dialog))
+      (lambda (_1 _2)
+	(fw:preferences:set
+	 'drscheme:settings
+	 (language-dialog (fw:preferences:get 'drscheme:settings))))
       (and
        (fw:preferences:get 'framework:menu-bindings)
        #\l))

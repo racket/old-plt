@@ -31,26 +31,6 @@
   ;(fw:version:add-spec 'd 11)
   
   
-  ;; add preferences
-  (fw:preferences:set-default 'drscheme:settings
-			       (basis:get-default-setting)
-			       basis:setting?)
-  (define (valid-setting? setting)
-    (ormap (lambda (x) (equal? (basis:setting-name setting)
-                               (basis:setting-name x)))
-           basis:settings))
-  (fw:preferences:set-un/marshall 'drscheme:settings
-				  (compose cdr vector->list struct->vector)
-				  (lambda (x) 
-				    (if (and (list? x)
-					     (equal? (arity basis:make-setting)
-                                                     (length x)))
-					(let ([setting (apply basis:make-setting x)])
-                                          (if (valid-setting? setting)
-                                              setting
-                                              (basis:get-default-setting)))
-					(basis:get-default-setting))))
-
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)
   (drscheme:get/extend:get-definitions-canvas%)

@@ -31,11 +31,9 @@ wxbItem::wxbItem (wxPanel *panel)
 wxbItem::~wxbItem (void)
 {
   wxPanel *parent = (wxPanel *) GetParent ();
-  if (parent)
-  {
+  if (parent) {
     // parent is not always a wxPanel: can be a wxMenu...
-    if (wxSubType(parent->__type,wxTYPE_PANEL))
-    {
+    if (wxSubType(parent->__type,wxTYPE_PANEL)) {
       if (parent->defaultItem == this)
         parent->defaultItem = NULL;
     }
@@ -76,14 +74,13 @@ void wxbItem::Centre (int direction)
 
 void wxbItem::Command (wxCommandEvent *event)
 {
-  ProcessCommand (event);
+  ProcessCommand(event);
 }
 
-void wxbItem::ProcessCommand (wxCommandEvent *event)
+void wxbItem::ProcessCommand(wxCommandEvent *event)
 {
-  wxFunction fun = callback;
-  if (fun)
-    fun(this, event);
+  if (callback)
+    callback(this, event);
 }
 
 /*
@@ -169,23 +166,20 @@ wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
   return NULL;
 }
 
-void wxbMenu::SetHelpString (long itemId, char *helpString)
+void wxbMenu::SetHelpString(long itemId, char *helpString)
 {
   wxMenuItem *item = FindItemForId (itemId);
-  if (item)
-    {
-      if (item->helpString)
-	delete[]item->helpString;
-      if (helpString)
-	item->helpString = copystring (helpString);
-      else
-	item->helpString = NULL;
-    }
+  if (item) {
+    if (helpString)
+      item->helpString = copystring(helpString);
+    else
+      item->helpString = NULL;
+  }
 }
 
-char *wxbMenu::GetHelpString (long itemId)
+char *wxbMenu::GetHelpString(long itemId)
 {
-  wxMenuItem *item = FindItemForId (itemId);
+  wxMenuItem *item = FindItemForId(itemId);
   if (item)
     return item->helpString;
   else
@@ -194,9 +188,8 @@ char *wxbMenu::GetHelpString (long itemId)
 
 void wxbMenu::ProcessCommand (wxCommandEvent *event)
 {
-  wxFunction fun = callback;
-  if (fun)
-    fun(this, event);
+  if (callback)
+    callback(this, event);
 }
 
 /*
@@ -223,8 +216,9 @@ wxbMenuBar::wxbMenuBar (int N, wxMenu * Menus[], char *Titles[])
   titles = Titles;
   menu_bar_frame = NULL;
   int i;
-  for (i = 0; i < N; i++)
-    menus[i]->menu_bar = (wxMenuBar *) this;
+  for (i = 0; i < N; i++) {
+    menus[i]->menu_bar = (wxMenuBar *)this;
+  }
   WXGC_IGNORE(this, menu_bar_frame);
 }
 
@@ -252,9 +246,9 @@ void wxbMenuBar::Append (wxMenu * menu, char *title)
   titles = new_titles;
 
   menus[n - 1] = menu;
-  titles[n - 1] = copystring (title);
+  titles[n - 1] = copystring(title);
 
-  menu->menu_bar = (wxMenuBar *) this;
+  menu->menu_bar = (wxMenuBar *)this;
   menu->SetParent(this);
 }
 
@@ -294,16 +288,17 @@ int wxbMenuBar::Number(void)
   return n;
 }
 
-wxMenuItem *wxbMenuBar::FindItemForId (long Id, wxMenu ** itemMenu)
+wxMenuItem *wxbMenuBar::FindItemForId (long Id, wxMenu **itemMenu)
 {
   if (itemMenu)
     *itemMenu = NULL;
 
   wxMenuItem *item = NULL;
   int i;
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     if ((item = menus[i]->FindItemForId (Id, itemMenu)))
       return item;
+  }
   return NULL;
 }
 

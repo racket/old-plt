@@ -80,8 +80,7 @@ wxTypeTree::~wxTypeTree(void)
   // Cleanup wxTypeDef allocated
   BeginFind();
   wxNode *node = Next();
-  while (node)
-  {
+  while (node) {
     wxTypeDef *typ = (wxTypeDef *)node->Data();
     delete typ;
     node = Next();
@@ -103,8 +102,7 @@ Bool wxSubType(WXTYPE type1, WXTYPE type2)
     return TRUE;
 
   WXTYPE t = type1;
-  while (TRUE)
-  {
+  while (1) {
     wxTypeDef *typ = (wxTypeDef *)wxAllTypes->Get((long)t);
     if (!typ)
       return FALSE;

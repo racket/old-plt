@@ -297,39 +297,14 @@ extern wxFontList   *wxTheFontList;
 
 // Stock objects
 extern wxFont *wxNORMAL_FONT;
-extern wxFont *wxSMALL_FONT;
-extern wxFont *wxITALIC_FONT;
-extern wxFont *wxSWISS_FONT;
 
-extern wxPen *wxRED_PEN;
-extern wxPen *wxCYAN_PEN;
-extern wxPen *wxGREEN_PEN;
 extern wxPen *wxBLACK_PEN;
-extern wxPen *wxWHITE_PEN;
-extern wxPen *wxTRANSPARENT_PEN;
-extern wxPen *wxBLACK_DASHED_PEN;
-extern wxPen *wxGREY_PEN;
-extern wxPen *wxMEDIUM_GREY_PEN;
-extern wxPen *wxLIGHT_GREY_PEN;
 
-extern wxBrush *wxBLUE_BRUSH;
-extern wxBrush *wxGREEN_BRUSH;
 extern wxBrush *wxWHITE_BRUSH;
 extern wxBrush *wxBLACK_BRUSH;
-extern wxBrush *wxGREY_BRUSH;
-extern wxBrush *wxMEDIUM_GREY_BRUSH;
-extern wxBrush *wxLIGHT_GREY_BRUSH;
-extern wxBrush *wxTRANSPARENT_BRUSH;
-extern wxBrush *wxCYAN_BRUSH;
-extern wxBrush *wxRED_BRUSH;
 
 extern wxColour *wxBLACK;
 extern wxColour *wxWHITE;
-extern wxColour *wxRED;
-extern wxColour *wxBLUE;
-extern wxColour *wxGREEN;
-extern wxColour *wxCYAN;
-extern wxColour *wxLIGHT_GREY;
 
 // Stock cursors types
 extern wxCursor *wxSTANDARD_CURSOR;

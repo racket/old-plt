@@ -14,34 +14,58 @@
 wxMessage::wxMessage(wxPanel *panel, char *label, int x, int y, long style, char *name):
   wxbMessage(panel, label, x, y, style, name)
 {
-  Create(panel, label, x, y, style, name);
+  Create(panel, label, NULL, x, y, style);
 }
 
 wxMessage::wxMessage(wxPanel *panel, wxBitmap *image, int x, int y, long style, char *name):
   wxbMessage(panel, image, x, y, style, name)
 {
-  Create(panel, image, x, y, style, name);
+  Create(panel, NULL, image, x, y, style);
 }
   
-Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, char *name)
+Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int x, int y, long style)
 {
+  if (image) {
+    if (!image->Ok() || (image->selectedIntoDC < 0))
+      return Create(panel, "<bad-image>", NULL, x, y, style);
+    
+    image->selectedIntoDC++;
+    bm_label = image;
+  }
+
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
-  wxWnd *cparent = NULL;
-  if (panel)
-    cparent = (wxWnd *)(panel->handle);
+  wxWnd *cparent;
+  cparent = (wxWnd *)(panel->handle);
 
-  HWND static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
-					STATIC_FLAGS | WS_CLIPSIBLINGS,
-					0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
-					wxhInstance, NULL);
+  HWND static_item;
+  if (image) {
+    static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
+				     FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
+				     | WS_VISIBLE | WS_GROUP | WS_CLIPSIBLINGS,
+				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				     wxhInstance, NULL);
+    
+    SetBitmapDimensionEx(image->ms_bitmap,
+			 image->GetWidth(),
+			 image->GetHeight(),
+			 NULL);
+    SendMessage((HWND)static_item,WM_CHANGEBITMAP,
+                  (WPARAM)0xFFFF/*((image->GetHeight()<<8)+image->GetWidth())*/,
+                  (LPARAM)image->ms_bitmap);
+  } else {
+    static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
+				     STATIC_FLAGS | WS_CLIPSIBLINGS,
+				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				     wxhInstance, NULL);
+  }
 
   ms_handle = (HANDLE)static_item;
 
   SubclassControl(static_item);
 
-  if (labelFont) {
+  if (!image && labelFont) {
     HDC the_dc = GetWindowDC((HWND)ms_handle);
     if (labelFont->GetInternalFont(the_dc))
       SendMessage((HWND)ms_handle,WM_SETFONT,
@@ -55,49 +79,6 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
   panel->AdvanceCursor(this);
   return TRUE;
 }
-
-Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style, char *name)
-{
-  if (!image->Ok() || (image->selectedIntoDC < 0))
-    return Create(panel, "<bad-image>", x, y, style, name);
-  
-  image->selectedIntoDC++;
-  bm_label = image;
-
-  if (panel) panel->AddChild(this);
-  wxWinType = wxTYPE_HWND;
-  windowStyle = style;
-  wxWnd *cparent = NULL;
-  if (panel)
-    cparent = (wxWnd *)(panel->handle);
-
-  HWND static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
-					FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
-					| WS_VISIBLE | WS_GROUP | WS_CLIPSIBLINGS,
-					0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
-					wxhInstance, NULL);
-  if (image) {
-    SetBitmapDimensionEx(image->ms_bitmap,
-			 image->GetWidth(),
-			 image->GetHeight(),
-			 NULL);
-    SendMessage((HWND)static_item,WM_CHANGEBITMAP,
-                  (WPARAM)0xFFFF/*((image->GetHeight()<<8)+image->GetWidth())*/,
-                  (LPARAM)image->ms_bitmap);
-  }
-
-  ms_handle = (HANDLE)static_item;
-
-  // Subclass again for purposes of dialog editing mode
-  SubclassControl(static_item);
-
-  panel->GetValidPosition(&x, &y);
-
-  SetSize(x, y, image ? image->GetWidth() : 0, image ? image->GetHeight() : 0);
-  panel->AdvanceCursor(this);
-  return TRUE;
-}
-
 
 wxMessage::~wxMessage(void)
 {
@@ -131,16 +112,14 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
   // If we're prepared to use the existing width, then...
   if (width == -1 && ((sizeFlags & wxSIZE_AUTO_WIDTH) != wxSIZE_AUTO_WIDTH))
     actualWidth = ww;
-  else if (width == -1) {
-    actualWidth = (int)(current_width);
-  }
+  else if (width == -1)
+    actualWidth = (int)current_width;
 
   // If we're prepared to use the existing height, then...
   if (height == -1 && ((sizeFlags & wxSIZE_AUTO_HEIGHT) != wxSIZE_AUTO_HEIGHT))
     actualHeight = hh;
-  else if (height == -1) {
-    actualHeight = (int)(cyf) ;
-  }
+  else if (height == -1)
+    actualHeight = (int)cyf;
 
   MoveWindow((HWND)ms_handle, x, y, actualWidth, actualHeight, TRUE);
 

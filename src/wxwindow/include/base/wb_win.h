@@ -74,6 +74,8 @@ class wxEvtHandler: public wxObject
  *
  */
 
+typedef void (*wxForEachProc)(wxWindow *w, void *data);
+
 class wxWindow;
 class wxMenu;
 class wxSizer;
@@ -173,7 +175,7 @@ class wxbWindow: public wxEvtHandler
   void SetShown(Bool s);
   Bool IsShownTree();
 
-  void ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
+  void ForEach(wxForEachProc foreach, void *data);
 
   Bool GetsFocus();
 };

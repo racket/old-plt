@@ -76,10 +76,9 @@ void wxbWindow::DestroyChildren(void)
     while ((node = children->First()) != NULL) {
       wxWindow *child;
       if ((child = (wxWindow *)node->Data()) != (wxWindow *)NULL) {
-//      child->DestroyChildren();
         delete child;
       }
-    } /* while */
+    }
   }
 }
 
@@ -110,15 +109,13 @@ Bool wxbWindow::IsShownTree()
 void wxbWindow::MakeModal(Bool modal)
 {
   // Disable all other windows
-  if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME))
-  {
+  if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME)) {
     wxChildNode *node = wxTopLevelWindows(this)->First();
-    while (node)
-    {
+    while (node) {
       wxWindow *win = (wxWindow *)node->Data();
       if (win != this)
         win->Enable(!modal);
-
+      
       node = node->Next();
     }
   }
@@ -130,9 +127,7 @@ void wxbWindow::MakeModal(Bool modal)
 void wxbWindow::OnCommand(wxWindow *win, wxCommandEvent *event)
 {
   if (window_parent)
-  {
     window_parent->OnCommand(win, event);
-  }
 }
 
 void wxbWindow::OnSize(int WXUNUSED(width), int WXUNUSED(height))
@@ -152,7 +147,7 @@ wxEvtHandler::~wxEvtHandler(void)
 {
 }
 
-void wxbWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
+void wxbWindow::ForEach(wxForEachProc foreach, void *data)
 {
   wxChildNode *node = GetChildren()->First();
   while (node) {

@@ -46,15 +46,17 @@ wxObject* wxbPanel::GetChild(int number)
 {
   // Return a pointer to the Nth object in the Panel
   if (!children)
-    return(NULL) ;
+    return(NULL);
+
   wxChildNode *node = GetChildren()->First();
-  while (node && number--)
-    node = node->Next() ;
-  if (node) {
-    wxObject *obj = (wxObject *)node->Data();
-    return(obj) ;
-  } else
-    return NULL ;
+  while (node && number--) {
+    node = node->Next();
+  }
+
+  if (node)
+    return (wxObject *)node->Data();
+  else
+    return NULL;
 }
 
 void wxbPanel::SetLabelPosition(int pos)  // wxHORIZONTAL or wxVERTICAL
@@ -77,11 +79,6 @@ void wxbPanel::SetButtonFont(wxFont *theFont)
   buttonFont = theFont;
 }
 
-/*
- * Called if in editing mode
- */
-
-// An event outside any items: may be a drag event.
-void wxbPanel::OnEvent(wxMouseEvent * /* event */)
+void wxbPanel::OnEvent(wxMouseEvent *)
 {
 }

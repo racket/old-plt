@@ -19,8 +19,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define _MAXPATHLEN 500
-
 char *
 copystring (const char *s)
 {
@@ -89,43 +87,37 @@ wxFileNameFromPath (char *path)
 
 // Return just the directory, or NULL if no directory
 char *
-wxPathOnly (char *path)
+wxPathOnly(char *path)
 {
-  if (path && *path)
-    {
-      static char buf[_MAXPATHLEN];
+  if (path && *path) {
+    char *buf;
+    
+    buf = copystrng(path);
 
-      // Local copy
-      strcpy (buf, path);
+    int l = strlen(path);
+    Bool done = FALSE;
 
-      int l = strlen(path);
-      Bool done = FALSE;
+    int i = l - 1;
 
-      int i = l - 1;
-
-      // Search backward for a backward or forward slash
-      while (!done && i > -1)
-      {
-        if (path[i] == '/' 
-	    || path[i] == '\\')
-        {
-          done = TRUE;
-          buf[i] = 0;
-          return buf;
-        }
-        else i --;
-      }
-
-      // Try Drive specifier
-      if (isalpha (buf[0]) && buf[1] == ':')
-	{
-	  // A:junk --> A:. (since A:.\junk Not A:\junk)
-	  buf[2] = '.';
-	  buf[3] = '\0';
-	  return buf;
-	}
+    // Search backward for a backward or forward slash
+    while (!done && i > -1) {
+      if (path[i] == '/' || path[i] == '\\') {
+	done = TRUE;
+	buf[i] = 0;
+	return buf;
+      } else 
+	i --;
     }
 
+    // Try Drive specifier
+    if (isalpha (buf[0]) && buf[1] == ':') {
+      // A:junk --> A:. (since A:.\junk Not A:\junk)
+      buf[2] = '.';
+      buf[3] = '\0';
+      return buf;
+    }
+  }
+  
   return NULL;
 }
 
@@ -140,8 +132,7 @@ char *wxNow( void )
 }
 
 /* Get Full RFC822 style email address */
-Bool
-wxGetEmailAddress (char *address, int maxSize)
+Bool wxGetEmailAddress (char *address, int maxSize)
 {
   char host[65];
   char user[65];
@@ -175,27 +166,22 @@ char *wxStripMenuCodes (char *in, char *out)
 
   char *tmpOut = out;
   
-  while (*in)
-    {
-      if (*in == '&')
-	{
-	  // Check && -> &, &x -> x
-	  if (*++in == '&')
-	    *out++ = *in++;
-	}
-      else if (*in == '\t')
-	{
-          // Remove all stuff after \t in X mode, and let the stuff as is
-          // in Windows mode.
-          // Accelerators are handled in wx_item.cc for Motif, and are not
-          // YET supported in XView
-	  break;
-	}
-      else
+  while (*in) {
+    if (*in == '&') {
+      // Check && -> &, &x -> x
+      if (*++in == '&')
 	*out++ = *in++;
-    }				// while
+    } else if (*in == '\t') {
+      // Remove all stuff after \t in X mode, and let the stuff as is
+      // in Windows mode.
+      // Accelerators are handled in wx_item.cc for Motif, and are not
+      // YET supported in XView
+      break;
+    } else
+      *out++ = *in++;
+  }
 
   *out = '\0';
-
+  
   return tmpOut;
 }

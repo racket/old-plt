@@ -24,10 +24,7 @@ class wxMessage: public wxbMessage
             long style = 0, char *name = "message");
   ~wxMessage(void);
 
-  Bool Create(wxPanel *panel, char *message, int x = -1, int y = -1,
-            long style = 0, char *name = "message");
-  Bool Create(wxPanel *panel, wxBitmap *image, int x = -1, int y = -1,
-            long style = 0, char *name = "message");
+  Bool Create(wxPanel *panel, char *message, wxBitmap *image, int x, int y, long style);
   void SetLabel(wxBitmap *bitmap);
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
   void SetLabel(char *label);

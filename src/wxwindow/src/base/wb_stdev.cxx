@@ -72,7 +72,7 @@ Bool wxMouseEvent::ShiftDown(void)
 // Is a button event (*doesn't* mean: is any button *down*?)
 Bool wxMouseEvent::IsButton(void)
 {
-  return (Button(-1)) ;
+  return Button(-1);
 }
 
 // True if was a button dclick event (1 = left, 2 = middle, 3 = right)

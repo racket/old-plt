@@ -417,7 +417,8 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c);
 void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname);
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
-Scheme_Object *scheme_stx_marks_only(Scheme_Object *o);
+Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o);
+
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 
@@ -1481,6 +1482,7 @@ int scheme_is_module_env(Scheme_Comp_Env *env);
 Scheme_Object *scheme_module_resolve(Scheme_Object *modidx);
 Scheme_Module *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
+void scheme_module_force_lazy(Scheme_Env *env);
 
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);

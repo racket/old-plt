@@ -425,7 +425,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
 {
   Scheme_Hash_Table *toplevel, *syntax;
   Scheme_Hash_Table *module_registry;
-  Scheme_Object *modpair;
+  Scheme_Object *modchain;
   Scheme_Env *env;
 
   toplevel = scheme_hash_table(7, SCHEME_hash_ptr, 1, 0);
@@ -433,21 +433,24 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
 
   if (semi > 0) {
     syntax = NULL;
-    modpair = NULL;
+    modchain = NULL;
     module_registry = NULL;
   } else {
     syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
     if (base) {
-      modpair = base->modpair;
+      modchain = base->modchain;
       module_registry = base->module_registry;
     } else {
       if (semi < 0) {
 	module_registry = NULL;
-	modpair = NULL;
+	modchain = NULL;
       } else {
 	Scheme_Hash_Table *modules;
+
 	modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-	modpair = scheme_make_pair((Scheme_Object *)modules, scheme_false);
+	modchain = scheme_make_vector(3, scheme_false);
+	SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)modules;
+
 	module_registry = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
       }
     }
@@ -460,7 +463,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
 
   if (semi < 1) {
     env->syntax = syntax;
-    env->modpair = modpair;
+    env->modchain = modchain;
     env->module_registry = module_registry;
 
     {
@@ -496,8 +499,9 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree
     Scheme_Hash_Table *modules;
 
     modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-    p = scheme_make_pair((Scheme_Object *)modules, scheme_false);
-    menv->modpair = p;
+    p = scheme_make_vector(3, scheme_false);
+    SCHEME_VEC_ELS(p)[0] = (Scheme_Object *)modules;
+    menv->modchain = p;
   }
 
   return menv;
@@ -507,7 +511,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
 {
   if (!env->exp_env) {
     Scheme_Env *eenv;
-    Scheme_Object *modpair;
+    Scheme_Object *modchain;
 
     eenv = make_env(NULL, -1);
     eenv->phase = env->phase + 1;
@@ -515,15 +519,17 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     eenv->module = env->module;
     eenv->module_registry = env->module_registry;
 
-    modpair = SCHEME_CDR(env->modpair);
-    if (SCHEME_FALSEP(modpair)) {
+    modchain = SCHEME_VEC_ELS(env->modchain)[1];
+    if (SCHEME_FALSEP(modchain)) {
       Scheme_Hash_Table *next_modules;
 
       next_modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-      modpair = scheme_make_pair((Scheme_Object *)next_modules, scheme_false);
-      SCHEME_CDR(env->modpair) = modpair;
+      modchain = scheme_make_vector(3, scheme_false);
+      SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)next_modules;
+      SCHEME_VEC_ELS(env->modchain)[1] = modchain;
+      SCHEME_VEC_ELS(modchain)[2] = env->modchain;
     }
-    eenv->modpair = modpair;
+    eenv->modchain = modchain;
 
     env->exp_env = eenv;
   }
@@ -1093,11 +1099,20 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       genv = scheme_module_access(modname, env->genv);
 
       if (!genv) {
-	scheme_wrong_syntax("import", NULL, srcsym, 
-			    "broken compiled code (stat-dist, phase %d): cannot find module %S %V",
-			    env->genv->phase, modname,
-			    scheme_syntax_to_datum(srcsym, 1, NULL));
-	return NULL;
+	if (env->genv->phase) {
+	  /* The failure might be due a laziness in imported-syntax
+	     execution. Force all laziness at the prior level 
+	     and try again. */
+	  scheme_module_force_lazy(env->genv);
+	  genv = scheme_module_access(modname, env->genv);
+	}
+
+	if (!genv) {
+	  scheme_wrong_syntax("import", NULL, srcsym, 
+			      "broken compiled code (stat-dist, phase %d): cannot find module %S",
+			      env->genv->phase, modname /*,  scheme_syntax_to_datum(srcsym, 1, NULL) */);
+	  return NULL;
+	}
       }
     }
   } else {

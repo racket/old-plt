@@ -518,10 +518,11 @@ typedef struct Scheme_Env
   int running;  
 
   Scheme_Hash_Table *toplevel;
-  Scheme_Object *modpair; /* Pair of:
-			     1. symbol -> env ; running modules, 
-			         shared with instances in same phase
-			     2. modtab pair for next phase (or #f) */
+  Scheme_Object *modchain; /* Vector of:
+			       1. symbol -> env ; running modules, 
+			           shared with instances in same phase
+			       2. modchain for next phase (or #f)
+                               3. modchain for previous phase (or #f) */
 } Scheme_Env;
 
 #define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))

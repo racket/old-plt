@@ -1347,7 +1347,13 @@
 
   (define (generate-temporaries l)
     (let ([l (stx->list l)])
-      (map (lambda (x) (datum->syntax (gensym) #f #f)) l)))
+      (map (lambda (x) (datum->syntax (cond
+				       [(or (symbol? x) (string? x))
+					(gensym x)]
+				       [(identifier? x)
+					(gensym (syntax-e x))]
+				       [else (gensym)])
+				      #f #f)) l)))
 
   (export with-syntax generate-temporaries))
 

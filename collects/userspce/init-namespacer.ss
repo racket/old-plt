@@ -241,12 +241,15 @@
   (define (make-keywords)
     (when (memq (init-params:setting-primitives (init-params:current-setting))
                 keyword-languages)
-              ;; this makes all names keywords (better error checking)
-      (for-each (lambda (x) (keyword-name (car x))) (make-global-value-list))
+
+      ;; currently, we are opting for the second of these two options:
+
+      ;; 1. this makes all names keywords (better error checking)
+      '(for-each (lambda (x) (keyword-name (car x))) (make-global-value-list))
       
-        ;; this only make #% names and syntax names 
-        ;; be keywords (the minimum)
-      '(for-each (lambda (x)
+      ;; 2. this only make #% names and syntax names 
+      ;; be keywords (the minimum)
+      (for-each (lambda (x)
                    (let ([name (car x)]
                          [str-name (symbol->string (car x))])
                      (when (or (syntax? (global-defined-value name))

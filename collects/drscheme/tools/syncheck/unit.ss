@@ -471,10 +471,6 @@
 				       menu
 				       (lambda (item evt)
 					 (unless (null? arrows)
-					   
-					   ;; deadlock; why?!?!?!
-					;(send (get-top-level-window) syncheck:button-callback)
-					   
 					   (let* ([arrow (car arrows)]
 						  [id-name (arrow-id-name arrow)]
 						  [new-id 
@@ -486,7 +482,9 @@
 						       #f
 						       (format "~a" id-name))))])
 					     ((arrow-rename arrow) new-id))
-					   (invalidate-bitmap-cache))))])
+					   (invalidate-bitmap-cache)
+					   (send (get-top-level-window)
+						 syncheck:button-callback))))])
 			       (send (get-canvas) popup-menu menu
 				     (inexact->exact (floor (send event get-x)))
 				     (inexact->exact (floor (send event get-y)))))))]
@@ -863,8 +861,8 @@
 			(send definitions-text set-styles-fixed #f)
 			(send definitions-text begin-edit-sequence #f))
 		      (lambda ()
-					; reset all of the buffer to the default style
-					; and clear out arrows
+			;; reset all of the buffer to the default style
+			;; and clear out arrows
 			(clear-highlighting)
 			(send definitions-text syncheck:init-arrows)
 			
@@ -892,8 +890,6 @@
 				       (lambda (expr recur)
 					 (cond
 					  [(drscheme:basis:process-finish? expr)
-					   (when (drscheme:basis:process-finish-error? expr)
-					     (send interactions-text insert-prompt))
 					   (semaphore-post semaphore)]
 					  [(not (zodiac:zodiac? expr))
 					   (recur)]

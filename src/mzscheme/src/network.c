@@ -292,9 +292,9 @@ void scheme_init_network(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
-  scheme_add_global_constant("make-udp", 
+  scheme_add_global_constant("open-udp-socket", 
 			     scheme_make_prim_w_arity(make_udp,
-						      "make-udp", 
+						      "open-udp-socket", 
 						      0, 0), 
 			     env);
   scheme_add_global_constant("udp-close", 
@@ -591,7 +591,7 @@ static int get_host_address(const char *address, int id, tcp_address *result)
     host = NULL;
 
   if (!address || host) {
-    result->sin_family = AF_INET;
+    result->sin_family = (id ? AF_INET : AF_UNSPEC);
     result->sin_port = id;
     memset(&(result->sin_addr), 0, sizeof(result->sin_addr));
     memset(&(result->sin_zero), 0, sizeof(result->sin_zero));
@@ -2685,9 +2685,9 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
   Scheme_UDP *udp;
   tcp_t s;
 
-  TCP_INIT("make-udp");
+  TCP_INIT("open-udp-socket");
 
-  scheme_security_check_network("make-udp", NULL, -1, 1);
+  scheme_security_check_network("open-udp-socket", NULL, -1, 1);
 
   s = socket(PF_INET, SOCK_DGRAM, 0);
 
@@ -2695,7 +2695,7 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
     int errid;
     errid = SOCK_ERRNO();
     scheme_raise_exn(MZEXN_I_O_UDP,
-		     "make-udp: creation failed (%E)", errid);
+		     "open-udp-socket: creation failed (%E)", errid);
     return NULL;
   }
 
@@ -2773,30 +2773,39 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
   char *address = "";
   unsigned short origid, id;
   GC_CAN_IGNORE tcp_address udp_bind_addr;
+  int errid;
 
   udp = (Scheme_UDP *)argv[0];
 
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type(name, "udp-socket", 0, argc, argv);
-  if ((!do_bind || !SCHEME_FALSEP(argv[1])) && !SCHEME_STRINGP(argv[1]))
+  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_STRINGP(argv[1]))
     scheme_wrong_type(name, (do_bind ? "string or #f" : "string"), 1, argc, argv);
-  if (!CHECK_PORT_ID(argv[2]))
-    scheme_wrong_type(name, PORT_ID_TYPE, 2, argc, argv);
-
+  if ((do_bind || !SCHEME_FALSEP(argv[2])) && !CHECK_PORT_ID(argv[2]))
+    scheme_wrong_type(name, (do_bind ? PORT_ID_TYPE : PORT_ID_TYPE " or #f"), 2, argc, argv);
+		      
   if (SCHEME_TRUEP(argv[1]))
     address = SCHEME_STR_VAL(argv[1]);
   else
     address = NULL;
-  origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
+  if (SCHEME_TRUEP(argv[2]))
+    origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
+  else
+    origid = 0;
+
+  if (!do_bind && (SCHEME_TRUEP(argv[1]) != SCHEME_TRUEP(argv[2]))) {
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		     argv[2],
+		     "%s: last two arguments must be both #f or both non-#f, given: %V %V",
+		     name, argv[1], argv[2]);
+  }
 
   scheme_security_check_network(name, address, origid, !do_bind);
 
-  if ((do_bind && udp->bound)
-      || (!do_bind && udp->connected)) {
+  if (do_bind && udp->bound) {
     scheme_raise_exn(MZEXN_I_O_UDP,
-		     "%s: udp socket is already %s: %V",
+		     "%s: udp socket is already bound: %V",
 		     name,
-		     do_bind ? "bound" : "connected",
 		     udp);
     return NULL;
   }
@@ -2810,25 +2819,38 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
 	udp->bound = 1;
 	return scheme_void;
       }
+      errid = SOCK_ERRNO();
     } else {
-      if (!connect(udp->s, (struct sockaddr *)&udp_bind_addr, sizeof(udp_bind_addr))) {
-	udp->connected = 1;
+      int ok;
+
+      ok = !connect(udp->s, (struct sockaddr *)&udp_bind_addr, sizeof(udp_bind_addr));
+      if (!ok)
+	errid = SOCK_ERRNO();
+      else
+	errid = 0;
+
+      if (!ok && (errid == EAFNOSUPPORT) && !origid) {
+	/* It's ok. We were trying to dicsonnect */
+	ok = 1;
+      }
+
+      if (ok) {
+	if (origid)
+	  udp->connected = 1;
+	else
+	  udp->connected = 0;
 	return scheme_void;
       }
     }
 
-    {
-      int errid;
-      errid = SOCK_ERRNO();
-      scheme_raise_exn(MZEXN_I_O_UDP,
-		       "%s: can't %s to port: %d on address: %s (%E)", 
-		       name,
-		       do_bind ? "bind" : "connect",
-		       origid,
-		       address ? address : "#f",
-		       errid);
-      return NULL;
-    }
+    scheme_raise_exn(MZEXN_I_O_UDP,
+		     "%s: can't %s to port: %d on address: %s (%E)", 
+		     name,
+		     do_bind ? "bind" : "connect",
+		     origid,
+		     address ? address : "#f",
+		     errid);
+    return NULL;
   } else {
     scheme_raise_exn(MZEXN_I_O_UDP,
 		     "%s: can't resolve address: %s", 

@@ -15,20 +15,44 @@
   
   ;java-equal?: 'a 'a (list 'a) (list 'a)-> bool
   (define (java-equal? v1 v2 visited-v1 visited-v2)
-    (cond
-      ((and (object? v1) (object? v2))
-       (or (eq? v1 v2)
-           (already-seen? v1 v2 visited-v1 visited-v2)
-           (and (equal? (send v1 my-name) (send v2 my-name))
-                (let ((v1-fields (send v1 field-values))
-                      (v2-fields (send v2 field-values)))
-                  (and (= (length v1-fields) (length v2-fields))
-                       (andmap (lambda (x) x) 
-                               (map java-equal? v1-fields v2-fields 
-                                    (map (lambda (v) (cons v1 visited-v1)) v1-fields)
-                                    (map (lambda (v) (cons v2 visited-v2)) v2-fields))))))))
-      ((and (not (object? v1)) (not (object? v2))) (equal? v1 v2))
-      (else #f)))
+    (or (eq? v1 v2)
+        (already-seen? v1 v2 visited-v1 visited-v2)
+        (cond
+          ((and (object? v1) (object? v2))
+           (cond
+             ((equal? "String" (send v1 my-name))
+              (and (equal? "String" (send v2 my-name))
+                   (equal? (send v1 get-mzscheme-string) (send v2 get-mzscheme-string))))
+             ((equal? "array" (send v1 my-name))
+              (and (equal? "array" (send v2 my-name))
+                   (= (send v1 length) (send v2 length))
+                   (let ((v1-vals (array->list v1))
+                         (v2-vals (array->list v2)))
+                   (andmap (lambda (x) x)
+                           (map java-equal? v1-vals v2-vals 
+                                (map (lambda (v) (cons v1 visited-v1)) v1-vals)
+                                (map (lambda (v) (cons v2 visited-v2)) v2-vals))))))
+             (else
+              (and (equal? (send v1 my-name) (send v2 my-name))
+                   (let ((v1-fields (send v1 field-values))
+                         (v2-fields (send v2 field-values)))
+                     (and (= (length v1-fields) (length v2-fields))
+                          (andmap (lambda (x) x) 
+                                  (map java-equal? v1-fields v2-fields 
+                                       (map (lambda (v) (cons v1 visited-v1)) v1-fields)
+                                       (map (lambda (v) (cons v2 visited-v2)) v2-fields)))))))))
+          ((and (not (object? v1)) (not (object? v2))) (equal? v1 v2))
+          (else #f))))
+  
+  (define (array->list v)
+    (letrec ((len (send v length))
+             (build-up
+              (lambda (c)
+                (if (= c len)
+                    null
+                    (cons (send v access c)
+                          (build-up (add1 c)))))))
+      (build-up 0)))
   
   (provide java-values-equal?)
   (define (java-values-equal? v1 v2)

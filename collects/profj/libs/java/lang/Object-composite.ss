@@ -148,7 +148,7 @@
               ((byte short int long float double) 0)
               ((char) #\null))
             null))
-      
+
       (define/public (length) (vector-length array))
       
       (define (array-out-of-bounds i)
@@ -206,6 +206,8 @@
                                                               (cdr sizes) null))
                         (loop (add1 idx))))
                     vec))))
+      
+      (define/override (my-name) "array")
       
       (super-instantiate ())))
   

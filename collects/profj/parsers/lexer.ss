@@ -283,6 +283,8 @@
      ;; 3.7
      (Comment (return-without-pos (get-token input-port)))
 
+;     ((special-comment) (return-without-pos (get-token input-port)))
+     
      ;; 3.6
      ((+ WhiteSpace) (return-without-pos (get-token input-port)))
 

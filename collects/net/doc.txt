@@ -1021,6 +1021,12 @@ PROCEDURES -----------------------------------------------------------
     (extract-field "TO" (insert-field "to" "me@localhost" empty-header))
     ; => "me@localhost"
 
+> (extract-all-fields header) -> (list (cons string string))
+
+  Returns an association-list version of the header; the case of the
+  field names is preserved, as well as the order and duplicate uses of
+  a field name.
+
 > (remove-field field-string header) -> header
 
   Creates a new header by removing the specified field from `header'

@@ -37,9 +37,7 @@
 			    (wait-for-events 1)
 			    (mred:test:reraise-error))
 
-	     (if state
-		 (mred:test:check-box-true cb)
-		 (mred:test:check-box-false cb))
+	     (mred:test:set-check-box! cb state)
 	     
 	     ; close dialog
 	     
@@ -72,7 +70,7 @@
 
 	 (mred:test:run-interval 500)
 
-	 (run-test "Case sensitive?" #f
+	 (run-test "Case sensitive" #f
 		   "(eq? 'foo 'FOO)"
 		   "#t"))
 

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.18 1999/11/13 15:11:42 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.19 1999/11/22 17:23:15 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -424,7 +424,7 @@ char *wxColourDatabase::FindName (wxColour *colour)
       wxColour *col = (wxColour *) node->Data ();
       if (col->Red () == red && col->Green () == green && col->Blue () == blue)
 	{
-	  char *found = node->key.string;
+	  char *found = node->string_key;
 	  if (found)
 	    return found;
 	}

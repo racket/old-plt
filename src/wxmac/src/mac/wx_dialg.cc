@@ -179,8 +179,8 @@ Bool wxDialogBox::OnClose(void)
 // Public constructors
 //=============================================================================
 
-/* For now, we ignore the 'resize-border flag on dialogs */
-#if 0
+/* we no longer ignore the border style on dialogs */
+#if 1
 # define DIALOG_BORDER_STYLE wxMAXIMIZE
 #else
 # define DIALOG_BORDER_STYLE 0

@@ -1,4 +1,4 @@
 
 /* Moved to common */
 
-#include "::::wxcommon:PSDC.h"
+#include "PSDC.h"

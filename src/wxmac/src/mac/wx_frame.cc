@@ -23,6 +23,7 @@ static const char sccsid[] = "%W% %G%";
 #include <QuickDraw.h>
 #include <TextEdit.h>
 #include <Menus.h>
+#include <Windows.h>
 
 extern wxScreen *theScreen;
 static wxMenuBar *empty_menu_bar, *close_menu_bar;
@@ -65,26 +66,85 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 	cUserHidden = TRUE;
 
-	int theProcID;
- 	// GRW adds
- 	if (cStyle & wxMDI_CHILD) // hack: MDI_CHILD means dialog box
- 		theProcID = movableDBoxProc;
-  	else if (cStyle & wxNO_RESIZE_BORDER)
- 		theProcID = noGrowDocProc;
-    else
- 		theProcID = zoomDocProc;
+	CWindowPtr theMacWindow;
 
 	/* Make surre we have the right device: */
-        GrafPtr wPort;
-        ::GetWMgrPort(&wPort);
+    GrafPtr wPort;
+    ::GetWMgrPort(&wPort);
 	::SetGWorld((CGrafPtr)wPort, wxGetGDHandle());
+	
+	long windowManagerGestaltResult;
+	OSStatus result = Gestalt('wind',&windowManagerGestaltResult);
+	
+	if (result != noErr) {
+		wxFatalError("wxFrame constructor: Call to Gestalt Manager failed.");
+	}
+	
+	if ((windowManagerGestaltResult & gestaltWindowMgrPresent) &&
+		(windowManagerGestaltResult & 0x04)) {
+		
+		// OS 8.5 window creation enabled
+		// (so we can get resizeable modal windows)
+		
+		WindowClass windowClass;
+		WindowAttributes windowAttributes;
+		
+		if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
+			windowClass = kMovableModalWindowClass;
+			if (cStyle & wxNO_RESIZE_BORDER) {
+				windowAttributes = kWindowNoAttributes;
+			} else {
+				windowAttributes = (kWindowResizableAttribute);
+			}
+		} else {
+			windowClass = kDocumentWindowClass;
+			if (cStyle & wxNO_RESIZE_BORDER) {
+				windowAttributes = kWindowStandardFloatingAttributes;
+			} else {
+				windowAttributes = kWindowStandardDocumentAttributes;
+			}
+		}
 
-	const WindowPtr MoveToFront = WindowPtr(-1L);
-	const Bool HasGoAwayBox = TRUE;
-	long theRefCon = (long)this;
-	CWindowPtr theMacWindow = (CWindowPtr)::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
-					!WindowIsVisible, theProcID, MoveToFront, HasGoAwayBox, theRefCon);
+#if defined(__powerc)		
+		result = CreateNewWindow(windowClass, windowAttributes,
+									&theBoundsRect, (GrafPtr *)&theMacWindow);
+#else
+        wxFatalError("wxFrame constructor: 68k code should not reach this point.");
+        theMacWindow = NULL;
+#endif
+									
+		if (result != noErr) {
+			char error[256];
+			sprintf(error,"wxFrameConstructor: Attempt to create window failed with error: %d.",
+					result);
+			wxFatalError(error);
+		}
+		
+		SetWRefCon((GrafPtr)theMacWindow, (long)this);
+		
+	} else {
+
+		// OS 8.5 not enabled, go with old-style window creation
+		
+		int theProcID;
+	 	// GRW adds
+	 	if (cStyle & wxMDI_CHILD) // hack: MDI_CHILD means dialog box
+	 		theProcID = movableDBoxProc;
+	  	else if (cStyle & wxNO_RESIZE_BORDER)
+	 		theProcID = noGrowDocProc;
+	    else
+	 		theProcID = zoomDocProc;
+	
+		const WindowPtr MoveToFront = WindowPtr(-1L);
+		const Bool HasGoAwayBox = TRUE;
+		long theRefCon = (long)this;
+		CWindowPtr theMacWindow = (CWindowPtr)::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
+						!WindowIsVisible, theProcID, MoveToFront, HasGoAwayBox, theRefCon);
+
+	}
+	
 	CheckMemOK(theMacWindow);
+	
 	cMacDC = new wxMacDC(theMacWindow);
 
  	WStateData **wstatedata = (WStateData**)((WindowPeek)theMacWindow)->dataHandle;

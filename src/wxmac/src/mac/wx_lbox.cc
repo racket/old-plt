@@ -484,8 +484,8 @@ void wxListBox::Delete(int N)
   if (node) cDataList->DeleteNode(node);    // if existed then delete from list
   node = cDataList->First();                // we now have to adjust all keys that 
   while (node)                                  // are >=N+1
-   { if (node->key.integer >= (long)(N+1))      // very ugly C++ wise but no other way 
-       node->key.integer--;                     // to look at or change key value
+   { if (node->integer_key >= (long)(N+1))      // very ugly C++ wise but no other way 
+       node->integer_key--;                     // to look at or change key value
      node = node->Next();
    }
   SetCurrentDC();

@@ -840,7 +840,10 @@
 			      (mred:scheme-paren:scheme-backward-match
 			       this start 0)])
 		      (if match
-			  (copy-to-end/set-position match start)
+			  (begin
+			    (begin-edit-sequence)
+			    (copy-to-end/set-position match start)
+			    (end-edit-sequence))
 			  (super-on-local-char key)))]
 		   [else (super-on-local-char key)])))]
 	    
@@ -928,8 +931,8 @@
 			[y (+ dy reset-console-start-location)]
 			[width (let ([b (box 0)])
 				 (get-extent b null)
-				 (min 0 (unbox b)))]
-			[height (min 0
+				 (max 0 (unbox b)))]
+			[height (max 0
 				     (- reset-console-end-location
 					reset-console-start-location))])
 		   (send brush set-stipple (mred:icon:get-reset-console-bitmap))

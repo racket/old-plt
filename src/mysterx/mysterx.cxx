@@ -1440,7 +1440,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
       // parameters that are optional with a default value in IDL are not
       // counted in pFuncDesc->cParamsOpt, so look for default bit flag
 
-      for (i = hiBound - numOptParams; i >= 0; i--) { 
+      for (i = hiBound; i >= 0; i--) { 
 	if (isDefaultParam(pFuncDesc,i)) {
 	  numOptParams++;
 	}
@@ -2212,7 +2212,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 
     // optional parameters with default values not counted in pFuncDesc->cParamsOpt
 
-    for (i = numParamsPassed - numOptParams - 1; i >= 0; i--) { 
+    for (i = numParamsPassed - 1; i >= 0; i--) { 
       if (isDefaultParam(pFuncDesc,i)) {
 	numOptParams++;
       }

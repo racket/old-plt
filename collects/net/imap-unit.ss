@@ -402,7 +402,13 @@
 		 [pattern (if mailbox
 			      (bytes-append mailbox-name #"%")
 			      #"%")])
-	    (imap-list-mailboxes imap pattern mailbox-name))]))
+	    (map (lambda (p)
+		   (list (car p)
+			 (cond
+			  [(symbol? (cadr p)) (string->bytes/utf-8 (symbol->string (cadr p)))]
+			  [(string? (cadr p)) (string->bytes/utf-8 (symbol->string (cadr p)))]
+			  [(bytes? (cadr p)) (cadr p)])))
+		 (imap-list-mailboxes imap pattern mailbox-name)))]))
       
       (define (imap-mailbox-flags imap mailbox)
         (let ([r (imap-list-mailboxes imap mailbox #f)])

@@ -910,6 +910,12 @@ PROCEDURES -----------------------------------------------------------
 
   A user's primary mailbox is always called "INBOX".
 
+> (imap-connect* in-port out-port username-string password-string mailbox-string) 
+   -> three values: imap, message count, recent message count
+
+  Like `imap-connect', but given input and output ports instead of a
+  server address.
+
 > (imap-disconnect imap) -> void
 
   Closes an IMAP connection. The close may fail due to a communication

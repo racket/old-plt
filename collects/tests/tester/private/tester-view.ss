@@ -67,7 +67,7 @@
         (send loading-gauge tick))
       
       
-    ;; --------------------- choice mode --------------------------------
+      ; --------------------- choice mode --------------------------------
       (define selection-mode-panel (make-object vertical-panel% top-panel))
       (define selectable-tests (make-object hierarchical-list% selection-mode-panel))
       
@@ -82,6 +82,8 @@
              (let ((tg (send selectable-tests new-list (list-mixin (car test-group)
                                                                    (cadr test-group)))))
                (send (send tg get-editor) insert (car test-group))
+               (send (send tg get-editor) set-clickback 0 (string-length (car test-group))
+                     (lambda (a b c) (send tg toggle-selectedness-of-group)))
                (for-each
                 (lambda (test)
                   (let* ([i (send tg new-item (item-mixin (car test) (cadr test) tg))]
@@ -229,7 +231,8 @@
                   select-all
                   increment-selected-kids
                   decrement-selected-kids
-                  has-any-selections?)
+                  has-any-selections?
+                  toggle-selectedness-of-group)
           (init-rest args)
           
           (define selected-style (make-object style-delta% 'change-bold))
@@ -248,6 +251,18 @@
                            (f (cdr l)))
                      (f (cdr l)))]))
             (list val (f (send this get-items))))
+          
+          ; -> void
+          ; if no menu item is selected, selects all menu items. Otherwise, 
+          ; unselects all selected menu items.
+          (define (toggle-selectedness-of-group)
+            (if (has-any-selections?)
+                (unselect-all)
+                (select-all)))
+          
+          ; -> void
+          (define (unselect-all)
+            (for-each (lambda (x) (send x unselect-me)) (send this get-items)))
           
           ; -> void
           (define (select-all)

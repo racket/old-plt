@@ -1503,14 +1503,16 @@ static void InitCutNPaste()
     wxREGGLOB(wxmb_commonCopyRegionData);
   }
 
-  wxREGGLOB(TheMediaClipboardClient);
-  TheMediaClipboardClient = new wxMediaClipboardClient;
+  if (!TheMediaClipboardClient) {
+    wxREGGLOB(TheMediaClipboardClient);
+    TheMediaClipboardClient = new wxMediaClipboardClient;
 #if ALLOW_X_STYLE_SELECTION
-  wxREGGLOB(TheMediaXClipboardClient);
-  wxREGGLOB(wxMediaXSelectionOwner);
-  wxREGGLOB(wxMediaXSelectionAllowed);
-  TheMediaXClipboardClient = new wxMediaXClipboardClient;
+    wxREGGLOB(TheMediaXClipboardClient);
+    wxREGGLOB(wxMediaXSelectionOwner);
+    wxREGGLOB(wxMediaXSelectionAllowed);
+    TheMediaXClipboardClient = new wxMediaXClipboardClient;
 #endif
+  }
 }
 
 void wxMediaBuffer::CopyRingNext(void)

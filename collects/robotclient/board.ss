@@ -264,7 +264,7 @@
            (set-spot (board) x y (set-robot-empty (get-spot (board) x y)))))
        dead-robots)
       
-      (map
+      (for-each
        (lambda (r)
 	 (let* ((old-robot (hash-table-get (robot-table) (response-id r) (lambda () #f)))
                 (old-robot (cond
@@ -282,7 +282,8 @@
                 ((= (response-id r) (player-id))
                  (let ((p (hash-table-get package-table (response-arg r))))
                    (cond
-                     ((gui) (send (gui) log (format "Picked up package: ~a" (package->string p)))))
+                     ((gui) (send (gui) log 
+                                  (format "Picked up package: ~a" (package->string p)))))
                    (packages-held
                     (cons p (packages-held)))))))
 	     ((D)
@@ -322,16 +323,13 @@
 		     (set-robot (get-spot (board)
 					  (robot-x new-robot)
 					  (robot-y new-robot))))
-           (robot-table (make-hash-table))
 	   (hash-table-put! (robot-table) (robot-id new-robot) new-robot)))
        flat-responses)
+      (hash-table-for-each (robot-table)
+                           (lambda (k v)
+                             (printf "~a - ~a~n" k v)))
       (robot-indexes alive-robots)
-      (let ((robots (map (lambda (id) (hash-table-get (robot-table) id
-                                                      (lambda ()
-                                                        (printf "~a ~a ~n"
-                                                                id
-                                                                (hash-table-map (robot-table)
-                                                                                (lambda (k v) k))))))
+      (let ((robots (map (lambda (id) (hash-table-get (robot-table) id))
                          (robot-indexes))))
         (cond
           ((gui)

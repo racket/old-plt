@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-09-27")
+(define *tex2page-version* "2004-08-31")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -7746,6 +7746,12 @@
 
 (tex-def-prim "\\aa" (lambda () (emit "&aring;")))
 
+(tex-def-prim
+  "\\abstract"
+  (lambda ()
+    (tex2page-string "\\quote")
+    (tex2page-string "\\centerline{\\bf\\abstractname}\\par")))
+
 (tex-def-prim "\\addtocounter" (lambda () (set-latex-counter #t)))
 
 (tex-def-prim "\\advance" (lambda () (do-advance #f)))
@@ -8295,6 +8301,8 @@
   "\\picture"
   (lambda () (do-latex-env-as-image "picture" 'inline)))
 
+(tex-def-prim "\\plainfootnote" do-plain-footnote)
+
 (tex-def-prim "\\pounds" (lambda () (emit "&pound;")))
 
 (tex-def-prim "\\printindex" (lambda () (do-inputindex #t)))
@@ -8804,6 +8812,8 @@
 
 (tex-let-prim "\\settowidth" "\\addtolength")
 
+(tex-let-prim "\\hookaction" "\\addtolength")
+
 (tex-def-prim "\\enlargethispage" (lambda () (eat-star) (get-group)))
 
 (tex-def-prim "\\parbox" (lambda () (get-bracketed-text-if-any) (get-group)))
@@ -8838,6 +8848,8 @@
   "\\usepackage"
   (lambda () (get-bracketed-text-if-any) (get-group) (probably-latex)))
 
+(tex-def-prim "\\readindexfile" (lambda () (get-token) (do-inputindex #f)))
+
 (tex-let-prim "\\enskip" "\\enspace")
 
 (tex-let-prim "\\colophon" "\\htmlcolophon")
@@ -8849,6 +8861,8 @@
 (tex-let-prim "\\u" "\\`")
 
 (tex-let-prim "\\vbox" "\\hbox")
+
+(tex-let-prim "\\endabstract" "\\endquote")
 
 (tex-let-prim "\\mbox" "\\hbox")
 
@@ -8887,6 +8901,10 @@
 (tex-let-prim "\\xdef" "\\gdef")
 
 (tex-let-prim "\\TIIPdate" "\\today")
+
+(tex-let-prim "\\schemeinput" "\\scminput")
+
+(tex-let-prim "\\sidx" "\\index")
 
 (tex-let-prim "\\obeywhitespaces" "\\obeywhitespace")
 

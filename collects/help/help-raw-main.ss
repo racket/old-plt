@@ -40,7 +40,9 @@
 	    (loop (add1 n))))))
 
   (define (add-choice key name title page label ckey)
-    (set! found-something? #t)
+    (unless found-something?
+      (set! found-something? #t)
+      (printf "<!-- RESULT LIST START -->"))
     (let ([bold-name
 	   (if (string=? "" key)
 	       name
@@ -51,10 +53,12 @@
 			 key
 			 (substring name end (string-length name)))))])
 
+      (printf "<!-- RESULT ITEM START -->~n")
       (printf "<tt><a href=\"~a\">~a</a></tt> in ~a<br>~n"
 	      (build-url page label)
 	      bold-name
-	      title)))
+	      title)
+      (printf "<!-- RESULT ITEM END -->~n")))
 
   (define (output . x)
     (let ([s (apply format x)])
@@ -90,6 +94,14 @@
      (set! given-find search-string))
    '("search string"))
 
+  (printf "<html>~n")
+  (printf "<head>~n")
+  (printf "<!-- BANNER START -->~n")
+  (printf "<h2><a target=_top href=\"http://www.cs.rice.edu/CS/PLT\"><img align=center border=0 src=\"http://www.cs.rice.edu/CS/PLT/pltlogo.gif\">PLT</a> search results</h2>~n")
+  (printf "<!-- BANNER END -->~n")
+  (printf "</head>~n")
+  (printf "<body>~n")
+
   (let/ec k
     (let ([err-msg (do-search
 		    given-find
@@ -100,6 +112,11 @@
 		    (lambda ()
 		      (output "(maximum searches reached)")
 		      (k (void))))])
-      (when err-msg
+      (cond
+       [err-msg
 	(display err-msg)
-	(newline)))))
+	(newline)]
+       [else (printf "<!-- RESULT LIST END -->")])))
+
+  (printf "</body>~n")
+  (printf "</html>~n"))

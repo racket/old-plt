@@ -41,13 +41,19 @@
 	
 (define (check-file in)
   (let ([p (open-input-file test-file)])
-    (let loop ()
+    (let loop ([badc 0])
       (let ([c (read-char p)]
 	    [c2 (read-char in)])
 	(unless (eq? c c2)
-	  (error "check-failed" c c2))
+	  (if (= badc 30)
+	      (error "check-failed" (file-position p) c c2)
+	      (begin
+		(fprintf (current-error-port)
+			 "fail: ~a ~s ~s~n"
+			 (file-position p) c c2)
+		(loop (add1 badc)))))
 	(unless (eof-object? c)
-	  (loop))))))
+	  (loop badc))))))
 
 (define (check-file/fast in)
   (let ([p (open-input-file test-file)])
@@ -85,11 +91,8 @@
 
 (define portno 40000)
 
-(define l1 (tcp-listen portno))
-(define l2 (tcp-listen (add1 portno)))
-
 (define (setup-mzscheme-echo tcp?)
-  (define p (process* test-file "-q"))
+  (define p (process* test-file "-q" "-b"))
   (define s (make-string 256))
   (define r #f)
   (define w #f)
@@ -112,8 +115,16 @@
 	(thread-wait t)
 	(fprintf (cadr p) "(begin ((copy-stream r w2)) (exit))~n"))
       (fprintf (cadr p) "(begin ((copy-stream (current-input-port) (current-output-port))) (exit))~n"))
-  (sleep 0.6)
-  (read-string-avail! s (car p))
+
+  ;; Flush initial output:
+  (read-string (string-length (banner)) (car p))
+  (sleep 0.3)
+  (when (char-ready? (car p))
+    (read-string-avail! s (car p)))
+  (sleep 0.3)
+  (when (char-ready? (car p))
+    (read-string-avail! s (car p)))
+
   (if tcp?
       (values r w r2 w2)
       p))
@@ -134,6 +145,12 @@
 	    (- ps-ms start-ps-ms)
 	    (- ms start-ms)
 	    (- gc-ms start-gc-ms))))
+
+'(thread (lambda ()
+	  (let loop ()
+	    (printf "alive~n")
+	    (sleep 1)
+	    (loop))))
 
 (start "Quick check:~n")
 (define p (open-input-file test-file))
@@ -247,6 +264,9 @@
 	  (close-output-port wp1)))
 (check-file/fast rp2)
 (end)
+
+(define l1 (tcp-listen portno))
+(define l2 (tcp-listen (add1 portno)))
 
 (start "TCP Echo...~n")
 (define-values (r w r2 w2) (setup-mzscheme-echo #t))

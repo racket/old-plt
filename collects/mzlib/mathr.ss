@@ -6,6 +6,8 @@
 (unit/sig mzlib:math^
   (import)
 
+  (define (square z) (* z z))
+  
   ;; circular constants and aliases
   (define e (exp 1.0)) 
   (define pi (atan 0 -1))

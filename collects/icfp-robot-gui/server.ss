@@ -322,7 +322,7 @@
                                ;; otherwise, bot is apparently dead:
                                (loop (add1 i))))))])
       (let ([actions (quicksort (randomize commands) (lambda (a b)
-                                                       (< (cadr a) (cadr b))))])
+                                                       (>= (abs (cadr a)) (abs (cadr b)))))])
         (send drawn queue-robot-actions actions)
         (set! past-states (cons (send drawn get-internal-state) past-states)))
       (send drawn apply-queued-actions)

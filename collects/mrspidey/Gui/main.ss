@@ -418,13 +418,18 @@
                       (when (multiple-files)
                         (for i 0 NUM-EXTRA-LINES (send edit insert-line-items '("")))))
                     (pretty-debug-gui `(last-line ,(send edit last-line)))
-                    (send edit change-style base-delta 
-                      0 (send edit last-position))
 
-                    (pretty-debug-gui "annotating!")
+		    (send edit change-style base-delta)
+
+		    ;; these changes allow dynamic font selection
+
+		    (send edit set-style-list (scheme:get-style-list))
+
+		    ;; end changes
+
+		    (pretty-debug-gui "annotating!")
                     (annotate! filename edit mode annotations)
-
-                    (send edit set-position 0)
+		    (send edit set-position 0)
                     (pretty-debug-gui `(annotate-buffer done))))
 
                 edit)]))]

@@ -51,11 +51,7 @@
 (define make-resource-delta
   (lambda (name default-string default-string-bw)
     (let ([delta (make-object style-delta% 
-                              'change-alignment 'top)])
-      '(set-resource-delta "base-delta"
-                          "(set-alignment-on 'top)"
-                          "(set-alignment-on 'top)"
-                          delta)
+                              'change-alignment 'base)])
       (set-resource-delta name default-string default-string-bw delta)
       delta)))
 
@@ -65,8 +61,12 @@
 
 (define base-delta
   (make-resource-delta "base-delta" 
-                       "(set-alignment-on 'top) "
-                          "(set-alignment-on 'top)"))
+                       "(set-delta 'change-normal) \
+                           (set-delta 'change-family 'modern) \
+                           (set-alignment-on 'base) "
+                          "(set-delta 'change-normal) \
+                           (set-delta 'change-family 'modern) \
+                           (set-alignment-on 'base)"))
 
 (define normal-delta
   (make-resource-delta "normal-delta"
@@ -76,8 +76,9 @@
   (make-resource-delta "type-link-delta"
                        "(set-delta 'change-bold)"
                        "(set-delta 'change-bold)"))
+
 (define type-delta
-  (make-resource-delta "type-link-delta"
+  (make-resource-delta "type-delta"
                        ""
                        ""))
 

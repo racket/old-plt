@@ -16,12 +16,13 @@
 		 (struct <unit> (dummy))
 		 (struct ref (type))
 		 (struct mlexn (name types))
+		 (struct value-set (name type))
 		 != <lt> <gt> <le> <ge> <or> <and> <>
 		 float? any?
 		 array-get
 		 (all-from (lib "match.ss")))
 
-
+	(define-struct value-set (name type) (make-inspector))
 	(define-struct <tuple> (list) (make-inspector))
 	(define-struct arrow (arglist result) (make-inspector))
 	(define-struct tvar (tbox) (make-inspector))

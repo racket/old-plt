@@ -16,7 +16,9 @@
        (list
 ;	(datum->syntax-object
 ;	 #f
-	 (compile-ml stmt (empty-context))))
+	 (let ([result (compile-ml stmt (empty-context))])
+	   (pretty-print (format "initial progval: ~a" result))
+	   result)))
 ;	 #f)))
 
      (define current-compile-context (make-parameter #f))
@@ -50,23 +52,7 @@
 	       (let ([all-bindings (map compile-define (repeat rec_flag (length pelist)) pelist (repeat context (length pelist)))])
 		 all-bindings)]
 	      [($ ast:pstr_type stdlist)
-	       (let* ([assumeone (car stdlist)]
-		      [name (eval (car assumeone))]
-		      [typedecl (cdr assumeone)])
-		 (match (ast:type_declaration-kind typedecl)
-			[($ ast:ptype_abstract dummy)
-			 (let ([core (compile-core_type (ast:type_declaration-manifest typedecl))])
-			   (begin
-			     (hash-table-put! user-types name core)
-			     #'(make-<voidstruct> #f)))]
-			[($ ast:ptype_variant scll)
-			 (let ([cscll (compile-scll scll)])
-			   (begin
-			     (hash-table-put! user-types name (lambda (x) (isa-variant? 'a 'b cscll)))
-			     (pretty-print "begining type definitions")
-			     #`(begin #,@(mkdefinestructs scll) (make-<voidstruct> #f))))]
-;			     #`(define-struct #,(string->symbol(eval (caar scll))) (tlist))))]
-			 ))]
+	       (map compile-typedecl stdlist)]
 	      [($ ast:pstr_eval expr)
 	       (compile-ml expr context)]
 	      [($ ast:pstr_exception name decl)
@@ -84,6 +70,24 @@
 			(make-<voidstruct> #f)))]
 	      [else
 	       (pretty-print (list "Unknown structure: " desc))]))
+
+     (define (compile-typedecl td)
+	       (let ([name (syntax-object->datum (car td))]
+		     [typedecl (cdr td)])
+		 (match (ast:type_declaration-kind typedecl)
+			[($ ast:ptype_abstract dummy)
+;			 (let ([core (compile-core_type (ast:type_declaration-manifest typedecl))])
+;			   (begin
+;			     (hash-table-put! user-types name core)
+			     #'(make-<voidstruct> #f)]
+			[($ ast:ptype_variant scll)
+;			 (let ([cscll (compile-scll scll)])
+;			   (begin
+;			     (hash-table-put! user-types name (lambda (x) (isa-variant? 'a 'b cscll)))
+;			     (pretty-print "begining type definitions")
+			     #`(begin #,@(mkdefinestructs scll) (make-<voidstruct> #f))]
+;			     #`(define-struct #,(string->symbol(eval (caar scll))) (tlist))))]
+			 )))
 
      (define (mkdefinestructs scll)
        (if (null? scll)
@@ -172,7 +176,7 @@
 	       (let ([testc (compile-ml test context)]
 		     [ifexpc (compile-ml ifexp context)]
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
-		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc) (make-<unit> #f)))]
+		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc (make-<unit> #f))))]
 	      [($ ast:pexp_construct name expr bool)
 	       (let ([constr (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		 (if constr
@@ -273,7 +277,10 @@
 	       #'_]
 	      [($ ast:ppat_construct name pat bool)
 	       (cond [(and (null? pat) (not bool) (if (hash-table-get <constructors> (unlongident name) (lambda () #f)) #t #f))
-		      (hash-table-get <constructors> (unlongident name))]
+		      (let ([cconstr (hash-table-get <constructors> (unlongident name))])
+			(if (tconstructor? (car cconstr))
+			    #`($ #,(string->symbol (unlongident name)) #f)
+			    (cdr cconstr)))]
 		     [(not bool)
 		      (let ([constructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 			(if constructor
@@ -354,19 +361,21 @@
 ;	      [else (pretty-print (list "Unknown function pattern: " (caar pelist)))]))
 
      (define (compile-define rec binding context)
-       (if (and (ast:pexp_function? (ast:expression-pexp_desc (cdr binding)))
-		(or (ast:ppat_var? (ast:pattern-ppat_desc (car binding)))
-		    (and (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
-			 (ast:ppat_var? (ast:pattern-ppat_desc (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding))))))))
-	   #`(define #,(string->symbol (eval (ast:ppat_var-name (ast:pattern-ppat_desc (if (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
-										     (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding)))
-      (car binding))))))
-	       #,(compile-ml (cdr binding) context)))
+;       (if (and (ast:pexp_function? (ast:expression-pexp_desc (cdr binding)))
+;		(or (ast:ppat_var? (ast:pattern-ppat_desc (car binding)))
+;		    (and (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
+;			 (ast:ppat_var? (ast:pattern-ppat_desc (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding))))))))
+;	   #`(define #,(string->symbol (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc (if (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
+;													   (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding)))
+;													   (car binding))))))
+	;       #,(compile-ml (cdr binding) context))
        (if rec
 	   (pretty-print "This kind of expression is not allowed on right hand side of let rec")
 	   (let ([varpat (get-varpat (car binding))]
 		 [val (compile-ml (cdr binding) context)])
-	     #`(match-define (#,varpat #,val)))))
+	     #`(begin
+		 (match-define #,varpat #,val)
+		 #,val))))
 
 
      (define (compile-let rec bindings finalexpr context)

@@ -17,23 +17,3 @@ Bugs
 
 * Updating bug? (hard to reproduce): long flash, not on same line,
   update on focus-in
-
-Possible Features
------------------
-
-* Need directory-selection dialog
-
-* X Keys such as KP_end are not currently accessible
-
-* Editor: the full width for non-wrapped lines need not include the
-  autowrap bitmap
-
-* Editor: should use a guaranteed offset for stippling in buffer
-  redraws
-
-* Optimization: dragging selection shouldn't keep changing the
-  auto-X-selection
-
-* Background color for buffers
-
-* Paragraph styles: more and dynamic

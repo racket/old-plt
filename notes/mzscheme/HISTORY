@@ -1,4 +1,4 @@
-Version 102, ??, 2000
+Version 102, June 26, 2000
 Switched to configure-based makefiles (autoconf)
 with-input-from-file and with-output-to-file close the port when
  control leaves the dynamic extent of the call (normally, through an

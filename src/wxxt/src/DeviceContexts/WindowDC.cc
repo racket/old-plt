@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.25 1999/04/23 19:00:30 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.26 1999/05/17 19:16:12 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -532,7 +532,7 @@ void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
     x1 = XLOG2DEV(x);
     y1 = YLOG2DEV(y);
     w1 = XLOG2DEV(xw) - x1;
-    h1 = XLOG2DEV(yh) - y1;
+    h1 = YLOG2DEV(yh) - y1;
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
       XFillRectangle(DPY, DRAWABLE, BRUSH_GC, x1, y1, w1, h1);

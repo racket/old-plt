@@ -52,7 +52,7 @@
  (error-sending-bug-report "Error Sending Bug Report")
  (error-sending-bug-report-expln "An error occurred when sending this bug report. If your internet connection is otherwise working fine, please visit:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/\n\nand submit the bug via our online web-form. Sorry for the difficulties.\n\nThe error message is:\n~a")
  (bug-report-sent "Bug Report Sent")
- (bug-report-sent-detail "Thanks for the report. You should receive a confirmation email in the next 30 minutes. If you do not, send email to scheme@cs.rice.edu.")
+ (bug-report-sent-detail "Thanks for the report. You should receive a confirmation email in the next 30 minutes. If you do not, send email to scheme@plt-scheme.org.")
  (illegal-bug-report "Illegal Bug Report")
  (pls-fill-in-field "Please fill in the \"~a\" field")
  (malformed-email-address "Malformed email address")

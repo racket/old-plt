@@ -49,7 +49,7 @@
  (error-sending-bug-report "Absenden des Bug Reports fehlgeschlagen")
  (error-sending-bug-report-expln "Ein Fehler ist beim Absenden des Bug Reports aufgetreten. Falls Ihre Internetverbindung sonst fehlerfrei funktioniert, besuchen Sie bitte:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/ \n\nund teilen Sie uns den Bug mit unserem Online-Formular mit. Wir bitten um Ihr Verständnis.\n\nDie Fehlermeldung lautet:\n~a")
  (bug-report-sent "Bug Report abgesendet")
- (bug-report-sent-detail "Wir danken für Ihren Bugreport. Sie sollten eine Bestätigung innerhalb der nächsten 30 Minuten per email bekommen; falls nicht, bitte sagen Sie uns hier bescheid: scheme@cs.rice.edu.")
+ (bug-report-sent-detail "Wir danken für Ihren Bugreport. Sie sollten eine Bestätigung innerhalb der nächsten 30 Minuten per email bekommen; falls nicht, bitte sagen Sie uns hier bescheid: scheme@plt-scheme.org.")
  (illegal-bug-report "Illegaler Bug Report")
  (pls-fill-in-field "Bitte auch das \"~a\" Feld ausfüllen!")
  (malformed-email-address "Ungültige email Adresse")

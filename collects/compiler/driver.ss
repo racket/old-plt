@@ -13,12 +13,13 @@
 ;;   4) A-normalization - anorm.ss
 ;;   5) Known-value analysis - known.ss
 ;;   6) Lexical analysis and inlining - analyze.ss
-;;   7) Closure conversion - closure.ss
-;;   8) Closure vechicle assignment - vehicle.ss
-;;   9) Representation choosing - rep.ss
-;;  10) Scheme to virtual machine translation - vmphase.ss
-;;  11) Optimizations on VM code - vmopt.ss
-;;  12) VM to C translation - vm2c.ss
+;;   7) Lightweight closure conversion - lightweight.ss (optional)
+;;   8) Closure conversion - closure.ss
+;;   9) Closure vehicle assignment - vehicle.ss
+;;  10) Representation choosing - rep.ss
+;;  11) Scheme to virtual machine translation - vmphase.ss
+;;  12) Optimizations on VM code - vmopt.ss
+;;  13) VM to C translation - vm2c.ss
 ;;
 ;; For more information about a phase, see the file
 ;;  implementing that phase.

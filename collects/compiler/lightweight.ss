@@ -56,6 +56,14 @@
     (phi set-phi!)
     (add-annotation 'phi (lambda () #f)))
 
+  ; phi-closure is set of lambdas closed under the rules:
+  ; (l x . t) in (phi e)         => (l x . t) in (phi-closure e)
+  ; (l x . t) in (phi-closure e) => (phi t) in (phi-closure e)
+
+  (define-values
+    (phi-closure set-phi-closure!)
+    (add-annotation 'phi-closure (lambda () #f)))
+
   ; prim is #t iff a node may evaluate to a Scheme primitive
 
   (define-values
@@ -1198,7 +1206,7 @@
 	    (unless (escape? a)
 		    (set-escape! a #t)
 		    (set! done #f)))]
-	 [flow-closure-as-list
+	 [phi-closure-as-list
 	  (lambda (flow)
 	    (let* ([closed #f]
 		   [result (set->list flow)])
@@ -1321,9 +1329,13 @@
 			(when (escape? a)
 			      (for-each
 			       (lambda (body)
-				 (for-each
-				  mark-as-escaping!
-				  (flow-closure-as-list (phi body))))
+				 (unless (phi-closure body)
+					 (let ([phi-cs (phi-closure-as-list (phi body))])
+					   (for-each
+					    mark-as-escaping!
+					    phi-cs)
+					   (set-phi-closure! body 
+							      (list->set phi-cs)))))
 			       bodies))))]
 		   [app-action
 		    (lambda (a _ __)
@@ -2876,36 +2888,6 @@
     (update-max-arities! ast)
     (update-variable-sets! ast)))
 
-(define (dump-escape ast)
-  (let ([de-zactor
-	 (make-object
-	  (class zactor% ()
-		 (override
-		  [case-lambda-form-action
-		   (lambda (a _ __)
-		     (when (escape? a)
-			   (printf "~n*** marked as escaping ***~n~a~n~n"
-				   (zodiac:parsed->raw a))))])
-		  (sequence 
-		    (super-init))))])
-
-    (traverse-ast-with-zactor ast de-zactor)))
-
-; (define (dump-annos ast)
-;  (let* ([dump-zactor
-;	  (make-object
-;	   (class zactor% ()
-;		  (override
-;		   [case-lambda-form-action 
-;		    (lambda (a _ __)
-;		      (let ([the-pi (pi a)]
-;			    [the-theta (theta a)])
-;			(printf "~nlambda: ~a~n" (zodiac:parsed->raw a))
-;			(printf "the-pi: ~a~n" the-pi)
-;			(printf "the-theta: ~a~n" (map zodiac:parsed->raw (set->list the-theta)))))])
-;		  (sequence (super-init))))])
-;    (traverse-ast-with-zactor ast dump-zactor)))
-
 (define (lightweight-analyze-and-transform asts)
 
   (for-each 
@@ -2915,10 +2897,8 @@
   (for-each 
    (lambda (ast)
      (closure-analyze ast)
-     (escape-analyze ast)
-
-     (dump-escape ast)
-
+     (when (compiler:option:use-mrspidey-for-units)
+	   (escape-analyze ast))
      (initialize-invariance-sets ast)
      (initialize-protocol-eq-classes ast))
    asts)

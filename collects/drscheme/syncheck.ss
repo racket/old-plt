@@ -1796,18 +1796,37 @@
                             (label (format (string-constant cs-rename-var) name-to-offer))
                             (callback
                              (lambda (x y)
-                               (rename-callback name-to-offer stx vars-ht))))))))))))
+                               (let ([frame-parent (find-menu-parent menu)])
+                                 (rename-callback name-to-offer stx vars-ht frame-parent)))))))))))))
+      
+      ;; find-parent : menu-item-container<%> -> (union #f (is-a?/c top-level-window<%>)
+      (define (find-menu-parent menu)
+        (let loop ([menu menu])
+          (cond
+            [(is-a? menu menu-bar%) (send menu get-frame)]
+            [(is-a? menu popup-menu%)
+             (let ([target (send menu get-popup-target)])
+               (cond
+                 [(is-a? target editor<%>) 
+                  (let ([canvas (send target get-canvas)])
+                    (and canvas
+                         (send canvas get-top-level-window)))]
+                 [(is-a? target window<%>) 
+                  (send target get-top-level-window)]
+                 [else #f]))]
+            [(is-a? menu menu-item<%>) (loop (send menu get-parent))]
+            [else #f])))
 
-      ;; rename-callback : string syntax[original] (listof syntax) -> void
+      ;; rename-callback : string syntax[original] (listof syntax) (union #f (is-a?/c top-level-window<%>)) -> void
       ;; callback for the rename popup menu item
-      (define (rename-callback name-to-offer stx vars-ht)
+      (define (rename-callback name-to-offer stx vars-ht parent)
         (let ([new-sym 
                (fw:keymap:call/text-keymap-initializer
                 (lambda ()
                   (get-text-from-user
                    (string-constant cs-rename-id)
                    (format (string-constant cs-rename-var-to) name-to-offer)
-                   #f
+                   parent
                    name-to-offer)))])
           (when new-sym
             (let* ([same-names
@@ -1823,7 +1842,9 @@
                 [(name-duplication? to-be-renamed vars-ht new-sym)
                  (message-box (string-constant check-syntax)
                               (format (string-constant cs-name-duplication-error) 
-                                      new-sym))]
+                                      new-sym)
+                              parent
+                              '(ok stop))]
                 [else
                  (unless (null? to-be-renamed)
                    (let ([first-one-source (syntax-source (car to-be-renamed))])

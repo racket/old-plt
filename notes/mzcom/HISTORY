@@ -1,7 +1,8 @@
-Version 200, iteration 1
-------------------------
+Version 201
+-----------
 
-Fixed GC bug that caused Reset to fail.
+MzScheme namespace-initialization bug caused 
+the Reset() method to fail.  Fixed for v201.
 
 Version 200
 -----------

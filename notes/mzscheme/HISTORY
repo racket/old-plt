@@ -1,3 +1,25 @@
+Version 53, ??, 1998
+Changed file-modify-seconds to file-or-directory-modify-seconds
+Changed rename-file to rename-file-or-directory
+Changed file procedures to return void on success and raise
+ and exception on failure: delete-file, rename-file-or-directory,
+ file-size, copy-file, make-directory, delete-directory
+Changed the procedures file-or-directory-modify-seconds and 
+ file-or-directory-permissions to raise an exception if the
+ file/directory does not exist
+Changed current-drive to raise exn:misc:unsupported on platforms
+ other than Windows
+Added find-system-path
+Fixed expand-defmacro for initialization argument expressions
+ in a class*/names form
+Fixed call/ec bug related to dynamic-wind (see !!! in 
+ tests/basic.ss)
+Fixed dynamic-wind bug: multiple levels of pre-thunks for a
+ jump into a continuation were evaluated in reverse order
+Fixed atan: second argument is allowed to be an exact non-integer
+Added make-temporary-file to MzLib's file.ss
+Removed the obsolete MzLib trigger library
+
 Version 52, May 25, 1998
 R5RS non-compliance reduced to macros
 Added scheme-report-environment, null-environment, and

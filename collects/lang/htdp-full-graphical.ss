@@ -1,5 +1,5 @@
 
-(module big-gui "big.ss"
+(module htdp-full-graphical "big.ss"
   (require (lib "mred.ss" "mred"))
 
   (provide (all-from "big.ss")

@@ -346,14 +346,14 @@ to the original stdout of DrScheme.
          (abbreviate-cons-as-list #t)
          (allow-sharing? #t)
          (language-numbers '(-500 6))
-         (module '(lib "big.ss" "lang"))
+         (module '(lib "htdp-full-graphical.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant full-language)))))
       
       (add-htdp-language
        (instantiate htdp-language% ()
-         (module '(lib "advanced.ss" "lang"))
+         (module '(lib "htdp-advanced.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant advanced-student)))
@@ -364,7 +364,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
-         (module '(lib "intermediate-lambda.ss" "lang"))
+         (module '(lib "htdp-intermediate-lambda.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant intermediate-student/lambda)))
@@ -375,7 +375,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
-         (module '(lib "intermediate.ss" "lang"))
+         (module '(lib "htdp-intermediate.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant intermediate-student)))
@@ -387,7 +387,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
-         (module '(lib "beginner-abbr.ss" "lang"))
+         (module '(lib "htdp-beginner-abbr.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant beginning-student/abbrev)))

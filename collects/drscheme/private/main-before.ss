@@ -272,12 +272,12 @@
                   (language-position position)
                   (language-numbers numbers)))])
 	(drscheme:language-configuration:add-language
-	 (make-simple '(lib "full-mred.ss" "lang")
+	 (make-simple '(lib "plt-mred.ss" "lang")
                       (list (string-constant plt)
                             (string-constant mred-w/debug))
                       (list -10 1)))
 	(drscheme:language-configuration:add-language
-	 (make-simple '(lib "full-mzscheme.ss" "lang") 
+	 (make-simple '(lib "plt-mzscheme.ss" "lang") 
                       (list (string-constant plt)
                             (string-constant mzscheme-w/debug))
                       (list -10 2)))

@@ -1,4 +1,4 @@
-(module full-mzscheme mzscheme
+(module plt-mzscheme mzscheme
   (define argv #())
   (define program "mzscheme")
   (provide argv 

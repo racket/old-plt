@@ -1,4 +1,4 @@
-(module full-mred mzscheme
+(module plt-mred mzscheme
   (require (lib "mred.ss" "mred")
            (lib "class.ss"))
   

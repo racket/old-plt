@@ -113,7 +113,7 @@ Analogous to `tcp-accept/enable-break'.
 
 -- Certificate procedures ----------------------------------------
 
-> (ssl-load-certification-chain! ssl-client-context-or-listener pathname)
+> (ssl-load-certificate-chain! ssl-client-context-or-listener pathname)
 
 Loads a PEM-format certification chain file for connections to made
 with the given context (created by `ssl-make-context') or listener

@@ -1491,6 +1491,75 @@ static Scheme_Object *ssl_accept_break(int argc, Scheme_Object *argv[]) {
 }
 
 /*****************************************************************************
+ * MISC                                                                      *
+ *****************************************************************************/
+
+static Scheme_Object *ssl_addresses(int argc, Scheme_Object *argv[])
+{
+  /* Again, sadly cut-and-paste from MzScheme's network.c */
+  GC_CAN_IGNORE struct sockaddr_in tcp_here_addr, tcp_there_addr;
+  int l, closed;
+  struct sslplt *wrapper = NULL;
+  unsigned long here_a, there_a;
+  unsigned char *b;
+  Scheme_Object *result[2];
+  char sa[20];
+  int fd;
+
+  if (SCHEME_OUTPORTP(argv[0])) {
+    Scheme_Output_Port *op;
+    op = (Scheme_Output_Port *)argv[0];
+    if (op->sub_type == ssl_output_port_type) {
+      wrapper = (struct sslplt *)op->port_data;
+      fd = BIO_get_fd(SSL_get_wbio(wrapper->ssl), NULL);
+    }
+    closed = op->closed;
+    
+  } else if (SCHEME_INPORTP(argv[0])) {
+    Scheme_Input_Port *ip;
+    ip = (Scheme_Input_Port *)argv[0];
+    if (ip->sub_type == ssl_input_port_type) {
+      wrapper = (struct sslplt *)ip->port_data;
+      fd = BIO_get_fd(SSL_get_rbio(wrapper->ssl), NULL);
+    }
+    closed = ip->closed;
+  }
+
+  if (!wrapper)
+    scheme_wrong_type("ssl-addresses", "ssl-port", 0, argc, argv);
+
+  if (closed)
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "ssl-addresses: port is closed");
+
+  l = sizeof(tcp_here_addr);
+  if (getsockname(fd, (struct sockaddr *)&tcp_here_addr, &l)) {
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "ssl-addresses: could not get local address (%e)",
+		     SOCK_ERRNO());
+  }
+  l = sizeof(tcp_there_addr);
+  if (getpeername(fd, (struct sockaddr *)&tcp_there_addr, &l)) {
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "ssl-addresses: could not get peer address (%e)",
+		     SOCK_ERRNO());
+  }
+  
+  here_a = *(unsigned long *)&tcp_here_addr.sin_addr;
+  there_a = *(unsigned long *)&tcp_there_addr.sin_addr;
+
+  b = (unsigned char *)&here_a;
+  sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
+  result[0] = scheme_make_string(sa);
+
+  b = (unsigned char *)&there_a;
+  sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
+  result[1] = scheme_make_string(sa);
+
+  return scheme_values(2, result);
+}
+
+/*****************************************************************************
  * PRECISE GC                                                                *
  *****************************************************************************/
 
@@ -1671,6 +1740,9 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
 
   v = scheme_make_prim_w_arity(ssl_mk_ctx,"ssl-make-context",0,1);
   scheme_add_global("ssl-make-context", v, env);
+
+  v = scheme_make_prim_w_everything(ssl_addresses, 0, "ssl-addresses", 1, 1, 0, 2, 2);
+  scheme_add_global("ssl-addresses", v, env);
 
   scheme_add_global("ssl-available?", scheme_true, env);
   scheme_finish_primitive_module(env);

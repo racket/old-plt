@@ -16,6 +16,7 @@
    ssl-connect ssl-connect/enable-break
    ssl-listen ssl-listener? ssl-close
    ssl-accept ssl-accept/enable-break
+   ssl-addresses
    ssl-make-client-context ssl-client-context?
    ssl-load-certificate-chain!
    ssl-set-verify!

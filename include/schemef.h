@@ -120,6 +120,9 @@ MZ_EXTERN void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *da
 MZ_EXTERN Scheme_Object *scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
 MZ_EXTERN int scheme_close_should_force_port_closed();
 
+MZ_EXTERN void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d);
+MZ_EXTERN void scheme_pop_kill_action();
+
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/

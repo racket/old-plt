@@ -44,6 +44,8 @@ EXPORTS
  scheme_add_swap_callback
  scheme_call_enable_break
  scheme_close_should_force_port_closed
+ scheme_push_kill_action
+ scheme_pop_kill_action
  scheme_signal_error
  scheme_raise_exn
  scheme_warning

@@ -779,6 +779,21 @@ typedef struct Scheme_Thread {
 # endif
 #endif
 
+typedef void (*Scheme_Kill_Action_Func)(void *);
+
+# define BEGIN_ESCAPEABLE(func, data) \
+    { mz_jmp_buf savebuf; \
+      scheme_push_kill_action((Scheme_Kill_Action_Func)func, (void *)data); \
+      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
+      if (scheme_setjmp(scheme_error_buf)) { \
+        func(data); \
+        scheme_longjmp(savebuf, 1); \
+      } else {
+# define END_ESCAPEABLE() \
+      scheme_pop_kill_action(); \
+      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
+
+
 /*========================================================================*/
 /*                             parameters                                 */
 /*========================================================================*/

@@ -98,6 +98,8 @@ Scheme_Object *(*scheme_object_wait_multiple)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
 Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
 int (*scheme_close_should_force_port_closed)();
+void (*scheme_push_kill_action)(Scheme_Kill_Action_Func f, void *d);
+void (*scheme_pop_kill_action)();
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/

@@ -52,6 +52,8 @@
   scheme_extension_table->scheme_add_swap_callback = scheme_add_swap_callback;
   scheme_extension_table->scheme_call_enable_break = scheme_call_enable_break;
   scheme_extension_table->scheme_close_should_force_port_closed = scheme_close_should_force_port_closed;
+  scheme_extension_table->scheme_push_kill_action = scheme_push_kill_action;
+  scheme_extension_table->scheme_pop_kill_action = scheme_pop_kill_action;
   scheme_extension_table->scheme_signal_error = scheme_signal_error;
   scheme_extension_table->scheme_raise_exn = scheme_raise_exn;
   scheme_extension_table->scheme_warning = scheme_warning;

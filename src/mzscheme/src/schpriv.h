@@ -819,22 +819,6 @@ typedef struct Scheme_Overflow {
   int captured; /* set to 1 if possibly captured in a continuation */
 } Scheme_Overflow;
 
-typedef void (*Scheme_Kill_Action_Func)(void *);
-void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d);
-void scheme_pop_kill_action();
-
-# define BEGIN_ESCAPEABLE(func, data) \
-    { mz_jmp_buf savebuf; \
-      scheme_push_kill_action((Scheme_Kill_Action_Func)func, (void *)data); \
-      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
-      if (scheme_setjmp(scheme_error_buf)) { \
-        func(data); \
-        scheme_longjmp(savebuf, 1); \
-      } else {
-# define END_ESCAPEABLE() \
-      scheme_pop_kill_action(); \
-      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
-
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \
     || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
     || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS) \

@@ -5,7 +5,7 @@
     (lambda (plt-home) 
       (if (not (eq? (system-type) 'windows))
 	  (fprintf (current-error-port) 
-		   "Error: can't install MzCOM on non-Windows machine~n")
+		   "Warning: can't install MzCOM on non-Windows machine~n")
 	  (let ([exe-path (build-path plt-home 
 				      "collects" "mzcom" "mzcom.exe")]) 
 	    (if (not (file-exists? exe-path))

@@ -244,7 +244,8 @@
 		    (lambda (out)
 		      (fluid-let ((*intext?* #f)
 				  (*code-env-spec* "ZZZZschemedisplay"))
-			(scheme2tex in out))))))
+			(scheme2tex in out)))))
+		'text)
 	      (if *slatex-in-protected-region?*
 		  (set! *protected-files* (cons aux.tex *protected-files*)))
 	      (process-tex-file filename))))))

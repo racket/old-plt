@@ -62,6 +62,8 @@ Read the instructions in plt/src/mac/README.
 
         configure --prefix=/usr/local/plt --enable-dynlib
 
+    The TARGETDIR must be an absolute path.
+
     If the --prefix flag is omitted, the binaries are built for an
     in-place installation (i.e., the plt directory containing this
     README will be used directly). Unless --enable-dynlib is used, the

@@ -222,10 +222,7 @@ Create (wxPanel * panel, char *label, int range,
 
   panel->AttachWidget(this, formWidget, x, y, width, height);
 
-  // Using a value of 0 causes a divide by zero crash in xmgauge
-  // ratio = .../ (float)THIS.value;
-  
-  SetValue(1);
+  SetValue(0);
 
   //  ChangeColour ();
 
@@ -268,7 +265,6 @@ wxGauge::~wxGauge (void)
 
 void wxGauge::SetSize (int x, int y, int width, int height, int sizeFlags)
 {
-#ifdef wx_motif
   Bool isShow = XtIsManaged(formWidget);
 
   int pw, ph;
@@ -326,38 +322,13 @@ void wxGauge::SetSize (int x, int y, int width, int height, int sizeFlags)
   sr_width = width;
   sr_height = height;
   GetEventHandler()->OnSize (width, height);
-#endif
-#ifdef wx_xview
-  wxItem::SetSize(x, y, width, height, sizeFlags);
-
-  if (width > -1)
-  {
-    Panel_item item = (Panel_item) handle;
-
-    int oldGaugeWidth = xv_get (item, PANEL_GAUGE_WIDTH, NULL);
-    Rect *rect = (Rect *) xv_get (item, XV_RECT);
-    int oldWidth = rect->r_width;
-
-    int diff = oldWidth - oldGaugeWidth;
-
-    if (width > 0)
-      width = width - diff;
-
-    if (width > 0)
-    {
-      xv_set ((Panel_item)handle, PANEL_GAUGE_WIDTH, (int) width, NULL);
-    };
-  }
-#endif
 }
 
 void wxGauge::SetShadowWidth(int w)
 {
-#ifdef wx_motif
   if (w == 0)
     w = 1;
   XtVaSetValues((Widget)handle, XmNshadowThickness, w, NULL);
-#endif
 }
 
 void wxGauge::SetBezelFace(int w)
@@ -366,28 +337,17 @@ void wxGauge::SetBezelFace(int w)
 
 void wxGauge::SetRange(int r)
 {
-#ifdef wx_motif
-  XtVaSetValues((Widget)handle, XmNmaximum, r, NULL);
-#endif
-#ifdef wx_xview
-  xv_set((Panel_item)handle, PANEL_MIN_VALUE, 0, PANEL_MAX_VALUE, r, NULL);
-#endif
+  XmGaugeSetMax((Widget)handle, r);
 }
 
 void wxGauge::SetValue(int pos)
 {
-#ifdef wx_motif
   // XtVaSetValues((Widget)handle, XmNvalue, pos, NULL);
   XmGaugeSetValue((Widget)handle, pos);
-#endif
-#ifdef wx_xview
-  xv_set((Panel_item)handle, PANEL_VALUE, pos, NULL);
-#endif
 }
 
 void wxGauge::ChangeColour (void)
 {
-#ifdef wx_motif
   int change;
 
   wxPanel *panel = (wxPanel *) window_parent;
@@ -447,8 +407,6 @@ void wxGauge::ChangeColour (void)
 		       XmNforeground, itemColors[wxFORE_INDEX].pixel,
 		       NULL);
     }
-
-#endif
 }
 
 #endif

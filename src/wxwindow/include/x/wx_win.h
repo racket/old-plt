@@ -104,6 +104,7 @@ class wxWindow: public wxbWindow
 #endif
   // Get the underlying X window
   virtual Window GetXWindow(void);
+  virtual Window GetXCursorWindow(void);
   virtual Display *GetXDisplay(void);
 
   inline void OnScroll(wxCommandEvent& /*  event */) {}

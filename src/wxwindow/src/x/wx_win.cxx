@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_win.cxx,v 1.4 1998/04/11 13:58:23 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.5 1998/04/16 15:27:12 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -172,6 +172,11 @@ Window wxWindow::GetXWindow(void)
   return XtWindow(w);
 }
 
+Window wxWindow::GetXCursorWindow(void)
+{
+  return GetXWindow();
+}
+
 Display *wxWindow::GetXDisplay(void)
 {
   Widget w = (Widget)handle;
@@ -276,7 +281,7 @@ wxCursor *wxWindow::SetCursor(wxCursor *cursor)
     Display *dpy = GetXDisplay();
     Cursor x_cursor = cursor ? cursor->GetXCursor(dpy) : None;
 
-    Window win = GetXWindow();
+    Window win = GetXCursorWindow();
     if (win)
       XDefineCursor(dpy, win, x_cursor);
   }

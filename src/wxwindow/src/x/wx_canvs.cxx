@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.2 1998/04/08 00:09:10 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.3 1998/04/10 15:08:14 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -496,6 +496,11 @@ void wxCanvas:: GetSize (int *w, int *h)
 Window wxCanvas::GetXWindow(void)
 {
   return (Window)XtWindow((Widget)(borderWidget ? borderWidget : scrolledWindow));
+}
+
+Window wxCanvas::GetXCursorWindow(void)
+{
+  return (Window)XtWindow((Widget)handle);
 }
 
 void wxCanvas:: GetPosition (int *x, int *y)

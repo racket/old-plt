@@ -154,6 +154,7 @@ class wxCanvas: public wxbCanvas
   virtual void WarpPointer(int x_pos, int y_pos) ;
 
   Window GetXWindow(void);
+  Window GetXCursorWindow(void);
 };
 
 // Allows iteration through damaged rectangles in OnPaint

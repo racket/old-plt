@@ -4,11 +4,14 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_utils.cxx,v 1.3 1998/04/23 20:40:07 mflatt Exp $
+ * RCS_ID:      $Id: wx_utils.cxx,v 1.4 1998/07/13 19:08:23 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
 // $Log: wx_utils.cxx,v $
+// Revision 1.4  1998/07/13 19:08:23  mflatt
+// .
+//
 // Revision 1.3  1998/04/23 20:40:07  mflatt
 // menus: count, rename submenu, delete bool
 //
@@ -909,7 +912,7 @@ wxXSetNoCursor (wxWindow * win, wxCursor * cursor)
 {
   XSetWindowAttributes attrs;
   Display *display = win->GetXDisplay();
-  Window xwin = win->GetXWindow();
+  Window xwin = win->GetXCursorWindow();
   
   if (cursor) {
     attrs.cursor = cursor->GetXCursor(display); /* MATTHEW: [4] Use display-specific */

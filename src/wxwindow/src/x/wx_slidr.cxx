@@ -236,7 +236,16 @@ int wxSlider::GetValue (void)
 
 void wxSlider::SetValue (int value)
 {
-  XtVaSetValues ((Widget) handle, XmNvalue, value, NULL);
+  int max_value, min_value;
+
+  XtVaGetValues((Widget) handle, XmNmaximum, &max_value, XmNminimum, &min_value, NULL);
+
+  if (value > max_value)
+    value = max_value;
+  if (value < min_value)
+    value = min_value;
+
+  XtVaSetValues((Widget) handle, XmNvalue, value, NULL);
 }
 
 void wxSlider::GetSize (int *width, int *height)

@@ -385,6 +385,7 @@ void wxButton::SetDefault (void)
   if (panel)
     panel->defaultItem = this;
 
+#if 0
   // We initially do not set XmNdefaultShadowThickness, to have small buttons.
   // Unfortunattelly, buttons are now mis-aligned. We try to correct this
   // now -- setting this ressource to 1 for each button in the same row.
@@ -405,8 +406,9 @@ void wxButton::SetDefault (void)
           XtManageChild (item->formWidget);
 	}
     }				// while
+#endif
 
-//  XtVaSetValues((Widget)handle, XmNshowAsDefault, 1, NULL);
+  // XtVaSetValues((Widget)handle, XmNshowAsDefault, 1, NULL);
   XtVaSetValues ((Widget) panel->handle, XmNdefaultButton, (Widget) handle, NULL);
 }
 

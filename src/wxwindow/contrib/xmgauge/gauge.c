@@ -547,6 +547,23 @@ XmGaugeSetValue(Widget w, int value)
     /* XFlush(XtDisplay(w)); */
 }
 
+void
+XmGaugeSetMax(Widget w, int value)
+{
+    XmGaugeWidget gw = (XmGaugeWidget)w;
+    int clear;
+
+    if (value < 1) value = 1;
+
+    clear = (gw->gauge.maximum < value);
+
+    gw->gauge.maximum = value;
+    if (gw->gauge.value > value)
+     gw->gauge.value = value;
+    DrawSlider(gw, clear);
+    /* XFlush(XtDisplay(w)); */
+}
+
 int
 XmGaugeGetValue(Widget w)
 {    

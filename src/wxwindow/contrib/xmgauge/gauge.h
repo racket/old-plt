@@ -29,6 +29,9 @@ typedef struct _XmGaugeCallbackStruct{
 void
 XmGaugeSetValue(Widget w, int value);
 
+void
+XmGaugeSetMax(Widget w, int value);
+
 int
 XmGaugeGetValue(Widget w);
 

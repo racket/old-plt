@@ -20,7 +20,8 @@
    push-button-and-wait
    set-language-level!
    repl-in-edit-sequence?
-   fetch-output))
+   fetch-output
+   has-error?))
 
 (invoke-unit/sig
  (compound-unit/sig 

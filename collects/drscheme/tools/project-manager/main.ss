@@ -133,7 +133,7 @@
 		(when (and (is-a? frame project-aware-frame<%>)
 			   (eq? this (send frame project:get-project-window)))
 		  (send frame project:set-project-window #f))))
-        (send rep shutdown))
+        (send (get-editor) shutdown))
       
       (define (has-file? file)
         (let ([n (file:normalize-path file)])

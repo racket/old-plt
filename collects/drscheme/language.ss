@@ -317,7 +317,6 @@
       (send f show #t)
       settings))
 
-  ; object to remember last teachpack directory
   (define teachpack-directory 
     (let ([lib-dir (build-path 
 		    (collection-path "mzlib")
@@ -346,21 +345,22 @@
       (lambda (_1 _2)
 	(let ([lib-file (fw:finder:get-file 
 			 teachpack-directory
-			 "Select a Teachpack" 
+			 "Select a Teachpack"
 			 ".*\\.(ss|scm)$")])
 	  (when lib-file
 	    (let ([old-pref (fw:preferences:get
 			     'drscheme:teachpack-file)])
-	      (fw:preferences:set
-	       'drscheme:teachpack-file
-	       (cons lib-file
-		     (cond
-		      [(string? old-pref) (list old-pref)]
-		      [(not old-pref) null]
-		      [else old-pref]))))
+	      (let ([new-item (normalize-path lib-file)])
+		(if (member new-item old-pref)
+		    (mred:message-box "DrScheme Teachpacks"
+				      (format "Already added ~a Teachpack"
+					      new-item))
+		    (fw:preferences:set
+		     'drscheme:teachpack-file
+		     (append old-pref (list lib-file))))))
 	    (set! teachpack-directory (path-only lib-file))))))
     (make-object mred:menu-item%
-      "Clear Teachpack(s)"
+      "Clear All Teachpacks"
       language-menu
-      (lambda (_1 _2) (fw:preferences:set 'drscheme:teachpack-file #f)))))
+      (lambda (_1 _2) (fw:preferences:set 'drscheme:teachpack-file null)))))
 

@@ -66,11 +66,10 @@
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
   (fw:preferences:set-default 'drscheme:teachpack-file
-			       #f
-			       (lambda (x) (or (string? x)
-					       (not x)
-					       (and (list? x)
-						    (andmap string? x)))))
+			       null
+			       (lambda (x) 
+				 (and (list? x)
+				      (andmap string? x))))
 
   (define (build-teachpack-thunk v)
     (with-handlers
@@ -127,26 +126,22 @@
 	       "loading Teachpack file does not result in a unit/sig")
 	      #f)))))
 
-  (fw:preferences:add-callback 
+  (fw:preferences:add-callback
    'drscheme:teachpack-file
    (lambda (p v)
-     (if v
-	 (let loop ([teachpacks (if (string? v)
-				    (list v)
-				    v)]
-		    [thunk void])
-	   (cond
-	    [(null? teachpacks)
-	     (set! invoke-teachpack thunk)]
-	    [else
-	     (let ([this-thunk (build-teachpack-thunk (car teachpacks))])
-	       (if this-thunk
-		   (loop (cdr teachpacks)
-			 (lambda ()
-			   (this-thunk)
-			   (thunk)))
-		   #f))]))
-	 (set! invoke-teachpack void))))
+     (let loop ([teachpacks v]
+		[thunk void])
+       (cond
+	[(null? teachpacks)
+	 (set! invoke-teachpack thunk)]
+	[else
+	 (let ([this-thunk (build-teachpack-thunk (car teachpacks))])
+	   (if this-thunk
+	       (loop (cdr teachpacks)
+		     (lambda ()
+		       (thunk)
+		       (this-thunk)))
+	       #f))]))))
     
   (define exception-reporting-rep (make-parameter #f))
 
@@ -561,7 +556,7 @@
         [define error-delta (make-object mred:style-delta%
                               'change-style
                               'slant)]
-        (send error-delta set-delta-foreground "RED")
+        (send error-delta set-delta-foreground (make-object mred:color% 255 0 0))
         (send result-delta set-delta-foreground (make-object mred:color% 0 0 175))
         (send output-delta set-delta-foreground (make-object mred:color% 150 0 150))
         
@@ -727,7 +722,13 @@
                       [(exn:variable? exn)
                        (let* ([var (symbol->string (exn:variable-id exn))]
                               [regexp (format "^(.*)(~a)" (quote-regexp-specials var))]
-                              [match (regexp-match regexp s)])
+                              [match (with-handlers ([(lambda (x) #t)
+						      (lambda (x)
+							((error-display-handler)
+							 (format "error constructing regexp: ~s~n"
+								 regexp))
+							#f)])
+				       (regexp-match regexp s))])
                          (when match
                            (let* ([var-start (+ start (string-length (cadr match)))]
                                   [var-end (+ var-start (string-length (caddr match)))])
@@ -1465,12 +1466,21 @@
             (set-prompt-mode #f)
             (set-resetting #f)
             (set-position (last-position) (last-position))
+
             (insert-delta "Language: " welcome-delta)
             (insert-delta (basis:setting-name user-setting) red-delta)
             (unless (equal? (basis:find-setting-named (basis:setting-name user-setting))
                             user-setting)
               (insert-delta " Custom" red-delta))
             (insert-delta (format ".~n") welcome-delta)
+
+	    (for-each
+	     (lambda (fn)
+	       (insert-delta "Teachpack: " welcome-delta)
+	       (insert-delta fn red-delta)
+	       (insert-delta (format ".~n") welcome-delta))
+	     (fw:preferences:get 'drscheme:teachpack-file))
+
             (set! repl-initially-active? #t)
             (end-edit-sequence)
             

@@ -1502,7 +1502,11 @@
       (let* ([local-vars 
 	      (apply
 	       append
-	       (map (lambda (e) (get-pointer-vars e "PTRLOCAL" #f)) decls))]
+	       (map (lambda (e) 
+		      (if (eq? (tok-n (car e)) 'static)
+			  null
+			  (get-pointer-vars e "PTRLOCAL" #f)))
+		    decls))]
 	     [vars (begin
 		       (ormap (lambda (var)
 				(when (assq (car var) extra-vars)

@@ -3342,9 +3342,10 @@ static XVisualInfo *GetWindowVisual(wxGLConfig *cfg, Boolean offscreen)
        the config until we find one. */
     if (suggested_vi)
       break;
-    else if (cfg->multisample)
+    else if (cfg->multisample) {
+      cfg = cfg->Clone();
       cfg->multisample = 0;
-    else
+    } else
       break;
   }
     

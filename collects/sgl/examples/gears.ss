@@ -1,4 +1,4 @@
-;; $Id: gears.ss,v 1.4 2005/01/08 06:25:39 sowens Exp $
+;; $Id: gears.ss,v 1.5 2005/01/11 14:54:04 mflatt Exp $
 ;;
 ;; This is a version of the venerable "gears" demo for PLT Scheme 200 using
 ;; Scott Owens' SGL OpenGL bindings.  It was ported from "glxgears.c" 1.3 from
@@ -37,13 +37,11 @@
          (lib "class.ss")
          (lib "math.ss")
          (prefix gl- (lib "sgl.ss" "sgl"))
+	 (lib "gl.ss" "sgl")
          (lib "gl-vectors.ss" "sgl"))
          
          
 (define controls? #t)
-
-(define cfg (new gl-config%))
-(send cfg set-multisample-size 4)
 
 (define gears-canvas%
   (class* canvas% ()
@@ -99,8 +97,6 @@
         ;; TODO: Generalize away some more redundant program text.
 
         (gl-shade-model 'flat)
-
-	(gl-enable 'multisample)
 
         (gl-normal 0.0 0.0 1.0)
 

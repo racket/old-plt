@@ -241,3 +241,14 @@ void wxTabChoice::Set(int N, char **Choices)
     SetSelection(sel);
   }
 }
+
+int wxTabChoice::ButtonFocus(int n)
+{
+  if (n < 0)
+    return TabCtrl_GetCurFocus((HWND)ms_handle);
+  else {
+    SetFocus();
+    TabCtrl_SetCurFocus((HWND)ms_handle, n);
+    return n;
+  }
+}

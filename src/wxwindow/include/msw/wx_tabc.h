@@ -37,6 +37,8 @@ class wxTabChoice : public wxItem
 
   void Set(int N, char **Choices);
 
+  int ButtonFocus(int n);
+
   HWND bgStatic;
   int orig_height;
 };

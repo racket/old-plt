@@ -273,9 +273,9 @@ void wxChoice::OnChar(wxKeyEvent *event)
     s = GetSelection();
     SetSelection(s + delta);
     if (s != GetSelection()) {
-      wxCommandEvent *event;
-      event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-      ProcessCommand(event);
+      wxCommandEvent *e;
+      e = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+      ProcessCommand(e);
     }
   }
 }

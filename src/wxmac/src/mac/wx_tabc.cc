@@ -294,7 +294,8 @@ void wxTabChoice::OnSetFocus()
 {
   if (focused_button < 0) {
     wxItem::OnSetFocus();
-    focused_button = GetSelection() + 1;
+    focused_button = GetSelection();
+    focused_button += 1;
   }
 }
 

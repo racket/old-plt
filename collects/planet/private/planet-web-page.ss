@@ -90,14 +90,93 @@
     (let* ([owners/all-versions (current-repository-contents)]
            [owners (let ((x (assoc (version) owners/all-versions)))
                      (if x (cdr x) '()))])
-      `(html (head (title "Available PLaneT Packages")
+      `(html ((xmlns "http://www.w3.org/1999/xhtml"))
+             (head (title "PLaneT PLT Scheme Package Repository")
                    (style ((type "text/css"))
-                          "@import \"style.css\";"))
+                          "@import \"style.css\";")
+                   (link ((rel "icon") 
+                          (href "http://www.plt-scheme.org/plticon.ico")
+                          (type "image/ico")))
+                   (link ((rel "shortcut icon")
+                          (href "http://www.plt.scheme.org/plticon.ico"))))
              (body
-              (h1 "Currently available PLaneT packages")
-              ,@(map 
-                 owner-line->html
-                 (quicksort owners (lambda (a b) (string<? (owner->name a) (owner->name b)))))))))
+              (table 
+               ((width "100%") (cellspacing "0") (border "0") (cellpadding "20"))
+               (tr 
+                (td ((height "100%") (width "35%") (align "center") (valign "top") (bgcolor "#73CA57"))
+                 (table 
+                  ((border "0") (cellpadding "30"))
+                  (tr
+                   (td
+                    (table 
+                     ((border "0"))
+                     (tr
+                      (td
+                       ((align "center"))
+                       (img ((src "http://www.plt-scheme.org/plt-green.jpg") (alt "icon")))))
+                     (tr
+                      (td 
+                       ((align "center"))
+                       (font ((size "+2"))
+                             (b (span ((class "sansa")) "PLaneT")))))
+                     (tr
+                      (td 
+                       (span 
+                        ((class "description"))
+                        (p (strong "PLaneT") " is PLT Scheme's centralized package distribution system. Here you"
+                           " will find user-contributed Scheme packages along with instructions for using them.")
+                        (p "The packages on this site are user-contributed and not part of PLT Scheme. Be aware "
+                           "that when you download one of them for use in your programs, you are installing "
+                           "software on your computer that could deliberately or accidentally hare your system. "
+                           "Do not require from PLaneT any packages you do not trust."))))
+                     (tr
+                      (td 
+                       ((align "center"))
+                       (small
+                        (span 
+                         ((class "sansa"))
+                         (a 
+                          ((href "http://www.plt-scheme.org/"))
+                          (font 
+                           ((color "#3A652B"))
+                           "PLT"))
+                         160
+                         "|"
+                         160
+                         (a 
+                          ((href "http://www.drscheme.org/"))
+                          (font 
+                           ((color "#3A652B"))
+                           "DrScheme"))
+                         160
+                         "|"
+                         160
+                         (a 
+                          ((href "http://www.teach-scheme.org/"))
+                          (font 
+                           ((color "#3A652B"))
+                           "TeachScheme!"))
+                         160
+                         "|"
+                         160
+                         (a 
+                          ((href "http://www.htdp.org/"))
+                          (font 
+                           ((color "#3A652B"))
+                           "HtDP"))
+                         160
+                         "|"
+                         160
+                         (a 
+                          ((href "http://www.htus.org/"))
+                          (font 
+                           ((color "#3A652B"))
+                           "HtUS")))))))))))
+                (td 
+                 ((height "100%") (width "*") (valign "top"))
+                 ,@(map 
+                    owner-line->html
+                    (quicksort owners (lambda (a b) (string<? (owner->name a) (owner->name b))))))))))))
   
   
   

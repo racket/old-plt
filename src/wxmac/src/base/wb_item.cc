@@ -170,7 +170,12 @@ wxbItem::wxbItem // Constructor (given parentWindow)
       if (!buttonFont) buttonFont = wxNORMAL_FONT;
       labelColour = parentPanel->labelColour;
       labelFont = parentPanel->labelFont;
-      labelPosition = parentPanel->label_position;
+      if (style & wxVERTICAL_LABEL)
+	labelPosition = wxVERTICAL;
+      else if (style & wxHORIZONTAL_LABEL)
+	labelPosition = wxHORIZONTAL;
+      else
+	labelPosition = parentPanel->label_position;
     } else {
       backColour = NULL;
       buttonColour = NULL;
@@ -266,12 +271,6 @@ wxbButton::wxbButton (wxPanel * panel, wxFunction Function,
   __type = wxTYPE_BUTTON;
   windowStyle = style;
   window_parent = panel;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbButton::~wxbButton (void)
@@ -554,12 +553,6 @@ wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func,
   __type = wxTYPE_CHECK_BOX;
   windowStyle = style;
   window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbCheckBox::~wxbCheckBox (void)
@@ -569,11 +562,6 @@ wxbCheckBox::~wxbCheckBox (void)
 wxbChoice::wxbChoice (void)
 {
   __type = wxTYPE_CHOICE;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
 }
 
 
@@ -627,12 +615,6 @@ wxbListBox::wxbListBox (wxPanel * panel, wxFunction func,
   multiple = Multiple;
   window_parent = panel;
   no_items = N;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 
@@ -681,12 +663,6 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
   selected = -1;
   window_parent = panel;
   no_items = N;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbRadioBox::~wxbRadioBox (void)
@@ -739,12 +715,6 @@ wxbMessage::wxbMessage (wxPanel * panel, char *label, int x, int y, long style, 
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
   window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *image, int x, int y, long style, char *name)
@@ -753,12 +723,6 @@ wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *image, int x, int y, long sty
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
   window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 //-----------------------------------------------------------------------------
@@ -805,12 +769,6 @@ wxbSlider::wxbSlider (wxPanel * panel, wxFunction func, char *label, int value,
   __type = wxTYPE_SLIDER;
   windowStyle = style;
   window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbSlider::~wxbSlider (void)
@@ -825,12 +783,6 @@ wxbGauge::wxbGauge (wxPanel * panel, char *label,
   __type = wxTYPE_GAUGE;
   windowStyle = style;
   window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbGauge::~wxbGauge (void)

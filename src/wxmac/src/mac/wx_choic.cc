@@ -72,13 +72,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   Rect r = {0,0,0,0};
   SInt16 baselineOffset; // ignored
   
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-  window_parent = panel;
-  labelPosition = panel->label_position;
   windowStyle = style;
   valueFont = buttonFont ? buttonFont : wxNORMAL_FONT;
   Callback (func);

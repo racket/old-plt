@@ -1079,6 +1079,8 @@ wxFrame *wxFrame::GetSheetParent()
 #ifdef OS_X
   if (cSheetParent)
     return NULL; /* No nested sheets */
+  else if (cStyle & wxNO_CAPTION)
+    return NULL; /* Sheets need a title bar */
   else
 #endif
     return this;

@@ -75,13 +75,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   
   windowStyle = style;
   window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-	
+  
   label = wxItemStripLabel(label);
 
   Callback(func);

@@ -161,12 +161,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   SetEraser(wxWHITE_BRUSH);
 
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonFont = panel->buttonFont ;
-  buttonColour = panel->buttonColour ;
-
   selected = -1;
   selections = 0;
   multiple = Multiple & wxMULTIPLE_MASK;

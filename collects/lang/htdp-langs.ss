@@ -296,10 +296,27 @@ to the original stdout of DrScheme.
       ;; the key used to put information on the continuation
       (define cm-key (gensym 'teaching-languages-continuation-mark-key))
       
-      ;; add-error-display : (string (union TST exn) -> void) -> string exn -> void
+      ;; teaching-languages-error-display-handler : 
+      ;;    (string (union TST exn) -> void) -> string exn -> void
       ;; adds in the bug icon, if there are contexts to display
       (define (teaching-languages-error-display-handler msg exn)
         (let ([rep (drscheme:rep:current-rep)])
+          
+          (let ([src 
+                 (cond
+                   [(exn:syntax? exn) (syntax-source (exn:syntax-expr exn))]
+                   [(exn:read? exn) (exn:read-source exn)]
+                   [(exn? exn) 
+                    (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
+                      (when (and cms (not (null? cms)))
+                        (let* ([first-cms (st-mark-source (car cms))]
+                               [src (car first-cms)])
+                          src)))]
+                   [else #f])])
+            (when (string? src)
+              (display src (current-error-port))
+              (display ": " (current-error-port))))
+            
           (if (exn? exn)
               (display (exn-message exn) (current-error-port))
               (fprintf (current-error-port) "uncaught exception: ~e" exn))

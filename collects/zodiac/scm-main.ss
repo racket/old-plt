@@ -1060,13 +1060,14 @@
 			    '(_ (else b ...) rest ...)))
 	    (out-pattern-2 'this-is-an-error-case)
 	    (in-pattern-3 '(_))
-	    (out-pattern-3 (if (or (language<=? 'structured)
-				 (not (compile-auto-cond-else)))
-			     ;param:unmatched-cond/case-is-error?)
-			     '(#%raise (#%make-exn:else
-					 "no matching clause"
-					 ((debug-info-handler))))
-			     '(#%void)))
+	    (out-pattern-3-signal-error
+	      '(#%raise (#%make-exn:else
+			  "no matching clause"
+			  ((debug-info-handler)))))
+	    (out-pattern-3-no-error
+	      (if (language<=? 'structured)
+		out-pattern-3-signal-error
+		'(#%void)))
 	    (in-pattern-4 (if (language<=? 'side-effecting)
 			    '()		; will never match
 			    '(_ (item) rest ...)))
@@ -1096,7 +1097,10 @@
 	      (static-error expr "else allowed only in last position"))
 	    (lambda () #f)
 	    env)
-	  (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-1 env)
+	  (if (compile-auto-cond-else)
+	    (pat:match-and-rewrite expr m&e-3-no-error out-pattern-3 kwd-1 env)
+	    (pat:match-and-rewrite expr m&e-3-signal-error
+	      out-pattern-3 kwd-1 env))
 	  (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd-1 env)
 	  (pat:match-and-rewrite expr m&e-5 out-pattern-5 kwd-1 env)
 	  (pat:match-and-rewrite expr m&e-6 out-pattern-6 kwd-1

@@ -3,7 +3,7 @@
   
   (provide (all-defined))
   
-  (define (System-currentTimeMillis-native) (current-milliseconds))
+  (define (System-currentTimeMillis-native) (inexact->exact (floor (current-inexact-milliseconds))))
   
   (define (System-gc-native) (collect-garbage))
   

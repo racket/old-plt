@@ -24,7 +24,10 @@
         null
         (let*-values ([(break) (make-break num-steps (car stxs) action)]
                       [(annotated new-env)
-                       (annotate:annotate (expand (car stxs)) env break 'foot-wrap)])
+                       (annotate:annotate (expand 
+                                           (read-syntax;;;;; I AM HERE
+                                           
+                                           (car stxs)) env break 'foot-wrap)])
           (cons annotated (loop new-env (cdr stxs)))))))
 
 (define (test-expr stx-list num-steps namespace)
@@ -191,11 +194,7 @@
      (test 'or-part syntax-e (syntax or-part-1))
      (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
 
-(test-beginner-sequence (list '(or true 4))
-                        `(((3) (3))
-                          ((3) (3))))
-
-(test-beginner-sequence (list '(or true false true))
+(test-beginner-sequence (list #'(or true false true))
                         `((((or ,highlight-placeholder false true)) (true))
                  (((or ,highlight-placeholder false true)) (true))
                  ((,highlight-placeholder) ((or true false true)))

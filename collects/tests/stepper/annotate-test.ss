@@ -695,11 +695,6 @@
      (test 'lexical identifier-binding (syntax b-0))
      (test 'lexical identifier-binding (syntax b-1)))])
 
-
-        
-
-
-
 ;(test 7 eval (car (annotate-exprs (list #'(begin (+ 3 4) (+ 4 5))))))
 ;(test 9 eval (car (annotate-exprs (list #'(begin (+ 3 4) (+ 4 5))))))
 

@@ -405,7 +405,7 @@
   (define format-source-loc 
     (case-lambda
      [(start-location end-location)
-      (format-source-loc #t)]
+      (format-source-loc start-location end-location #t)]
      [(start-location end-location start-at-one?)
       (format-source-loc start-location end-location start-at-one? #t)]
      [(start-location end-location start-at-one? lines-and-columns?)

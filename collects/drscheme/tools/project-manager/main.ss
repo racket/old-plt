@@ -958,7 +958,7 @@
       (make-object separator-menu-item% project-menu)
       (make-object menu-item% "Execute" project-menu (lambda x (execute-project)) #\t)
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
-      (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)))
+      (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
       (make-object button% "Execute" (get-area-container) (lambda x (execute-project)))

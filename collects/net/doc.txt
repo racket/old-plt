@@ -1142,13 +1142,15 @@ Module files: _mime.ss_ - provides the procedures documented below
 
 ABSTRACT -------------------------------------------------------------
 
-   MIME stands for Multipurpose Internet Mail Extensions. the mime
-   library provides support for MIME as described in: rfc2045 through
-   rfc2049.  
+Author: Francisco Solsona <solsona@acm.org>
 
-   This library is supposed to be used by PLT Scheme applications, or
-   libraries to make the MIME-aware.  For instance, MUAs, (Fast)CGI
-   libraries to support multipart/form-data extensions, etc.
+MIME stands for Multipurpose Internet Mail Extensions. the mime
+library provides support for MIME as described in: rfc2045 through
+rfc2049.
+
+This library is supposed to be used by PLT Scheme applications, or
+libraries to make the MIME-aware.  For instance, MUAs, (Fast)CGI
+libraries to support multipart/form-data extensions, etc.
 
 EXCEPTIONS -----------------------------------------------------------
 
@@ -1499,6 +1501,8 @@ Module files: _qp.ss_ - provides the procedures documented below
 
 ABSTRACT -------------------------------------------------------------
 
+Author: Francisco Solsona <solsona@acm.org>
+
 Implements Quoted Printable (mime-standard) encoder and decoder. As 
 proposed by the rfc2045 section 6.7.
 
@@ -1543,4 +1547,3 @@ PROCEDURES -----------------------------------------------------------
    Reads characters from `input' and writes de un-quoted printable
    result to `output'.  Returns two values: the `output'-port, and a
    thunk to kill the output.
-

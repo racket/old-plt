@@ -1,5 +1,5 @@
 (unit/sig drscheme:bundle:misc^
-  (import)
+  (import mred^)
   
   (define (set-box/f! b/f contents)
     (when (box? b/f)

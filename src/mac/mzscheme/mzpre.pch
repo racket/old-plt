@@ -1,9 +1,45 @@
-#ifdef powerc
-  #pragma precompile_target ":mzpre.ppc"
+#ifdef OS_X
+  #pragma precompile_target ":MzHeadersOSX"
 #else
-  #pragma precompile_target ":mzpre.68k"
+  #ifdef powerc
+    #pragma precompile_target ":mzpre.ppc"
+  #else
+    #pragma precompile_target ":mzpre.68k"
+  #endif
 #endif
 
-#include "macconf.h"
+#ifdef OS_X
+  #include <Carbon/Carbon.h>
+#else
+
+  #define INCLUDE_WITHOUT_PATHS
+  
+  #if defined(__powerc)
+    #include <MacHeadersPPC>
+  #else
+    #include <MacHeaders68K>
+  #endif
+
+  // these are defined again in gc_priv.h.
+  #undef TRUE
+  #undef FALSE
+
+  //#define ALL_INTERIOR_POINTERS     // follows interior pointers.
+  #define SILENT                    // no collection messages.
+  //#define DONT_ADD_BYTE_AT_END      // no padding.
+  //#define SMALL_CONFIG              // use a smaller heap.
+  #define USE_TEMPORARY_MEMORY      // use Macintosh temporary memory.
+  #define OLD_BLOCK_ALLOC
+
+  // EEXIST --- the error in errno.h returned when a file cannot be
+  // created because the file already exists --- is not defined on the mac.
+  // (actually, it _is_ defined in Metrowerks 6)
+
+  #if (__MWERKS__ < 0x2400)
+    # define EEXIST dupFNErr
+  #endif
+
+#endif
+
 #include "schpriv.h"
 

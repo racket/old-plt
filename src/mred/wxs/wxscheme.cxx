@@ -323,13 +323,13 @@ static BOOL do_choose_color(void *data, HWND parent)
 #endif
 
 #ifdef wx_mac
-Boolean NullEventFilter(EventRecord *evt) 
+pascal Boolean NullEventFilter(EventRecord *evt) 
 {
   // just dump them all on the color picker
   return false;
 }
 
-void MyColorChangedCallback ( SInt32 userData, PMColor *newColor )
+pascal void MyColorChangedCallback ( SInt32 userData, PMColor *newColor )
 {
   // do nothing
   return;

@@ -1,11 +1,13 @@
 // the .pch extension of this file is an artifact of the codewarrior system. 
 
-#ifdef __MWERKS__ 
-#ifdef powerc
-  #pragma precompile_target ":wxspre.ppc"
+#ifdef OS_X
+  #pragma precompile_target ":wxspre.OSX"
 #else
-  #pragma precompile_target ":wxspre.68k"
-#endif
+  #ifdef powerc
+    #pragma precompile_target ":wxspre.ppc"
+  #else
+    #pragma precompile_target ":wxspre.68k"
+  #endif
 #endif
 
 #include "MrEdSetup.h"

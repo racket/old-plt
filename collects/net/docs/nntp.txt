@@ -1,4 +1,4 @@
-Time-stamp: <98/03/16 23:12:47 shriram>
+Time-stamp: <98/03/17 20:22:13 shriram>
 
 Package: nntp
 Collection: net
@@ -6,7 +6,7 @@ Files: nntp.ss, nntpr.ss, nntps.ss, nntpu.ss
 
 ABSTRACT -------------------------------------------------------------
 
-The nntp pakage helps programmers access Usenet groups via the NNTP
+The nntp package helps programmers access Usenet groups via the NNTP
 protocols.
 
 TYPES ----------------------------------------------------------------
@@ -111,5 +111,5 @@ string -> desired
 extract-desired-headers :
 list (string) x list (desired) -> list (string)
 
-  Given a list of headers and of desireds, returns the header lines
-  that match any of the desireds.
+  Given a list of headers and of desired's, returns the header lines
+  that match any of the desired's.

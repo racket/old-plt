@@ -1,4 +1,4 @@
-Time-stamp: <98/03/17 12:57:57 shriram>
+Time-stamp: <98/03/17 20:23:30 shriram>
 
 Package: url
 Collection: net
@@ -6,14 +6,14 @@ Files: url.ss, urlr.ss, urls.ss, urlu.ss
 
 ABSTRACT -------------------------------------------------------------
 
-The url pakage manages features of URLs.
+The url package manages features of URLs.
 
 TYPES ----------------------------------------------------------------
 
 struct url (scheme host port path params query fragment)
 scheme : string + #f
 host : string + #f
-port : num + #f
+port : number + #f
 path : string
 params : string + #f
 query : string + #f
@@ -34,7 +34,7 @@ pure-port:
 
 mime-header:
 
-  String correspoding to an Internet header of the sort used by MIME.
+  String corresponding to an Internet header of the sort used by MIME.
 
 PROCEDURES -----------------------------------------------------------
 
@@ -46,13 +46,13 @@ string -> string
   accesses on the local disk system.
 
 get-pure-port :
-url [x list (str)] -> iport
+url [x list (string)] -> iport
 
   Takes a URL and returns a pure port corresponding to it.  Writes the
   optional strings to the server.
 
 get-impure-port :
-url [x list (str)] -> iport
+url [x list (string)] -> iport
 
   Takes a URL and returns an impure port corresponding to it.  Writes
   the optional strings to the server.
@@ -86,7 +86,7 @@ url -> string
   Generates a string corresponding to the contents of the url struct.
 
 call/input-url :
-url x (url -> iport) x  (iport -> ()) [x list (str)] -> ()
+url x (url -> iport) x  (iport -> ()) [x list (string)] -> ()
 
   First argument is the URL to open.  Second is a procedure that takes
   a URL and turns it into a (pure or impure) port.  The third takes

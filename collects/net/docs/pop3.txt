@@ -1,4 +1,4 @@
-Time-stamp: <98/03/17 12:58:03 shriram>
+Time-stamp: <98/03/17 20:22:37 shriram>
 
 Package: pop3
 Collection: net
@@ -133,8 +133,8 @@ string -> desired
 extract-desired-headers :
 list (string) x list (desired) -> list (string)
 
-  Given a list of headers and of desireds, returns the header lines
-  that match any of the desireds.
+  Given a list of headers and of desired's, returns the header lines
+  that match any of the desired's.
 
 EXAMPLE --------------------------------------------------------------
 

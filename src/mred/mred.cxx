@@ -3025,15 +3025,21 @@ int main(int argc, char *argv[])
 
 #ifdef wx_mac
   /* initialize Mac stuff */
-  MaxApplZone();
-  InitGraf(&qd.thePort);		
-  InitFonts();
-  InitWindows();
-  InitMenus();
-  TEInit();
-  InitDialogs(NULL);
-  MoreMasters();
-  MoreMasters();
+  ::MaxApplZone();
+  ::InitGraf(&qd.thePort);		
+  ::InitFonts();
+  ::InitWindows();
+  ::InitMenus();
+  ::TEInit();
+  ::InitDialogs(NULL);
+  ::InitCursor();
+#ifdef OS_X
+  ::MoreMasterPointers(512);
+#else
+  for (int i=0; i<4; i++) {
+	::MoreMasters();
+  }
+#endif
   
   Drop_GetArgs(&argc, &argv);
   

@@ -66,6 +66,14 @@
 #ifndef MZ_PRECISE_GC
 # define START_XFORM_SKIP /**/
 # define END_XFORM_SKIP /**/
+# define GC_CAN_IGNORE /**/
+# define GC_MAYBE_IGNORE_INTERIOR /**/
+#else
+# ifdef GC_INTERIORABLES_NEVER_MOVE
+#  define GC_MAYBE_IGNORE_INTERIOR GC_CAN_IGNORE
+# else
+#  define GC_MAYBE_IGNORE_INTERIOR /**/
+# endif
 #endif
 
 #ifdef MZ_PRECISE_GC

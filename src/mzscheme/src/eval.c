@@ -2084,13 +2084,18 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 {
   Scheme_Type type;
-  Scheme_Object *v, **old_runstack;
-  MZ_MARK_STACK_TYPE old_cont_mark_stack;
+  Scheme_Object *v;
+  GC_MAYBE_IGNORE_INTERIOR Scheme_Object **old_runstack;
+  GC_MAYBE_IGNORE_INTERIOR MZ_MARK_STACK_TYPE old_cont_mark_stack;
 #if USE_LOCAL_RUNSTACK
-  Scheme_Object **runstack;
+  GC_MAYBE_IGNORE_INTERIOR Scheme_Object **runstack;
 #endif
 #ifndef MZ_REAL_THREADS
+# ifdef REGISTER_POOR_MACHINE
+#  define p scheme_current_process
+# else
   Scheme_Process *p = scheme_current_process;
+# endif
 #endif
 
 #ifdef DO_STACK_CHECK
@@ -2104,7 +2109,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     p->ku.k.i1 = num_rands;
     if (num_rands >= 0) {
       /* Copy rands: */
-      void *ra;
+      GC_CAN_IGNORE void *ra;
       ra = (void *)MALLOC_N(Scheme_Object*, num_rands);
       p->ku.k.p2 = ra;
       {
@@ -2173,8 +2178,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     type = _SCHEME_TYPE(obj);
 
     if (type == scheme_prim_type) {
-      Scheme_Primitive_Proc *prim;
-
+      GC_CAN_IGNORE Scheme_Primitive_Proc *prim;
+      
       if (rands == p->tail_buffer) {
 	if (num_rands < TAIL_COPY_THRESHOLD) {
 	  int i;
@@ -2190,7 +2195,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
 	  {
-	    Scheme_Object **tb;
+	    GC_CAN_IGNORE Scheme_Object **tb;
 	    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
 	    p->tail_buffer = tb;
 	  }
@@ -2214,7 +2219,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       DEBUG_CHECK_TYPE(v);
     } else if (type == scheme_linked_closure_type) {
       Scheme_Closure_Compilation_Data *data;
-      Scheme_Object **stack, **src;
+      GC_CAN_IGNORE Scheme_Object **stack, **src;
       int i, has_rest, num_params;
       
       DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(););
@@ -2252,7 +2257,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	  n = num_params - has_rest;
 	  
-	  stack = RUNSTACK = old_runstack - num_params;
+	  RUNSTACK = old_runstack - num_params;
 	  CHECK_RUNSTACK(p, RUNSTACK);
 	  RUNSTACK_CHANGED();
 
@@ -2278,11 +2283,13 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	    p->runstack_tmp_keep = NULL;
 
+	    stack = RUNSTACK;
 	    stack[n] = rest_vals;
 	    while (n--) {
 	      stack[n] = rands[n];
 	    }
 	  } else {
+	    stack = RUNSTACK;
 	    /* Possibly, but not necessarily, rands > stack: */
 	    if ((unsigned long)rands > (unsigned long)stack) {
 	      int i;
@@ -2356,7 +2363,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       goto eval_top;
     } else if (type == scheme_closed_prim_type) {
-      Scheme_Closed_Primitive_Proc *prim;
+      GC_CAN_IGNORE Scheme_Closed_Primitive_Proc *prim;
       
       DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(););
       
@@ -2375,7 +2382,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
 	  {
-	    Scheme_Object **tb;
+	    GC_CAN_IGNORE Scheme_Object **tb;
 	    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
 	    p->tail_buffer = tb;
 	  }
@@ -2425,7 +2432,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       Scheme_Object *value;
       
       if (num_rands != 1) {
-	Scheme_Object **vals;
+	GC_CAN_IGNORE Scheme_Object **vals;
 	int i;
 
 	UPDATE_THREAD_RSPTR_FOR_GC();
@@ -2487,7 +2494,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       if (num_rands == 1)
 	c->value = value;
       else {
-	Scheme_Object *vals;
+	GC_CAN_IGNORE Scheme_Object *vals;
 	vals = scheme_values(num_rands, (Scheme_Object **)value);
 	c->value = vals;
       }
@@ -2498,7 +2505,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       Scheme_Object *value;
 
       if (num_rands != 1) {
-	Scheme_Object **vals;
+	GC_CAN_IGNORE Scheme_Object **vals;
 	int i;
 
 	UPDATE_THREAD_RSPTR_FOR_GC();
@@ -2593,7 +2600,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       case scheme_application_type:
 	{
 	  Scheme_App_Rec *app;
-	  Scheme_Object *tmpv, **randsp, **stack;
+	  GC_CAN_IGNORE Scheme_Object *tmpv;
+	  Scheme_Object **randsp, **stack;
 	  int k;
 	  int d_evals;
 #ifdef MZ_PRECISE_GC
@@ -2671,7 +2679,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 		break;
 	      default:
 		{
-		  Scheme_Object *er;
+		  GC_CAN_IGNORE Scheme_Object *er;
 		  er = _scheme_eval_compiled_expr_wp(v, p);
 		  *(randsp++) = er;
 		}
@@ -2703,12 +2711,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	}
       case scheme_branch_type:
 	{
-	  Scheme_Branch_Rec *b;
-	  b = (Scheme_Branch_Rec *)obj;
-
 	  UPDATE_THREAD_RSPTR();
-	  obj = NOT_SAME_OBJ(_scheme_eval_compiled_expr_wp(b->test, p), scheme_false)
-	    ? b->tbranch : b->fbranch;
+	  obj = (NOT_SAME_OBJ(_scheme_eval_compiled_expr_wp(((Scheme_Branch_Rec *)obj)->test, p), 
+			      scheme_false)
+		 ? ((Scheme_Branch_Rec *)obj)->tbranch 
+		 : ((Scheme_Branch_Rec *)obj)->fbranch);
 
 	  goto eval_top;
 	}
@@ -2719,8 +2726,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       case scheme_let_value_type:
 	{
-	  Scheme_Let_Value *lv;
-	  Scheme_Object *value, **values;
+	  GC_CAN_IGNORE Scheme_Let_Value *lv;
+	  GC_CAN_IGNORE Scheme_Object *value, **values;
 	  int i, c, ab;
 
 	  lv = (Scheme_Let_Value *)obj;
@@ -2742,7 +2749,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	      RUNSTACK[i] = value;
 	  } else {
 	    int c2;
-	    Scheme_Object **stack;
+	    GC_CAN_IGNORE Scheme_Object **stack;
 
 	    value = _scheme_eval_compiled_expr_multi_wp(value, p);
 	    c2 = (SAME_OBJ(value, SCHEME_MULTIPLE_VALUES) ? p->ku.multiple.count : 1);
@@ -2779,7 +2786,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       case scheme_let_void_type:
 	{
-	  Scheme_Let_Void *lv;
+	  GC_CAN_IGNORE Scheme_Let_Void *lv;
 	  int c;
 
 	  lv = (Scheme_Let_Void *)obj;
@@ -2795,7 +2802,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    UPDATE_THREAD_RSPTR_FOR_GC();
 
 	    while (c--) {
-	      Scheme_Object *ub;
+	      GC_CAN_IGNORE Scheme_Object *ub;
 	      ub = scheme_make_envunbox(scheme_undefined);
 	      stack[c] = ub;
 	    }
@@ -2808,7 +2815,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	{
 	  Scheme_Letrec *l = (Scheme_Letrec *)obj;
 	  Scheme_Object **a, **dest, **stack;
-	  short *map;
+	  GC_CAN_IGNORE short *map;
 	  int i;
 
 	  stack = RUNSTACK;
@@ -2827,8 +2834,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  /* Close them: */
 	  i = l->count;
 	  while (i--) {
-	    Scheme_Closed_Compiled_Procedure *closure;
-	    Scheme_Closure_Compilation_Data *data;
+	    GC_CAN_IGNORE Scheme_Closed_Compiled_Procedure *closure;
+	    GC_CAN_IGNORE Scheme_Closure_Compilation_Data *data;
 	    int j;
 
 	    closure = (Scheme_Closed_Compiled_Procedure *)stack[i];
@@ -2849,7 +2856,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       case scheme_let_one_type:
 	{
-	  Scheme_Let_One *lo = (Scheme_Let_One *)obj;
+	  /* Macro instead of var for efficient precise GC conversion */
+# define lo ((Scheme_Let_One *)obj)
 
 	  PUSH_RUNSTACK(p, RUNSTACK, 1);
 	  RUNSTACK_CHANGED();
@@ -2860,7 +2868,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    break;
 	  case SCHEME_EVAL_GLOBAL:
 	    {
-	      Scheme_Object *tmpv;
+	      GC_CAN_IGNORE Scheme_Object *tmpv;
 	      global_lookup(RUNSTACK[0] =, lo->value, tmpv);
 	    }
 	    break;
@@ -2873,7 +2881,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  default:
 	    UPDATE_THREAD_RSPTR();
 	    {
-	      Scheme_Object *val;
+	      GC_CAN_IGNORE Scheme_Object *val;
 	      val = _scheme_eval_compiled_expr_wp(lo->value, p);
 	      RUNSTACK[0] = val;
 	    }
@@ -2881,14 +2889,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  }
 
 	  obj = lo->body;
-
+#undef lo
 	  goto eval_top;
 	}
       
       case scheme_with_cont_mark_type:
 	{
 	  Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)obj;
-	  Scheme_Object *key, *val;
+	  GC_CAN_IGNORE Scheme_Object *key, *val;
 	  
 	  UPDATE_THREAD_RSPTR();
 	  key = wcm->key;
@@ -2945,6 +2953,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   DEBUG_CHECK_TYPE(v);
 
   return v;
+
+#ifndef MZ_REAL_THREADS
+# ifdef REGISTER_POOR_MACHINE
+#  undef p
+# endif
+#endif
 }
 
 /*========================================================================*/

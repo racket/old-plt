@@ -58,7 +58,7 @@ typedef short Type_Tag;
 
 #define TIME 0
 #define SEARCH 0
-#define SAFETY 0
+#define SAFETY 1
 #define NOISY 0
 #define MARK_STATS 0
 
@@ -1626,6 +1626,14 @@ void GC_mark(const void *p)
 
 	  switch(type) {
 	  case MTYPE_TAGGED:
+#if SAFETY
+	    {
+	      Type_Tag tag = *(Type_Tag *)p;
+	      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
+		CRASH();
+	      }
+	    }
+#endif
 	  case MTYPE_XTAGGED:
 	  case MTYPE_ARRAY:
 	    if (mark_stack_pos < MARK_STACK_MAX) {

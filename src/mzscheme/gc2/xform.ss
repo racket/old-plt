@@ -227,7 +227,7 @@
 (when pgc?
   ;; Header:
   (printf "#define FUNCCALL(setup, x) (setup, x)~n")
-  (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(SETUP(0), x)~n")
+  (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(GC_variable_stack = __gc_var_stack__[0], x)~n")
   (printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;~n")
   (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")
   (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
@@ -235,6 +235,7 @@
   (printf "#define BLOCK_SETUP(x) ~a~n" (if per-block-push? "x" "/* skipped */"))
   (printf "#define NULLED_OUT 0~n")
   (printf "#define NULL_OUT_ARRAY(a) memset(a, 0, sizeof(a))~n")
+  (printf "#define GC_CAN_IGNORE /**/~n")
   (printf "~n")
   
   ;; C++ cupport:
@@ -300,6 +301,7 @@
 (define XFORM_RESET_VAR_STACK (string->symbol "XFORM_RESET_VAR_STACK"))
 (define END_XFORM_ARITH (string->symbol "END_XFORM_ARITH"))
 (define START_XFORM_ARITH (string->symbol "START_XFORM_ARITH"))
+(define GC_CAN_IGNORE (string->symbol "GC_CAN_IGNORE"))
 
 (define __attribute__ (string->symbol "__attribute__"))
 
@@ -347,6 +349,7 @@
   ;; don't need to push any variables:
   '(exit
     scheme_wrong_type scheme_wrong_number scheme_wrong_syntax
+    scheme_wrong_count scheme_wrong_rator
     scheme_raise_exn scheme_signal_error
     scheme_raise_out_of_memory
     ))
@@ -860,7 +863,9 @@
     (set! non-pointer-types (append (map car non-pointers) non-pointer-types))))
 
 (define (get-vars e comment union-ok?)
-  (let* ([e (filter (lambda (x) (not (memq (tok-n x) '(volatile const)))) e)]
+  (let* ([e   (if (eq? GC_CAN_IGNORE (tok-n (car e)))
+		  (list (make-tok semi #f #f)) ; drop everything
+		  (filter (lambda (x) (not (memq (tok-n x) '(volatile const)))) e))]
 	 [base (tok-n (car e))]
 	 [base-is-ptr?
 	  (lookup-pointer-type base)]
@@ -1053,7 +1058,7 @@
     (cond
      [(null? (cdr e))
       (fprintf map-port "(decl ~s)~n" name)
-      (list (make-tok (string->symbol (format "SEGOF_~a" name) )
+      (list (make-tok (string->symbol (format "SEGOF_~a" name))
 		      #f #f)
 	    (car e))]
      [(memq (tok-n (car e)) (list __attribute__))

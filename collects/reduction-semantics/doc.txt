@@ -41,6 +41,28 @@ this tool:
   _threads.ss_: shows how non-deterministic choice can be
   modelled in a reduction semantics.
 
+  _iswim.ss_ : grammar and reductions from "Programming Languages
+               and Lambda Calculi" by Felleisen and Flatt.
+
+               Grammar and substitution:
+>                 iswim-grammar : compiled-lang?
+>                 is-in-V? : (any? . -> . boolean?)
+>                 iswim-subst : (any? symbol? any? . -> . any?)
+               Reductions:
+>                 beta_v : red?
+>                 delta : (listof red?)
+>                 ->v : (listof red?)
+>                 :->v : (listof red?)
+               Abbreviations:
+>                 if0 : (any? any? any? . -> . any?)
+>                 true : any?
+>                 false : any?
+>                 mkpair : any?
+>                 fst : any?
+>                 snd : any?
+>                 Y_v : any?
+>                 sum : any?
+
 ======================================================================
 
 The _reduction-semantics.ss_ library defines a pattern

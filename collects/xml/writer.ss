@@ -5,7 +5,12 @@
   ;;(define empty-tag-shorthand (make-parameter void))
   
   ;; (empty-tag-shorthand) : (U 'always 'never (listof Symbol))
-  (define empty-tag-shorthand (make-parameter 'always))
+  (define empty-tag-shorthand
+    (make-parameter 'always
+                    (lambda (x)
+                      (if (or (eq? x 'always) (eq? x 'never) (and (list? x) (andmap symbol? x)))
+                          x
+                          (error 'empty-tag-shorthand "expected 'always, 'never, or a list of symbols: received ~a" x)))))
   
   (define html-empty-tags '(param meta link isindex input img hr frame col br basefont base area))
   
@@ -45,7 +50,7 @@
   
   ;; display-xml : Document [Output-port] -> Void
   (define display-xml (gen-write/display-xml display-xml/content))
-
+  
   ;; display-outside-misc : (listof Misc) Output-port -> Void
   (define (display-outside-misc misc out)
     (for-each (lambda (x)
@@ -54,7 +59,7 @@
                    [(pi? x) write-xml-pi]) x 0 void out)
                 (newline out))
               misc))
-    
+  
   ;; write-xml-content : Content Nat (Nat Output-Stream -> Void) Output-Stream -> Void
   (define (write-xml-content el over dent out)
     ((cond
@@ -110,7 +115,7 @@
   (define (write-xml-entity entity over dent out)
     (let ([n (entity-text entity)])
       (fprintf out (if (number? n) "&#~a;" "&~a;") n)))
-    
+  
   (define escape-table
     (map (lambda (x y) (cons (regexp (symbol->string x)) y))
          '(< > &)
@@ -125,6 +130,6 @@
     (foldr (lambda (esc str) (regexp-replace* (car esc) str (cdr esc)))
            x
            table))
-
+  
   ;; incr : Nat -> Nat
   (define (incr n) (+ n 2)))

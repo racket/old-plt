@@ -130,19 +130,20 @@
                           classes)
                 (let* ((dir (find-directory path err))
                        (classes (get-class-list dir)))
-                  (for-each (lambda (class) (import-class class path dir file type-recs level #t))
+                  (for-each (lambda (class) 
+                              (import-class class path dir file type-recs level (import-src imp) #t))
                             classes)
                   (send type-recs add-package-contents path classes))))
-          (import-class name path (find-directory path err) file type-recs level #t))))
+          (import-class name path (find-directory path err) file type-recs level (import-src imp) #t))))
   
-  ;import-class: string (list string) (list string) location type-records symbol bool-> void
-  (define (import-class class path dir loc type-recs level add-to-env)
+  ;import-class: string (list string) (list string) location type-records symbol src bool-> void
+  (define (import-class class path dir loc type-recs level caller-src add-to-env)
     (let ((class-name (cons class path))
           (type-path (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
           (file-path (build-path (apply build-path dir) class))
           (new-level (box level)))
       (cond
-        ((is-import-restricted? class path level) (used-restricted-import class path))
+        ((is-import-restricted? class path level) (used-restricted-import class path caller-src))
         ((send type-recs get-class-record class-name (lambda () #f)) void)
         ((file-exists? type-path) 
          (send type-recs add-class-record (read-record type-path))
@@ -164,7 +165,7 @@
                    (send type-recs get-class-record class-name (lambda () 'internal-error "Failed to add record"))
                    )))
          (send type-recs add-require-syntax class-name (build-require-syntax class path dir #t)))
-        (else (file-error 'file (cons class path))))
+        (else (file-error 'file (cons class path) caller-src)))
       (when add-to-env (send type-recs add-to-env class path loc))
       (send type-recs add-class-req class-name (not add-to-env) loc)))
 
@@ -184,7 +185,7 @@
   (define (add-my-package type-recs package defs loc level)
     (let* ((dir (find-directory package (lambda () #f)))
            (classes (if dir (get-class-list dir) null)))
-      (for-each (lambda (c) (import-class c package dir loc type-recs level #t)) 
+      (for-each (lambda (c) (import-class c package dir loc type-recs level #f #t)) 
                 (filter (lambda (c) (not (contained-in? defs c))) classes))
       (send type-recs add-package-contents package classes)))
       
@@ -198,8 +199,8 @@
   (define (find-implicit-import name type-recs level call-src)
     (lambda ()
       (let ((original-loc (send type-recs get-location))
-            (dir (find-directory (cdr name) (lambda () (file-error 'dir name)))))
-        (import-class (car name) (cdr name) dir original-loc type-recs level #f)
+            (dir (find-directory (cdr name) (lambda () (file-error 'dir name call-src)))))
+        (import-class (car name) (cdr name) dir original-loc type-recs level call-src #f)
         (begin0
           (get-record (send type-recs get-class-record name (lambda () #f) type-recs))
           (send type-recs set-location! original-loc)))))
@@ -233,7 +234,7 @@
                                     (directory-list (build-path (apply build-path dir) "compiled")))))
            (array (datum->syntax-object #f `(lib "array.ss" "profj" "libs" "java" "lang") #f)))
       (send type-recs add-package-contents lang class-list)
-      (for-each (lambda (c) (import-class c lang dir #f type-recs 'full #f)) class-list)
+      (for-each (lambda (c) (import-class c lang dir #f type-recs 'full #f #f)) class-list)
       (send type-recs add-require-syntax (list 'array) (list array array))
       
       ;Add lang to interactions environment
@@ -262,7 +263,7 @@
         ((procedure? record) (get-record record type-recs))
         ((eq? record 'in-progress)
          (dependence-error 'cycle (name-id n) (name-src n)))
-        (else (get-record (find-implicit-import name type-recs level #f) type-recs)))))
+        (else (get-record (find-implicit-import name type-recs level (name-src n) #f) type-recs)))))
   
   (define (class-specific-field? field)
     (not (memq 'private 
@@ -1124,7 +1125,6 @@
                            meth (car class) name)
                    name (id-src (field-name parm)))))
 
-  
   ;field-error: id src -> void
   (define (field-error name src)
     (let ((n (id->ext-name name)))
@@ -1136,20 +1136,20 @@
                  (format "Import ~a not found" (path->ext (name->path imp)))
                  'import src))
 
-  ;file-error: symbol (list string) -> void
-  (define (file-error kind path)
+  ;file-error: symbol (list string) src -> void
+  (define (file-error kind path src)
     (let ((k (if (eq? kind 'file) 'file-not-found 'directory-not-found)))
       (raise-error k
                    (case kind
                      ((file) (format "Required file ~a not found" (path->ext path)))
                      ((dir) (format "Required directory ~a not found" (path->ext path))))
-                   k #f)))
+                   k src)))
 
-  ;used-restricted-import: string (list string) -> void
-  (define (used-restricted-import class path)
+  ;used-restricted-import: string (list string) src -> void
+  (define (used-restricted-import class path src)
     (raise-error 'import
                  (format "Imported class, ~a, cannot be imported or used" (path->ext (cons class path)))
-                 'import #f))
+                 'import src))
 
   
   ;throws-error id src -> void

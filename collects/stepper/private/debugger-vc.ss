@@ -45,17 +45,17 @@
       ; set up debugger eventspace
       
       (parameterize ([current-eventspace debugger-eventspace])
-            (queue-callback 
-             (lambda ()
-               ; yuck!  hidden dependence on the list of names provided by "debugger-bindings.ss"
-               (namespace-set-variable-value! 'go-semaphore go-semaphore)
-               (namespace-set-variable-value! 'events events)
-               (namespace-set-variable-value! 'user-custodian user-custodian)
-               (namespace-set-variable-value! 'set-event-num! set-event-num!)
-               (namespace-set-variable-value! 'bt bt)
-               (namespace-set-variable-value! 'set-frame-num! set-frame-num!)
-               (namespace-set-variable-value! 'src src)
-               (namespace-set-variable-value! 'binding binding))))))
+        (queue-callback 
+         (lambda ()
+           ; yuck!  hidden dependence on the list of names provided by "debugger-bindings.ss"
+           (namespace-set-variable-value! 'go-semaphore go-semaphore)
+           (namespace-set-variable-value! 'events events)
+           (namespace-set-variable-value! 'user-custodian user-custodian)
+           (namespace-set-variable-value! 'set-event-num! set-event-num!)
+           (namespace-set-variable-value! 'bt bt)
+           (namespace-set-variable-value! 'set-frame-num! set-frame-num!)
+           (namespace-set-variable-value! 'src src)
+           (namespace-set-variable-value! 'binding binding))))))
   
   ;; Info functions:
   
@@ -75,9 +75,6 @@
   
   ; send-output-to-debugger-window : (string text:basic% -> void)
   (define (send-output-to-debugger-window str text)
-    (send text insert str (send text last-position)))
-    
-    
-    )      
+    (send text insert str (send text last-position))))      
       
     

@@ -38,7 +38,7 @@
       (error 'check-range "argument ~v out of range [~v ... ~v]" num bottom top)))
   
   (define (set-event-num! num)
-    (check-range num 0 (- (length (events) 1)))
+    (check-range num 0 (- (length (events)) 1))
     (namespace-set-variable-value! 'current-event-num num)
     (namespace-set-variable-value! 'current-frame-num 0))
   
@@ -60,4 +60,4 @@
     (lookup-binding-with-symbol (do-n-times cdr (current-frame-num) (current-mark-list)) sym))
 
   (define (do-n-times fn n arg)
-    (foldl arg (lambda (x arg) (fn arg)) (build-list n (lambda (x) x)))))
+    (foldl (lambda (x arg) (fn arg)) arg (build-list n (lambda (x) x)))))

@@ -6,7 +6,8 @@
   
   (define-signature debugger-model^
     (go-semaphore
-     user-custodian))
+     user-custodian
+     go))
   
   (define-signature debugger-vc^
     (receive-result)))

@@ -5,13 +5,11 @@
            (prefix frame: (lib "framework.ss" "framework"))
            (lib "unitsig.ss")
            (lib "class.ss")
-           (lib "etc.ss")
            (lib "list.ss")
-           (prefix model: "private/debugger-model.ss")
-	   "private/my-macros.ss"
-           "private/shared.ss"
-           (prefix x: "private/mred-extensions.ss")
-           (lib "string-constant.ss" "string-constants"))
+           "debugger-sig.ss"
+           "private/debugger-vc.ss"
+           "private/debugger-model.ss"
+	   "private/my-macros.ss")
 
   (provide tool@)
   
@@ -25,8 +23,6 @@
       (define debugger-initial-width 500)
       (define debugger-initial-height 500)
       
-      (define image? x:image?)
-  
       (define debugger-bitmap
         (drscheme:unit:make-bitmap
          "Debug"
@@ -98,7 +94,18 @@
                                         '(default=1))
                     (begin
                       (set! debugger-exists #t)
-                      (model:go program-expander))))))
+                      (start-debugger program-expander))))))
+          
+          (define (start-debugger program-expander)
+            (define-values/invoke-unit/sig (go)
+             (compound-unit/sig 
+               (import [EXPANDER : (program-expander)])
+               (link [MODEL : debugger-model^ (debugger-model@ VIEW-CONTROLLER EXPANDER)] 
+                     [VIEW-CONTROLLER : debugger-vc^ (debugger-vc@ MODEL)])
+               (export (var (MODEL go))))
+             #f
+             (program-expander))
+            (go))
           
           (rename [super-enable-evaluation enable-evaluation])
           (define/override (enable-evaluation)

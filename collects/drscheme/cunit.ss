@@ -398,7 +398,9 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 				 (make-object snip% name #f))))))
 	       mb))])
 	(public
+	  [get-panel% (lambda () mred:vertical-panel%)]
 	  [get-edit% (lambda () project-pasteboard%)])
+
 	(sequence
 	  (super-init filename snip))
 	(sequence

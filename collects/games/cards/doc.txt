@@ -36,11 +36,11 @@ plus a structure:
 
 >  struct:region :: (struct region (x y w h label callback))
       `x', `y', `w', `h' are coordinates on the table,
-      `label' is a string to label the region or #f for no label. When the
-        region is added to a table, the label is drawn in 12-pixel
-        text, centered horizontally and 5 pixels down from the 
-        region's top outline. If label is #f, no label or box is drawn 
-        for the region.
+      `label' is a string or bitmap to label the region or #f for no
+        label. When the region is added to a table, a text label is
+        drawn in 12-pixel text, and the label is centered horizontally
+        and 5 pixels down from the region's top outline. If label is
+        #f, no label or box is drawn for the region.
       `callback' is a procedure that takes a list of cards that were
         dragged to the region; if callback is #f, the region is not
         active (i.e., dragging cards to the region doesn't highlight the
@@ -68,15 +68,18 @@ plus a structure:
      should restore any modified drawing context state before
      returning.
 
-  In additionto the above function, the _region-interactive-callback_
-  and _set-region-interactive-callback!_ procedures get and set a
-  callback procedure that is invoked when a region is [un]hilited as
-  the user drags a set of cards to the region. The callback is
-  provided two arguments: a boolean indicating whether the region is
-  hilited, and the list of cards being dragged. Like region-callback,
-  the default is #f, which indicates that the region has no
-  interactive callback (but does not affect whether the region is
-  hilited as cards are dragged).
+Plus some extra callback procedures on regions:
+
+> (region-interactive-callback r)
+> (set-region-interactive-callback! r hilite-callback)
+  Get and set a callback procedure that is invoked when a region is
+  [un]hilited as the user drags a set of cards to the region. The
+  callback is provided two arguments: a boolean indicating whether the
+  region is hilited, and the list of cards being dragged. Like
+  region-callback, the default is #f, which indicates that the region
+  has no interactive callback (but does not affect whether the region
+  is hilited as cards are dragged). The final unhilite (when cards are
+  potentially delivered) does not trigger this callback.
 
 
 Table methods: [in addition to standard frame% methods]
@@ -258,7 +261,10 @@ Card methods:
 > snap-back-after-move :: (send c snap-back-after-move on?)
        Assuming user can move the card interactively, determines
        whether the card stays where the user dragged it or snaps back
-       to its original place. Initially #f.
+       to its original place. Initially #f. A region's *interactive*
+       callback can disable snap-back for a card so that the card can
+       be delivered to the region. (A region's normal callback cannot
+       release the card, because it's too late.)
 
 > stay-in-region :: (send c stay-in-region r)
 > stay-in-region :: (send c stay-in-region)
@@ -267,10 +273,13 @@ Card methods:
 
 > home-region :: (send c home-region r)
 > home-region :: (send c home-region)
-       If `r' is a region, the user can move the card freely within the
-       region, but it snaps back if moved completely out of the
+       If `r' is a region, the user can move the card freely within
+       the region, but it snaps back if moved completely out of the
        region. If moved partly out of the region, the card is moved
-       enough to get completely back in. Initially #f.
+       enough to get completely back in. Initially #f. A region's
+       *interactive* callback can disable snap-back for a card so that
+       the card can be delivered to the region. (A region's normal
+       callback cannot release the card, because it's too late.)
 
 > copy :: (send c copy) - makes a new card with the same suit and
        value.

@@ -6,9 +6,7 @@
   ;;  fixup name to be MrEd or MzScheme
   (define (find-exe mred?)
     (let* ([sp (find-system-path 'exec-file)]
-	   [exe (find-executable-path sp 
-				      (let-values ([(base name dir?) (split-path sp)])
-					name))]
+	   [exe (find-executable-path sp #f)]
 	   [fail
 	    (lambda ()
 	      (error 'make-embedding-executable

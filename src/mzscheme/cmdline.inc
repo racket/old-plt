@@ -213,7 +213,11 @@ static int run_from_cmd_line(int argc, char *argv[],
   {
     /* Make sure the .exe extension is present for consistency */
     int l = strlen(prog);
-    if (l <= 4 || strcmp(prog + l - 4, ".exe")) {
+    if (l <= 4 
+	|| (prog[l - 4] != '.')
+	|| (tolower(((unsigned char *)prog)[l - 3]) != 'e')
+	|| (tolower(((unsigned char *)prog)[l - 2]) != 'x')
+	|| (tolower(((unsigned char *)prog)[l - 1]) != 'e')) {
       char *s = (char *)scheme_malloc_atomic(l + 4 + 1);
       memcpy(s, prog, l);
       memcpy(s + l, ".exe", 5);

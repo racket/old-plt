@@ -19,7 +19,7 @@
 
 #cs(module datadefs mzscheme 
      
-     (require-for-syntax (lib "aux.scm" "testing"))
+     (require-for-syntax (file "aux.scm"))
      (require (lib "contract.ss"))
      
      (provide 

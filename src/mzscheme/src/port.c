@@ -3537,10 +3537,12 @@ fd_close_input(Scheme_Input_Port *port)
 # ifdef MAC_FILE_HANDLES
     FSClose(fip->fd);
 # else
-    do {
+    {
       int cr;
-      cr = close(fip->fd);
-    } while ((cr == -1) && (errno == EINTR));
+      do {
+	cr = close(fip->fd);
+      } while ((cr == -1) && (errno == EINTR));
+    }
 # endif
   }
 #endif
@@ -4703,10 +4705,12 @@ fd_close_output(Scheme_Output_Port *port)
 # ifdef MAC_FILE_HANDLES
     FSClose(fop->fd);
 # else
-    do {
+    {
       int cr;
-      cr = close(fop->fd);
-    } while ((cr == -1) && (errno == EINTR));
+      do {
+	cr = close(fop->fd);
+      } while ((cr == -1) && (errno == EINTR));
+    }
 # endif
   }
 #endif

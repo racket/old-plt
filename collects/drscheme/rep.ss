@@ -660,7 +660,7 @@
 		  (gw s1)))))]
 
 	  [this-err-write/exn ; =User=
-	   (let* ([raw-symbol-chars "a-z/!>:-\\*\\?"]
+	   (let* ([raw-symbol-chars "a-z/!>:%\\*\\?-"]
 		  [symbol-chars (format "[~a]" raw-symbol-chars)]
 		  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
 		  [fallthru-regexp (regexp (format "^()(~a*): " symbol-chars))]

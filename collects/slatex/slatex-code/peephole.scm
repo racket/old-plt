@@ -48,7 +48,7 @@
 		       (set! curr-notab &void-notab))
 		      ((eq? curr-notab &mid-math)
 		       (error "get-line: Sorry, you can't split ~
-math formulas across lines in Scheme code.")))
+math formulas across lines in Scheme code")))
 		(setf (of line =char / i) #\newline)
 		(setf (of line =space / i) &void-space)
 		(setf (of line =tab / i)

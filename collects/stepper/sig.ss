@@ -74,6 +74,7 @@
    (struct error-result (finished-exprs err-msg))
    (struct finished-result (finished-exprs))
    list-take
+   list-partition
    (struct closure-record (name mark constructor?))
    create-bogus-bound-varref
    create-bogus-top-level-varref

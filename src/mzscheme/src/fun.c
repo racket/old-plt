@@ -2119,7 +2119,7 @@ ormap(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
 {
-  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Thread *p;
   Scheme_Object *v;
 
   scheme_check_proc_arity("call-with-values", 0, 0, argc, argv);
@@ -2127,6 +2127,7 @@ static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
     scheme_wrong_type("call-with-values", "procedure", 1, argc, argv);
 
   v = _scheme_apply_multi(argv[0], 0, NULL);
+  p = scheme_current_thread;
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
     if (SAME_OBJ(p->ku.multiple.array, p->values_buffer))
       p->values_buffer = NULL;

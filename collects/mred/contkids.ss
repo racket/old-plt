@@ -593,7 +593,12 @@
 		    (list* parent callback label val x y
 			   const-default-size const-default-size args))))
     
-    (define canvas-default-size 50)
+    (define canvas-default-size
+      (case wx:window-system
+	[(xt)  30]
+	[(motif) 50]
+	[(windows) 50]
+	[(macintosh) 50]))
     ; an arbitrary default size for canvases to avoid initial size problems
     ; under xt.
     

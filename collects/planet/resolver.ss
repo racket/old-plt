@@ -260,9 +260,10 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
     (with-handlers
         ([exn:fail? (lambda (e) 
                       (raise (make-exn:fail
-                              (format 
-                               "Error downloading module from PLaneT server: ~a"
-                               (exn-message e))
+                              (string->immutable-string
+                               (format 
+                                "Error downloading module from PLaneT server: ~a"
+                                (exn-message e)))
                               (exn-continuation-marks e))))])
       (match (download-package pkg)
         [(#t path maj min) (install-pkg pkg path maj min)]
@@ -318,6 +319,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   (define (download-package pkg)
   
     (define-values (ip op) (tcp-connect (PLANET-SERVER-NAME) (PLANET-SERVER-PORT)))
+    (define dummy1 (printf "connected to port ~a\n" (PLANET-SERVER-PORT)))
     (define (close-ports)
       (close-input-port ip)
       (close-output-port op))

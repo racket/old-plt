@@ -41,6 +41,12 @@ Various common pieces of code that both the client and server need to access
       [(regexp-match #rx"3.+|29.|" ver) "300"]
       [else #f]))
   
+  (define (version->description ver)
+    (cond
+      [(string=? ver "207.1") "20x"]
+      [(string=? ver "300") "299.x-30x"]
+      [else (error 'version->description "Expected one of 207.1 and 300, got ~a" ver)]))
+  
   (define (legal-language? l)
     (and (language-version->repository l) #t))
   

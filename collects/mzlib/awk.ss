@@ -135,7 +135,7 @@
 				rest)])))))])
 	   (let ([testing-clauses (get-testing-clauses)])
 	     `(let (,@user-state-var-decls ,@initvars)
-		(let ,loop ([,counter 0]) 
+		(let ,loop ([,counter 1]) 
 		     (call-with-values
 		      (lambda () ,get-next-record)
 		      (lambda ,user-fields

@@ -345,7 +345,8 @@
 	    [get-edit% (lambda () edit%)]
 	    [make-edit
 	     (lambda ()
-	       (make-object (get-edit%)))]
+	       (let ([% (get-edit%)])
+		 (make-object %)))]
 	    [add-canvas
 	     (opt-lambda ([canvas (make-canvas)][prefix? #f])
 	       (unless (member canvas canvases)
@@ -387,6 +388,7 @@
 	    (super-init () name -1 -1 WIDTH HEIGHT
 			(+ wx:const-default-frame wx:const-sdi)
 			name))
+
 	  
 	  (public
 	    [last-focus-canvas #f] ; Does this need to be inited during make-canvas?
@@ -396,6 +398,7 @@
 	      (send canvas set-media (make-edit)))
 	    (send canvas set-frame this)
 	    (set! last-focus-canvas canvas))
+
 	  (public
 	    [edit (send canvas get-media)]
 	    [canvases (list canvas)])

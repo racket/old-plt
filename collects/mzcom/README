@@ -1,0 +1,82 @@
+This directory contains the files for MzCOM, a COM 
+class wrapper for MzScheme.
+
+The code is in the file mzcom.dll.  During normal
+installation of MzCOM from the file mzcom.plt, the
+mzcom.dll is registered automatically.  You can 
+move the .dll to whatever location you like, but
+you'll need to re-register it.  From the command
+line, run
+
+  REGSVR32 mzcom.dll
+
+Under Windows 95/98, REGSVR32 is in the Windows 
+System directory.  Under Windows NT/2000, REGSVR32
+is in the directory WINNT\System32.
+
+Using MzCOM
+-----------
+
+To load a COM object, COM hosts require a COM class 
+name or a ProgID.  MzCOM has the class name 
+"MzObj Class" and the ProgID "MzCOM.MzObj.<version>",
+where <version> is the version number, such as 102.
+
+From Visual BASIC, you declare a variable, then assign to it:
+
+  DIM schemeObject as MzObj
+  SET schemeObject as NEW MzObj
+
+Using PLT's MysterX 
+
+  http://www.cs.rice.edu/CS/PLT/packages/mysterx/
+
+you can load MzCOM with either
+
+  (cocreate-instance-from-coclass "MzObj Class")
+
+or
+
+  (cocreate-instance-from-progid "MzCOM.MzObj.<version>")
+
+Consult your documentation for loading MzCOM into other
+COM environments.  MzCOM is compiled as a "dual-mode"
+class, meaning its methods may be called directly or by
+using OLE Automation.
+
+Methods
+-------
+
+MzCOM has two methods, About() and Eval().
+
+About() takes no arguments and displays an informational 
+dialog.
+
+Eval() takes and returns BSTR's (BASIC strings).  The
+returned value is the result of evaluating the input
+expression, formatted as a string.  The input string
+may contain several S-expressions.  The embedded MzScheme
+updates its environment with each evaluation.  Therefore,
+it is possible to define procedures in a call to 
+Eval(), and use the procedures in subsequent calls.
+
+Events
+------
+
+MzCOM has a single event, Error().  
+
+The Error() event is passed a BSTR (BASIC string)
+that explains the error.  
+
+Evaluation thread
+-----------------
+
+The MzScheme evaluator runs in a Win32 thread created
+when MzCOM is loaded.  If an expression kills the 
+primary MzScheme thread, as in 
+
+  (kill-thread (current-thread))
+
+then the evaluator Win32 thread is also killed.  
+When that happens, subsequent calls to Eval() will fail.
+

@@ -1003,8 +1003,10 @@
  (snips-and-arrows-popup-menu-tack-all-arrows "Coller toutes les flèches")
  (snips-and-arrows-popup-menu-untack-all-arrows "Décoller toutes les flèches")
  (snips-and-arrows-user-action-disallowed-title "Insertions et effacements actuellement interdits")
- (snips-and-arrows-user-action-disallowed "Insertions et effacements sont interdits dans les editeurs qui contiennent des boîtes inserées par un outil.  Cachez toutes les boîtes avant de modifier le contenu de l'editeur.")
- (snips-and-arrows-hide-all-snips-in-editor "Cacher les boîtes de cet editeur")
+ (snips-and-arrows-user-action-disallowed "Insertions et effacements sont interdits dans les éditeurs qui contiennent des boîtes inserées par un outil.  Cachez toutes les boîtes avant de modifier le contenu de l'éditeur.")
+ (snips-and-arrows-changing-terms-warning-title "Changer les termes ne pourra être défait")
+ (snips-and-arrows-changing-terms-warning "Changer des termes dans un éditeur n'est pas une action qui peut être défaite. Vous pouvez soit annuler cette action, cacher les boîtes, et réessayer le changement, soit vous pouvez continuer le changement, auquel cas le changement ne pourra pas être défait (tous les autres changements effectués avant ou après pourront cependant toujours être défaits).")
+ (snips-and-arrows-hide-all-snips-in-editor "Cacher les boîtes de cet éditeur")
  
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Insérer une boîte XML")

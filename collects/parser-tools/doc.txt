@@ -1,12 +1,11 @@
 _lex.ss_
 A regular expression is one of the following
 character                          match the given character
-'_                                 match any character
-'eof                               match end of file
 symbol                             match the sequence of chars in the symbol
 				   beware of mzscheme converting the 
 				   symbol to all lower case
 string                             match its sequence of characters
+(eof)				   match end of file
 (symbol)                           expand the lex abbreviation named symbol
 (* re)                             match 0 or more occurances of re
 (+ re)                             match 1 or more occurances of re
@@ -53,11 +52,11 @@ Several values are also provided:
     current line
 > (position? x) the question associated with a position struct
 
-Each time the scheme code for lex is compiled (e.g. when a .ss file containing
-a (lex ...) is loaded/required) the lexer generator is run.  To avoid this
-overhead place the lexer generator into a module and compile the module to a 
-.zo with 'mzc -z filename'  Then place the resulting .zo file in a
-subdirectory named 'compiled'
+Each time the scheme code for a lexer is compiled (e.g. when a .ss
+file containing a (lex ...) is loaded/required) the lexer generator is
+run.  To avoid this overhead place the lexer into a module and compile
+the module to a .zo with 'mzc -z filename' Then place the resulting
+.zo file in a subdirectory named 'compiled'
 
 
 _yacc.ss_
@@ -131,6 +130,12 @@ value, so it is usual to return symbols only in the case of empty
 tokens).  f returns the value associated with the parse tree by the
 semantic actions.
 
+Each time the scheme code for a parser is compiled (e.g. when a .ss
+file containing a (parser ...) is loaded/required) the parser
+generator is run.  To avoid this overhead place the parser into a
+module and compile the module to a .zo with 'mzc -z filename' Then
+place the resulting .zo file in a subdirectory named 'compiled'.
+
 
 As example of both lex and yacc here is a read function that works for
 a subset of the R5RS scheme syntax: (and must read an entire file)
@@ -155,7 +160,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
       (token-BOOL #t)]
      ["#f" 
       (token-BOOL #f)]
-     [(@ "#\\" _) 
+     [(@ "#\\" (- #\000 #\377))
       (token-CHARACTER (caddr (string->list (get-lexeme))))]
      ["#\\space" 
       (token-CHARACTER #\space)]
@@ -173,7 +178,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
       'HASHOPEN]
      ["."
       'IMPROPER]
-     [eof 
+     [(eof)
       'EOF]))
   
   (define get-string-token
@@ -186,7 +191,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
   
   
   (define-lex-abbrevs
-   [initial (: (- a z) (- #\A #\Z) ! $ % & * / : < = > ? ^ #\_ ~)]
+   [initial (: (- a z) (- #\A #\Z) ! $ % & * / : < = > ? ^ _ ~)]
    [subsequent (: (initial) (digit) + - #\. @)]
    [digit (- #\0 #\9)]
    [comment (@ #\; (^ #\newline) #\newline)])
@@ -207,23 +212,33 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
   
   (define (simple-read input-port)
     (let ((ip (make-lex-buf input-port)))
-      (read-parser (lambda () (read-lexer ip)))))
-  
-  )
+      (read-parser (lambda () (read-lexer ip))))))
 
 
 
-Future additions:
+TODO:
+lexer:
+Default lex abbrevs
+
+parser:
+Increase speed of parser generator
+
+both:
+debugging
+
+
+Potential future additions:
 lexer:
 POSIX style regular expressions
+User definition of lex operators
 
 parser:
 Fisher-Burke error recovery
 Possibly change the $1 style to something like SML/NJ YACC uses
-Optimizations, possible LALR table compression
+LALR table compression
 Error checking for useless productions
 Error check for use of an end token in a production
 
 both:
 More automatic line number handling
-Code decumentation
+Code documentation

@@ -8,8 +8,6 @@
 
 ;; The input should be a syntax object which conforms to:
 ;; re = char                       match the given character
-;;    | '_                         match any character
-;;    | 'eof                       match end of file
 ;;    | (make-marker nat)          cannot match, a placeholder used in the 
 ;;                                   dfa algorithm
 ;;    | symbol                     match the sequence of chars in the symbol
@@ -84,8 +82,6 @@
   (let ((se (syntax-e s)))
     (cond
      ((char? se) (make-syms (list se) -1))
-     ((eq? se '_) (make-syms (make-range 0 255) -1))
-     ((eq? se 'eof) (make-syms eof -1))
      ((marker? se) (make-syms se -1))
      ((or (string? se) (symbol? se))
       (let ((l (string->list 
@@ -103,6 +99,7 @@
 	(cond
 	 ((and (lex-abbrev? expand) (= len-se 1))
 	  (parse (lex-abbrev-abbrev expand)))
+	 ((and (eq? oper 'eof)) (make-syms eof -1))
 	 ((and (eq? oper '*) (= 2 len-se))
 	  (make-kstar (parse (cadr se))))
 	 ((eq? oper '*)

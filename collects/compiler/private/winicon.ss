@@ -1,5 +1,6 @@
 
 (module winicon mzscheme
+  (require (lib "list.ss"))
   (provide install-icon
 	   extract-icons
 	   parse-icon
@@ -451,26 +452,32 @@
 		   (add1
 		    (hash-table-get ht c (lambda () 0)))))
 		image)
-      (let ([n 0])
-	(hash-table-for-each ht (lambda (key val)
-				  (let ([n (if (< n (sub1 num-colors))
-					       n
-					       ;; Find closest match:
-					       (let ([n 0])
-						 (let loop ([i 1])
-						   (unless (= i num-colors)
-						    (when (< (color-dist key (vector-ref table i))
-							     (color-dist key (vector-ref table n)))
-						       (set! n i))
-						    (loop (add1 i))))
-						 n))])
-				    (vector-set! table n key)
-				    (hash-table-put! map-ht key n))
-				  (when (< n (sub1 num-colors))
-			            (set! n (add1 n))))))
+      (let ([kv-sorted
+             (quicksort (hash-table-map ht cons)
+                        (lambda (a b)
+                          (< (cdr a) (cdr b))))])
+        (let ([n 0])
+          (for-each (lambda (kv)
+                      (let ([key (car kv)])
+                        (let ([n (if (< n (sub1 num-colors))
+                                     n
+                                     ;; Find closest match:
+                                     (let ([n 0])
+                                       (let loop ([i 1])
+                                         (unless (= i num-colors)
+                                           (when (< (color-dist key (vector-ref table i))
+                                                    (color-dist key (vector-ref table n)))
+                                             (set! n i))
+                                           (loop (add1 i))))
+                                       n))])
+                          (vector-set! table n key)
+                          (hash-table-put! map-ht key n))
+                        (when (< n (sub1 num-colors))
+                          (set! n (add1 n)))))
+                    kv-sorted)))
       (values (vector->list table)
-	      (map (lambda (c) (hash-table-get map-ht c)) image))))
-
+              (map (lambda (c) (hash-table-get map-ht c)) image))))
+    
   ;; Assumes that bits-per-pixel is 1, 2, 4, 8, or 32.
   ;; Also assumes that (bits-per-pixel * width) is a multiple of 8.
   (define (build-dib icon image mask)
@@ -644,18 +651,32 @@
       (integer->dword 0 o)  ; y pixels per meter
       (integer->dword 0 o)  ; used
       (integer->dword 0 o)  ; important
-      ;; Got ARGB, need RGBA; alphas are all 255
-      (let* ([rgba (string-append (substring argb 1) "\377")]
-             [mask-rgba (string-append (substring mask-argb 1) "\377")]
+      ;; Got ARGB, need BGRA
+      (let* ([flip-pixels (lambda (s)
+                            (let ([s (string-copy s)])
+                              (let loop ([p 0])
+                                (unless (= p (string-length s))
+                                  (let ([a (string-ref s p)]
+                                        [r (string-ref s (+ p 1))]
+                                        [g (string-ref s (+ p 2))]
+                                        [b (string-ref s (+ p 3))])
+                                    (string-set! s p b)
+                                    (string-set! s (+ p 1) g)
+                                    (string-set! s (+ p 2) r)
+                                    (string-set! s (+ p 3) a)
+                                    (loop (+ p 4)))))
+                              s))]
+             [rgba (flip-pixels argb)]
+             [mask-rgba (flip-pixels mask-argb)]
              [row-size (if (zero? (modulo w 32))
                            w
                            (+ w (- 32 (remainder w 32))))]
              [mask (make-string (* h row-size 1/8) #\000)])
         (let loop ([i (* w h 4)])
           (unless (zero? i)
-            (let ([mr (string-ref mask-rgba (- i 4))]
+            (let ([mr (string-ref mask-rgba (- i 2))]
                   [mg (string-ref mask-rgba (- i 3))]
-                  [mb (string-ref mask-rgba (- i 2))]
+                  [mb (string-ref mask-rgba (- i 4))]
                   [a (- i 1)])
               (let ([alpha (- 255
                               (floor (/ (+ (char->integer mr)

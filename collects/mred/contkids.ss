@@ -114,7 +114,7 @@
     ; through this function to create panel%.  (Yes, this is
     ; cheating.  So what's your point?)
     (define make-item%
-      (opt-lambda (item% stretch-x stretch-y make-default-size)
+      (lambda (item% stretch-x stretch-y make-default-size)
 	(class item% args
 	  (inherit
 	    get-width
@@ -593,7 +593,7 @@
 		    (list* parent callback label val x y
 			   const-default-size const-default-size args))))
     
-    (define canvas-default-size 30)
+    (define canvas-default-size 50)
     ; an arbitrary default size for canvases to avoid initial size problems
     ; under xt.
     

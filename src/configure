@@ -5192,7 +5192,7 @@ if test "${enable_shared}" = "yes" ; then
     mkdir "lt"
   fi
   abssrcdir=`(cd ${srcdir}; pwd)`
-  (cd lt; sh ${abssrcdir}/lt/configure --enable-shared)
+  (cd lt; sh ${abssrcdir}/lt/configure --enable-shared --disable-static)
   LTDIR=`pwd`/lt
   absprefix=`(cd ${prefix}; pwd)`
   AR="${LTDIR}/libtool $CC -rpath ${absprefix}/lib -o"

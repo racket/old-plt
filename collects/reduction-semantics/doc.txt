@@ -494,6 +494,12 @@ produces this output:
 
 This library also provides:
 
+> (plt-subst (match-pattern subst-rhs ...) ...)      SYNTAX
+
+This is identical to subst, described above, except that
+the pattern language used is that from (lib "plt-match.ss"), 
+instead of (lib "match.ss").
+
 > subst/proc
 > alpha-rename 
 > free-vars/memoize

@@ -32,7 +32,7 @@
                         (lc-subst x arg body))))
   
   (define lc-subst
-    (subst
+    (plt-subst
      [(? symbol?) (variable)]
      [(? number?) (constant)]
      [`(lambda (,x) ,b)

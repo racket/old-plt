@@ -1,8 +1,10 @@
 (module subst mzscheme
   (require (lib "match.ss")
+           (prefix plt: (lib "plt-match.ss"))
            (lib "list.ss"))
   
-  (provide subst all-vars variable subterm subterms constant build
+  (provide plt-subst subst
+           all-vars variable subterm subterms constant build
            subst/proc alpha-rename free-vars/memoize)
   
   (define-syntax (all-vars stx) (raise-syntax-error 'subst "all-vars out of context" stx))
@@ -12,63 +14,70 @@
   (define-syntax (constant stx) (raise-syntax-error 'subst "constant out of context" stx))
   (define-syntax (build stx) (raise-syntax-error 'subst "build out of context" stx))
   
-  (define-syntax (subst stx)
+  (define-syntax (make-subst stx)
     (syntax-case stx ()
-      [(_ (pat rhs ...) ...)
-       (with-syntax ([term/arg #'term/arg]
-                     [constant/arg #'constant/arg]
-                     [variable/arg #'variable/arg]
-                     [combine/arg #'combine/arg]
-                     [sub-piece/arg #'subpiece/arg])
-         (define (handle-rhs rhs-stx)
-           (syntax-case rhs-stx (all-vars build subterm subterms variable constant)
-             [((all-vars all-vars-exp) (build build-exp) sub-pieces ...)
-              (with-syntax ([(sub-pieces ...)
-                             (map (lambda (subterm-stx)
-                                    (syntax-case subterm-stx (subterm subterms)
-                                      [(subterm vars body) (syntax (list (sub-piece/arg vars body)))]
-                                      [(subterms vars terms) 
-                                       (syntax 
-                                        (let ([terms-var terms])
-                                          (unless (list? terms-var)
-                                            (error 'subst
-                                                   "expected a list of terms for `subterms' subclause, got: ~e"
-                                                   terms-var))
-                                          (map (lambda (x) (sub-piece/arg vars x))
-                                               terms-var)))]
-                                      [else (raise-syntax-error 
-                                             'subst 
-                                             "unknown all-vars subterm"
-                                             stx
-                                             subterm-stx)]))
-                                  (syntax->list (syntax (sub-pieces ...))))])
-                (syntax
-                 (apply combine/arg
-                        build-exp
-                        all-vars-exp
-                        (append sub-pieces ...))))]
-             [((all-vars) sub-pieces ...)
-              (raise-syntax-error 'subst "expected all-vars must have an argument" stx rhs-stx)]
-             [((all-vars all-vars-exp) not-build-clause anything ...)
-              (raise-syntax-error 'subst "expected build clause" (syntax not-build-clause))]
-             [((all-vars all-vars-exp))
-              (raise-syntax-error 'subst "missing build clause" (syntax (all-vars all-vars-exp)))]
-             [((constant)) 
-              (syntax (constant/arg term/arg))]
-             [((variable))
-              (syntax (variable/arg (lambda (x) x) term/arg))]
-             [(unk unk-more ...)
-              (raise-syntax-error 'subst "unknown clause" (syntax unk))]))
-         (with-syntax ([(expanded-rhs ...)
-                        (map handle-rhs (syntax->list (syntax ((rhs ...) ...))))])
-           (syntax
-            (let ([separate
-                   (lambda (term/arg constant/arg variable/arg combine/arg sub-piece/arg)
-                     (match term/arg
-                       [pat expanded-rhs] ...
-                       [else (error 'subst "no matching clauses for ~s\n" term/arg)]))])
-              (lambda (var val exp)
-                (subst/proc var val exp separate))))))]))
+      [(_ subst match)
+       (syntax
+        (define-syntax (subst stx)
+          (syntax-case stx ()
+            [(_ (pat rhs (... ...)) (... ...))
+             (with-syntax ([term/arg #'term/arg]
+                           [constant/arg #'constant/arg]
+                           [variable/arg #'variable/arg]
+                           [combine/arg #'combine/arg]
+                           [sub-piece/arg #'subpiece/arg])
+               (define (handle-rhs rhs-stx)
+                 (syntax-case rhs-stx (all-vars build subterm subterms variable constant)
+                   [((all-vars all-vars-exp) (build build-exp) sub-pieces (... ...))
+                    (with-syntax ([(sub-pieces (... ...))
+                                   (map (lambda (subterm-stx)
+                                          (syntax-case subterm-stx (subterm subterms)
+                                            [(subterm vars body) (syntax (list (sub-piece/arg vars body)))]
+                                            [(subterms vars terms) 
+                                             (syntax 
+                                              (let ([terms-var terms])
+                                                (unless (list? terms-var)
+                                                  (error 'subst
+                                                         "expected a list of terms for `subterms' subclause, got: ~e"
+                                                         terms-var))
+                                                (map (lambda (x) (sub-piece/arg vars x))
+                                                     terms-var)))]
+                                            [else (raise-syntax-error 
+                                                   'subst 
+                                                   "unknown all-vars subterm"
+                                                   stx
+                                                   subterm-stx)]))
+                                        (syntax->list (syntax (sub-pieces (... ...)))))])
+                      (syntax
+                       (apply combine/arg
+                              build-exp
+                              all-vars-exp
+                              (append sub-pieces (... ...)))))]
+                   [((all-vars) sub-pieces (... ...))
+                    (raise-syntax-error 'subst "expected all-vars must have an argument" stx rhs-stx)]
+                   [((all-vars all-vars-exp) not-build-clause anything (... ...))
+                    (raise-syntax-error 'subst "expected build clause" (syntax not-build-clause))]
+                   [((all-vars all-vars-exp))
+                    (raise-syntax-error 'subst "missing build clause" (syntax (all-vars all-vars-exp)))]
+                   [((constant)) 
+                    (syntax (constant/arg term/arg))]
+                   [((variable))
+                    (syntax (variable/arg (lambda (x) x) term/arg))]
+                   [(unk unk-more (... ...))
+                    (raise-syntax-error 'subst "unknown clause" (syntax unk))]))
+               (with-syntax ([(expanded-rhs (... ...))
+                              (map handle-rhs (syntax->list (syntax ((rhs (... ...)) (... ...)))))])
+                 (syntax
+                  (let ([separate
+                         (lambda (term/arg constant/arg variable/arg combine/arg sub-piece/arg)
+                           (match term/arg
+                             [pat expanded-rhs] (... ...)
+                             [else (error 'subst "no matching clauses for ~s\n" term/arg)]))])
+                    (lambda (var val exp)
+                      (subst/proc var val exp separate))))))])))]))
+  
+  (make-subst subst match)
+  (make-subst plt-subst plt:match)
   
   (define (subst/proc var val exp separate)
     (let* ([free-vars-cache (make-hash-table)]

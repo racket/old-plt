@@ -241,6 +241,7 @@ typedef struct System_Child {
 #  define FD_NONBLOCKING FNDELAY
 # endif
 typedef struct Scheme_FD {
+  MZTAG_IF_REQUIRED
   int fd;
   int bufcount, buffpos;
   unsigned char buffer[MZPORT_FD_BUFFSIZE];

@@ -212,11 +212,12 @@
 	    (make-response/full 200 "Okay"
 				(current-seconds)
 				"application/data"
-				`(("Content-length: " ,(string-length data))
-				  ("Content-disposition: " 
-				   (format "attachment; filename=~s"
-					   (let-values ([(base name dir?) (split-path tag)])
-					     name))))
+				`((Content-length . ,(string-length data))
+				  (Content-disposition 
+				   .
+				   ,(format "attachment; filename=~s"
+					    (let-values ([(base name dir?) (split-path tag)])
+					      name))))
 				(list data)))))
 
       (define (status-page status for-handin)

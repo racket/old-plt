@@ -469,18 +469,12 @@ void wxCanvas::GetVirtualSize(int* x, int* y)
 //-----------------------------------------------------------------------------
 void wxCanvas::ViewStart(int* x, int* y)
 {
-	int xx = 0;
-	int yy = 0;
-
-	if (cScroll)
-	{
-		wxScrollData* scrollData = cScroll->GetScrollData();
-		xx = scrollData->GetValue(wxWhatScrollData::wxPositionH);
-		yy = scrollData->GetValue(wxWhatScrollData::wxPositionV);
-	}
-	
-	*x = xx;
-	*y = yy;
+  wxDC* theDC = GetDC();
+  if (theDC) {
+    *x = -(theDC->device_origin_x);
+    *y = -(theDC->device_origin_y);
+  } else
+    *x = *y = 0;
 }
 
 //-----------------------------------------------------------------------------

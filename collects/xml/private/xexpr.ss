@@ -50,8 +50,8 @@
 	     [(pcdata? x) (pcdata-string x)]
 	     [(entity? x) (entity-text x)]
 	     [(or (comment? x) (pi? x)) x]
-	     [(document? x) (error 'xml->xexpr "Expected content, given ~a~nUse document-element to extract the content." x)]
-	     [else (error 'xml->xexpr "Expected content, given ~a" x)]))))
+	     [(document? x) (error 'xml->xexpr "Expected content, given ~e~nUse document-element to extract the content." x)]
+	     [else (error 'xml->xexpr "Expected content, given ~e" x)]))))
       
       ;; attribute->srep : Attribute -> Attribute-srep
       (define (attribute->srep a)
@@ -60,7 +60,7 @@
       ;; srep->attribute : Attribute-srep -> Attribute
       (define (srep->attribute a)
 	(unless (and (pair? a) (pair? (cdr a)) (null? (cddr a)) (symbol? (car a)) (string? (cadr a)))
-	  (error 'srep->attribute "expected (cons Symbol String) given ~a" a))
+	  (error 'srep->attribute "expected (cons Symbol String) given ~e" a))
 	(make-attribute 'scheme 'scheme (car a) (cadr a)))
       
       ;; xexpr->xml : Xexpr -> Content
@@ -70,7 +70,7 @@
 	 [(pair? x)
 	  (let ([f (lambda (atts body)
 		     (unless (list? body)
-		       (error 'xexpr->xml "expected a list of xexprs a the body in ~a" x))
+		       (error 'xexpr->xml "expected a list of xexprs a the body in ~e" x))
 		     (make-element 'scheme 'scheme (car x)
 				   atts
 				   (map xexpr->xml body)))])

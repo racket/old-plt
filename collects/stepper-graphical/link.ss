@@ -59,7 +59,8 @@
                 zodiac
                 utils
                 error
-                framework)]
+                framework
+                drscheme)]
         [mred-extensions : stepper:mred-extensions^
                  ((require-library-unit/sig "mred-extensions.ss" "stepper-graphical")
                   mred

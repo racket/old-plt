@@ -12,7 +12,7 @@
 	(printf "~a~n" l)
 	;; start skipping lines, except --prefix:
 	(loop 1)]
-       [(and skip (regexp-match "^EOF$" l))
+       [(and skip (regexp-match "^(_AC)?EOF$" l))
 	;; Done skipping. Output line, then add blank lines
 	;; to keep the rest of the file in sync.
 	(printf "~a~n" l)

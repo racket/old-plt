@@ -91,7 +91,7 @@ fi
 
 if test "${enable_gl}" = "" ; then
   if test "$OS" = "Linux" ; then
-    enable_gl=yes
+    enable_gl=maybe
   fi
 fi
 
@@ -513,6 +513,16 @@ fi
 
 ################ X OpenGL ##################
 
+if test "${enable_gl}" = "maybe" ; then  
+  if test "${enable_mred}" = "yes" ; then  
+    # Check for header
+    AC_CHECK_HEADER(GL/glx.h, enable_gl=yes, enable_gl=no)
+    if test "${enable_gl}" = "no" ; then  
+     echo "could not find GL/glx.h header; disabling GL support"
+    fi
+  fi
+fi
+
 if test "${enable_gl}" = "yes" ; then  
   if test "${enable_mred}" = "yes" ; then  
     if test "${GL_NEEDS_PTHREAD}" = "yes" ; then
@@ -536,6 +546,9 @@ if test "${enable_gl}" = "yes" ; then
           MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576"
           GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
           MROPTIONS="$MROPTIONS -DUSE_GL"
+        else
+          echo "could not link to GL libraries; disabling GL support"
+          enable_gl=no
         fi
       fi
     fi

@@ -61,11 +61,11 @@ Using PLT's MysterX, available at
 
 you can load MzCOM with either
 
-  (cocreate-instance-from-coclass "MzObj Class")
+  (cci/coclass "MzObj Class")
 
 or
 
-  (cocreate-instance-from-progid "MzCOM.MzObj.<version>")
+  (cci/progid "MzCOM.MzObj.<version>")
 
 Consult your documentation for loading MzCOM into other
 COM environments.  MzCOM is compiled as a "dual-mode"

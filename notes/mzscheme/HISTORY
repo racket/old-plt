@@ -2,8 +2,19 @@
 Version 102/5:
 
  * `with-input-from-file' and `with-output-to-file' close the port
-   when control leaves the dynamic extent of the call (normally,
-   through an exception, or through a general continuation jump).
+   when control leaves the dynamic extent of the call (either
+   normally, through an exception, or through a general continuation
+   jump).
+
+ * Added a `detail' field to `exn:i/o:filesystem'. This is a
+   compromise between the version 53 exn system, which was too
+   detailed, and the version 101 system, which doesn't provide enough
+   information (e.g., to implement `make-temporary-file').
+
+   The value of the `detail' field is currently either
+   'ill-formed-path, 'already-exists, 'wrong-version, or
+   'generic-failure. This set may be expanded in the future, such that
+   some generic failures turn into specific failures.
 
  * Added `square' to functio.ss.
 
@@ -46,10 +57,11 @@ Version 102/1:
    default is #t, which means parse as inexact (normal behavior). #f
    means parse as exact.
 
-Version 102, ??
+Version 102, ??, 2000
 with-input-from-file and with-output-to-file close the port when
  control leaves the dynamic extent of the call (normally, through an
  exception, or through a general continuation jump).
+Added detail field to exn:i/o:filesystem
 Added read-decimal-as-inexact parameter
 Fixed number reader to allow +inf.0, -inf.0, and +nan.0 in
  complex constants
@@ -57,7 +69,9 @@ Fixed bugs in number reader for hexadecimal numbers containing `.'
  and/or `s'/`l'-based exponents; note that `#e#x+e.s+e@-e.l-e'
  is a legal number(!)
 Fixed reading from special devices, such as /dev/null and /dev/zero,
- in Solaris and HP/UX.
+ in Solaris and HP/UX
+Fixed blocking output (to stdout, stderr, or a process port) so that
+ only the writing thread is blocked
 Added square to MzLib's function.ss
 Inside MzScheme: scheme_basic_env() initializes break-enabled
  to #f instead of #t

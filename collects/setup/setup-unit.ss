@@ -10,7 +10,7 @@
 	   (lib "cm.ss")
 	   (lib "port.ss")
            (lib "match.ss")
-           (lib "util.ss" "planet")
+           #;(lib "util.ss" "planet") ;; needed for planet integration to convert planet spec to directory
            
 	   "option-sig.ss"
 	   (lib "sig.ss" "compiler")
@@ -176,8 +176,8 @@
 		   (car c)
 		   c)))
       
-      (define planet-dirs-to-compile
-        (map (lambda (spec) (apply planet->cc spec))
+      (define planet-dirs-to-compile '()
+        #;(map (lambda (spec) (apply planet->cc spec))
              (if (and (null? x-specific-collections) (null? x-specific-planet-dirs))
                  (get-installed-planet-archives)
                  x-specific-planet-dirs)))
@@ -263,7 +263,7 @@
 		     (list cc)
 		     (loop (cdr l)))))))
 
-      (set! planet-dirs-to-compile
+      #;(set! planet-dirs-to-compile
 	    (let loop ([l planet-dirs-to-compile])
 	      (if (null? l)
 		  null

@@ -8,7 +8,7 @@ ODBCVER=0x0351
 # will have to change if non-MS driver manager
 ODBC_LIBS=odbc32.lib odbccp32.lib 
 
-all : srpersist.dll
+all : srpmain.dll
 
 clean :
 	-@erase srpersist.obj
@@ -28,20 +28,22 @@ LINK32=$(MZC)
 LINK32_FLAGS=
 LINK32_LIBS= \
 	kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
-	advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib 
-	kernel32.lib user32.lib gdi32.lib winspool.lib \
+	advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
 	comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib \
 	uuid.lib $(ODBC_LIBS)
 LINK32_OBJS= \
 	srpersist.obj srptypes.obj srpbuffer.obj
 
-all : srpersist.dll
+all : srpmain.dll
 
-srpersist.dll : $(DEF_FILE) $(LINK32_OBJS)
-	$(LINK32) $(LINK32_FLAGS) --ld srpersist.dll $(LINK32_OBJS) $(LINK32_LIBS)
+srpmain.dll : $(DEF_FILE) $(LINK32_OBJS)
+	$(LINK32) $(LINK32_FLAGS) --ld srpmain.dll $(LINK32_OBJS) $(LINK32_LIBS)
 
-install : srpersist.dll
-	copy srpersist.dll ..\..\collects\srpersist\compiled\native\win32\i386
+install : srpmain.dll
+	@ -255 mkdir ..\..\collects\srpersist\compiled\native
+	@ -255 mkdir ..\..\collects\srpersist\compiled\native\win32
+	@ -255 mkdir ..\..\collects\srpersist\compiled\native\win32\i386
+	copy srpmain.dll ..\..\collects\srpersist\compiled\native\win32\i386
 
 srpersist.obj : srpersist.cxx srpersist.h srptypes.h srpprims.tbl srpconsts.tbl srpinfo.tbl srpstructs.tbl srpexns.tbl
 

@@ -3954,8 +3954,6 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   SQLUSMALLINT option;
   SRP_CONST_TYPE optionType;
   SQLUINTEGER number;
-  SQLUINTEGER *numpointer;
-  SQLUSMALLINT *smallnumpointer;
   SRP_NAMED_TYPED_CONSTANT *p;    
   Scheme_Object *retval;
   RETURN_CODE retcode;
@@ -4306,7 +4304,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
 Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDBC connectionHandle;
-  SQLINTEGER option;
+  SQLUSMALLINT option;
   char *optionString;
   SRP_CONST_TYPE optionType;
   SQLUINTEGER val;
@@ -4331,7 +4329,10 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
 			optionString);
   }
 
-  option = p->val;
+  // p->val is an SQLINTEGER, but all the connection options
+  // are between 101 and 112, so this cast is OK
+
+  option = (SQLUSMALLINT)(p->val);
   optionType = p->type;
 
   connectionHandle = SQL_HDBC_VAL(argv[0]);
@@ -5095,8 +5096,6 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
   SRP_NAMED_TYPED_CONSTANT *p;    
   SRP_CONST_TYPE optionType;
   SQLUINTEGER number;
-  SQLUINTEGER boolVal;
-  SQLUINTEGER paramSetSize;
   RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {

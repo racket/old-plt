@@ -83,12 +83,12 @@ typedef struct _srp_struct_ {
 
 typedef struct _named_constant_ {
   char *scheme_name;
-  SQLINTEGER val;
+  SQLUINTEGER val;
 } SRP_NAMED_CONSTANT;
 
 typedef struct _named_small_constant_ {
   char *scheme_name;
-  SQLSMALLINT val;
+  SQLUSMALLINT val;
 } SRP_NAMED_SMALL_CONSTANT;
 
 typedef  enum _const_type_ { 
@@ -123,7 +123,7 @@ typedef  enum _const_type_ {
 
 typedef struct _named_typed_constant_ {
   char *scheme_name;
-  SQLINTEGER val;
+  SQLUINTEGER val;
   SRP_CONST_TYPE type;
 } SRP_NAMED_TYPED_CONSTANT;
 

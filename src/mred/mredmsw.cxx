@@ -275,6 +275,7 @@ int MrEdCheckForBreak(void)
 int MrEdCheckForBreak(void)
 {
   HWND w = GetActiveWindow();
+
   if (MrEdGetContext() != GetContext(w))
     return 0;
 

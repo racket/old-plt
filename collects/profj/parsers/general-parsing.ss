@@ -1,7 +1,8 @@
 #cs
 (module general-parsing mzscheme
   
-  (require (lib "lex.ss" "parser-tools"))
+  (require (lib "lex.ss" "parser-tools")
+           (lib "string.ss"))
   (require "../ast.ss" "../parameters.ss" "lexer.ss")
   
   (provide (all-defined))
@@ -151,6 +152,14 @@
   (define-token? dot? 'PERIOD)
   (define-token? comma? 'COMMA)
   
+  (define (separator? tok)
+    (or (open-separator? tok) (close-separator? tok)
+        (memq (get-token-name tok) `(SEMI_COLON PERIOD COMMA))))
+  (define (open-separator? tok)
+    (memq (get-token-name tok) `(O_PAREN O_BRACE O_BRACKET)))
+  (define (close-separator? tok)
+    (memq (get-token-name tok) `(C_PAREN C_BRACE C_BRACKET)))
+  
   ;top-level keywords
   (define-sym-token? package-token? 'package)
   (define-sym-token? import-token? 'import)
@@ -176,7 +185,7 @@
   (define-sym-token? else? 'else)
   (define-sym-token? finally? 'finally)
   (define-sym-token? for-token? 'for)
-  (define-sym-token? goto? 'goto); Ask Scott about this.
+  (define-sym-token? goto? 'goto)
   (define-sym-token? if-token? 'if)
   (define-sym-token? return-token? 'return)
   (define-sym-token? switch-token? 'switch)
@@ -193,4 +202,24 @@
   (define-sym-token? cond? '?)
   (define-token? id-token? 'IDENTIFIER)
   
+  ;keyword? lex-token -> bool
+  (define (keyword? t)
+    (or (memq (get-token-name t) `(? this super new instanceof while try throw synchronized switch return if goto for finally
+                                     else do default continue catch case break void throws const interface implements extends
+                                     class import package))
+        (assignment-operator? t)
+        (prim-type? t)
+        (modifier? t)))
+  
+  ;only looks for incorrect capitalization at this point, intend to add 1-off spelling errors for at least some keywords
+  ;close-to-keyword? token (opt symbol )-> bool
+  (define (close-to-keyword? t args)
+    (if (id-token? t)
+        (let ((s (token-value t)))
+          (string-lowercase! s)
+          (if (null? args)
+              (keyword? (string->symbol s))
+              (eq? s (car args))))
+        #f))
+                                  
   )

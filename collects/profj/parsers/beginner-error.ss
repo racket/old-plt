@@ -13,8 +13,20 @@
     (let ((port ((parse-error-port))))
       (port-count-lines! port)
       (let ((getter (lambda () (get-token port))))
-        (parse-definition (getter) 'start getter))))
+        (parse-definition null (getter) 'start getter))))
 
+  ;find-error-interaction: -> (U bool or token)
+  ;Should not return
+  (define (find-beginner-error-interactions)
+    (let ((port ((parse-error-port))))
+      (port-count-lines! port)
+      (let* ((getter (lambda () (get-token port)))
+             (first-tok (getter)))
+        (case (get-token-name (car first-tok))
+          ((EOF) #t)
+          ((if return) (parse-statement first-tok 'start getter))
+          (else (parse-expression first-tok 'start getter))))))
+  
   ;temporary default error: used by errors that haven't had specfic error stuff done for them
   (define (raise-error msg start-token end-token)
     (if (null? end-token)
@@ -35,60 +47,104 @@
                           (- (position-offset (caddr end-token))
                              (position-offset (cadr start-token))))))
 
-  ;find-error-interaction: -> void
-  (define (find-beginner-error-interactions)
-    (let ((port ((parse-error-port))))
-      (port-count-lines! port)
-      (let* ((getter (lambda () (get-token port)))
-             (first-tok (getter)))
-        (case (get-token-name (car first-tok))
-          ((EOF) (void))
-          ((if return) (parse-statement first-tok 'start getter))
-          (else (parse-expression first-tok 'start getter)))
-        #t)))
-      
+  ;parse-error: string position position
+  (define (parse-error message start stop)
+    (raise-read-error message
+                      (file-path)
+                      (position-line start)
+                      (position-col start)
+                      (+ (position-offset start) (interactions-offset))
+                      (- (position-offset start)
+                         (position-offset stop))))
+
+  ;token = (list lex-token position position)
+  (define (get-tok token) (car token))
+  (define (get-start token) (cadr token))
+  (define (get-end token) (caddr token))
   
-  ;parse-definition: token symbol (-> token) -> void
-  (define (parse-definition cur-tok state getter)
-    (let* ((tok (car cur-tok))
+  (define (output-format tok)
+    (cond
+      ((separator? tok) 
+       (case (get-token-name tok)
+         ((O_BRACE) "{")
+         ((C_BRACE) "}")
+         ((O_PAREN) "(")
+         ((C_PAREN) ")")
+         ((O_BRACKET) "[")
+         ((C_BRACKET) "]")
+         ((SEMI_COLON) ";")
+         ((COMMA) ",")
+         ((PERIOD) ".")))
+      ((keyword? tok) (format "keyword ~a" (get-token-name tok)))
+      ((id-token? tok) (format "identifier ~a" (token-value tok)))
+      ((literal-token? tok) (format "value ~a" (token-value tok)))))
+  
+  ;parse-definition: token token symbol (-> token) -> void
+  (define (parse-definition pre cur-tok state getter)
+    (let* ((tok (get-tok cur-tok))
            (tok-kind (get-token-name tok))
-           (tok-start (cadr cur-tok))
-           (tok-stop (caddr cur-tok)))
+           (start (get-start cur-tok))
+           (stop (get-end cur-tok)))
       
       (case state
         ((start) 
          (case tok-kind
-           ((EOF) #t);(error 'parse-definition-beginner "Internal Error: Unexpectedly Succeeded in presence of error"))
-           ((class) (parse-definition (getter) 'class-id getter))
+           ((EOF) #t)
+           ((class) (parse-definition cur-tok (getter) 'class-id getter))
            ((abstract) 
-            (let ((next-tok (getter)))
+            (let* ((next (getter))
+                   (next-tok (get-tok next)))                   
               (cond
-                ((class? (car next-tok)) (parse-definition next-tok state getter))
-                ((eof? (car next-tok)) (raise-error 'eof-instead-of-class cur-tok next-tok))
-                (else (raise-error 'abstract-at-top-level-not-followed-by-class cur-tok next-tok)))))
-           (else (raise-error 'class-not-found-at-top-level cur-tok null))))
+                ((class? next-tok) (parse-definition cur-tok next state getter))
+                ((eof? next-tok) (parse-error "abstract should be followed by class definition" start stop))
+                (else 
+                 (if (close-to-keyword? next-tok 'class)
+                     (parse-error (format "expected 'class' after 'abstract,' found ~a which is incorrectly spelled or capitalized"
+                                          (token-value next-tok))
+                                  start
+                                  (get-end next))
+                     (parse-error (format "abstract muct be immediately followed by 'class' not ~a" (output-format next-tok))
+                                  start
+                                  (get-end next)))))))
+           (else 
+            (if (close-to-keyword? tok 'class)
+                (parse-error (format "expected 'class' to start next definition, found ~a which is incorrectly spelled or capitalized"
+                                     (token-value tok))
+                             start stop)
+                (parse-error (format "expected 'class' to start next definition, not ~a" (output-format tok))
+                             start stop)))))
         ((class-id)
          (case tok-kind
-           ((EOF) (raise-error 'eof-instead-of-classname cur-tok null))
+           ((EOF) (parse-error "'class' should be followed by a class name and body" (get-start pre) (get-end pre)))
            ((IDENTIFIER) 
             (let ((next-tok (getter)))
               (cond
-                ((eof? (car next-tok)) (raise-error 'eof-after-class-name cur-tok next-tok))
-                ((extends? (car next-tok)) (parse-definition next-tok 'extends getter))
-                ((o-brace? (car next-tok)) (parse-definition next-tok 'body getter))
-                (else (raise-error 'brace-or-extends-not-found-after-class-id cur-tok next-tok)))))
+                ((eof? (car next-tok)) (parse-error (format "expected class body after ~a" (token-value next-tok)) start stop))
+                ((extends? (car next-tok)) (parse-definition cur-tok next-tok 'extends getter))
+                ((o-brace? (car next-tok)) (parse-definition cur-tok next-tok 'body getter))
+                (else 
+                 (cond
+                   ((close-to-keyword? tok 'extends) 
+                    (parse-error (format "found ~a, which is similar to 'extends'" (token-value tok)) start stop))
+                   ((open-separator? tok)
+                    (parse-error (format "expected { to begin class body, but found ~a" (output-format tok)) start stop))
+                   ((close-separator? tok)
+                    (parse-error (format "Class body must be opened with { before being closed, found ~a" 
+                                         (output-format tok)) start stop))
+                   (else
+                    (raise-error 'brace-or-extends-not-found-after-class-id cur-tok next-tok)))))))
            (else (raise-error 'class-identifier-not-found cur-tok null))))
         ((extends) 
          (let ((next-tok (getter)))
            (cond
              ((eof? (car next-tok)) (raise-error 'eof-after-extend cur-tok next-tok))
-             ((id-token? (car next-tok)) (parse-definition (getter) 'body getter))
+             ((id-token? (car next-tok)) (parse-definition next-tok (getter) 'body getter))
              ((o-brace? (car next-tok)) (raise-error 'got-o-brace-after-extend-not-name cur-tok next-tok))
              (else (raise-error 'extends-identifier-not-found cur-tok next-tok)))))
         ((body)
          (case tok-kind
            ((EOF) (raise-error 'eof-instead-of-classbody cur-tok null))
-           ((O_BRACE) (parse-definition (parse-members (getter) 'start getter) 'body-end getter))
+           ((O_BRACE) (parse-definition cur-tok (parse-members (getter) 'start getter) 'body-end getter))
            (else (raise-error 'body-not-started-with-o-brace cur-tok null))))
         ((body-end)
          (case tok-kind
@@ -96,7 +152,7 @@
             (let ((next-tok (getter)))
               (cond
                 ((or (eof? (car next-tok)) (class? (car next-tok)) (abstract? (car next-tok)))
-                 (parse-definition next-tok 'start getter))
+                 (parse-definition cur-tok next-tok 'start getter))
                 (else (raise-error 'expected-new-class-or-nothing-after-body cur-tok next-tok)))))
            (else (raise-error 'expected-a-c-brace-to-end-closest-class cur-tok null)))))))
               
@@ -250,7 +306,7 @@
         ((IDENTIFIER) 
          (let ((next-tok (getter)))
            (if (dot? (car next-tok))
-               (parse-name (getter) 'start getter)
+               (parse-name (getter) getter)
                next-tok)))
         ((PERIOD)
          (raise-error 'cannot-have-two-dots-after-each-other cur-tok null))

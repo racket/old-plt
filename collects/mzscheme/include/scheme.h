@@ -695,8 +695,8 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #define SCHEME_OBJ_CLASS(obj) ((Scheme_Object *)((Scheme_Class_Object *)(obj))->sclass)
 #define SCHEME_OBJ_DATA(obj)  (((Scheme_Class_Object *)(obj))->primdata)
 #define SCHEME_OBJ_FLAG(obj)  (((Scheme_Class_Object *)(obj))->primflag)
-#define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port)(obj))->port_data)
-#define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port)(obj))->port_data)
+#define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
+#define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
 #define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))
 #define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
 

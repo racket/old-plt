@@ -72,7 +72,9 @@
 				user)]
 	       [l (with-handlers ([not-break-exn? (lambda (x) null)])
                     (parameterize ([current-directory dir])
-                      (filter file-exists? (directory-list))))])
+                      (filter (lambda (f)
+                                (and (file-exists? f) (not (equal? f "grade"))))
+                              (directory-list))))])
 	  (if (pair? l)
 	      (cdr
 	       (apply

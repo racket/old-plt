@@ -58,9 +58,11 @@
 			       void
 			       (lambda ()
 				 (with-handlers ([exn:break? void])
-				   (ready-for-break)
-				   (copy-port cin in)))
-			       (lambda () (close-output-port in)))))])
+				   (ready-for-break #t)
+				   (copy-port cin in)
+				   (ready-for-break #f)))
+			       (lambda () (close-output-port in)))
+			   (ready-for-break #t)))])
 	  (and get-thread? t))
 	in))
 
@@ -124,7 +126,10 @@
 			 (if-stream-out cerr)
 			 exe args)])
 	    (let ([ot (streamify-out cout out #t)]
-		  [it (streamify-in cin in #t (lambda () (semaphore-post it-ready)))]
+		  [it (streamify-in cin in #t (lambda (ok?) 
+						(if ok?
+						    (semaphore-post it-ready)
+						    (semaphore-wait it-ready))))]
 		  [et (streamify-out cerr err #t)])
 	      (subprocess-wait subp)
 	      (when it
@@ -135,7 +140,13 @@
 	      (when (thread? ot)
 		(thread-wait ot))
 	      (when (thread? et)
-		(thread-wait et)))
+		(thread-wait et))
+	      (when err 
+		(close-input-port err))
+	      (when out
+		(close-input-port out))
+	      (when in
+		(close-output-port in)))
 	    (zero? (subprocess-status subp))))))
 
   (define (system str)

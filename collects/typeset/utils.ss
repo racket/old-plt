@@ -453,8 +453,12 @@
     (let* ([margin 2]
 	   [get-w/h/d/s/l/r
 	    (lambda (dc)
-	      (let-values ([(width height descent space) (send dc get-text-extent "a")])
-		(values (+ margin (* 3 width) margin) height descent space 0 0)))])
+	      (let ([old-font (send dc get-font)])
+		(send dc set-font (send the-font-list find-or-create-font (typeset-size)
+					'roman 'normal 'normal #f))
+		(let-values ([(width height descent space) (send dc get-text-extent "a")])
+		  (values (+ margin (* 4 width) margin) height descent space 0 0)
+		  (send dc set-font old-font))))])
       (drawing "robby:ellipses"
 	       get-w/h/d/s/l/r
 	       (lambda (dc x y)
@@ -477,7 +481,7 @@
 		   (send dc set-brush (send the-brush-list find-or-create-brush "BLACK" 'solid))
 
 		   (draw-dot l yp)
-		   (draw-dot (+ (floor (/ (+ l r) 2))) yp)
+		   (draw-dot (/ (+ l r) 2) yp)
 		   (draw-dot r yp)
 
 		   (send dc set-brush old-brush)

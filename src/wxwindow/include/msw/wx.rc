@@ -106,8 +106,8 @@ WXCURSOR_WATCH          CURSOR  DISCARDABLE     "WATCH1.CUR"
 //
 
 wxDEFAULT_FRAME               ICON std.ico
-wxDEFAULT_MDIPARENTFRAME      ICON mdi.ico
-wxDEFAULT_MDICHILDFRAME       ICON child.ico
+wxDEFAULT_MDIPARENTFRAME      ICON std.ico
+wxDEFAULT_MDICHILDFRAME       ICON std.ico
 
 //////////////////////////////////////////////////////////////////////////////
 // User contribution

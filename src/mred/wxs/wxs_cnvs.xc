@@ -42,6 +42,13 @@ static void wxThisContextCurrent(wxCanvas* c)
 #endif
 }
 
+static void wxSetBackgroundToGray(wxCanvas *c)
+{
+#ifdef wx_xt
+  c->SetBackgroundToGray();
+#endif
+}
+
 @BEGINSYMBOLS canvasStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
 @SYM "vscroll" : wxVSCROLL
@@ -84,6 +91,8 @@ static void wxThisContextCurrent(wxCanvas* c)
 
 @ m "swap-buffers" : void wxSwapBuffers()
 @ m "this-context-current" : void wxThisContextCurrent()
+
+@ m "set-background-to-gray" : void wxSetBackgroundToGray()
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

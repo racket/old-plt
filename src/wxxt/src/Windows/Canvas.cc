@@ -178,6 +178,12 @@ wxCanvas::~wxCanvas(void)
 #endif
 }
 
+void wxCanvas::SetBackgroundToGray(void)
+{
+  XtVaSetValues(X->handle, XtNbackground,  wxGREY_PIXEL, NULL);
+
+}
+
 //-----------------------------------------------------------------------------
 // handle scrollbars, pointer, and virtual size
 //-----------------------------------------------------------------------------

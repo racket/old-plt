@@ -83,7 +83,7 @@
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren scheme-paren 
                            icon keymap text editor frame comment-box mode color color-prefs)]
-	    [main : framework:main^ (main@ mred preferences exit group handler editor)])
+	    [main : framework:main^ (main@ mred preferences exit group handler editor color-prefs)])
       (export
        (unit menu)
        (unit application)

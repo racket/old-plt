@@ -14,12 +14,14 @@
   #if 0 // can't use precompiled headers with change to ACCESSOR...
   #ifdef __MWERKS__
   #if defined(__powerc)
-  #include <MacHeadersPPC>
+   #include <MacHeadersPPC>
   #else
-  #include <MacHeaders68K>
+   #include <MacHeaders68K>
+  #endif // (__powerc)
   #endif
-  #endif
-  #endif
+  #endif // 0
+  #include <Events.h>
+  #include <Files.h>
 #endif
 
 #define WXUNUSED(x)

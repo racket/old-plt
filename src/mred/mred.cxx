@@ -2744,7 +2744,7 @@ void MrEdApp::DoDefaultAboutItem()
 {
   DialogPtr dial;
   short hit;
-  GrafPtr port;
+  CGrafPtr port;
   GDHandle device;
  
   dial = GetNewDialog(129, NULL, (WindowRef)-1);

@@ -51,8 +51,15 @@
 
 #include <stdlib.h>
 
-#ifdef OS_X
+#ifdef wx_mac
+ #ifdef OS_X
   #include <Quicktime/Movies.h>
+ #else
+  #include <Gestalt.h>
+  #include <Movies.h>
+  #include <ColorPicker.h>
+  #include <Folders.h>
+ #endif
 #endif
 
 class GCBitmap {

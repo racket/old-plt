@@ -23,8 +23,11 @@
 
 #include "mred.h"
 
-#include <Events.h>
-#include <Processes.h>
+#ifndef OS_X
+ #include <Events.h>
+ #include <Processes.h>
+ #include <Sound.h>
+#endif
 
 #define FG_SLEEP_TIME 0
 #define BG_SLEEP_TIME 30

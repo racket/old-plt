@@ -136,14 +136,25 @@
       
       ;; type message = (list ... message attributes, see selectors below ...)
 
+      (define uid-validity #f)
+
       ;; mailbox : (listof message)
       ;; mailboxes holds the list of messages reflected in the top list
       ;; in the GUI. When modifying this value (usually indirectly), use
       ;; `header-chganging-action'. Mutate the variable, but not the list!
-      (define mailbox (with-handlers ([void (lambda (x) null)])
-			(with-input-from-file
-			    (build-path mailbox-dir "mailbox")
-			  read)))
+      (define mailbox (let ([l (with-handlers ([void (lambda (x) null)])
+					      (with-input-from-file
+						  (build-path mailbox-dir "mailbox")
+						read))])
+			;; If the file's list start with an integer, that's
+			;;  the uidvalidity value. Otherwise, for backward
+			;;  compatibility, we allow the case that it wasn't
+			;;  recorded.
+			(if (or (not (car l)) (integer? (car l)))
+			    (begin
+			      (set! uid-validity (car l))
+			      (cdr l))
+			    l)))
       
       (define message-uid car)
       (define message-position cadr)
@@ -166,7 +177,7 @@
 	(status "Saving mailbox information...")
 	(with-output-to-file (build-path mailbox-dir "mailbox")
 	  (lambda ()
-	    (write mailbox))
+	    (write (cons uid-validity mailbox)))
 	  'truncate))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -186,17 +197,24 @@
                             
                             ;; Already Connected
                             (cond
-                              [(eq? mode 'reselect)
+                              [(memq mode '(reselect next-uid))
+			       ;; There's a separate case for next-uid that
+			       ;;  skips the reselect. But it doesn't work with
+			       ;;  my IMAP setup at cs.utah.edu. Don't know why,
+			       ;;  but I've spent too much time investigating, and
+			       ;;  SELECTing again works fine.
                                (let-values ([(count new) (imap-reselect connection mailbox-name)]
-                                            [(uid-l) (imap-status connection mailbox-name '(uidnext))])
+                                            [(uid-l) (imap-status connection mailbox-name '(uidnext uidvalidity))])
+			         (check-validity (cadr uid-l) void)
                                  (set! message-count count)
                                  (set! next-uid (car uid-l))
                                  (values connection count new next-uid))]
-                              [(eq? mode 'next-uid)
-                               (let-values ([(uid-l) (imap-status connection mailbox-name '(uidnext))])
+			      [(eq? mode 'next-uid)
+                               (let-values ([(uid-l) (imap-status connection mailbox-name '(uidnext uidvalidity))])
+				 (check-validity (cadr uid-l) void)
                                  (set! next-uid (car uid-l))
                                  (values connection message-count 0 next-uid))]
-                              [else
+			      [else
                                (values connection message-count 0 next-uid)])
                             
                             ;; New connection
@@ -217,10 +235,11 @@
 									(imap-connect* in out (USERNAME) pw mailbox-name))
 								      (parameterize ([imap-port-number port-no])
 									(imap-connect server (USERNAME) pw mailbox-name))))]
-					      [(uid-l) (imap-status imap mailbox-name '(uidnext))])
+					      [(uid-l) (imap-status imap mailbox-name '(uidnext uidvalidity))])
                                   (unless (get-PASSWORD)
 				    (set-PASSWORD pw))
 				  (status "(Connected, ~a messages)" count)
+				  (check-validity (cadr uid-l) (lambda () (imap-disconnect imap)))
 				  (set! connection imap)
 				  (set! message-count count)
 				  (set! next-uid (car uid-l))
@@ -243,6 +262,15 @@
 	       (disconnect))
 	     (imap-force-disconnect connection)
 	     (set! connection #f)))))
+      
+      (define (check-validity v cleanup)
+	(when (and uid-validity
+		   (not (= uid-validity v)))
+	  ;; This is really very unlikely, but we checked
+	  ;; to guard against disaster.
+	  (cleanup)
+	  (error 'connect "UID validity changed! SirMail can't handle it."))
+	(set! uid-validity v))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Mailbox Actions (indepdent of the GUI)                 ;;
@@ -1917,7 +1945,8 @@
       (send main-frame create-status-line)
       
       (send main-frame show #t)
-      (start-vsz/rss-thread)
+      (when (eq? (system-type) 'macosx)
+        (start-vsz/rss-thread))
       (set! got-started? #t)
       
       (unless (null? mailbox)

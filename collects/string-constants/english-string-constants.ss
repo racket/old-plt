@@ -360,8 +360,8 @@
  (wrap-text-item "Wrap Text")
 
  (windows-menu-label "&Windows")
- (choose-a-frame "Choose a frame")        ;;; title of dialog
- (choose-a-frame... "Choose a frame...")  ;;; corresponding title of menu item
+ (bring-frame-to-front "Bring frame to front")       ;;; title of dialog
+ (bring-frame-to-front... "Bring frame to front...") ;;; corresponding title of menu item
 
  (show-menu-label "&Show")
 

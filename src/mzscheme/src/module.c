@@ -1166,8 +1166,9 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	/* Required: */
 	for (l = menv->require_names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	  idx = SCHEME_CAR(l);
-	  im = (Scheme_Module *)scheme_hash_get(menv->module_registry, idx);
-	 
+	  name = scheme_module_resolve(idx);
+	  im = (Scheme_Module *)scheme_hash_get(menv->module_registry, name);
+
 	  add_require_renames(rn, im, idx);
 	}
 	
@@ -1208,7 +1209,8 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	/* Required for syntax: */
 	for (l = menv->et_require_names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	  idx = SCHEME_CAR(l);
-	  im = (Scheme_Module *)scheme_hash_get(menv->module_registry, idx);
+	  name = scheme_module_resolve(idx);
+	  im = (Scheme_Module *)scheme_hash_get(menv->module_registry, name);
 	 
 	  add_require_renames(rn, im, idx);
 	}

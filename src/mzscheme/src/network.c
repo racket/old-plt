@@ -73,6 +73,7 @@ static int mzerrno = 0;
 # define TCP_SOCKSENDBUF_SIZE 32768
 # define NOT_WINSOCK(x) x
 # define SOCK_ERRNO() errno
+# define WAS_EAGAIN(e) ((e == EWOULDBLOCK) || (e == EAGAIN) || (errid == EINPROGRESS) || (errid == EALREADY))
 #endif
 
 #ifdef USE_WINSOCK_TCP
@@ -86,6 +87,7 @@ struct SOCKADDR_IN {
 };
 # define NOT_WINSOCK(x) 0
 # define SOCK_ERRNO() WSAGetLastError()
+# define WAS_EAGAIN(e) ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
 extern int scheme_stupid_windows_machine;
 #endif
 
@@ -1334,12 +1336,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
      isn't ready, even though select() says that data is ready. It
      seems to happen for at least one user, and there appears to be
      no harm in protecting against it. */
-# ifdef USE_WINSOCK_TCP
-#  define RECV_NOT_READY(e) ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
-# else
-#  define RECV_NOT_READY(e) ((e == EWOULDBLOCK) || (e == EAGAIN))
-# endif
-  if (RECV_NOT_READY(errid))
+  if (WAS_EAGAIN(errid))
     goto top;
 
 #endif
@@ -1505,21 +1502,15 @@ static long tcp_write_string(Scheme_Output_Port *port,
 
   if (sent != len) {
 #ifdef USE_WINSOCK_TCP
-    errid = WSAGetLastError();
 # define SEND_BAD_MSG_SIZE(e) (e == WSAEMSGSIZE)
-# define SEND_WOULD_BLOCK(e) \
-    ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
-#else
-    errid = errno;
+#else    
 # ifdef SEND_IS_NEVER_TOO_BIG
 #  define SEND_BAD_MSG_SIZE(errid) 0
 # else
 #  define SEND_BAD_MSG_SIZE(errid) (errid == EMSGSIZE)
 # endif
-# define SEND_WOULD_BLOCK(errid) \
-   ((errid == EWOULDBLOCK) || (errid == EAGAIN)\
-    || (errid == EINPROGRESS) || (errid == EALREADY))
 #endif
+    errid = SOCK_ERRNO();
     if (sent > 0) {
       /* Some data was sent. Return, or recur to handle the rest. */
       if (rarely_block)
@@ -1535,7 +1526,7 @@ static long tcp_write_string(Scheme_Output_Port *port,
 	return sent;
       sent += tcp_write_string(port, s, offset + half, len - half, 0);
       errid = 0;
-    } else if (SEND_WOULD_BLOCK(errid)) {
+    } else if (WAS_EAGAIN(errid)) {
       errid = 0;
       would_block = 1;
     }

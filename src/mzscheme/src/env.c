@@ -299,6 +299,10 @@ Scheme_Env *scheme_basic_env()
   scheme_init_memtrace(env);
   scheme_init_parameterization(env);
 
+#ifndef DONT_USE_FOREIGN
+  scheme_init_foreign(env);
+#endif
+
   scheme_add_embedded_builtins(env);
 
   scheme_save_initial_module_set(env);

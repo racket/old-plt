@@ -311,7 +311,7 @@ ac_includes_default="\
 ac_subdirs_all="$ac_subdirs_all foreign/gcc/libffi"
 ac_subdirs_all="$ac_subdirs_all wxcommon/jpeg"
 ac_subdirs_all="$ac_subdirs_all wxxt/src/x/wbuild"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER PLAIN_CC x_includes x_libraries OPTIONS MZOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS LTO subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER PLAIN_CC x_includes x_libraries OPTIONS MZOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS FOREIGN_OBJ_IF_USED FOREIGN_OBJS_IF_USED LTO subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -7230,6 +7230,9 @@ LIBS="$LIBS $EXTRALIBS"
 
 
 
+
+
+
 mk_needed_dir()
 {
   if test ! -d "$1" ; then
@@ -7244,6 +7247,8 @@ makefiles="Makefile
              mzscheme/gc2/Makefile mzscheme/guile/Makefile
              mzscheme/palm/Makefile"
 
+FOREIGN_OBJ_IF_USED=
+FOREIGN_OBJS_IF_USED=
 if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then
   ac_aux_dir=
 for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
@@ -7275,6 +7280,10 @@ ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 subdirs="$subdirs foreign/gcc/libffi "
 
   makefiles="$makefiles foreign/Makefile"
+  FOREIGN_OBJ_IF_USED="\$(FOREIGN_OBJ)"
+  FOREIGN_OBJS_IF_USED="\$(FOREIGN_OBJS)"
+else
+  MZOPTIONS="$MZOPTIONS -DDONT_USE_FOREIGN"
 fi
 
 if test "${enable_mred}" = "yes" ; then
@@ -8049,6 +8058,8 @@ s,@ZLIB_INC@,$ZLIB_INC,;t t
 s,@PNG_A@,$PNG_A,;t t
 s,@OSKHOME@,$OSKHOME,;t t
 s,@EXTRA_OSK_LIBS@,$EXTRA_OSK_LIBS,;t t
+s,@FOREIGN_OBJ_IF_USED@,$FOREIGN_OBJ_IF_USED,;t t
+s,@FOREIGN_OBJS_IF_USED@,$FOREIGN_OBJS_IF_USED,;t t
 s,@LTO@,$LTO,;t t
 s,@subdirs@,$subdirs,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

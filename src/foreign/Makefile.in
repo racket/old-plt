@@ -4,13 +4,18 @@ srcdir = @srcdir@
 CC = @CC@
 CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ \
          -I$(srcdir)/../mzscheme/include -Igcc/libffi/include
+AR = @AR@
+ARFLAGS = @ARFLAGS@
 
-all:
-	$(MAKE) libffi
-	$(MAKE) foreign
+LIBFFI_A = gcc/libffi/.libs/libffi.a
 
-libffi:
+# compile sub-libraries & foreign.c, then extract all .a files here so we have
+# a single directory with all object files.
+all: $(LIBFFI_A) foreign.o
+	$(AR) x $(LIBFFI_A)
+
+$(LIBFFI_A):
 	cd gcc/libffi; $(MAKE) libffi.la
 
-foreign:
+foreign.o:
 	$(CC) $(CFLAGS) -c $(srcdir)/foreign.c -o foreign.o

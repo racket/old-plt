@@ -1031,8 +1031,8 @@ static Scheme_Object *FP_ffi_malloc(int argc, Scheme_Object *argv[])
   else if (SAME_OBJ(mode, atomic_sym))   res = scheme_malloc_atomic(size);
   else if (SAME_OBJ(mode, stubborn_sym)) res = scheme_malloc_stubborn(size);
   else if (SAME_OBJ(mode, eternal_sym))  res = scheme_malloc_eternal(size);
-  else if (SAME_OBJ(mode, uncollectable_sym))
-    res = scheme_malloc_uncollectable(size);
+  /* else if (SAME_OBJ(mode, uncollectable_sym)) */
+  /*   res = scheme_malloc_uncollectable(size); */
   else scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
   if ((from != NULL) && (res != NULL)) memcpy(res, from, size);
   return scheme_make_ffiptr(res);
@@ -1400,11 +1400,32 @@ static Scheme_Object *FP_ffi_callback(int argc, Scheme_Object *argv[])
 /*****************************************************************************/
 /* Initialization */
 
-Scheme_Object *scheme_reload(Scheme_Env *env)
+void scheme_init_foreign(Scheme_Env *env)
 {
   Scheme_Env *menv;
   ffi_type_struct *t;
-  menv = scheme_primitive_module(scheme_intern_symbol("ffi-prim"), env);
+  menv = scheme_primitive_module(scheme_intern_symbol("#%foreign"), env);
+  ffi_lib_tag = scheme_make_type("<ffi-lib>");
+  ffi_obj_tag = scheme_make_type("<ffi-obj>");
+  ffi_type_tag = scheme_make_type("<ffi-type>");
+  ffi_ptr_tag = scheme_make_type("<ffi-ptr>");
+  ffi_callback_tag = scheme_make_type("<ffi-callback>");
+  opened_libs = scheme_make_hash_table(SCHEME_hash_string);
+  /* scheme_register_extension_global should change to MZ_REGISTER_STATIC when
+   * the code moves into mzscheme. */
+  scheme_register_extension_global(&opened_libs, sizeof(opened_libs));
+  atomic_sym = scheme_intern_symbol("atomic");
+  scheme_register_extension_global(atomic_sym,sizeof(atomic_sym));
+  stubborn_sym = scheme_intern_symbol("stubborn");
+  scheme_register_extension_global(stubborn_sym,sizeof(stubborn_sym));
+  uncollectable_sym = scheme_intern_symbol("uncollectable");
+  scheme_register_extension_global(uncollectable_sym,sizeof(uncollectable_sym));
+  eternal_sym = scheme_intern_symbol("eternal");
+  scheme_register_extension_global(eternal_sym,sizeof(eternal_sym));
+  abs_sym = scheme_intern_symbol("abs");
+  scheme_register_extension_global(abs_sym,sizeof(abs_sym));
+  pointer_sym = scheme_intern_symbol("pointer");
+  scheme_register_extension_global(pointer_sym,sizeof(pointer_sym));
   scheme_add_global("ffi-lib?",
     scheme_make_prim_w_arity(FP_ffi_lib_p, "ffi-lib?", 1, 1), menv);
   scheme_add_global("ffi-lib",
@@ -1616,38 +1637,6 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
   scheme_end_stubborn_change(t);
   scheme_add_global("_fmark", (Scheme_Object*)t, menv);
   scheme_finish_primitive_module(menv);
-  return scheme_void;
-}
-
-Scheme_Object *scheme_initialize(Scheme_Env *env)
-{
-  ffi_lib_tag = scheme_make_type("<ffi-lib>");
-  ffi_obj_tag = scheme_make_type("<ffi-obj>");
-  ffi_type_tag = scheme_make_type("<ffi-type>");
-  ffi_ptr_tag = scheme_make_type("<ffi-ptr>");
-  ffi_callback_tag = scheme_make_type("<ffi-callback>");
-  opened_libs = scheme_make_hash_table(SCHEME_hash_string);
-  /* scheme_register_extension_global should change to MZ_REGISTER_STATIC when
-   * the code moves into mzscheme. */
-  scheme_register_extension_global(&opened_libs, sizeof(opened_libs));
-  atomic_sym = scheme_intern_symbol("atomic");
-  scheme_register_extension_global(atomic_sym,sizeof(atomic_sym));
-  stubborn_sym = scheme_intern_symbol("stubborn");
-  scheme_register_extension_global(stubborn_sym,sizeof(stubborn_sym));
-  uncollectable_sym = scheme_intern_symbol("uncollectable");
-  scheme_register_extension_global(uncollectable_sym,sizeof(uncollectable_sym));
-  eternal_sym = scheme_intern_symbol("eternal");
-  scheme_register_extension_global(eternal_sym,sizeof(eternal_sym));
-  abs_sym = scheme_intern_symbol("abs");
-  scheme_register_extension_global(abs_sym,sizeof(abs_sym));
-  pointer_sym = scheme_intern_symbol("pointer");
-  scheme_register_extension_global(pointer_sym,sizeof(pointer_sym));
-  return scheme_reload(env);
-}
-
-Scheme_Object *scheme_module_name()
-{
-  return scheme_intern_symbol("ffi-prim");
 }
 
 /*****************************************************************************/

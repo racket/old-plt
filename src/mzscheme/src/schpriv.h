@@ -169,6 +169,10 @@ void scheme_init_memtrace(Scheme_Env *env);
 void scheme_init_parameterization(Scheme_Env *env);
 void scheme_init_getenv(void);
 
+#ifndef DONT_USE_FOREIGN
+void scheme_init_foreign(Scheme_Env *env);
+#endif
+
 /* Type readers & writers for compiled code data */
 typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);
 typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);

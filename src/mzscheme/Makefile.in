@@ -18,6 +18,11 @@ RANLIB = @RANLIB@
 
 MZSRC = $(srcdir)/src
 
+FOREIGN_DIR = ../foreign
+FOREIGN_SRC = $(srcdir)/$(FOREIGN_DIR)/foreign.c
+FOREIGN_OBJ = $(FOREIGN_DIR)/foreign.o
+FOREIGN_OBJS = $(FOREIGN_DIR)/*.o
+
 ################################################################################
 
 bin: 
@@ -75,12 +80,16 @@ sproc-extra-lib:
 gc.@LIBSFX@: 
 	$(AR) $(ARFLAGS) @GCDIR@/gc.@LIBSFX@ @GCDIR@/*.@LTO@
 
+# Compilation of the foreign libraries (this compiles all of them)
+$(FOREIGN_OBJ): $(FOREIGN_SRC)
+	cd $(FOREIGN_DIR); make all
+
 mzlibrary:
 	cd src; $(MAKE) all 
 	$(MAKE) libmzscheme.@LIBSFX@
 
-libmzscheme.@LIBSFX@: src/*.@LTO@
-	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.@LTO@
+libmzscheme.@LIBSFX@: src/*.@LTO@ @FOREIGN_OBJ_IF_USED@
+	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.@LTO@ @FOREIGN_OBJS_IF_USED@
 	$(RANLIB) libmzscheme.@LIBSFX@
 
 # Irix sproc, only

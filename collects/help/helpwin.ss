@@ -12,7 +12,14 @@
 
   (include "startup-url.ss")
   
+  (define-values (screen-w screen-h) (get-display-size))
   (framework:preferences:add-general-panel)
+  (framework:preferences:set-default 'drscheme:help-desk:width
+				     600
+				     number?)
+  (framework:preferences:set-default 'drscheme:help-desk:height
+				     (max 440 (min 800 (- screen-h 60)))
+				     number?)
 
   (define last-url-string #f)
 
@@ -102,8 +109,6 @@
 				      (super-init #f #f)
 				      (set-title "Search Results"))))
 
-	  (define-values (screen-w screen-h) (get-display-size))
-
 	  (define (get-unique-title)
 	    (let ([frames (send (framework:group:get-the-frame-group) get-frames)])
 	      (let loop ([n 2][name "Help Desk"])
@@ -115,6 +120,17 @@
 	  (define f
 	    (make-object (frame-mixin
 			  (class (framework:frame:standard-menus-mixin framework:frame:basic%) args
+
+			    (rename [super-on-size on-size])
+			    (override
+			     [on-size
+			      (lambda (w h)
+				(framework:preferences:set 'drscheme:help-desk:width w)
+				(framework:preferences:set 'drscheme:help-desk:height h)
+				(super-on-size w h))])
+				    
+
+
 			    (inherit get-edit-target-object)
 			    (rename [super-on-subwindow-char on-subwindow-char])
 			    (private
@@ -272,7 +288,9 @@
 						  (super-on-subwindow-char w e))]
 				     [else (super-on-subwindow-char w e)])))])
 			    (sequence (apply super-init args))))
-	      (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 40)))))
+	      (get-unique-title) #f
+	      (framework:preferences:get 'drscheme:help-desk:width)
+	      (framework:preferences:get 'drscheme:help-desk:height)))
 
 	  (when icon16
 	    (send f set-icon icon16 mask16 'small))

@@ -163,11 +163,11 @@ void wxCanvas::SetBackgroundToGray(void)
 
 void wxCanvas::Paint(void)
 {
-  if (style & wxTRANSPARENT_WIN) {
+  if (!(style & wxNO_AUTOCLEAR)) {
     /* Need to erase, first */
     wxColor *c;
     c = dc->GetBackground();
-    dc->SetBackground(wxGREY);
+    dc->SetBackground((style & wxTRANSPARENT_WIN) ? wxGREY : wxWHITE);
     dc->Clear();
     dc->SetBackground(c);
   }

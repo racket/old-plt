@@ -503,7 +503,9 @@ name (int argc, Scheme_Object *argv[]) \
   return ret; \
 }
 
-#define GEN_UNARY_OP(name, scheme_name, c_name, inf_val, sinf_val, neginf_val, sneginf_val, nan_val, snan_val, complex_fun, PRECHECK, USE_COMPLEX) \
+#define BIGNUMS_AS_DOUBLES(o) d = scheme_bignum_to_double(o);
+
+#define GEN_UNARY_OP(name, scheme_name, c_name, inf_val, sinf_val, neginf_val, sneginf_val, nan_val, snan_val, complex_fun, PRECHECK, USE_COMPLEX, BIGNUM_MODE) \
 static Scheme_Object * \
 name (int argc, Scheme_Object *argv[]) \
 { \
@@ -528,7 +530,7 @@ name (int argc, Scheme_Object *argv[]) \
      S_FLOATWRAP( is_double = 1; ) \
      d = SCHEME_DBL_VAL(o); \
    } else if (t == scheme_bignum_type) { \
-     d = scheme_bignum_to_double(o); \
+     BIGNUM_MODE(o) \
    } else if (t == scheme_rational_type) { \
      d = scheme_rational_to_double(o); \
    } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) \

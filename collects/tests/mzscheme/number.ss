@@ -1623,6 +1623,21 @@
 (test 314.0 round (* 200 (acos 0.0)))
 (test 314.0 round (* 200 (acos -0.0)))
 
+(test 71034.0 round (* 100 (log 312918491891666147403524564598095080760332972643192197862041633988540637438735086398143104076897116667450730097183397289314559387355872839339937813881411504027225774279272518360586167057501686099965513263132778526566297754301647311975918380842568054630540214544682491386730004162058539391336047825248736472519)))
+(test 71117.0 round (* 100 (log (expt 2 1026))))
+(test 71048.0 round (* 100 (log (expt 2 1025))))
+(test 70978.0 round (* 100 (log (expt 2 1024))))
+(test 70909.0 round (* 100 (log (expt 2 1023))))
+(test 35420.0 round (* 100 (log (expt 2 511))))
+(test 35489.0 round (* 100 (log (expt 2 512))))
+(test 35558.0 round (* 100 (log (expt 2 513))))
+(test 141887.0 round (* 100 (log (expt 2 2047))))
+(test 141957.0 round (* 100 (log (expt 2 2048))))
+(test 142026.0 round (* 100 (log (expt 2 2049))))
+(test 23026.0 round (log (expt 10 10000)))
+(test 23026.0 round (real-part (log (- (expt 10 10000)))))
+(test 3.0 round (imag-part (log (- (expt 10 10000)))))
+
 (define (test-inf-bad f)
   (test-nan.0 f +inf.0)
   (test-nan.0 f -inf.0)
@@ -1847,7 +1862,7 @@
 (test #t symbol? '1+ei)
 (test #t symbol? '|1/0|)
 
-(arity-test string->number 1 2)
+(arity-test string->number 1 3)
 (arity-test number->string 1 2)
 
 (err/rt-test (number->string 'a))

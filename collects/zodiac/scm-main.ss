@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.137 1997/12/02 20:48:54 shriram Exp shriram $
+; $Id: scm-main.ss,v 1.138 1997/12/02 21:13:09 shriram Exp shriram $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1680,7 +1680,8 @@
 		    (expand-expr
 		      (structurize-syntax
 			(if (and (or (null? raw-cs)
-				   (string=? (car raw-cs) "mzlib"))
+				   (and (null? (cdr raw-cs))
+				     (string=? (car raw-cs) "mzlib")))
 			      (member raw-f mzscheme-libraries-provided))
 			  `(#%void)
 			  `(#%require-library ,(quote-form-expr f)
@@ -1725,7 +1726,8 @@
 		    (expand-expr
 		      (structurize-syntax
 			(if (and (or (null? raw-cs)
-				   (string=? (car raw-cs) "mzlib"))
+				   (and (null? (cdr raw-cs))
+				     (string=? (car raw-cs) "mzlib")))
 			      (member raw-f mzscheme-libraries-provided))
 			  `(#%void)
 			  `(#%require-relative-library ,(quote-form-expr f)

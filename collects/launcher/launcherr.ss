@@ -1,9 +1,11 @@
 
 (unit/sig launcher-maker^
-  (import)
+  (import mzlib:file^)
   
   (define plthome
-    (or (getenv "PLTHOME")
+    (or (with-handlers ([(lambda (x) #t)
+			 (lambda (x) #f)])
+	  (normal-case-path (normalize-path (getenv "PLTHOME"))))
 	(let ([dir (collection-path "mzlib")])
 	  (and dir
 	       (let-values ([(base name dir?) (split-path dir)])
@@ -11,7 +13,7 @@
 		      (let-values ([(base name dir?) (split-path base)])
 			(and (string? base)
 			     (complete-path? base)
-			     base))))))))
+			     (normal-case-path (normalize-path base))))))))))
   
   (define (install-template dest kind mz mr)
     (define src (build-path (collection-path "launcher")
@@ -203,8 +205,10 @@
 	  [m (string->list "<Command Line: Replace This")]
 	  [x (string->list "<Executable Directory: Replace This")])
       ; null character marks end of executable directory
-      (let* ([exedir (string-append plthome 
-				    (string (latin-1-integer->char 0)))]
+      (let* ([exedir (string-append
+					;plthome
+		      "d:\\plt"
+		      (string (latin-1-integer->char 0)))]
 	     [pos-fun ; Find the magic start
 	      (lambda 
 	       (magic s)

@@ -1,3 +1,4 @@
+(require-library "file.ss")
 
 (require-relative-library "launchers.ss")
 
@@ -5,4 +6,6 @@
   (require-library "invoke.ss"))
 
 (define-values/invoke-unit/sig launcher-maker^
-  (require-relative-library "launcherr.ss"))
+  (require-relative-library "launcherr.ss")
+  #f
+  mzlib:file^)

@@ -29,13 +29,19 @@
   
   (define re:suffix (regexp "\\..?.?.?$"))
 
-  (define (get-compilation-path path)
+  (define (get-compilation-dir+name path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
       (let ((name (regexp-replace re:suffix name-suffix "")))
-        (cond
-          ((eq? 'relative base) (build-path "compiled" name))
-          (else (build-path base "compiled" name))))))
-  
+	(values
+	 (cond
+	  ((eq? 'relative base) (build-path "compiled"))
+	  (else (build-path base "compiled")))
+	 name))))
+
+  (define (get-compilation-path path)
+    (let-values ([(dir name) (get-compilation-dir+name path)])
+      (build-path dir name)))
+	
   (define (get-code-dir path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
       (cond
@@ -55,14 +61,13 @@
   (define (touch path)
     (close-output-port (open-output-file path 'append)))
 
-  (define (compilation-failure path zo-name)
+  (define (compilation-failure path zo-name date-path)
     (with-handlers ((not-break-exn? void))
       (delete-file zo-name))
-    (let ((out (open-output-file (string-append (get-compilation-path path) ".fail")
-                                 'replace)))
-      (close-output-port out))
+    (let ([fail-path (string-append (get-compilation-path path) ".fail")])
+      (close-output-port (open-output-file fail-path 'truncate/replace)))
     ((trace) (format "~afailure" (indent))))
-    
+  
   (define (compile-zo path)
     ((trace) (format "~acompiling: ~a" (indent) path))
     (indent (format "  ~a" (indent)))
@@ -73,7 +78,8 @@
 	  (begin
 	    (with-handlers ((not-break-exn? void))
               (delete-file zo-name))
-            (with-handlers ((exn:get-module-code? (lambda (ex) (compilation-failure path zo-name))))
+            (with-handlers ((exn:get-module-code? (lambda (ex) 
+						    (compilation-failure path zo-name (exn:get-module-code-path ex)))))
 	      (let ([param 
 		     ;; Avoid using cm while loading cm-ctime:
 		     (parameterize ([use-compiled-file-kinds 'none])
@@ -88,7 +94,7 @@
 		      (make-directory code-dir))
 		  (let ((out (open-output-file zo-name 'replace)))
 		    (with-handlers ((exn:application:type?
-				     (lambda (ex) (compilation-failure path zo-name))))
+				     (lambda (ex) (compilation-failure path zo-name #f))))
 		      (dynamic-wind 
 			  void
 			  (lambda () (write code out))
@@ -117,14 +123,29 @@
 	    (date-minute date)
 	    (date-second date)))
   
-  (define (get-compiled-time path)
-    (with-handlers ((exn:i/o:filesystem?
-                     (lambda (ex)
-                       (with-handlers ((exn:i/o:filesystem?
-                                        (lambda (ex) -inf.0)))
-                         (file-or-directory-modify-seconds (string-append (get-compilation-path path)
-                                                                          ".fail"))))))
-      (file-or-directory-modify-seconds (string-append (get-compilation-path path) ".zo"))))
+  (define (append-object-suffix f)
+    (string-append f (case (system-type)
+		       [(windows) ".dll"]
+		       [else ".so"])))
+
+  (define (get-compiled-time path w/fail?)
+    (let-values  ([(dir name) (get-compilation-dir+name path)])
+      (first-date
+       (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix "_loader")))
+       (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix name)))
+       (lambda () (build-path dir (string-append name ".zo")))
+       (and w/fail? (lambda () (build-path dir (string-append name ".zo" ".fail")))))))
+
+  (define first-date
+    (case-lambda
+     [() +inf.0]
+     [(f . l)
+      (if f
+	  (with-handlers ([exn:i/o:filesystem?
+			   (lambda (ex)
+			     (apply first-date l))])
+	    (file-or-directory-modify-seconds (f)))
+	  (apply first-date l))]))
   
   (define (compile-root path up-to-date)
     (let ([path (simplify-path (expand-path path))])
@@ -134,7 +155,7 @@
           (stamp stamp)
           (else
            ((trace) (format "~achecking: ~a" (indent) path))
-           (let ((path-zo-time (get-compiled-time path))
+           (let ((path-zo-time (get-compiled-time path #f))
                  (path-time 
                   (with-handlers ((exn:i/o:filesystem? 
                                    (lambda (ex)
@@ -142,12 +163,12 @@
                                      #f)))
                     (file-or-directory-modify-seconds path))))
              (cond
-               ((not path-time) +inf.0)
+               ((not path-time) path-zo-time)
                (else
                 (cond
                   ((> path-time path-zo-time) (compile-zo path))
                   (else
-                   (let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) #f)))
+                   (let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) (list (version)))))
                                  (call-with-input-file (string-append (get-compilation-path path) ".dep")
                                    read))))
                      (cond
@@ -167,7 +188,7 @@
 					      (cdr deps)))
                            path-zo-time)
                         (compile-zo path))))))
-                (let ((stamp (get-compiled-time path)))
+                (let ((stamp (get-compiled-time path #t)))
                   (hash-table-put! up-to-date path stamp)
                   stamp)))))))))
   

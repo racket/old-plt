@@ -97,7 +97,8 @@
 	       v)))
        (lambda () (close-input-port p)))))
   
-  (define-struct (exn:get-module-code exn) ())
+  (define-struct (exn:get-module-code exn) (path))
+
   (define (get-module-code path)
     (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
       (raise-type-error 'get-module-code "pathname string" path))
@@ -116,7 +117,6 @@
 					re:suffix file
 					(case (system-type)
 					  [(windows) ".dll"]
-					  [(macosx) ".dylib"]
 					  [else ".so"])))
 			   #f))]
 	     [ok-kind? (lambda (file) (eq? mode 'all))]
@@ -140,16 +140,19 @@
 	  => (lambda (loader)
 	       (raise (make-exn:get-module-code (format "get-module-code: cannot use _loader file: ~e"
                                                         _loader-so)
-                                                (current-continuation-marks))))]
+                                                (current-continuation-marks)
+						loader)))]
 	 [(date>=? so path-d)
 	  (with-dir (lambda () (raise (make-exn:get-module-code 
                                        (format "get-module-code: cannot use extension file; ~e" so)
-                                       (current-continuation-marks)))))]
+                                       (current-continuation-marks)
+				       so))))]
 	 [(date>=? zo path-d)
 	  (read-one zo #f)]
 	 [(not path-d)
 	  (raise (make-exn:get-module-code (format "get-module-code: no such file: ~e" path)
-                                           (current-continuation-marks)))]
+                                           (current-continuation-marks)
+					   #f))]
 	 [else 
 	  (with-dir (lambda () (compile (read-one path #t))))]))))
 
@@ -327,6 +330,7 @@
 	   get-module-code
            exn:get-module-code
            exn:get-module-code?
+           exn:get-module-code-path
            make-exn:get-module-code
            
 	   resolve-module-path

@@ -71,15 +71,36 @@
 			 (let ([expanded
 				(map
 				 (lambda (defn-or-expr)
-				   (local-expand
-				    defn-or-expr
-				    (list*
-				     (quote-syntax begin)
-				     (quote-syntax define-values)
-				     (quote-syntax define-syntax)
-				     (quote-syntax set!)
-				     (quote-syntax #%app)
-				     declared-names)))
+				   (let ([le
+					  (local-expand
+					   defn-or-expr
+					   (list*
+					    ;; Need all kernel syntax
+					    (quote-syntax begin)
+					    (quote-syntax define-values)
+					    (quote-syntax define-syntax)
+					    (quote-syntax set!)
+					    (quote-syntax let)
+					    (quote-syntax let-values)
+					    (quote-syntax let*)
+					    (quote-syntax let*-values)
+					    (quote-syntax letrec)
+					    (quote-syntax letrec-values)
+					    (quote-syntax lambda)
+					    (quote-syntax case-lambda)
+					    (quote-syntax if)
+					    (quote-syntax struct)
+					    (quote-syntax quote)
+					    (quote-syntax letrec-syntax)
+					    (quote-syntax with-continuation-mark)
+					    (quote-syntax #%app)
+					    (quote-syntax #%unbound)
+					    (quote-syntax #%datum)
+					    declared-names))])
+				     ;; If the result is #%unbound...
+				     (syntax-case le (#%unbound)
+				       [(#%unbound . x) (syntax x)]
+				       [else le])))
 				 defns&exprs)])
 			   (apply
 			    append
@@ -135,10 +156,28 @@
 				(append imported-names all-defined-names))])
 		     (when name
 		       (raise-syntax-error 
-			'syntax
+			'unit
 			"variable imported and/or defined twice"
 			stx
 			name)))
+		   ;; Check that all exported names are defined:
+		   (let ([ht (make-hash-table)])
+		     (for-each
+		      (lambda (name)
+			(let ([l (hash-table-get ht (syntax-e name) (lambda () null))])
+			  (hash-table-put! ht (syntax-e name) (cons name l))))
+		      all-defined-names)
+		     (for-each 
+		      (lambda (n)
+			(let ([v (hash-table-get ht (syntax-e n) (lambda () null))])
+			  (unless (ormap (lambda (i) (bound-identifier=? i n)) v)
+			    (raise-syntax-error
+			     'unit
+			     "exported variable is not defined"
+			     stx
+			     n))))
+		      exported-names))
+
 		   ;; Compute defined but not exported:
 		   (let ([ht (make-hash-table)])
 		     (for-each

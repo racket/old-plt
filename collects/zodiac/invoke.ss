@@ -43,3 +43,26 @@
 		(if show-raw? (zodiac:parsed->raw e) e)))
 	    (newline)
 	    (loop)))))))
+
+(define zodiac:test
+  (lambda ()
+    (zodiac:invoke-system)
+    (let loop ()
+      (printf "e> ")
+      (flush-output)
+      (let ((r ((zodiac:read))))
+	(if (zodiac:eof? r)
+	  (newline)
+	  (begin
+	    (newline)
+	    (pretty-print
+	      (let ((e (zodiac:scheme-expand r
+			 (let ([p (make-parameterization)])
+			   (with-parameterization p
+			     (lambda ()
+			       (current-namespace
+				 (make-namespace 'hash-percent-syntax))))
+			   p))))
+		(zodiac:parsed->raw e)))
+	    (newline)
+	    (loop)))))))

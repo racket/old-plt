@@ -143,7 +143,7 @@
       (let* ([annotated
 	      (with-parameterization system-parameterization
 		(lambda ()
-		  (let* ([expanded (zodiac:scheme-expand x)]
+		  (let* ([expanded (zodiac:scheme-expand x parameterization)]
 			 [_ '(printf "expanded: ~a~n~n" expanded)]
 			 [annotated (aries:annotate expanded)]
 			 [_ '(printf "annotated: ~a~n~n" annotated)])

@@ -1357,26 +1357,23 @@
 		(let ((macro-name (pat:pexpand 'macro-name p-env kwd))
 		       (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
 		  (valid-syntactic-id? macro-name)
-		  (let ((real-name (sexp->raw macro-name))
-			 (real-handler (with-parameterization
-					 zodiac-user-parameterization
-					 (lambda ()
-					   (eval
-					     (sexp->raw macro-handler)))))
-			 (cache-table (make-hash-table)))
+		  (let* ((real-name (sexp->raw macro-name))
+			  (raw-handler (sexp->raw macro-handler))
+			  ; ROBBY: raw-handler was being pretty-printed
+			  (real-handler (with-parameterization
+					  zodiac-user-parameterization
+					  (lambda ()
+					    (eval raw-handler))))
+			  (cache-table (make-hash-table)))
 		    (unless (procedure? real-handler)
 		      (static-error expr "Expander is not a procedure"))
 		    (add-macro-form real-name vocab
-		      (with-parameterization zodiac-user-parameterization
-			(lambda ()
-			  (eval
-			    `(#%lambda (m-expr m-env)
-			       (,structurize-syntax
-				 (#%apply ,real-handler
-				   (let ((in (#%cdr (,sexp->raw m-expr
-						      ,cache-table))))
-				     in))
-				 m-expr))))))
+		      (lambda (m-expr m-env)
+			(structurize-syntax
+			  (apply real-handler
+			    (let ((in (cdr (sexp->raw m-expr cache-table))))
+			      in))
+			  m-expr)))
 		    (expand-expr (structurize-syntax '(#%void) expr
 				   '() cache-table)
 		      env attributes vocab)))))

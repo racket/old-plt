@@ -1806,6 +1806,7 @@
   
   
   (provide any? 
+           flat-rec-contract
 	   union
            and/c
 	   not/f
@@ -1823,6 +1824,31 @@
            cons-immutable/c cons/p list-immutable/c list/p 
            box-immutable/c box/p
 	   mixin-contract make-mixin-contract)
+  
+  (define-syntax (flat-rec-contract stx)
+    (syntax-case stx  ()
+      [(_ name ctc ...)
+       (identifier? (syntax name))
+       (with-syntax ([(ctc-id ...) (generate-temporaries (syntax (ctc ...)))]
+                     [(pred-id ...) (generate-temporaries (syntax (ctc ...)))])
+         (syntax 
+          (let* ([pred (lambda (x) (error 'flat-rec-contract "applied too soon"))]
+                 [name (flat-contract (let ([name (lambda (x) (pred x))]) name))])
+            (let ([ctc-id (coerce-contract flat-rec-contract ctc)] ...)
+              (begin 
+                (void) ;; ensure begin has at least one arg.
+                (unless (flat-contract? ctc-id)
+                  (error 'flat-rec-contract "expected flat contracts as arguments, got ~e" ctc-id))
+                ...)
+              (set! pred
+                    (let ([pred-id (flat-contract-predicate ctc-id)] ...)
+                      (lambda (x)
+                        (or (pred-id x) ...))))
+              name))))]
+      [(_ name ctc ...)
+       (raise-syntax-error 'flat-rec-contract "expected first argument to be an identifier" stx (syntax name))]))
+  
+  ;; tidy contracts
   
   (define (union . args)
     (for-each

@@ -1302,6 +1302,8 @@
   (test-flat-contract '(box/p boolean?) (box #f) (box 1))
   (test-flat-contract '(box/p (flat-contract boolean?)) (box #t) #f)
   
+  (test-flat-contract '(flat-rec-contract sexp (cons/p sexp sexp) number?) '(1 2 . 3) '(1 . #f))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
   ;;   case-> arity checking tests                          ;;
@@ -1418,6 +1420,7 @@
   
   (test-name "(box/p boolean?)" (box/p boolean?))
   (test-name "(box/p boolean?)" (box/p (flat-contract boolean?)))
+  (test-name "the-name" (flat-rec-contract the-name))
   
   ))
 (report-errs)

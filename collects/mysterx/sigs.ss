@@ -14,7 +14,7 @@
    com-set-property-type
    com-event-type
    com-object-type
-   com-has-type?
+   com-is-a?
    com-help
    com-register-event-handler
    com-unregister-event-handler
@@ -39,7 +39,7 @@
    com-set-property-type
    com-event-type
    com-object-type
-   com-has-type?
+   com-is-a?
    com-help
    com-register-event-handler
    com-unregister-event-handler

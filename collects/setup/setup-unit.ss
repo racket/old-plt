@@ -313,14 +313,14 @@
 			   (delete-file/record-dependency zo dependencies)
 			   (delete-file/record-dependency dep dependencies)))))))
 		(when did-something?
-		  (loop dependencies)))))
-	  (setup-printf "Clearing info-domain caches")
-	  (for-each (lambda (p)
-		      (let ([fn (build-path p "info-domain" "compiled" "cache.ss")])
-			(when (file-exists? fn)
-			  (with-handlers ([exn:fail:filesystem? (warning-handler (void))])
-			    (with-output-to-file fn void 'truncate/replace)))))
-		    (current-library-collection-paths))))
+		  (loop dependencies))))
+	    (setup-printf "Clearing info-domain caches")
+	    (for-each (lambda (p)
+			(let ([fn (build-path p "info-domain" "compiled" "cache.ss")])
+			  (when (file-exists? fn)
+			    (with-handlers ([exn:fail:filesystem? (warning-handler (void))])
+			      (with-output-to-file fn void 'truncate/replace)))))
+		      (current-library-collection-paths)))))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;                  Helpers                      ;;
@@ -499,6 +499,11 @@
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       (when (make-info-domain)
+	;; Each ht maps a collection root dir to an
+	;; info-domain table. Even when `collections-to-compile'
+	;; is a subset of all collections, we only care about
+	;; those collections that exist in the same root as
+	;; the ones in `collections-to-compile'.
 	(let ([ht (make-hash-table 'equal)]
 	      [ht-orig (make-hash-table 'equal)])
 	  (for-each (lambda (cc)
@@ -507,8 +512,11 @@
 				      (dynamic-require
 				       (build-path (cc-path cc) "info.ss")
 				       '#%info-domain))])
+			;; Check whether we have a table for this collection's
+			;;  collection root:
 			(let ([t (hash-table-get ht (cc-root-dir cc)
 						 (lambda ()
+						   ;; No table for this root, yet. Build one.
 						   (let ([l (let ([p (build-path (cc-root-dir cc)
 										 "info-domain"
 										 "compiled"
@@ -518,8 +526,9 @@
 								    (with-input-from-file p
 								      read))
 								  null))])
-						     ;; Convert list to hash table, but only if the collection
-						     ;;  exists
+						     ;; Convert list to hash table. Incluse only well-formed
+						     ;;  list elements, and only elements whose corresponding
+						     ;;  collection exists.
 						     (let ([t (make-hash-table 'equal)]
 							   [all-ok? #f])
 						       (when (list? l)
@@ -542,16 +551,24 @@
 									       (set! all-ok? #f)))
 									 (set! all-ok? #f)))
 								   l))
+						       ;; Record the table loaded for this collection root
+						       ;; in the all-roots table:
 						       (hash-table-put! ht (cc-root-dir cc) t)
+						       ;; If anything in the "cache.ss" file was bad,
+						       ;; then claim that the old table was empty,
+						       ;; so that we definitely write the new table.
 						       (hash-table-put! ht-orig (cc-root-dir cc) 
 									(and all-ok? (hash-table-copy t)))
 						       t))))])
+			  ;; Add this collection's info to the table, replacing
+			  ;; any information already there.
 			  (hash-table-put! t (map (lambda (s) (if (path? s)
 								  (path->string s)
 								  s))
 						  (cc-collection cc))
 					   (domain)))))
 		    collections-to-compile)
+	  ;; Write out each collection-root-specific table to a "cache.ss" file:
 	  (hash-table-for-each ht
 			       (lambda (root-dir ht)
 				 (unless (equal? ht (hash-table-get ht-orig root-dir))

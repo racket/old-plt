@@ -1,4 +1,13 @@
 
+Version 102/2:
+
+ * Fixed `kill-thread' on a thread that hasn't performed any work,
+   yet.
+
+ * Fixed scheme_make_integer_value() on the boundary case (2^31).
+
+ * MzScheme2k: fixed numerous bugs.
+
 Version 102/1:
 
  * Added `read-decimal-as-inexact' parameter, which controls how

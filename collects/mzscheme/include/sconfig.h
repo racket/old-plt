@@ -586,14 +586,6 @@ int   scheme_sproc_semaphore_try_down(void *);
   /* since it currently relies on one MSVC-style inline   */
   /* assembly file. Nevertheless, the old flags and       */
   /* instructions have been preserved.                    */
-  /*                                                      */
-  /* Old Borland instructions:                            */
-  /*   To compile a standalone MzScheme, first #define    */
-  /*   MZWINCONSOLE.                                      */
-  /*   To compile for Windows95, first #define MZWIN95.   */
-  /*   Windows95 version also works under Windows NT, but */
-  /*   not under Win32s. A Win32s version will also work  */
-  /*   under Windows NT.                                  */
 
 #if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN__)) \
     && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))

@@ -371,7 +371,7 @@ typedef struct Scheme_Jumpup_Buf {
   mz_jmp_buf buf;
 #ifdef MZ_PRECISE_GC
   void *gc_var_stack;
-  int gc_var_count;
+  void *external_stack;
 #endif
 } Scheme_Jumpup_Buf;
 
@@ -959,13 +959,17 @@ extern Scheme_Process *scheme_current_process;
 #endif
 extern Scheme_Process *scheme_first_process;
 
-/* Set these global hooks: */
+/* Set these global hooks (optionally): */
 extern void (*scheme_exit)(int v);
 extern void (*scheme_console_printf)(char *str, ...);
 extern void (*scheme_sleep)(float seconds, void *fds);
 extern void (*scheme_notify_multithread)(int on);
 extern void (*scheme_wakeup_on_input)(void *fds);
 extern int (*scheme_check_for_break)(void);
+#ifdef MZ_PRECISE_GC
+extern void *(*scheme_get_external_stack_val)(void);
+extern void (*scheme_set_external_stack_val)(void *);
+#endif
 #ifdef USE_WIN32_THREADS
 extern void (*scheme_suspend_main_thread)(void);
 int scheme_set_in_main_thread(void);

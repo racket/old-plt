@@ -18,8 +18,10 @@
     `(let () 
        ,@(map
 	  (lambda (def)
-	    (let ([d (local-expand-defmacro def)])
-	      (unless (and (pair? d) (eq? (car d) '#%define-values))
+	    (let-values ([(d kind) (local-expand-body-expression def)])
+	      (unless (and (eq? kind '#%define-values)
+			   (list? d)
+			   (= 3 (length d)))
 		      (raise-syntax-error
 		       'local
 		       "bad definition"

@@ -162,16 +162,13 @@
 
    (define find-library
      (case-lambda 
-      [(name) (find-library name "standard")]
-      [(name collection)
-       (let ([all-paths (current-library-collection-paths)])
-	 (let loop ([paths all-paths])
-	   (if (null? paths)
-	       #f
-	       (let ([dir (build-path (car paths) collection)])
-		 (if (directory-exists? dir)
-		     (let ([file (build-path dir name)])
-		       (if (file-exists? file)
-			   file
-			   #f))
-		     (loop (cdr paths)))))))])))
+      [(name) (find-library name "mzlib")]
+      [(name collection . cp)
+       (let ([dir (apply collection-path collection cp)])
+	 (if dir
+	     (let ([file (build-path dir name)])
+	       (if (file-exists? file)
+		   file
+		   #f))
+	     #f))])))
+

@@ -9,7 +9,7 @@
    (lambda (must-string? require? sig? sname)
      (lambda names
        (let ([len (length names)]
-	     [expect (if require? 2 1)])
+	     [expect (if require? +inf.0 1)])
 	 (unless (and (positive? len) (<= len expect))
 		 ((raise-syntax-error sname
 				      (format "expected ~a names; given ~a"
@@ -51,7 +51,7 @@
 			'reference-library
 			'reference)]
 	     [len (length names)]
-	     [expect (if require? 2 1)])
+	     [expect (if require? +inf.0 1)])
 	 (unless (and (positive? len) (<= len expect))
 		 ((raise-syntax-error sname
 				      (format "expected ~a names; given ~a"

@@ -13,4 +13,5 @@
 (constant filename-extension)
 (constant file-name-from-path)
 (constant path-only)
+(constant find-collection)
 (constant find-library)

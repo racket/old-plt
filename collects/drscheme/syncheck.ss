@@ -755,8 +755,7 @@
                                                        0
                                                        (send (get-definitions-text)
                                                              last-position))
-                      (fw:preferences:get
-                       (drscheme:language-configuration:get-settings-preferences-symbol))
+                      (send (get-definitions-text) get-next-settings)
                       (lambda (err? sexp run-in-expansion-thread loop)
                         (unless users-namespace
                           (set! users-namespace (run-in-expansion-thread current-namespace)))
@@ -1136,7 +1135,7 @@
             (annotate-original-keywords sexp)
             (set! bound-in-sources (combine-bound-in-source sexp bound-in-sources))
             (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
-            (set! varrefs (flatten-cons-tree #t (syntax-property sexp 'bound-in-source) varrefs))
+            (set! varrefs (flatten-bis-tree #t (syntax-property sexp 'bound-in-source) varrefs))
             (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
@@ -1308,8 +1307,8 @@
                    [acc old-biss])
           (cond
             [(and (cons? bis)
-                  (syntax? (car bis))
-                  (syntax? (cdr bis)))
+                  (identifier? (car bis))
+                  (identifier? (cdr bis)))
              (if (and (syntax-original? (car bis))
                       (syntax-original? (cdr bis)))
                  (cons bis acc)
@@ -1400,6 +1399,32 @@
                                   (cons (cons level ct) acc)
                                   (cons ct acc))
                               acc)]
+            [else acc])))
+
+      ;; flatten-bis-tree : (union 'no-cons boolean)
+      ;;                    cons-tree
+      ;;                    (union (listof syntax[original]) (listof (cons boolean syntax[original])))
+      ;;                 -> (listof syntax[original])
+      ;; similar to flatten-cons-tree, except it
+      ;; flattesn the tree associated with the 'bound-in-source property
+      (define (flatten-bis-tree level ct acc)
+        (let loop ([ct ct]
+                   [acc acc])
+          (cond
+            [(and (pair? ct)
+                  (syntax? (car ct))
+                  (syntax? (cdr ct)))
+             (if (and (identifier? (car ct))
+                      (syntax-original? (car ct))
+                      (identifier? (cdr ct))
+                      (syntax-original? (cdr ct)))
+                 (if (boolean? level)
+                     (list* (cons level (car ct))
+                            (cons level (cdr ct))
+                            acc)
+                     (list* (car ct) (cdr ct) acc))
+                 acc)]
+            [(pair? ct) (loop (car ct) (loop (cdr ct) acc))]
             [else acc])))
 
       ;; extract-provided-vars : syntax -> (listof syntax[identifier])

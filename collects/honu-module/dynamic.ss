@@ -687,6 +687,23 @@
 	  [(id \; . rest)
 	   (identifier? #'id)
 	   (values #'(provide id) #'rest)]))))
+  
+  (define-honu-syntax honu-require
+    (lambda (body ctx)
+      (unless (top-block-context? ctx)
+	(raise-syntax-error #f "not allowed outside the top level" (stx-car body)))
+      (let loop ([body (stx-cdr body)][prev-comma? #f])
+	(syntax-case body (\, \;)
+	  [(\; . rest)
+	   (not prev-comma?)
+	   (values #`(begin) #'rest)]
+	  [(fn \, . rest)
+	   (string? (syntax-e #'fn))
+	   (let-values ([(decls rest) (loop #'rest #t)])
+	     (values #`(begin (require fn) #,decls) rest))]
+	  [(fn \; . rest)
+	   (string? (syntax-e #'fn))
+	   (values #'(require fn) #'rest)]))))
 
   (define-honu-syntax honu-return
     (lambda (stx ctx)
@@ -735,8 +752,11 @@
 	#,(syntax-local-introduce #'(require (lib "dynamic.ss" "honu-module")))
 	(honu-unparsed-begin #,@(stx-cdr stx))))
   
+  (define-syntax (\; stx) (raise-syntax-error '\; "out of context" stx))
+  
   (provide int obj (rename string-type string) ->
-	   (rename set! =)
+	   \;
+           (rename set! =)
 	   (rename honu-return return)
 	   + - * / (rename modulo %)
 	   (rename string->number stringToNumber)
@@ -745,4 +765,6 @@
 	   #%top
 	   #%parens
 	   #%dynamic-honu-module-begin
-	   (rename honu-provide provide)))
+	   define-honu-syntax
+           (rename honu-provide provide)
+           (rename honu-require require)))

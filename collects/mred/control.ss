@@ -8,7 +8,8 @@
   ; Helper for media-text%
   (define media-text-edit% 
     (class mred:return-edit% (cb return-cb control)
-      (rename [super-on-change on-change]
+      (rename [super-after-insert after-insert]
+	      [super-after-delete after-delete]
 	      [super-on-focus on-focus])
       (inherit get-text last-position)
       (private
@@ -23,9 +24,13 @@
 		 (send e set-command-string str))
 	       (cb control e))))])
       (public
-	[on-change
+	[after-insert
 	 (lambda args
-	   (apply super-on-change args)
+	   (apply super-after-insert args)
+	   (callback wx:const-event-type-text-command #t))]
+	[after-delete
+	 (lambda args
+	   (apply super-after-delete args)
 	   (callback wx:const-event-type-text-command #t))]
 	[on-focus
 	 (lambda (on?)
@@ -34,7 +39,8 @@
 	       (callback wx:const-event-type-set-focus #f)
 	       (callback wx:const-event-type-kill-focus #f)))]
 	[callback-ready
-	 (lambda () (set! block-callback 0))]
+	 (lambda () 
+	   (set! block-callback 0))]
 	[without-callback
 	 (lambda (thunk)
 	   (dynamic-wind
@@ -141,7 +147,6 @@
 	    ; To bottom of first line
 	    (send (send e get-admin) get-dc null ybox)
 	    (set! dy (+ -3 (abs (unbox ybox)) (send e line-location 0 #f))) ; 3 is fudge factor
-	    (printf "init: ~a~n" dy)
 	    
 	    ; Add diff for client size
 	    (send c get-client-size wbox hbox)

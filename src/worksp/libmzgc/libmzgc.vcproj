@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -21,37 +21,32 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../mzscheme/gc/include"
-				PreprocessorDefinitions="WIN32;DEBUG;_WINDOWS;_USRDLL;GC_BUILD;MD_LIB_MAIN;SILENT;OLD_BLOCK_ALLOC;LARGE_CONFIG;ATOMIC_UNCOLLECTABLE;INITIAL_MARK_STACK_SIZE=8192;GC_DLL"
+				AdditionalIncludeDirectories="..\..\MzScheme\Gc\Include,$(NOINHERIT)"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;MD_LIB_MAIN;SILENT;OLD_BLOCK_ALLOC;LARGE_CONFIG;ATOMIC_UNCOLLECTABLE;INITIAL_MARK_STACK_SIZE=8192;GC_DLL"
+				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Debug/libmzgc.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+				Description="Copy files to final location"
+				CommandLine="copy /y $(OutDir)\$(ProjectName)xxxxxxx.dll ..\..\..\$(ProjectName)xxxxxxx.dll
+copy /y $(OutDir)\$(ProjectName)xxxxxxx.lib ..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib
+"
+				Outputs="..\..\..\$(ProjectName)xxxxxxx.dll,..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="Unicows.lib Kernel32.lib User32.lib Shell32.lib AdvApi32.lib"
-				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
-				LinkIncremental="1"
+				AdditionalDependencies="Unicows.lib"
+				OutputFile="$(OutDir)\$(ProjectName)xxxxxxx.dll"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/libmzgc.pdb"
-				ImportLibrary=".\Debug/libmzgcxxxxxxx.lib"/>
+				ImportLibrary="$(OutDir)\libmzgcxxxxxxx.lib"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libmzgc.tlb"/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -69,48 +64,45 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../mzscheme/gc/include"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="..\..\MzScheme\Gc\Include,$(NOINHERIT)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;SILENT;OLD_BLOCK_ALLOC;LARGE_CONFIG;ATOMIC_UNCOLLECTABLE;INITIAL_MARK_STACK_SIZE=8192;GC_DLL"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/libmzgc.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+				Description="Copy files to final location"
+				CommandLine="copy /y $(OutDir)\$(ProjectName)xxxxxxx.dll ..\..\..\$(ProjectName)xxxxxxx.dll
+copy /y $(OutDir)\$(ProjectName)xxxxxxx.lib ..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib
+"
+				Outputs="..\..\..\$(ProjectName)xxxxxxx.dll,..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="Unicows.lib Kernel32.lib User32.lib Shell32.lib AdvApi32.lib $(NOINHERIT)"
-				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
-				LinkIncremental="1"
+				AdditionalDependencies="Unicows.lib"
+				OutputFile="$(OutDir)\$(ProjectName)xxxxxxx.dll"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Release/libmzgc.pdb"
-				ImportLibrary=".\Release/libmzgcxxxxxxx.lib"/>
+				ImportLibrary="$(OutDir)\$(ProjectName)xxxxxxx.lib"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libmzgc.tlb"/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -186,7 +178,7 @@
 				RelativePath="..\mzscheme\uniplt.c">
 			</File>
 			<File
-				RelativePath="..\..\mzscheme\gc\win32_threads.c">
+				RelativePath="..\..\Mzscheme\Gc\win32_threads.c">
 			</File>
 		</Filter>
 		<Filter

@@ -1,3 +1,4 @@
+
 ;; use some kind of signature predicate to get the primitive
 ;; color right. 
 ;; Ie allow turtle primitives to be primitive color, but if the
@@ -625,8 +626,7 @@
 					    (change-style syntax-style
 							  (zodiac:location-offset (zodiac:zodiac-start zobj))
 							  (add1 (zodiac:location-offset 
-								 (zodiac:zodiac-finish zobj))))
-					    (mred:message-box "before change style.2")]
+								 (zodiac:zodiac-finish zobj))))]
 					   [else (void)]))))
 				    '(mred:message-box "color-syntax ending"))]
 					    

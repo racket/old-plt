@@ -15,23 +15,65 @@ exec mzpp -s "---begin" -o `echo "$0" | sed 's/ssc$/c/'` "$0"
 {:(load "ssc-utils.ss"):}
 
 #include "schpriv.h"
+
 #ifndef WINDOWS_DYNAMIC_LOAD
+
 # include <dlfcn.h>
-# include <inttypes.h>
+
+# if SIZEOF_CHAR == 1
+   typedef   signed char Tsint8;
+   typedef unsigned char Tuint8;
+# else
+#  error "configuration error, please contact PLT (int8)"
+# endif
+
+# if SIZEOF_SHORT == 2
+   typedef   signed short Tsint16;
+   typedef unsigned short Tuint16;
+# elif SIZEOF_INT == 2
+   typedef   signed int Tsint16;
+   typedef unsigned int Tuint16;
+# else
+#  error "configuration error, please contact PLT (int16)"
+# endif
+
+# if SIZEOF_INT == 4
+   typedef   signed int Tsint32;
+   typedef unsigned int Tuint32;
+# elif SIZEOF_LONG == 4
+   typedef   signed long Tsint32;
+   typedef unsigned long Tuint32;
+# else
+#  error "configuration error, please contact PLT (int32)"
+# endif
+
+# if SIZEOF_LONG == 8
+   typedef   signed long Tsint64;
+   typedef unsigned long Tuint64;
+# elif SIZEOF_LONG_LONG == 8
+   typedef   signed long long Tsint64;
+   typedef unsigned long long Tuint64;
+# else
+#  error "configuration error, please contact PLT (int64)"
+# endif
+
 #else
+
 # include <windows.h>
 # ifndef __CYGWIN32__
 #  include <wtypes.h>
-   typedef          _int8   int8_t;
-   typedef unsigned _int8  uint8_t;
-   typedef          _int16  int16_t;
-   typedef unsigned _int16 uint16_t;
-   typedef          _int32  int32_t;
-   typedef unsigned _int32 uint32_t;
-   typedef          _int64  int64_t;
-   typedef unsigned _int64 uint64_t;
+   typedef          _int8  Tsint8;
+   typedef unsigned _int8  Tuint8;
+   typedef          _int16 Tsint16;
+   typedef unsigned _int16 Tuint16;
+   typedef          _int32 Tsint32;
+   typedef unsigned _int32 Tuint32;
+   typedef          _int64 Tsint64;
+   typedef unsigned _int64 Tuint64;
 # endif
+
 #endif
+
 #include "ffi.h"
 
 #ifndef MZ_PRECISE_GC
@@ -426,8 +468,8 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 
 (~ "/***********************************************************************"\\
    " * The following are the only primitive types." \\
-   " * The tricky part is figuring out what width-ed types corrspond to what"\\
-   " * internal types.  Matthew says:" \\
+   " * The tricky part is figuring out what width-ed types correspond to"\\
+   " * what internal types.  Matthew says:" \\
    " *   MzScheme expects to be compiled such that sizeof(int) == 4," \\
    " *   sizeof(long) == sizeof(void*), sizeof(short) >= 2," \\
    " *   sizeof(char) == 1, sizeof(float) == 4, and sizeof(double) == 8." \\
@@ -441,17 +483,17 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 
 ;; libffi primitive types
 ;;    scheme-name  c-type     SCHEME_?P  SCHEME_?_VAL scheme_make_
-(defctype* 'int8   "int8_t"       "INT"  "INT"        "integer")
-(defctype* 'uint8  "uint8_t"      "INT"  "UINT"       "integer_from_unsigned")
+(defctype* 'int8   "Tsint8"      "INT"  "INT"        "integer")
+(defctype* 'uint8  "Tuint8"      "INT"  "UINT"       "integer_from_unsigned")
 (~ "/* `byte' is a convenient name for uint8 */")
 (defaliastype 'byte 'uint8)
-(defctype* 'int16  "int16_t"      "INT"  "INT"        "integer")
-(defctype* 'uint16 "uint16_t"     "INT"  "UINT"       "integer_from_unsigned")
+(defctype* 'int16  "Tsint16"     "INT"  "INT"        "integer")
+(defctype* 'uint16 "Tuint16"     "INT"  "UINT"       "integer_from_unsigned")
 (~ "/* `word' is a convenient name for uint16 */")
 (defaliastype 'word 'uint16)
 
 (~ "/* Treats integers properly: */")
-(defctype* 'int32  "int32_t"
+(defctype* 'int32  "Tsint32"
   (lambda (x aux) (list "scheme_get_realint_val("x",&"aux")")) #f
   "realinteger_value")
 (~ "/* Treats integers properly: */")
@@ -460,10 +502,10 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
   "realinteger_value_from_unsigned")
 
 ;; mzlonglong is always assumed to be 64 bits, or the above will throw an error
-(defctype* 'int64  "int64_t"
+(defctype* 'int64  "Tsint64"
   (lambda (x aux) (list "scheme_get_long_long_val("x",&"aux")")) #f
   "integer_value_from_long_long")
-(defctype* 'uint64 "uint64_t"
+(defctype* 'uint64 "Tuint64"
   (lambda (x aux) (list "scheme_get_unsigned_long_long_val("x",&"aux")")) #f
   "integer_value_from_unsigned_long_long")
 
@@ -472,9 +514,9 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 (defaliastype 'uint 'uint32)
 
 (~ "/* This is like int32, but always assumes fixnum: */")
-(defctype* '(fixint "int32")   "int32_t"  "INT" "INT"  "integer")
+(defctype* '(fixint "int32")   "Tsint32"  "INT" "INT"  "integer")
 (~ "/* This is like uint32, but always assumes fixnum: */")
-(defctype* '(ufixint "uint32") "uint32_t" "INT" "UINT" "integer_from_unsigned")
+(defctype* '(ufixint "uint32") "Tuint32" "INT" "UINT" "integer_from_unsigned")
 
 (~ "/* This is what mzscheme defines as long: */" \\
    "#ifndef SIXTY_FOUR_BIT_INTEGERS" \\

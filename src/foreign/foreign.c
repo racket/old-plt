@@ -8,23 +8,65 @@
 
 
 #include "schpriv.h"
+
 #ifndef WINDOWS_DYNAMIC_LOAD
+
 # include <dlfcn.h>
-# include <inttypes.h>
+
+# if SIZEOF_CHAR == 1
+   typedef   signed char Tsint8;
+   typedef unsigned char Tuint8;
+# else
+#  error "configuration error, please contact PLT (int8)"
+# endif
+
+# if SIZEOF_SHORT == 2
+   typedef   signed short Tsint16;
+   typedef unsigned short Tuint16;
+# elif SIZEOF_INT == 2
+   typedef   signed int Tsint16;
+   typedef unsigned int Tuint16;
+# else
+#  error "configuration error, please contact PLT (int16)"
+# endif
+
+# if SIZEOF_INT == 4
+   typedef   signed int Tsint32;
+   typedef unsigned int Tuint32;
+# elif SIZEOF_LONG == 4
+   typedef   signed long Tsint32;
+   typedef unsigned long Tuint32;
+# else
+#  error "configuration error, please contact PLT (int32)"
+# endif
+
+# if SIZEOF_LONG == 8
+   typedef   signed long Tsint64;
+   typedef unsigned long Tuint64;
+# elif SIZEOF_LONG_LONG == 8
+   typedef   signed long long Tsint64;
+   typedef unsigned long long Tuint64;
+# else
+#  error "configuration error, please contact PLT (int64)"
+# endif
+
 #else
+
 # include <windows.h>
 # ifndef __CYGWIN32__
 #  include <wtypes.h>
-   typedef          _int8   int8_t;
-   typedef unsigned _int8  uint8_t;
-   typedef          _int16  int16_t;
-   typedef unsigned _int16 uint16_t;
-   typedef          _int32  int32_t;
-   typedef unsigned _int32 uint32_t;
-   typedef          _int64  int64_t;
-   typedef unsigned _int64 uint64_t;
+   typedef          _int8  Tsint8;
+   typedef unsigned _int8  Tuint8;
+   typedef          _int16 Tsint16;
+   typedef unsigned _int16 Tuint16;
+   typedef          _int32 Tsint32;
+   typedef unsigned _int32 Tuint32;
+   typedef          _int64 Tsint64;
+   typedef unsigned _int64 Tuint64;
 # endif
+
 #endif
+
 #include "ffi.h"
 
 #ifndef MZ_PRECISE_GC
@@ -359,8 +401,8 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 
 /***********************************************************************
  * The following are the only primitive types.
- * The tricky part is figuring out what width-ed types corrspond to what
- * internal types.  Matthew says:
+ * The tricky part is figuring out what width-ed types correspond to
+ * what internal types.  Matthew says:
  *   MzScheme expects to be compiled such that sizeof(int) == 4,
  *   sizeof(long) == sizeof(void*), sizeof(short) >= 2,
  *   sizeof(char) == 1, sizeof(float) == 4, and sizeof(double) == 8.
@@ -380,7 +422,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_int8 (2)
 /* Type Name:   int8
  * LibFfi type: ffi_type_sint8
- * C type:      int8_t
+ * C type:      Tsint8
  * Predicate:   SCHEME_INTP(<Scheme>)
  * Scheme->C:   SCHEME_INT_VAL(<Scheme>)
  * C->Scheme:   scheme_make_integer(<C>)
@@ -389,7 +431,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_uint8 (3)
 /* Type Name:   uint8
  * LibFfi type: ffi_type_uint8
- * C type:      uint8_t
+ * C type:      Tuint8
  * Predicate:   SCHEME_INTP(<Scheme>)
  * Scheme->C:   SCHEME_UINT_VAL(<Scheme>)
  * C->Scheme:   scheme_make_integer_from_unsigned(<C>)
@@ -403,7 +445,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_int16 (4)
 /* Type Name:   int16
  * LibFfi type: ffi_type_sint16
- * C type:      int16_t
+ * C type:      Tsint16
  * Predicate:   SCHEME_INTP(<Scheme>)
  * Scheme->C:   SCHEME_INT_VAL(<Scheme>)
  * C->Scheme:   scheme_make_integer(<C>)
@@ -412,7 +454,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_uint16 (5)
 /* Type Name:   uint16
  * LibFfi type: ffi_type_uint16
- * C type:      uint16_t
+ * C type:      Tuint16
  * Predicate:   SCHEME_INTP(<Scheme>)
  * Scheme->C:   SCHEME_UINT_VAL(<Scheme>)
  * C->Scheme:   scheme_make_integer_from_unsigned(<C>)
@@ -427,7 +469,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_int32 (6)
 /* Type Name:   int32
  * LibFfi type: ffi_type_sint32
- * C type:      int32_t
+ * C type:      Tsint32
  * Predicate:   scheme_get_realint_val(<Scheme>,&aux)
  * Scheme->C:   -none- (set by the predicate)
  * C->Scheme:   scheme_make_realinteger_value(<C>)
@@ -446,7 +488,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_int64 (8)
 /* Type Name:   int64
  * LibFfi type: ffi_type_sint64
- * C type:      int64_t
+ * C type:      Tsint64
  * Predicate:   scheme_get_long_long_val(<Scheme>,&aux)
  * Scheme->C:   -none- (set by the predicate)
  * C->Scheme:   scheme_make_integer_value_from_long_long(<C>)
@@ -455,7 +497,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_uint64 (9)
 /* Type Name:   uint64
  * LibFfi type: ffi_type_uint64
- * C type:      uint64_t
+ * C type:      Tuint64
  * Predicate:   scheme_get_unsigned_long_long_val(<Scheme>,&aux)
  * Scheme->C:   -none- (set by the predicate)
  * C->Scheme:   scheme_make_integer_value_from_unsigned_long_long(<C>)
@@ -474,7 +516,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_fixint (10)
 /* Type Name:   fixint
  * LibFfi type: ffi_type_sint32
- * C type:      int32_t
+ * C type:      Tsint32
  * Predicate:   SCHEME_INTP(<Scheme>)
  * Scheme->C:   SCHEME_INT_VAL(<Scheme>)
  * C->Scheme:   scheme_make_integer(<C>)
@@ -484,7 +526,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #define FOREIGN_ufixint (11)
 /* Type Name:   ufixint
  * LibFfi type: ffi_type_uint32
- * C type:      uint32_t
+ * C type:      Tuint32
  * Predicate:   SCHEME_INTP(<Scheme>)
  * Scheme->C:   SCHEME_UINT_VAL(<Scheme>)
  * C->Scheme:   scheme_make_integer_from_unsigned(<C>)
@@ -665,16 +707,16 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  */
 
 typedef union _ForeignAny {
-  int8_t x_int8;
-  uint8_t x_uint8;
-  int16_t x_int16;
-  uint16_t x_uint16;
-  int32_t x_int32;
+  Tsint8 x_int8;
+  Tuint8 x_uint8;
+  Tsint16 x_int16;
+  Tuint16 x_uint16;
+  Tsint32 x_int32;
   unsigned int x_uint32;
-  int64_t x_int64;
-  uint64_t x_uint64;
-  int32_t x_fixint;
-  uint32_t x_ufixint;
+  Tsint64 x_int64;
+  Tuint64 x_uint64;
+  Tsint32 x_fixint;
+  Tuint32 x_ufixint;
   long x_long;
   unsigned long x_ulong;
   long x_fixnum;
@@ -793,16 +835,16 @@ static int ctype_sizeof(Scheme_Object *type)
   if (type == NULL) return -1;
   switch (CTYPE_PRIMLABEL(type)) {
   case FOREIGN_void: return 0;
-  case FOREIGN_int8: return sizeof(int8_t);
-  case FOREIGN_uint8: return sizeof(uint8_t);
-  case FOREIGN_int16: return sizeof(int16_t);
-  case FOREIGN_uint16: return sizeof(uint16_t);
-  case FOREIGN_int32: return sizeof(int32_t);
+  case FOREIGN_int8: return sizeof(Tsint8);
+  case FOREIGN_uint8: return sizeof(Tuint8);
+  case FOREIGN_int16: return sizeof(Tsint16);
+  case FOREIGN_uint16: return sizeof(Tuint16);
+  case FOREIGN_int32: return sizeof(Tsint32);
   case FOREIGN_uint32: return sizeof(unsigned int);
-  case FOREIGN_int64: return sizeof(int64_t);
-  case FOREIGN_uint64: return sizeof(uint64_t);
-  case FOREIGN_fixint: return sizeof(int32_t);
-  case FOREIGN_ufixint: return sizeof(uint32_t);
+  case FOREIGN_int64: return sizeof(Tsint64);
+  case FOREIGN_uint64: return sizeof(Tuint64);
+  case FOREIGN_fixint: return sizeof(Tsint32);
+  case FOREIGN_ufixint: return sizeof(Tuint32);
   case FOREIGN_long: return sizeof(long);
   case FOREIGN_ulong: return sizeof(unsigned long);
   case FOREIGN_fixnum: return sizeof(long);
@@ -1012,16 +1054,16 @@ static Scheme_Object *c_to_scheme(Scheme_Object *type, void *src)
     return (Scheme_Object*)src;
   } else switch (CTYPE_PRIMLABEL(type)) {
     case FOREIGN_void: return scheme_void;
-    case FOREIGN_int8: return scheme_make_integer(((int8_t*)src)[0]);
-    case FOREIGN_uint8: return scheme_make_integer_from_unsigned(((uint8_t*)src)[0]);
-    case FOREIGN_int16: return scheme_make_integer(((int16_t*)src)[0]);
-    case FOREIGN_uint16: return scheme_make_integer_from_unsigned(((uint16_t*)src)[0]);
-    case FOREIGN_int32: return scheme_make_realinteger_value(((int32_t*)src)[0]);
+    case FOREIGN_int8: return scheme_make_integer(((Tsint8*)src)[0]);
+    case FOREIGN_uint8: return scheme_make_integer_from_unsigned(((Tuint8*)src)[0]);
+    case FOREIGN_int16: return scheme_make_integer(((Tsint16*)src)[0]);
+    case FOREIGN_uint16: return scheme_make_integer_from_unsigned(((Tuint16*)src)[0]);
+    case FOREIGN_int32: return scheme_make_realinteger_value(((Tsint32*)src)[0]);
     case FOREIGN_uint32: return scheme_make_realinteger_value_from_unsigned(((unsigned int*)src)[0]);
-    case FOREIGN_int64: return scheme_make_integer_value_from_long_long(((int64_t*)src)[0]);
-    case FOREIGN_uint64: return scheme_make_integer_value_from_unsigned_long_long(((uint64_t*)src)[0]);
-    case FOREIGN_fixint: return scheme_make_integer(((int32_t*)src)[0]);
-    case FOREIGN_ufixint: return scheme_make_integer_from_unsigned(((uint32_t*)src)[0]);
+    case FOREIGN_int64: return scheme_make_integer_value_from_long_long(((Tsint64*)src)[0]);
+    case FOREIGN_uint64: return scheme_make_integer_value_from_unsigned_long_long(((Tuint64*)src)[0]);
+    case FOREIGN_fixint: return scheme_make_integer(((Tsint32*)src)[0]);
+    case FOREIGN_ufixint: return scheme_make_integer_from_unsigned(((Tuint32*)src)[0]);
     case FOREIGN_long: return scheme_make_integer_value(((long*)src)[0]);
     case FOREIGN_ulong: return scheme_make_integer_value_from_unsigned(((unsigned long*)src)[0]);
     case FOREIGN_fixnum: return scheme_make_integer(((long*)src)[0]);
@@ -1072,66 +1114,66 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       scheme_wrong_type("Scheme->C","non-void-C-type",0,1,&(type));
     case FOREIGN_int8:
       if (SCHEME_INTP(val)) {
-        int8_t tmp;
-        tmp = (int8_t)(SCHEME_INT_VAL(val));
-        (((int8_t*)dst)[0]) = tmp; return NULL;
+        Tsint8 tmp;
+        tmp = (Tsint8)(SCHEME_INT_VAL(val));
+        (((Tsint8*)dst)[0]) = tmp; return NULL;
       } else {
         scheme_wrong_type("Scheme->C","int8",0,1,&(val));
         return NULL; /* shush the compiler */
       }
     case FOREIGN_uint8:
       if (SCHEME_INTP(val)) {
-        uint8_t tmp;
-        tmp = (uint8_t)(SCHEME_UINT_VAL(val));
-        (((uint8_t*)dst)[0]) = tmp; return NULL;
+        Tuint8 tmp;
+        tmp = (Tuint8)(SCHEME_UINT_VAL(val));
+        (((Tuint8*)dst)[0]) = tmp; return NULL;
       } else {
         scheme_wrong_type("Scheme->C","uint8",0,1,&(val));
         return NULL; /* shush the compiler */
       }
     case FOREIGN_int16:
       if (SCHEME_INTP(val)) {
-        int16_t tmp;
-        tmp = (int16_t)(SCHEME_INT_VAL(val));
-        (((int16_t*)dst)[0]) = tmp; return NULL;
+        Tsint16 tmp;
+        tmp = (Tsint16)(SCHEME_INT_VAL(val));
+        (((Tsint16*)dst)[0]) = tmp; return NULL;
       } else {
         scheme_wrong_type("Scheme->C","int16",0,1,&(val));
         return NULL; /* shush the compiler */
       }
     case FOREIGN_uint16:
       if (SCHEME_INTP(val)) {
-        uint16_t tmp;
-        tmp = (uint16_t)(SCHEME_UINT_VAL(val));
-        (((uint16_t*)dst)[0]) = tmp; return NULL;
+        Tuint16 tmp;
+        tmp = (Tuint16)(SCHEME_UINT_VAL(val));
+        (((Tuint16*)dst)[0]) = tmp; return NULL;
       } else {
         scheme_wrong_type("Scheme->C","uint16",0,1,&(val));
         return NULL; /* shush the compiler */
       }
     case FOREIGN_int32:
-      if (!(scheme_get_realint_val(val,&(((int32_t*)dst)[0])))) scheme_wrong_type("Scheme->C","int32",0,1,&(val));
+      if (!(scheme_get_realint_val(val,&(((Tsint32*)dst)[0])))) scheme_wrong_type("Scheme->C","int32",0,1,&(val));
       return NULL;
     case FOREIGN_uint32:
       if (!(scheme_get_unsigned_realint_val(val,&(((unsigned int*)dst)[0])))) scheme_wrong_type("Scheme->C","uint32",0,1,&(val));
       return NULL;
     case FOREIGN_int64:
-      if (!(scheme_get_long_long_val(val,&(((int64_t*)dst)[0])))) scheme_wrong_type("Scheme->C","int64",0,1,&(val));
+      if (!(scheme_get_long_long_val(val,&(((Tsint64*)dst)[0])))) scheme_wrong_type("Scheme->C","int64",0,1,&(val));
       return NULL;
     case FOREIGN_uint64:
-      if (!(scheme_get_unsigned_long_long_val(val,&(((uint64_t*)dst)[0])))) scheme_wrong_type("Scheme->C","uint64",0,1,&(val));
+      if (!(scheme_get_unsigned_long_long_val(val,&(((Tuint64*)dst)[0])))) scheme_wrong_type("Scheme->C","uint64",0,1,&(val));
       return NULL;
     case FOREIGN_fixint:
       if (SCHEME_INTP(val)) {
-        int32_t tmp;
-        tmp = (int32_t)(SCHEME_INT_VAL(val));
-        (((int32_t*)dst)[0]) = tmp; return NULL;
+        Tsint32 tmp;
+        tmp = (Tsint32)(SCHEME_INT_VAL(val));
+        (((Tsint32*)dst)[0]) = tmp; return NULL;
       } else {
         scheme_wrong_type("Scheme->C","fixint",0,1,&(val));
         return NULL; /* shush the compiler */
       }
     case FOREIGN_ufixint:
       if (SCHEME_INTP(val)) {
-        uint32_t tmp;
-        tmp = (uint32_t)(SCHEME_UINT_VAL(val));
-        (((uint32_t*)dst)[0]) = tmp; return NULL;
+        Tuint32 tmp;
+        tmp = (Tuint32)(SCHEME_UINT_VAL(val));
+        (((Tuint32*)dst)[0]) = tmp; return NULL;
       } else {
         scheme_wrong_type("Scheme->C","ufixint",0,1,&(val));
         return NULL; /* shush the compiler */

@@ -18,7 +18,6 @@
 		       ((require-library "pconverr.ss")
 			(mzlib string)
 			(mzlib function))]
-	[face : drscheme:face^ ((require-relative-library "face.ss") mred)]
 	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss") mred framework)]
 	[interface : drscheme:interface^
 		   ((require-library "interface.ss" "userspce") zodiac)]
@@ -36,7 +35,7 @@
 	[export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib framework print-convert app
 				     edit language snip
-				     init interface face graph
+				     init interface graph
 				     help aries zodiac)]
 	[language : drscheme:language^
 		  ((require-relative-library "language.ss")
@@ -65,7 +64,6 @@
 				(mzlib pretty-print)
 				print-convert
 				(export* unit)
-				(export* compound-unit)
 				(export* get/extend)
 				(export* basis)
 				(mzlib function))])
@@ -84,5 +82,4 @@
 	  (unit export* drscheme:export)
 	  (unit tool drscheme:tool)
 	  (unit app drscheme:app)
-	  (unit main drscheme:main)
-	  (unit face drscheme:face)))
+	  (unit main drscheme:main)))

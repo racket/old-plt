@@ -3,7 +3,6 @@
 	  [mzlib : mzlib:core^]
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
-	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:app : drscheme:app^]
 	  [help : help:start-help-desk^]
 	  [zodiac : drscheme:zodiac^])
@@ -16,8 +15,8 @@
        [()
 	(mred:begin-busy-cursor)
 	(set! help-desk-frame (help:start-help-desk 
-			       (lambda () 
-				 (send (drscheme:unit:make-unit #f) create-frame))))
+			       (lambda ()
+				 (drscheme:unit:open-drscheme-window))))
 	(mred:end-busy-cursor)]
        [(key)
 	(let ([turn-cursor-off? (not help-desk-frame)])
@@ -44,13 +43,7 @@
       ;[file-menu:new-string (lambda () "Unit")]
        [file-menu:new
 	(lambda (item evt)
-	  (send (drscheme:unit:make-unit #f) create-frame))]
-       [file-menu:between-new-and-open
-	(lambda (file-menu)
-	  '(send file-menu append-item "New Compound Unit"
-		 (lambda ()
-		   (send (drscheme:compound-unit:make-compound-unit #f)
-			 create-frame))))]
+	  (drscheme:unit:open-drscheme-window))]
        [file-menu:open (lambda (item evt) (fw:handler:open-file) #t)]
        [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
        [help-menu:about-string (lambda () "DrScheme")])
@@ -61,7 +54,7 @@
   (define <%> (interface (fw:frame:info<%> basics<%>)))
 
   (define -mixin
-    (mixin (fw:frame:info<%> basics<%>) (<%>) (unit)
+    (mixin (fw:frame:info<%> basics<%>) (<%>) (name)
       (rename [super-make-root-area-container make-root-area-container])
       (inherit get-info-panel)
       (public
@@ -103,7 +96,7 @@
       
       (inherit get-menu% get-menu-bar)
       (sequence 
-	(super-init (send unit get-name))
+	(super-init name)
 	(set! show-menu (make-object (get-menu%) "Show" (get-menu-bar))))
       
       (private

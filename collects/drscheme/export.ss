@@ -8,7 +8,6 @@
 			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
 			   [interface : drscheme:interface^]
-			   [face : drscheme:face^]
 			   [graph : drscheme:graph^]
 			   [help-desk : help:start-help-desk^]
 			   [aries : plt:aries^]
@@ -34,16 +33,12 @@
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
 		mred mzlib framework
-		unit compound-unit* app
+		unit app
 		help-desk zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
-	   mred mzlib framework app compound-unit* frame edit rep
-	   language get/extend face graph)]
-	[compound-unit* : drscheme:compound-unit^
-	  ((require-relative-library "cunit.ss")
-	   mred mzlib framework graph unit frame face)]
-	;[signature : drscheme:signature^ ((require-relative-library "sig.ss") mred framework)]
+	   mred mzlib framework app frame edit rep
+	   language get/extend graph)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^
 		    ((require-relative-library "params.ss") 
@@ -51,8 +46,6 @@
   (export (unit basis)
 	  (unit frame)
 	  (unit unit)
-	  (unit compound-unit* compound-unit)
-	  ;(unit signature)
 	  (unit program)
 	  (unit get/extend)
 	  (unit rep)))

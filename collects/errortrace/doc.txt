@@ -2,7 +2,7 @@
  [index entires: _debug_ _debugger_ _debugging_
                  _profile_ _profiler_ _profiling_ ]
 
-Errortrace is a poor man's stack-trace-on-exceptions/profiler for
+Errortrace is a Poor Man's stack-trace-on-exceptions/profiler for
  MzScheme.  Errortrace is not a complete debugger, and a real debugger
  in DrScheme is imminent; meanwhile, using errotrace might be better
  than nothing.

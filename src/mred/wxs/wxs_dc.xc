@@ -217,7 +217,7 @@ static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, ch
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
-  wxColour *c;
+  wxColour *c = NULL;
   double xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
@@ -265,7 +265,7 @@ static void dcSetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, ch
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
-  wxColour *c;
+  wxColour *c = NULL;
   double xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
@@ -316,27 +316,56 @@ static wxBitmap *dc_target(Scheme_Object *obj)
   return (wxBitmap *)0x1; /* dont't return NULL because that matches unspecified mask */
 }
 
-static void ScaleSection(wxMemoryDC *dest, wxMemoryDC *src, 
-			 double tx, double ty, int w2, int h2,
-			 double fx, double fy, int w, int h)
+static wxMemoryDC *temp_mdc;
+
+static void ScaleSection(wxMemoryDC *dest, wxBitmap *src, 
+			 double tx, double ty, double ww2, double hh2,
+			 double fx, double fy, double ww, double hh)
 {
   double xs, ys, r, g, b, t, dx, dy, wt, si, sj;
-  long i, j, starti, endi, startj, endj, p, xi, xj;
-  unsigned char *s, *s2;
-  SETUP_VAR_STACK(4);
+  int i, j, starti, endi, startj, endj, p, xi, xj, sbmw, sbmh, w, h, w2, h2;
+  unsigned char *s = NULL, *s2 = NULL;
+  wxMemoryDC *srcdc = NULL;
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, s);
   VAR_STACK_PUSH(1, s2);
   VAR_STACK_PUSH(2, dest);
   VAR_STACK_PUSH(3, src);
+  VAR_STACK_PUSH(4, srcdc);
 
   if (!dest->Ok())
-    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-scaled-section"), 
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
 				       "dc is not ok: ",
 				       WITH_VAR_STACK(objscheme_bundle_wxMemoryDC(dest))));
   if (!src->Ok())
-    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-scaled-section"), 
-				       "source dc is not ok: ", 
-				       WITH_VAR_STACK(objscheme_bundle_wxMemoryDC(src))));
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
+				       "source bitmap is not ok: ", 
+				       WITH_VAR_STACK(objscheme_bundle_wxBitmap(src))));
+
+  sbmw = src->GetWidth();
+  sbmh = src->GetHeight();
+  if (fx > sbmw)
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
+				       "x offset too large for source bitmap: ", 
+				       WITH_VAR_STACK(scheme_make_double(fx))));
+  if (fy > sbmh)
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
+				       "y offset too large for source bitmap: ", 
+				       WITH_VAR_STACK(scheme_make_double(fy))));
+  if ((fx + ww) > sbmw)
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
+				       "x offset plus width too large for source bitmap: ", 
+				       WITH_VAR_STACK(scheme_make_double(fx))));
+  if ((fy + hh) > sbmh)
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
+				       "y offset plus height too large for source bitmap: ", 
+				       WITH_VAR_STACK(scheme_make_double(fy))));
+  
+  w = (int)(floor(ww + fx) - floor(fx));
+  h = (int)(floor(hh + fy) - floor(fy));
+
+  w2 = (int)(floor(ww2 + tx) - floor(tx));
+  h2 = (int)(floor(hh2 + ty) - floor(ty));
 
   xs = (double)w2 / (double)w;
   ys = (double)h2 / (double)h;
@@ -344,7 +373,31 @@ static void ScaleSection(wxMemoryDC *dest, wxMemoryDC *src,
   s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
   s2 = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w2 * h2 * 4));
 
-  WITH_VAR_STACK(dcGetARGBPixels(src, fx, fy, w, h, (char *)s));
+#ifdef wx_msw
+  srcdc = (wxMemoryDC *)src->selectedInto;
+#endif
+  if (!srcdc) {
+    if (!temp_mdc) {
+      wxREGGLOB(temp_mdc);
+      temp_mdc = WITH_VAR_STACK(new wxMemoryDC(1));
+    }
+    WITH_VAR_STACK(temp_mdc->SelectObject(src));
+    /* Might fail, so we double-check: */
+    if (WITH_VAR_STACK(temp_mdc->GetObject()))
+      srcdc = temp_mdc;
+  }
+  if (!srcdc) {
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
+				       "could not inspect source bitmap: ", 
+				       WITH_VAR_STACK(objscheme_bundle_wxBitmap(src))));
+  }
+
+
+  WITH_VAR_STACK(dcGetARGBPixels(srcdc, fx, fy, w, h, (char *)s));
+
+  if (srcdc == temp_mdc) {
+    temp_mdc->SelectObject(NULL);
+  }
 
   for (i = 0; i < w2; i++) {
     si = (double)i / xs;
@@ -480,7 +533,7 @@ static void ScaleSection(wxMemoryDC *dest, wxMemoryDC *src,
 @ m "get-argb-pixels" : void dcGetARGBPixels(double,double,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
 @ m "set-argb-pixels" : void dcSetARGBPixels(double,double,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
 
-@ m "draw-scaled-section" : void ScaleSection(wxMemoryDC!,double,double,rint[0|10000],rint[0|10000],double,double,rint[0|10000],rint[0|10000])
+@ m "draw-bitmap-section-smooth" : void ScaleSection(wxBitmap!,double,double,nndouble,nndouble,double,double,nndouble,nndouble)
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("bitmap-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();

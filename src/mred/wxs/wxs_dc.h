@@ -32,7 +32,7 @@ Scheme_Object *objscheme_bundle_wxDC(class wxDC *realobj);
 class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int nullOK);
 extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
-extern class wxMemoryDC *objscheme_unbundle_wxMemoryDC(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 #endif

@@ -43,6 +43,12 @@ LDFLAGS = $(XLIB)
 
 MREDLINKER = @MREDLINKER@
 
+JPEG_A = ../wxcommon/jpeg/libjpeg.a
+JPEG_INC = -I../wxcommon/jpeg -I$(srcdir)/../wxcommon/jpeg
+ZLIB_A = ../wxcommon/zlib/libz.a
+ZLIB_INC = -I$(srcdir)/../wxcommon/zlib
+PNG_A = ../wxcommon/libpng/libpng.a
+
 EXTRALDFLAGS_wx_xt =
 EXTRALDFLAGS_wx_mac = -framework Carbon -framework QuickTime -lz
 MREDLDFLAGS = $(LDFLAGS) $(EXTRALDFLAGS_@WXVARIANT@)
@@ -50,7 +56,7 @@ WXLIBS_wx_xt = ../wxxt/src/libwx_xt.a ../wxxt/contrib/xpm/lib/libXpm.a ../wxxt/u
 MREDX_wx_xt = mredx.o
 WXLIBS_wx_mac = ../wxmac/src/libwxmac.a
 MREDX_wx_mac = mredmac.o simpledrop.o
-WXLIBSNORM = mred.o $(MREDX_@WXVARIANT@) wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a $(WXLIBS_@WXVARIANT@) ../wxcommon/jpeg/libjpeg.a ../wxcommon/libpng/libpng.a @ZLIB_A@
+WXLIBSNORM = mred.o $(MREDX_@WXVARIANT@) wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a $(WXLIBS_@WXVARIANT@) @JPEG_A@ @PNG_A@ @ZLIB_A@
 WXLIBSDYN = libmred.@LIBSFX@
 GUILIBS_wx_xt = $(LDLIBS)
 GUILIBS_wx_mac = @LIBS@
@@ -169,7 +175,7 @@ wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h \
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
 
 wxJPEG.o : $(srcdir)/../wxcommon/wxJPEG.cxx $(srcdir)/../wxcommon/wxGC.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -I../wxcommon/jpeg -I$(srcdir)/../wxcommon/jpeg -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) @JPEG_INC@ -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
 
 dl_stub.o: $(srcdir)/misc/dl_stub.c
 	$(CC) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/dl_stub.c -o dl_stub.o

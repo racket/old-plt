@@ -40,6 +40,12 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
+JPEG_A = ../../wxcommon/jpeg/libjpeg.a
+JPEG_INC = -I../../wxcommon/jpeg -I$(srcdir)/../../wxcommon/jpeg
+ZLIB_A = ../../wxcommon/zlib/libz.a
+ZLIB_INC = -I$(srcdir)/../../wxcommon/zlib
+PNG_A = ../../wxcommon/libpng/libpng.a
+
 XFORM_INC_wx_xt = -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src
 XFORM_INC_wx_mac = -Dwx_mac -DOS_X -MMD -DWX_CARBON -I$(WXMACDIR)/../utils/image/src -I$(WXMACDIR)/../contrib/wxxpm/libxpm.34b/lib -I$(WXMACDIR)/../../mac/mzscheme
 
@@ -47,7 +53,7 @@ MZMMM_wx_xt = ../../mzscheme/mzscheme3m
 MZMMM_wx_mac = env DYLD_FRAMEWORK_PATH="`pwd`/../../mzscheme" ../../mzscheme/mzscheme3m
 MZMMM = $(MZMMM_@WXVARIANT@)
 
-XFORM = $(MZMMM) -rq $(srcdir)/../../mzscheme/gc2/xform.ss "$(CC) -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) $(XFORM_INC_@WXVARIANT@) -I$(srcdir)/../../wxcommon/jpeg -I../../wxcommon/jpeg"
+XFORM = $(MZMMM) -rq $(srcdir)/../../mzscheme/gc2/xform.ss "$(CC) -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) $(XFORM_INC_@WXVARIANT@) @JPEG_INC@ @ZLIB_INC@"
 XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/gc2.h
 
 WXBDIR=../../wxxt
@@ -1358,8 +1364,8 @@ wx_mac_PLAIN_OBJS = \
 
 xform: $(XSRCS) xsrc/xcglue.c
 
-wx_xt_LIBS = -lXpm ../../wxcommon/jpeg/libjpeg.a  ../../wxcommon/libpng/libpng.a  ../../wxcommon/zlib/libz.a $(LDLIBS)
-wx_mac_LIBS = -framework Carbon -framework QuickTime ../../wxcommon/jpeg/libjpeg.a ../../wxcommon/libpng/libpng.a -lz
+wx_xt_LIBS = ../../wxxt/contrib/xpm/lib/libXpm.a @JPEG_A@ @PNG_A@ @ZLIB_A@ $(LDLIBS)
+wx_mac_LIBS = -framework Carbon -framework QuickTime @JPEG_A@ @PNG_A@ -lz
 
 MREDLINKER = @MREDLINKER@
 

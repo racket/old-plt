@@ -3,7 +3,7 @@
    The copying version is mainly for debugging, since
    it can move data on every collection. */
 
-#define USE_DEBUGGING_COLLECTOR 1
+#define USE_DEBUGGING_COLLECTOR 0
 
 #if USE_DEBUGGING_COLLECTOR
 # include "copy.c"

@@ -33,6 +33,7 @@
   (name-eq? marks-equal?
     parsed->raw extend-parsed->raw
     lexically-resolved? in-lexically-extended-env
+    add-primitivized-micro-form add-primitivized-macro-form
     generate-name
     scheme-expand scheme-expand-program
     set-top-level-status get-top-level-status at-top-level?

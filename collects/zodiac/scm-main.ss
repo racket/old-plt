@@ -176,319 +176,280 @@
 
   ; ----------------------------------------------------------------------
 
-  (let ((case-lambda-handler
-	  (lambda (cl-kwd)
-	    (add-micro-form cl-kwd scheme-vocabulary
-	      (let* ((kwd `(,cl-kwd else))
-		      (in-pattern `(,cl-kwd
-				     (args ,@expr-pattern)
-				     ...))
-		      (m&e (pat:make-match&env in-pattern kwd)))
-		(lambda (expr env attributes vocab)
-		  (cond
-		    ((pat:match-against m&e expr env)
-		      =>
-		      (lambda (p-env)
-			(let ((args (pat:pexpand '(args ...) p-env kwd))
-			       (bodies (pat:pexpand `((,@expr-pattern) ...)
-					 p-env kwd)))
-			  (let*
-			    ((top-level? (get-top-level-status attributes))
-			      (_ (set-top-level-status attributes))
-			      (arglists+exprs
-				(map
-				  (lambda (arg body)
-				    (distinct-valid-syntactic-id/s? arg)
-				    (let* ((arglist
-					     (expand-expr arg env attributes
-					       arglist-decls-vocab))
-					    (arg-vars+marks
-					      (arglist-vars arglist)))
-				      (extend-env arg-vars+marks env)
-				      (begin0
-					(cons
-					  (make-argument-list arglist)
-					  (parse-expr body env attributes vocab expr))
-					(retract-env (map car arg-vars+marks) env))))
-				  args bodies)))
-			    (set-top-level-status attributes top-level?)
-			    (create-case-lambda-form
-			      (map car arglists+exprs)
-			      (map cdr arglists+exprs)
-			      expr)))))
-		    (else
-		      (static-error expr "Malformed case-lambda")))))))))
-    (case-lambda-handler 'case-lambda)
-    (case-lambda-handler '#%case-lambda))
+  (add-primitivized-micro-form 'case-lambda scheme-vocabulary
+    (let* ((kwd `(else))
+	    (in-pattern `(_
+			   (args ,@expr-pattern)
+			   ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((args (pat:pexpand '(args ...) p-env kwd))
+		     (bodies (pat:pexpand `((,@expr-pattern) ...)
+			       p-env kwd)))
+		(let*
+		  ((top-level? (get-top-level-status attributes))
+		    (_ (set-top-level-status attributes))
+		    (arglists+exprs
+		      (map
+			(lambda (arg body)
+			  (distinct-valid-syntactic-id/s? arg)
+			  (let* ((arglist
+				   (expand-expr arg env attributes
+				     arglist-decls-vocab))
+				  (arg-vars+marks
+				    (arglist-vars arglist)))
+			    (extend-env arg-vars+marks env)
+			    (begin0
+			      (cons
+				(make-argument-list arglist)
+				(parse-expr body env attributes vocab expr))
+			      (retract-env (map car arg-vars+marks) env))))
+			args bodies)))
+		  (set-top-level-status attributes top-level?)
+		  (create-case-lambda-form
+		    (map car arglists+exprs)
+		    (map cdr arglists+exprs)
+		    expr)))))
+	  (else
+	    (static-error expr "Malformed case-lambda"))))))
 
-  (let ((lambda-handler
-	  (lambda (l-kwd)
-	    (add-macro-form l-kwd scheme-vocabulary
-	      (let* ((kwd (list l-kwd))
-		      (in-pattern `(,l-kwd args ,@expr-pattern))
-		      (out-pattern `(case-lambda
-				      (args ,@expr-pattern)))
-		      (m&e (pat:make-match&env in-pattern kwd)))
-		(lambda (expr env)
-		  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-		    (static-error expr "Malformed lambda"))))))))
-    (lambda-handler 'lambda)
-    (lambda-handler '#%lambda))
+  (add-primitivized-macro-form 'lambda scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ args ,@expr-pattern))
+	    (out-pattern `(case-lambda
+			    (args ,@expr-pattern)))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env)
+	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	  (static-error expr "Malformed lambda")))))
 
   (define-struct internal-definition (vars val))
 
   (define internal-define-vocab
     (create-vocabulary 'internal-define-vocab scheme-vocabulary))
 
-  (let ((define-values-handler
-	  (lambda (d-kwd)
-	    (add-micro-form d-kwd internal-define-vocab
-	      (let* ((kwd (list d-kwd))
-		      (in-pattern `(,d-kwd (var ...) val))
-		      (m&e (pat:make-match&env in-pattern kwd)))
-		(lambda (expr env attributes vocab)
-		  (cond
-		    ((pat:match-against m&e expr env)
-		      =>
-		      (lambda (p-env)
-			(let* ((vars (pat:pexpand '(var ...) p-env kwd))
-				(_ (map valid-syntactic-id? vars))
-				(val (pat:pexpand 'val p-env kwd)))
-			  (make-internal-definition vars val))))
-		    (else
-		      (static-error expr
-			"Malformed internal definition")))))))))
-    (define-values-handler 'define-values)
-    (define-values-handler '#%define-values))
+  (add-primitivized-micro-form 'define-values internal-define-vocab
+    (let* ((kwd '())
+	    (in-pattern `(_ (var ...) val))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let* ((vars (pat:pexpand '(var ...) p-env kwd))
+		      (_ (map valid-syntactic-id? vars))
+		      (val (pat:pexpand 'val p-env kwd)))
+		(make-internal-definition vars val))))
+	  (else
+	    (static-error expr
+	      "Malformed internal definition"))))))
 
   (when (language>=? 'side-effecting)
-    (let
-      ((begin-handler
-	 (lambda (b-kwd)
-	   (add-micro-form b-kwd scheme-vocabulary
-	     (let* ((kwd (list b-kwd))
-		     (in-pattern `(,b-kwd b ...))
-		     (m&e (pat:make-match&env in-pattern kwd)))
-	       (lambda (expr env attributes vocab)
-		 (cond
-		   ((pat:match-against m&e expr env)
-		     =>
-		     (lambda (p-env)
-		       (let ((bodies (pat:pexpand '(b ...) p-env kwd)))
-			 (if (get-top-level-status attributes)
-			   (if (null? bodies)
-			     (static-error expr "Malformed begin")
-			     (create-begin-form
-			       (map (lambda (e)
-				      (expand-expr e env attributes vocab))
-				 bodies)
-			       expr))
-			   (let-values
-			     (((definitions terms)
-				(let loop ((seen '()) (rest bodies))
-				  (if (null? rest)
-				    (static-error expr
-				      (if (null? seen)
-					"Malformed begin"
-					"Internal definitions not followed by expression"))
-				    (let ((first (car rest)))
-				      (let ((e-first
-					      (expand-expr first env
-						attributes
-						internal-define-vocab)))
-					(if (internal-definition? e-first)
-					  (loop (cons e-first seen)
-					    (cdr rest))
-					  (values (reverse seen)
-					    rest))))))))
-			     (if (null? definitions)
-			       (create-begin-form
-				 (map (lambda (e)
-					(expand-expr e env attributes
-					  vocab))
-				   terms)
-				 expr)
-			       (expand-expr
-				 (structurize-syntax
-				   `(letrec*-values
-				      ,(map (lambda (def)
-					      (list
-						(internal-definition-vars
-						  def)
-						(internal-definition-val
-						  def)))
-					 definitions)
-				      ,@terms)
-				   expr)
-				 env attributes vocab)))))))
-		   (else
-		     (static-error expr "Malformed begin")))))))))
-      (begin-handler 'begin)
-      (begin-handler '#%begin)))
-
-  (when (language>=? 'side-effecting)
-    (let
-      ((begin0-handler
-	 (lambda (b-kwd)
-	   (add-micro-form b-kwd scheme-vocabulary
-	     (let* ((kwd (list b-kwd))
-		     (in-pattern `(,b-kwd b ...))
-		     (m&e (pat:make-match&env in-pattern kwd)))
-	       (lambda (expr env attributes vocab)
-		 (cond
-		   ((pat:match-against m&e expr env)
-		     =>
-		     (lambda (p-env)
-		       (let ((bodies (pat:pexpand '(b ...) p-env kwd))
-			      (top-level? (get-top-level-status attributes)))
-			 (when (null? bodies)
-			   (static-error expr "Malformed begin0"))
-			 (set-top-level-status attributes)
-			 (let*-values
-			   (((first-body) (car bodies))
-			     ((definitions terms)
-			       (let loop ((seen '()) (rest (cdr bodies)))
-				 (if (null? rest)
-				   (if (null? seen)
-				     (values '() '())
-				     (static-error expr
-				       "Internal definitions not followed by expression"))
-				   (let ((first (car rest)))
-				     (let ((e-first
-					     (expand-expr first env
-					       attributes
-					       internal-define-vocab)))
-				       (if (internal-definition? e-first)
-					 (loop (cons e-first seen)
-					   (cdr rest))
-					 (values (reverse seen)
-					   rest))))))))
-			   (begin0
-			     (if (null? definitions)
-			       (create-begin0-form
-				 (map (lambda (e)
-					(expand-expr e env attributes
-					  vocab))
-				   bodies)
-				 expr)
-			       (expand-expr
-				 (structurize-syntax
-				   `(begin0
-				      ,first-body
-				      (letrec*-values
-					,(map
-					   (lambda (def)
-					     (list
-					       (internal-definition-vars
-						 def)
-					       (internal-definition-val
-						 def)))
-					   definitions)
-					,@terms))
-				   expr)
-				 env attributes vocab))
-			     (set-top-level-status attributes
-			       top-level?))))))
-		   (else
-		     (static-error expr "Malformed begin0")))))))))
-      (begin0-handler 'begin0)
-      (begin0-handler '#%begin0)))
-
-					; (if test then)                                            [core]
-					; (if test then else)                                       [core]
-
-  (let ((if-handler
-	  (lambda (i-kwd)
-	    (add-micro-form i-kwd scheme-vocabulary
-	      (let* ((kwd (list i-kwd))
-		      (in-pattern-1 `(,i-kwd test then))
-		      (in-pattern-2 `(,i-kwd test then else))
-		      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-		      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-		(lambda (expr env attributes vocab)
-		  (cond
-		    ((pat:match-against m&e-1 expr env)
-		      =>
-		      (lambda (p-env)
-			(when (language<=? 'structured)
-			  (static-error expr "If must have an else clause"))
+    (add-primitivized-micro-form 'begin scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(_ b ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((bodies (pat:pexpand '(b ...) p-env kwd)))
+		  (if (get-top-level-status attributes)
+		    (if (null? bodies)
+		      (static-error expr "Malformed begin")
+		      (create-begin-form
+			(map (lambda (e)
+			       (expand-expr e env attributes vocab))
+			  bodies)
+			expr))
+		    (let-values
+		      (((definitions terms)
+			 (let loop ((seen '()) (rest bodies))
+			   (if (null? rest)
+			     (static-error expr
+			       (if (null? seen)
+				 "Malformed begin"
+				 "Internal definitions not followed by expression"))
+			     (let ((first (car rest)))
+			       (let ((e-first
+				       (expand-expr first env
+					 attributes
+					 internal-define-vocab)))
+				 (if (internal-definition? e-first)
+				   (loop (cons e-first seen)
+				     (cdr rest))
+				   (values (reverse seen)
+				     rest))))))))
+		      (if (null? definitions)
+			(create-begin-form
+			  (map (lambda (e)
+				 (expand-expr e env attributes
+				   vocab))
+			    terms)
+			  expr)
 			(expand-expr
 			  (structurize-syntax
-			    (pat:pexpand '(if test then (#%void)) p-env kwd)
-			    expr '(-1))
-			  env attributes vocab)))
-		    ((pat:match-against m&e-2 expr env)
-		      =>
-		      (lambda (p-env)
-			(let* ((top-level? (get-top-level-status attributes))
-				(_ (set-top-level-status attributes))
-				(test-exp (expand-expr
-					    (pat:pexpand 'test p-env kwd)
-					    env attributes vocab))
-				(_ (set-top-level-status attributes
-				     top-level?))
-				(then-exp (expand-expr
-					    (pat:pexpand 'then p-env kwd)
-					    env attributes vocab))
-				(else-exp (expand-expr
-					    (pat:pexpand 'else p-env kwd)
-					    env attributes vocab)))
-			  (create-if-form test-exp then-exp else-exp expr))))
-		    (else
-		      (static-error expr "Malformed if")))))))))
-    (if-handler 'if)
-    (if-handler '#%if))
-
-					; (quote expr)                                              [core]
-
-  (let ((quote-handler
-	  (lambda (q-kwd)
-	    (add-micro-form q-kwd scheme-vocabulary
-	      (let* ((kwd (list q-kwd))
-		      (in-pattern `(,q-kwd body))
-		      (m&e (pat:make-match&env in-pattern kwd)))
-		(lambda (expr env attributes vocab)
-		  (if (and (z:list? expr)
-			(= 2 (z:sequence-length expr)))
-		    (let ((contents (expose-list expr)))
-		      (if (and (z:symbol? (car contents))
-			    (or (eq? 'quote (z:read-object (car contents)))
-			      (eq? '#%quote (z:read-object (car contents)))))
-			(create-quote-form (cadr contents) expr)
-			(static-error expr "Malformed quote")))
-		    (static-error expr "Malformed quote"))))))))
-    (quote-handler 'quote)
-    (quote-handler '#%quote))
+			    `(letrec*-values
+			       ,(map (lambda (def)
+				       (list
+					 (internal-definition-vars
+					   def)
+					 (internal-definition-val
+					   def)))
+				  definitions)
+			       ,@terms)
+			    expr)
+			  env attributes vocab)))))))
+	    (else
+	      (static-error expr "Malformed begin")))))))
 
   (when (language>=? 'side-effecting)
-    (let ((set!-handler
-	    (lambda (s-kwd)
-	      (add-micro-form s-kwd scheme-vocabulary
-		(let* ((kwd (list s-kwd))
-			(in-pattern `(,s-kwd var val))
-			(m&e (pat:make-match&env in-pattern kwd)))
-		  (lambda (expr env attributes vocab)
-		    (let ((p-env (pat:match-against m&e expr env)))
-		      (if p-env
-			(let* ((top-level? (get-top-level-status attributes))
-				(_ (set-top-level-status attributes))
-				(var-p (pat:pexpand 'var p-env kwd))
-				(_ (valid-syntactic-id? var-p))
-				(id-expr (expand-expr var-p env attributes
-					   vocab))
-				(expr-expr (expand-expr
-					     (pat:pexpand 'val p-env kwd)
-					     env attributes vocab)))
-			  (set-top-level-status attributes top-level?)
-			  (create-set!-form id-expr expr-expr expr))
-			(static-error expr "Malformed set!")))))))))
-      (set!-handler 'set!)
-      (set!-handler '#%set!)))
+    (add-primitivized-micro-form 'begin0 scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(_ b ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((bodies (pat:pexpand '(b ...) p-env kwd))
+		       (top-level? (get-top-level-status attributes)))
+		  (when (null? bodies)
+		    (static-error expr "Malformed begin0"))
+		  (set-top-level-status attributes)
+		  (let*-values
+		    (((first-body) (car bodies))
+		      ((definitions terms)
+			(let loop ((seen '()) (rest (cdr bodies)))
+			  (if (null? rest)
+			    (if (null? seen)
+			      (values '() '())
+			      (static-error expr
+				"Internal definitions not followed by expression"))
+			    (let ((first (car rest)))
+			      (let ((e-first
+				      (expand-expr first env
+					attributes
+					internal-define-vocab)))
+				(if (internal-definition? e-first)
+				  (loop (cons e-first seen)
+				    (cdr rest))
+				  (values (reverse seen)
+				    rest))))))))
+		    (begin0
+		      (if (null? definitions)
+			(create-begin0-form
+			  (map (lambda (e)
+				 (expand-expr e env attributes
+				   vocab))
+			    bodies)
+			  expr)
+			(expand-expr
+			  (structurize-syntax
+			    `(begin0
+			       ,first-body
+			       (letrec*-values
+				 ,(map
+				    (lambda (def)
+				      (list
+					(internal-definition-vars
+					  def)
+					(internal-definition-val
+					  def)))
+				    definitions)
+				 ,@terms))
+			    expr)
+			  env attributes vocab))
+		      (set-top-level-status attributes
+			top-level?))))))
+	    (else
+	      (static-error expr "Malformed begin0")))))))
+
+  (add-primitivized-micro-form 'if scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern-1 `(_ test then))
+	    (in-pattern-2 `(_ test then else))
+	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	    (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e-1 expr env)
+	    =>
+	    (lambda (p-env)
+	      (when (language<=? 'structured)
+		(static-error expr "If must have an else clause"))
+	      (expand-expr
+		(structurize-syntax
+		  (pat:pexpand '(if test then (#%void)) p-env kwd)
+		  expr '(-1))
+		env attributes vocab)))
+	  ((pat:match-against m&e-2 expr env)
+	    =>
+	    (lambda (p-env)
+	      (let* ((top-level? (get-top-level-status attributes))
+		      (_ (set-top-level-status attributes))
+		      (test-exp (expand-expr
+				  (pat:pexpand 'test p-env kwd)
+				  env attributes vocab))
+		      (_ (set-top-level-status attributes
+			   top-level?))
+		      (then-exp (expand-expr
+				  (pat:pexpand 'then p-env kwd)
+				  env attributes vocab))
+		      (else-exp (expand-expr
+				  (pat:pexpand 'else p-env kwd)
+				  env attributes vocab)))
+		(create-if-form test-exp then-exp else-exp expr))))
+	  (else
+	    (static-error expr "Malformed if"))))))
+
+  (add-primitivized-micro-form 'quote scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ body))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(if (and (z:list? expr)
+	      (= 2 (z:sequence-length expr)))
+	  (let ((contents (expose-list expr)))
+	    (if (and (z:symbol? (car contents))
+		  (or (eq? 'quote (z:read-object (car contents)))
+		    (eq? '#%quote (z:read-object (car contents)))))
+	      (create-quote-form (cadr contents) expr)
+	      (static-error expr "Malformed quote")))
+	  (static-error expr "Malformed quote")))))
 
   (when (language>=? 'side-effecting)
-    (add-micro-form 'set!-values scheme-vocabulary
-      (let* ((kwd '(set!-values))
-	      (in-pattern '(set!-values (vars ...) val))
+    (add-primitivized-micro-form 'set! scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(_ var val))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (let ((p-env (pat:match-against m&e expr env)))
+	    (if p-env
+	      (let* ((top-level? (get-top-level-status attributes))
+		      (_ (set-top-level-status attributes))
+		      (var-p (pat:pexpand 'var p-env kwd))
+		      (_ (valid-syntactic-id? var-p))
+		      (id-expr (expand-expr var-p env attributes
+				 vocab))
+		      (expr-expr (expand-expr
+				   (pat:pexpand 'val p-env kwd)
+				   env attributes vocab)))
+		(set-top-level-status attributes top-level?)
+		(create-set!-form id-expr expr-expr expr))
+	      (static-error expr "Malformed set!")))))))
+
+  (when (language>=? 'side-effecting)
+    (add-primitivized-micro-form 'set!-values scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ (vars ...) val))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond
@@ -509,15 +470,13 @@
 			expr)
 		      env attributes vocab)))))
 	    (else
-	      (static-error expr "Malformed set!")))))))
-
-					; (local (defs ...) body ...)                                    [micro]
+	      (static-error expr "Malformed set!-values")))))))
 
   (define local-extract-vocab (create-vocabulary 'local-extract-vocab))
 
-  (add-micro-form 'local scheme-vocabulary
-    (let* ((kwd '(local))
-	    (in-pattern `(local (defs ...) ,@expr-pattern))
+  (add-primitivized-micro-form 'local scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ (defs ...) ,@expr-pattern))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(let ((p-env (pat:match-against m&e expr env)))
@@ -547,21 +506,19 @@
 		(set-top-level-status attributes top-level?)))
 	    (static-error expr "Malformed local"))))))
 
-					; (define var val)                                          [core]
-
-  (let* ((kwd '(define))
-	  (in-pattern-1 `(define (fun . args) ,@expr-pattern))
+  (let* ((kwd '())
+	  (in-pattern-1 `(_ (fun . args) ,@expr-pattern))
 	  (out-pattern-1 `(define-values (fun) (lambda args ,@expr-pattern)))
-	  (in-pattern-2 `(define var val))
+	  (in-pattern-2 `(_ var val))
 	  (out-pattern-2 `(define-values (var) val))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-    (add-macro-form 'define scheme-vocabulary
+    (add-primitivized-macro-form 'define scheme-vocabulary
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
 	  (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	  (static-error expr "Malformed define"))))
-    (add-micro-form 'define local-extract-vocab
+    (add-primitivized-micro-form 'define local-extract-vocab
       (lambda (expr env attributes vocab)
 	(cond
 	  ((pat:match-against m&e-1 expr env)
@@ -582,55 +539,51 @@
 	  (else
 	    (static-error expr "Malformed define in local clause"))))))
 
-  (let ((define-values-handler
-	  (lambda (d-kwd)
-	    (let* ((kwd (list d-kwd))
-		    (in-pattern-1 `(,d-kwd (var ...) val))
-		    (m&e-1 (pat:make-match&env in-pattern-1 kwd)))
-	      (let ((define-values-helper
-		      (lambda (handler)
-			(lambda (expr env attributes vocab)
-			  (unless (at-top-level? attributes)
-			    (static-error expr
-			      (if (language<=? 'structured)
-				"Not at top-level"
-				"Invalid position for internal definition")))
-			  (cond
-			    ((pat:match-against m&e-1 expr env)
-			      =>
-			      (lambda (p-env)
-				(let* ((top-level? (get-top-level-status
-						     attributes))
-					(_ (set-top-level-status
-					     attributes))
-					(vars (pat:pexpand '(var ...)
-						p-env kwd))
-					(_ (map valid-syntactic-id? vars))
-					(val (pat:pexpand 'val p-env kwd))
-					(out (handler expr env
-					       attributes vocab vars val)))
-				  (set-top-level-status attributes
-				    top-level?)
-				  out)))
-			    (else (static-error expr
-				    "Malformed define-values")))))))
-		(add-micro-form d-kwd scheme-vocabulary
-		  (define-values-helper
-		    (lambda (expr env attributes vocab vars val)
-		      (let* ((id-exprs (map (lambda (v)
-					      (expand-expr v env
-						attributes vocab))
-					 vars))
-			      (expr-expr (expand-expr val env
-					   attributes vocab)))
-			(create-define-values-form id-exprs
-			  expr-expr expr)))))
-		(add-micro-form d-kwd local-extract-vocab
-		  (define-values-helper
-		    (lambda (expr env attributes vocab vars val)
-		      (cons vars val)))))))))
-    (define-values-handler 'define-values)
-    (define-values-handler '#%define-values))
+  (let* ((kwd '())
+	  (in-pattern-1 `(_ (var ...) val))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd)))
+    (let ((define-values-helper
+	    (lambda (handler)
+	      (lambda (expr env attributes vocab)
+		(unless (at-top-level? attributes)
+		  (static-error expr
+		    (if (language<=? 'structured)
+		      "Not at top-level"
+		      "Invalid position for internal definition")))
+		(cond
+		  ((pat:match-against m&e-1 expr env)
+		    =>
+		    (lambda (p-env)
+		      (let* ((top-level? (get-top-level-status
+					   attributes))
+			      (_ (set-top-level-status
+				   attributes))
+			      (vars (pat:pexpand '(var ...)
+				      p-env kwd))
+			      (_ (map valid-syntactic-id? vars))
+			      (val (pat:pexpand 'val p-env kwd))
+			      (out (handler expr env
+				     attributes vocab vars val)))
+			(set-top-level-status attributes
+			  top-level?)
+			out)))
+		  (else (static-error expr
+			  "Malformed define-values")))))))
+      (add-primitivized-micro-form 'define-values scheme-vocabulary
+	(define-values-helper
+	  (lambda (expr env attributes vocab vars val)
+	    (let* ((id-exprs (map (lambda (v)
+				    (expand-expr v env
+				      attributes vocab))
+			       vars))
+		    (expr-expr (expand-expr val env
+				 attributes vocab)))
+	      (create-define-values-form id-exprs
+		expr-expr expr)))))
+      (add-primitivized-micro-form 'define-values local-extract-vocab
+	(define-values-helper
+	  (lambda (expr env attributes vocab vars val)
+	    (cons vars val))))))
 
   (define extract-type&super
     (let* ((kwd '())
@@ -652,31 +605,27 @@
 	    (static-error type-spec "Invalid specification"))))))
 
   (when (language>=? 'structured)
-    (let ((struct-handler
-	    (lambda (s-kwd)
-	      (add-micro-form s-kwd scheme-vocabulary
-		(let* ((kwd (list s-kwd))
-			(in-pattern `(,s-kwd type-spec (fields ...)))
-			(m&e-in (pat:make-match&env in-pattern kwd)))
-		  (lambda (expr env attributes vocab)
-		    (cond
-		      ((pat:match-against m&e-in expr env)
-			=>
-			(lambda (p-env)
-			  (let* ((fields (pat:pexpand '(fields ...) p-env kwd))
-				  (type-spec (pat:pexpand 'type-spec p-env kwd)))
-			    (distinct-valid-syntactic-id/s? fields)
-			    (let-values (((type super)
-					   (extract-type&super type-spec env)))
-			      (create-struct-form
-				type
-				(and super (expand-expr super env attributes vocab))
-				fields
-				expr)))))
-		      (else
-			(static-error expr "Malformed struct")))))))))
-      (struct-handler 'struct)
-      (struct-handler '#%struct)))
+    (add-primitivized-micro-form 'struct scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(_ type-spec (fields ...)))
+	      (m&e-in (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-in expr env)
+	      =>
+	      (lambda (p-env)
+		(let* ((fields (pat:pexpand '(fields ...) p-env kwd))
+			(type-spec (pat:pexpand 'type-spec p-env kwd)))
+		  (distinct-valid-syntactic-id/s? fields)
+		  (let-values (((type super)
+				 (extract-type&super type-spec env)))
+		    (create-struct-form
+		      type
+		      (and super (expand-expr super env attributes vocab))
+		      fields
+		      expr)))))
+	    (else
+	      (static-error expr "Malformed struct")))))))
 
   (define generate-struct-names
     (opt-lambda (type fields source
@@ -705,8 +654,8 @@
 		    fields)))))))))
 
   (when (language>=? 'structured)
-    (let* ((kwd '(define-struct))
-	    (in-pattern '(define-struct type-spec (fields ...)))
+    (let* ((kwd '())
+	    (in-pattern '(_ type-spec (fields ...)))
 	    (m&e-in (pat:make-match&env in-pattern kwd)))
       (let ((ds-core
 	      (lambda (handler)
@@ -727,7 +676,7 @@
 			      names struct-expr)))))
 		    (else
 		      (static-error expr "Malformed define-struct")))))))
-	(add-micro-form 'define-struct scheme-vocabulary
+	(add-primitivized-micro-form 'define-struct scheme-vocabulary
 	  (ds-core
 	    (lambda (expr env attributes vocab names struct-expr)
 	      (expand-expr
@@ -735,15 +684,14 @@
 		  `(define-values ,names ,struct-expr)
 		  expr)
 		env attributes vocab))))
-	(add-micro-form 'define-struct local-extract-vocab
+	(add-primitivized-micro-form 'define-struct local-extract-vocab
 	  (ds-core
 	    (lambda (expr env attributes vocab names struct-expr)
 	      (cons names struct-expr)))))))
 
   (when (language>=? 'structured)
-    (let* ((kwd '(let-struct))
-	    (in-pattern `(let-struct type-spec (fields ...)
-			   ,@expr-pattern))
+    (let* ((kwd '())
+	    (in-pattern `(_ type-spec (fields ...) ,@expr-pattern))
 	    (m&e-in (pat:make-match&env in-pattern kwd)))
       (let ((ls-core
 	      (lambda (handler)
@@ -755,7 +703,7 @@
 			(handler expr env attributes vocab p-env)))
 		    (else
 		      (static-error expr "Malformed let-struct")))))))
-	(add-micro-form 'let-struct scheme-vocabulary
+	(add-primitivized-micro-form 'let-struct scheme-vocabulary
 	  (ls-core
 	    (lambda (expr env attributes vocab p-env)
 	      (let* ((fields (pat:pexpand '(fields ...) p-env kwd))
@@ -775,14 +723,11 @@
 
   ; ----------------------------------------------------------------------
 
-  ; (let ((var val) ...) body ...)                           [macro]
-  ; (let fun ((var val) ...) body ...)                       [macro]
-
-  (add-macro-form 'let scheme-vocabulary
-    (let* ((kwd '(let))
+  (add-primitivized-macro-form 'let scheme-vocabulary
+    (let* ((kwd '())
 	    (in-pattern-1 (if (language<=? 'structured)
-			    '(let ((v e) ...) b)
-			    '(let fun ((v e) ...) b ...)))
+			    '(_ ((v e) ...) b)
+			    '(_ fun ((v e) ...) b ...)))
 	    (out-pattern-1 (if (language<=? 'structured)
 			     '(let-values (((v) e) ...) b)
 			     '((letrec ((fun (lambda (v ...) b ...)))
@@ -790,7 +735,7 @@
 				e ...)))
 	    (in-pattern-2 (if (language<=? 'structured)
 			    in-pattern-1
-			    '(let ((v e) ...) b ...)))
+			    '(_ ((v e) ...) b ...)))
 	    (out-pattern-2 (if (language<=? 'structured)
 			     out-pattern-1
 			     '(let-values (((v) e) ...) b ...)))
@@ -831,20 +776,15 @@
 	'(split* E ...)
 	'(split*fn (lambda () E) ...))))
 
-					; (let* () body ...)                                       [macro]
-					; (let* ((var0 val0) (var1 val1) ...) body ...)            [macro]
-
-  (add-macro-form
-    'let*
-    scheme-vocabulary
-    (let* ((kwd '(let*))
+  (add-primitivized-macro-form 'let* scheme-vocabulary
+    (let* ((kwd '())
 	    (in-pattern-1 (if (language<=? 'structured)
-			    '(let* () b) '(let* () b ...)))
+			    '(_ () b) '(_ () b ...)))
 	    (out-pattern-1 (if (language<=? 'structured)
 			     'b '(begin b ...)))
 	    (in-pattern-2 (if (language<=? 'structured)
-			    '(let* ((v0 e0) (v1 e1) ...) b)
-			    '(let* ((v0 e0) (v1 e1) ...) b ...)))
+			    '(_ ((v0 e0) (v1 e1) ...) b)
+			    '(_ ((v0 e0) (v1 e1) ...) b ...)))
 	    (out-pattern-2 (if (language<=? 'structured)
 			     '(let ((v0 e0)) (let* ((v1 e1) ...) b))
 			     '(let ((v0 e0)) (let* ((v1 e1) ...) b ...))))
@@ -855,12 +795,10 @@
 	  (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	  (static-error expr "Malformed let*")))))
 
-					; (delay expr)                                              [core]
-
   (when (language>=? 'structured)
-    (add-macro-form 'delay scheme-vocabulary
-      (let* ((kwd '(delay))
-	      (in-pattern '(delay expr))
+    (add-primitivized-macro-form 'delay scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ expr))
 	      (out-pattern '(#%make-promise (lambda () expr)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
@@ -868,9 +806,9 @@
 	    (static-error expr "Malformed delay"))))))
 
   (when (language>=? 'structured)
-    (add-macro-form 'time scheme-vocabulary
-      (let* ((kwd '(time))
-	      (in-pattern '(time expr))
+    (add-primitivized-macro-form 'time scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ expr))
 	      (out-pattern '(let-values (((v cpu user)
 					   (#%time-apply (lambda () expr))))
 			      (#%printf "cpu time: ~s real time: ~s~n"
@@ -888,65 +826,60 @@
 	  (values (reverse rev-head) tail)
 	  (loop (cons (car tail) rev-head) (cdr tail) (cdr counter))))))
 
-  (let ((let-values-handler
-	  (lambda (l-kwd)
-	    (add-micro-form l-kwd scheme-vocabulary
-	      (let* ((kwd (list l-kwd))
-		      (in-pattern `(,l-kwd (((v ...) e) ...)
-				     ,@expr-pattern))
-		      (m&e (pat:make-match&env in-pattern kwd)))
-		(lambda (expr env attributes vocab)
-		  (cond
-		    ((pat:match-against m&e expr env)
-		      =>
-		      (lambda (p-env)
-			(let ((vars (pat:pexpand '((v ...) ...) p-env kwd))
-			       (vals (pat:pexpand '(e ...) p-env kwd))
-			       (body (pat:pexpand `(,@expr-pattern)
-				       p-env kwd)))
-			  (let*
-			    ((top-level? (get-top-level-status attributes))
-			      (_ (set-top-level-status attributes))
-			      (all-vars (apply append vars))
-			      (_ (distinct-valid-syntactic-id/s? all-vars))
-			      (expanded-vals
-				(map (lambda (e)
-				       (expand-expr e env attributes vocab))
-				  vals))
-			      (new-vars+marks
-				(map create-lexical-binding+marks all-vars))
-			      (new-vars
-				(map car new-vars+marks))
-			      (_
-				(extend-env new-vars+marks env))
-			      (result
-				(create-let-values-form
-				  (let loop ((var-lists vars)
-					      (new-vars new-vars))
-				    (if (null? var-lists)
-				      '()
-				      (let-values (((head tail)
-						     (break-list new-vars
-						       (car var-lists))))
-					(cons head
-					  (loop (cdr var-lists) tail)))))
-				  expanded-vals
-				  (parse-expr body env
-				    attributes vocab expr)
-				  expr))
-			      (_ (retract-env new-vars env)))
-			    (set-top-level-status attributes top-level?)
-			    result))))
-		    (else
-		      (static-error expr "Malformed let-values")))))))))
-    (let-values-handler 'let-values)
-    (let-values-handler '#%let-values))
+  (add-primitivized-micro-form 'let-values scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ (((v ...) e) ...) ,@expr-pattern))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((vars (pat:pexpand '((v ...) ...) p-env kwd))
+		     (vals (pat:pexpand '(e ...) p-env kwd))
+		     (body (pat:pexpand `(,@expr-pattern)
+			     p-env kwd)))
+		(let*
+		  ((top-level? (get-top-level-status attributes))
+		    (_ (set-top-level-status attributes))
+		    (all-vars (apply append vars))
+		    (_ (distinct-valid-syntactic-id/s? all-vars))
+		    (expanded-vals
+		      (map (lambda (e)
+			     (expand-expr e env attributes vocab))
+			vals))
+		    (new-vars+marks
+		      (map create-lexical-binding+marks all-vars))
+		    (new-vars
+		      (map car new-vars+marks))
+		    (_
+		      (extend-env new-vars+marks env))
+		    (result
+		      (create-let-values-form
+			(let loop ((var-lists vars)
+				    (new-vars new-vars))
+			  (if (null? var-lists)
+			    '()
+			    (let-values (((head tail)
+					   (break-list new-vars
+					     (car var-lists))))
+			      (cons head
+				(loop (cdr var-lists) tail)))))
+			expanded-vals
+			(parse-expr body env
+			  attributes vocab expr)
+			expr))
+		    (_ (retract-env new-vars env)))
+		  (set-top-level-status attributes top-level?)
+		  result))))
+	  (else
+	    (static-error expr "Malformed let-values"))))))
 
-  (add-macro-form 'let*-values scheme-vocabulary
-    (let* ((kwd '(let*-values))
-	    (in-pattern-1 `(let*-values () ,@expr-pattern))
+  (add-primitivized-macro-form 'let*-values scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern-1 `(_ () ,@expr-pattern))
 	    (out-pattern-1 `(let-values () ,@expr-pattern))
-	    (in-pattern-2 `(let*-values ((v0 e0) (v1 e1) ...)
+	    (in-pattern-2 `(_ ((v0 e0) (v1 e1) ...)
 			     ,@expr-pattern))
 	    (out-pattern-2 `(let-values ((v0 e0))
 			      (let*-values ((v1 e1) ...)
@@ -958,100 +891,91 @@
 	  (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	  (static-error expr "Malformed let*-values")))))
 
-  (let ((letrec*-values-handler
-	  (lambda (l-kwd)
-	    (add-micro-form l-kwd scheme-vocabulary
-	      (let* ((kwd (list l-kwd))
-		      (in-pattern `(,l-kwd (((v ...) e) ...)
-				     ,@expr-pattern))
-		      (m&e (pat:make-match&env in-pattern kwd)))
-		(lambda (expr env attributes vocab)
-		  (cond
-		    ((pat:match-against m&e expr env)
-		      =>
-		      (lambda (p-env)
-			(let ((vars (pat:pexpand '((v ...) ...) p-env kwd))
-			       (vals (pat:pexpand '(e ...) p-env kwd))
-			       (body (pat:pexpand `(,@expr-pattern)
-				       p-env kwd)))
-			  (let*
-			    ((all-vars (apply append vars))
-			      (top-level? (get-top-level-status attributes))
-			      (_ (set-top-level-status attributes))
-			      (_ (distinct-valid-syntactic-id/s? all-vars))
-			      (new-vars+marks
-				(map create-lexical-binding+marks all-vars))
-			      (new-vars
-				(map car new-vars+marks))
-			      (_
-				(extend-env new-vars+marks env))
-			      (expanded-vals
-				(map (lambda (e)
-				       (expand-expr e env attributes vocab))
-				  vals))
-			      (result
-				(create-letrec*-values-form
-				  (let loop ((var-lists vars)
-					      (new-vars new-vars))
-				    (if (null? var-lists)
-				      '()
-				      (let-values (((head tail)
-						     (break-list new-vars
-						       (car var-lists))))
-					(cons head
-					  (loop (cdr var-lists) tail)))))
-				  expanded-vals
-				  (parse-expr body env
-				    attributes vocab expr)
-				  expr))
-			      (_ (retract-env new-vars env)))
-			    (set-top-level-status attributes top-level?)
-			    result))))
-		    (else
-		      (static-error expr "Malformed letrec*-values")))))))))
-    (letrec*-values-handler 'letrec*-values)
-    (letrec*-values-handler '#%letrec*-values))
+  (add-primitivized-micro-form 'letrec*-values scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ (((v ...) e) ...) ,@expr-pattern))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((vars (pat:pexpand '((v ...) ...) p-env kwd))
+		     (vals (pat:pexpand '(e ...) p-env kwd))
+		     (body (pat:pexpand `(,@expr-pattern)
+			     p-env kwd)))
+		(let*
+		  ((all-vars (apply append vars))
+		    (top-level? (get-top-level-status attributes))
+		    (_ (set-top-level-status attributes))
+		    (_ (distinct-valid-syntactic-id/s? all-vars))
+		    (new-vars+marks
+		      (map create-lexical-binding+marks all-vars))
+		    (new-vars
+		      (map car new-vars+marks))
+		    (_
+		      (extend-env new-vars+marks env))
+		    (expanded-vals
+		      (map (lambda (e)
+			     (expand-expr e env attributes vocab))
+			vals))
+		    (result
+		      (create-letrec*-values-form
+			(let loop ((var-lists vars)
+				    (new-vars new-vars))
+			  (if (null? var-lists)
+			    '()
+			    (let-values (((head tail)
+					   (break-list new-vars
+					     (car var-lists))))
+			      (cons head
+				(loop (cdr var-lists) tail)))))
+			expanded-vals
+			(parse-expr body env
+			  attributes vocab expr)
+			expr))
+		    (_ (retract-env new-vars env)))
+		  (set-top-level-status attributes top-level?)
+		  result))))
+	  (else
+	    (static-error expr "Malformed letrec*-values"))))))
 
-  (add-macro-form 'letrec-values scheme-vocabulary
-    (let* ((kwd '(letrec-values))
-	    (in-pattern `(letrec-values (((v ...) e) ...) ,@expr-pattern))
+  (add-primitivized-macro-form 'letrec-values scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ (((v ...) e) ...) ,@expr-pattern))
 	    (m&e (pat:make-match&env in-pattern kwd))
 	    (out-pattern `(letrec*-values (((v ...) e) ...) ,@expr-pattern)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed letrec-values")))))
 
-  (add-macro-form 'letrec* scheme-vocabulary
-    (let* ((kwd '(letrec*))
-	    (in-pattern `(letrec* ((v e) ...) ,@expr-pattern))
+  (add-primitivized-macro-form 'letrec* scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ ((v e) ...) ,@expr-pattern))
 	    (m&e (pat:make-match&env in-pattern kwd))
 	    (out-pattern `(letrec*-values (((v) e) ...) ,@expr-pattern)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed letrec*")))))
 
-  (add-macro-form 'letrec scheme-vocabulary
-    (let* ((kwd '(letrec))
-	    (in-pattern `(letrec ((v e) ...) ,@expr-pattern))
+  (add-primitivized-macro-form 'letrec scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ ((v e) ...) ,@expr-pattern))
 	    (m&e (pat:make-match&env in-pattern kwd))
 	    (out-pattern `(letrec*-values (((v) e) ...) ,@expr-pattern)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed letrec")))))
 
-					; (or)                                                     [macro]
-					; (or e)                                                   [macro]
-					; (or e0 e1 ...)                                           [macro]
-
-  (add-macro-form
+  (add-primitivized-macro-form
     'or
     scheme-vocabulary
-    (let* ((kwd '(or))
-	    (in-pattern-1 '(or))
+    (let* ((kwd '())
+	    (in-pattern-1 '(_))
 	    (out-pattern-1 '#f)
-	    (in-pattern-2 '(or e))
+	    (in-pattern-2 '(_ e))
 	    (out-pattern-2 'e)
-	    (in-pattern-3 '(or e0 e1 ...))
+	    (in-pattern-3 '(_ e0 e1 ...))
 	    (out-pattern-3 '(let ((t e0)) (if t t (or e1 ...))))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
@@ -1064,32 +988,26 @@
 	      (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd env)
 	      (static-error expr "Malformed or")))))))
 
-					; nor                                                      [macro]
-
-  (add-macro-form
+  (add-primitivized-macro-form
     'nor
     scheme-vocabulary
-    (let* ((kwd '(nor))
-	    (in-pattern '(nor e0 ...))
+    (let* ((kwd '())
+	    (in-pattern '(_ e0 ...))
 	    (out-pattern '(#%not (or e0 ...)))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed nor")))))
 
-					; (and)                                                    [macro]
-					; (and e)                                                  [macro]
-					; (and e0 e1 ...)                                          [macro]
-
-  (add-macro-form
+  (add-primitivized-macro-form
     'and
     scheme-vocabulary
-    (let* ((kwd '(and))
-	    (in-pattern-1 '(and))
+    (let* ((kwd '())
+	    (in-pattern-1 '(_))
 	    (out-pattern-1 '#t)
-	    (in-pattern-2 '(and e))
+	    (in-pattern-2 '(_ e))
 	    (out-pattern-2 'e)
-	    (in-pattern-3 '(and e0 e1 ...))
+	    (in-pattern-3 '(_ e0 e1 ...))
 	    (out-pattern-3 '(if e0 (and e1 ...) #f))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
@@ -1100,46 +1018,42 @@
 	  (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd env)
 	  (static-error expr "Malformed and")))))
 
-					; nand                                                     [macro]
-
-  (add-macro-form
+  (add-primitivized-macro-form
     'nand
     scheme-vocabulary
-    (let* ((kwd '(nand))
-	    (in-pattern '(nand e0 ...))
+    (let* ((kwd '())
+	    (in-pattern '(_ e0 ...))
 	    (out-pattern '(#%not (and e0 ...)))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed nand")))))
 
-					; (recur fun ((v e) ...) b ...)                            [macro]
-
   (when (language>=? 'side-effecting)
-    (add-macro-form
+    (add-primitivized-macro-form
       'recur
       scheme-vocabulary
-      (let* ((kwd '(recur))
-	      (in-pattern '(recur fun ((v e) ...) b ...))
+      (let* ((kwd '())
+	      (in-pattern '(_ fun ((v e) ...) b ...))
 	      (out-pattern '(let fun ((v e) ...) b ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed recur"))))))
 
-  (add-macro-form
+  (add-primitivized-macro-form
     'cond
     scheme-vocabulary
-    (let* ((kwd-1 '(cond else =>))
+    (let* ((kwd-1 '(else =>))
 	    (in-pattern-1 (if (language<=? 'structured)
-			    '(cond (else b)) '(cond (else b ...))))
+			    '(_ (else b)) '(_ (else b ...))))
 	    (out-pattern-1 (if (language<=? 'structured)
 			     'b '(begin b ...)))
 	    (in-pattern-2 (if (language<=? 'structured)
-			    '(cond (else b) rest ...)
-			    '(cond (else b ...) rest ...)))
+			    '(_ (else b) rest ...)
+			    '(_ (else b ...) rest ...)))
 	    (out-pattern-2 'this-is-an-error-case)
-	    (in-pattern-3 '(cond))
+	    (in-pattern-3 '(_))
 	    (out-pattern-3 (if (or (language<=? 'structured)
 				 param:unmatched-cond/case-is-error?)
 			     '(#%raise (#%make-exn:else
@@ -1148,16 +1062,16 @@
 			     '(#%void)))
 	    (in-pattern-4 (if (language<=? 'side-effecting)
 			    '()		; will never match
-			    '(cond (item) rest ...)))
+			    '(_ (item) rest ...)))
 	    (out-pattern-4 '(or item (cond rest ...)))
-	    (in-pattern-5 '(cond (test => receiver) rest ...))
+	    (in-pattern-5 '(_ (test => receiver) rest ...))
 	    (out-pattern-5 '(let ((t test))
 			      (if t (receiver t) (cond rest ...))))
-	    (in-pattern-6 '(cond (test =>) rest ...))
+	    (in-pattern-6 '(_ (test =>) rest ...))
 	    (out-pattern-6 'this-is-an-error-case)
 	    (in-pattern-7 (if (language<=? 'structured)
-			    '(cond (test b) rest ...)
-			    '(cond (test b0 b1 ...) rest ...)))
+			    '(_ (test b) rest ...)
+			    '(_ (test b0 b1 ...) rest ...)))
 	    (out-pattern-7 (if (language<=? 'structured)
 			     '(if test b (cond rest ...))
 			     '(if test (begin b0 b1 ...) (cond rest ...))))
@@ -1186,20 +1100,16 @@
 	  (pat:match-and-rewrite expr m&e-7 out-pattern-7 kwd-1 env)
 	  (static-error expr "Malformed cond")))))
 
-					; (case val (else b ...))                                  [macro]
-					; (case val ((keys ...) b ...))                            [macro]
-					; (case val ((keys ...) b ...) rest ...)                   [macro]
-
-  (add-macro-form
+  (add-primitivized-macro-form
     'case
     scheme-vocabulary
-    (let* ((kwd-1 '(case else))
+    (let* ((kwd-1 '(else))
 	    (in-pattern-1 (if (language<=? 'structured)
-			    '(case val (else b))
-			    '(case val (else b ...))))
+			    '(_ val (else b))
+			    '(_ val (else b ...))))
 	    (out-pattern-1 (if (language<=? 'structured) 'b '(begin b ...)))
-	    (kwd-2 '(case))
-	    (in-pattern-2 '(case val))
+	    (kwd-2 '())
+	    (in-pattern-2 '(_ val))
 	    (out-pattern-2 (if (or (language<=? 'structured)
 				 param:unmatched-cond/case-is-error?)
 			     '(#%raise (#%make-exn:else
@@ -1207,8 +1117,8 @@
 					 ((debug-info-handler))))
 			     '(#%void)))
 	    (in-pattern-3 (if (language<=? 'structured)
-			    '(case val ((keys ...) b) rest ...)
-			    '(case val ((keys ...) b ...) rest ...)))
+			    '(_ val ((keys ...) b) rest ...)
+			    '(_ val ((keys ...) b ...) rest ...)))
 	    (out-pattern-3 (if (language<=? 'structured)
 			     '(let ((tmp val))
 				(if (#%memv tmp (quote (keys ...)))
@@ -1227,74 +1137,65 @@
 	  (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-2 env)
 	  (static-error expr "Malformed case")))))
 
-					; (when test expr ...)                                     [macro]
-
   (when (language>=? 'side-effecting)
-    (add-macro-form
+    (add-primitivized-macro-form
       'when
       scheme-vocabulary
-      (let* ((kwd '(when))
-	      (in-pattern `(when test ,@expr-pattern))
+      (let* ((kwd '())
+	      (in-pattern `(_ test ,@expr-pattern))
 	      (out-pattern `(if test (begin ,@expr-pattern) (#%void)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed when"))))))
 
-					; (unless test expr ...)                                   [macro]
-
   (when (language>=? 'side-effecting)
-    (add-macro-form
+    (add-primitivized-macro-form
       'unless
       scheme-vocabulary
-      (let* ((kwd '(unless))
-	      (in-pattern `(unless test ,@expr-pattern))
+      (let* ((kwd '())
+	      (in-pattern `(_ test ,@expr-pattern))
 	      (out-pattern `(if test (#%void) (begin ,@expr-pattern)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed unless"))))))
 
-					; (letcc var body ...)                                     [macro]
-					; (let/cc var body ...)                                    [macro]
-
   (when (language>=? 'side-effecting)
     (let
       ((rewriter
 	 (lambda (the-kwd kwd-text)
-	   (let* ((kwd (list the-kwd))
-		   (in-pattern (cons the-kwd `(var ,@expr-pattern)))
+	   (let* ((kwd '())
+		   (in-pattern `(_ var ,@expr-pattern))
 		   (out-pattern `(#%call/cc (lambda (var) ,@expr-pattern)))
 		   (m&e (pat:make-match&env in-pattern kwd)))
 	     (lambda (expr env)
 	       (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 		 (static-error expr
 		   (string-append "Malformed " kwd-text))))))))
-      (add-macro-form 'letcc scheme-vocabulary
+      (add-primitivized-macro-form 'letcc scheme-vocabulary
 	(rewriter 'letcc "letcc"))
-      (add-macro-form 'let/cc scheme-vocabulary
+      (add-primitivized-macro-form 'let/cc scheme-vocabulary
 	(rewriter 'let/cc "let/cc"))))
 
   (when (language>=? 'side-effecting)
     (let
       ((rewriter
 	 (lambda (the-kwd kwd-text)
-	   (let* ((kwd (list the-kwd))
-		   (in-pattern (cons the-kwd `(var ,@expr-pattern)))
+	   (let* ((kwd '())
+		   (in-pattern `(_ var ,@expr-pattern))
 		   (out-pattern `(#%call/ec (lambda (var) ,@expr-pattern)))
 		   (m&e (pat:make-match&env in-pattern kwd)))
 	     (lambda (expr env)
 	       (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 		 (static-error expr
 		   (string-append "Malformed " kwd-text))))))))
-      (add-macro-form 'letec scheme-vocabulary
+      (add-primitivized-macro-form 'letec scheme-vocabulary
 	(rewriter 'letec "letec"))
-      (add-macro-form 'let/ec scheme-vocabulary
+      (add-primitivized-macro-form 'let/ec scheme-vocabulary
 	(rewriter 'let/ec "let/ec"))
-      (add-macro-form 'catch scheme-vocabulary
+      (add-primitivized-macro-form 'catch scheme-vocabulary
 	(rewriter 'catch "catch"))))
-
-					; (define-schema var exp)                                  [macro]
 
   (add-macro-form
     'define-schema
@@ -1308,9 +1209,9 @@
 	  (static-error expr "Malformed define-schema")))))
 
   (when (language>=? 'side-effecting)
-    (add-macro-form 'do scheme-vocabulary
-      (let* ((in-kwd '(do))
-	      (in-pattern `(do (var-init-step ...)
+    (add-primitivized-macro-form 'do scheme-vocabulary
+      (let* ((in-kwd '())
+	      (in-pattern `(_ (var-init-step ...)
 			     (test seq ...)
 			     ,@expr-pattern))
 	      (out-pattern `(letrec ((loop
@@ -1374,9 +1275,9 @@
 	      (static-error expr "Malformed do")))))))
 
   (when (language>=? 'side-effecting)
-    (add-micro-form 'fluid-let scheme-vocabulary
-      (let* ((kwd '(fluid-let))
-	      (in-pattern `(fluid-let ((var val) ...) body ...))
+    (add-primitivized-micro-form 'fluid-let scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(_ ((var val) ...) body ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond
@@ -1408,11 +1309,11 @@
 	      (static-error expr "Malformed fluid-let")))))))
 
   (when (language>=? 'side-effecting)
-    (add-macro-form 'parameterize scheme-vocabulary
-      (let* ((kwd '(parameterize))
-	      (in-pattern-1 '(parameterize () body ...))
+    (add-primitivized-macro-form 'parameterize scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern-1 '(_ () body ...))
 	      (out-pattern-1 '(begin body ...))
-	      (in-pattern-2 '(parameterize ((param value) rest ...) body ...))
+	      (in-pattern-2 '(_ ((param value) rest ...) body ...))
 	      (out-pattern-2 '(let* ((pz (#%in-parameterization
 					   (#%current-parameterization)
 					   param #t))
@@ -1430,9 +1331,9 @@
 	    (static-error expr "Malformed parameterize"))))))
 
   (when (language>=? 'side-effecting)
-    (add-macro-form 'with-handlers scheme-vocabulary
-      (let* ((kwd '(with-handlers))
-	      (in-pattern '(with-handlers ((pred handler) ...) body ...))
+    (add-primitivized-macro-form 'with-handlers scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(_ ((pred handler) ...) body ...))
 	      (out-pattern
 		'((#%call/ec
 		    (lambda (k)
@@ -1461,48 +1362,44 @@
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed with-handlers"))))))
 
-  (let ((d-m-handler
-	  (lambda (d-m-kwd)
-	    (add-micro-form d-m-kwd scheme-vocabulary
-	      (let* ((kwd `(,d-m-kwd))
-		      (in-pattern `(,d-m-kwd macro-name macro-handler))
-		      (m&e (pat:make-match&env in-pattern kwd)))
-		(lambda (expr env attributes vocab)
-		  (unless (at-top-level? attributes)
-		    (static-error expr "Not at top-level"))
-		  (cond
-		    ((pat:match-against m&e expr env)
-		      =>
-		      (lambda (p-env)
-			(let ((macro-name (pat:pexpand 'macro-name p-env kwd))
-			       (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
-			  (valid-syntactic-id? macro-name)
-			  (let* ((top-level? (get-top-level-status
-					       attributes))
-				  (_ (set-top-level-status attributes))
-				  (real-name (sexp->raw macro-name))
-				  (raw-handler (sexp->raw macro-handler))
-				  (real-handler (with-parameterization
-						  zodiac-user-parameterization
-						  (lambda ()
-						    (eval raw-handler))))
-				  (cache-table (make-hash-table)))
-			    (set-top-level-status attributes top-level?)
-			    (unless (procedure? real-handler)
-			      (static-error expr "Expander is not a procedure"))
-			    (add-macro-form real-name vocab
-			      (lambda (m-expr m-env)
-				(structurize-syntax
-				  (apply real-handler
-				    (let ((in (cdr (sexp->raw m-expr cache-table))))
-				      in))
-				  m-expr '() cache-table)))
-			    (expand-expr (structurize-syntax '(#%void) expr)
-			      env attributes vocab)))))
-		    (else
-		      (static-error expr "Malformed define-macro")))))))))
-    (d-m-handler 'define-macro)
-    (d-m-handler '#%define-macro))
+  (add-primitivized-micro-form 'define-macro scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ macro-name macro-handler))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(unless (at-top-level? attributes)
+	  (static-error expr "Not at top-level"))
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((macro-name (pat:pexpand 'macro-name p-env kwd))
+		     (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
+		(valid-syntactic-id? macro-name)
+		(let* ((top-level? (get-top-level-status
+				     attributes))
+			(_ (set-top-level-status attributes))
+			(real-name (sexp->raw macro-name))
+			(raw-handler (sexp->raw macro-handler))
+			(real-handler (with-parameterization
+					zodiac-user-parameterization
+					(lambda ()
+					  (eval raw-handler))))
+			(cache-table (make-hash-table)))
+		  (set-top-level-status attributes top-level?)
+		  (unless (procedure? real-handler)
+		    (static-error expr "Expander is not a procedure"))
+		  (add-macro-form real-name vocab
+		    (lambda (m-expr m-env)
+		      (structurize-syntax
+			(apply real-handler
+			  (let ((in (cdr (sexp->raw m-expr cache-table))))
+			    in))
+			m-expr '() cache-table)))
+		  (expand-expr (structurize-syntax '(#%void) expr)
+		    env attributes vocab)))))
+	  (else
+	    (static-error expr "Malformed define-macro"))))))
 
   (add-micro-form 'begin-elaboration-time scheme-vocabulary
     (let* ((kwd '(begin-elaboration-time))
@@ -1532,11 +1429,11 @@
 	  (else
 	    (static-error expr "Malformed begin-elaboration-time"))))))
 
-  (add-macro-form 'unquote scheme-vocabulary
+  (add-primitivized-macro-form 'unquote scheme-vocabulary
     (lambda (expr env)
       (static-error expr "Unquote outside quasiquote")))
 
-  (add-macro-form 'unquote-splicing scheme-vocabulary
+  (add-primitivized-macro-form 'unquote-splicing scheme-vocabulary
     (lambda (expr env)
       (static-error expr "Unquote-splicing outside quasiquote")))
 
@@ -1544,9 +1441,9 @@
 
   (include "shared.ss")
 
-  (add-micro-form 'reference scheme-vocabulary
-    (let* ((kwd '(reference))
-	    (in-pattern '(reference filename))
+  (add-primitivized-micro-form 'reference scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ filename))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -1566,9 +1463,9 @@
 	  (else
 	    (static-error expr "Malformed reference"))))))
 
-  (add-micro-form 'reference-library scheme-vocabulary
-    (let* ((kwd '(reference-library))
-	    (in-pattern '(reference-library filename))
+  (add-primitivized-micro-form 'reference-library scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ filename))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -1581,7 +1478,7 @@
 			(z:string? (quote-form-expr f)))
 		    (expand-expr
 		      (structurize-syntax
-			`(require-library,(quote-form-expr f))
+			`(#%load/use-compiled ,(quote-form-expr f))
 			expr)
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))

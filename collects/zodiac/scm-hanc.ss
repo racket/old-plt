@@ -469,9 +469,9 @@
 
 ; --------------------------------------------------------------------
 
-(add-micro-form 'define-signature scheme-vocabulary
-  (let* ((kwd '(define-signature))
-	  (in-pattern '(define-signature name sig))
+(add-primitivized-micro-form 'define-signature scheme-vocabulary
+  (let* ((kwd '())
+	  (in-pattern '(_ name sig))
 	  (m&e (pat:make-match&env in-pattern kwd)))
     (lambda (expr env attributes vocab)
       (cond
@@ -509,9 +509,9 @@
   (lambda (expr env attributes vocab)
     (list expr)))
 
-(add-micro-form 'include u/s-expand-includes-vocab
-  (let* ((kwd '(include))
-          (in-pattern '(include filename))
+(add-primitivized-micro-form 'include u/s-expand-includes-vocab
+  (let* ((kwd '())
+          (in-pattern '(_ filename))
           (m&e (pat:make-match&env in-pattern kwd)))
     (lambda (expr env attributes vocab)
       (cond
@@ -563,15 +563,15 @@
         (else
           (static-error expr "Malformed include"))))))
 
-(add-micro-form 'unit/sig scheme-vocabulary
-  (let* ((kwd-1 '(unit/sig import rename))
-	  (in-pattern-1 '(unit/sig signature
+(add-primitivized-micro-form 'unit/sig scheme-vocabulary
+  (let* ((kwd-1 '(import rename))
+	  (in-pattern-1 '(_ signature
 			   (import imports ...)
 			   (rename renames ...)
 			   clauses ...))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
-	  (kwd-2 '(unit/sig import))
-	  (in-pattern-2 '(unit/sig signature
+	  (kwd-2 '(import))
+	  (in-pattern-2 '(_ signature
 			   (import imports ...)
 			   clauses ...))
 	  (out-pattern-2 '(unit/sig signature
@@ -1490,9 +1490,9 @@
 	   (expand-expr l env attributes cu/s-link-record-tag-sigs-vocab))
       links)))
 
-(add-micro-form 'compound-unit/sig scheme-vocabulary
-  (let* ((kwd '(compound-unit/sig import link export))
-	  (in-pattern '(compound-unit/sig
+(add-primitivized-micro-form 'compound-unit/sig scheme-vocabulary
+  (let* ((kwd '(import link export))
+	  (in-pattern '(_
 			 (import imports ...)
 			 (link links ...)
 			 (export exports ...)))
@@ -1648,9 +1648,9 @@
 	    (signature-elements
 	      (expand-expr expr env attributes sig-vocab))))))))
 
-(add-micro-form 'invoke-unit/sig scheme-vocabulary
-  (let* ((kwd '(invoke-unit/sig))
-	  (in-pattern '(invoke-unit/sig expr linkage ...))
+(add-primitivized-micro-form 'invoke-unit/sig scheme-vocabulary
+  (let* ((kwd '())
+	  (in-pattern '(_ expr linkage ...))
 	  (m&e (pat:make-match&env in-pattern kwd)))
     (lambda (expr env attributes vocab)
       (cond
@@ -1685,11 +1685,11 @@
 	(else
 	  (static-error expr "Malformed invoke-unit/sig"))))))
 
-(add-micro-form 'invoke-open-unit/sig scheme-vocabulary
-  (let* ((kwd '(invoke-open-unit/sig))
-	  (in-pattern-1 '(invoke-open-unit/sig expr))
+(add-primitivized-micro-form 'invoke-open-unit/sig scheme-vocabulary
+  (let* ((kwd '())
+	  (in-pattern-1 '(_ expr))
 	  (out-pattern-1 '(invoke-open-unit/sig expr #f))
-	  (in-pattern-2 '(invoke-open-unit/sig expr name-spec linkage ...))
+	  (in-pattern-2 '(_ expr name-spec linkage ...))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
@@ -1735,9 +1735,9 @@
 	(else
 	  (static-error expr "Malformed invoke-open-unit/sig"))))))
 
-(add-micro-form 'unit->unit/sig scheme-vocabulary
-  (let* ((kwd '(unit->unit/sig))
-	  (in-pattern '(unit->unit/sig expr (in-sig ...) out-sig))
+(add-primitivized-micro-form 'unit->unit/sig scheme-vocabulary
+  (let* ((kwd '())
+	  (in-pattern '(_ expr (in-sig ...) out-sig))
 	  (m&e (pat:make-match&env in-pattern kwd)))
     (lambda (expr env attributes vocab)
       (cond

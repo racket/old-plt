@@ -15,15 +15,13 @@
   (define-struct (lexical-binding struct:binding) ())
   (define-struct (form struct:parsed) ())
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define name-eq? eq?)
 
   (define marks-equal? equal?)
 
-					; ----------------------------------------------------------------------
-
-					;    (define make-empty-back-box (lambda () (box '())))
+  ; ----------------------------------------------------------------------
 
   (define generate-name
     (lambda (var)
@@ -75,7 +73,7 @@
 	(zodiac-start source) (zodiac-finish source)
 	(make-empty-back-box) fun args)))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define p->r-table
     '())
@@ -106,7 +104,21 @@
       (cons (p->r (app-fun expr))
 	(map p->r (app-args expr)))))
 
-					; ----------------------------------------------------------------------
+  ; --------------------------------------------------------------------
+
+  (define add-primitivized-micro-form
+    (lambda (name vocab rewriter)
+      (unless (symbol? name)
+	(internal-error name "Must be symbol in add-primitivized-micro-form"))
+      (add-micro-form (list name (symbol-append "#%" name)) vocab rewriter)))
+
+  (define add-primitivized-macro-form
+    (lambda (name vocab rewriter)
+      (unless (symbol? name)
+	(internal-error name "Must be symbol in add-primitivized-macro-form"))
+      (add-macro-form (list name (symbol-append "#%" name)) vocab rewriter)))
+
+  ; --------------------------------------------------------------------
 
   (define scheme-vocabulary (create-vocabulary 'scheme-vocabulary))
 
@@ -170,7 +182,7 @@
 	    (retract-env new-vars env)
 	    result)))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define set-top-level-status
     (opt-lambda (attributes (value #f))
@@ -183,7 +195,7 @@
 
   (define at-top-level? get-top-level-status)
 
-					; --------------------------------------------------------------------
+  ; --------------------------------------------------------------------
 
   (define previous-attribute (make-attributes))
 
@@ -201,7 +213,7 @@
 	(set-top-level-status attr #t)
 	(expand-program exprs attr scheme-vocabulary params))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define valid-syntactic-id?
     (lambda (id)
@@ -242,7 +254,7 @@
 	((null? ids) ids)
 	(else (static-error ids "Invalid identifier")))))
 
-					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define valid-id?
     (lambda (id)
@@ -280,7 +292,7 @@
 	(else (static-error ids "Invalid identifier")))))
 
     
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define language-levels '(core structured side-effecting advanced))
 
@@ -307,7 +319,7 @@
       (or (eq? language the-language)
 	(not (language<=? language)))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define optarglist-pattern 'vars)
 
@@ -320,7 +332,7 @@
   (define-struct (list-optarglist struct:optarglist) ())
   (define-struct (ilist-optarglist struct:optarglist) ())
 
-					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define optarglist-decl-entry-parser-vocab
     (create-vocabulary 'optarglist-decl-entry-parser-vocab))
@@ -435,7 +447,7 @@
 	    (internal-error optarglist
 	      "Invalid in make-optargument-list"))))))
 
-					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (extend-parsed->raw optarglist?
     (lambda (expr p->r)
@@ -459,7 +471,7 @@
 	  (else
 	    (internal-error expr "p->r: not an optarglist"))))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define paroptarglist-pattern 'vars)
 
@@ -472,7 +484,7 @@
   (define-struct (list-paroptarglist struct:paroptarglist) ())
   (define-struct (ilist-paroptarglist struct:paroptarglist) ())
 
-					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define paroptarglist-decl-entry-parser-vocab
     (create-vocabulary 'paroptarglist-decl-entry-parser-vocab))
@@ -590,7 +602,7 @@
 	    (internal-error paroptarglist
 	      "Invalid in make-paroptargument-list"))))))
 
-					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (extend-parsed->raw paroptarglist?
     (lambda (expr p->r)
@@ -614,7 +626,7 @@
 	  (else
 	    (internal-error expr "p->r: not an paroptarglist"))))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define arglist-pattern '(args))
 
@@ -623,7 +635,7 @@
   (define-struct (list-arglist struct:arglist) ())
   (define-struct (ilist-arglist struct:arglist) ())
 
-					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define arglist-decls-vocab
     (create-vocabulary 'arglist-decls-vocab))
@@ -650,7 +662,7 @@
 	    (expose-list expr)))
 	(static-error expr "Invalid argument list syntax"))))
 
-					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define make-argument-list
     (lambda (arglist)

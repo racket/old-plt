@@ -2,9 +2,9 @@
 
 (define qq-vocab (create-vocabulary 'qq-vocab))
 
-(add-micro-form 'quasiquote scheme-vocabulary
-  (let* ((kwd '(quasiquote))
-	  (in-pattern '(quasiquote template))
+(add-primitivized-micro-form 'quasiquote scheme-vocabulary
+  (let* ((kwd '())
+	  (in-pattern '(_ template))
 	  (m&e (pat:make-match&env in-pattern kwd)))
     (lambda (expr env attributes vocab)
       (cond
@@ -123,9 +123,9 @@
 	  expr env attributes vocab))
       (else expr))))
 
-(add-micro-form 'quasiquote qq-vocab
-  (let* ((kwd '(quasiquote))
-	  (in-pattern '(quasiquote template))
+(add-primitivized-micro-form 'quasiquote qq-vocab
+  (let* ((kwd '())
+	  (in-pattern '(_ template))
 	  (m&e (pat:make-match&env in-pattern kwd)))
     (lambda (expr env attributes vocab)
       (cond
@@ -146,9 +146,9 @@
 	(else
 	  (static-error expr "Malformed quasiquote"))))))
 
-(add-micro-form 'quote qq-vocab
-  (let* ((kwd '(quote))
-	  (in-pattern '(quote body))
+(add-primitivized-micro-form 'quote qq-vocab
+  (let* ((kwd '())
+	  (in-pattern '(_ body))
 	  (m&e (pat:make-match&env in-pattern kwd)))
     (lambda (expr env attributes vocab)
       (cond
@@ -165,9 +165,9 @@
 
 (define unquotation-handler
   (lambda (uq-type string-uq-type)
-    (add-micro-form uq-type qq-vocab
-      (let* ((kwd (list uq-type))
-	      (in-pattern (list uq-type 'body))
+    (add-primitivized-micro-form uq-type qq-vocab
+      (let* ((kwd '())
+	      (in-pattern `(_ body))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond

@@ -72,9 +72,9 @@
 
   ; --------------------------------------------------------------------
 
-  (add-micro-form 'poly mrspidey-vocabulary
-    (let* ((kwd '(poly))
-	    (in-pattern '(poly p-expr))
+  (add-primitivized-micro-form 'poly mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ p-expr))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -88,9 +88,9 @@
 	  (else
 	    (static-error expr "Malformed poly"))))))
 
-  (add-micro-form ': mrspidey-vocabulary
-    (let* ((kwd '(:))
-	    (in-pattern '(: :-expr type))
+  (add-primitivized-micro-form ': mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ :-expr type))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -106,9 +106,9 @@
 	  (else
 	    (static-error expr "Malformed :"))))))
 
-  (add-micro-form 'type: mrspidey-vocabulary
-    (let* ((kwd '(type:))
-	    (in-pattern '(type: type attr ...))
+  (add-primitivized-micro-form 'type: mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ type attr ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -124,9 +124,9 @@
 	  (else
 	    (static-error expr "Malformed type:"))))))
 
-  (add-micro-form 'st:control mrspidey-vocabulary
-    (let* ((kwd '(st:control))
-	    (in-pattern '(st:control para val))
+  (add-primitivized-micro-form 'st:control mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ para val))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -142,9 +142,9 @@
 	  (else
 	    (static-error expr "Malformed st:control"))))))
 
-  (add-micro-form 'define-type mrspidey-vocabulary
-    (let* ((kwd '(define-type))
-	    (in-pattern '(define-type sym type))
+  (add-primitivized-micro-form 'define-type mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ sym type))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -161,9 +161,9 @@
 	  (else
 	    (static-error expr "Malformed define-type"))))))
 
-  (add-micro-form 'define-constructor mrspidey-vocabulary
-    (let* ((kwd '(define-constructor))
-	    (in-pattern '(define-constructor sym modes ...))
+  (add-primitivized-micro-form 'define-constructor mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ sym modes ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -189,9 +189,9 @@
 
   (define reference-maker
     (lambda (form-name library?)
-      (add-micro-form form-name mrspidey-vocabulary
-	(let* ((kwd (list form-name))
-		(in-pattern `(,form-name file))
+      (add-primitivized-micro-form form-name mrspidey-vocabulary
+	(let* ((kwd '())
+		(in-pattern `(_ file))
 		(m&e (pat:make-match&env in-pattern kwd)))
 	  (lambda (expr env attributes vocab)
 	    (cond
@@ -264,9 +264,9 @@
 
   (define reference-unit-maker
     (lambda (form-name signed? library?)
-      (add-micro-form form-name mrspidey-vocabulary
-	(let* ((kwd (list form-name))
-		(in-pattern `(,form-name file))
+      (add-primitivized-micro-form form-name mrspidey-vocabulary
+	(let* ((kwd '())
+		(in-pattern `(_ file))
 		(m&e (pat:make-match&env in-pattern kwd)))
 	  (lambda (expr env attributes vocab)
 	    (cond
@@ -295,9 +295,9 @@
   (reference-unit-maker 'reference-library-unit #f #t)
   (reference-unit-maker 'reference-library-unit/sig #t #t)
 
-'  (add-micro-form 'references-unit-imports mrspidey-vocabulary
-    (let* ((kwd '(reference-unit-imports))
-	    (in-pattern '(reference-unit-imports file))
+'  (add-primitivized-micro-form 'references-unit-imports mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond

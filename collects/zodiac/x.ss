@@ -36,10 +36,13 @@
 
   (define add-micro/macro-form
     (lambda (constructor)
-      (lambda (name vocab rewriter)
-	(hash-table-put! (vocabulary-record-this vocab)
-	  name
-	  (constructor rewriter)))))
+      (lambda (name/s vocab rewriter)
+	(let ((v (vocabulary-record-this vocab))
+	       (names (if (symbol? name/s) (list name/s) name/s))
+	       (r (constructor rewriter)))
+	  (map (lambda (n)
+		 (hash-table-put! v n r))
+	    names)))))
 
   (define vocab->list
     (lambda (vocab)
@@ -198,7 +201,7 @@
     (opt-lambda (table key (failure-thunk (lambda () #f)))
       (hash-table-get table key failure-thunk)))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define introduce-identifier
     (lambda (new-name old-id)
@@ -225,7 +228,7 @@
 	     (lambda (_) new-name))
 	    s)))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define-struct (top-level-resolution struct:resolutions) ())
 

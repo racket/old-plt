@@ -158,7 +158,10 @@
 
     ; ----------------------------------------------------------------------
 
-    (define expr-pattern '(expr ...))
+    (define expr-pattern
+      (if (language>=? 'side-effecting)
+	'(expr ...)
+	'expr))
 
     (define parse-expr
       (lambda (expr env attributes vocab source)

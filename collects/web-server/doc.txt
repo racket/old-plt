@@ -232,7 +232,7 @@ instantiated with one argument: the url to visit.
 Constructing configurations requires another library.
   (require (lib "configuration.ss" "web-server"))
 
-> load-configuration : str -> configuration
+> load-configuration : path -> configuration
   
   This function accepts a path to a configuration file and returns a
   configuration that serve accepts.  The configuration servlet creates

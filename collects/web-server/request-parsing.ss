@@ -1,5 +1,6 @@
 (module request-parsing mzscheme
-  (require (lib "url.ss" "net")
+  (require (lib "contract.ss")
+           (lib "url.ss" "net")
            (lib "string.ss")
            (lib "list.ss")
            
@@ -12,11 +13,19 @@
            close-connection?
            read-bindings
            lowercase-symbol!)
+
+;  (provide/contract
+;   [read-request-line (input-port? . -> . symbol? bytes? bytes? bytes?)])
+
+  (define myprint printf)
   
-  ; lowercase-symbol! : String -> Symbol
+  ; lowercase-symbol! : (union string bytes) -> symbol
   (define (lowercase-symbol! s)
-    (string-lowercase! s)
-    (string->symbol s))
+    (let ([s (if (bytes? s)
+                 (bytes->string/utf-8 s)
+                 s)])
+      (string-lowercase! s)
+      (string->symbol s)))
   
   
   ;; **************************************************
@@ -24,18 +33,18 @@
   
   ; Method = (U 'get 'post 'head 'put 'delete 'trace)
   (define METHOD:REGEXP
-    (regexp "^(GET|HEAD|POST|PUT|DELETE|TRACE) (.+) HTTP/([0-9]+)\\.([0-9]+)$"))
+    (byte-regexp #"^(GET|HEAD|POST|PUT|DELETE|TRACE) (.+) HTTP/([0-9]+)\\.([0-9]+)$"))
   
   (define (match-method x)
     (regexp-match METHOD:REGEXP x))
   ;:(define match-method (type: (str -> (union false (list str str str str str)))))
   
   
-  ; read-request-line : iport oport -> Symbol String String String
+  ; read-request-line : iport -> symbol bytes bytes bytes
   ; to read in the first line of an http request, AKA the "request line"
   ; effect: in case of errors, complain [MF: where] and close the ports
-  (define (read-request-line ip op)
-    (let ([line (read-line ip 'any)])
+  (define (read-request-line ip)
+    (let ([line (read-bytes-line ip 'any)])
       (if (eof-object? line)
           (error 'read-request "http input closed abruptly")
           (cond
@@ -47,20 +56,22 @@
   ;; **************************************************
   ;; read-headers
   
-  (define COLON:REGEXP (regexp (format "^([^:]*):[ ~a]*(.*)" #\tab)))
+  ;(define COLON:REGEXP (regexp (format "^([^:]*):[ ~a]*(.*)" #\tab)))
+  (define COLON:REGEXP (byte-regexp (bytes-append #"^([^:]*):[ " (bytes 9) #"]*(.*)")))
   
   (define (match-colon s)
     (regexp-match COLON:REGEXP s))
   ;:(define match-colon (type: (str -> (union false (list str str str)))))  
   
   
-  ; read-headers : iport -> (listof (cons Symbol String))
+  ; read-headers : iport -> (listof (cons symbol bytes))
   (define (read-headers in)
+    (myprint "read-headers~n")
     (let read-header ()
-      (let ([l (read-line in 'any)])
+      (let ([l (read-bytes-line in 'any)])
         (cond
           [(eof-object? l) null]
-          [(zero? (string-length l)) null]
+          [(zero? (bytes-length l)) null]
           [(match-colon l) =>
            (lambda (match)
              ; (cadr match) exists because COLON:REGEXP contains two (.)
@@ -71,15 +82,16 @@
           [else (error 'read-headers "malformed header")]))))
   
   
-  ; read-one-head : iport str -> str
+  ; read-one-head : iport bytes -> bytes
   (define (read-one-head in rhs)
-    (let ([c (peek-char in)])
+    (let ([c (peek-byte in)])
       (cond
-        [(or (eq? c #\space) (eq? c #\tab))
+        [(or (= c 32) (= c 9)) ;(or (eq? c #\space) (eq? c #\tab))
+         
          ; (read-line in 'any) can't return eof
          ; because we just checked with peek-char
          ; Spidey: FLOW
-         (read-one-head in (string-append rhs (read-line in 'any)))]
+         (read-one-head in (bytes-append rhs (read-bytes-line in 'any)))]
         [else rhs])))
   
   
@@ -88,9 +100,14 @@
   
   (define DEFAULT-HOST-NAME "<none>")
   
-  ; get-host : Url (listof (cons Symbol String)) -> String
+  ; get-host : Url (listof (cons Symbol bytes)) -> string
   ; host names are case insesitive---Internet RFC 1034
+  ;; Notes (GregP):
+  ;; 1. The host will either be part of the URL
+  ;;    or will be identified via a header (RFC 2616 SECTION 5.1.2)
+  
   (define (get-host uri headers)
+    (myprint "get-host~n")
     (let ([lower!
            (lambda (s)
              (string-lowercase! s)
@@ -98,7 +115,8 @@
       (cond
         [(url-host uri) => lower!]
         [(assq 'host headers) =>
-         (lambda (h) (lower! (cdr h)))]
+         (lambda (h)
+           (lower! (bytes->string/utf-8 (cdr h))))]
         [else DEFAULT-HOST-NAME])))
   
   ;; **************************************************
@@ -184,6 +202,7 @@
   ;; connection symbol url host -> (union (listof (list symbol string)) #f)
   (define read-bindings
     (lambda (conn meth uri headers)
+      (myprint "read-bindings~n")
       (case meth
         [(get) (url-query uri)]
         [(post)

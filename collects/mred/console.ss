@@ -232,7 +232,9 @@
 		  (when (and prompt-mode? autoprompting?)
 		    (insert #\newline))
 		  (let ((start (last-position)))
-		    (insert s)
+		    (insert (if (is-a? s wx:snip%)
+				(send s copy)
+				s))
 		    (let ((end (last-position)))
 		      (change-style () start end)
 		      (style-func start end)))
@@ -424,16 +426,12 @@
 				  (change-style result-delta
 						start end))))]
 	      [this-result (make-output-port this-result-write generic-close)]
-	      [pretty-print-out
-	       (lambda (v)
-		 (with-parameterization user-parameterization
-		   (lambda ()
-		     (mzlib:pretty-print:pretty-print v this-result))))]
 	      [display-result
 	       (lambda (v)
-		 (cond
-		   [(void? v) v]
-		   [else (pretty-print-out v)]))]
+		 (unless (void? v)
+		   (with-parameterization user-parameterization
+		     (lambda ()
+		       (display v this-result)))))]
 	      [eval-and-display
 	       (lambda (str)
 		 (catch-errors
@@ -645,10 +643,37 @@
 	      [this-in (make-this-in)]
 	      [takeover
 	       (lambda ()
+		 '(error-display-handler
+		  (let ([old (error-display-handler)])
+		    (lambda (x)
+		      (print-struct #t)
+		      (mred:gui-utils:message-box (format "~a" x) "Uncaught Exception")
+		      (old x))))
 		 (unless (eq? mred:debug:on? 'no-takeover)
-		   (current-output-port this-out)
-		   (current-input-port this-in)
-		   (current-error-port this-err)))])
+		   (let ([doit
+			  (lambda ()
+			    (current-output-port this-out)
+			    (current-input-port this-in)
+			    (current-error-port this-err)
+			    (mzlib:pretty-print:pretty-print-display-string-handler 
+			     (lambda (string port)
+			       (for-each (lambda (x) (write-char x port))
+					 (string->list string))))
+			    (for-each (lambda (port port-out-write)
+					(let ([handler-maker
+					       (lambda (pretty)
+						 (lambda (v p)
+						   (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+								   (lambda (x _) (and (is-a? x wx:snip%) 1))]
+								  [mzlib:pretty-print:pretty-print-print-hook
+								   (lambda (x _) (port-out-write x))])
+						     (pretty v p 'infinity))))])
+					(port-write-handler port (handler-maker mzlib:pretty-print:pretty-print))
+					(port-display-handler port (handler-maker mzlib:pretty-print:pretty-display))))
+				      (list this-out this-err this-result)
+				      (list this-out-write this-err-write this-result-write)))])
+		     (with-parameterization user-parameterization doit)
+		     (doit))))])
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-edit%")
 	    (apply super-init args)
@@ -660,10 +685,7 @@
 	    (port-read-handler this-in (lambda (x) (transparent-read)))
 	    (with-parameterization user-parameterization
 	      (lambda ()
-		(current-output-port this-out)
-		(current-input-port this-in)
-		(current-base-parameterization user-parameterization)
-		(current-error-port this-err)))))))
+		(current-base-parameterization user-parameterization)))))))
       
     (define console-edit% (make-console-edit% mred:edit:edit%))
 
@@ -892,15 +914,6 @@
 	    (let ([edit (get-edit)])
 	      (send edit set-file-format wx:const-media-ff-std)
 	      
-	      ; setup snips for the pretty printer
-	      (mzlib:pretty-print:pretty-print-size-hook
-	       (lambda (x _) (and (is-a? x wx:snip%) 1)))
-	      (mzlib:pretty-print:pretty-print-print-hook
-	       (lambda (x _) 
-		 (let ([edit (get-edit)])
-		   (send edit insert
-			 (send x copy)
-			 (send edit last-position)))))
 	      
 	      ; Welcome message and initial prompt:
 	      (when mssg

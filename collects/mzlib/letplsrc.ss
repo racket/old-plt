@@ -145,7 +145,7 @@
 	  ;; eg '(cons x y) becomes (cons 'x 'y)
 	  ;; and `(,x ,y) becomse (list 'x 'y)
 	  (define translation-namespace (make-namespace 'empty))
-	  (global-defined-value 'translation-namespace translation-namespace)
+
 	  (define _1
 	    (let* ([tmp-namespace (make-namespace)]
 		   [add-already-macro
@@ -160,14 +160,19 @@
 		      (parameterize ([current-namespace tmp-namespace])
 			(eval `(define-macro ,m-name ,function)))
 		      (add-already-macro m-name))])
+
+	      (global-defined-value 'translation-namespace translation-namespace)
+
 	      (add-already-macro 'quasiquote)
+	      (add-already-macro '#%quasiquote)
+	      (add-already-macro 'quote)
+	      (add-already-macro '#%quote)
 	      (add-not-yet-macro 'list 
 				 (lambda in
 				   (let loop ([l in])
 				     (cond
 				       [(null? l) null]
 				       [else `(#%cons ,(car l) ,(loop (cdr l)))]))))
-	      (add-not-yet-macro 'quote (lambda (x) `(#%quote ,x)))
 	      (add-not-yet-macro '... (lambda (x) `(#%repeat ,x)))
 	      (add-not-yet-macro 'repeat (lambda (x) `(#%repeat ,x)))
 	      (add-not-yet-macro 'cons (lambda (x y) `(#%cons ,x ,y)))
@@ -177,12 +182,7 @@
 	  (define translate-pattern
 	    (lambda (pattern)
 	      (let ([expanded (parameterize ([current-namespace translation-namespace])
-				(printf "expanding: ~a~n" pattern)
-				(printf "to: ~a~n" (expand-defmacro-once pattern))
-				(printf "to: ~a~n" (expand-defmacro-once (expand-defmacro-once pattern)))
-				(printf "to: ~a~n" (expand-defmacro-once (expand-defmacro-once (expand-defmacro-once pattern))))
 				(expand-defmacro pattern))])
-		(printf "expanded: ~a~n" pattern)
 		(let loop ([in expanded])
 		  (match in
 		    [`(#%repeat ,p) (make-prepeat (loop p))]
@@ -296,7 +296,6 @@
 	 [(null? l) `(begin ,@bodies)]
 	 [else (translate-binding (car l) (loop (cdr l)))])))))
 
-
 #|
 (define (test)
 
@@ -304,10 +303,11 @@
     (lambda (pattern value)
       (let ([test-result (with-handlers ([(lambda (x) 'EXCEPTION-RAISED)
 					  (lambda (x) 
-					    (printf "~a"
-						    (if (exn? x)
-							(exn-message x)
-							x))
+					    (display
+					     (if (exn? x)
+						 (exn-message x)
+						 x))
+					    (newline)
 					    #f)])
 			   (eval `(rmatch ,value
 					  ([,pattern x]))))])
@@ -318,10 +318,11 @@
     (unless (equal? ans
 		    (with-handlers ([(lambda (x) #T)
 				     (lambda (x)
-				       (printf "~a"
-					       (if (exn? x)
-						   (exn-message x)
-						   x))
+				       (display
+					(if (exn? x)
+					    (exn-message x)
+					    x))
+				       (newline)
 				       'DIFFERENT-FROM-IT-ALL)])
 		      (eval expr)))
       (error 'test-equal "~s didn't evaluate to ~s" expr ans)))
@@ -333,7 +334,7 @@
     (unless (equal? (cons 1 3)
 		    (with-handlers ([(lambda (x) #t)
 				     (lambda (x) 
-				       (printf "~a"
+				       (printf "~a~n"
 					       (if (exn? x)
 						   (exn-message x)
 						   x))
@@ -362,6 +363,7 @@
   (3-at-x '(box (box x)) '(box (box 3)))
   (3-at-x '(vector 'x `(3) `(,x)) '(vector 'x (list 3) (list 3)))
   (3-at-x '(vector 'x "abc" #\f `(3) `(,x)) '(vector 'x "abc" #\f (list 3) (list 3)))
+  (3-at-x '`(box ,x) ''(box 3))
 
   (33s-at-x '(... (box x)) '(list (box 3) (box 3) (box 3)))
 
@@ -375,7 +377,6 @@
   (test-equal 3 '(let+ ([rec a (lambda () a)] [val b (a)]) 3))
 
   (printf "all tests passed~n")
-
   )
 
 (test)

@@ -463,6 +463,7 @@
       
       (define FROM-WIDTH 150)
       (define SUBJECT-WIDTH 300)
+      (define UID-WIDTH 150)
 
       ;; update-frame-width : -> void
       ;; updates the green line's width
@@ -471,9 +472,18 @@
       (define (update-frame-width)
 	(let* ([goofy-margin 15]
 	       [calc-w (- (get-pref 'sirmail:frame-width) goofy-margin)])
-	  (set! FROM-WIDTH (quotient calc-w 3))
-	  (set! SUBJECT-WIDTH (- calc-w FROM-WIDTH)))
+	  (set! FROM-WIDTH (quotient calc-w 4))
+          (set! UID-WIDTH (quotient calc-w 6))
+	  (set! SUBJECT-WIDTH (- calc-w FROM-WIDTH UID-WIDTH)))
 	
+        (when (object? sorting-from-snip)
+          (send sorting-from-snip set-min-width FROM-WIDTH)
+          (send sorting-from-snip set-max-width FROM-WIDTH)
+          (send sorting-uid-snip set-min-width UID-WIDTH)
+          (send sorting-uid-snip set-max-width UID-WIDTH)
+          (send sorting-subject-snip set-min-width SUBJECT-WIDTH)
+          (send sorting-subject-snip set-max-width SUBJECT-WIDTH))
+        
 	(when (object? header-list)
 	  (let ([e (send header-list get-editor)])
 	    (send e begin-edit-sequence)
@@ -488,11 +498,14 @@
                                                                   (cons s l))]
                                     [else (loop (send s next) l)]))]
 			       [from-snip (car embedded-editors)]
-			       [subject-snip (cadr embedded-editors)])
+			       [subject-snip (cadr embedded-editors)]
+                               [date-snip (caddr embedded-editors)])
 			  (send from-snip set-min-width FROM-WIDTH)
 			  (send from-snip set-max-width FROM-WIDTH)
 			  (send subject-snip set-min-width SUBJECT-WIDTH)
-			  (send subject-snip set-max-width SUBJECT-WIDTH)))
+			  (send subject-snip set-max-width SUBJECT-WIDTH)
+                          (send date-snip set-min-width UID-WIDTH)
+			  (send date-snip set-max-width UID-WIDTH)))
 		      (send header-list get-items))
 	    (send e end-edit-sequence))))
       
@@ -1026,7 +1039,7 @@
                                            (send e set-keymap #f)
                                            (send e set-max-undo-history 0)
                                            e)))
-                   (with-border? #f )
+                   (with-border? #f)
                    (top-margin 1)
                    (top-inset 1)
                    (bottom-margin 1)
@@ -1042,8 +1055,10 @@
 	(let* ([i (send header-list new-item)]
 	       [e (send i get-editor)]
 	       [from (make-field FROM-WIDTH)]
-	       [sep (make-object vertical-line-snip%)]
+	       [sep1 (make-object vertical-line-snip%)]
 	       [subject (make-field SUBJECT-WIDTH)]
+               [sep2 (make-object vertical-line-snip%)]
+               [date (make-field UID-WIDTH)]
 	       [one-line (lambda (s)
 			   (let ([m (regexp-match re:one-line s)])
 			     (if m (car m) s)))])
@@ -1051,14 +1066,18 @@
           (send e set-line-spacing 0)
 	  (send i user-data (message-uid m))
 	  (send e insert from)
-	  (send e insert sep)
+	  (send e insert sep1)
 	  (send e insert subject)
+          (send e insert sep2)
+          (send e insert date)
 	  (send (send from get-editor) insert 
 		(one-line (or (parse-iso-8859-1 (message-from m))
 			      "<unknown>")))
 	  (send (send subject get-editor) insert 
 		(one-line (or (parse-iso-8859-1 (message-subject m))
 			      no-subject-string)))
+          (send (send date get-editor) insert (format "~a" (message-uid m)))
+          
 	  (unless (message-downloaded? m)
 	    (apply-style i unread-delta))
 	  (when (memq 'marked (message-flags m))
@@ -1130,6 +1149,36 @@
       
       (define display-text% (html-text-mixin text%))
       
+      (define sorting-list%
+        (class hierarchical-list%
+          (inherit get-editor)
+          
+          (define/private (find-sorting-key evt)
+            (let loop ([editor (get-editor)])
+              (when editor
+                (let ([xb (box (send evt get-x))]
+                      [yb (box (send evt get-y))])
+                  (send editor global-to-local xb yb)
+                  (let* ([pos (send editor find-position (unbox xb) (unbox yb))]
+                         [snip (send editor find-snip pos 'after-or-none)])
+                    (cond
+                      [(eq? snip sorting-from-snip) 'from]
+                      [(eq? snip sorting-subject-snip) 'subject]
+                      [(eq? snip sorting-uid-snip) 'uid]
+                      [(is-a? snip editor-snip%)
+                       (loop (send snip get-editor))]
+                      [else #f]))))))
+          
+          (define/override (on-event evt)
+            (cond
+              [(send evt button-up?)
+               (let ([sorting-key (find-sorting-key evt)])
+                 (case sorting-key
+                   [(from) (sort-by-sender)]
+                   [(subject) (sort-by-subject)]
+                   [(uid) (sort-by-order-received)]))]))
+          (super-instantiate ())))
+           
       (define sm-frame (make-object sm-frame% mailbox-name #f 
                          (get-pref 'sirmail:frame-width)
                          (get-pref 'sirmail:frame-height)))
@@ -1137,6 +1186,11 @@
       (define sizing-panel (make-object panel:vertical-dragable% (send sm-frame get-area-container)))
       (define top-half (make-object vertical-panel% sizing-panel))
       (define button-panel (make-object horizontal-panel% top-half))
+      (define sorting-list (instantiate sorting-list% ()
+                             (parent top-half)
+                             (stretchable-height #f)
+                             (line-count 1)
+                             (style '(hide-hscroll))))
       (define header-list (make-object header-list% top-half))
       (send (send header-list get-editor) set-line-spacing 0)
       (define message (make-object editor-canvas% sizing-panel))
@@ -1153,6 +1207,32 @@
 	  (when (send b ok?)
 	    (send e set-autowrap-bitmap b)))
 	(send e lock #t))
+
+      (send sorting-list min-height 5)
+      (send sorting-list set-line-count 1)
+      (define sorting-text (send (send sorting-list new-item) get-editor))
+      (define sorting-text-from (make-object text%))
+      (send sorting-text-from insert "From")
+      (define sorting-text-subject (make-object text%))
+      (send sorting-text-subject insert "Subject")
+      (define sorting-text-uid (make-object text%))
+      (send sorting-text-uid insert "UID")
+      (define (add-sorting-es text width)
+        (let ([es (instantiate editor-snip% ()
+                    (with-border? #f)
+                    (editor text)
+                    (top-margin 1)
+                    (top-inset 1)
+                    (bottom-margin 1)
+                    (bottom-inset 1))])
+          (send sorting-text insert es)
+          (send es set-flags (remove 'handles-events (send es get-flags)))
+          es))
+      (define sorting-from-snip (add-sorting-es sorting-text-from FROM-WIDTH))
+      (send sorting-text insert (make-object vertical-line-snip%))
+      (define sorting-subject-snip (add-sorting-es sorting-text-subject SUBJECT-WIDTH))
+      (send sorting-text insert (make-object vertical-line-snip%))
+      (define sorting-uid-snip (add-sorting-es sorting-text-uid UID-WIDTH))
       
       (define mb (send sm-frame get-menu-bar))
       (define msg-menu (make-object menu% "&Message" mb))
@@ -1299,10 +1379,34 @@
       (make-object menu-item% "by Date" sort-menu (lambda (i e) (sort-by-date)))
       (make-object menu-item% "by Order Received" sort-menu (lambda (i e) (sort-by-order-received)))
       
-      (define (sort-by-date) (sort-by (list (list "date" date-cmp))))
-      (define (sort-by-sender) (sort-by (list (list "from" from-cmp))))
-      (define (sort-by-subject) (sort-by (list (list "subject" subject-cmp))))
-      (define (sort-by-order-received) (sort-by null))
+      (define (sort-by-date) 
+        (sort-by (list (list "date" date-cmp)))
+        (reset-sorting-text-styles))
+      (define (sort-by-sender) 
+        (sort-by (list (list "from" from-cmp)))
+        (reset-sorting-text-styles)
+        (identify-sorted sorting-text-from))
+      (define (sort-by-subject) 
+        (sort-by (list (list "subject" subject-cmp)))
+        (reset-sorting-text-styles)
+        (identify-sorted sorting-text-subject))
+      (define (sort-by-order-received) 
+        (sort-by null)
+        (reset-sorting-text-styles)
+        (identify-sorted sorting-text-uid))
+      
+      (define no-sort-style-delta (make-object style-delta% 'change-normal))
+      (define sort-style-delta (make-object style-delta% 'change-bold))
+      (send sort-style-delta set-delta-foreground "Indigo")
+      (define (reset-sorting-text-styles)
+        (send sorting-text-from change-style no-sort-style-delta 0 (send sorting-text-from last-position))
+        (send sorting-text-uid change-style no-sort-style-delta 0 (send sorting-text-uid last-position))
+        (send sorting-text-subject change-style no-sort-style-delta 0 (send sorting-text-subject last-position)))
+      (define (identify-sorted text)
+        (send text change-style sort-style-delta 0 (send text last-position)))
+      
+      (reset-sorting-text-styles)
+      (identify-sorted sorting-text-uid)
       
       (define re:date
 	(regexp

@@ -25,7 +25,7 @@ fi
     #"Documents"
     #"Directories"
     #"Graphing Functions"
-    #"Graphing Functions 2"
+    ;; #"Graphing Functions 2"
     #"GUI"
     #"Lkup GUI"
     #"Arrows GUI"

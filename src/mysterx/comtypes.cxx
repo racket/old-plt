@@ -101,22 +101,19 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
 
 
 Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
-  IDispatch * pIDispatch;
-  IUnknown * pUnk;
+  IDispatch * pIDispatch = NULL;
+  IUnknown * pUnk = NULL;
   HRESULT hr;
 
   // Ensure we have the canonical iunknown!
-  hr = pIUnknown->QueryInterface (IID_IUnknown, (void **)&pUnk);
-  if (SUCCEEDED (hr) && pUnk != pIUnknown) {
-      pIUnknown->Release();
-      return mx_make_iunknown (pUnk);
-      }
+  pIUnknown->QueryInterface (IID_IUnknown, (void **)&pUnk);
+  pIUnknown->Release();
 
   // Try to get Dispatch pointer
-  hr = pIUnknown->QueryInterface (IID_IDispatch, (void **)&pIDispatch);
+  hr = pUnk->QueryInterface (IID_IDispatch, (void **)&pIDispatch);
 
   if (SUCCEEDED (hr)) {
-      pIUnknown->Release();
+      pUnk->Release();
       return mx_make_idispatch (pIDispatch);
       }
 
@@ -128,9 +125,9 @@ Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
 
   retval->type = mx_com_iunknown_type;
   retval->released = FALSE;
-  retval->pIUnknown = pIUnknown;
+  retval->pIUnknown = pUnk;
 
-  mx_register_simple_com_object((Scheme_Object *)retval,pIUnknown);
+  mx_register_simple_com_object ((Scheme_Object *)retval, pUnk);
 
   return (Scheme_Object *)retval;
 }
@@ -185,11 +182,7 @@ Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
   int len;
   Scheme_Object *port;
 
-  if (MX_CYP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-currency->number","com-currency",0,argc,argv);
-  }
-
-  cy = MX_CY_VAL(argv[0]);
+  cy = MX_CY_VAL (GUARANTEE_CY ("com-currency->number", 0));
 
   sprintf(buff,"%I64d",cy);
 
@@ -352,9 +345,7 @@ Scheme_Object *mx_date_to_scheme_date(int argc,Scheme_Object **argv) {
     334, // Dec
   };
 
-  if (MX_DATEP(argv[0]) == FALSE) {
-    scheme_wrong_type("date->com-date","com-date",0,argc,argv);
-  }
+  GUARANTEE_DATE ("date->com-date", 0);
 
   if (VariantTimeToSystemTime(MX_DATE_VAL(argv[0]),&sysTime) == FALSE) {
     scheme_signal_error("com-date->date: error in conversion");
@@ -427,19 +418,13 @@ SCODE mx_scode_val(Scheme_Object *obj) {
 }
 
 Scheme_Object *mx_scode_to_scheme_number(int argc,Scheme_Object **argv) {
-  if (MX_SCODEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-scode->number","com-scode",0,argc,argv);
-  }
-
-  return scheme_make_integer_value(mx_scode_val(argv[0]));
+  return scheme_make_integer_value (mx_scode_val (GUARANTEE_SCODE ("com-scode->number", 0)));
 }
 
 Scheme_Object *scheme_number_to_mx_scode(int argc,Scheme_Object **argv) {
   SCODE scode;
 
-  if (SCHEME_REALP(argv[0]) == FALSE) {
-    scheme_wrong_type("number->com-scode","number",0,argc,argv);
-  }
+  GUARANTEE_TYPE ("number->com-scode", 0, SCHEME_REALP, "number");
 
   if (scheme_get_int_val(argv[0],&scode) == 0) {
     scheme_signal_error("number->com-scode: "

@@ -14,13 +14,14 @@
   drscheme:language-configuration:language-settings?
   (-> void?)
   (string? any? . -> . void?)
+  (-> void?)
   ((union eof-object? syntax? (cons/p string? any?))
    (-> void?)
    . -> .
    void?)
   . -> .
   void?)
- (input language-settings init iter)
+ (input language-settings init error kill iter)
 
 "Use this function to expand the contents of the definitions"
 "window for use with external program processing tools."
@@ -90,11 +91,19 @@
 "parameters are not set, so if there are appropriate directories,"
 "the \\var{init} method is a good place to set them."
 ""
-"The \\var{error} argument is called when an error occurs."
+"The \\var{error-termination} argument is called when an error occurs."
 "If it is called, the \\var{iter} argument is not called"
 "again. The user's"
 "\\MzLink{mz:p:error-display-handler}{\\rawscm{error-display-handler}}"
 "is set to call the \\var{error} argument."
+""
+"The \\var{kill-termination} argument is called when the main thread of"
+"the eventspace terminates, no matter if the custodian was"
+"shutdown, or the thread was killed. This procedure is also"
+"called when the thread terminates normally. This procedure is"
+"called from a new, dedicated thread ({\\it i. e.}, not the thread"
+"created to do the expansion, nor the thread that"
+"\\rawscm{drscheme:eval:expand-program} was called from.)"
 ""
 "The \\var{iter} argument is called for each expression in the"
 "expanded program and once more with eof, unless an error is"

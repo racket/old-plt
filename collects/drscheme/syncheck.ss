@@ -539,6 +539,7 @@
           (rename [super-clear-annotations clear-annotations])
           (define/override (clear-annotations)
             (super-clear-annotations)
+            (hide-error-report)
             (syncheck:clear-highlighting))
           
           (inherit get-button-panel 
@@ -561,7 +562,6 @@
             (super-disable-evaluation))
           
           (define/public (syncheck:clear-highlighting)
-            (hide-error-report)
             (let* ([definitions (get-definitions-text)]
                    [locked? (send definitions is-locked?)])
               (send definitions begin-edit-sequence #f)
@@ -571,7 +571,7 @@
                      [style (send list find-named-style "Standard")])
                 (when style
                   (send definitions change-style
-                        style 0 (send (get-definitions-text) last-position))))
+                        style 0 (send definitions last-position))))
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
           
@@ -731,27 +731,47 @@
                 (set! docs-panel-visible? #t)
                 (update-docs-visibility))))
           
+          (inherit set-breakables get-breakables reset-offer-kill)
           ;; syncheck:button-callback : -> void
           ;; this is the only function that has any code running on the user's thread
           (define/public (syncheck:button-callback)
-            (let* ([definitions-text (get-definitions-text)]
-                   [drs-eventspace (current-eventspace)]
-                   [users-namespace #f]
-                   [users-custodian #f]
-                   [error-termination
-		    (lambda (msg exn)
-		      (syncheck:clear-highlighting)
-		      (report-error msg exn)
-		      (custodian-shutdown-all users-custodian))]
-                   [init-proc
-                    (lambda () ; =user=
-                      (set-directory definitions-text)
-                      (set! users-custodian (current-custodian))
-                      (set! users-namespace (current-namespace)))])
-              (let-values ([(expanded-expression expansion-completed) (make-traversal)])
+            (let-values ([(expanded-expression expansion-completed) (make-traversal)])
+              (let* ([definitions-text (get-definitions-text)]
+                     [drs-eventspace (current-eventspace)]
+                     [users-namespace #f]
+                     [users-custodian #f]
+                     [normal-termination? #f]
+                     [cleanup
+                      (lambda ()
+                        (set-breakables #f #f)
+                        (enable-evaluation))]
+                     [kill-termination
+                      (lambda ()
+                        (unless normal-termination?
+                          (parameterize ([current-eventspace drs-eventspace])
+                            (queue-callback
+                             (lambda ()
+                               (syncheck:clear-highlighting)
+                               (cleanup)
+                               (custodian-shutdown-all users-custodian))))))]
+                     [error-termination
+                      (lambda (msg exn)
+                        (set! normal-termination? #t)
+                        (cleanup)
+                        (syncheck:clear-highlighting)
+                        (report-error msg exn)
+                        (custodian-shutdown-all users-custodian))]
+                     [init-proc
+                      (lambda () ; =user=
+                        (set-breakables (current-thread) (current-custodian))
+                        (set-directory definitions-text)
+                        (set! users-custodian (current-custodian))
+                        (set! users-namespace (current-namespace)))])
                 (with-lock/edit-sequence
                  (lambda ()
+                   (disable-evaluation)
                    (clear-annotations)
+                   (reset-offer-kill)
                    (send definitions-text syncheck:init-arrows)
                    (color-range definitions-text
                                 0
@@ -764,15 +784,18 @@
                     (send definitions-text get-next-settings)
                     init-proc
                     error-termination
+                    kill-termination
                     (lambda (sexp loop) ; =user=
                       (cond
                         [(eof-object? sexp)
+                         (set! normal-termination? #t)
                          (parameterize ([current-eventspace drs-eventspace])
                            (queue-callback
                             (lambda () ; =drs=
                               (with-lock/edit-sequence
                                (lambda ()
-                                 (expansion-completed users-namespace)))
+                                 (expansion-completed users-namespace)
+                                 (cleanup)))
                               (custodian-shutdown-all users-custodian))))]
                         [else
                          (parameterize ([current-eventspace drs-eventspace])

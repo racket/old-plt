@@ -884,6 +884,25 @@ static pascal void SoundFinished(SndChannelPtr snd)
   }
 }
 
+static FilePlayCompletionUPP SoundFinishedProc = NewFilePlayCompletionProc(SoundFinished);
+
+static int IsFinished(void *r)
+{
+  AsyncSoundRec *f = finished;
+  
+  while (f) {
+    if ((void *)f == r)
+      return 1;
+    f = f->next;
+  }
+  <
+  return 0;
+}
+
+extern "C" {
+ 	 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
+};
+
 void wxCheckFinishedSounds(void)
 {
   while (finished) {
@@ -894,34 +913,52 @@ void wxCheckFinishedSounds(void)
     SndDisposeChannel(p->snd, FALSE);
   }
 }
-
-static FilePlayCompletionUPP SoundFinishedProc = NewFilePlayCompletionProc(SoundFinished);
-#endif
-*/
-#ifndef wx_x
-
-/*# ifdef wx_mac
-static int IsFinished(void *r)
-{
-  AsyncSoundRec *f = finished;
-  
-  while (f) {
-    if ((void *)f == r)
-      return 1;
-    f = f->next;
-  }
-  
-  return 0;
-}
-
-extern "C" {
-  int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
-};
 # endif
 */
 
+
+#ifndef wx_x
+
 #ifdef wx_mac
-int MyIsFinished(void *movie)
+
+typedef struct AsyncSoundRec {
+  Movie mov;
+  short file;
+  struct AsyncSoundRec *next;
+} AsyncSoundRec;
+
+static AsyncSoundRec *playing = NULL;
+
+void wxCheckFinishedSounds(void)
+{
+  AsyncSoundRec *playptr = playing;
+  AsyncSoundRec *last_playptr = NULL;
+  
+  while (playptr) {
+    if (IsFinished((void *)playptr->mov)) {
+      if (last_playptr) {
+        last_playptr->next = playptr->next;
+      } else {
+        playing = playptr->next;
+      }
+      MyCloseMovie(playptr->mov, playptr->file);
+    }
+    last_playptr = playptr;
+    playptr = playptr->next;
+  }      
+}      
+      
+void MyCloseMovie(Movie movie, short resRefNum) 
+{
+  short osErr;
+  DisposeMovie(movie);
+
+  osErr = CloseMovieFile(resRefNum);
+  if (osErr != noErr)
+    my_signal_error("cannot close movie file", SCHEME_STR_VAL(argv[0]), osErr);
+}
+  
+int IsFinished(void *movie)
 {
   MoviesTask((Movie)movie,0);
   return IsMovieDone((Movie)movie);
@@ -979,17 +1016,17 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   // play the movie once thru
   StartMovie(theMovie);
   
-  if (async) {
-    wxDispatchEventsUntil(MyIsFinished,theMovie);
+  if (!async) {
+    wxDispatchEventsUntil(IsFinished,theMovie);
+    MyCloseMovie(theMovie, resRefNum);
   } else {
-    while (!IsMovieDone(theMovie))
-      MoviesTask(theMovie, 0);
-  }
-  DisposeMovie(theMovie);
+    AsyncSoundRec *r = new AsyncSoundRec;
     
-  osErr = CloseMovieFile(resRefNum);
-  if (osErr != noErr)
-    my_signal_error("cannot close movie file", SCHEME_STR_VAL(argv[0]), osErr);
+    r->mov = theMovie;
+    r->file = resRefNum;
+    r->next = playing;
+    playing = r;
+  }
       
   ok = TRUE;
      

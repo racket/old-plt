@@ -843,13 +843,13 @@ inline static unsigned long custodian_get_memory(void *custodian, int all_gens)
 /*****************************************************************************/
 #ifdef NEWGC_MANUAL_ACCOUNT
 
-void scheme_init_manual_memory(Scheme_Object *key)
+void scheme_init_manual_memory(void *key)
 {
   man_account_key = key;
   track_manual_owner_info = 1;
 }
 
-Scheme_Object *scheme_new_tracking_val(void)
+void *scheme_new_tracking_val(void)
 {
   int i, old_size;
 
@@ -869,7 +869,7 @@ Scheme_Object *scheme_new_tracking_val(void)
   return scheme_new_tracking_val();
 }
 
-int scheme_alias_tracking_val(Scheme_Object *val1, Scheme_Object *val2)
+int scheme_alias_tracking_val(void *val1, void *val2)
 {
   int index = SCHEME_INT_VAL(val1);
 
@@ -881,7 +881,7 @@ int scheme_alias_tracking_val(Scheme_Object *val1, Scheme_Object *val2)
   return 1;
 }
 
-unsigned long scheme_get_tracking_val_memory(Scheme_Object *val)
+unsigned long scheme_get_tracking_val_memory(void *val)
 {
   int i, j, man_owner = -1;
   unsigned long total_memuse = 0;

@@ -518,7 +518,6 @@ BOOL wxCanvasWnd::NCPaint(WPARAM wParam, LPARAM lParam, LONG *result)
     if (wxOpenThemeData) {
       RECT wr;
       HDC hdc;
-      HANDLE orig;
       HWND hWnd;
       static HANDLE gray;
     

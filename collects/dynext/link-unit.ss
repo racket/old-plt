@@ -78,6 +78,29 @@
 	(lambda ()
 	  (list (format s (if (eq? '3m (link-variant)) "3m" "")))))
 
+      (define (drop-3m s)
+	(lambda ()
+	  (if (eq? '3m (link-variant))
+	      null
+	      (list s))))
+
+      (define (wrap-xxxxxxx f)
+	(lambda ()
+	  (let ([l (f)])
+	    (if (null? l)
+		null
+		(let ([s (car l)]
+		      [ver (substring (regexp-replace*
+				       "alpha"
+				       (format "~a_000000000" (version))
+				       "a")
+				      0
+				      7)])
+		  (list
+		   (if (file-exists? (format s ver))
+		       (format s ver)
+		       (format s "xxxxxxx"))))))))
+      
       (define (expand-for-link-variant l)
 	(apply append (map (lambda (s) (if (string? s) (list s) (s))) l)))
 
@@ -164,7 +187,9 @@
 			   (file "init.o")
 			   (file "fixup.o"))]
 	   [win-borland? (map file (list "mzdynb.obj"))]
-	   [else (list (wrap-3m (file "mzdyn~a.exp"))
+	   [else (list (wrap-xxxxxxx (wrap-3m (file "libmzsch~a~~a.lib")))
+		       (wrap-xxxxxxx (drop-3m (file "libmzgc~a.lib")))
+		       (wrap-3m (file "mzdyn~a.exp"))
 		       (wrap-3m (file "mzdyn~a.obj")))])))
       
       (define (get-unix/macos-link-libraries)

@@ -66,7 +66,15 @@
 				(build-path 3m-dir "mzssl.c")))
 			      void))
 	  (parameterize ([link-variant '3m])
-	    (go (build-path 3m-dir "mzssl.c"))))))
+	    (with-new-flags current-extension-compiler-flags
+			    (if (eq? 'windows (system-type))
+				'("/Zi")
+				null)
+	      (with-new-flags current-extension-linker-flags
+			      (if (eq? 'windows (system-type))
+				  '("/Zi")
+				  null)
+	        (go (build-path 3m-dir "mzssl.c"))))))))
 
     ;; Under windows, put "{lib,sll}eay32" into the system folder when
     ;; they're in a "precompiled" dir.

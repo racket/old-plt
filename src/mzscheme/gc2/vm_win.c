@@ -18,6 +18,9 @@
 # define GCPRINT fprintf
 # define GCOUTF stderr
 #endif
+#ifndef CHECK_USED_AGAINST_MAX
+# define CHECK_USED_AGAINST_MAX(x) /* empty */
+#endif
 
 static void *malloc_pages(size_t len, size_t alignment)
 {

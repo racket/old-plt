@@ -2,6 +2,7 @@
    Provides:
       initialize_signal_handler();
    Requires:
+      generations_available - mutable int, Windows only
       designate_modified
       macosx_init_exception_handler() --- OS X, only
 */

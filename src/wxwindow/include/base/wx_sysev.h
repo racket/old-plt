@@ -32,7 +32,6 @@
 class wxEvent: public wxObject
 {
  public:
-  char *eventHandle;         // Handle of an underlying windowing system event
   WXTYPE   eventType;
   WXTYPE   eventClass;
   long timeStamp;

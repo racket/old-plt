@@ -1,4 +1,9 @@
 
+Version 204.5
+Handling of --main/-C command-line flag changed
+Changed Windows extension-linking convention; extensions
+ link directly to the MzScheme/GC DLLs
+
 Version 204.4
 Added custodian-managed-list
 Changed vector-set-performance-stats! to accept an optional

@@ -134,7 +134,12 @@
      ""
      "")
 
-(compile "../../mzscheme/gc2/gc2.c" "xsrc/gc2.obj" '("../../mzscheme/gc2/compact.c") "/D GC2_AS_EXPORT")
+(compile "../../mzscheme/gc2/gc2.c" "xsrc/gc2.obj"
+	 (map (lambda (f) (build-path "../../mzscheme/gc2/" f))
+	      '("gc2.c"
+		"compact.c"
+		"vm_win.c"))
+	 "/D GC2_AS_EXPORT")
 (compile "../../mzscheme/src/mzsj86.c" "xsrc/mzsj86.obj" '() mz-inc)
 
 (define dll "../../../libmzsch3mxxxxxxx.dll")
@@ -384,3 +389,4 @@
 
 (copy-file/diff "mzdyn3m.exp" "../../../lib/msvc/mzdyn3m.exp")
 (copy-file/diff "mzdyn3m.obj" "../../../lib/msvc/mzdyn3m.obj")
+(copy-file/diff "../../../libmzsch3mxxxxxxx.lib" "../../../lib/msvc/libmzsch3mxxxxxxx.lib")

@@ -24,7 +24,6 @@ wxEvent::wxEvent(void) : wxObject(WXGC_NO_CLEANUP)
 {
   eventClass = 0;
   eventType = 0;
-  eventHandle = NULL;
   timeStamp = 0;
 }
 

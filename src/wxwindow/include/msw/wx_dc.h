@@ -34,6 +34,7 @@ class wxDC: public wxbDC
   int clip_x2;
   int clip_y2;
   Bool dont_delete;
+  Bool screen_font;
   int window_ext_x;
   int window_ext_y;
   float system_scale_x;
@@ -144,10 +145,10 @@ class wxDC: public wxbDC
 
   void SetRop(HDC cdc);
   void DoClipping(HDC cdc);
-  void SelectOldObjects(HDC dc);
-
-   HDC ThisDC();
-   void DoneDC(HDC dc);
+  void SelectOldObjects(HDC dc);
+
+   HDC ThisDC();
+   void DoneDC(HDC dc);
    void ShiftXY(float x, float y, int &ix, int &iy);
 };
 

@@ -31,7 +31,8 @@ class wxFont: public wxbFont
   DECLARE_DYNAMIC_CLASS(wxFont)
 
  public:
-  HFONT cfont;
+  HFONT screen_cfont;
+  HFONT general_cfont;
 
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE);
@@ -40,8 +41,8 @@ class wxFont: public wxbFont
 	 Bool underlined = FALSE);
   ~wxFont(void);
   Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE);
-  void BuildInternalFont(HDC dc) ;
-  HFONT GetInternalFont(HDC dc) ;
+  HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE);
+  inline HFONT GetInternalFont(HDC dc) { return BuildInternalFont(dc, TRUE); }
 };
 
 class wxColourMap: public wxObject

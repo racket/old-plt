@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.7 1998/08/11 14:25:04 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.8 1998/08/21 19:13:04 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -87,6 +87,7 @@ wxDC::wxDC(void)
   dont_delete = FALSE;
   cdc = NULL;
   clipping = FALSE;
+  screen_font = TRUE;
   ok = TRUE;
   window_ext_x = VIEWPORT_EXTENT;
   window_ext_y = VIEWPORT_EXTENT;
@@ -357,30 +358,23 @@ void wxDC::Clear(void)
   RECT rect;
   if (canvas)
     GetClientRect(((wxWnd *)canvas->handle)->handle, &rect);
-  else if (selected_bitmap)
-  {
+  else if (selected_bitmap) {
     rect.left = 0; rect.top = 0;
     rect.right = selected_bitmap->GetWidth();
     rect.bottom = selected_bitmap->GetHeight();
   }
   (void) ::SetMapMode(dc, MM_TEXT);
   ::SetViewportOrgEx(dc, 0, 0, NULL);
-
   ::SetWindowOrgEx(dc, 0, 0, NULL);
-
 
   DWORD colour = GetBkColor(dc);
   HBRUSH brush = CreateSolidBrush(colour);
   FillRect(dc, &rect, brush);
   DeleteObject(brush);
+  
+  DoneDC(dc);
 
-  ::SetMapMode(dc, MM_ANISOTROPIC);
-  ::SetViewportExtEx(dc, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
-  ::SetWindowExtEx(dc, window_ext_x, window_ext_y, NULL);
-  ::SetViewportOrgEx(dc, (int)device_origin_x, (int)device_origin_y, NULL);
-  ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
-
-   DoneDC(dc);
+  SetMapMode(mapping_mode);
 }
 
 void wxDC::BeginDrawing(void)
@@ -897,27 +891,24 @@ void wxDC::SetFont(wxFont *the_font)
   HDC dc = ThisDC();
   if (!dc) return;
 
-
   font = the_font;
 
-  if (!the_font)
-  {
+  if (!the_font) {
     if (old_font)
       ::SelectObject(dc, old_font);
     old_font = NULL;
   }
-  if (font)
-    font->BuildInternalFont(dc);
 
-  if (font && font->cfont)
-  {
-#if DEBUG > 1
-    wxDebugMsg("wxDC::SetFont: Selecting HFONT %X\n", font->cfont);
-#endif
-    HFONT f = (HFONT)::SelectObject(dc, font->cfont);
-    if (!old_font)
-      old_font = f;
+  if (font) {
+    HFONT cfont = font->BuildInternalFont(dc, screen_font);
+
+    if (cfont) {
+      HFONT f = (HFONT)::SelectObject(dc, cfont);
+      if (!old_font)
+	old_font = f;
+    }
   }
+  
   DoneDC(dc);
 }
 
@@ -989,25 +980,24 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
 
   ShiftXY(x, y, xx1, yy1);
   
-  if (font && font->cfont)
+  if (font)
   {
-#if DEBUG > 1
-    wxDebugMsg("wxDC::DrawText: Selecting HFONT %X\n", font->cfont);
-#endif
-    HFONT f = (HFONT)::SelectObject(dc, font->cfont);
-    if (!old_font)
-      old_font = f;
+    HFONT cfont = font->BuildInternalFont(dc, screen_font);
+    if (cfont) {
+      HFONT f = (HFONT)::SelectObject(dc, cfont);
+      if (!old_font)
+        old_font = f;
+    }
   }
-
+  
   if (current_text_foreground.Ok())
     SetTextColor(dc, current_text_foreground.pixel);
 
   DWORD old_background;
-  if (current_text_background.Ok())
-  {
+  if (current_text_background.Ok()) {
     old_background = SetBkColor(dc, current_text_background.pixel);
   }
-
+  
   if (current_bk_mode == wxTRANSPARENT)
     SetBkMode(dc, TRANSPARENT);
   else
@@ -1251,30 +1241,20 @@ void wxDC::SetMapMode(int mode)
 {
   mapping_mode = mode;
 
-  int pixel_width = 0;
-  int pixel_height = 0;
-  int mm_width = 0;
-  int mm_height = 0;
-
   HDC dc = ThisDC();
-
 
   if (!dc) return;
 
+  float mm2pixelsX = GetDeviceCaps(dc, LOGPIXELSX) * mm2inches;
+  float mm2pixelsY = GetDeviceCaps(dc, LOGPIXELSY) * mm2inches;
 
-  pixel_width = GetDeviceCaps(dc, HORZRES);
-  pixel_height = GetDeviceCaps(dc, VERTRES);
-  mm_width = GetDeviceCaps(dc, HORZSIZE);
-  mm_height = GetDeviceCaps(dc, VERTSIZE);
-
-  if ((pixel_width == 0) || (pixel_height == 0) || (mm_width == 0) || (mm_height == 0))
-  {
-    DoneDC(dc);
-    return;
+  if (!mm2pixelsX || !mm2pixelsY) {
+    /* Guess 300 dpi. At least we should start getting bug reports
+       about text too large, instead of too small, if this is where
+       things fail. */
+    mm2pixelsX = 300 * mm2inches;
+    mm2pixelsY = 300 * mm2inches;
   }
-
-  float mm2pixelsX = (float)pixel_width/mm_width;
-  float mm2pixelsY = (float)pixel_height/mm_height;
 
   switch (mode)
   {
@@ -1313,11 +1293,9 @@ void wxDC::SetMapMode(int mode)
 
   if (::GetMapMode(dc) != MM_ANISOTROPIC)
     ::SetMapMode(dc, MM_ANISOTROPIC);
-    
-  SetViewportExtEx(dc, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
-  window_ext_x = (int)MS_XDEV2LOG(VIEWPORT_EXTENT);
-  window_ext_y = (int)MS_YDEV2LOG(VIEWPORT_EXTENT);
-  ::SetWindowExtEx(dc, window_ext_x, window_ext_y, NULL);
+
+  ::SetViewportExtEx(dc, 1000, 1000, NULL);
+  ::SetWindowExtEx(dc, MS_XDEV2LOGREL(1000), MS_YDEV2LOGREL(1000), NULL);
   ::SetViewportOrgEx(dc, (int)device_origin_x, (int)device_origin_y, NULL);
   ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
 
@@ -1453,9 +1431,13 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
                 SRCCOPY;		
   }
 
+  ::SetMapMode(dc_src, MM_TEXT);
+
   success = BitBlt(dc, xdest1, ydest1, 
 		   XLOG2DEVREL(width), YLOG2DEVREL(height), 
 		   dc_src, xsrc1, ysrc1, op);
+
+  source->SetMapMode(source->mapping_mode);
 
   DoneDC(dc);
 
@@ -1594,6 +1576,8 @@ wxPrinterDC::wxPrinterDC(char *driver_name, char *device_name, char *file, Bool 
     filename = copystring(file);
   else filename = NULL;
 
+  screen_font = FALSE;
+
 #if USE_COMMON_DIALOGS
   if (interactive) {
     PRINTDLG *pd = new PRINTDLG;
@@ -1630,8 +1614,6 @@ wxPrinterDC::wxPrinterDC(char *driver_name, char *device_name, char *file, Bool 
   }
   
   if (cdc) {
-    // int width = GetDeviceCaps(cdc, VERTRES);
-    // int height = GetDeviceCaps(cdc, HORZRES);
     SetMapMode(MM_POINTS);
   }
 
@@ -1647,12 +1629,12 @@ wxPrinterDC::wxPrinterDC(HDC theDC)
 
   filename = NULL;
 
+  screen_font = FALSE;
+
   cdc = theDC;
   ok = TRUE;
 
   if (cdc) {
-    // int width = GetDeviceCaps(cdc, VERTRES);
-    // int height = GetDeviceCaps(cdc, HORZRES);
     SetMapMode(MM_POINTS);
   }
 

@@ -805,8 +805,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (toPage != 0)
     printData.SetToPage(toPage);
 
-  if (minPage != 0)
-  {
+  if (minPage != 0) {
     printData.EnablePageNumbers(TRUE);
     if (printData.GetFromPage() < printData.GetMinPage())
       printData.SetFromPage(printData.GetMinPage());
@@ -822,17 +821,14 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   
   // Create a suitable device context  
   wxDC *dc = NULL;
-  if (prompt)
-  {
+  if (prompt) {
     wxPrintDialog  *dialog = new wxPrintDialog(parent, &printData);
     if (dialog->Show(TRUE))
-    {
-      dc = dialog->GetPrintDC();
-      printData = dialog->GetPrintData();
-    }
-  }
-  else
-  {
+      {
+	dc = dialog->GetPrintDC();
+	printData = dialog->GetPrintData();
+      }
+  } else {
 #ifdef wx_msw
     if (WINDOWS_PRINTING)
       dc = new wxPrinterDC(NULL, NULL, NULL, FALSE);
@@ -844,8 +840,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   }
 
   // May have pressed cancel.
-  if (!dc || !dc->Ok())
-  {
+  if (!dc || !dc->Ok()) {
     if (dc) delete dc;
     return FALSE;
   }
@@ -856,8 +851,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   int logPPIPrinterY = 0;
 
 #ifdef wx_msw
-  if (WINDOWS_PRINTING)
-  {
+  if (WINDOWS_PRINTING) {
     HDC hdc = ::GetDC(NULL);
     logPPIScreenX = ::GetDeviceCaps(hdc, LOGPIXELSX);
     logPPIScreenY = ::GetDeviceCaps(hdc, LOGPIXELSY);
@@ -865,17 +859,16 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 
     logPPIPrinterX = ::GetDeviceCaps(dc->cdc, LOGPIXELSX);
     logPPIPrinterY = ::GetDeviceCaps(dc->cdc, LOGPIXELSY);
-  }
-  else
+  } else
 #endif
-  {
-    // Correct values for X/PostScript?
-    logPPIScreenX = 100;
-    logPPIScreenY = 100;
-    logPPIPrinterX = 100;
-    logPPIPrinterY = 100;
-  }
-
+    {
+      // Correct values for X/PostScript?
+      logPPIScreenX = 100;
+      logPPIScreenY = 100;
+      logPPIPrinterX = 100;
+      logPPIPrinterY = 100;
+    }
+  
   printout->SetPPIScreen(logPPIScreenX, logPPIScreenY);
   printout->SetPPIPrinter(logPPIPrinterX, logPPIPrinterY);
 
@@ -912,54 +905,42 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   Bool keepGoing = TRUE;
 
   int copyCount;
-  for (copyCount = 1; copyCount <= printData.GetNoCopies(); copyCount ++)
-  {
-    if (!printout->OnBeginDocument(printData.GetFromPage(), printData.GetToPage()))
-    {
+  for (copyCount = 1; copyCount <= printData.GetNoCopies(); copyCount ++) {
+    if (!printout->OnBeginDocument(printData.GetFromPage(), printData.GetToPage())) {
       wxEndBusyCursor();
       wxMessageBox("Could not start printing.", "Print Error", wxOK, parent);
       break;
     }
+    
     if (abortIt)
       break;
 
     int pn;
-	int is_down = (printData.GetFromPage() > printData.GetToPage());
-	int endpage = printData.GetToPage() + (is_down ? -1 : 1);
+    int is_down = (printData.GetFromPage() > printData.GetToPage());
+    int endpage = printData.GetToPage() + (is_down ? -1 : 1);
     for (pn = printData.GetFromPage(); keepGoing && (pn != endpage);
-	     pn = (is_down ? pn - 1 : pn + 1))
-    {
-	  if (!printout->HasPage(pn)) {
-		  if (!is_down)
-			  break;
-	  } else {
-      if (abortIt)
-      {
-        keepGoing = FALSE;
-        break;
+	 pn = (is_down ? pn - 1 : pn + 1)) {
+      if (!printout->HasPage(pn)) {
+	if (!is_down)
+	  break;
+      } else {
+	if (abortIt) {
+	  keepGoing = FALSE;
+	  break;
+	} else {
+	  dc->StartPage();
+	  printout->OnPrintPage(pn);
+	  dc->EndPage();
+	}
       }
-      else
-      {
-#ifdef wx_msw
-//        int dcID = ::SaveDC(dc->cdc);
-#endif
-        dc->StartPage();
-        printout->OnPrintPage(pn);
-        dc->EndPage();
-#ifdef wx_msw
-//        ::RestoreDC(dc->cdc, dcID);
-#endif
-      }
-	  }
     }
     printout->OnEndDocument();
   }
-
+  
   printout->OnEndPrinting();
 
 #ifdef wx_msw
-  if (abortWindow)
-  {
+  if (abortWindow) {
     abortWindow->Show(FALSE);
     delete abortWindow;
     abortWindow = NULL;
@@ -1088,22 +1069,16 @@ void wxPrintout::GetPageInfo(int *minPage, int *maxPage, int *fromPage, int *toP
 
 LONG APIENTRY _EXPORT wxAbortProc(HDC WXUNUSED(hPr), int WXUNUSED(Code))
 {
-    MSG msg;
+  MSG msg;
 
-    if (!wxPrinter::abortWindow)              /* If the abort dialog isn't up yet */
-        return(TRUE);
-
-    /* Process messages intended for the abort dialog box */
-
-    while (!wxPrinter::abortIt && PeekMessage(&msg, NULL, NULL, NULL, TRUE))
-        if (!IsDialogMessage(wxPrinter::abortWindow->GetHWND(), &msg)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-    /* bAbort is TRUE (return is FALSE) if the user has aborted */
-
-    return (!wxPrinter::abortIt);
+  if (!wxPrinter::abortWindow)              /* If the abort dialog isn't up yet */
+    return(TRUE);
+  
+  wxYield();
+  
+  /* bAbort is TRUE (return is FALSE) if the user has aborted */
+  
+  return !wxPrinter::abortIt;
 }
 #endif
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.5 1998/08/11 14:25:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.6 1998/08/21 19:13:05 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -90,92 +90,104 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
   underlined = Underlined;
 
   temporary = FALSE;
-  cfont = NULL;
+
+  screen_cfont = NULL;
+  general_cfont = NULL;
 
   return TRUE;
 }
 
 wxFont::~wxFont()
 {
-  if (cfont)
-    DeleteObject(cfont);
+  int i;
 
-  cfont = NULL;
-
+  if (screen_cfont)
+    DeleteObject(screen_cfont);
+  if (general_cfont)
+    DeleteObject(general_cfont);
+  
   COUNT_M(font_count);
 }
 
-void wxFont::BuildInternalFont(HDC WXUNUSED(dc))
+HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
 {
-  if (!cfont) {
-    BYTE ff_italic;
-    int ff_weight = 0;
-    int ff_family = 0;
-    char *ff_face = NULL;
-    
-    ff_face = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
-    if (!*ff_face)
-      ff_face = NULL;
-    
-    switch (family) {
-      case wxSCRIPT:
-	ff_family = FF_SCRIPT;
-	break;
-      case wxDECORATIVE: 
-	ff_family = FF_DECORATIVE;
-	break;
-      case wxROMAN: 
-	ff_family = FF_ROMAN;
-	break;
-      case wxTELETYPE:
-      case wxMODERN:
-	ff_family = FF_MODERN;
-	break;
-      case wxSWISS: 
-	ff_family = FF_SWISS;
-	break;
-      case wxDEFAULT:
-      default: 
-	ff_family = FF_SWISS;
-    }
+  int i;
+  int nHeight;
 
-    if (style == wxITALIC || style == wxSLANT)
-      ff_italic = 1;
-    else
-      ff_italic = 0;
+  if (screenFont && screen_cfont)
+    return screen_cfont;
+  if (!screenFont && general_cfont)
+    return general_cfont;
 
-    if (weight == wxNORMAL)
-      ff_weight = FW_NORMAL;
-    else if (weight == wxLIGHT)
-      ff_weight = FW_LIGHT;
-    else if (weight == wxBOLD)
-      ff_weight = FW_BOLD;
-
-    // Have to get screen DC Caps, because a metafile will return 0.
+  if (screenFont) {
+    int dpi;
     HDC dc2 = ::GetDC(NULL);
-    int nHeight = point_size*GetDeviceCaps(dc2, LOGPIXELSY)/72;
+    dpi = ::GetDeviceCaps(dc, LOGPIXELSY);
     ::ReleaseDC(NULL, dc2);
-
-    Bool ff_underline = underlined;
-    
-    cfont = CreateFont(nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
-		       0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		       PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
-    
-    if (!cfont)
-      cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
-			 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-			 PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
-    
-#ifdef DEBUG_CREATE
-    if (cfont==NULL) wxError("Cannot create font","Internal Error");
-#endif
+    nHeight = point_size*dpi/72;
+  } else
+    nHeight = point_size;
+  
+  HFONT cfont;
+  BYTE ff_italic;
+  int ff_weight = 0;
+  int ff_family = 0;
+  char *ff_face = NULL;
+  
+  ff_face = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
+  if (!*ff_face)
+    ff_face = NULL;
+  
+  switch (family) {
+  case wxSCRIPT:
+    ff_family = FF_SCRIPT;
+    break;
+  case wxDECORATIVE: 
+    ff_family = FF_DECORATIVE;
+    break;
+  case wxROMAN: 
+    ff_family = FF_ROMAN;
+    break;
+  case wxTELETYPE:
+  case wxMODERN:
+    ff_family = FF_MODERN;
+    break;
+  case wxSWISS: 
+    ff_family = FF_SWISS;
+    break;
+  case wxDEFAULT:
+  default: 
+    ff_family = FF_SWISS;
   }
-}
+  
+  if (style == wxITALIC || style == wxSLANT)
+    ff_italic = 1;
+  else
+    ff_italic = 0;
+  
+  if (weight == wxNORMAL)
+    ff_weight = FW_NORMAL;
+  else if (weight == wxLIGHT)
+    ff_weight = FW_LIGHT;
+  else if (weight == wxBOLD)
+    ff_weight = FW_BOLD;
+  
+  Bool ff_underline = underlined;
+  
+  cfont = CreateFont(nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
+		     0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		     PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+  
+  if (!cfont)
+    cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
+		       0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		       PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
 
-HFONT wxFont::GetInternalFont(HDC dc)
-{
-  BuildInternalFont(dc);
+  if (screenFont)
+    screen_cfont = cfont;
+  else
+    general_cfont = cfont;
+
   return cfont;
 }
 

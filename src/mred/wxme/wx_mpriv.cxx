@@ -2673,7 +2673,7 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
   if (flowLocked)
     return FALSE;
 
-  float H, W, h;
+  float H, W, h, vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
 
@@ -2683,6 +2683,12 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
 
   if (!W || !H)
     wxmeGetDefaultSize(&W, &H);
+
+  vm = v_margin;
+  hm = h_margin;
+
+  H -= (2 * vm);
+  W -= (2 * hm);
 
   line = firstLine;
   for (i = 0; i < numValidLines; this_page++) {
@@ -2705,7 +2711,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   if (flowLocked)
     return;
 
-  float H, W, FH, FW, y, h;
+  float H, W, FH, FW, y, h, vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
 
@@ -2729,8 +2735,11 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   FH = H;
   FW = W;
 
-  H -= (2 * v_margin);
-  W -= (2 * h_margin);
+  vm = v_margin;
+  hm = h_margin;
+
+  H -= (2 * vm);
+  W -= (2 * hm);
 
   y = 0;
   line = firstLine;
@@ -2752,7 +2761,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       
 	  wxMediaEdit *savesb = skipBox;
       skipBox = this;
-      Redraw(dc, y + (i ? 1 : 0), y + h, 0, W, -y + v_margin, h_margin, 
+      Redraw(dc, y + (i ? 1 : 0), y + h, 0, W, -y + vm, hm, 
 	     wxSNIP_DRAW_NO_CARET, 0);
       skipBox = savesb;
       

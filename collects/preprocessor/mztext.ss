@@ -1,6 +1,6 @@
 (module mztext mzscheme
 
-(require (lib "string.ss") (lib "pp-utils.ss" "preprocessor"))
+(require (lib "string.ss") (lib "port.ss") (lib "pp-utils.ss" "preprocessor"))
 (provide (all-from (lib "pp-utils.ss" "preprocessor")))
 
 ;;=============================================================================
@@ -35,6 +35,7 @@
           [(number? x) (add! (number->string x))]
           [(char?   x) (add! (string x))]
           [else (error 'composite-input "bad object: ~e" x)]))
+  ;; Large parts taken from `input-port-append'.
   (define (read bstr)
     (let loop ()
       (cond [(null? ports) eof]
@@ -55,7 +56,7 @@
        [else (let ([n (peek-bytes-avail!* bstr skip evt (car ports))])
                (cond [(eq? n 0)
                       ;; Not ready, yet.
-                      (car ports)]
+                      (peek-bytes-avail!-evt str skip unless-evt (car ports))]
                      [(eof-object? n)
                       ;; Port is exhausted, or we skipped past its input.
                       ;; If skip is not zero, we need to figure out
@@ -121,14 +122,15 @@
 (define (make-dispatcher prefix dispatchers . regexps?)
   (define re
     (if (and (pair? regexps?) (car regexps?)) (lambda (x) x) regexp-quote))
-  (cons (string-append
-         prefix "(?:"
-         (apply string-append
-                (cdr (apply append
-                            (map (lambda (d)
-                                   (list "|" (format "(~a)" (re (car d)))))
-                                 dispatchers))))
-         ")")
+  (cons (regexp (string-append
+                 prefix "(?:"
+                 (apply string-append
+                        (cdr (apply append
+                                    (map (lambda (d)
+                                           (list "|" (format "(~a)"
+                                                             (re (car d)))))
+                                         dispatchers))))
+                 ")"))
         (map cadr dispatchers)))
 
 ;;=============================================================================

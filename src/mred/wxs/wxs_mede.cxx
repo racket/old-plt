@@ -999,7 +999,7 @@ CONSTRUCTOR_INIT(: wxMediaEdit(x0, x1, x2))
 
 os_wxMediaEdit::~os_wxMediaEdit()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 class wxTabSnip* os_wxMediaEdit::OnNewTabSnip()
@@ -1018,14 +1018,14 @@ class wxTabSnip* os_wxMediaEdit::OnNewTabSnip()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-new-tab-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-new-tab-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::OnNewTabSnip();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1050,14 +1050,14 @@ class wxTextSnip* os_wxMediaEdit::OnNewTextSnip()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-new-string-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-new-string-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::OnNewTextSnip();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1083,7 +1083,7 @@ void os_wxMediaEdit::SetRegionData(nnlong x0, nnlong x1, class wxBufferData* x2)
   VAR_STACK_PUSH(5, x2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "set-region-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "set-region-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::SetRegionData(x0, x1, x2);
@@ -1093,7 +1093,7 @@ void os_wxMediaEdit::SetRegionData(nnlong x0, nnlong x1, class wxBufferData* x2)
   p[POFFSET+1] = scheme_make_integer(x1);
   p[POFFSET+2] = WITH_VAR_STACK(objscheme_bundle_wxBufferData(x2));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
@@ -1117,7 +1117,7 @@ class wxBufferData* os_wxMediaEdit::GetRegionData(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "get-region-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "get-region-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::GetRegionData(x0, x1);
@@ -1126,7 +1126,7 @@ class wxBufferData* os_wxMediaEdit::GetRegionData(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1151,14 +1151,14 @@ void os_wxMediaEdit::AfterSetSizeConstraint()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-set-size-constraint", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-set-size-constraint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterSetSizeConstraint();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1182,14 +1182,14 @@ void os_wxMediaEdit::OnSetSizeConstraint()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-set-size-constraint", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-set-size-constraint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnSetSizeConstraint();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1213,14 +1213,14 @@ Bool os_wxMediaEdit::CanSetSizeConstraint()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "can-set-size-constraint?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "can-set-size-constraint?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::CanSetSizeConstraint();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1245,14 +1245,14 @@ void os_wxMediaEdit::AfterSetPosition()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-set-position", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-set-position", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterSetPosition();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1276,7 +1276,7 @@ void os_wxMediaEdit::AfterChangeStyle(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-change-style", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-change-style", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterChangeStyle(x0, x1);
@@ -1285,7 +1285,7 @@ void os_wxMediaEdit::AfterChangeStyle(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1309,7 +1309,7 @@ void os_wxMediaEdit::OnChangeStyle(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-change-style", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-change-style", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnChangeStyle(x0, x1);
@@ -1318,7 +1318,7 @@ void os_wxMediaEdit::OnChangeStyle(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1342,7 +1342,7 @@ Bool os_wxMediaEdit::CanChangeStyle(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "can-change-style?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "can-change-style?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::CanChangeStyle(x0, x1);
@@ -1351,7 +1351,7 @@ Bool os_wxMediaEdit::CanChangeStyle(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1376,7 +1376,7 @@ void os_wxMediaEdit::AfterDelete(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-delete", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-delete", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterDelete(x0, x1);
@@ -1385,7 +1385,7 @@ void os_wxMediaEdit::AfterDelete(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1409,7 +1409,7 @@ void os_wxMediaEdit::OnDelete(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-delete", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-delete", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnDelete(x0, x1);
@@ -1418,7 +1418,7 @@ void os_wxMediaEdit::OnDelete(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1442,7 +1442,7 @@ Bool os_wxMediaEdit::CanDelete(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "can-delete?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "can-delete?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::CanDelete(x0, x1);
@@ -1451,7 +1451,7 @@ Bool os_wxMediaEdit::CanDelete(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1476,7 +1476,7 @@ void os_wxMediaEdit::AfterInsert(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-insert", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-insert", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterInsert(x0, x1);
@@ -1485,7 +1485,7 @@ void os_wxMediaEdit::AfterInsert(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1509,7 +1509,7 @@ void os_wxMediaEdit::OnInsert(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-insert", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-insert", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnInsert(x0, x1);
@@ -1518,7 +1518,7 @@ void os_wxMediaEdit::OnInsert(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1542,7 +1542,7 @@ Bool os_wxMediaEdit::CanInsert(nnlong x0, nnlong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "can-insert?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "can-insert?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::CanInsert(x0, x1);
@@ -1551,7 +1551,7 @@ Bool os_wxMediaEdit::CanInsert(nnlong x0, nnlong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1576,7 +1576,7 @@ void os_wxMediaEdit::DoPaste(nnlong x0, ExactLong x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "do-paste", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "do-paste", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::DoPaste(x0, x1);
@@ -1585,7 +1585,7 @@ void os_wxMediaEdit::DoPaste(nnlong x0, ExactLong x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = WITH_VAR_STACK(scheme_make_integer_value(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1609,7 +1609,7 @@ void os_wxMediaEdit::DoCopy(nnlong x0, nnlong x1, ExactLong x2, Bool x3)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "do-copy", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "do-copy", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::DoCopy(x0, x1, x2, x3);
@@ -1620,7 +1620,7 @@ void os_wxMediaEdit::DoCopy(nnlong x0, nnlong x1, ExactLong x2, Bool x3)
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_integer_value(x2));
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1644,7 +1644,7 @@ void os_wxMediaEdit::SetAnchor(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "set-anchor", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "set-anchor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::SetAnchor(x0);
@@ -1652,7 +1652,7 @@ void os_wxMediaEdit::SetAnchor(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1678,7 +1678,7 @@ nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "put-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "put-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::PutFile(x0, x1);
@@ -1687,7 +1687,7 @@ nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1713,7 +1713,7 @@ nstring os_wxMediaEdit::GetFile(nstring x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "get-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "get-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::GetFile(x0);
@@ -1721,7 +1721,7 @@ nstring os_wxMediaEdit::GetFile(nstring x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1746,14 +1746,14 @@ void os_wxMediaEdit::AfterEditSequence()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-edit-sequence", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterEditSequence();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1777,14 +1777,14 @@ void os_wxMediaEdit::OnEditSequence()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-edit-sequence", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnEditSequence();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1808,7 +1808,7 @@ void os_wxMediaEdit::AfterLoadFile(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-load-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterLoadFile(x0);
@@ -1816,7 +1816,7 @@ void os_wxMediaEdit::AfterLoadFile(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1841,7 +1841,7 @@ void os_wxMediaEdit::OnLoadFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-load-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnLoadFile(x0, x1);
@@ -1850,7 +1850,7 @@ void os_wxMediaEdit::OnLoadFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1875,7 +1875,7 @@ Bool os_wxMediaEdit::CanLoadFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "can-load-file?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "can-load-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::CanLoadFile(x0, x1);
@@ -1884,7 +1884,7 @@ Bool os_wxMediaEdit::CanLoadFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1909,7 +1909,7 @@ void os_wxMediaEdit::AfterSaveFile(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "after-save-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::AfterSaveFile(x0);
@@ -1917,7 +1917,7 @@ void os_wxMediaEdit::AfterSaveFile(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1942,7 +1942,7 @@ void os_wxMediaEdit::OnSaveFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-save-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnSaveFile(x0, x1);
@@ -1951,7 +1951,7 @@ void os_wxMediaEdit::OnSaveFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1976,7 +1976,7 @@ Bool os_wxMediaEdit::CanSaveFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "can-save-file?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "can-save-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::CanSaveFile(x0, x1);
@@ -1985,7 +1985,7 @@ Bool os_wxMediaEdit::CanSaveFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2010,7 +2010,7 @@ class wxSnip* os_wxMediaEdit::OnNewBox(int x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-new-box", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-new-box", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::OnNewBox(x0);
@@ -2018,7 +2018,7 @@ class wxSnip* os_wxMediaEdit::OnNewBox(int x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_bufferType(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2044,7 +2044,7 @@ class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, int x1, Bool x2, B
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-new-image-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-new-image-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::OnNewImageSnip(x0, x1, x2, x3);
@@ -2055,7 +2055,7 @@ class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, int x1, Bool x2, B
   p[POFFSET+2] = (x2 ? scheme_true : scheme_false);
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -2080,7 +2080,7 @@ void os_wxMediaEdit::InvalidateBitmapCache(float x0, float x1, float x2, float x
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "invalidate-bitmap-cache", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "invalidate-bitmap-cache", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::InvalidateBitmapCache(x0, x1, x2, x3);
@@ -2091,7 +2091,7 @@ void os_wxMediaEdit::InvalidateBitmapCache(float x0, float x1, float x2, float x
   p[POFFSET+2] = WITH_VAR_STACK(objscheme_bundle_nonnegative_symbol_float(x2, "end"));
   p[POFFSET+3] = WITH_VAR_STACK(objscheme_bundle_nonnegative_symbol_float(x3, "end"));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -2116,7 +2116,7 @@ void os_wxMediaEdit::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float 
   VAR_STACK_PUSH(5, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-paint", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-paint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
@@ -2132,7 +2132,7 @@ void os_wxMediaEdit::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float 
   p[POFFSET+7] = WITH_VAR_STACK(scheme_make_double(x7));
   p[POFFSET+8] = WITH_VAR_STACK(bundle_symset_caret(x8));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+9, p));
   
@@ -2157,7 +2157,7 @@ Bool os_wxMediaEdit::WriteFootersToFile(class wxMediaStreamOut* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "write-footers-to-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "write-footers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::WriteFootersToFile(x0);
@@ -2165,7 +2165,7 @@ Bool os_wxMediaEdit::WriteFootersToFile(class wxMediaStreamOut* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2191,7 +2191,7 @@ Bool os_wxMediaEdit::WriteHeadersToFile(class wxMediaStreamOut* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "write-headers-to-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "write-headers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::WriteHeadersToFile(x0);
@@ -2199,7 +2199,7 @@ Bool os_wxMediaEdit::WriteHeadersToFile(class wxMediaStreamOut* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2226,7 +2226,7 @@ Bool os_wxMediaEdit::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "read-footer-from-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "read-footer-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::ReadFooterFromFile(x0, x1);
@@ -2235,7 +2235,7 @@ Bool os_wxMediaEdit::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2262,7 +2262,7 @@ Bool os_wxMediaEdit::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "read-header-from-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "read-header-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::ReadHeaderFromFile(x0, x1);
@@ -2271,7 +2271,7 @@ Bool os_wxMediaEdit::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2297,7 +2297,7 @@ void os_wxMediaEdit::SetFilename(nstring x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "set-filename", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "set-filename", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::SetFilename(x0, x1);
@@ -2306,7 +2306,7 @@ void os_wxMediaEdit::SetFilename(nstring x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2331,7 +2331,7 @@ Bool os_wxMediaEdit::ReleaseSnip(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "release-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "release-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::ReleaseSnip(x0);
@@ -2339,7 +2339,7 @@ Bool os_wxMediaEdit::ReleaseSnip(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2364,7 +2364,7 @@ void os_wxMediaEdit::SetModified(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "set-modified", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "set-modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::SetModified(x0);
@@ -2372,7 +2372,7 @@ void os_wxMediaEdit::SetModified(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2398,7 +2398,7 @@ void os_wxMediaEdit::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "set-snip-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "set-snip-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::SetSnipData(x0, x1);
@@ -2407,7 +2407,7 @@ void os_wxMediaEdit::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxBufferData(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2432,7 +2432,7 @@ class wxBufferData* os_wxMediaEdit::GetSnipData(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "get-snip-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "get-snip-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::GetSnipData(x0);
@@ -2440,7 +2440,7 @@ class wxBufferData* os_wxMediaEdit::GetSnipData(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2466,7 +2466,7 @@ void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "needs-update", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "needs-update", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::NeedsUpdate(x0, x1, x2, x3, x4);
@@ -2478,7 +2478,7 @@ void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   p[POFFSET+4] = WITH_VAR_STACK(scheme_make_double(x4));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
@@ -2503,7 +2503,7 @@ void os_wxMediaEdit::Resized(class wxSnip* x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "resized", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "resized", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::Resized(x0, x1);
@@ -2512,7 +2512,7 @@ void os_wxMediaEdit::Resized(class wxSnip* x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2537,7 +2537,7 @@ void os_wxMediaEdit::SetCaretOwner(class wxSnip* x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "set-caret-owner", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "set-caret-owner", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::SetCaretOwner(x0, x1);
@@ -2546,7 +2546,7 @@ void os_wxMediaEdit::SetCaretOwner(class wxSnip* x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_focus(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2571,7 +2571,7 @@ Bool os_wxMediaEdit::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, 
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "scroll-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "scroll-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::ScrollTo(x0, x1, x2, x3, x4, x5, x6);
@@ -2585,7 +2585,7 @@ Bool os_wxMediaEdit::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, 
   p[POFFSET+5] = (x5 ? scheme_true : scheme_false);
   p[POFFSET+6] = WITH_VAR_STACK(bundle_symset_bias(x6));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+7, p));
   
@@ -2610,14 +2610,14 @@ void os_wxMediaEdit::OnDisplaySize()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-display-size", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-display-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnDisplaySize();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2641,14 +2641,14 @@ void os_wxMediaEdit::OnChange()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-change", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-change", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnChange();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2672,7 +2672,7 @@ void os_wxMediaEdit::OnFocus(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-focus", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnFocus(x0);
@@ -2680,7 +2680,7 @@ void os_wxMediaEdit::OnFocus(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2705,7 +2705,7 @@ void os_wxMediaEdit::OnDefaultChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-default-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-default-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnDefaultChar(x0);
@@ -2713,7 +2713,7 @@ void os_wxMediaEdit::OnDefaultChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2738,7 +2738,7 @@ void os_wxMediaEdit::OnDefaultEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-default-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-default-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnDefaultEvent(x0);
@@ -2746,7 +2746,7 @@ void os_wxMediaEdit::OnDefaultEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2771,7 +2771,7 @@ void os_wxMediaEdit::OnLocalChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-local-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-local-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnLocalChar(x0);
@@ -2779,7 +2779,7 @@ void os_wxMediaEdit::OnLocalChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2804,7 +2804,7 @@ void os_wxMediaEdit::OnLocalEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-local-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-local-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnLocalEvent(x0);
@@ -2812,7 +2812,7 @@ void os_wxMediaEdit::OnLocalEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2836,14 +2836,14 @@ void os_wxMediaEdit::SizeCacheInvalid()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "size-cache-invalid", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::SizeCacheInvalid();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2867,14 +2867,14 @@ void os_wxMediaEdit::BlinkCaret()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "blink-caret", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::BlinkCaret();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2898,7 +2898,7 @@ void os_wxMediaEdit::OwnCaret(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "own-caret", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OwnCaret(x0);
@@ -2906,7 +2906,7 @@ void os_wxMediaEdit::OwnCaret(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2930,7 +2930,7 @@ void os_wxMediaEdit::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+5);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "refresh", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "refresh", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::Refresh(x0, x1, x2, x3, x4);
@@ -2942,7 +2942,7 @@ void os_wxMediaEdit::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   p[POFFSET+4] = WITH_VAR_STACK(bundle_symset_caret(x4));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
@@ -2967,7 +2967,7 @@ class wxCursor* os_wxMediaEdit::AdjustCursor(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "adjust-cursor", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::AdjustCursor(x0);
@@ -2975,7 +2975,7 @@ class wxCursor* os_wxMediaEdit::AdjustCursor(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -3001,7 +3001,7 @@ void os_wxMediaEdit::OnChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnChar(x0);
@@ -3009,7 +3009,7 @@ void os_wxMediaEdit::OnChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -3034,7 +3034,7 @@ void os_wxMediaEdit::OnEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::OnEvent(x0);
@@ -3042,7 +3042,7 @@ void os_wxMediaEdit::OnEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -3067,7 +3067,7 @@ void os_wxMediaEdit::CopySelfTo(class wxMediaBuffer* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "copy-self-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "copy-self-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaEdit::CopySelfTo(x0);
@@ -3075,7 +3075,7 @@ void os_wxMediaEdit::CopySelfTo(class wxMediaBuffer* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaBuffer(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -3099,14 +3099,14 @@ class wxMediaBuffer* os_wxMediaEdit::CopySelf()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "copy-self", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "copy-self", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaEdit::CopySelf();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -7573,8 +7573,7 @@ int objscheme_istype_wxMediaEdit(Scheme_Object *obj, const char *stop, int nullO
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMediaEdit_class))
+  if (objscheme_is_a(obj,  os_wxMediaEdit_class))
     return 1;
   else {
     if (!stop)

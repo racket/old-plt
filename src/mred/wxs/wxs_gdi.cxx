@@ -318,7 +318,7 @@ CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4, x5))
 
 os_wxFont::~os_wxFont()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxFontGetFontId(int n,  Scheme_Object *p[])
@@ -585,8 +585,7 @@ int objscheme_istype_wxFont(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxFont_class))
+  if (objscheme_is_a(obj,  os_wxFont_class))
     return 1;
   else {
     if (!stop)
@@ -671,7 +670,7 @@ CONSTRUCTOR_INIT(: wxFontList())
 
 os_wxFontList::~os_wxFontList()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
@@ -805,8 +804,7 @@ int objscheme_istype_wxFontList(Scheme_Object *obj, const char *stop, int nullOK
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxFontList_class))
+  if (objscheme_is_a(obj,  os_wxFontList_class))
     return 1;
   else {
     if (!stop)
@@ -913,7 +911,7 @@ CONSTRUCTOR_INIT(: wxColour(x0))
 
 os_wxColour::~os_wxColour()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxColourBlue(int n,  Scheme_Object *p[])
@@ -1147,8 +1145,7 @@ int objscheme_istype_wxColour(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxColour_class))
+  if (objscheme_is_a(obj,  os_wxColour_class))
     return 1;
   else {
     if (!stop)
@@ -1243,7 +1240,7 @@ static Scheme_Object *os_wxColourDatabase_interface;
 
 os_wxColourDatabase::~os_wxColourDatabase()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxColourDatabaseFindColour(int n,  Scheme_Object *p[])
@@ -1297,8 +1294,7 @@ int objscheme_istype_wxColourDatabase(Scheme_Object *obj, const char *stop, int 
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxColourDatabase_class))
+  if (objscheme_is_a(obj,  os_wxColourDatabase_class))
     return 1;
   else {
     if (!stop)
@@ -1393,7 +1389,7 @@ CONSTRUCTOR_INIT(: wxPoint(x0, x1))
 
 os_wxPoint::~os_wxPoint()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *objscheme_wxPoint_Getx(int n,  Scheme_Object *p[])
@@ -1539,8 +1535,7 @@ int objscheme_istype_wxPoint(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxPoint_class))
+  if (objscheme_is_a(obj,  os_wxPoint_class))
     return 1;
   else {
     if (!stop)
@@ -1717,7 +1712,7 @@ CONSTRUCTOR_INIT(: wxBrush(x0, x1))
 
 os_wxBrush::~os_wxBrush()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxBrushSetStyle(int n,  Scheme_Object *p[])
@@ -1993,8 +1988,7 @@ int objscheme_istype_wxBrush(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxBrush_class))
+  if (objscheme_is_a(obj,  os_wxBrush_class))
     return 1;
   else {
     if (!stop)
@@ -2079,7 +2073,7 @@ CONSTRUCTOR_INIT(: wxBrushList())
 
 os_wxBrushList::~os_wxBrushList()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxBrushListFindOrCreateBrush(int n,  Scheme_Object *p[])
@@ -2188,8 +2182,7 @@ int objscheme_istype_wxBrushList(Scheme_Object *obj, const char *stop, int nullO
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxBrushList_class))
+  if (objscheme_is_a(obj,  os_wxBrushList_class))
     return 1;
   else {
     if (!stop)
@@ -2448,7 +2441,7 @@ CONSTRUCTOR_INIT(: wxPen(x0, x1, x2))
 
 os_wxPen::~os_wxPen()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxPenSetStyle(int n,  Scheme_Object *p[])
@@ -2857,8 +2850,7 @@ int objscheme_istype_wxPen(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxPen_class))
+  if (objscheme_is_a(obj,  os_wxPen_class))
     return 1;
   else {
     if (!stop)
@@ -2944,7 +2936,7 @@ CONSTRUCTOR_INIT(: wxPenList())
 
 os_wxPenList::~os_wxPenList()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
@@ -3057,8 +3049,7 @@ int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxPenList_class))
+  if (objscheme_is_a(obj,  os_wxPenList_class))
     return 1;
   else {
     if (!stop)
@@ -3224,7 +3215,7 @@ CONSTRUCTOR_INIT(: wxCursor(x0))
 
 os_wxCursor::~os_wxCursor()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxCursorOk(int n,  Scheme_Object *p[])
@@ -3338,8 +3329,7 @@ int objscheme_istype_wxCursor(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxCursor_class))
+  if (objscheme_is_a(obj,  os_wxCursor_class))
     return 1;
   else {
     if (!stop)
@@ -3569,7 +3559,7 @@ CONSTRUCTOR_INIT(: wxRegion(x0))
 
 os_wxRegion::~os_wxRegion()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxRegionEmpty(int n,  Scheme_Object *p[])
@@ -3916,8 +3906,7 @@ int objscheme_istype_wxRegion(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxRegion_class))
+  if (objscheme_is_a(obj,  os_wxRegion_class))
     return 1;
   else {
     if (!stop)
@@ -4007,7 +3996,7 @@ static Scheme_Object *os_wxFontNameDirectory_interface;
 
 os_wxFontNameDirectory::~os_wxFontNameDirectory()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxFontNameDirectoryIdentity(int n,  Scheme_Object *p[])
@@ -4270,8 +4259,7 @@ int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, i
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxFontNameDirectory_class))
+  if (objscheme_is_a(obj,  os_wxFontNameDirectory_class))
     return 1;
   else {
     if (!stop)

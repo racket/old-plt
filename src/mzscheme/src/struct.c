@@ -377,7 +377,8 @@ static Scheme_Object *prop_accessor(Scheme_Object *prop, int argc, Scheme_Object
     }
   }
   
-  scheme_wrong_type("property accessor", "...", 0, argc, args);
+  if (argc < 2) /* hack; see scheme_struct_type_property_ref */
+    scheme_wrong_type("property accessor", "...", 0, argc, args);
   return NULL;
 }
 
@@ -422,11 +423,25 @@ static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[])
   return scheme_values(3, a);
 }
 
+Scheme_Object *scheme_make_struct_type_property(Scheme_Object *name)
+{
+  Scheme_Thread *p = scheme_current_thread;
+
+  (void)make_struct_type_property(1, &name);
+  return p->ku.multiple.array[0];
+}
+
+Scheme_Object *scheme_struct_type_property_ref(Scheme_Object *prop, Scheme_Object *s)
+{
+  return prop_accessor(prop, 2, &s); /* 2 is a hack! */
+}
+
 static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[])
 {
   return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)
 	  ? scheme_true : scheme_false);
 }
+
 
 /*========================================================================*/
 /*                             struct ops                                 */
@@ -1301,7 +1316,9 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 					Scheme_Object *parent,
 					Scheme_Object *inspector,
 					int num_fields,
-					int num_uninit_fields)
+					int num_uninit_fields,
+					Scheme_Object *uninit_val,
+					Scheme_Object *props)
 {
   Scheme_Struct_Type *struct_type, *parent_type;
   int j, depth;
@@ -1368,17 +1385,96 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     struct_type->props_ht = parent_type->props_ht;
   }
 
+  if (props) {
+    int num_props, i;
+    Scheme_Object *l, *a;
+
+    num_props = scheme_list_length(props);
+    if (struct_type->props_ht || (struct_type->num_props + num_props > PROP_USE_HT_COUNT)) {
+      Scheme_Hash_Table *ht;
+
+      ht = scheme_hash_table(struct_type->num_props + num_props, SCHEME_hash_ptr, 0, 0);
+    
+      if (!struct_type->props_ht) {
+	for (i = 0; i < struct_type->num_props; i++) {
+	  scheme_add_to_table(ht, (char *)SCHEME_CAR(struct_type->props[i]), SCHEME_CDR(struct_type->props[i]), 0);
+	}
+	struct_type->props_ht = ht;
+	struct_type->num_props = 0;
+	struct_type->props = NULL;
+      } else {
+	/* Duplicate hash table: */
+	Scheme_Bucket **bs;
+	bs = struct_type->props_ht->buckets;
+	for (i =  struct_type->props_ht->count; i--; ) {
+	  if (bs[i] && bs[i]->key) {
+	    scheme_add_to_table(ht, bs[i]->key, bs[i]->val, 0);
+	  }
+	}
+      }
+
+      /* Add new props: */
+      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	a = SCHEME_CAR(l);
+	if (scheme_lookup_in_table(ht, (char *)SCHEME_CAR(a))) {
+	  /* Property is already in the superstruct_type */
+	  break;
+	}
+	scheme_add_to_table(ht, (char *)SCHEME_CAR(a), SCHEME_CDR(a), 0);
+      }
+    } else {
+      /* Make props array: */
+      Scheme_Object **pa;
+      int j;
+
+      i = struct_type->num_props;
+      
+      pa = MALLOC_N(Scheme_Object *, i + num_props);
+      memcpy(pa, struct_type->props, sizeof(Scheme_Object *) * i);
+
+      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l), i++) {
+	a = SCHEME_CAR(l);
+	
+	for (j = 0; j < i; j++) {
+	  if (SAME_OBJ(SCHEME_CAR(pa[j]), SCHEME_CAR(a)))
+	    break;
+	}
+	if (j < i)
+	  break;
+
+	a = scheme_make_pair(SCHEME_CAR(a), SCHEME_CDR(a));
+	pa[i] = a;
+      }
+      
+      struct_type->num_props += num_props;
+      struct_type->props = pa;
+    }
+
+    if (!SCHEME_NULLP(l)) {
+      /* SCHEME_CAR(l) is a duplicate */
+      a = SCHEME_CAR(l);
+      scheme_arg_mismatch("make-struct-type", "duplicate property binding", a);
+    }
+  }
+
+  if (!uninit_val)
+    uninit_val = scheme_false;
+  struct_type->uninit_val = uninit_val;
+
   return (Scheme_Object *)struct_type;
 }
 
 Scheme_Object *scheme_make_struct_type(Scheme_Object *base,
 				       Scheme_Object *parent,
 				       Scheme_Object *inspector,
-				       int num_fields)
+				       int num_fields, int num_uninit,
+				       Scheme_Object *uninit_val,
+				       Scheme_Object *properties)
 {
   return _make_struct_type(base, NULL, 0,
 			   parent, inspector, 
-			   num_fields, 0);
+			   num_fields, num_uninit,
+			   uninit_val, properties);
 }
 
 Scheme_Object *scheme_make_struct_type_from_string(const char *base,
@@ -1387,7 +1483,7 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 {
   return _make_struct_type(NULL, base, strlen(base),
 			   parent, scheme_false, 
-			   num_fields, 0);
+			   num_fields, 0, NULL, NULL);
 }
 
 static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
@@ -1462,76 +1558,8 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
   type = (Scheme_Struct_Type *)_make_struct_type(argv[0], NULL, 0, 
 						 SCHEME_FALSEP(argv[1]) ? NULL : argv[1],
 						 inspector,
-						 initc, uninitc);
-  type->uninit_val = uninit_val;
-
-  if (num_props) {
-    if (type->props_ht || (type->num_props + num_props > PROP_USE_HT_COUNT)) {
-      Scheme_Hash_Table *ht;
-
-      ht = scheme_hash_table(type->num_props + num_props, SCHEME_hash_ptr, 0, 0);
-    
-      if (!type->props_ht) {
-	for (i = 0; i < type->num_props; i++) {
-	  scheme_add_to_table(ht, (char *)SCHEME_CAR(type->props[i]), SCHEME_CDR(type->props[i]), 0);
-	}
-	type->props_ht = ht;
-	type->num_props = 0;
-	type->props = NULL;
-      } else {
-	/* Duplicate hash table: */
-	Scheme_Bucket **bs;
-	bs = type->props_ht->buckets;
-	for (i =  type->props_ht->count; i--; ) {
-	  if (bs[i] && bs[i]->key) {
-	    scheme_add_to_table(ht, bs[i]->key, bs[i]->val, 0);
-	  }
-	}
-      }
-
-      /* Add new props: */
-      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	a = SCHEME_CAR(l);
-	if (scheme_lookup_in_table(ht, (char *)SCHEME_CAR(a))) {
-	  /* Property is already in the supertype */
-	  break;
-	}
-	scheme_add_to_table(ht, (char *)SCHEME_CAR(a), SCHEME_CDR(a), 0);
-      }
-    } else {
-      /* Make props array: */
-      Scheme_Object **pa;
-      int j;
-
-      i = type->num_props;
-      
-      pa = MALLOC_N(Scheme_Object *, i + num_props);
-      memcpy(pa, type->props, sizeof(Scheme_Object *) * i);
-
-      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l), i++) {
-	a = SCHEME_CAR(l);
-	
-	for (j = 0; j < i; j++) {
-	  if (SAME_OBJ(SCHEME_CAR(pa[j]), SCHEME_CAR(a)))
-	    break;
-	}
-	if (j < i)
-	  break;
-
-	a = scheme_make_pair(SCHEME_CAR(a), SCHEME_CDR(a));
-	pa[i] = a;
-      }
-      
-      type->num_props += num_props;
-      type->props = pa;
-    }
-
-    if (!SCHEME_NULLP(l)) {
-      /* SCHEME_CAR(l) is a duplicate */
-      a = SCHEME_CAR(l);
-      scheme_arg_mismatch("make-struct-type", "duplicate property binding", a);
-    }
-  }
+						 initc, uninitc,
+						 uninit_val, props);
 
   names = scheme_make_struct_names(argv[0],
 				   NULL,

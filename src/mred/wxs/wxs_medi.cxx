@@ -568,7 +568,7 @@ static Scheme_Object *os_wxMediaBuffer_interface;
 
 os_wxMediaBuffer::~os_wxMediaBuffer()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
@@ -589,7 +589,7 @@ nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "put-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "put-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::PutFile(x0, x1);
@@ -598,7 +598,7 @@ nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -624,7 +624,7 @@ nstring os_wxMediaBuffer::GetFile(nstring x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "get-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::GetFile(x0);
@@ -632,7 +632,7 @@ nstring os_wxMediaBuffer::GetFile(nstring x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -657,14 +657,14 @@ void os_wxMediaBuffer::AfterEditSequence()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-edit-sequence", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "after-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::AfterEditSequence();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -688,14 +688,14 @@ void os_wxMediaBuffer::OnEditSequence()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-edit-sequence", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnEditSequence();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -719,7 +719,7 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-load-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "after-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::AfterLoadFile(x0);
@@ -727,7 +727,7 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -752,7 +752,7 @@ void os_wxMediaBuffer::OnLoadFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-load-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnLoadFile(x0, x1);
@@ -761,7 +761,7 @@ void os_wxMediaBuffer::OnLoadFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -786,7 +786,7 @@ Bool os_wxMediaBuffer::CanLoadFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-load-file?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "can-load-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::CanLoadFile(x0, x1);
@@ -795,7 +795,7 @@ Bool os_wxMediaBuffer::CanLoadFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -820,7 +820,7 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-save-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "after-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::AfterSaveFile(x0);
@@ -828,7 +828,7 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -853,7 +853,7 @@ void os_wxMediaBuffer::OnSaveFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-save-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnSaveFile(x0, x1);
@@ -862,7 +862,7 @@ void os_wxMediaBuffer::OnSaveFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -887,7 +887,7 @@ Bool os_wxMediaBuffer::CanSaveFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-save-file?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "can-save-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::CanSaveFile(x0, x1);
@@ -896,7 +896,7 @@ Bool os_wxMediaBuffer::CanSaveFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -921,7 +921,7 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-new-box", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-new-box", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::OnNewBox(x0);
@@ -929,7 +929,7 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_bufferType(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -955,7 +955,7 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2,
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-new-image-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-new-image-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
@@ -966,7 +966,7 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2,
   p[POFFSET+2] = (x2 ? scheme_true : scheme_false);
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -991,7 +991,7 @@ void os_wxMediaBuffer::InvalidateBitmapCache(float x0, float x1, float x2, float
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "invalidate-bitmap-cache", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "invalidate-bitmap-cache", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1002,7 +1002,7 @@ void os_wxMediaBuffer::InvalidateBitmapCache(float x0, float x1, float x2, float
   p[POFFSET+2] = WITH_VAR_STACK(objscheme_bundle_nonnegative_symbol_float(x2, "end"));
   p[POFFSET+3] = WITH_VAR_STACK(objscheme_bundle_nonnegative_symbol_float(x3, "end"));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1027,7 +1027,7 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
   VAR_STACK_PUSH(5, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-paint", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-paint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
@@ -1043,7 +1043,7 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
   p[POFFSET+7] = WITH_VAR_STACK(scheme_make_double(x7));
   p[POFFSET+8] = WITH_VAR_STACK(bundle_symset_caret(x8));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+9, p));
   
@@ -1068,7 +1068,7 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "write-footers-to-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "write-footers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::WriteFootersToFile(x0);
@@ -1076,7 +1076,7 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1102,7 +1102,7 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "write-headers-to-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "write-headers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::WriteHeadersToFile(x0);
@@ -1110,7 +1110,7 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1137,7 +1137,7 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "read-footer-from-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "read-footer-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::ReadFooterFromFile(x0, x1);
@@ -1146,7 +1146,7 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1173,7 +1173,7 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "read-header-from-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "read-header-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaBuffer::ReadHeaderFromFile(x0, x1);
@@ -1182,7 +1182,7 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1208,7 +1208,7 @@ void os_wxMediaBuffer::SetFilename(nstring x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-filename", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-filename", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1217,7 +1217,7 @@ void os_wxMediaBuffer::SetFilename(nstring x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1242,7 +1242,7 @@ Bool os_wxMediaBuffer::ReleaseSnip(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "release-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "release-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return 0;
@@ -1250,7 +1250,7 @@ Bool os_wxMediaBuffer::ReleaseSnip(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1275,7 +1275,7 @@ void os_wxMediaBuffer::SetModified(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-modified", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::SetModified(x0);
@@ -1283,7 +1283,7 @@ void os_wxMediaBuffer::SetModified(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1309,7 +1309,7 @@ void os_wxMediaBuffer::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-snip-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-snip-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1318,7 +1318,7 @@ void os_wxMediaBuffer::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxBufferData(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1343,7 +1343,7 @@ class wxBufferData* os_wxMediaBuffer::GetSnipData(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-snip-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "get-snip-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return 0;
@@ -1351,7 +1351,7 @@ class wxBufferData* os_wxMediaBuffer::GetSnipData(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1377,7 +1377,7 @@ void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "needs-update", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "needs-update", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1389,7 +1389,7 @@ void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   p[POFFSET+4] = WITH_VAR_STACK(scheme_make_double(x4));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
@@ -1414,7 +1414,7 @@ void os_wxMediaBuffer::Resized(class wxSnip* x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "resized", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "resized", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1423,7 +1423,7 @@ void os_wxMediaBuffer::Resized(class wxSnip* x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1448,7 +1448,7 @@ void os_wxMediaBuffer::SetCaretOwner(class wxSnip* x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-caret-owner", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-caret-owner", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1457,7 +1457,7 @@ void os_wxMediaBuffer::SetCaretOwner(class wxSnip* x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_focus(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1482,7 +1482,7 @@ Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "scroll-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "scroll-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return 0;
@@ -1496,7 +1496,7 @@ Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3
   p[POFFSET+5] = (x5 ? scheme_true : scheme_false);
   p[POFFSET+6] = WITH_VAR_STACK(bundle_symset_bias(x6));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+7, p));
   
@@ -1521,14 +1521,14 @@ void os_wxMediaBuffer::OnDisplaySize()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-display-size", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-display-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnDisplaySize();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1552,14 +1552,14 @@ void os_wxMediaBuffer::OnChange()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-change", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-change", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1583,7 +1583,7 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-focus", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnFocus(x0);
@@ -1591,7 +1591,7 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1616,7 +1616,7 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-default-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-default-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1624,7 +1624,7 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1649,7 +1649,7 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-default-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-default-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1657,7 +1657,7 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1682,7 +1682,7 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-local-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-local-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnLocalChar(x0);
@@ -1690,7 +1690,7 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1715,7 +1715,7 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-local-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-local-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaBuffer::OnLocalEvent(x0);
@@ -1723,7 +1723,7 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1747,14 +1747,14 @@ void os_wxMediaBuffer::SizeCacheInvalid()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "size-cache-invalid", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1778,14 +1778,14 @@ void os_wxMediaBuffer::BlinkCaret()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "blink-caret", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1809,7 +1809,7 @@ void os_wxMediaBuffer::OwnCaret(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "own-caret", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1817,7 +1817,7 @@ void os_wxMediaBuffer::OwnCaret(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1841,7 +1841,7 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+5);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "refresh", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "refresh", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1853,7 +1853,7 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   p[POFFSET+4] = WITH_VAR_STACK(bundle_symset_caret(x4));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
@@ -1878,7 +1878,7 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "adjust-cursor", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return NULL;
@@ -1886,7 +1886,7 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1912,7 +1912,7 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1920,7 +1920,7 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1945,7 +1945,7 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1953,7 +1953,7 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1978,7 +1978,7 @@ void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "copy-self-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "copy-self-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -1986,7 +1986,7 @@ void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaBuffer(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2010,14 +2010,14 @@ class wxMediaBuffer* os_wxMediaBuffer::CopySelf()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "copy-self", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "copy-self", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return 0;
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -5086,8 +5086,7 @@ int objscheme_istype_wxMediaBuffer(Scheme_Object *obj, const char *stop, int nul
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMediaBuffer_class))
+  if (objscheme_is_a(obj,  os_wxMediaBuffer_class))
     return 1;
   else {
     if (!stop)

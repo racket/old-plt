@@ -20,19 +20,20 @@ void objscheme_init(Scheme_Env *);
 /*                   Utilites used by xctocc                      */
 /******************************************************************/
 
+  /* >>>>>>>>>>>> WARNING <<<<<<<<<<<<<<
+     The following struct declaration is crafted to
+     overlay over a Scheme_Structure. */
 typedef struct Scheme_Class_Object {
-  Scheme_Type type;
-  short hash; /* for Precise GC */
-  short primflag;
-  short num_extra;
-  void *primdata;
-  Scheme_Object *sclass;
-  Scheme_Object *dispatcher;
-  Scheme_Object *extra[1];
+  Scheme_Type type; /* scheme_structure_type */
+#ifdef MZ_PRECISE_GC
+  short hash;
+#endif
+  void *__type; /* struct type */
+  long primflag; /* field 0 */
+  void *primdata; /* field 1 */
+  /* ... */
 } Scheme_Class_Object;
   
-extern Scheme_Type objscheme_object_type;
-
 typedef Scheme_Prim Scheme_Method_Prim;
 #define POFFSET 1
 #define THEOBJ p[0]
@@ -77,6 +78,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj,
 				     void **cache);
 
 int objscheme_is_subclass(Scheme_Object *a, Scheme_Object *sup);
+int objscheme_is_a(Scheme_Object *o, Scheme_Object *c);
 
 Scheme_Object *objscheme_unbox(Scheme_Object *, const char *where);
 Scheme_Object *objscheme_nullable_unbox(Scheme_Object *, const char *where);

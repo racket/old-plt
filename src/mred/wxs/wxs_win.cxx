@@ -174,7 +174,7 @@ static Scheme_Object *os_wxWindow_class;
 
 os_wxWindow::~os_wxWindow()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 void os_wxWindow::OnDropFile(pathname x0)
@@ -194,7 +194,7 @@ void os_wxWindow::OnDropFile(pathname x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "on-drop-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxWindow_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -202,7 +202,7 @@ void os_wxWindow::OnDropFile(pathname x0)
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -228,7 +228,7 @@ Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "pre-on-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxWindow_class, "pre-on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return FALSE;
@@ -237,7 +237,7 @@ Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -264,7 +264,7 @@ Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "pre-on-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxWindow_class, "pre-on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return FALSE;
@@ -273,7 +273,7 @@ Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -298,7 +298,7 @@ void os_wxWindow::OnSize(int x0, int x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "on-size", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxWindow_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
@@ -307,7 +307,7 @@ void os_wxWindow::OnSize(int x0, int x1)
   p[POFFSET+0] = scheme_make_integer(x0);
   p[POFFSET+1] = scheme_make_integer(x1);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -331,14 +331,14 @@ void os_wxWindow::OnSetFocus()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "on-set-focus", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxWindow_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -362,14 +362,14 @@ void os_wxWindow::OnKillFocus()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "on-kill-focus", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxWindow_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1209,8 +1209,7 @@ int objscheme_istype_wxWindow(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxWindow_class))
+  if (objscheme_is_a(obj,  os_wxWindow_class))
     return 1;
   else {
     if (!stop)

@@ -410,7 +410,7 @@ static Scheme_Object *os_wxDC_interface;
 
 os_wxDC::~os_wxDC()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxDCEndPage(int n,  Scheme_Object *p[])
@@ -1562,8 +1562,7 @@ int objscheme_istype_wxDC(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxDC_class))
+  if (objscheme_is_a(obj,  os_wxDC_class))
     return 1;
   else {
     if (!stop)
@@ -1649,7 +1648,7 @@ CONSTRUCTOR_INIT(: wxMemoryDC())
 
 os_wxMemoryDC::~os_wxMemoryDC()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxMemoryDCGetObject(int n,  Scheme_Object *p[])
@@ -1801,8 +1800,7 @@ int objscheme_istype_wxMemoryDC(Scheme_Object *obj, const char *stop, int nullOK
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMemoryDC_class))
+  if (objscheme_is_a(obj,  os_wxMemoryDC_class))
     return 1;
   else {
     if (!stop)
@@ -1888,7 +1886,7 @@ CONSTRUCTOR_INIT(: wxPostScriptDC(x0, x1))
 
 os_wxPostScriptDC::~os_wxPostScriptDC()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p[])
@@ -1952,8 +1950,7 @@ int objscheme_istype_wxPostScriptDC(Scheme_Object *obj, const char *stop, int nu
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxPostScriptDC_class))
+  if (objscheme_is_a(obj,  os_wxPostScriptDC_class))
     return 1;
   else {
     if (!stop)
@@ -2075,7 +2072,7 @@ CONSTRUCTOR_INIT(: basePrinterDC(x0))
 
 os_basePrinterDC::~os_basePrinterDC()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_basePrinterDC_ConstructScheme(int n,  Scheme_Object *p[])
@@ -2134,8 +2131,7 @@ int objscheme_istype_basePrinterDC(Scheme_Object *obj, const char *stop, int nul
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_basePrinterDC_class))
+  if (objscheme_is_a(obj,  os_basePrinterDC_class))
     return 1;
   else {
     if (!stop)

@@ -563,13 +563,19 @@ Scheme_Object **scheme_make_struct_names(Scheme_Object *base,
 Scheme_Object *scheme_make_struct_type(Scheme_Object *base, 
 				       Scheme_Object *parent, 
 				       Scheme_Object *inspector,
-				       int num_fields);
+				       int num_fields, int num_uninit_fields,
+				       Scheme_Object *uninit_val,
+				       Scheme_Object *properties);
 Scheme_Object *scheme_make_struct_instance(Scheme_Object *stype,
 					   int argc,
 					   Scheme_Object **argv);
+
 int scheme_is_struct_instance(Scheme_Object *type, Scheme_Object *v);
 Scheme_Object *scheme_struct_ref(Scheme_Object *s, int pos);
 void scheme_struct_set(Scheme_Object *s, int pos, Scheme_Object *v);
+
+Scheme_Object *scheme_make_struct_type_property(Scheme_Object *name);
+Scheme_Object *scheme_struct_type_property_ref(Scheme_Object *prop, Scheme_Object *s);
 
 /*========================================================================*/
 /*                              utilities                                 */

@@ -451,7 +451,7 @@ CONSTRUCTOR_INIT(: wxMediaPasteboard())
 
 os_wxMediaPasteboard::~os_wxMediaPasteboard()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 void os_wxMediaPasteboard::AfterInteractiveResize(class wxSnip* x0)
@@ -471,7 +471,7 @@ void os_wxMediaPasteboard::AfterInteractiveResize(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-interactive-resize", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-interactive-resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterInteractiveResize(x0);
@@ -479,7 +479,7 @@ void os_wxMediaPasteboard::AfterInteractiveResize(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -504,7 +504,7 @@ void os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-interactive-resize", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-interactive-resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnInteractiveResize(x0);
@@ -512,7 +512,7 @@ void os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -537,7 +537,7 @@ Bool os_wxMediaPasteboard::CanInteractiveResize(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-interactive-resize?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-interactive-resize?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanInteractiveResize(x0);
@@ -545,7 +545,7 @@ Bool os_wxMediaPasteboard::CanInteractiveResize(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -571,7 +571,7 @@ void os_wxMediaPasteboard::AfterInteractiveMove(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-interactive-move", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-interactive-move", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterInteractiveMove(x0);
@@ -579,7 +579,7 @@ void os_wxMediaPasteboard::AfterInteractiveMove(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -604,7 +604,7 @@ void os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-interactive-move", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-interactive-move", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnInteractiveMove(x0);
@@ -612,7 +612,7 @@ void os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -637,7 +637,7 @@ Bool os_wxMediaPasteboard::CanInteractiveMove(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-interactive-move?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-interactive-move?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanInteractiveMove(x0);
@@ -645,7 +645,7 @@ Bool os_wxMediaPasteboard::CanInteractiveMove(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -674,7 +674,7 @@ void os_wxMediaPasteboard::InteractiveAdjustResize(class wxSnip* x0, nnfloat* x1
   VAR_STACK_PUSH(7, x2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "interactive-adjust-resize", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "interactive-adjust-resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::InteractiveAdjustResize(x0, x1, x2);
@@ -684,7 +684,7 @@ void os_wxMediaPasteboard::InteractiveAdjustResize(class wxSnip* x0, nnfloat* x1
   p[POFFSET+1] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   p[POFFSET+2] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
@@ -714,7 +714,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMove(class wxSnip* x0, float* x1, fl
   VAR_STACK_PUSH(7, x2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "interactive-adjust-move", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "interactive-adjust-move", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::InteractiveAdjustMove(x0, x1, x2);
@@ -724,7 +724,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMove(class wxSnip* x0, float* x1, fl
   p[POFFSET+1] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   p[POFFSET+2] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
@@ -753,7 +753,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "interactive-adjust-mouse", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "interactive-adjust-mouse", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::InteractiveAdjustMouse(x0, x1);
@@ -762,7 +762,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
   p[POFFSET+0] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x0))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   p[POFFSET+1] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -790,7 +790,7 @@ void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent* x
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-double-click", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-double-click", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnDoubleClick(x0, x1);
@@ -799,7 +799,7 @@ void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent* x
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -824,7 +824,7 @@ void os_wxMediaPasteboard::AfterSelect(class wxSnip* x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-select", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-select", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterSelect(x0, x1);
@@ -833,7 +833,7 @@ void os_wxMediaPasteboard::AfterSelect(class wxSnip* x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -858,7 +858,7 @@ void os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-select", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-select", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnSelect(x0, x1);
@@ -867,7 +867,7 @@ void os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -892,7 +892,7 @@ Bool os_wxMediaPasteboard::CanSelect(class wxSnip* x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-select?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-select?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanSelect(x0, x1);
@@ -901,7 +901,7 @@ Bool os_wxMediaPasteboard::CanSelect(class wxSnip* x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -927,7 +927,7 @@ void os_wxMediaPasteboard::AfterResize(class wxSnip* x0, nnfloat x1, nnfloat x2,
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-resize", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterResize(x0, x1, x2, x3);
@@ -938,7 +938,7 @@ void os_wxMediaPasteboard::AfterResize(class wxSnip* x0, nnfloat x1, nnfloat x2,
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -963,7 +963,7 @@ void os_wxMediaPasteboard::OnResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-resize", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnResize(x0, x1, x2);
@@ -973,7 +973,7 @@ void os_wxMediaPasteboard::OnResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
   p[POFFSET+1] = WITH_VAR_STACK(scheme_make_double(x1));
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
@@ -998,7 +998,7 @@ Bool os_wxMediaPasteboard::CanResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-resize?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-resize?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanResize(x0, x1, x2);
@@ -1008,7 +1008,7 @@ Bool os_wxMediaPasteboard::CanResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
   p[POFFSET+1] = WITH_VAR_STACK(scheme_make_double(x1));
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
@@ -1034,7 +1034,7 @@ void os_wxMediaPasteboard::AfterMoveTo(class wxSnip* x0, float x1, float x2, Boo
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-move-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-move-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterMoveTo(x0, x1, x2, x3);
@@ -1045,7 +1045,7 @@ void os_wxMediaPasteboard::AfterMoveTo(class wxSnip* x0, float x1, float x2, Boo
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1070,7 +1070,7 @@ void os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-move-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-move-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnMoveTo(x0, x1, x2, x3);
@@ -1081,7 +1081,7 @@ void os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1106,7 +1106,7 @@ Bool os_wxMediaPasteboard::CanMoveTo(class wxSnip* x0, float x1, float x2, Bool 
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-move-to?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-move-to?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanMoveTo(x0, x1, x2, x3);
@@ -1117,7 +1117,7 @@ Bool os_wxMediaPasteboard::CanMoveTo(class wxSnip* x0, float x1, float x2, Bool 
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1143,7 +1143,7 @@ void os_wxMediaPasteboard::AfterDelete(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-delete", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-delete", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterDelete(x0);
@@ -1151,7 +1151,7 @@ void os_wxMediaPasteboard::AfterDelete(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1176,7 +1176,7 @@ void os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-delete", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-delete", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnDelete(x0);
@@ -1184,7 +1184,7 @@ void os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1209,7 +1209,7 @@ Bool os_wxMediaPasteboard::CanDelete(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-delete?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-delete?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanDelete(x0);
@@ -1217,7 +1217,7 @@ Bool os_wxMediaPasteboard::CanDelete(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1244,7 +1244,7 @@ void os_wxMediaPasteboard::AfterInsert(class wxSnip* x0, class wxSnip* x1, float
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-insert", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-insert", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterInsert(x0, x1, x2, x3);
@@ -1255,7 +1255,7 @@ void os_wxMediaPasteboard::AfterInsert(class wxSnip* x0, class wxSnip* x1, float
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1281,7 +1281,7 @@ void os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-insert", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-insert", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnInsert(x0, x1, x2, x3);
@@ -1292,7 +1292,7 @@ void os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1318,7 +1318,7 @@ Bool os_wxMediaPasteboard::CanInsert(class wxSnip* x0, class wxSnip* x1, float x
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-insert?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-insert?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanInsert(x0, x1, x2, x3);
@@ -1329,7 +1329,7 @@ Bool os_wxMediaPasteboard::CanInsert(class wxSnip* x0, class wxSnip* x1, float x
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1354,7 +1354,7 @@ void os_wxMediaPasteboard::DoPaste(ExactLong x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "do-paste", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "do-paste", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::DoPaste(x0);
@@ -1362,7 +1362,7 @@ void os_wxMediaPasteboard::DoPaste(ExactLong x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_integer_value(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1386,7 +1386,7 @@ void os_wxMediaPasteboard::DoCopy(ExactLong x0, Bool x1)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "do-copy", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "do-copy", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::DoCopy(x0, x1);
@@ -1395,7 +1395,7 @@ void os_wxMediaPasteboard::DoCopy(ExactLong x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_integer_value(x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1421,7 +1421,7 @@ nstring os_wxMediaPasteboard::PutFile(nstring x0, nstring x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "put-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "put-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::PutFile(x0, x1);
@@ -1430,7 +1430,7 @@ nstring os_wxMediaPasteboard::PutFile(nstring x0, nstring x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1456,7 +1456,7 @@ nstring os_wxMediaPasteboard::GetFile(nstring x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "get-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "get-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::GetFile(x0);
@@ -1464,7 +1464,7 @@ nstring os_wxMediaPasteboard::GetFile(nstring x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1489,14 +1489,14 @@ void os_wxMediaPasteboard::AfterEditSequence()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-edit-sequence", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterEditSequence();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1520,14 +1520,14 @@ void os_wxMediaPasteboard::OnEditSequence()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-edit-sequence", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnEditSequence();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -1551,7 +1551,7 @@ void os_wxMediaPasteboard::AfterLoadFile(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-load-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterLoadFile(x0);
@@ -1559,7 +1559,7 @@ void os_wxMediaPasteboard::AfterLoadFile(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1584,7 +1584,7 @@ void os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-load-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnLoadFile(x0, x1);
@@ -1593,7 +1593,7 @@ void os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1618,7 +1618,7 @@ Bool os_wxMediaPasteboard::CanLoadFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-load-file?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-load-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanLoadFile(x0, x1);
@@ -1627,7 +1627,7 @@ Bool os_wxMediaPasteboard::CanLoadFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1652,7 +1652,7 @@ void os_wxMediaPasteboard::AfterSaveFile(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "after-save-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::AfterSaveFile(x0);
@@ -1660,7 +1660,7 @@ void os_wxMediaPasteboard::AfterSaveFile(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1685,7 +1685,7 @@ void os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-save-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnSaveFile(x0, x1);
@@ -1694,7 +1694,7 @@ void os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1719,7 +1719,7 @@ Bool os_wxMediaPasteboard::CanSaveFile(string x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "can-save-file?", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-save-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CanSaveFile(x0, x1);
@@ -1728,7 +1728,7 @@ Bool os_wxMediaPasteboard::CanSaveFile(string x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -1753,7 +1753,7 @@ class wxSnip* os_wxMediaPasteboard::OnNewBox(int x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-new-box", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-new-box", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::OnNewBox(x0);
@@ -1761,7 +1761,7 @@ class wxSnip* os_wxMediaPasteboard::OnNewBox(int x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_bufferType(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1787,7 +1787,7 @@ class wxImageSnip* os_wxMediaPasteboard::OnNewImageSnip(nstring x0, int x1, Bool
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-new-image-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-new-image-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::OnNewImageSnip(x0, x1, x2, x3);
@@ -1798,7 +1798,7 @@ class wxImageSnip* os_wxMediaPasteboard::OnNewImageSnip(nstring x0, int x1, Bool
   p[POFFSET+2] = (x2 ? scheme_true : scheme_false);
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1823,7 +1823,7 @@ void os_wxMediaPasteboard::InvalidateBitmapCache(float x0, float x1, float x2, f
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "invalidate-bitmap-cache", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "invalidate-bitmap-cache", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::InvalidateBitmapCache(x0, x1, x2, x3);
@@ -1834,7 +1834,7 @@ void os_wxMediaPasteboard::InvalidateBitmapCache(float x0, float x1, float x2, f
   p[POFFSET+2] = WITH_VAR_STACK(objscheme_bundle_nonnegative_symbol_float(x2, "end"));
   p[POFFSET+3] = WITH_VAR_STACK(objscheme_bundle_nonnegative_symbol_float(x3, "end"));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
@@ -1859,7 +1859,7 @@ void os_wxMediaPasteboard::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, 
   VAR_STACK_PUSH(5, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-paint", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-paint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
@@ -1875,7 +1875,7 @@ void os_wxMediaPasteboard::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, 
   p[POFFSET+7] = WITH_VAR_STACK(scheme_make_double(x7));
   p[POFFSET+8] = WITH_VAR_STACK(bundle_symset_caret(x8));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+9, p));
   
@@ -1900,7 +1900,7 @@ Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "write-footers-to-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "write-footers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::WriteFootersToFile(x0);
@@ -1908,7 +1908,7 @@ Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1934,7 +1934,7 @@ Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "write-headers-to-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "write-headers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::WriteHeadersToFile(x0);
@@ -1942,7 +1942,7 @@ Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -1969,7 +1969,7 @@ Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn* x0, string 
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "read-footer-from-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "read-footer-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::ReadFooterFromFile(x0, x1);
@@ -1978,7 +1978,7 @@ Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn* x0, string 
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2005,7 +2005,7 @@ Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn* x0, string 
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "read-header-from-file", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "read-header-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::ReadHeaderFromFile(x0, x1);
@@ -2014,7 +2014,7 @@ Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn* x0, string 
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2040,7 +2040,7 @@ void os_wxMediaPasteboard::SetFilename(nstring x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "set-filename", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "set-filename", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::SetFilename(x0, x1);
@@ -2049,7 +2049,7 @@ void os_wxMediaPasteboard::SetFilename(nstring x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2074,7 +2074,7 @@ Bool os_wxMediaPasteboard::ReleaseSnip(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "release-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "release-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::ReleaseSnip(x0);
@@ -2082,7 +2082,7 @@ Bool os_wxMediaPasteboard::ReleaseSnip(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2107,7 +2107,7 @@ void os_wxMediaPasteboard::SetModified(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "set-modified", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "set-modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::SetModified(x0);
@@ -2115,7 +2115,7 @@ void os_wxMediaPasteboard::SetModified(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2141,7 +2141,7 @@ void os_wxMediaPasteboard::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "set-snip-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "set-snip-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::SetSnipData(x0, x1);
@@ -2150,7 +2150,7 @@ void os_wxMediaPasteboard::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxBufferData(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2175,7 +2175,7 @@ class wxBufferData* os_wxMediaPasteboard::GetSnipData(class wxSnip* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "get-snip-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "get-snip-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::GetSnipData(x0);
@@ -2183,7 +2183,7 @@ class wxBufferData* os_wxMediaPasteboard::GetSnipData(class wxSnip* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2209,7 +2209,7 @@ void os_wxMediaPasteboard::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnf
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "needs-update", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "needs-update", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::NeedsUpdate(x0, x1, x2, x3, x4);
@@ -2221,7 +2221,7 @@ void os_wxMediaPasteboard::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnf
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   p[POFFSET+4] = WITH_VAR_STACK(scheme_make_double(x4));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
@@ -2246,7 +2246,7 @@ void os_wxMediaPasteboard::Resized(class wxSnip* x0, Bool x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "resized", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "resized", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::Resized(x0, x1);
@@ -2255,7 +2255,7 @@ void os_wxMediaPasteboard::Resized(class wxSnip* x0, Bool x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2280,7 +2280,7 @@ void os_wxMediaPasteboard::SetCaretOwner(class wxSnip* x0, int x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "set-caret-owner", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "set-caret-owner", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::SetCaretOwner(x0, x1);
@@ -2289,7 +2289,7 @@ void os_wxMediaPasteboard::SetCaretOwner(class wxSnip* x0, int x1)
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_focus(x1));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
@@ -2314,7 +2314,7 @@ Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloa
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "scroll-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "scroll-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5, x6);
@@ -2328,7 +2328,7 @@ Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloa
   p[POFFSET+5] = (x5 ? scheme_true : scheme_false);
   p[POFFSET+6] = WITH_VAR_STACK(bundle_symset_bias(x6));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+7, p));
   
@@ -2353,14 +2353,14 @@ void os_wxMediaPasteboard::OnDisplaySize()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-display-size", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-display-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnDisplaySize();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2384,14 +2384,14 @@ void os_wxMediaPasteboard::OnChange()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-change", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-change", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnChange();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2415,7 +2415,7 @@ void os_wxMediaPasteboard::OnFocus(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-focus", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnFocus(x0);
@@ -2423,7 +2423,7 @@ void os_wxMediaPasteboard::OnFocus(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2448,7 +2448,7 @@ void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-default-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-default-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnDefaultChar(x0);
@@ -2456,7 +2456,7 @@ void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2481,7 +2481,7 @@ void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-default-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-default-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnDefaultEvent(x0);
@@ -2489,7 +2489,7 @@ void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2514,7 +2514,7 @@ void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-local-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-local-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnLocalChar(x0);
@@ -2522,7 +2522,7 @@ void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2547,7 +2547,7 @@ void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-local-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-local-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnLocalEvent(x0);
@@ -2555,7 +2555,7 @@ void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2579,14 +2579,14 @@ void os_wxMediaPasteboard::SizeCacheInvalid()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "size-cache-invalid", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::SizeCacheInvalid();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2610,14 +2610,14 @@ void os_wxMediaPasteboard::BlinkCaret()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "blink-caret", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::BlinkCaret();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -2641,7 +2641,7 @@ void os_wxMediaPasteboard::OwnCaret(Bool x0)
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "own-caret", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OwnCaret(x0);
@@ -2649,7 +2649,7 @@ void os_wxMediaPasteboard::OwnCaret(Bool x0)
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2673,7 +2673,7 @@ void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, i
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+5);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "refresh", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "refresh", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::Refresh(x0, x1, x2, x3, x4);
@@ -2685,7 +2685,7 @@ void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, i
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   p[POFFSET+4] = WITH_VAR_STACK(bundle_symset_caret(x4));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
@@ -2710,7 +2710,7 @@ class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "adjust-cursor", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::AdjustCursor(x0);
@@ -2718,7 +2718,7 @@ class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2744,7 +2744,7 @@ void os_wxMediaPasteboard::OnChar(class wxKeyEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-char", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnChar(x0);
@@ -2752,7 +2752,7 @@ void os_wxMediaPasteboard::OnChar(class wxKeyEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2777,7 +2777,7 @@ void os_wxMediaPasteboard::OnEvent(class wxMouseEvent* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-event", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::OnEvent(x0);
@@ -2785,7 +2785,7 @@ void os_wxMediaPasteboard::OnEvent(class wxMouseEvent* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2810,7 +2810,7 @@ void os_wxMediaPasteboard::CopySelfTo(class wxMediaBuffer* x0)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "copy-self-to", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "copy-self-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxMediaPasteboard::CopySelfTo(x0);
@@ -2818,7 +2818,7 @@ void os_wxMediaPasteboard::CopySelfTo(class wxMediaBuffer* x0)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaBuffer(x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
@@ -2842,14 +2842,14 @@ class wxMediaBuffer* os_wxMediaPasteboard::CopySelf()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "copy-self", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "copy-self", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return ASSELF wxMediaPasteboard::CopySelf();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -5933,8 +5933,7 @@ int objscheme_istype_wxMediaPasteboard(Scheme_Object *obj, const char *stop, int
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMediaPasteboard_class))
+  if (objscheme_is_a(obj,  os_wxMediaPasteboard_class))
     return 1;
   else {
     if (!stop)

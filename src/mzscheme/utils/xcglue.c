@@ -10,25 +10,12 @@
    This glue provides two new types, #<primitive-class> and
    #<primitive-object>, and several procedures:
 
-      (make-primitive-object prim-class k proc) - creates a primitive
-        object, an instance of `prim-class', with `k' extra slots and
-        method dispatcher `proc'.
+      (initialize-primitive-object prim-obj v ...) -
+        initializes the primitive object, given initialization
+        arguments v...
 
-	The method dispatcher is called to check for overriding
-        methods.  The `proc' gets a primitive object and a symbolic
-        method; it should return a method (if it was overridden) or
-        #f.
-
-      (initialize-primitive-object prim-obj v ...) - initializes the
-        primitive object, given initialization arguments v.
-
-      (primitive-object-ref o k) - returns the value in the kth extra
-        field.
-      (primitive-object-set! o k) - sets the value in the kth extra
-        field.
-
-      (primitive-object->class prim-obj) - returns the primitive
-        class of an object.
+      (primitive-class->struct prim-class) - returns a struct-type
+        for the primitive class.
 
       (primitive-class->method-name-list prim-class) - gets a list of
         symbolic method names for the class.
@@ -38,13 +25,11 @@
         instance of the class as its first argument, and the remaining
         arguments are method-specific.
 
-      (primitive-class->superclass prim-class) - gets the superclass
+      (primitive-class->superclass prim-class) - gets the superclass.
 
       (primitive-class? v) - returns #t if v is a primitive class.
 
-      (primitive-object? v) - returns #t if v is a primitive object.
-
-   In addition, the C code will generate definitions of classes.
+   In addition, the C code generates definitions of classes.
 
    C side:
    -------
@@ -84,10 +69,14 @@ typedef struct Scheme_Class {
   Scheme_Object **names;
   Scheme_Object **methods;
   Scheme_Object *cache_nl, *cache_mv;
+  Scheme_Object *struct_type;
 } Scheme_Class;
 
 Scheme_Type objscheme_class_type;
-Scheme_Type objscheme_object_type;
+
+static Scheme_Object *object_struct;
+static Scheme_Object *object_property;
+static Scheme_Object *dispatcher_property;
 
 #ifdef MZ_PRECISE_GC
 # include "../gc2/gc2.h"
@@ -110,6 +99,7 @@ int gc_class_mark(void *_c)
   gcMARK(c->methods);
   gcMARK(c->cache_nl);
   gcMARK(c->cache_mv);
+  gcMARK(c->struct_type);
   
   return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
 }
@@ -125,55 +115,9 @@ int gc_class_fixup(void *_c)
   gcFIXUP(c->methods);
   gcFIXUP(c->cache_nl);
   gcFIXUP(c->cache_mv);
+  gcFIXUP(c->struct_type);
   
   return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
-}
-
-int gc_obj_size(void *_o)
-{
-  Scheme_Class_Object *o = (Scheme_Class_Object *)_o;
-  int s;
-
-  s = (sizeof(Scheme_Class_Object) 
-       + (o->num_extra - 1) * sizeof(Scheme_Object*));
-  
-  return gcBYTES_TO_WORDS(s);
-}
-
-int gc_obj_mark(void *_o)
-{
-  Scheme_Class_Object *o = (Scheme_Class_Object *)_o;
-  int s, i;
-
-  for (i = o->num_extra; i--; )
-    gcMARK(o->extra[i]);
-
-  gcMARK(o->dispatcher);
-  gcMARK(o->sclass);
-  gcMARK(o->primdata);
-
-  s = (sizeof(Scheme_Class_Object) 
-       + (o->num_extra - 1) * sizeof(Scheme_Object*));
-  
-  return gcBYTES_TO_WORDS(s);
-}
-
-int gc_obj_fixup(void *_o)
-{
-  Scheme_Class_Object *o = (Scheme_Class_Object *)_o;
-  int s, i;
-
-  for (i = o->num_extra; i--; )
-    gcFIXUP(o->extra[i]);
-
-  gcFIXUP(o->dispatcher);
-  gcFIXUP(o->sclass);
-  gcFIXUP(o->primdata);
-
-  s = (sizeof(Scheme_Class_Object) 
-       + (o->num_extra - 1) * sizeof(Scheme_Object*));
-  
-  return gcBYTES_TO_WORDS(s);
 }
 
 END_XFORM_SKIP;
@@ -182,96 +126,25 @@ END_XFORM_SKIP;
 
 /***************************************************************************/
 
-static Scheme_Object *make_prim_obj(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *sclass = argv[0], *ki = argv[1], *proc = argv[2];
-  long k, i;
-  Scheme_Class_Object *obj;
-
-  if (SCHEME_TYPE(sclass) != objscheme_class_type)
-    scheme_wrong_type("make-primitive-object", "primitive-class", 0, argc, argv);
-  if (!SCHEME_INTP(ki) || (SCHEME_INT_VAL(ki) < 0))
-    scheme_wrong_type("make-primitive-object", "non-negative fixnum integer", 1, argc, argv);
-  scheme_check_proc_arity("make-primitive-object", 2, 2, argc, argv);
-
-  k = SCHEME_INT_VAL(ki);
-
-  obj = (Scheme_Class_Object *)scheme_malloc_tagged(sizeof(Scheme_Class_Object)
-						    + (k - 1) * sizeof(Scheme_Object*));
-  obj->type = objscheme_object_type;
-  obj->num_extra = k;
-
-  for (i = 0; i < k; i++) {
-    obj->extra[i] = scheme_false;
-  }
-
-  obj->sclass = sclass;
-  obj->dispatcher = proc;
-
-  return (Scheme_Object *)obj;
-}
-
 static Scheme_Object *init_prim_obj(int argc, Scheme_Object **argv)
 {
-  Scheme_Class_Object *obj = (Scheme_Class_Object *)argv[0];
+  Scheme_Class *c;
+  Scheme_Class_Object *obj = (Scheme_Class_Object *)argv[1];
 
- if (SCHEME_TYPE(argv[0]) != objscheme_object_type)
+  if (scheme_is_struct_instance(argv[0], object_struct))
     scheme_wrong_type("init-primitive-object", "primitive-object", 0, argc, argv);
+  
+  c = (Scheme_Class *)scheme_struct_type_property_ref(object_property, (Scheme_Object *)obj);
 
-  return _scheme_apply(((Scheme_Class *)obj->sclass)->initf, argc, argv);
+  return _scheme_apply(c->initf, argc, argv);
 }
 
-static Scheme_Object *obj_ref(int argc, Scheme_Object **argv)
+static Scheme_Object *class_struct_type(int argc, Scheme_Object **argv)
 {
-  Scheme_Object *obj = argv[0], *ki = argv[1];
-  long k = SCHEME_INT_VAL(ki);
+  if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
+    scheme_wrong_type("primitive-class->struct-type", "primitive-class", 0, argc, argv);
 
-  if (SCHEME_TYPE(obj) != objscheme_object_type)
-    scheme_wrong_type("primitive-object-ref", "primitive-object", 0, argc, argv);
-  if (!SCHEME_INTP(ki) || (SCHEME_INT_VAL(ki) < 0))
-    scheme_wrong_type("primitive-object-ref", "non-negative fixnum integer", 1, argc, argv);
-
-  if (k >= (long)((Scheme_Class_Object *)obj)->num_extra)
-    scheme_arg_mismatch("primitive-object-ref", "index too large: ", ki);
-
-  return ((Scheme_Class_Object *)obj)->extra[SCHEME_INT_VAL(ki)];
-}
-
-static Scheme_Object *obj_set(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *obj = argv[0], *ki = argv[1];
-  long k = SCHEME_INT_VAL(ki);
-
-  if (SCHEME_TYPE(obj) != objscheme_object_type)
-    scheme_wrong_type("primitive-object-set!", "primitive-object", 0, argc, argv);
-  if (!SCHEME_INTP(ki) || (SCHEME_INT_VAL(ki) < 0))
-    scheme_wrong_type("primitive-object-set!", "non-negative fixnum integer", 1, argc, argv);
-
-  if (k >= (long)((Scheme_Class_Object *)obj)->num_extra)
-    scheme_arg_mismatch("primitive-object-set!", "index too large: ", ki);
-
-  return ((Scheme_Class_Object *)obj)->extra[SCHEME_INT_VAL(ki)] = argv[2];
-}
-
-static Scheme_Object *obj_size(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *obj = argv[0];
-  long s;
-
-  if (SCHEME_TYPE(obj) != objscheme_object_type)
-    scheme_wrong_type("primitive-object-size", "primitive-object", 0, argc, argv);
-
-  s = ((Scheme_Class_Object *)obj)->num_extra;
-
-  return scheme_make_integer(s);
-}
-
-static Scheme_Object *obj_to_class(int argc, Scheme_Object **argv)
-{
-  if (SCHEME_TYPE(argv[0]) != objscheme_object_type)
-    scheme_wrong_type("primitive-object->class", "primitive-object", 0, argc, argv);
-
-  return ((Scheme_Class_Object *)argv[0])->sclass;
+  return ((Scheme_Class *)argv[0])->struct_type;
 }
 
 static Scheme_Object *class_sup(int argc, Scheme_Object **argv)
@@ -359,25 +232,13 @@ static Scheme_Object *class_p(int argc, Scheme_Object **argv)
 	  : scheme_false);
 }
 
-static Scheme_Object *obj_p(int argc, Scheme_Object **argv)
-{
-  return ((SCHEME_TYPE(argv[0]) == objscheme_object_type)
-	  ? scheme_true
-	  : scheme_false);
-}
-
 Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass)
 {
   Scheme_Class_Object *obj;
 
-  obj = (Scheme_Class_Object *)scheme_malloc_tagged(sizeof(Scheme_Class_Object)
-						    - sizeof(Scheme_Object*));
-  obj->type = objscheme_object_type;
-  obj->sclass = sclass;
-  obj->dispatcher = NULL;
+  obj = (Scheme_Class_Object *)scheme_make_struct_instance(((Scheme_Class *)sclass)->struct_type, 0, NULL);
 
-  return (Scheme_Object *)obj;
-  
+  return (Scheme_Object *)obj;  
 }
 
 /***************************************************************************/
@@ -386,7 +247,7 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
 				 Scheme_Method_Prim *initf, int num_methods)
 {
   Scheme_Class *sclass;
-  Scheme_Object *f, **methods, **names;
+  Scheme_Object *f, **methods, **names, *struct_type;
 
   sclass = (Scheme_Class *)scheme_malloc_tagged(sizeof(Scheme_Class));
   sclass->type = objscheme_class_type;
@@ -408,6 +269,15 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
 
   sclass->methods = methods;
   sclass->names = names;
+
+  struct_type = scheme_make_struct_type(scheme_intern_symbol(name), 
+					object_struct, 
+					NULL,
+					0, 0, NULL,
+					scheme_make_pair(scheme_make_pair(object_property, 
+									  (Scheme_Object *)sclass),
+							 scheme_null));
+  sclass->struct_type = struct_type;
 
   return (Scheme_Object *)sclass;
 }
@@ -451,6 +321,22 @@ Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name)
 int objscheme_is_subclass(Scheme_Object *a, Scheme_Object *b)
 {
   while (a && (a != b)) {
+    a = ((Scheme_Class *)a)->sup;
+  }
+
+  return !!a;
+}
+
+int objscheme_is_a(Scheme_Object *o, Scheme_Object *c)
+{
+  Scheme_Object *a;
+
+  if (!scheme_is_struct_instance(o, object_struct))
+    return 0;
+
+  a = scheme_struct_type_property_ref(object_property, o);
+  
+  while (a && (a != c)) {
     a = ((Scheme_Class *)a)->sup;
   }
 
@@ -514,18 +400,22 @@ void objscheme_init(Scheme_Env *env)
   }
 
   objscheme_class_type = scheme_make_type("<primitive-class>");
-  objscheme_object_type = scheme_make_type("<primitive-object>");
 
+  wxREGGLOB(object_property);
+  object_property = scheme_make_struct_type_property(scheme_intern_symbol("primitive-object"));
+  
+  wxREGGLOB(dispatcher_property);
+  dispatcher_property = scheme_make_struct_type_property(scheme_intern_symbol("primitive-dispatcher"));
+
+  wxREGGLOB(object_struct);
+  object_struct = scheme_make_struct_type(scheme_intern_symbol("primitive-object"), 
+					  NULL, NULL,
+					  0, 2, NULL,
+					  NULL);
+  
 #ifdef MZ_PRECISE_GC
   GC_register_traversers(objscheme_class_type, gc_class_size, gc_class_mark, gc_class_fixup);
-  GC_register_traversers(objscheme_object_type, gc_obj_size, gc_obj_mark, gc_obj_fixup);
 #endif
-
-  scheme_install_xc_global("make-primitive-object",
-			   scheme_make_prim_w_arity(make_prim_obj,
-						    "make-primitive-object",
-						    3, 3),
-			   env);
 
   scheme_install_xc_global("initialize-primitive-object",
 			   scheme_make_prim_w_arity(init_prim_obj,
@@ -533,29 +423,12 @@ void objscheme_init(Scheme_Env *env)
 						    1, -1),
 			   env);
 
-  scheme_install_xc_global("primitive-object-ref",
-			   scheme_make_prim_w_arity(obj_ref,
-						    "primitive-object-ref",
-						    2, 2),
-			   env);
-  scheme_install_xc_global("primitive-object-set!",
-			   scheme_make_prim_w_arity(obj_set,
-						    "primitive-object-set!",
-						    3, 3),
-			   env);
-  scheme_install_xc_global("primitive-object-size",
-			   scheme_make_prim_w_arity(obj_size,
-						    "primitive-object-size",
+  scheme_install_xc_global("primitive-class->struct-type",
+			   scheme_make_prim_w_arity(class_struct_type,
+						    "primitive-class->struct_type",
 						    1, 1),
 			   env);
-
-  scheme_install_xc_global("primitive-object->class",
-			   scheme_make_prim_w_arity(obj_to_class,
-						    "primitive-object->class",
-						    1, 1),
-			   env);
-
-
+  
   scheme_install_xc_global("primitive-class->method-name-list",
 			   scheme_make_prim_w_arity(class_meth_list,
 						    "primitive-class->method-name-list",
@@ -577,11 +450,6 @@ void objscheme_init(Scheme_Env *env)
   scheme_install_xc_global("primitive-class?",
 			   scheme_make_prim_w_arity(class_p,
 						    "primitive-class?",
-						    1, 1),
-			   env);
-  scheme_install_xc_global("primitive-object?",
-			   scheme_make_prim_w_arity(obj_p,
-						    "primitive-object?",
 						    1, 1),
 			   env);
 
@@ -625,10 +493,18 @@ void objscheme_add_global_interface(Scheme_Object *in, char *name, void *env)
 Scheme_Object *objscheme_find_method(Scheme_Object *_obj, Scheme_Object *sclass,
 				     char *name, void **cache)
 {
-  Scheme_Object *s, *m, *p[2];
+  Scheme_Object *s, *m, *p[2], *dispatcher;
   Scheme_Class_Object *obj = (Scheme_Class_Object *)_obj;
 
-  if (!obj || !obj->dispatcher)
+  if (!obj)
+    return NULL;
+
+  dispatcher = scheme_struct_type_property_ref(dispatcher_property, (Scheme_Object *)obj);
+  if (!dispatcher)
+    return NULL;
+
+  /* Make sure dispatcher has the right shape: */
+  if (!scheme_check_proc_arity(NULL, 2, 0, 1, &dispatcher))
     return NULL;
 
   if (*cache)
@@ -640,7 +516,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *_obj, Scheme_Object *sclass,
 
   p[0] = _obj;
   p[1] = s;
-  m = scheme_apply(obj->dispatcher, 2, p);
+  m = scheme_apply(dispatcher, 2, p);
 
   if (SCHEME_FALSEP(m))
     return NULL;
@@ -1170,14 +1046,18 @@ void objscheme_check_valid(Scheme_Object *sclass, const char *name, int n, Schem
 {
   Scheme_Class_Object *obj = (Scheme_Class_Object *)argv[0];
 
-  if (SCHEME_TYPE(argv[0]) != objscheme_object_type) {
+  if (scheme_is_struct_instance((Scheme_Object *)obj, object_struct)) {
     scheme_wrong_type(name ? name : "unbundle", "primitive object", 0, n, argv);
     return;
   }
 
-  if (sclass && !objscheme_is_subclass(obj->sclass, sclass)) {
-    scheme_wrong_type(name ? name : "unbundle", ((Scheme_Class *)sclass)->name, 0, n, argv);
-    return;
+  if (sclass) {
+    Scheme_Object *osclass;
+    osclass = scheme_struct_type_property_ref(object_property, (Scheme_Object *)obj);
+    if (!objscheme_is_subclass(osclass, sclass)) {
+      scheme_wrong_type(name ? name : "unbundle", ((Scheme_Class *)sclass)->name, 0, n, argv);
+      return;
+    }
   }
 
   if (obj->primflag < 0) {

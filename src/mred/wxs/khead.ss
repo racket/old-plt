@@ -9,46 +9,16 @@
   
   (define kernel:initialize-primitive-object
     (dynamic-require '#%mred-kernel 'initialize-primitive-object))
-  (define kernel:primitive-object->class
-    (dynamic-require '#%mred-kernel 'primitive-object->class))
   (define kernel:find-in-primitive-class
     (dynamic-require '#%mred-kernel 'find-in-primitive-class))
   (define kernel:primitive-class->method-name-list
     (dynamic-require '#%mred-kernel 'primitive-class->method-name-list))
   (define kernel:primitive-class->method-vector
     (dynamic-require '#%mred-kernel 'primitive-class->method-vector))
+  (define kernel:primitive-class->struct-type
+    (dynamic-require '#%mred-kernel 'primitive-class->struct-type))
 
-  (define kernel:make-primitive-object
-    (dynamic-require '#%mred-kernel 'make-primitive-object))
-  (define kernel:primitive-object?
-    (dynamic-require '#%mred-kernel 'primitive-object?))
-  (define kernel:primitive-object-size
-    (dynamic-require '#%mred-kernel 'primitive-object-size))
-  (define kernel:primitive-object-ref
-    (dynamic-require '#%mred-kernel 'primitive-object-ref))
-  (define kernel:primitive-object-set!
-    (dynamic-require '#%mred-kernel 'primitive-object-set!))
-  
   ;; (require (prefix kernel: #%mred-kernel))
-
-  (install-prim-functions kernel:primitive-object? 
-			  (lambda (o)
-			    (= 2 (kernel:primitive-object-size o)))
-			  (lambda (o)
-			    (kernel:primitive-object-ref o 0))
-			  (lambda (o)
-			    (kernel:primitive-object-ref o 1))
-			  (lambda (prim-class c s lkup)
-			    (let ([o (kernel:make-primitive-object 
-				      prim-class
-				      2
-				      lkup)])
-			      (kernel:primitive-object-set! o 0 c)
-			      (kernel:primitive-object-set! o 1 s)
-			      o))
-			  kernel:initialize-primitive-object
-			  kernel:primitive-object->class
-			  kernel:find-in-primitive-class)
 
   (define (find-method class name)
     (let loop ([l (kernel:primitive-class->method-name-list class)][p 0])
@@ -117,7 +87,8 @@
 		   (syntax
 		    (define name (let ([c (dynamic-require '#%mred-kernel 'name)])
 				   (make-prim-class
-				    c
+				    (kernel:primitive-class->struct-type c)
+				    kernel:initialize-primitive-object
 				    'name super
 				    '(old ...)
 				    '(new ...)

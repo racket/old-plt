@@ -117,7 +117,7 @@ CONSTRUCTOR_INIT(: wxMenu(x0, x1))
 
 os_wxMenu::~os_wxMenu()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxMenumenuSelect(int n,  Scheme_Object *p[])
@@ -502,8 +502,7 @@ int objscheme_istype_wxMenu(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMenu_class))
+  if (objscheme_is_a(obj,  os_wxMenu_class))
     return 1;
   else {
     if (!stop)
@@ -621,7 +620,7 @@ CONSTRUCTOR_INIT(: wxMenuBar())
 
 os_wxMenuBar::~os_wxMenuBar()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxMenuBarSetLabelTop(int n,  Scheme_Object *p[])
@@ -798,8 +797,7 @@ int objscheme_istype_wxMenuBar(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMenuBar_class))
+  if (objscheme_is_a(obj,  os_wxMenuBar_class))
     return 1;
   else {
     if (!stop)
@@ -937,7 +935,7 @@ CONSTRUCTOR_INIT(: wxsMenuItem())
 
 os_wxsMenuItem::~os_wxsMenuItem()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxsMenuItemId(int n,  Scheme_Object *p[])
@@ -1010,8 +1008,7 @@ int objscheme_istype_wxsMenuItem(Scheme_Object *obj, const char *stop, int nullO
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxsMenuItem_class))
+  if (objscheme_is_a(obj,  os_wxsMenuItem_class))
     return 1;
   else {
     if (!stop)

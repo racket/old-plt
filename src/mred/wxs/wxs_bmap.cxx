@@ -187,7 +187,7 @@ CONSTRUCTOR_INIT(: wxBitmap(x0, x1))
 
 os_wxBitmap::~os_wxBitmap()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxBitmapSaveFile(int n,  Scheme_Object *p[])
@@ -462,8 +462,7 @@ int objscheme_istype_wxBitmap(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxBitmap_class))
+  if (objscheme_is_a(obj,  os_wxBitmap_class))
     return 1;
   else {
     if (!stop)

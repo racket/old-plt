@@ -61,7 +61,7 @@ CONSTRUCTOR_INIT(: wxObject())
 
 os_wxObject::~os_wxObject()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxObject_ConstructScheme(int n,  Scheme_Object *p[])
@@ -113,8 +113,7 @@ int objscheme_istype_wxObject(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxObject_class))
+  if (objscheme_is_a(obj,  os_wxObject_class))
     return 1;
   else {
     if (!stop)

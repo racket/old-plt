@@ -1198,9 +1198,7 @@ sub DoPrintClass
 	print "{\n";
 	print "  REMEMBER_VAR_STACK();\n";
 	print "  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;\n";
-	print "  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)\n";
-	print "      && objscheme_is_subclass(";
-	print "((Scheme_Class_Object *)obj)->sclass,";
+	print "  if (objscheme_is_a(obj, ";
 	print " ${newclass}_class))\n";
 	print "    return 1;\n";
 	print "  else {\n";

@@ -80,7 +80,7 @@ CONSTRUCTOR_INIT(: wxTimer())
 
 os_wxTimer::~os_wxTimer()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 void os_wxTimer::Notify()
@@ -99,14 +99,14 @@ void os_wxTimer::Notify()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTimer_class, "notify", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTimer_class, "notify", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     ASSELF wxTimer::Notify();
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -254,8 +254,7 @@ int objscheme_istype_wxTimer(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxTimer_class))
+  if (objscheme_is_a(obj,  os_wxTimer_class))
     return 1;
   else {
     if (!stop)
@@ -367,7 +366,7 @@ static Scheme_Object *os_wxClipboard_interface;
 
 os_wxClipboard::~os_wxClipboard()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxClipboardGetClipboardBitmap(int n,  Scheme_Object *p[])
@@ -567,8 +566,7 @@ int objscheme_istype_wxClipboard(Scheme_Object *obj, const char *stop, int nullO
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxClipboard_class))
+  if (objscheme_is_a(obj,  os_wxClipboard_class))
     return 1;
   else {
     if (!stop)
@@ -658,7 +656,7 @@ CONSTRUCTOR_INIT(: wxClipboardClient())
 
 os_wxClipboardClient::~os_wxClipboardClient()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 nstring os_wxClipboardClient::GetData(string x0, long* x1)
@@ -678,7 +676,7 @@ nstring os_wxClipboardClient::GetData(string x0, long* x1)
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "get-data", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxClipboardClient_class, "get-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return NULL;
@@ -686,7 +684,7 @@ nstring os_wxClipboardClient::GetData(string x0, long* x1)
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   if (SCHEME_STRINGP(v)) (*x1) = SCHEME_STRTAG_VAL(v);
@@ -711,14 +709,14 @@ void os_wxClipboardClient::BeingReplaced()
   VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "on-replaced", &mcache);
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxClipboardClient_class, "on-replaced", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
     return;
   } else {
   
   
-  p[0] = (Scheme_Object *)__gc_external;
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
@@ -871,8 +869,7 @@ int objscheme_istype_wxClipboardClient(Scheme_Object *obj, const char *stop, int
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxClipboardClient_class))
+  if (objscheme_is_a(obj,  os_wxClipboardClient_class))
     return 1;
   else {
     if (!stop)
@@ -1044,7 +1041,7 @@ CONSTRUCTOR_INIT(: wxPrintSetupData())
 
 os_wxPrintSetupData::~os_wxPrintSetupData()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxPrintSetupDatacopy(int n,  Scheme_Object *p[])
@@ -1688,8 +1685,7 @@ int objscheme_istype_wxPrintSetupData(Scheme_Object *obj, const char *stop, int 
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxPrintSetupData_class))
+  if (objscheme_is_a(obj,  os_wxPrintSetupData_class))
     return 1;
   else {
     if (!stop)

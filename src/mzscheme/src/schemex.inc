@@ -323,6 +323,8 @@
   scheme_extension_table->scheme_is_struct_instance = scheme_is_struct_instance;
   scheme_extension_table->scheme_struct_ref = scheme_struct_ref;
   scheme_extension_table->scheme_struct_set = scheme_struct_set;
+  scheme_extension_table->scheme_make_struct_type_property = scheme_make_struct_type_property;
+  scheme_extension_table->scheme_struct_type_property_ref = scheme_struct_type_property_ref;
   scheme_extension_table->scheme_eq = scheme_eq;
   scheme_extension_table->scheme_eqv = scheme_eqv;
   scheme_extension_table->scheme_equal = scheme_equal;

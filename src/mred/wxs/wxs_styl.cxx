@@ -58,7 +58,7 @@ static Scheme_Object *os_wxMultColour_interface;
 
 os_wxMultColour::~os_wxMultColour()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxMultColourSet(int n,  Scheme_Object *p[])
@@ -252,8 +252,7 @@ int objscheme_istype_wxMultColour(Scheme_Object *obj, const char *stop, int null
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMultColour_class))
+  if (objscheme_is_a(obj,  os_wxMultColour_class))
     return 1;
   else {
     if (!stop)
@@ -332,7 +331,7 @@ static Scheme_Object *os_wxAddColour_interface;
 
 os_wxAddColour::~os_wxAddColour()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxAddColourSet(int n,  Scheme_Object *p[])
@@ -526,8 +525,7 @@ int objscheme_istype_wxAddColour(Scheme_Object *obj, const char *stop, int nullO
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxAddColour_class))
+  if (objscheme_is_a(obj,  os_wxAddColour_class))
     return 1;
   else {
     if (!stop)
@@ -1035,7 +1033,7 @@ CONSTRUCTOR_INIT(: wxStyleDelta(x0, x1))
 
 os_wxStyleDelta::~os_wxStyleDelta()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxStyleDeltaCopy(int n,  Scheme_Object *p[])
@@ -2139,8 +2137,7 @@ int objscheme_istype_wxStyleDelta(Scheme_Object *obj, const char *stop, int null
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxStyleDelta_class))
+  if (objscheme_is_a(obj,  os_wxStyleDelta_class))
     return 1;
   else {
     if (!stop)
@@ -2225,7 +2222,7 @@ static Scheme_Object *os_wxStyle_interface;
 
 os_wxStyle::~os_wxStyle()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxStyleSwitchTo(int n,  Scheme_Object *p[])
@@ -2782,8 +2779,7 @@ int objscheme_istype_wxStyle(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxStyle_class))
+  if (objscheme_is_a(obj,  os_wxStyle_class))
     return 1;
   else {
     if (!stop)
@@ -2882,7 +2878,7 @@ CONSTRUCTOR_INIT(: wxStyleList())
 
 os_wxStyleList::~os_wxStyleList()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxStyleListForgetNotification(int n,  Scheme_Object *p[])
@@ -3231,8 +3227,7 @@ int objscheme_istype_wxStyleList(Scheme_Object *obj, const char *stop, int nullO
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxStyleList_class))
+  if (objscheme_is_a(obj,  os_wxStyleList_class))
     return 1;
   else {
     if (!stop)

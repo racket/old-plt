@@ -4,7 +4,10 @@
 (module class mzscheme
   (require-for-syntax (lib "stx.ss""syntax"))
 
-  (define-struct obj (class slots))
+  (define insp (current-inspector))
+
+  (define-values (prop:object object? object-ref) (make-struct-type-property 'object))
+
   (define-struct class (name
 			object-make width method-prim-vec
 			pos supers
@@ -24,7 +27,7 @@
 
   (define object<%> (make-interface 'object% null null #f))
   (define object% (make-class 'object%
-			      make-obj 0 (vector)
+			      'make-obj 0 (vector)
 			      0 (vector #f) 
 			      object<%>
 			      (make-hash-table) 
@@ -36,9 +39,22 @@
 			      #f #f))
   (set-interface-class! object<%> object%)
   (vector-set! (class-supers object%) 0 object%)
+  (define-values (struct:obj make-obj obj-class obj-slots)
+    (let-values ([(struct:obj make-obj obj? obj-accessor obj-mutator)
+		  (make-struct-type 'object #f 2 0 #f (list (cons prop:object object%)) insp)])
+      (set-class-object-make! object% make-obj)
+      (values struct:obj
+	      make-obj
+	      (make-struct-field-accessor obj-accessor 0)
+	      (make-struct-field-accessor obj-accessor 1))))
+
+  (define (make-naming-constructor type name)
+    (let-values ([(struct: make- ? -accessor -mutator)
+		  (make-struct-type name type 0 0 #f null insp)])
+      make-))
 
   ;; For C++ glue:
-  (define (prim-obj? x) #f)
+  (define (prim-object? x) #f)
   (define (prim-obj/slots? x) #f)
   (define (prim-obj-class x) #f)
   (define (prim-obj-slots x) #f)
@@ -50,23 +66,23 @@
   ;; prim-class -> class mapping
   (define prim-classes (make-hash-table-weak))
 
-  (define (+obj? x) (or (obj? x) (prim-obj? x)))
+  (define (+object? x) (or (object? x) (prim-object? x)))
   (define (+obj-class x)
-    (if (obj? x) (obj-class x) (prim-obj-class x)))
+    (if (object? x) (obj-class x) (prim-obj-class x)))
   (define (+obj-slots x)
-    (if (obj? x) (obj-slots x) (prim-obj-slots x)))
+    (if (object? x) (obj-slots x) (prim-obj-slots x)))
 
-  (define (pobj? x) (and (prim-obj? x) (not (prim-obj/slots? x))))
+  (define (pobject? x) (and (prim-object? x) (not (prim-obj/slots? x))))
   (define (p+obj-class x)
     (cond
-     [(obj? x) (obj-class x)]
+     [(object? x) (obj-class x)]
      [(prim-obj/slots? x) (prim-obj-class x)]
      [else (hash-table-get prim-classes (prim-obj->prim-class x)
 			   (lambda ()
 			     (error "unknown primitive class")))]))
 
   (define (install-prim-functions ? /slots? -class -slots make- init- ->prim-class find)
-    (set! prim-obj? ?)
+    (set! prim-object? ?)
     (set! prim-obj/slots? /slots?)
     (set! prim-obj-class -class)
     (set! prim-obj-slots -slots)
@@ -77,8 +93,7 @@
 
   (define skip (gensym))
 
-  (define-struct (lazy-prim-method (current-inspector)) (m))
-  (print-struct #t)
+  (define-struct lazy-prim-method (m))
 
   (define (unbox/prim-resolve b o)
     (let ([v (unbox b)])
@@ -271,7 +286,7 @@
 						    (apply m args))))))))
 				    (if name
 					(make-naming-constructor 
-					 struct:obj 
+					 struct:obj
 					 (string->symbol (format "object:~a" name)))
 					make-obj))]
 		   [interface-make (if name
@@ -406,15 +421,13 @@
 	  (apply (setup) args)
 	  this))))
 
-  (define object? +obj?)
-
   (define (is-a? v c)
     (cond
      [(class? c)
-      (and (+obj? v)
+      (and (+object? v)
 	   (subclass? (p+obj-class v) c))]
      [(interface? c)
-      (and (+obj? v)
+      (and (+object? v)
 	   (implementation? (p+obj-class v) c))]
      [else (raise-type-error 'is-a? "class or interface" 1 v c)]))
 
@@ -462,7 +475,7 @@
     (class-go-arity c))
 
   (define (ivar/proc o n)
-    (unless (+obj? o)
+    (unless (+object? o)
       (raise-type-error 'ivar/proc "object" 0 o n))
     (let ([fail
 	   (lambda (c)
@@ -474,7 +487,7 @@
 			  n 
 			  (for-class (class-name c))
 			  o)))])
-      (if (pobj? o)
+      (if (pobject? o)
 	  ;; Primitive object without slot table
 	  (let ([pc (prim-obj->prim-class o)])
 	    (let ([m (and (symbol? n)
@@ -528,7 +541,7 @@
 	      (lambda (o)
 		(unless (is-a? o c)
 		  (let ([name (string->symbol (format "generic~a" (for-class (class-name c))))])
-		    (if (+obj? o)
+		    (if (+object? o)
 			(obj-error name
 				   "object not an instance of the generic's class: ~e"
 				   o)
@@ -550,7 +563,7 @@
 	  (lambda (o)
 	    (unless (is-a? o c)
 	      (let ([name (string->symbol (format "generic~a" (for-intf (interface-name c))))])
-		(if (+obj? o)
+		(if (+object? o)
 		    (obj-error name
 			       "object not an instance of the generic's interface: ~e"
 			       o)

@@ -62,7 +62,7 @@ CONSTRUCTOR_INIT(: wxEvent())
 
 os_wxEvent::~os_wxEvent()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *objscheme_wxEvent_GettimeStamp(int n,  Scheme_Object *p[])
@@ -148,8 +148,7 @@ int objscheme_istype_wxEvent(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxEvent_class))
+  if (objscheme_is_a(obj,  os_wxEvent_class))
     return 1;
   else {
     if (!stop)
@@ -314,7 +313,7 @@ CONSTRUCTOR_INIT(: wxCommandEvent(x0))
 
 os_wxCommandEvent::~os_wxCommandEvent()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *objscheme_wxCommandEvent_GeteventType(int n,  Scheme_Object *p[])
@@ -402,8 +401,7 @@ int objscheme_istype_wxCommandEvent(Scheme_Object *obj, const char *stop, int nu
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxCommandEvent_class))
+  if (objscheme_is_a(obj,  os_wxCommandEvent_class))
     return 1;
   else {
     if (!stop)
@@ -488,7 +486,7 @@ CONSTRUCTOR_INIT(: wxPopupEvent())
 
 os_wxPopupEvent::~os_wxPopupEvent()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *objscheme_wxPopupEvent_GetmenuId(int n,  Scheme_Object *p[])
@@ -575,8 +573,7 @@ int objscheme_istype_wxPopupEvent(Scheme_Object *obj, const char *stop, int null
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxPopupEvent_class))
+  if (objscheme_is_a(obj,  os_wxPopupEvent_class))
     return 1;
   else {
     if (!stop)
@@ -749,7 +746,7 @@ CONSTRUCTOR_INIT(: wxScrollEvent())
 
 os_wxScrollEvent::~os_wxScrollEvent()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *objscheme_wxScrollEvent_GetmoveType(int n,  Scheme_Object *p[])
@@ -905,8 +902,7 @@ int objscheme_istype_wxScrollEvent(Scheme_Object *obj, const char *stop, int nul
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxScrollEvent_class))
+  if (objscheme_is_a(obj,  os_wxScrollEvent_class))
     return 1;
   else {
     if (!stop)
@@ -1344,7 +1340,7 @@ CONSTRUCTOR_INIT(: wxKeyEvent(x0))
 
 os_wxKeyEvent::~os_wxKeyEvent()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *objscheme_wxKeyEvent_GetkeyCode(int n,  Scheme_Object *p[])
@@ -1641,8 +1637,7 @@ int objscheme_istype_wxKeyEvent(Scheme_Object *obj, const char *stop, int nullOK
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxKeyEvent_class))
+  if (objscheme_is_a(obj,  os_wxKeyEvent_class))
     return 1;
   else {
     if (!stop)
@@ -1825,7 +1820,7 @@ CONSTRUCTOR_INIT(: wxMouseEvent(x0))
 
 os_wxMouseEvent::~os_wxMouseEvent()
 {
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
 static Scheme_Object *os_wxMouseEventMoving(int n,  Scheme_Object *p[])
@@ -2390,8 +2385,7 @@ int objscheme_istype_wxMouseEvent(Scheme_Object *obj, const char *stop, int null
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
-      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMouseEvent_class))
+  if (objscheme_is_a(obj,  os_wxMouseEvent_class))
     return 1;
   else {
     if (!stop)

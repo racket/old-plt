@@ -584,7 +584,6 @@ ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
   }
 
   obj->pITypeInfo = pITypeInfo;
-  pITypeInfo->AddRef();
 
   return pITypeInfo;
 }
@@ -603,6 +602,10 @@ Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
 
   retval->type = mx_com_type_type;
   retval->pITypeInfo = pITypeInfo;
+
+  pITypeInfo->AddRef();
+
+  mx_register_simple_com_object((Scheme_Object *)retval,pITypeInfo);
   
   return (Scheme_Object *)retval;
 }
@@ -1400,7 +1403,6 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   }
   
   obj->pEventTypeInfo = pEventTypeInfo;
-  pEventTypeInfo->AddRef();
   
   return pEventTypeInfo;
 }
@@ -1748,7 +1750,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   int i;
 
   if (invKind == INVOKE_EVENT) {
-    if (MX_COM_OBJP(argv[0])) {
+    if (MX_COM_OBJP(argv[0]) == FALSE) {
       scheme_wrong_type("com-method-type","com-object",0,argc,argv);
     }
   }

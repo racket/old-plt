@@ -16,29 +16,33 @@
 
     (print-struct #t)
 
+    (break-enabled #f) ;; very important.
+
     (define primitive-eval (current-eval))
 
+    (define system-parameterization (current-parameterization))
+    (parameterization-branch-handler (lambda () system-parameterization))
+
     (error-display-handler
-     (let ([p (current-parameterization)])
-       (lambda (msg)
-	 (with-parameterization p
-	   (lambda ()
-	     (display msg)
-	     (newline)
-	     (mred:message-box (format "Internal Error: ~a" msg)
-			       "Internal Error"))))))
+     (lambda (msg)
+       (with-parameterization system-parameterization
+	 (lambda ()
+	   (display msg)
+	   (newline)
+	   (mred:message-box (format "Internal Error: ~a" msg)
+			     "Internal Error")))))
 
     (define build-parameterization
       (let ([orig-eventspace (wx:current-eventspace)])
-	(lambda (base-parameterization)
-	  (let* ([system-parameterization (current-parameterization)]
-		 [p (make-parameterization base-parameterization)]
+	(lambda ()
+	  (let* ([p (make-parameterization system-parameterization)]
 		 [bottom-eventspace (wx:make-eventspace p)]
-		 [n (make-namespace 'no-constants
-				    'wx
-				    'hash-percent-syntax)])
+		 [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)])
 	    (with-parameterization p
 	      (lambda ()
+		(parameterization-branch-handler
+		 (lambda ()
+		   p))
 		(require-library-use-compiled #f)
 		(error-value->string-handler
 		 (lambda (x n)
@@ -69,6 +73,7 @@
 				(with-parameterization system-parameterization
 				  (lambda ()
 				    (mred:exit)))))
+		(current-will-executor (make-will-executor))
 		(read-curly-brace-as-paren #t)
 		(read-square-bracket-as-paren #t)
 		(print-struct #t)
@@ -87,14 +92,13 @@
 		   this-out this-out-write
 		   this-in this-result this-result-write
 		   output-delta set-output-delta
-		   do-pre-eval user-parameterization
 		   do-post-eval
 		   insert-prompt
 		   erase prompt-mode?
 		   get-canvas
 		   ready-non-prompt autoprompting?
 		   set-prompt-mode
-		   delete
+		   delete lock
 		   get-text
 		   reset-console-start-position
 		   last-position
@@ -120,59 +124,35 @@
 	    [escape-fn #f])
 	  (public
 	    [report-error
-	     (lambda (start-location end-location type string)
+	     (lambda (start-location end-location type input-string)
 	       (let* ([start (zodiac:location-offset start-location)]
 		      [finish (add1 (zodiac:location-offset end-location))]
 		      [file (zodiac:location-file start-location)]
-		      [fallback
-		       (lambda ()
-			 (mred:message-box
-			  (format "~a: ~a.~a-~a.~a: ~a" file
-				  (zodiac:location-line start-location)
-				  (zodiac:location-column start-location)
-				  (zodiac:location-line end-location)
-				  (zodiac:location-column end-location)
-				  string)
-			  "Error"))])
-		 (cond
-		   [(is-a? file wx:media-edit%)
-		    (let ([frame (send file get-frame)])
-		      (if frame
-			  (let* ([console-edit (ivar frame interactions-edit)]
-				 [console-end-position (send console-edit get-end-position)])
-			    (send frame ensure-interactions-shown)
-			    (send console-edit this-err-write string)
-			    (send (send file get-canvas) set-focus)
-			    (send file set-position start finish)
-			    (send file scroll-to-position start #f (sub1 (send file last-position))))
-			  (fallback)))]
-		   [else (fallback)])))])
+		      [frame (get-frame)]
+		      [interactions-edit (ivar frame interactions-edit)]
+		      [message
+		       (if (is-a? file wx:media-edit%)
+			   input-string
+			   (format "~a: ~a.~a-~a.~a: ~a" file
+				   (zodiac:location-line start-location)
+				   (zodiac:location-column start-location)
+				   (zodiac:location-line end-location)
+				   (zodiac:location-column end-location)
+				   input-string))])
+		 (send frame ensure-interactions-shown)
+		 (send interactions-edit this-err-write message)
+		 (when (is-a? file wx:media-edit%)
+		   (send (send file get-canvas) set-focus)
+		   (send file begin-edit-sequence)
+		   (send file set-position start finish)
+		   (send file scroll-to-position start #f (sub1 (send file last-position)))
+		   (send file end-edit-sequence))))])
 	  (public
 	    [on-set-media void]
 	    [get-prompt (lambda () "> ")]
-	    
-	    [system-parameterization (current-parameterization)]
 	    [param #f]
+	    [custodian (make-custodian)]
 
-	    [current-thread-desc #f]
-	    [current-thread-directory (current-directory)]
-
-	    [protect-threads-queue (make-semaphore 1)]
-	    [threads-queue null]
-
-	    [break (lambda ()
-		     (when current-thread-desc
-		       (break-thread current-thread-desc))
-		     (semaphore-wait protect-threads-queue)
-		     (for-each (lambda (t)
-				 (unless (eq? t current-thread-desc)
-				   (break-thread t)))
-			       threads-queue)
-		     (set! threads-queue null)
-		     (semaphore-post protect-threads-queue)
-		     (if current-thread-desc
-			 (set! current-thread-desc #f)
-			 (insert-prompt)))]
 	    [userspace-eval
 	     (lambda (sexp)
 	       (with-parameterization system-parameterization
@@ -197,202 +177,287 @@
 						"zodiac eval; unparsed: ~a~n" (zodiac:parsed->raw expanded))]
 			  [annotated (aries:annotate expanded)]
 			  [_ (mred:debug:printf 'zodiac
-						"zodiac eval; annotated: ~a~n" annotated)])
-		     (user-eval annotated)))))]
-	    [user-eval
-	     (lambda (expr)
-	       (with-parameterization param
-		 (lambda ()
-		   (primitive-eval expr))))]
+						"zodiac eval; annotated: ~a~n" annotated)])		     
+		     (with-parameterization param
+		       (lambda ()
+			 (primitive-eval annotated)))))))]
 	    [display-result
 	     (lambda (v)
 	       (unless (void? v)
-		 (with-parameterization param
-		   (lambda ()
-		     (parameterize
-			 ([mzlib:pretty-print@:pretty-print-size-hook
-			   (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-			  [mzlib:pretty-print@:pretty-print-print-hook
-			   (lambda (x _ port) (this-result-write x))])
-		       (mzlib:pretty-print@:pretty-print v this-result))))))]
-	    [send-scheme
-	     (let ([s (make-semaphore 1)])
-	       (opt-lambda (expr [before void] [after void])
-		 (let* ([print-style (drscheme:language:setting-printing
-				      (mred:get-preference 'drscheme:settings))])
-		   (semaphore-wait protect-threads-queue)
-		   (set! threads-queue
-			 (cons
-			  (thread
-			   (lambda ()
-			     (let ([user-code-error? #t])
-			       (mzlib:function@:dynamic-wind/protect-break
-				(lambda () 
-				  (semaphore-wait s)
-				  (current-directory current-thread-directory)
-				  (set! current-thread-desc (current-thread))
-				  (before))
-				(lambda ()
-				  (set! user-code-error? 
-					(let/ec k
-					  (call-with-values
-					   (lambda ()
-					     (with-parameterization param
-					       (lambda ()
-						 (with-handlers ([void
-								  (lambda (exn)
-								    (with-parameterization system-parameterization
-								      (lambda ()
-									(if (exn? exn)
-									    (let ([di (exn-debug-info exn)])
-									      (report-error (zodiac:zodiac-start di)
-											    (zodiac:zodiac-finish di)
-											    'dynamic
-											    (exn-message exn)))
-									    (mred:message-box (format "~s" exn)
-											      "Uncaught Exception"))
-									(k #t))))])
-						   (primitive-eval expr)))))
-					   (lambda anss
-					     (let ([anss (let loop ([v anss])
-							   (cond
-							     [(null? v) null]
-							     [(void? (car v)) (loop (cdr v))]
-							     [else (cons (car v) (loop (cdr v)))]))])
-					       (if (null? anss)
-						   (void)
-						   (let ([f (lambda (ans)
-							      (let ([res 
-								     (if (eq? print-style 'r4rs-style)
-									 ans
-									 (print-convert:print-convert ans))])
-								(with-parameterization param
-								  (lambda ()
-								    (display-result res)))))])
-						     (for-each f anss))))))
-					  #f)))
-				(lambda () 
-				  (set! current-thread-desc #f)
-				  (semaphore-post s)
-				  (set! current-thread-directory (current-directory))
-				  (semaphore-wait protect-threads-queue)
-				  (set! threads-queue (mzlib:function@:remq (current-thread) threads-queue))
-				  (semaphore-post protect-threads-queue)
-				  (after user-code-error?))))))
-			  threads-queue))
-		   (semaphore-post protect-threads-queue))))]
+		 (let ([v (if (eq? (drscheme:language:setting-printing
+				    (mred:get-preference 'drscheme:settings))
+				   'r4rs-style)
+			      v
+			      (print-convert:print-convert v))])
+		   (parameterize
+		       ([mzlib:pretty-print@:pretty-print-size-hook
+			 (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+			[mzlib:pretty-print@:pretty-print-print-hook
+			 (lambda (x _ port) (this-result-write x))])
+		     (mzlib:pretty-print@:pretty-print v this-result)))))]
+	    [process-edit/zodiac
+	     (lambda (edit f start end annotate?)
+	       (process/zodiac
+		(zodiac:read (mred:read-snips/chars-from-buffer edit start end)
+			     (zodiac:make-location 0 0 start edit))
+		f
+		annotate?))]
+	    [process-file/zodiac
+	     (lambda (filename f annotate?)
+	       (let ([port (open-input-file filename)])
+	       (process/zodiac
+		(zodiac:read port (zodiac:make-location 0 0 0 filename))
+		(lambda (x r)
+		  (unless x (close-input-port port))
+		  (f x r))
+		annotate?)))]
+	    [process/zodiac
+	     (lambda (reader f annotate?)
+	       (let* ([cleanup
+		       (lambda (error?)
+			 (f error? void))])
+		 (with-handlers ([zodiac:interface:zodiac-exn?
+				  (lambda (exn)
+				    (report-error (zodiac:interface:zodiac-exn-start-location exn)
+						  (zodiac:interface:zodiac-exn-end-location exn)
+						  (zodiac:interface:zodiac-exn-type exn)
+						  (zodiac:interface:zodiac-exn-message exn))
+				    (cleanup #t))])
+		   (let loop ()
+		     (let ([zodiac-read (reader)])
+		       (if (zodiac:eof? zodiac-read)
+			   (cleanup #f)
+			   (let ([exp (call/nal
+					       zodiac:scheme-expand/nal
+					       zodiac:scheme-expand
+					       (expression: zodiac-read)
+					       (parameterization: 
+						;param
+						(make-parameterization system-parameterization)
+						))])
+			     (f (if annotate? (aries:annotate exp) exp)
+				loop))))))))])
+	  (private
+	    [in-evaluation? #f]
+	    [in-evaluation-semaphore (make-semaphore 1)]
+	    [in-break? #f]
+	    [ask-about-kill? #f])
+	  (public
 	    [do-eval (lambda (start end) (do-many-buffer-evals this start end))]
+	    [cleanup-evaluation
+	     (opt-lambda ()
+	       (mred:debug:printf 'console-threading "cleanup-evaluation: waiting in-evaluation")
+	       (semaphore-wait in-evaluation-semaphore)
+	       (mred:debug:printf 'console-threading "cleanup-evaluation: passed in-evaluation")
+	       (set! in-evaluation? #f)
+	       (mred:debug:printf 'console-threading "cleanup-evaluation: posting in-evaluation")
+	       (semaphore-post in-evaluation-semaphore)
+
+	       (wx:end-busy-cursor)
+	       (send (get-frame) enable-evaluation)
+	       (reset-break-state)
+	       (if (thread-running? evaluation-thread)
+		   (insert-prompt)
+		   (begin (lock #t)
+			  (mred:message-box "The evaluation thread was killed, so no evaluation can take place until the next execution."
+					    "Warning"))))]
 	    [do-many-buffer-evals
 	     (lambda (edit start end)
-	       (let* ([loc (zodiac:make-location 0 0 start edit)]
-		      [reader (zodiac:read 
-			       (mred:read-snips/chars-from-buffer edit start end)
-			       loc)]
-		      [cleanup
-		       (lambda ()
-			 (do-post-eval)
-			 (wx:end-busy-cursor))])
-		 (wx:begin-busy-cursor)
-		 (do-pre-eval)
-		 (let loop ()
-		   (let/ec k
-		     (with-handlers ([zodiac:interface:zodiac-exn?
-				      (lambda (exn)
-					(report-error (zodiac:interface:zodiac-exn-start-location exn)
-						      (zodiac:interface:zodiac-exn-end-location exn)
-						      (zodiac:interface:zodiac-exn-type exn)
-						      (zodiac:interface:zodiac-exn-message exn))
-					(cleanup)
-					(k #f))])
-		       (let ([zodiac-read (reader)])
-			 (if (zodiac:eof? zodiac-read)
-			     (cleanup)
-			     (send-scheme (aries:annotate (call/nal
-							   zodiac:scheme-expand/nal
-							   zodiac:scheme-expand
-							   (expression: zodiac-read)
-							   (parameterization: param)))
-					  void
-					  (lambda (error?)
-					    (if error?
-						(cleanup)
-						(loop)))))))))))])
+	       (mred:debug:printf 'console-threading "do-many-buffer-evals: waiting in-evaluation")
+	       (semaphore-wait in-evaluation-semaphore)
+	       (mred:debug:printf 'console-threading "do-many-buffer-evals: passed in-evaluation")
+	       (if in-evaluation?
+		   (begin
+		     (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.1")
+		     (semaphore-post in-evaluation-semaphore))
+		   (begin 
+		     (set! in-evaluation? #t)
+		     (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.2")
+		     (semaphore-post in-evaluation-semaphore)
+		     (let ([evaluation-sucessful (make-semaphore 0)]
+			   [grace/kill-semaphore (make-semaphore 1)])
+		       (letrec ([thread-grace 
+				 (thread
+				  (lambda ()
+				    (semaphore-wait evaluation-sucessful)
+				    (semaphore-wait grace/kill-semaphore)
+				    (break-thread thread-kill)
+				    (cleanup-evaluation)))]
+				[thread-kill 
+				 (thread 
+				  (lambda ()
+				    (thread-wait evaluation-thread)
+				    (semaphore-wait grace/kill-semaphore)
+				    (break-thread thread-grace)
+				    (cleanup-evaluation)))])
+			 (void))
+		       (ready-non-prompt)
+		       (wx:begin-busy-cursor)
+		       (reset-break-state)
+		       (send (get-frame) disable-evaluation)
+		       (process-edit/zodiac edit
+					    (lambda (expr recur)
+					      (cond
+						[(or (not expr) (eq? expr #t))
+						 (semaphore-post evaluation-sucessful)]
+						[else
+						 (send-scheme expr 
+							      (lambda (error?)
+								(if error?
+								    (semaphore-post evaluation-sucessful)
+								    (recur))))]))
+					    start
+					    end
+					    #t)))))])
+	  (public
+	    [reset-break-state (lambda () (set! ask-about-kill? #f))]
+	    [break-semaphore (make-semaphore 1)]
+	    [break (lambda ()
+		     (mred:debug:printf 'console-threading "break: waiting break.1")
+		     (semaphore-wait break-semaphore)
+		     (mred:debug:printf 'console-threading "break: passed break.1")
+		     (cond
+		      [(or (not in-evaluation?)
+			   in-break?
+			   (not evaluation-thread))
+		       (mred:debug:printf 'console-threading "break: posting break.1.1")
+		       (semaphore-post break-semaphore)
+		       (void)]
+		      [ask-about-kill? 
+		       (set! in-break? #t)
+		       (mred:debug:printf 'console-threading "break: posting break.1.2")
+		       (semaphore-post break-semaphore)
+		       (if (mred:get-choice
+			    "Do you want to kill the evaluation?"
+			    "Just Break"
+			    "Kill"
+			    "Kill?")
+			   (break-thread evaluation-thread)
+			   (kill-thread evaluation-thread))
+		       (mred:debug:printf 'console-threading "break: waiting break.2")
+		       (semaphore-wait break-semaphore)
+		       (mred:debug:printf 'console-threading "break: passed break.2")
+		       (set! in-break? #f)
+		       (mred:debug:printf 'console-threading "break: posting break.2")
+		       (semaphore-post break-semaphore)]
+		      [else 
+		       (break-thread evaluation-thread)
+		       (set! ask-about-kill? #t)
+		       (mred:debug:printf 'console-threading "break: posting break.1.3")
+		       (semaphore-post break-semaphore)]))]
+	    [report-exception-error
+	     (lambda (exn)
+	       (if (exn? exn)
+		   (let ([di (exn-debug-info exn)])
+		     (report-error (zodiac:zodiac-start di)
+				   (zodiac:zodiac-finish di)
+				   'dynamic
+				   (exn-message exn)))
+		   (mred:message-box (format "~s" exn)
+				     "Uncaught Exception")))])
+
+	  (public
+	    [send-scheme (opt-lambda (x [after void]) (void))]
+	    [evaluation-thread #f]
+	    [current-thread-directory (current-directory)]
+	    [init-evaluation-thread
+	     (lambda ()
+	       (parameterize ([current-custodian custodian])
+		 (let-values 
+		     ([(evaluation-thread2 send-scheme2)
+		       (mzlib:thread@:consumer-thread
+			(opt-lambda (expr [after void])
+			  (let* ([user-code-error? #t])
+			    (dynamic-wind
+			     (lambda ()
+			       (current-directory current-thread-directory))
+			     (lambda ()
+			       (set! user-code-error? 
+				     (let/ec k
+				       (call-with-values
+					(lambda ()
+					  (with-handlers ([(lambda (x) #t)
+							   report-exception-error])
+					    (with-parameterization param
+					      (lambda ()
+						(primitive-eval expr)))))
+					(lambda anss
+					  (for-each display-result anss)))
+				       #f)))
+			     (lambda () 
+			       (set! current-thread-directory (current-directory))
+			       (after user-code-error?))))))])
+		   (set! send-scheme send-scheme2)
+		   (set! evaluation-thread evaluation-thread2))))])
 	  (public
 	    [userspace-load
 	     (lambda (filename)
-	       (let* ([p (open-input-file filename)]
-		      [chars (list (read-char p) (read-char p) (read-char p) (read-char p))])
-		 (close-input-port p)
-		 (let ([loc (zodiac:make-location 0 0 0 filename)]
-		       [re-p (void)]
-		       [old-load-relative-directory
-			(with-parameterization param
-			  current-load-relative-directory)])
-		   (dynamic-wind
-		    (lambda ()
-		      (let-values ([(base name must-be-dir?)
-				    (split-path
-				     (mzlib:file@:normalize-path filename))])
-			(with-parameterization param
-			  (lambda ()
-			    (current-load-relative-directory base))))
-		      (set! re-p
-			    (if (equal? chars (list #\W #\X #\M #\E))
-				(let ([edit (make-object drscheme:edit:edit%)])
-				  (send edit load-file filename)
-				  (mred:read-snips/chars-from-buffer edit))
-				(open-input-file filename))))
-		    (lambda ()
-		      (let ([reader (zodiac:read re-p loc)])
-			(let loop ([this-exp (reader)]
-				   [next-exp (reader)])
-			  (let ([go
-				 (lambda ()
-				   (user-eval (aries:annotate
-					       (call/nal
-						zodiac:scheme-expand/nal
-						zodiac:scheme-expand
-						(expression: this-exp)
-						(parameterization: param)))))])
-			    (cond
-			     [(zodiac:eof? this-exp) (void)]
-			     [(zodiac:eof? next-exp) (go)]
-			     [else (begin (go)
-					  (loop next-exp (reader)))])))))
-		    (lambda ()
-		      (when (input-port? re-p)
-			(close-input-port re-p))
-		      (with-parameterization param
-			(lambda ()
-			  (current-load-relative-directory old-load-relative-directory))))))))])
+	       (with-parameterization system-parameterization
+		 (lambda ()
+		   (let* ([p (open-input-file filename)]
+			  [loc (zodiac:make-location 0 0 0 filename)]
+			  [chars (begin0
+				  (list (read-char p) (read-char p) (read-char p) (read-char p))
+				  (close-input-port p))]
+			  [user-load-relative-directory (in-parameterization param current-load-relative-directory)]
+			  [old-load-relative-directory (user-load-relative-directory)])
+		     (dynamic-wind
+		      (lambda ()
+			(let-values ([(base name must-be-dir?)
+				      (split-path
+				       (mzlib:file@:normalize-path filename))])
+			  (user-load-relative-directory base)))
+		      (lambda ()
+			(let ([process-sexps
+			       (let ([last (void)])
+				 (lambda (sexp recur)
+				   (cond
+				     [(or (eq? sexp #t) (not sexp)) last]
+				     [(zodiac:zodiac? sexp)
+				      (set! last
+					    (with-handlers ([(lambda (x) #t) report-exception-error])
+					      (with-parameterization param
+						(lambda ()
+						  (primitive-eval sexp)))))
+					     (recur)])))])
+			  (if (equal? chars (list #\W #\X #\M #\E))
+			      (let ([edit (make-object drscheme:edit:edit%)])
+				(send edit load-file filename)
+				(process-edit/zodiac edit process-sexps
+						     0 (send edit last-position)
+						     #t))
+			      (process-file/zodiac filename process-sexps #t))))
+		      (lambda ()
+			(user-load-relative-directory old-load-relative-directory)))))))])
 	  (public
 	    [takeover void]
 	    [reset-console
 	     (let ([first-dir (current-directory)])
 	       (lambda ()
-		 (when param
-		   '(wx:kill-eventspace (with-parameterization param
-					 wx:current-eventspace)))
-		 (set! param (let ([p (build-parameterization user-parameterization)])
-			       (with-parameterization p
-				 (lambda ()
-				   (current-output-port this-out)
-				   (current-error-port this-err)
-				   (current-input-port this-in)
-				   (current-load userspace-load)
-				   (current-eval userspace-eval)
-				   (set! current-thread-directory
-					 (let/ec k
-					   (unless (get-frame)
-					     (k first-dir))
-					   (let*-values ([(filename) (send (ivar (get-frame) definitions-edit)
-									   get-filename)]
-							 [(normalized) (if (string? filename)
-									   (mzlib:file@:normalize-path filename)
-									   (k first-dir))]
-							 [(base _1 _2) (split-path normalized)])
-					     base)))))
-			       p))
+		 (custodian-shutdown-all custodian)
+		 (lock #f) ;; locked if the thread was killed
+		 (init-evaluation-thread)
+		 (let ([p (build-parameterization)])
+		   (with-parameterization p
+		     (lambda ()
+		       (current-custodian custodian)
+		       (current-output-port this-out)
+		       (current-error-port this-err)
+		       (current-input-port this-in)
+		       (current-load userspace-load)
+		       (current-eval userspace-eval)
+		       (set! current-thread-directory
+			     (let/ec k
+			       (unless (get-frame)
+				 (k first-dir))
+			       (let*-values ([(filename) (send (ivar (get-frame) definitions-edit)
+							       get-filename)]
+					     [(normalized) (if (string? filename)
+							       (mzlib:file@:normalize-path filename)
+							       (k first-dir))]
+					     [(base _1 _2) (split-path normalized)])
+				 base)))))
+		   (set! param p))
 		 (unless (mred:get-preference 'drscheme:keep-interactions-history)
 		   (set-resetting #t)
 		   (delete reset-console-start-position (last-position))

@@ -1,4 +1,4 @@
-Time-stamp: <00/06/09 11:12:16 shriram>
+Time-stamp: <00/06/12 16:32:15 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -27,7 +27,8 @@ Files: _url.ss_, _urlr.ss_, _urls.ss_, _urlu.ss_
 
 ABSTRACT -------------------------------------------------------------
 
-The url package manages features of URLs.
+The url package helps programmers use URLs as specified in RFC 1738:
+http://www.cis.ohio-state.edu/rfc/rfc1738.txt
 
 TYPES ----------------------------------------------------------------
 
@@ -49,6 +50,10 @@ TYPES ----------------------------------------------------------------
   1 = scheme, 2 = host, 3 = port, 4 = path,
   5 = params, 6 = query, 7 = fragment
 
+  If the scheme is "file", then the path is a platform-dependent
+  string as constructed using build-path.  Otherwise it's a url-path
+  as defined in the standard.
+
 > pure-port
 
   A pure port is one from which the MIME headers have been removed, so
@@ -66,8 +71,8 @@ PROCEDURES -----------------------------------------------------------
 > (unixpath->path string) -> path-string
 
   Procedure that handles the translation of URL paths to paths on the
-  local filesystem (eg, for URLs with scheme "file").  This procedure
-  works as follows:
+  local filesystem (eg, for URLs with scheme "file", ie, URLs of the
+  form _file:_).  This procedure works as follows:
 
   A leading slash is turned into a reference to the first string
   returned by filesystem-root-list.  The rest of the path is split
@@ -140,7 +145,8 @@ Libraries: _cgi.ss_, _cgic.ss_, _cgir.ss_, _cgis.ss_, _cgiu.ss_
 ABSTRACT -------------------------------------------------------------
 
 The cgi package helps programmers write scripts that follow the Common
-Gateway Interface (CGI) protocol of the World-Wide Web.
+Gateway Interface (CGI/1.1) protocol of the World-Wide Web:
+http://hoohoo.ncsa.uiuc.edu/cgi/
 
 INTERACTIONS ---------------------------------------------------------
 
@@ -262,7 +268,7 @@ ABSTRACT -------------------------------------------------------------
 The mail package helps programmers write programs that need to send
 electronic mail messages.  The package assumes the existence of a
 conformant sendmail program on the local system; see also the SMTP
-package, below.
+package, below (and use it instead).
 
 TYPES ----------------------------------------------------------------
 
@@ -368,7 +374,8 @@ Files: _nntp.ss_, _nntpr.ss_, _nntps.ss_, _nntpu.ss_
 ABSTRACT -------------------------------------------------------------
 
 The nntp package helps programmers access Usenet groups via the NNTP
-protocols.
+protocols:
+http://www.cis.ohio-state.edu/rfc/rfc0977.txt
 
 TYPES ----------------------------------------------------------------
 

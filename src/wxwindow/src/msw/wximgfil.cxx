@@ -328,7 +328,6 @@ ushort wxGIF::get_next_code()
 
 void wxGIF::InitInterlaceRow(int linewidth)
 {
-  int linepos;
   int count, lpos;
   
   lpos = ItCount;
@@ -623,8 +622,6 @@ BOOL wxGIF::SetColourMap(ushort n, byte *r, byte *g, byte *b)
 Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
  
-  HBITMAP  hBitmap;
-
   if (pal) *pal = NULL;
 
   wxGIF *gifImage  = new wxGIF(fileName);

@@ -147,10 +147,12 @@ class wxDC: public wxbDC
    void DoneDC(HDC dc);
    void ShiftXY(float x, float y, int &ix, int &iy);
 
-  Bool StartBrush(HDC dc);
+  Bool StartBrush(HDC dc, Bool no_stipple = FALSE);
   Bool StartPen(HDC dc);
   void DoneBrush(HDC dc);
   void DonePen(HDC dc);
+
+  wxBitmap *StippleBrush();				   
 };
 
 // This class specific to Windows 3.1

@@ -1496,7 +1496,6 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
 	  && loc->selected) {
 	wxBrush *oldbrush;
 	wxPen *oldpen;
-	int lf;
 
 	oldbrush = dc->GetBrush();
 	oldpen = dc->GetPen();

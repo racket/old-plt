@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.12 1998/09/19 03:37:58 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.13 1998/09/21 05:21:16 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -217,7 +217,7 @@ wxRegion* wxDC::GetClippingRegion()
 
 void wxDC::SetClippingRegion(wxRegion *c)
 {
-  if (c->dc != this) return;
+  if (c && (c->dc != this)) return;
 
   if (clipping) delete clipping;
 
@@ -452,54 +452,88 @@ void wxDC::DrawLine(float x1, float y1, float x2, float y2)
   CalcBoundingBox(x2, y2);
 }
 
-void wxDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
+static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
+{
+  float x, y, w, h, bw, bh;
+  int xstart, xend, ystart, yend, i, j;
+  wxRegion *old;
+
+  wxBitmap *bm = brush->GetStipple();
+  int style = brush->GetStyle();
+  wxColour *c = &brush->GetColour();
+
+  r->BoundingBox(&x, &y, &w, &h);
+  bw = bm->GetWidth();
+  bh = bm->GetHeight();
+
+  x = dc->LogicalToDeviceX(x);
+  y = dc->LogicalToDeviceY(y);
+  w = dc->LogicalToDeviceXRel(w);
+  h = dc->LogicalToDeviceYRel(h);
+  
+  xstart = floor(x / bw);
+  xend = floor((x + w + bw - 0.00001) / bw);
+
+  ystart = floor(y / bh);
+  yend = floor((y + h + bh - 0.00001) / bh);
+
+  old = dc->GetClippingRegion();
+  dc->SetClippingRegion(r);
+
+  for (i = xstart; i < xend; i++)
+    for (j = ystart; j < yend; j++)
+      dc->Blit(dc->DeviceToLogicalX(i * bw), 
+	       dc->DeviceToLogicalY(j * bh), 
+	       dc->DeviceToLogicalXRel(bw), 
+	       dc->DeviceToLogicalYRel(bh),
+	       bm, 0, 0, style, c);
+
+  dc->SetClippingRegion(old);
+}
+
+void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
 {
   HDC dc = ThisDC();
 
   if (!dc) return;
 
-  int xx1, yy1, xx2, yy2, xxc, yyc;
-
-  ShiftXY(x1, y1, xx1, yy1);
-  ShiftXY(x2, y2, xx2, yy2);
-  ShiftXY(xc, yc, xxc, yyc);
-
-  double dx = xc-x1;
-  double dy = yc-y1;
-  double radius = (double)sqrt(dx*dx+dy*dy);
-  if (xx1==xx2 && xx2==yy2) {
-    DrawEllipse(xc,yc,(float)(radius*2.0),(float)(radius*2));
-    return;
+  if (StippleBrush()) {
+    wxRegion *r = new wxRegion(this);
+    r->SetArc(x, y, w, h, start, end);
+    FillWithStipple(this, r, current_brush);
   }
 
-  xx1 = XLOG2DEV(xx1);
-  yy1 = YLOG2DEV(yy1);
-  xx2 = XLOG2DEV(xx2);
-  yy2 = YLOG2DEV(yy2);
-  xxc = XLOG2DEV(xxc);
-  yyc = YLOG2DEV(yyc);
-  double ray = sqrt((xxc-xx1)*(xxc-xx1)+(yyc-yy1)*(yyc-yy1));
- 
-  (void)MoveToEx(dc, xx1, yy1, NULL);
-  int xxx1 = (int)(xxc-ray);
-  int yyy1 = (int)(yyc-ray);
-  int xxx2 = (int)(xxc+ray);
-  int yyy2 = (int)(yyc+ray);
-  
-  if (StartBrush(dc)) {
-    Pie(dc,xxx1,yyy1,xxx2,yyy2, xx1,yy1,xx2,yy2);
+  int xx1, yy1, xx2, yy2, hh, ww, cx, cy;
+
+  ShiftXY(x, y, xx1, yy1);
+  ShiftXY(x + w, y + h, xx2, yy2);
+  hh = yy2 - yy1;
+  ww = xx2 - xx1;
+
+  cx = xx1 + ww/2;
+  cy = yy1 + hh/2;
+
+  float rx1, ry1, rx2, ry2;
+
+  rx1 = cx + (ww / 2) * cos(start);
+  ry1 = cy - ((hh / 2) * sin(start));
+  rx2 = cx + (ww / 2) * cos(end);
+  ry2 = cy - ((hh / 2) * sin(end));
+
+  if (StartBrush(dc, 1)) {
+    Pie(dc, xx1, yy1, xx2, yy2, rx1, ry1, rx2, ry2);
     DoneBrush(dc);
   }
 
   if (StartPen(dc)) {
-    Arc(dc,xxx1,yyy1,xxx2,yyy2, xx1,yy1,xx2,yy2);
+    Arc(dc, xx1, yy1, xx2, yy2, rx1, ry1, rx2, ry2);
     DonePen(dc);
   }
   
   DoneDC(dc);
   
-  CalcBoundingBox((float)(xc-radius), (float)(yc-radius));
-  CalcBoundingBox((float)(xc+radius), (float)(yc+radius));
+  CalcBoundingBox(x, y);
+  CalcBoundingBox(x + w, y + h);
 }
 
 void wxDC::DrawPoint(float x, float y)
@@ -534,6 +568,12 @@ void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int
 
   if (!dc) return;
 
+  if (StippleBrush()) {
+    wxRegion *r = new wxRegion(this);
+    r->SetPolygon(n, points, xoffset, yoffset, fillStyle);
+    FillWithStipple(this, r, current_brush);
+  }
+
   int xoffset1;
   int yoffset1;
 
@@ -550,7 +590,7 @@ void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int
 
   int prev = SetPolyFillMode(dc, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
 
-  if (StartBrush(dc)) {
+  if (StartBrush(dc, 1)) {
     (void)Polygon(dc, cpoints, n);
     DoneBrush(dc);
   }
@@ -628,6 +668,12 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
 
   if (!dc) return;
 
+  if (StippleBrush()) {
+    wxRegion *r = new wxRegion(this);
+    r->SetRectangle(x, y, width, height);
+    FillWithStipple(this, r, current_brush);
+  }
+
   int x1, y1, x2, y2;
 
   ShiftXY(x, y, x1, y1);
@@ -635,7 +681,7 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
 
   Bool do_brush, do_pen;
 
-  if (StartBrush(dc)) {
+  if (StartBrush(dc, 1)) {
     (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
 		    XLOG2DEV(x2) + 1, YLOG2DEV(y2) + 1);
     DoneBrush(dc);
@@ -658,6 +704,12 @@ void wxDC::DrawRoundedRectangle(float x, float y, float width, float height, flo
 
   if (!dc) return;
 
+  if (StippleBrush()) {
+    wxRegion *r = new wxRegion(this);
+    r->SetRoundedRectangle(x, y, width, height);
+    FillWithStipple(this, r, current_brush);
+  }
+
   int x1, y1, x2, y2;
   ShiftXY(x, y, x1, y1);
   ShiftXY(x + width, y + height, x2, y2);
@@ -673,7 +725,7 @@ void wxDC::DrawRoundedRectangle(float x, float y, float width, float height, flo
     radius = (float)(- radius * smallest);
   }
 
-  if (StartBrush(dc)) {
+  if (StartBrush(dc, 1)) {
     (void)RoundRect(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2),
 		    YLOG2DEV(y2), XLOG2DEV(radius), YLOG2DEV(radius));
     DoneBrush(dc);
@@ -696,11 +748,17 @@ void wxDC::DrawEllipse(float x, float y, float width, float height)
 
   if (!dc) return;
 
+  if (StippleBrush()) {
+    wxRegion *r = new wxRegion(this);
+    r->SetEllipse(x, y, width, height);
+    FillWithStipple(this, r, current_brush);
+  }
+
   int x1, y1, x2, y2;
   ShiftXY(x, y, x1, y1);
   ShiftXY(x + width, y + height, x2, y2);
 
-  if (StartBrush(dc)) {
+  if (StartBrush(dc, 1)) {
     (void)Ellipse(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
     DoneBrush(dc);
   }
@@ -908,9 +966,14 @@ void wxDC::SetRop(HDC dc, int style)
   SetROP2(dc, c_rop);
 }
 
-int wxDC::StartBrush(HDC dc)
+int wxDC::StartBrush(HDC dc, Bool no_stipple)
 {
   if (current_brush && current_brush->GetStyle() !=wxTRANSPARENT) {
+    if (no_stipple) {
+      wxBitmap *bm = current_brush->GetStipple();
+      if (bm && bm->Ok())
+	return FALSE;
+    }
     suspended_pen = (HPEN)::SelectObject(dc, ::GetStockObject(NULL_PEN));
     SetBrush(current_brush);
     return TRUE;
@@ -936,6 +999,16 @@ int wxDC::StartPen(HDC dc)
 void wxDC::DonePen(HDC dc)
 {
   ::SelectObject(dc, suspended_brush);
+}
+
+wxBitmap *wxDC::StippleBrush()
+{
+  if (current_brush) {
+    wxBitmap *bm = current_brush->GetStipple();
+    if (bm && bm->Ok())
+      return bm;
+  }
+  return NULL;
 }
 
 Bool wxDC::StartDoc(char *message)
@@ -1229,7 +1302,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 			width, height,
 			dc_src, xsrc1, ysrc1, 
 			source->ms_bitmap, xsrc1, ysrc1,
-			SRCCOPY);
+			MAKEROP4(SRCAND, SRCCOPY));
     } else
       op = SRCCOPY; /* opaque */
   } else {

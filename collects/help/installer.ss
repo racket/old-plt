@@ -3,9 +3,8 @@
   
   (require (lib "match.ss")
 	   (lib "file.ss")
-	   (lib "list.ss")
-           "servlets/private/util.ss")
-
+	   (lib "list.ss"))
+  
   (define installer
     (lambda (path)   
       (create-index-file)))
@@ -46,11 +45,10 @@
 	   [servlet-files 
 	    (filter 
 	     (lambda (path)
-               (let* ([s (path->string path)]
-                      [len (string-length s)])
-		 (string=? 
-		  ".ss"
-		  (substring s (- len 3) len))))
+               (let* ([s (path->bytes path)]
+                      [len (bytes-length s)])
+		 (equal? #".ss"
+                         (subbytes s (- len 3) len))))
 	     all-files)]
 	   [dirs 
 	    (filter directory-exists? all-files)])
@@ -59,7 +57,7 @@
   
   ; path is absolute, and has the servlet dir as a prefix 
   (define (relativize-and-slashify path)
-    (let* ([exp-path (map path->string (explode-path path))]
+    (let* ([exp-path (explode-path path)]
 	   [prefix-len (sub1 exploded-servlet-dir-len)]
 	   [relative-exp-path
 	    (let loop ([p exp-path]
@@ -70,13 +68,24 @@
 		  (loop (cdr p) (add1 n))))])
       (fold-into-web-path relative-exp-path)))
   
+  ; (listof string) -> string
+  ; result is forward-slashed web path
+  ;  e.g. ("foo" "bar") -> "foo/bar"
+  (define (fold-into-web-path lst)
+    (foldr (lambda (s a)
+             (if a
+                 (bytes-append (path->bytes s) #"/" a)
+                 (path->bytes s)))
+           #f
+           lst))
+  
   (define index '())
   
   (define (add-index-entry! val file name title)
     (set! index 
 	  (cons
 	   (list val
-                 (string-append "/" (relativize-and-slashify file))
+                 (bytes-append #"/" (relativize-and-slashify file))
 		 name
 		 title)
 	   index)))

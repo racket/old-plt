@@ -4,6 +4,8 @@
    [servlet-path? (path? . -> . boolean?)])
 
   (define (servlet-path? path)
-    (regexp-match #rx#"^/servlets/" 
-                  (path->bytes path))))
+    (if (regexp-match #rx#"^/servlets/" 
+                      (path->bytes path))
+        #t
+        #f)))
 

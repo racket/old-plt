@@ -144,22 +144,6 @@
 		       " in "
 		       "\"" ,src "\"")))))
       
-      ; page-label is #f or a string that labels an HTML anchor
-      ; path is either an absolute pathname (possibly not normalized) 
-      ; in the format of the native OS, or, in the case of Help Desk 
-      ; servlets, a forward-slashified path beginning with "/servlets/"
-      (define (make-anchored-path page-label path)
-        (let ([normal-path 
-               (if (servlet-path? path) 
-                   path
-                   (normalize-path path))])
-          (if (and page-label
-                   (string? page-label)
-                   (not (or (string=? page-label "NO TAG") 
-                            (regexp-match "\\?|&" page-label))))
-              (string-append normal-path "#" page-label)
-              normal-path)))
-      
       (define (doc-txt? url)
         (let ([len (string-length url)])
           (and (> len 8)
@@ -184,6 +168,24 @@
             [else ; manual, so have absolute path
              (tidy-manual-path anchored-path)])))
       
+      ; page-label is #f or a bytes that labels an HTML anchor
+      ; path is either an absolute pathname (possibly not normalized) 
+      ; in the format of the native OS, or, in the case of Help Desk 
+      ; servlets, a forward-slashified path beginning with "/servlets/"
+      (define (make-anchored-path page-label path)
+        (let ([normal-path 
+               (if (servlet-path? path) 
+                   path
+                   (normalize-path path))])
+          (if (and page-label
+                   (string? page-label)
+                   (not (or (string=? page-label "NO TAG") 
+                            (regexp-match "\\?|&" page-label))))
+              (string-append normal-path #"#" page-label)
+              normal-path)))
+      
+
+      
       ; path is absolute pathname
       (define (make-text-href page-label path)
         (let* ([maybe-coll (maybe-extract-coll last-header)]
@@ -202,18 +204,19 @@
            offset)))
       
       (define (html-entry? path)
-        (and (not (suffixed? path "doc.txt"))
+        (and (not (suffixed? path #"doc.txt"))
              (or (eq? current-kind 'html)
-                 (suffixed? path ".html"))))
+                 (suffixed? path #".html"))))
       
       (define (suffixed? path suffix)
-        (let ([path-len (string-length path)]
-              [suffix-len (string-length suffix)])
+        (let* ([path-bytes (path->bytes path)]
+               [path-len (bytes-length path-bytes)]
+               [suffix-len (bytes-length suffix)])
           (and (path-len . >= . suffix-len)
-               (string=? (substring path 
-                                    (- path-len suffix-len)
-                                    path-len)
-                         suffix))))
+               (bytes=? (subbytes path-bytes
+                                  (- path-len suffix-len)
+                                  path-len)
+                        suffix))))
       
       (define (goto-lucky-entry ekey label src path page-label key)
         (let* ([href (if (html-entry? path)

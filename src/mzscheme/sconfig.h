@@ -189,6 +189,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-sunos4"
 # define SIGSET_IS_SIGNAL
 # define USE_TM_GMTOFF_FIELD
+# define NO_STRERROR_AVAILABLE
+# define USE_ON_EXIT_FOR_ATEXIT
 # endif
 
 # define FLAGS_ALREADY_SET
@@ -1377,6 +1379,11 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* NO_USLEEP means that there is no usleep() function. Used only in 
     standalone MzScheme. Used only if NO_SLEEP is undefined. */
+
+ /* NO_STRERROR_AVAILABLE means that strerror() is not available. */
+
+ /* USE_ON_EXIT_FOR_ATEXIT means that a SunOS4-style on_exit()
+    is available instead of atexit(). */
 
  /* NO_NEED_FOR_BEGINTHREAD indicates that the C library used for
     Windows is always thread-ready and there's no need use the

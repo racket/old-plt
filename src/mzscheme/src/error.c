@@ -266,7 +266,9 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    en = va_arg(args, int);
 	    if (en) {
 	      char *es;
-#ifdef DOS_FILE_SYSTEM
+#ifdef NO_STRERROR_AVAILABLE
+	      es = "Unknown error";
+# ifdef DOS_FILE_SYSTEM
 	      char mbuf[256];
 	      if (type == 'E') {
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, 
@@ -286,8 +288,9 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	      } else
 		es = NULL;
 	      if (!es)
-#endif
+# endif
 		es = strerror(en);
+#endif
 	      tlen = strlen(es) + 24;
 	      t = (const char *)scheme_malloc_atomic(tlen);
 	      sprintf((char *)t, "%s; errno=%d", es, en);

@@ -131,7 +131,7 @@ static Scheme_Object *inf_object, *minus_inf_object, *nan_object;
 
 #define zeroi scheme_make_integer(0)
 
-static Scheme_Object *zerod, *nzerod, *scheme_pi, *plus_i, *minus_i;
+static Scheme_Object *zerod, *nzerod, *scheme_pi, *scheme_half_pi, *plus_i, *minus_i;
 #ifdef MZ_USE_SINGLE_FLOATS
 static Scheme_Object *zerof, *nzerof, *single_scheme_pi;
 static Scheme_Object *single_inf_object, *single_minus_inf_object, *single_nan_object;
@@ -156,6 +156,7 @@ scheme_init_number (Scheme_Env *env)
 {
   if (scheme_starting_up) {
     REGISTER_SO(scheme_pi);
+    REGISTER_SO(scheme_half_pi);
     REGISTER_SO(zerod);
     REGISTER_SO(nzerod);
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -222,6 +223,7 @@ scheme_init_number (Scheme_Env *env)
     SCHEME_DBL_VAL(nzerod) = scheme_floating_point_nzero;
 
     scheme_pi = scheme_make_double(atan2(0, -1));
+    scheme_half_pi = scheme_make_double(atan2(0, -1)/2);
 #ifdef MZ_USE_SINGLE_FLOATS
     zerof = scheme_make_float(0.0f);
     nzerof = scheme_make_float(-0.0f);
@@ -2163,18 +2165,20 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 #define GEN_ZERO_IS_ZERO() if (o == zeroi) return zeroi;
 #define GEN_ZERO_IS_ONE() if (o == zeroi) return scheme_make_integer(1);
 #define GEN_ONE_IS_ZERO() if (o == scheme_make_integer(1)) return zeroi;
+#define GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR() if (o == scheme_make_integer(1)) return zeroi; else if (o == zeroi) scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, zeroi, "log: undefined for 0");
+#define GEN_ZERO_IS_HALF_PI() if (o == zeroi) return scheme_half_pi;
 
 #define NEVER_RESORT_TO_COMPLEX(d) 0
 #define NEGATIVE_USES_COMPLEX(d) d < 0.0
 #define OVER_ONE_MAG_USES_COMPLEX(d) (d > 1.0) || (d < -1.0)
 
 GEN_UNARY_OP(exp_prim, exp, exp, inf_object, zerod, nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(log_prim, log, log, inf_object, nan_object, nan_object, complex_log, GEN_ONE_IS_ZERO, NEGATIVE_USES_COMPLEX)
+GEN_UNARY_OP(log_prim, log, log, inf_object, nan_object, nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
 GEN_UNARY_OP(sin_prim, sin, sin, nan_object, nan_object, nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(cos_prim, cos, cos, nan_object, nan_object, nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(tan_prim, tan, tan, nan_object, nan_object, nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(asin_prim, asin, asin, nan_object, nan_object, nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
-GEN_UNARY_OP(acos_prim, acos, acos, nan_object, nan_object, nan_object, complex_acos, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
+GEN_UNARY_OP(acos_prim, acos, acos, nan_object, nan_object, nan_object, complex_acos, GEN_ONE_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 
 static Scheme_Object *
 atan_prim (int argc, Scheme_Object *argv[])
@@ -2259,6 +2263,9 @@ atan_prim (int argc, Scheme_Object *argv[])
 
     v = atan2(v, v2);
   } else {
+    if (argv[0] == zeroi)
+      return zeroi;
+
     v = atan(v);
 #ifdef MZ_USE_SINGLE_FLOATS
     single++;

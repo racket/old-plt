@@ -672,6 +672,7 @@
 						 start end)))))))])
 	
 	(public
+	  [io-edit% transparent-io-edit%]
 	  [transparent-edit #f]
 	  [transparent-snip #f]
 	  [this-in-char-ready? (lambda () #t)]
@@ -692,7 +693,7 @@
 	  [init-transparent-io-do-work
 	   (lambda (grab-focus?)
 	     (let ([starting-at-prompt-mode? prompt-mode?])
-	       (set! transparent-edit (make-object transparent-io-edit%))
+	       (set! transparent-edit (make-object io-edit%))
 	       (semaphore-wait timer-sema)
 	       (when timer-on
 		 (set-box! timer-on (cons transparent-edit (unbox timer-on)))
@@ -739,7 +740,8 @@
 		       (send transparent-edit fetch-sexp))]
 		  [f (lambda ()
 		       (mzlib:function:dynamic-disable-break g))])
-	     (lambda () (single-threader f)))])
+	     (lambda ()
+	       (single-threader f)))])
 	(public
 	  [set-output-delta
 	   (lambda (delta)
@@ -865,14 +867,14 @@
 	  [display-result
 	   (lambda (v)
 	     (unless (void? v)
-	       (begin-edit-sequence)
+	       '(begin-edit-sequence)
 	       (parameterize 
 		   ([mzlib:pretty-print:pretty-print-size-hook
 		     (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
 		    [mzlib:pretty-print:pretty-print-print-hook
 		     (lambda (x _ port) (this-result-write x))])
 		 (mzlib:pretty-print:pretty-print v this-result))
-	       (end-edit-sequence)))]
+	       '(end-edit-sequence)))]
 	  [eval-and-display
 	   (lambda (str)
 	     (catch-errors
@@ -1150,13 +1152,15 @@
   
   (define console-edit% (make-console-edit% mred:edit:backup-autosave-edit%))
   
+  (define ibeam-cursor (make-object wx:cursor% wx:const-cursor-ibeam))
+
   (define make-transparent-io-edit%
     (lambda (super%)
       (class super% args
 	(inherit change-style prompt-position set-prompt-position
 		 resetting? set-resetting lock get-text
 		 flush-console-output set-position last-position get-character
-		 clear-undos set-auto-set-wrap locked?
+		 clear-undos set-auto-set-wrap locked? set-cursor
 		 do-pre-eval do-post-eval)
 	(rename [super-on-insert on-insert]
 		[super-on-local-char on-local-char])
@@ -1196,6 +1200,7 @@
 	     (set-prompt-position end))]
 	  [fetch-sexp
 	   (lambda ()
+	     (set-cursor ibeam-cursor)
 	     (flush-console-output)
 	     (let loop ()
 	       (let ([yield/loop? #f]
@@ -1226,7 +1231,8 @@
 		    (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
 		    (loop)]
 		   [answer answer]
-		   [else (void)]))))]
+		   [else (void)])))
+	     (set-cursor null))]
 	  [fetch-char
 	   (lambda ()
 	     (flush-console-output)

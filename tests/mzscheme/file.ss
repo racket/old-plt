@@ -817,6 +817,37 @@
 (arity-test read-string-avail!/enable-break 1 4)
 (arity-test peek-string-avail!/enable-break 2 5)
 
+(let ([fill-a
+       (lambda (s pos)
+	 (let ([l (string-length s)])
+	   (let loop ([i 0])
+	     (unless (= i l)
+	       (string-set! s i (integer->char (+ 48 (modulo (+ i pos) 10))))
+	       (loop (add1 i))))
+	   l))]
+      [pos 0])
+  (let ([p (make-custom-input-port 
+	    #f
+	    (lambda (s) (let ([n (fill-a s pos)])
+			  (set! pos (+ pos n))
+			  n))
+	    (lambda (s skip) (fill-a s (+ pos skip)))
+	    void)])
+    (test #\0 read-char p)
+    (test #\1 peek-char p)
+    (test #\1 read-char p)
+    (test "234" read-string 3 p)
+    (test "567" peek-string 3 0 p)
+    (test "567890" read-string 6 p)
+    (test "123" peek-string 3 500 p)
+    (test "123" peek-string 3 (expt 10 100) p)
+    (test "567" peek-string 3 (+ 4 (expt 10 100)) p)
+    (test #f regexp-match "11" p 0 10000)
+    (test "123" read-string 3 p)
+    (test '("0") regexp-match "0" p 0)
+    (let ([x (+ 9 (expt 10 100))])
+      (test (list (cons x (add1 x))) regexp-match-peek-positions "0" p (expt 10 100)))))
+
 ;;------------------------------------------------------------
 
 (SECTION 6 10 4)

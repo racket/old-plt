@@ -35,6 +35,8 @@ Known bugs/limitations:
  - No good default indentation.
  - Error messages are still messy.
  - Constraints will often not work (if ever).
+ - Type unification errors will not always print the right types (e.g. Expected int list list but found int list)
+ - Programs may not behave correctly if you use mzscheme built-in functions (cons, list, etc.) as variable name
  - Doesn't give good parsing errors (especially mismatched parens and
 the like).
  - Patten matching does not check to make sure the pattern is

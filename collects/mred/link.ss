@@ -43,17 +43,19 @@
 			  (mred:scheme-paren@ debug paren)]
 	    [paren : mred:paren^ (mred:paren@ debug)]
 	    [path-utils : mred:path-utils^ (mred:path-utils@ debug)]
-	    [gui-utils : mred:gui-utils^ (mred:gui-utils@ debug (core function@) trigger)]
-	    [finder : mred:finder^
-		    (mred:finder@ debug container preferences
-				gui-utils edit canvas
-				(core string@) (core function@) (core file@))]
 	    [icon : mred:icon^ (mred:icon@ debug constants)]
 	    [menu : mred:menu^ (mred:menu@ debug (core function@))]
 	    [edit : mred:edit^ 
 	      (mred:edit@ debug connections finder path-utils mode
 			  scheme-paren keymap icon preferences gui-utils
 			  (core function@))]
+	    [gui-utils : mred:gui-utils^
+		       (mred:gui-utils@ debug frame container canvas edit
+					(core function@) trigger)]
+	    [finder : mred:finder^
+		    (mred:finder@ debug container preferences
+				gui-utils edit canvas
+				(core string@) (core function@) (core file@))]
 	    [group : mred:group^ 
 		   (mred:group@ debug preferences editor-frame gui-utils
 			      exit autosave handler (core function@))]

@@ -143,7 +143,8 @@
    exit))
 
 (define-signature mred:gui-utils^
-  (cursor-delay
+  (message-box
+   cursor-delay
    show-busy-cursor
    delay-action
    local-busy-cursor

@@ -8,7 +8,12 @@
     (define make-connections-frame%
       (lambda (%)
 	(class-asi %
+	  (rename [super-show show])
 	  (public
+	    [shown #f]
+	    [show (lambda (x) 
+		    (set! shown x)
+		    (super-show x))]
 	    [on-frame-active void]
 	    [active-edit
 	     (lambda ()
@@ -80,7 +85,7 @@
 			(car canvases))))]
 	    [get-frame
 	     (lambda ()
-	       (let ([c (active-canvas)])
+	       (let ([c active-canvas])
 		 (and c
 		      (ivar c frame))))]
 	    [active-canvas #f]

@@ -356,6 +356,6 @@
 
     (define hyper-text-require (lambda () (void)))
 
-    (mred:handler:insert-format-handler  "Hyper-Text" '("htx" "htm" "html")
+    (mred:handler:insert-format-handler  "Hyper-Text" (list "htx")
 					  (lambda (filename group)
 					    (open-hyper-make filename group)))))

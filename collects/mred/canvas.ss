@@ -16,32 +16,32 @@
 	  (public
 	    [get-edit% (lambda () mred:edit:edit%)]
 	    [style-flags 0])
-	  (inherit get-media get-parent)
+	  (inherit get-media get-parent frame)
 	  (public
 	    [get-style-flags (lambda () style-flags)]
 	    [make-edit (lambda () (make-object (get-edit%)))]
 	    [make-initial-edit (lambda () null)])
 
 	  (private
+	    [rewrap
+	     (lambda ()
+	       (let ([edit (get-media)])
+		 (unless (null? edit)
+		   (mred:debug:printf 'rewrap "canvas:rewrap")
+		   (send edit rewrap))))]
 	    [resize-edit
 	       ;; only resize the edit when the container classes are 
 	       ;; force redrawing or when the frame is shown.
 	     (lambda ()
-	       (let ([frame-shown?
-		      (let loop ([t (get-parent)])
-			(cond
-			  [(is-a? t wx:frame%)
-			   (ivar t shown)]
-			  [(null? t) #f]
-			  [else (loop (send t get-parent))]))])
-		 (when frame-shown?
-		   (let ([edit (get-media)])
-		     (unless (null? edit)
-		       (mred:debug:printf 'rewrap "canvas on-size rewrapping: ~a ~a~n"
-					  must-resize-edit frame-shown?)
-		       (send edit rewrap))))))]
-	    [must-resize-edit #f])
+	       (let ([frame-shown? (ivar frame shown)])
+		 (mred:debug:printf 'rewrap "resize-edit: ~a" frame-shown?)
+		 (if frame-shown?
+		     (rewrap)
+		     (set! needs-rewrapping #t))))]
+	    [must-resize-edit #f]
+	    [needs-rewrapping #f])
 	  (rename
+	    [super-show show]
 	    [super-force-redraw force-redraw]
 	    [super-on-size on-size]
 	    [super-set-media set-media])
@@ -50,6 +50,13 @@
 		  [edit-renamed void])
 
 	  (public
+	    [show 
+	     (lambda (t)
+	       (super-show t)
+	       (when (and t
+			  needs-rewrapping)
+		 (set! needs-rewrapping #f)
+		 (rewrap)))]
 	    [force-redraw 
 	     (lambda ()
 	       (set! must-resize-edit #t)
@@ -63,10 +70,12 @@
 	       (super-set-media media redraw?)
 	       (edit-modified (and (not (null? media))
 				   (send media modified?)))
-	       (edit-renamed (if (null? m)
+	       (edit-renamed (if (null? media)
 				 "No buffer"
-				 (send m get-filename)))
-	       (unless (null? m)
+				 (send media get-filename)))
+	       (mred:debug:printf 'rewrap "rewrap: setting the media: ~a" media)
+	       (unless (null? media)
+		 (mred:debug:printf 'rewrap "rewrap: setting the media")
 		 (resize-edit)))])
 	  (sequence
 	    (super-init parent x y w h

@@ -70,17 +70,50 @@
     (define make-scheme-mode-edit%
       (lambda (super%)
 	(class super% args
-	       (inherit set-mode)
-	       (sequence
-		 (mred:debug:printf 'super-init "before scheme-mode-edit%")
-		 (apply super-init args)
-		 (mred:debug:printf 'super-init "before scheme-mode-edit%")
-		 (set-mode (make-object mred:scheme-mode:scheme-mode%))))))
+	  (inherit set-mode)
+	  (public
+	    [get-insert-edit
+	     (lambda () (make-object wx:media-snip%
+			  (make-object scheme-mode-edit%)))])
+	  (sequence
+	    (mred:debug:printf 'super-init "before scheme-mode-edit%")
+	    (apply super-init args)
+	    (mred:debug:printf 'super-init "before scheme-mode-edit%")
+	    (set-mode (make-object mred:scheme-mode:scheme-mode%))))))
 
     (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit:edit%))
 
     (define console-max-save-previous-exprs 30)
 		    
+    (define make-single-threader
+      (lambda ()
+	(let ([sema (make-semaphore 1)])
+	  (lambda (thunk)
+	    (dynamic-wind
+	     (lambda () (semaphore-wait sema))
+	     thunk
+	     (lambda () (semaphore-post sema)))))))
+
+    (define mzlib:function:dynamic-delay-break
+      (let ([p (current-output-port)])
+        (lambda (t)
+          (let* ([break? #f]
+                 [old-handler (user-break-poll-handler)]
+                 [new-handler
+                  (lambda ()
+                    (unless break?
+                      '(begin (fprintf p ".") (flush-output p))
+                      (when (old-handler)
+                        '(fprintf p "~nsetting break to #t~n")
+                        (set! break? #t)))
+                    #f)])
+            (begin0
+              (parameterize ([user-break-poll-handler new-handler])
+                            (t))
+              '(fprintf p "~nwill break: ~a~n" break?)
+              (when break?
+                (break-thread (current-thread))))))))
+
     (define make-console-edit%
       (lambda (super%)
 	(class super% args
@@ -143,11 +176,12 @@
 	    [on-something
 	     (opt-lambda (super [attend-to-styles-fixed? #f])
 	       (lambda (start len)
-		 (and (or (not (number? prompt-position))
-			  (>= start prompt-position)
-			  (and attend-to-styles-fixed? styles-fixed?)
-			  resetting?)
-		      ((super) start len))))])
+		 (let ([guard (or (not (number? prompt-position))
+				  (>= start prompt-position)
+				  (and attend-to-styles-fixed? styles-fixed?)
+				  resetting?)])
+		   (and guard
+			((super) start len)))))])
 	  (public
 	    [resetting? #f]
 	    [on-insert (on-something (lambda () super-on-insert))]
@@ -165,34 +199,34 @@
 	  (public
 	    [generic-write
 	     (lambda (s style-func)
-	       (semaphore-wait timer-sema)
-	       (if timer-on
-		   (begin
-		     (set! timer-writes (add1 timer-writes))
-		     (when (> timer-writes CACHE-WRITE-COUNT)
-		       (end-edit-sequence)
-		       (begin-edit-sequence)
-		       (set! timer-writes 0)))
-		   (begin
-		     (set! timer-writes 0)
-		     (let ([on-box (box #t)])
-		       (begin-edit-sequence)
-		       (set! timer-on on-box)
-		       (thread 
-			(lambda ()
-			  (dynamic-wind
-			   void
-			   (lambda ()
-			     (sleep CACHE-TIME))
-			   (lambda ()
-			     (semaphore-wait timer-sema)
-			     (when (unbox on-box)
-			       (end-edit-sequence)
-			       (set! timer-on #f))
-			     (semaphore-post timer-sema))))))))
-	       (semaphore-post timer-sema)
-	       (mzlib:function:dynamic-disable-break
+	       (mzlib:function:dynamic-delay-break
 		(lambda ()
+		  (semaphore-wait timer-sema)
+		  (if timer-on
+		      (begin
+			(set! timer-writes (add1 timer-writes))
+			(when (> timer-writes CACHE-WRITE-COUNT)
+			  (end-edit-sequence)
+			  (begin-edit-sequence)
+			  (set! timer-writes 0)))
+		      (begin
+			(set! timer-writes 0)
+			(let ([on-box (box #t)])
+			  (begin-edit-sequence)
+			  (set! timer-on on-box)
+			  (thread 
+			   (lambda ()
+			     (dynamic-wind
+			      void
+			      (lambda ()
+				(sleep CACHE-TIME))
+			      (lambda ()
+				(semaphore-wait timer-sema)
+				(when (unbox on-box)
+				  (end-edit-sequence)
+				  (set! timer-on #f))
+				(semaphore-post timer-sema))))))))
+		  (semaphore-post timer-sema)
 		  (begin-edit-sequence)
 		  (set-position (last-position))
 		  (when (and prompt-mode? autoprompting?)
@@ -232,7 +266,7 @@
 	       (set! autoprompting? v))]
 	    [this-out-write
 	     (lambda (s)
-	       (mzlib:function:dynamic-disable-break
+	       (mzlib:function:dynamic-delay-break
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
@@ -245,7 +279,7 @@
 				  start end)))))))]
 	    [this-err-write
 	     (lambda (s)
-	       (mzlib:function:dynamic-disable-break
+	       (mzlib:function:dynamic-delay-break
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
@@ -256,15 +290,11 @@
 	       
 	  (public
 	    [transparent-edit #f]
-	    [this-in-read
-	     (lambda ()
-	       eof)]
 	    [this-in-char-ready? (lambda () #t)]
 	    [cleanup-transparent-io
 	     (lambda ()
 	       (when transparent-edit
-		 (send transparent-edit flush-console-output)
-		 (send transparent-edit lock #t)
+		 (send transparent-edit shutdown)
 		 (set-position (last-position))
 		 (set-caret-owner null)
 		 (let ([a (get-admin)])
@@ -292,24 +322,21 @@
 			(send a grab-caret))))
 		  (lambda () (end-edit-sequence)))
 		 (set! prompt-position (last-position))))]
+	    [single-threader (make-single-threader)]
+	    [this-in-read
+	     (let* ([g (lambda ()
+			 (init-transparent-io)
+			 (send transparent-edit fetch-char))]
+		    [f (lambda () (mzlib:function:dynamic-delay-break g))])
+	       (lambda ()
+		 (single-threader f)))]
 	    [transparent-read
-	     (lambda ()
-	       (mzlib:function:dynamic-disable-break
-		(lambda ()
-		  (init-transparent-io)
-		  (send transparent-edit flush-console-output)
-		  (send transparent-edit set-position (send transparent-edit last-position))
-		  (let/ec k
-		    (read 
-		     (open-input-string 
-		      (let loop ()
-			(cond
-			  [(not transparent-edit) (k (void))]
-			  [(send transparent-edit ready?)
-			   (send transparent-edit get-data)]
-			  [else
-			   (wx:yield)
-			   (loop)]))))))))])
+	     (let* ([g (lambda ()
+			 (init-transparent-io)
+			 (send transparent-edit fetch-sexp))]
+		    [f (lambda ()
+			 (mzlib:function:dynamic-delay-break g))])
+	       (lambda () (single-threader f)))])
 	  (public
 	    [set-output-delta
 	     (lambda (delta)
@@ -613,7 +640,13 @@
 		 (make-output-port this-err-write generic-close))]
 	      [this-err (make-this-err)]
 	      [this-out (make-this-out)]
-	      [this-in (make-this-in)])
+	      [this-in (make-this-in)]
+	      [takeover
+	       (lambda ()
+		 (unless (eq? mred:debug:on? 'no-takeover)
+		   (current-output-port this-out)
+		   (current-input-port this-in)
+		   (current-error-port this-err)))])
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-edit%")
 	    (apply super-init args)
@@ -621,10 +654,7 @@
 	    (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
 	  (public [user-parameterization (make-parameterization)])
 	  (sequence
-	    '(unless (eq? mred:debug:on? 'no-takeover)
-	       (current-output-port this-out)
-	       (current-input-port this-in)
-	       (current-error-port this-err))
+	    (takeover)
 	    (port-read-handler this-in (lambda (x) (transparent-read)))
 	    (with-parameterization user-parameterization
 	      (lambda ()
@@ -673,8 +703,11 @@
     (define make-transparent-io-edit%
       (lambda (super%)
 	(class-asi super%
-	  (inherit change-style prompt-position resetting?)
+	  (inherit change-style prompt-position resetting? lock get-text
+		   flush-console-output set-position last-position get-character
+		   do-pre-eval do-post-eval)
 	  (rename [super-on-insert on-insert]
+		  [super-on-local-char on-local-char]
 		  [super-generic-write generic-write])
 	  (private
 	    [input-delta (make-object wx:style-delta%)]
@@ -684,7 +717,60 @@
 		  [add (send input-delta get-foreground-add)])
 	      (send mult set 0 0 0)
 	      (send add set 0 150 0)))
+	  (private [shutdown? #f])
 	  (public
+	    [on-local-char
+	     (lambda (key)
+	       (flush-console-output)
+	       (super-on-local-char key))]
+	    [shutdown
+	     (lambda ()
+	       (flush-console-output)
+	       (set! shutdown? #t)
+	       (lock #t))]
+	    [consumed-delta 
+	     (make-object wx:style-delta% wx:const-change-bold)]
+	    [mark-consumed
+	     (lambda (start end)
+	       (flush-console-output)
+	       (let ([old-resetting resetting?])
+		 (set! resetting? #t)
+		 (change-style consumed-delta start end)
+		 (set! resetting? old-resetting))
+	       (set! prompt-position end))]
+	    [fetch-sexp
+	     (lambda ()
+	       (flush-console-output)
+	       (let loop ()
+		 (cond
+		   [shutdown? (void)]
+		   [(null? potential-sexps) 
+		    (wx:yield)
+		    (loop)]
+		   [else (let* ([sexp (car potential-sexps)]
+				[start (car sexp)]
+				[end (cdr sexp)]
+				[text (get-text start end #t)])
+			   (set! potential-sexps (cdr potential-sexps))
+			   (mark-consumed start end)
+			   (read (open-input-string text)))])))]
+	    [fetch-char
+	     (lambda ()
+	       (flush-console-output)
+	       (let ([found-char
+		      (lambda (pos)
+			(mark-consumed pos (add1 pos))
+			(get-character pos))])
+		 (let loop ()
+		   (cond
+		     [(not (null? potential-sexps))
+		      (let ([first-sexp (car potential-sexps)])
+			(set! potential-sexps null)
+			(found-char (car first-sexp)))]
+		     [(< prompt-position (last-position))
+		      (found-char prompt-position)]
+		     [else (wx:yield) (loop)]))))]
+	    [takeover void]
 	    [get-prompt (lambda () "")]
 	    [generic-write
 	     (lambda (s style-funct)
@@ -693,22 +779,27 @@
 					(set! prompt-position end))))]
 	    [on-insert
 	     (lambda (start len)
-	       (super-on-insert start len)
 	       (let ([old-r resetting?])
 		 (set! resetting? #t)
 		 (change-style input-delta start (+ start len))
 		 (set! resetting? old-r))
-	       #t)]
-	    [get-data
-	     (lambda ()
-	       (if (null? data)
-		   #f
-		   (begin0 (car data)
-			   (set! data (cdr data)))))]
-	    [eval-and-display
-	     (lambda (str)
-	       (set! data (cons str data)))]
-	    [ready? (lambda () (not (null? data)))]))))
+	       (super-on-insert start len))]
+	    [potential-sexps null]
+	    [do-eval
+	     (lambda (start end)
+	       (do-pre-eval)
+	       (let ([new-sexps
+		      (let loop ([pos start])
+			(cond
+			  [(< pos end) 
+			   (let ([next-sexp
+				  (mred:scheme-paren:scheme-forward-match
+				   this pos end)])
+			     (cons (cons pos next-sexp)
+				   (loop next-sexp)))]
+			  [else null]))])
+	       (set! potential-sexps (append potential-sexps new-sexps))
+	       (do-post-eval)))]))))
       
       (define transparent-io-edit% 
 	(make-transparent-io-edit% console-edit%))

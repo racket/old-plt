@@ -37,7 +37,6 @@
       (class mred:container:frame% args
 	(rename [super-pre-on-char pre-on-char]
 		[super-pre-on-event pre-on-event])
-	(rename [super-show show])
 	(sequence (mred:debug:printf 'creation "creating a frame"))
 	(public
 	  [get-panel% 
@@ -52,10 +51,6 @@
 	  (apply super-init args)
 	  (mred:debug:printf 'super-init "after empty-frame%"))
 	(public
-	  [shown #f]
-	  [show (lambda (x) 
-		  (set! shown x)
-		  (super-show x))]
 	  [keymap (make-object wx:keymap%)]
 	  [make-root-panel
 	   (lambda (% parent)
@@ -196,7 +191,7 @@
 				(make-an-item 'file-menu:save "" #f "s" "&Save" "")
 				(make-an-item 'file-menu:save-as "" #f #f "Save" " &As...")
 				(make-between 'file-menu 'between-save-and-print #t)
-				(make-an-item 'file-menu:print "" #f "p" "&Print..." "")
+				(make-an-item 'file-menu:print "" #f "p" "&Print" "...")
 				(make-between 'file-menu 'between-print-and-close #t)
 				(make-an-item 'file-menu:close "" 
 					      '(lambda () (when (on-close) (show #f)) #t)

@@ -329,6 +329,8 @@
 		      'container-panel-on-size
 		      "container-panel-on-size: Client size: ~s x ~s"
 		      client-width client-height)
+		     '(begin (set! curr-width client-width)
+			     (set! curr-height client-height))
 		     (redraw client-width client-height)))))]
 	  
 	  ; place-children: determines where each child of panel should be

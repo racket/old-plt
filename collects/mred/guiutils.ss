@@ -1,10 +1,40 @@
+
 (define mred:gui-utils@
   (unit/sig mred:gui-utils^
     (import [mred:debug : mred:debug^]
+	    [mred:frame : mred:frame^]
+	    [mred:container : mred:container^]
+	    [mred:canvas : mred:canvas^]
+	    [mred:edit : mred:edit^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:trigger : mzlib:trigger^])
 
     (mred:debug:printf 'invoke "mred:gui-utils@")
+
+    (define message-box
+      (let ([e% (class-asi mred:edit:edit%
+		  (public
+		    [auto-set-wrap #t]
+		    [autowrap-bitmap null]))])
+	(opt-lambda (s [title "Message Box"])
+	  (let* ([f (make-object mred:container:dialog-box% '() title #t)]
+		 [p (make-object mred:container:vertical-panel% f)]
+		 [c (make-object mred:canvas:wrapping-canvas% p)]
+		 [e (make-object mred:edit:edit%)]
+		 [bottom-panel (make-object mred:container:horizontal-panel% p)]
+		 [space (make-object mred:container:horizontal-panel%
+				     bottom-panel)]
+		 [button (make-object mred:container:button% bottom-panel
+				      (lambda x (send f show #f))
+				      "Ok")])
+	    (send c set-media e)
+	    (send e set-auto-set-wrap #t) ;; this should be supurflous
+	    (send e set-autowrap-bitmap null) ;; this should also not be necessary
+	    (send* e (insert s) (lock #t))
+	    (send button set-focus)
+	    (send bottom-panel stretchable-in-y #f)
+	    (send* f (set-size -1 -1 400 200) (show #t))
+	    f))))
 
     (define cursor-delay
       (let ([x 0.25])

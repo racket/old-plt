@@ -297,6 +297,9 @@
                       (not (eq? name 'apply)))
                  (memq name struct-proc-names))))
          
+         (define (top-level-annotate/inner expr)
+           (annotate/inner expr 'all #f #t #f))
+         
          ; annotate/inner takes 
          ; a) a zodiac expression to annotate
          ; b) a list of all findins which this expression is tail w.r.t. 
@@ -319,7 +322,7 @@
          ;
 	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool (union #f symbol (list binding symbol)) -> 
          ;          sexp (list-of z:varref))
-	 
+         
 	 (define (annotate/inner expr tail-bound pre-break? top-level? procedure-name-info)
 	   
 	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f procedure-name-info))]
@@ -591,7 +594,7 @@
                                        [foot-wrap? (wcm-wrap debug-info annotated)]) 
                                 free-bindings-super-expr))
                       (let ([annotated `(#%struct ,raw-type ,raw-fields)])
-                        (values (ccond [(or cheap-wrap? ankle-wrap)
+                        (values (ccond [(or cheap-wrap? ankle-wrap?)
                                         (appropriate-wrap annotated null)]
                                        [foot-wrap?
                                         (wcm-wrap (make-debug-info-normal null) annotated)]) 
@@ -652,7 +655,7 @@
                      ([(bodies) (z:begin-form-bodies expr)]
                       [(annotated-bodies free-bindings)
                        (dual-map (lambda (expr)
-                                   (annotate/inner expr 'all #f top-level? must-mark? #f)) 
+                                   (top-level-annotate/inner expr)) 
                                  bodies)])
                        (values `(#%begin ,@annotated-bodies)
                                (apply binding-set-union free-bindings)))
@@ -841,7 +844,7 @@
                     (let*-values
                         ([(clauses free-vars-lists)
                           (dual-map (lambda (expr)
-                                      (annotate/inner expr 'all #f #t #f))
+                                      (top-level-annotate/inner expr))
                                     (z:unit-form-clauses expr))]
                          [(annotated) `(#%unit
                                         (import ,@(map get-binding-name imports))
@@ -899,7 +902,6 @@
                            free-vars
                            expr)])
                       (values annotated-unit free-vars-outside))]))]
-                         
                          
                [(z:compound-unit-form? expr)
                 (let ((imports (map get-binding-name
@@ -1112,7 +1114,7 @@
          
          (define (annotate/top-level expr)
            (let-values ([(annotated dont-care)
-                         (annotate/inner expr 'all #f #t #f)])
+                         (top-level-annotate/inner expr)])
              annotated)))
          
          ; body of local

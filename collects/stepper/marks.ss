@@ -115,4 +115,8 @@
                  (car matches)]))))
   
   (define (lookup-binding-list mark-list binding)
-    (apply append (map (lambda (x) (binding-matches x binding)) mark-list))))
+    (apply append (map (lambda (x) (binding-matches x binding)) mark-list)))
+  
+  ; I'm not really sure this belongs here, but it's a convenient spot.
+  (define ankle-wrap-enabled 
+    (make-parameter #t (lambda (x) x))))

@@ -9,8 +9,8 @@
  `(HTML
    (HEAD ,hd-css
 	(TITLE "PLT Help Desk")
-	(LINK ((REL "icon") (HREF "/servlets/plticon.ico") (TYPE "image/ico")))
-	(LINK ((REL "SHORTCUT ICON") (HREF "/servlets/plticon.ico"))))
+	(LINK ((REL "icon") (HREF "/help/servlets/plticon.ico") (TYPE "image/ico")))
+	(LINK ((REL "SHORTCUT ICON") (HREF "/help/servlets/plticon.ico"))))
    ; the * pretends we have a second frame, working around a bug
    ;  in Navigator 4.x
    (FRAMESET ((ROWS "100%,*")

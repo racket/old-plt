@@ -2595,9 +2595,9 @@ int mark_user_input_SIZE(void *p) {
 int mark_user_input_MARK(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcMARK(uip->read_sble_proc);
+  gcMARK(uip->read_evt_proc);
   gcMARK(uip->read_proc);
-  gcMARK(uip->peek_sble_proc);
+  gcMARK(uip->peek_evt_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->peeked);
@@ -2609,9 +2609,9 @@ int mark_user_input_MARK(void *p) {
 int mark_user_input_FIXUP(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcFIXUP(uip->read_sble_proc);
+  gcFIXUP(uip->read_evt_proc);
   gcFIXUP(uip->read_proc);
-  gcFIXUP(uip->peek_sble_proc);
+  gcFIXUP(uip->peek_evt_proc);
   gcFIXUP(uip->peek_proc);
   gcFIXUP(uip->close_proc);
   gcFIXUP(uip->peeked);
@@ -2632,10 +2632,10 @@ int mark_user_output_SIZE(void *p) {
 int mark_user_output_MARK(void *p) {
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcMARK(uop->sble);
-  gcMARK(uop->write_sble_proc);
+  gcMARK(uop->evt);
+  gcMARK(uop->write_evt_proc);
   gcMARK(uop->write_proc);
-  gcMARK(uop->write_special_sble_proc);
+  gcMARK(uop->write_special_evt_proc);
   gcMARK(uop->write_special_proc);
   gcMARK(uop->close_proc);
   return
@@ -2645,10 +2645,10 @@ int mark_user_output_MARK(void *p) {
 int mark_user_output_FIXUP(void *p) {
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcFIXUP(uop->sble);
-  gcFIXUP(uop->write_sble_proc);
+  gcFIXUP(uop->evt);
+  gcFIXUP(uop->write_evt_proc);
   gcFIXUP(uop->write_proc);
-  gcFIXUP(uop->write_special_sble_proc);
+  gcFIXUP(uop->write_special_evt_proc);
   gcFIXUP(uop->write_special_proc);
   gcFIXUP(uop->close_proc);
   return
@@ -2914,31 +2914,31 @@ int mark_read_special_FIXUP(void *p) {
 #define mark_read_special_IS_CONST_SIZE 1
 
 
-int mark_read_write_sble_SIZE(void *p) {
+int mark_read_write_evt_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Evt));
 }
 
-int mark_read_write_sble_MARK(void *p) {
-  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)p;
+int mark_read_write_evt_MARK(void *p) {
+  Scheme_Read_Write_Evt *rww = (Scheme_Read_Write_Evt *)p;
   gcMARK(rww->port);
   gcMARK(rww->v);
   gcMARK(rww->str);
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Evt));
 }
 
-int mark_read_write_sble_FIXUP(void *p) {
-  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)p;
+int mark_read_write_evt_FIXUP(void *p) {
+  Scheme_Read_Write_Evt *rww = (Scheme_Read_Write_Evt *)p;
   gcFIXUP(rww->port);
   gcFIXUP(rww->v);
   gcFIXUP(rww->str);
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Evt));
 }
 
-#define mark_read_write_sble_IS_ATOMIC 0
-#define mark_read_write_sble_IS_CONST_SIZE 1
+#define mark_read_write_evt_IS_ATOMIC 0
+#define mark_read_write_evt_IS_CONST_SIZE 1
 
 
 #endif  /* PORT */
@@ -3075,31 +3075,31 @@ int mark_udp_FIXUP(void *p) {
 #define mark_udp_IS_CONST_SIZE 1
 
 
-int mark_udp_sble_SIZE(void *p) {
+int mark_udp_evt_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));
 }
 
-int mark_udp_sble_MARK(void *p) {
-  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)p;
+int mark_udp_evt_MARK(void *p) {
+  Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)p;
 
   gcMARK(uw->udp);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));
 }
 
-int mark_udp_sble_FIXUP(void *p) {
-  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)p;
+int mark_udp_evt_FIXUP(void *p) {
+  Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)p;
 
   gcFIXUP(uw->udp);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));
 }
 
-#define mark_udp_sble_IS_ATOMIC 0
-#define mark_udp_sble_IS_CONST_SIZE 1
+#define mark_udp_evt_IS_ATOMIC 0
+#define mark_udp_evt_IS_CONST_SIZE 1
 
 # endif
 #endif
@@ -3400,31 +3400,31 @@ int mark_will_registration_FIXUP(void *p) {
 #define mark_will_registration_IS_CONST_SIZE 1
 
 
-int mark_sble_SIZE(void *p) {
+int mark_evt_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Sble));
+  gcBYTES_TO_WORDS(sizeof(Evt));
 }
 
-int mark_sble_MARK(void *p) {
-  Sble *r = (Sble *)p;
+int mark_evt_MARK(void *p) {
+  Evt *r = (Evt *)p;
  
   gcMARK(r->next);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Sble));
+  gcBYTES_TO_WORDS(sizeof(Evt));
 }
 
-int mark_sble_FIXUP(void *p) {
-  Sble *r = (Sble *)p;
+int mark_evt_FIXUP(void *p) {
+  Evt *r = (Evt *)p;
  
   gcFIXUP(r->next);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Sble));
+  gcBYTES_TO_WORDS(sizeof(Evt));
 }
 
-#define mark_sble_IS_ATOMIC 0
-#define mark_sble_IS_CONST_SIZE 1
+#define mark_evt_IS_ATOMIC 0
+#define mark_evt_IS_CONST_SIZE 1
 
 
 int mark_syncing_SIZE(void *p) {
@@ -3462,33 +3462,33 @@ int mark_syncing_FIXUP(void *p) {
 #define mark_syncing_IS_CONST_SIZE 1
 
 
-int mark_sble_set_SIZE(void *p) {
+int mark_evt_set_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Sble_Set));
+  gcBYTES_TO_WORDS(sizeof(Evt_Set));
 }
 
-int mark_sble_set_MARK(void *p) {
-  Sble_Set *w = (Sble_Set *)p;
+int mark_evt_set_MARK(void *p) {
+  Evt_Set *w = (Evt_Set *)p;
  
   gcMARK(w->ws);
   gcMARK(w->argv);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Sble_Set));
+  gcBYTES_TO_WORDS(sizeof(Evt_Set));
 }
 
-int mark_sble_set_FIXUP(void *p) {
-  Sble_Set *w = (Sble_Set *)p;
+int mark_evt_set_FIXUP(void *p) {
+  Evt_Set *w = (Evt_Set *)p;
  
   gcFIXUP(w->ws);
   gcFIXUP(w->argv);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Sble_Set));
+  gcBYTES_TO_WORDS(sizeof(Evt_Set));
 }
 
-#define mark_sble_set_IS_ATOMIC 0
-#define mark_sble_set_IS_CONST_SIZE 1
+#define mark_evt_set_IS_ATOMIC 0
+#define mark_evt_set_IS_CONST_SIZE 1
 
 
 int mark_thread_set_SIZE(void *p) {
@@ -3822,60 +3822,60 @@ int mark_struct_property_FIXUP(void *p) {
 #define mark_struct_property_IS_CONST_SIZE 1
 
 
-int mark_wrapped_sble_SIZE(void *p) {
+int mark_wrapped_evt_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Evt));
 }
 
-int mark_wrapped_sble_MARK(void *p) {
-  Wrapped_Sble *ww = (Wrapped_Sble *)p;
+int mark_wrapped_evt_MARK(void *p) {
+  Wrapped_Evt *ww = (Wrapped_Evt *)p;
 
-  gcMARK(ww->sble);
+  gcMARK(ww->evt);
   gcMARK(ww->wrapper);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Evt));
 }
 
-int mark_wrapped_sble_FIXUP(void *p) {
-  Wrapped_Sble *ww = (Wrapped_Sble *)p;
+int mark_wrapped_evt_FIXUP(void *p) {
+  Wrapped_Evt *ww = (Wrapped_Evt *)p;
 
-  gcFIXUP(ww->sble);
+  gcFIXUP(ww->evt);
   gcFIXUP(ww->wrapper);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Evt));
 }
 
-#define mark_wrapped_sble_IS_ATOMIC 0
-#define mark_wrapped_sble_IS_CONST_SIZE 1
+#define mark_wrapped_evt_IS_ATOMIC 0
+#define mark_wrapped_evt_IS_CONST_SIZE 1
 
 
-int mark_nack_guard_sble_SIZE(void *p) {
+int mark_nack_guard_evt_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Evt));
 }
 
-int mark_nack_guard_sble_MARK(void *p) {
-  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)p;
+int mark_nack_guard_evt_MARK(void *p) {
+  Nack_Guard_Evt *nw = (Nack_Guard_Evt *)p;
 
   gcMARK(nw->maker);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Evt));
 }
 
-int mark_nack_guard_sble_FIXUP(void *p) {
-  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)p;
+int mark_nack_guard_evt_FIXUP(void *p) {
+  Nack_Guard_Evt *nw = (Nack_Guard_Evt *)p;
 
   gcFIXUP(nw->maker);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Evt));
 }
 
-#define mark_nack_guard_sble_IS_ATOMIC 0
-#define mark_nack_guard_sble_IS_CONST_SIZE 1
+#define mark_nack_guard_evt_IS_ATOMIC 0
+#define mark_nack_guard_evt_IS_CONST_SIZE 1
 
 
 #endif  /* STRUCT */

@@ -256,8 +256,8 @@ static void register_thread_sync();
 static Scheme_Object *sch_sync(int argc, Scheme_Object *args[]);
 static Scheme_Object *sch_sync_timeout(int argc, Scheme_Object *args[]);
 static Scheme_Object *sch_sync_timeout_enable_break(int argc, Scheme_Object *args[]);
-static Scheme_Object *sble_p(int argc, Scheme_Object *args[]);
-static Scheme_Object *sbles_to_sble(int argc, Scheme_Object *args[]);
+static Scheme_Object *evt_p(int argc, Scheme_Object *args[]);
+static Scheme_Object *evts_to_evt(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[]);
 static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[]);
@@ -458,26 +458,26 @@ void scheme_init_thread(Scheme_Env *env)
 						      1, 2), 
 			     env);
 
-  scheme_add_global_constant("thread-resume-sble", 
+  scheme_add_global_constant("thread-resume-evt", 
 			     scheme_make_prim_w_arity(make_thread_resume,
-						      "thread-resume-sble", 
+						      "thread-resume-evt", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("thread-suspend-sble", 
+  scheme_add_global_constant("thread-suspend-evt", 
 			     scheme_make_prim_w_arity(make_thread_suspend,
-						      "thread-suspend-sble", 
+						      "thread-suspend-evt", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("thread-dead-sble", 
+  scheme_add_global_constant("thread-dead-evt", 
 			     scheme_make_prim_w_arity(make_thread_dead,
-						      "thread-dead-sble", 
+						      "thread-dead-evt", 
 						      1, 1), 
 			     env);
 
   register_thread_sync();
-  scheme_add_sble(scheme_thread_suspend_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
-  scheme_add_sble(scheme_thread_resume_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
-  scheme_add_sble(scheme_thread_dead_type, (Scheme_Ready_Fun)dead_ready, NULL, NULL, 1);
+  scheme_add_evt(scheme_thread_suspend_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
+  scheme_add_evt(scheme_thread_resume_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
+  scheme_add_evt(scheme_thread_dead_type, (Scheme_Ready_Fun)dead_ready, NULL, NULL, 1);
 
   scheme_add_global_constant("make-custodian",
 			     scheme_make_prim_w_arity(make_custodian,
@@ -623,7 +623,7 @@ void scheme_init_thread(Scheme_Env *env)
 						      1, 1), 
 			     env);
   
-  scheme_add_sble_through_sema(scheme_will_executor_type, will_executor_sema, NULL);
+  scheme_add_evt_through_sema(scheme_will_executor_type, will_executor_sema, NULL);
 
 
   scheme_add_global_constant("collect-garbage", 
@@ -649,9 +649,9 @@ void scheme_init_thread(Scheme_Env *env)
 			     env);
   
 
-  scheme_add_global_constant("sble?", 
-			     scheme_make_folding_prim(sble_p,
-						      "sble?", 
+  scheme_add_global_constant("evt?", 
+			     scheme_make_folding_prim(evt_p,
+						      "evt?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("sync", 
@@ -674,9 +674,9 @@ void scheme_init_thread(Scheme_Env *env)
 						      "sync/timeout/enable-break", 
 						      2, -1),
 			     env);
-  scheme_add_global_constant("choice-sble", 
-			     scheme_make_prim_w_arity(sbles_to_sble,
-						      "choice-sble", 
+  scheme_add_global_constant("choice-evt", 
+			     scheme_make_prim_w_arity(evts_to_evt,
+						      "choice-evt", 
 						      0, -1), 
 			     env);
 
@@ -2502,7 +2502,7 @@ static Scheme_Object *thread_wait(int argc, Scheme_Object *args[])
 
 static void register_thread_sync()
 {
-  scheme_add_sble(scheme_thread_type, 
+  scheme_add_evt(scheme_thread_type, 
 		  thread_wait_done, 
 		  NULL, NULL, 0);
 }
@@ -3833,7 +3833,7 @@ void scheme_pop_kill_action()
 }
 
 /*========================================================================*/
-/*                      suspend/resume and sbles                          */
+/*                      suspend/resume and evts                          */
 /*========================================================================*/
 
 /* Forward decl: */
@@ -4231,7 +4231,7 @@ static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *argv[])
   Scheme_Thread *p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("thread-suspend-sble", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-suspend-evt", "thread", 0, argc, argv);
 
   p = (Scheme_Thread *)argv[0];
 
@@ -4257,7 +4257,7 @@ static Scheme_Object *make_thread_resume(int argc, Scheme_Object *argv[])
   Scheme_Thread *p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("thread-resume-sble", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-resume-evt", "thread", 0, argc, argv);
 
   p = (Scheme_Thread *)argv[0];
 
@@ -4295,7 +4295,7 @@ static int resume_suspend_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 static Scheme_Object *make_thread_dead(int argc, Scheme_Object *argv[])
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("thread-resume-sble", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-resume-evt", "thread", 0, argc, argv);
 
   return scheme_get_thread_dead((Scheme_Thread *)argv[0]);
 }
@@ -4331,7 +4331,7 @@ static int dead_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 
 static void syncing_needs_wakeup(Scheme_Object *s, void *fds);
 
-typedef struct Sble {
+typedef struct Evt {
   MZTAG_IF_REQUIRED
   Scheme_Type sync_type;
   Scheme_Ready_Fun_FPC ready;
@@ -4339,51 +4339,51 @@ typedef struct Sble {
   Scheme_Sync_Sema_Fun get_sema;
   Scheme_Sync_Filter_Fun filter;
   int can_redirect;
-  struct Sble *next;
-} Sble;
+  struct Evt *next;
+} Evt;
 
-static Sble *sbles;
+static Evt *evts;
 
-void scheme_add_sble(Scheme_Type type,
+void scheme_add_evt(Scheme_Type type,
 			 Scheme_Ready_Fun ready, 
 			 Scheme_Needs_Wakeup_Fun wakeup, 
 			 Scheme_Sync_Filter_Fun filter,
 			 int can_redirect)
 {
-  Sble *next = sbles;
+  Evt *next = evts;
 
-  if (!sbles) {
-    REGISTER_SO(sbles);
+  if (!evts) {
+    REGISTER_SO(evts);
   }
 
-  sbles = MALLOC_ONE_RT(Sble);
+  evts = MALLOC_ONE_RT(Evt);
 #ifdef MZTAG_REQUIRED
-  sbles->type = scheme_rt_sble;
+  evts->type = scheme_rt_evt;
 #endif
-  sbles->sync_type = type;
-  sbles->ready = (Scheme_Ready_Fun_FPC)ready;
-  sbles->needs_wakeup = wakeup;
-  sbles->filter = filter;
-  sbles->can_redirect = can_redirect;
-  sbles->next = next;
+  evts->sync_type = type;
+  evts->ready = (Scheme_Ready_Fun_FPC)ready;
+  evts->needs_wakeup = wakeup;
+  evts->filter = filter;
+  evts->can_redirect = can_redirect;
+  evts->next = next;
 }
 
-void scheme_add_sble_through_sema(Scheme_Type type,
+void scheme_add_evt_through_sema(Scheme_Type type,
 				  Scheme_Sync_Sema_Fun get_sema, 
 				  Scheme_Sync_Filter_Fun filter)
 {
-  scheme_add_sble(type, NULL, NULL, filter, 0);
-  sbles->get_sema = get_sema;
+  scheme_add_evt(type, NULL, NULL, filter, 0);
+  evts->get_sema = get_sema;
 }
 
-static Sble *find_sble(Scheme_Object *o)
+static Evt *find_evt(Scheme_Object *o)
 {
   Scheme_Type t;
-  Sble *w;
+  Evt *w;
 
   t = SCHEME_TYPE(o);
   
-  for (w = sbles; w; w = w->next) {
+  for (w = evts; w; w = w->next) {
     if (SAME_TYPE(t, w->sync_type)) {
       if (w->filter) {
 	Scheme_Sync_Filter_Fun filter;
@@ -4398,15 +4398,15 @@ static Sble *find_sble(Scheme_Object *o)
   return NULL;
 }
 
-int scheme_is_sble(Scheme_Object *o)
+int scheme_is_evt(Scheme_Object *o)
 {
-  if (SCHEME_SBLESETP(o))
+  if (SCHEME_EVTSETP(o))
     return 1;
 
-  return !!find_sble(o);
+  return !!find_evt(o);
 }
 
-static Syncing *make_syncing(Sble_Set *sble_set, float timeout, double start_time) 
+static Syncing *make_syncing(Evt_Set *evt_set, float timeout, double start_time) 
 {
   Syncing *syncing;
   int pos;
@@ -4415,20 +4415,20 @@ static Syncing *make_syncing(Sble_Set *sble_set, float timeout, double start_tim
 #ifdef MZTAG_REQUIRED
   syncing->type = scheme_rt_syncing;
 #endif
-  syncing->set = sble_set;
+  syncing->set = evt_set;
   syncing->timeout = timeout;
   if (timeout >= 0)
     syncing->sleep_end = start_time + (timeout * 1000);
   else
     syncing->sleep_end = 0.0;
 
-  if (sble_set->argc > 1) {
+  if (evt_set->argc > 1) {
     Scheme_Config *config;
     Scheme_Object *rand_state;
     config = scheme_current_config();
     rand_state = scheme_get_param(config, MZCONFIG_SCHEDULER_RANDOM_STATE);
     pos = scheme_rand((Scheme_Random_State *)rand_state);
-    syncing->start_pos = (pos % sble_set->argc);
+    syncing->start_pos = (pos % evt_set->argc);
   }
 
   return syncing;
@@ -4461,12 +4461,12 @@ static void set_sync_target(Syncing *syncing, int i, Scheme_Object *target,
 			    int repost, int retry)
 /* Not ready, deferred to target. */
 {
-  Sble_Set *sble_set = syncing->set;
+  Evt_Set *evt_set = syncing->set;
 
   if (wrap) {
     if (!syncing->wrapss) {
       Scheme_Object **wrapss;
-      wrapss = MALLOC_N(Scheme_Object*, sble_set->argc);
+      wrapss = MALLOC_N(Scheme_Object*, evt_set->argc);
       syncing->wrapss = wrapss;
     }
     if (!syncing->wrapss[i])
@@ -4478,7 +4478,7 @@ static void set_sync_target(Syncing *syncing, int i, Scheme_Object *target,
   if (nack) {
     if (!syncing->nackss) {
       Scheme_Object **nackss;
-      nackss = MALLOC_N(Scheme_Object*, sble_set->argc);
+      nackss = MALLOC_N(Scheme_Object*, evt_set->argc);
       syncing->nackss = nackss;
     }
     if (!syncing->nackss[i])
@@ -4490,42 +4490,42 @@ static void set_sync_target(Syncing *syncing, int i, Scheme_Object *target,
   if (repost) {
     if (!syncing->reposts) {
       char *s;
-      s = (char *)scheme_malloc_atomic(sble_set->argc);
-      memset(s, 0, sble_set->argc);
+      s = (char *)scheme_malloc_atomic(evt_set->argc);
+      memset(s, 0, evt_set->argc);
       syncing->reposts = s;
     }
     syncing->reposts[i] = 1;
   }
 
-  if (SCHEME_SBLESETP(target) && retry) {
+  if (SCHEME_EVTSETP(target) && retry) {
     /* Flatten the set into this one */
-    Sble_Set *wts = (Sble_Set *)target;
+    Evt_Set *wts = (Evt_Set *)target;
     if (wts->argc == 1) {
       /* 1 thing in set? Flattening is easy! */
-      sble_set->argv[i] = wts->argv[0];
-      sble_set->ws[i] = wts->ws[0];
+      evt_set->argv[i] = wts->argv[0];
+      evt_set->ws[i] = wts->ws[0];
     } else {
       /* Inline the set (in place) */
       Scheme_Object **argv;
-      Sble **ws;
+      Evt **ws;
        
-      argv = (Scheme_Object **)splice_ptr_array((void **)sble_set->argv, 
-						sble_set->argc,
+      argv = (Scheme_Object **)splice_ptr_array((void **)evt_set->argv, 
+						evt_set->argc,
 						(void **)wts->argv, 
 						wts->argc,
 						i);
-      ws = (Sble **)splice_ptr_array((void **)sble_set->ws, 
-					 sble_set->argc,
+      ws = (Evt **)splice_ptr_array((void **)evt_set->ws, 
+					 evt_set->argc,
 					 (void **)wts->ws, 
 					 wts->argc,
 					 i);
 
-      sble_set->argv = argv;
-      sble_set->ws = ws;
+      evt_set->argv = argv;
+      evt_set->ws = ws;
 
       if (syncing->wrapss) {
 	argv = (Scheme_Object **)splice_ptr_array((void **)syncing->wrapss, 
-						  sble_set->argc,
+						  evt_set->argc,
 						  (void **)NULL,
 						  wts->argc,
 						  i);
@@ -4533,7 +4533,7 @@ static void set_sync_target(Syncing *syncing, int i, Scheme_Object *target,
       }
       if (syncing->nackss) {
 	argv = (Scheme_Object **)splice_ptr_array((void **)syncing->nackss, 
-						  sble_set->argc,
+						  evt_set->argc,
 						  (void **)NULL,
 						  wts->argc,
 						  i);
@@ -4543,22 +4543,22 @@ static void set_sync_target(Syncing *syncing, int i, Scheme_Object *target,
 	char *s;
 	int len;
 	
-	len = sble_set->argc + wts->argc - 1;
+	len = evt_set->argc + wts->argc - 1;
 	
 	s = (char *)scheme_malloc_atomic(len);
 	memset(s, 0, len);
 	
 	memcpy(s, syncing->reposts, i);
-	memcpy(s + i + wts->argc, syncing->reposts + i + 1, sble_set->argc - i - 1);
+	memcpy(s + i + wts->argc, syncing->reposts + i + 1, evt_set->argc - i - 1);
 	syncing->reposts = s;
       }
 
-      sble_set->argc += (wts->argc - 1);
+      evt_set->argc += (wts->argc - 1);
 
       /* scheme_channel_syncer_type needs to know its location, which
 	 might have changed: */
-      argv = sble_set->argv;
-      for (i = sble_set->argc; i--; ) {
+      argv = evt_set->argv;
+      for (i = evt_set->argc; i--; ) {
 	if (SAME_TYPE(SCHEME_TYPE(argv[i]), scheme_channel_syncer_type)) {
 	  ((Scheme_Channel_Syncer *)argv[i])->syncing_i = i;
 	}
@@ -4566,10 +4566,10 @@ static void set_sync_target(Syncing *syncing, int i, Scheme_Object *target,
 
     }
   } else {
-    Sble *ww;
-    sble_set->argv[i] = target;
-    ww = find_sble(target);
-    sble_set->ws[i] = ww;
+    Evt *ww;
+    evt_set->argv[i] = target;
+    ww = find_evt(target);
+    evt_set->ws[i] = ww;
   }
 }
 
@@ -4589,11 +4589,11 @@ void scheme_set_sync_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 static int syncing_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 {
   int i, redirections = 0, all_semas = 1, j, result = 0;
-  Sble *w;
+  Evt *w;
   Scheme_Object *o;
   Scheme_Schedule_Info r_sinfo;
   Syncing *syncing = (Syncing *)s;
-  Sble_Set *sble_set;
+  Evt_Set *evt_set;
   int is_poll;
   double sleep_end;
   
@@ -4605,22 +4605,22 @@ static int syncing_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   }
 
   /* We must handle target redirections in the objects on which we're
-     syncing. We never have to redirect the sble_set itself, but
-     a sble_set can show up as a target, and we inline it in
+     syncing. We never have to redirect the evt_set itself, but
+     a evt_set can show up as a target, and we inline it in
      that case. */
 
-  sble_set = syncing->set;
+  evt_set = syncing->set;
 
   is_poll = (syncing->timeout == 0.0);
 
   /* Anything ready? */
-  for (j = 0; j < sble_set->argc; j++) {
+  for (j = 0; j < evt_set->argc; j++) {
     Scheme_Ready_Fun_FPC ready;
 
-    i = (j + syncing->start_pos) % sble_set->argc;
+    i = (j + syncing->start_pos) % evt_set->argc;
 
-    o = sble_set->argv[i];
-    w = sble_set->ws[i];
+    o = evt_set->argv[i];
+    w = evt_set->ws[i];
     ready = w->ready;
 
     if (!SCHEME_SEMAP(o)
@@ -4722,12 +4722,12 @@ static void syncing_needs_wakeup(Scheme_Object *s, void *fds)
 {
   int i;
   Scheme_Object *o;
-  Sble *w;
-  Sble_Set *sble_set = ((Syncing *)s)->set;
+  Evt *w;
+  Evt_Set *evt_set = ((Syncing *)s)->set;
 
-  for (i = 0; i < sble_set->argc; i++) {
-    o = sble_set->argv[i];
-    w = sble_set->ws[i];
+  for (i = 0; i < evt_set->argc; i++) {
+    o = evt_set->argv[i];
+    w = evt_set->ws[i];
 
     if (w->needs_wakeup) {
       Scheme_Needs_Wakeup_Fun nw = w->needs_wakeup;
@@ -4737,51 +4737,51 @@ static void syncing_needs_wakeup(Scheme_Object *s, void *fds)
   }
 }
 
-static Scheme_Object *sble_p(int argc, Scheme_Object *argv[])
+static Scheme_Object *evt_p(int argc, Scheme_Object *argv[])
 {
-  return (scheme_is_sble(argv[0])
+  return (scheme_is_evt(argv[0])
 	  ? scheme_true
 	  : scheme_false);
 }
 
-Sble_Set *make_sble_set(const char *name, int argc, Scheme_Object **argv, int delta)
+Evt_Set *make_evt_set(const char *name, int argc, Scheme_Object **argv, int delta)
 {
-  Sble *w, **iws, **ws;
-  Sble_Set *sble_set, *subset;
+  Evt *w, **iws, **ws;
+  Evt_Set *evt_set, *subset;
   Scheme_Object **args;
   int i, j, count = 0;
 
-  iws = MALLOC_N(Sble*, argc-delta);
+  iws = MALLOC_N(Evt*, argc-delta);
   
-  /* Find Sble record for each non-set argument, and compute flattened size. */
+  /* Find Evt record for each non-set argument, and compute flattened size. */
   for (i = 0; i < (argc - delta); i++) {
-    if (!SCHEME_SBLESETP(argv[i+delta])) {
-      w = find_sble(argv[i+delta]);
+    if (!SCHEME_EVTSETP(argv[i+delta])) {
+      w = find_evt(argv[i+delta]);
       if (!w) {
-	scheme_wrong_type(name, "sble", i+delta, argc, argv);
+	scheme_wrong_type(name, "evt", i+delta, argc, argv);
 	return NULL;
       }
       iws[i] = w;
       count++;
     } else {
-      count += ((Sble_Set *)argv[i+delta])->argc;
+      count += ((Evt_Set *)argv[i+delta])->argc;
     }
   }
 
-  sble_set = MALLOC_ONE_TAGGED(Sble_Set);
-  sble_set->so.type = scheme_sble_set_type;
-  sble_set->argc = count;
+  evt_set = MALLOC_ONE_TAGGED(Evt_Set);
+  evt_set->so.type = scheme_evt_set_type;
+  evt_set->argc = count;
 
   if (count == (argc - delta))
     ws = iws;
   else
-    ws = MALLOC_N(Sble*, count);
+    ws = MALLOC_N(Evt*, count);
 
   args = MALLOC_N(Scheme_Object*, count);
   for (i = delta, j = 0; i < argc; i++, j++) {
-    if (SCHEME_SBLESETP(argv[i])) {
+    if (SCHEME_EVTSETP(argv[i])) {
       int k, n;
-      subset = (Sble_Set *)argv[i];
+      subset = (Evt_Set *)argv[i];
       n = subset->argc;
       for (k = 0; k < n; k++, j++) {
 	args[j] = subset->argv[k];
@@ -4794,15 +4794,15 @@ Sble_Set *make_sble_set(const char *name, int argc, Scheme_Object **argv, int de
     }
   }
 
-  sble_set->ws = ws;
-  sble_set->argv = args;
+  evt_set->ws = ws;
+  evt_set->argv = args;
 
-  return sble_set;
+  return evt_set;
 }
 
-Scheme_Object *scheme_make_sble_set(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_make_evt_set(int argc, Scheme_Object **argv)
 {
-  return (Scheme_Object *)make_sble_set("internal-make-sble-set", argc, argv, 0);
+  return (Scheme_Object *)make_evt_set("internal-make-evt-set", argc, argv, 0);
 }
 
 static void post_syncing_nacks(Syncing *syncing)
@@ -4831,7 +4831,7 @@ static void post_syncing_nacks(Syncing *syncing)
 
 static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[], int with_break, int with_timeout, int tailok)
 {
-  Sble_Set *sble_set;
+  Evt_Set *evt_set;
   Syncing *syncing;
   float timeout = -1.0;
   double start_time;
@@ -4859,49 +4859,49 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
     return argv[with_timeout];
   }
 
-  sble_set = NULL;
+  evt_set = NULL;
 
-  /* Special case: only argument is an immutable sble set: */
-  if ((argc == (with_timeout + 1)) && SCHEME_SBLESETP(argv[with_timeout])) {
+  /* Special case: only argument is an immutable evt set: */
+  if ((argc == (with_timeout + 1)) && SCHEME_EVTSETP(argv[with_timeout])) {
     int i;
-    sble_set = (Sble_Set *)argv[with_timeout];
-    for (i = sble_set->argc; i--; ) {
-      if (sble_set->ws[i]->can_redirect) {
+    evt_set = (Evt_Set *)argv[with_timeout];
+    for (i = evt_set->argc; i--; ) {
+      if (evt_set->ws[i]->can_redirect) {
 	/* Need to copy this set to handle redirections. */
-	sble_set = NULL;
+	evt_set = NULL;
 	break;
       }
     }
   }
 
-  if (!sble_set)
-    sble_set = make_sble_set(name, argc, argv, with_timeout);
+  if (!evt_set)
+    evt_set = make_evt_set(name, argc, argv, with_timeout);
 
   /* Check for another special case: syncing on a set of semaphores
      without a timeout. Use general code for channels.
-     (Note that we check for this case after sble-set flattening.) */
+     (Note that we check for this case after evt-set flattening.) */
   if (timeout < 0.0) {
     int i;
-    for (i = sble_set->argc; i--; ) {
-      if (!SCHEME_SEMAP(sble_set->argv[i]))
+    for (i = evt_set->argc; i--; ) {
+      if (!SCHEME_SEMAP(evt_set->argv[i]))
 	break;
     }
     if (i < 0) {
       /* Hit the special case. */
-      i = scheme_wait_semas_chs(sble_set->argc, sble_set->argv, 0, NULL);
+      i = scheme_wait_semas_chs(evt_set->argc, evt_set->argv, 0, NULL);
 
       /* In case a break appeared after we received a post,
 	 check for a break, because scheme_wait_semas_chs() won't: */
       scheme_check_break_now();
 
       if (i)
-	return sble_set->argv[i - 1];
+	return evt_set->argv[i - 1];
       else
 	return (tailok ? scheme_false : NULL);
     }
   }
 
-  syncing = make_syncing(sble_set, timeout, start_time);
+  syncing = make_syncing(evt_set, timeout, start_time);
 
   if (timeout < 0.0)
     timeout = 0.0; /* means "no timeout" to block_until */
@@ -4920,9 +4920,9 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
   post_syncing_nacks(syncing);
 
   if (syncing->result) {
-    /* Apply wrap functions to the selected sble: */
+    /* Apply wrap functions to the selected evt: */
     Scheme_Object *o, *l, *a, *to_call = NULL, *args[1];
-    o = sble_set->argv[syncing->result - 1];
+    o = evt_set->argv[syncing->result - 1];
     if (SAME_TYPE(SCHEME_TYPE(o), scheme_channel_syncer_type)) {
       /* This is a put that got changed to a syncer, but not changed back */
       o = ((Scheme_Channel_Syncer *)o)->obj;
@@ -5025,9 +5025,9 @@ Scheme_Object *sch_sync_timeout_enable_break(int argc, Scheme_Object *argv[])
   return do_scheme_sync_enable_break(1, argc, argv);
 }
 
-static Scheme_Object *sbles_to_sble(int argc, Scheme_Object *argv[])
+static Scheme_Object *evts_to_evt(int argc, Scheme_Object *argv[])
 {
-  return (Scheme_Object *)make_sble_set("choice-sble", argc, argv, 0);
+  return (Scheme_Object *)make_evt_set("choice-evt", argc, argv, 0);
 }
 
 /*========================================================================*/
@@ -6397,7 +6397,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_will_executor_type, mark_will_executor_val);
   GC_REG_TRAV(scheme_custodian_type, mark_custodian_val);
   GC_REG_TRAV(scheme_thread_hop_type, mark_thread_hop);
-  GC_REG_TRAV(scheme_sble_set_type, mark_sble_set);
+  GC_REG_TRAV(scheme_evt_set_type, mark_evt_set);
   GC_REG_TRAV(scheme_thread_set_type, mark_thread_set);
   GC_REG_TRAV(scheme_config_type, mark_config);
 
@@ -6405,7 +6405,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_param_data, mark_param_data);
   GC_REG_TRAV(scheme_rt_will, mark_will);
   GC_REG_TRAV(scheme_rt_will_registration, mark_will_registration);
-  GC_REG_TRAV(scheme_rt_sble, mark_sble);
+  GC_REG_TRAV(scheme_rt_evt, mark_evt);
   GC_REG_TRAV(scheme_rt_syncing, mark_syncing);
   GC_REG_TRAV(scheme_rt_parameterization, mark_parameterization);
 }

@@ -113,19 +113,19 @@ enum {
   scheme_security_guard_type,
   scheme_indent_type,
   scheme_udp_type,
-  scheme_udp_sble_type,
+  scheme_udp_evt_type,
   scheme_id_macro_type,
-  scheme_sble_set_type,                 /* 100 */
-  scheme_wrapped_sble_type,
-  scheme_nack_guard_sble_type,
+  scheme_evt_set_type,                  /* 100 */
+  scheme_wrapped_evt_type,
+  scheme_nack_guard_evt_type,
   scheme_semaphore_repost_type,
   scheme_channel_type,
   scheme_channel_put_type,
   scheme_thread_resume_type,
   scheme_thread_suspend_type,
   scheme_thread_dead_type,
-  scheme_poll_sble_type,
-  scheme_nack_sble_type,                /* 110 */
+  scheme_poll_evt_type,
+  scheme_nack_evt_type,                 /* 110 */
   scheme_module_registry_type,
   scheme_thread_set_type,
   scheme_string_converter_type,
@@ -133,11 +133,11 @@ enum {
   scheme_thread_cell_type,
   scheme_channel_syncer_type,
   scheme_special_comment_type,
-  scheme_read_sble_type,
-  scheme_peek_sble_type,
-  scheme_write_sble_type,               /* 120 */
-  scheme_always_sble_type,
-  scheme_never_sble_type,
+  scheme_read_evt_type,
+  scheme_peek_evt_type,
+  scheme_write_evt_type,                /* 120 */
+  scheme_always_evt_type,
+  scheme_never_evt_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,
@@ -186,7 +186,7 @@ enum {
   scheme_rt_preallocated_object,
   scheme_thread_hop_type,
   scheme_rt_srcloc,
-  scheme_rt_sble,
+  scheme_rt_evt,
   scheme_rt_syncing,
   scheme_rt_comp_prefix,                /* 170 */
   scheme_rt_user_input,

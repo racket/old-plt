@@ -191,24 +191,24 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_indent_type, "<internal-indentation>");
 
   set_name(scheme_udp_type, "<udp-socket>");
-  set_name(scheme_udp_sble_type, "<udp-socket-sble>");
+  set_name(scheme_udp_evt_type, "<udp-socket-evt>");
 
-  set_name(scheme_sble_set_type, "<sble-set>");
-  set_name(scheme_wrapped_sble_type, "<sble>");
-  set_name(scheme_nack_sble_type, "<sble>");
-  set_name(scheme_nack_guard_sble_type, "<sble>");
-  set_name(scheme_poll_sble_type, "<sble>");
+  set_name(scheme_evt_set_type, "<evt-set>");
+  set_name(scheme_wrapped_evt_type, "<evt>");
+  set_name(scheme_nack_evt_type, "<evt>");
+  set_name(scheme_nack_guard_evt_type, "<evt>");
+  set_name(scheme_poll_evt_type, "<evt>");
   set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
-  set_name(scheme_alarm_type, "<alarm-sble>");
-  set_name(scheme_read_sble_type, "<read-sble>");
-  set_name(scheme_peek_sble_type, "<peek-sble>");
-  set_name(scheme_write_sble_type, "<write-sble>");
-  set_name(scheme_always_sble_type, "<always-sble>");
-  set_name(scheme_never_sble_type, "<never-sble>");
+  set_name(scheme_alarm_type, "<alarm-evt>");
+  set_name(scheme_read_evt_type, "<read-evt>");
+  set_name(scheme_peek_evt_type, "<peek-evt>");
+  set_name(scheme_write_evt_type, "<write-evt>");
+  set_name(scheme_always_evt_type, "<always-evt>");
+  set_name(scheme_never_evt_type, "<never-evt>");
 
-  set_name(scheme_thread_resume_type, "<thread-resume-sble>");
-  set_name(scheme_thread_suspend_type, "<thread-suspend-sble>");
-  set_name(scheme_thread_dead_type, "<thread-dead-sble>");
+  set_name(scheme_thread_resume_type, "<thread-resume-evt>");
+  set_name(scheme_thread_suspend_type, "<thread-suspend-evt>");
+  set_name(scheme_thread_dead_type, "<thread-dead-evt>");
 
   set_name(scheme_thread_set_type, "<thread-set>");
   set_name(scheme_thread_cell_type, "<thread-cell>");
@@ -496,9 +496,9 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_security_guard_type, guard_val);
 
-  GC_REG_TRAV(scheme_nack_sble_type, twoptr_obj);
-  GC_REG_TRAV(scheme_always_sble_type, char_obj);
-  GC_REG_TRAV(scheme_never_sble_type, char_obj);
+  GC_REG_TRAV(scheme_nack_evt_type, twoptr_obj);
+  GC_REG_TRAV(scheme_always_evt_type, char_obj);
+  GC_REG_TRAV(scheme_never_evt_type, char_obj);
 
   GC_REG_TRAV(scheme_inspector_type, mark_inspector);
 

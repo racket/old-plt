@@ -107,9 +107,9 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
-  scheme_add_global_constant("semaphore-peek-sble", 
+  scheme_add_global_constant("semaphore-peek-evt", 
 			     scheme_make_prim_w_arity(make_sema_repost,
-						      "semaphore-peek-sble", 
+						      "semaphore-peek-evt", 
 						      1, 1), 
 			     env);
 
@@ -118,9 +118,9 @@ void scheme_init_sema(Scheme_Env *env)
 						      "make-channel",
 						      0, 0), 
 			     env);
-  scheme_add_global_constant("channel-put-sble", 
+  scheme_add_global_constant("channel-put-evt", 
 			     scheme_make_prim_w_arity(make_channel_put,
-						      "channel-put-sble",
+						      "channel-put-evt",
 						      2, 2), 
 			     env);
   scheme_add_global_constant("channel?", 
@@ -129,28 +129,28 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1, 1), 
 			     env);  
 
-  scheme_add_global_constant("alarm-sble", 
+  scheme_add_global_constant("alarm-evt", 
 			     scheme_make_prim_w_arity(make_alarm,
-						      "alarm-sble",
+						      "alarm-evt",
 						      1, 1), 
 			     env);
 
   o = scheme_alloc_small_object();
-  o->type = scheme_always_sble_type;
-  scheme_add_global_constant("always-sble", o, env);
+  o->type = scheme_always_evt_type;
+  scheme_add_global_constant("always-evt", o, env);
 
   o = scheme_alloc_small_object();
-  o->type = scheme_never_sble_type;
-  scheme_add_global_constant("never-sble", o, env);
+  o->type = scheme_never_evt_type;
+  scheme_add_global_constant("never-evt", o, env);
 
-  scheme_add_sble(scheme_sema_type, sema_ready, NULL, NULL, 0);
-  scheme_add_sble_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
-  scheme_add_sble(scheme_channel_type, (Scheme_Ready_Fun)channel_get_ready, NULL, NULL, 1);
-  scheme_add_sble(scheme_channel_put_type, (Scheme_Ready_Fun)channel_put_ready, NULL, NULL, 1);
-  scheme_add_sble(scheme_channel_syncer_type, (Scheme_Ready_Fun)channel_syncer_ready, NULL, NULL, 0);
-  scheme_add_sble(scheme_alarm_type, (Scheme_Ready_Fun)alarm_ready, NULL, NULL, 0);
-  scheme_add_sble(scheme_always_sble_type, always_ready, NULL, NULL, 0);
-  scheme_add_sble(scheme_never_sble_type, never_ready, NULL, NULL, 0);
+  scheme_add_evt(scheme_sema_type, sema_ready, NULL, NULL, 0);
+  scheme_add_evt_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
+  scheme_add_evt(scheme_channel_type, (Scheme_Ready_Fun)channel_get_ready, NULL, NULL, 1);
+  scheme_add_evt(scheme_channel_put_type, (Scheme_Ready_Fun)channel_put_ready, NULL, NULL, 1);
+  scheme_add_evt(scheme_channel_syncer_type, (Scheme_Ready_Fun)channel_syncer_ready, NULL, NULL, 0);
+  scheme_add_evt(scheme_alarm_type, (Scheme_Ready_Fun)alarm_ready, NULL, NULL, 0);
+  scheme_add_evt(scheme_always_evt_type, always_ready, NULL, NULL, 0);
+  scheme_add_evt(scheme_never_evt_type, never_ready, NULL, NULL, 0);
 }
 
 Scheme_Object *scheme_make_sema(long v)
@@ -872,7 +872,7 @@ static Scheme_Object *make_channel_put(int argc, Scheme_Object **argv)
   Scheme_Channel_Put *cp;
 
   if (!SCHEME_CHANNELP(argv[0]))
-    scheme_wrong_type("channel-put-sble", "channel", 0, argc, argv);
+    scheme_wrong_type("channel-put-evt", "channel", 0, argc, argv);
 
   cp = MALLOC_ONE_TAGGED(Scheme_Channel_Put);
   cp->so.type = scheme_channel_put_type;
@@ -936,7 +936,7 @@ static Scheme_Object *make_alarm(int argc, Scheme_Object **argv)
   double sleep_end;
 
   if (!SCHEME_REALP(argv[0])) {
-    scheme_wrong_type("alarm-sble", "real number", 0, argc, argv);
+    scheme_wrong_type("alarm-evt", "real number", 0, argc, argv);
   }
 
   sleep_end = scheme_get_val_as_double(argv[0]);

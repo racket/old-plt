@@ -300,16 +300,16 @@ static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_shell_execute(int c, Scheme_Object *args[]);
 static void register_subprocess_wait();
 
-typedef struct Scheme_Read_Write_Sble {
+typedef struct Scheme_Read_Write_Evt {
   Scheme_Object so;
   Scheme_Object *port;
   Scheme_Object *v; /* peek skip or writeable special */
   char *str;
   long start, size;
-} Scheme_Read_Write_Sble;
+} Scheme_Read_Write_Evt;
 
-static int rw_sble_ready(Scheme_Object *rww, Scheme_Schedule_Info *sinfo);
-static void rw_sble_wakeup(Scheme_Object *rww, void *fds);
+static int rw_evt_ready(Scheme_Object *rww, Scheme_Schedule_Info *sinfo);
+static void rw_evt_wakeup(Scheme_Object *rww, void *fds);
 
 static Scheme_Object *
 _scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile);
@@ -579,9 +579,9 @@ scheme_init_port (Scheme_Env *env)
 
   REGISTER_SO(read_string_byte_buffer);
 
-  scheme_add_sble(scheme_read_sble_type, (Scheme_Ready_Fun)rw_sble_ready, rw_sble_wakeup, NULL, 1);
-  scheme_add_sble(scheme_peek_sble_type, (Scheme_Ready_Fun)rw_sble_ready, rw_sble_wakeup, NULL, 1);
-  scheme_add_sble(scheme_write_sble_type, (Scheme_Ready_Fun)rw_sble_ready, rw_sble_wakeup, NULL, 1);
+  scheme_add_evt(scheme_read_evt_type, (Scheme_Ready_Fun)rw_evt_ready, rw_evt_wakeup, NULL, 1);
+  scheme_add_evt(scheme_peek_evt_type, (Scheme_Ready_Fun)rw_evt_ready, rw_evt_wakeup, NULL, 1);
+  scheme_add_evt(scheme_write_evt_type, (Scheme_Ready_Fun)rw_evt_ready, rw_evt_wakeup, NULL, 1);
 }
 
 void scheme_init_port_config(void)
@@ -962,9 +962,9 @@ Scheme_Input_Port *
 scheme_make_input_port(Scheme_Object *subtype,
 		       void *data,
 		       Scheme_Object *name,
-		       Scheme_Get_String_Sble_Fun get_string_sble_fun,
+		       Scheme_Get_String_Evt_Fun get_string_evt_fun,
 		       Scheme_Get_String_Fun get_string_fun,
-		       Scheme_Peek_String_Sble_Fun peek_string_sble_fun,
+		       Scheme_Peek_String_Evt_Fun peek_string_evt_fun,
 		       Scheme_Peek_String_Fun peek_string_fun,
 		       Scheme_In_Ready_Fun byte_ready_fun,
 		       Scheme_Close_Input_Fun close_fun,
@@ -978,9 +978,9 @@ scheme_make_input_port(Scheme_Object *subtype,
   ip->so.type = scheme_input_port_type;
   ip->sub_type = subtype;
   ip->port_data = data;
-  ip->get_string_sble_fun = get_string_sble_fun;
+  ip->get_string_evt_fun = get_string_evt_fun;
   ip->get_string_fun = get_string_fun;
-  ip->peek_string_sble_fun = peek_string_sble_fun;
+  ip->peek_string_evt_fun = peek_string_evt_fun;
   ip->peek_string_fun = peek_string_fun;
   ip->byte_ready_fun = byte_ready_fun;
   ip->need_wakeup_fun = need_wakeup_fun;
@@ -1011,7 +1011,7 @@ scheme_make_input_port(Scheme_Object *subtype,
   return (ip);
 }
 
-static int sble_input_port_p(Scheme_Object *p)
+static int evt_input_port_p(Scheme_Object *p)
 {
   return 1;
 }
@@ -1020,12 +1020,12 @@ Scheme_Output_Port *
 scheme_make_output_port(Scheme_Object *subtype,
 			void *data,
 			Scheme_Object *name,
-			Scheme_Write_String_Sble_Fun write_string_sble_fun,
+			Scheme_Write_String_Evt_Fun write_string_evt_fun,
 			Scheme_Write_String_Fun write_string_fun,
 			Scheme_Out_Ready_Fun ready_fun,
 			Scheme_Close_Output_Fun close_fun,
 			Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
-			Scheme_Write_Special_Sble_Fun write_special_sble_fun,
+			Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 			Scheme_Write_Special_Fun write_special_fun,
 			int must_close)
 {
@@ -1036,12 +1036,12 @@ scheme_make_output_port(Scheme_Object *subtype,
   op->sub_type = subtype;
   op->port_data = data;
   op->name = name;
-  op->write_string_sble_fun = write_string_sble_fun;
+  op->write_string_evt_fun = write_string_evt_fun;
   op->write_string_fun = write_string_fun;
   op->close_fun = close_fun;
   op->ready_fun = ready_fun;
   op->need_wakeup_fun = need_wakeup_fun;
-  op->write_special_sble_fun = write_special_sble_fun;
+  op->write_special_evt_fun = write_special_evt_fun;
   op->write_special_fun = write_special_fun;
   op->closed = 0;
   op->pos = 0;
@@ -1062,7 +1062,7 @@ scheme_make_output_port(Scheme_Object *subtype,
   return op;
 }
 
-static int sble_output_port_p(Scheme_Object *p)
+static int evt_output_port_p(Scheme_Object *p)
 {
   return 1;
 }
@@ -1080,7 +1080,7 @@ static int output_ready(Scheme_Object *port, Scheme_Schedule_Info *sinfo)
     /* We can't call the normal ready because that might run Scheme
        code, and this function is called by the scheduler when
        false_pos_ok is true. So, in that case, we asume that if the
-       port's sble is ready, then the port is ready. (After
+       port's evt is ready, then the port is ready. (After
        all, false positives are ok in that mode.) Even when the
        scheduler isn't requesting the status, we need sinfo. */
     return scheme_user_port_write_probably_ready(op, sinfo);
@@ -1099,7 +1099,7 @@ static void output_need_wakeup (Scheme_Object *port, void *fds)
 {
   Scheme_Output_Port *op;
 
-  /* If this is a user output port and its sble needs a wakeup, we
+  /* If this is a user output port and its evt needs a wakeup, we
      shouldn't get here. The target use above will take care of it. */
 
   op = (Scheme_Output_Port *)port;
@@ -1121,7 +1121,7 @@ int scheme_byte_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
     /* We can't call the normal byte_ready because that runs Scheme
        code, and this function is called by the scheduler when
        false_pos_ok is true. So, in that case, we asume that if the
-       port's sble is ready, then the port is ready. (After
+       port's evt is ready, then the port is ready. (After
        all, false positives are ok in that mode.) Even when the
        scheduler isn't requesting the status, we need sinfo. */
     return scheme_user_port_byte_probably_ready(ip, sinfo);
@@ -1131,12 +1131,12 @@ int scheme_byte_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 
 static void register_port_wait()
 {
-  scheme_add_sble(scheme_input_port_type,
+  scheme_add_evt(scheme_input_port_type,
 		  (Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready, scheme_need_wakeup,
-		  sble_input_port_p, 1);
-  scheme_add_sble(scheme_output_port_type,
+		  evt_input_port_p, 1);
+  scheme_add_evt(scheme_output_port_type,
 		  (Scheme_Ready_Fun)output_ready, output_need_wakeup,
-		  sble_output_port_p, 1);
+		  evt_output_port_p, 1);
 }
 
 static int pipe_char_count(Scheme_Object *p)
@@ -1884,13 +1884,13 @@ int scheme_peekc_is_ungetc(Scheme_Object *port)
   return !ip->peek_string_fun;
 }
 
-Scheme_Object *make_read_write_sble(Scheme_Type type, 
+Scheme_Object *make_read_write_evt(Scheme_Type type, 
 				    Scheme_Object *port, Scheme_Object *skip, 
 				    char *str, long start, long size)
 {
-  Scheme_Read_Write_Sble *rww;
+  Scheme_Read_Write_Evt *rww;
 
-  rww = MALLOC_ONE_TAGGED(Scheme_Read_Write_Sble);
+  rww = MALLOC_ONE_TAGGED(Scheme_Read_Write_Evt);
   rww->so.type = type;
   rww->port = port;
   rww->v = skip;
@@ -1901,9 +1901,9 @@ Scheme_Object *make_read_write_sble(Scheme_Type type,
   return (Scheme_Object *)rww;
 }
 
-static int rw_sble_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
+static int rw_evt_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)_rww;
+  Scheme_Read_Write_Evt *rww = (Scheme_Read_Write_Evt *)_rww;
 
   if (sinfo->false_positive_ok) {
     /* Causes the thread to swap in, which we need in case there's an
@@ -1912,7 +1912,7 @@ static int rw_sble_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
     return 1;
   }
   
-  if (rww->so.type == scheme_write_sble_type) {
+  if (rww->so.type == scheme_write_evt_type) {
     /* Write */
     long v;
     if (rww->v) {
@@ -1924,7 +1924,7 @@ static int rw_sble_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
       } else	
 	return 0;
     } else {
-      v = scheme_put_byte_string("write-sble", rww->port,
+      v = scheme_put_byte_string("write-evt", rww->port,
 				 rww->str, rww->start, rww->size,
 				 2);
       if (v < 1)
@@ -1941,13 +1941,13 @@ static int rw_sble_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
     long v;
     Scheme_Object *vo;
 
-    v = scheme_get_byte_string(((rww->so.type == scheme_peek_sble_type)
-				? "peek-sble"
-				: "read-sble"),
+    v = scheme_get_byte_string(((rww->so.type == scheme_peek_evt_type)
+				? "peek-evt"
+				: "read-evt"),
 			       rww->port,
 			       rww->str, rww->start, rww->size,
 			       2,
-			       (rww->so.type == scheme_peek_sble_type),
+			       (rww->so.type == scheme_peek_evt_type),
 			       rww->v);
     if (v) {
       if (v == SCHEME_SPECIAL) {
@@ -1967,12 +1967,12 @@ static int rw_sble_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
   }
 }
 
-static void rw_sble_wakeup(Scheme_Object *_rww, void *fds)
+static void rw_evt_wakeup(Scheme_Object *_rww, void *fds)
 {
-  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)_rww;
+  Scheme_Read_Write_Evt *rww = (Scheme_Read_Write_Evt *)_rww;
 
   if (rww->port) {
-    if (rww->so.type == scheme_write_sble_type)
+    if (rww->so.type == scheme_write_evt_type)
       output_need_wakeup(rww->port, fds);
     else
       scheme_need_wakeup(rww->port, fds);
@@ -1980,20 +1980,20 @@ static void rw_sble_wakeup(Scheme_Object *_rww, void *fds)
 }
 
 
-Scheme_Object *scheme_make_read_sble(const char *who, Scheme_Object *port,
+Scheme_Object *scheme_make_read_evt(const char *who, Scheme_Object *port,
 					 char *str, long start, long size,
 					 int peek, Scheme_Object *peek_skip)
 {
-  return make_read_write_sble((peek 
-				   ? scheme_peek_sble_type
-				   : scheme_read_sble_type), 
+  return make_read_write_evt((peek 
+				   ? scheme_peek_evt_type
+				   : scheme_read_evt_type), 
 				  port, peek_skip, str, start, size);
 }
 
-Scheme_Object *scheme_make_write_sble(const char *who, Scheme_Object *port,
+Scheme_Object *scheme_make_write_evt(const char *who, Scheme_Object *port,
 					  Scheme_Object *special, char *str, long start, long size)
 {
-  return make_read_write_sble(scheme_write_sble_type, port, special, str, start, size);
+  return make_read_write_evt(scheme_write_evt_type, port, special, str, start, size);
 }
 
 void
@@ -4784,7 +4784,7 @@ static long flush_fd(Scheme_Output_Port *op,
 	  if (!fop->oth) {
 	    /* We create a thread even for pipes that can be put in
 	       non-blocking mode, because that seems to be the only
-	       way to get sble behavior. */
+	       way to get evt behavior. */
 	    Win_FD_Output_Thread *oth;
 	    HANDLE h;
 	    DWORD id;
@@ -5490,7 +5490,7 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
 static void register_subprocess_wait()
 {
 #if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
-  scheme_add_sble(scheme_subprocess_type, subp_done,
+  scheme_add_evt(scheme_subprocess_type, subp_done,
 		  subp_needs_wakeup, NULL, 0);
 #endif
 }
@@ -6840,9 +6840,9 @@ static void register_traversers(void)
 
   GC_REG_TRAV(scheme_subprocess_type, mark_subprocess);
   GC_REG_TRAV(scheme_rt_read_special_dw, mark_read_special);
-  GC_REG_TRAV(scheme_read_sble_type, mark_read_write_sble);
-  GC_REG_TRAV(scheme_peek_sble_type, mark_read_write_sble);
-  GC_REG_TRAV(scheme_write_sble_type, mark_read_write_sble);
+  GC_REG_TRAV(scheme_read_evt_type, mark_read_write_evt);
+  GC_REG_TRAV(scheme_peek_evt_type, mark_read_write_evt);
+  GC_REG_TRAV(scheme_write_evt_type, mark_read_write_evt);
 }
 
 END_XFORM_SKIP;

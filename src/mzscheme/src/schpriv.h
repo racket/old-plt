@@ -928,19 +928,19 @@ typedef struct Scheme_Channel_Put {
 #define NOT_BLOCKED 0
 #define SLEEP_BLOCKED 1
 
-typedef struct Sble_Set {
+typedef struct Evt_Set {
   Scheme_Object so;
 
   int argc;
-  Scheme_Object **argv; /* no sble sets; nested sets get flattened */
-  struct Sble **ws;
-} Sble_Set;
+  Scheme_Object **argv; /* no evt sets; nested sets get flattened */
+  struct Evt **ws;
+} Evt_Set;
 
-#define SCHEME_SBLESETP(o) SAME_TYPE(SCHEME_TYPE(o), scheme_sble_set_type)
+#define SCHEME_EVTSETP(o) SAME_TYPE(SCHEME_TYPE(o), scheme_evt_set_type)
 
 typedef struct Syncing {
   MZTAG_IF_REQUIRED
-  Sble_Set *set;
+  Evt_Set *set;
   int result, start_pos;
   double sleep_end;
   float timeout;
@@ -955,7 +955,7 @@ typedef struct Syncing {
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *syncing);
 Scheme_Object *scheme_make_sema_repost(Scheme_Object *sema);
 
-Scheme_Object *scheme_wrap_sble(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_wrap_evt(int argc, Scheme_Object *argv[]);
 
 void scheme_get_outof_line(Scheme_Channel_Syncer *ch_w);
 

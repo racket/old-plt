@@ -46,12 +46,12 @@ scheme_close_managed
 scheme_schedule_custodian_close
 scheme_add_custodian_extractor
 scheme_add_atexit_closer
-scheme_add_sble
-scheme_add_sble_through_sema
-scheme_is_sble
+scheme_add_evt
+scheme_add_evt_through_sema
+scheme_is_evt
 scheme_sync
 scheme_sync_enable_break
-scheme_make_sble_set
+scheme_make_evt_set
 scheme_add_swap_callback
 scheme_call_enable_break
 scheme_close_should_force_port_closed
@@ -307,8 +307,8 @@ scheme_tell_column
 scheme_count_lines
 scheme_close_input_port
 scheme_close_output_port
-scheme_make_read_sble
-scheme_make_write_sble
+scheme_make_read_evt
+scheme_make_write_evt
 scheme_make_port_type
 scheme_make_input_port
 scheme_make_output_port

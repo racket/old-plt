@@ -180,11 +180,11 @@ typedef struct Scheme_UDP {
   Scheme_Custodian_Reference *mref;
 } Scheme_UDP;
 
-typedef struct Scheme_UDP_Sble {
-  Scheme_Object so; /* scheme_udp_sble_type */
+typedef struct Scheme_UDP_Evt {
+  Scheme_Object so; /* scheme_udp_evt_type */
   Scheme_UDP *udp;
   int for_read;
-} Scheme_UDP_Sble;
+} Scheme_UDP_Evt;
 
 #endif /* UDP_IS_SUPPORTED */
 
@@ -218,12 +218,12 @@ static Scheme_Object *udp_send_enable_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_receive(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_receive_star(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_receive_enable_break(int argc, Scheme_Object *argv[]);
-static Scheme_Object *udp_read_sble(int argc, Scheme_Object *argv[]);
-static Scheme_Object *udp_write_sble(int argc, Scheme_Object *argv[]);
+static Scheme_Object *udp_read_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *udp_write_evt(int argc, Scheme_Object *argv[]);
 
 #ifdef UDP_IS_SUPPORTED
-static int udp_sble_check_ready(Scheme_Object *uw);
-static void udp_sble_needs_wakeup(Scheme_Object *_uw, void *fds);
+static int udp_evt_check_ready(Scheme_Object *uw);
+static void udp_evt_needs_wakeup(Scheme_Object *_uw, void *fds);
 #endif
 
 static void register_tcp_listener_sync();
@@ -386,14 +386,14 @@ void scheme_init_network(Scheme_Env *env)
 						      "udp-receive!/enable-break", 
 						      2, 4), 
 			     env);
-  scheme_add_global_constant("udp-receive-sble", 
-			     scheme_make_prim_w_arity(udp_read_sble,
-						      "udp-receive-sble", 
+  scheme_add_global_constant("udp-receive-evt", 
+			     scheme_make_prim_w_arity(udp_read_evt,
+						      "udp-receive-evt", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("udp-send-sble", 
-			     scheme_make_prim_w_arity(udp_write_sble,
-						      "udp-send-sble", 
+  scheme_add_global_constant("udp-send-evt", 
+			     scheme_make_prim_w_arity(udp_write_evt,
+						      "udp-send-evt", 
 						      1, 1), 
 			     env);
 
@@ -2571,9 +2571,9 @@ tcp_accept_break(int argc, Scheme_Object *argv[])
 static void register_tcp_listener_sync()
 {
 #ifdef USE_TCP
-  scheme_add_sble(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL, 0);
+  scheme_add_evt(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL, 0);
 # ifdef UDP_IS_SUPPORTED
-  scheme_add_sble(scheme_udp_sble_type, udp_sble_check_ready, udp_sble_needs_wakeup, NULL, 0);
+  scheme_add_evt(scheme_udp_evt_type, udp_evt_check_ready, udp_evt_needs_wakeup, NULL, 0);
 # endif
 #endif
 }
@@ -3335,18 +3335,18 @@ static Scheme_Object *udp_receive_enable_break(int argc, Scheme_Object *argv[])
   return scheme_call_enable_break(udp_receive, argc, argv);
 }
 
-static Scheme_Object *make_udp_sble(const char *name, int argc, Scheme_Object **argv, int for_read)
+static Scheme_Object *make_udp_evt(const char *name, int argc, Scheme_Object **argv, int for_read)
 {
 #ifdef UDP_IS_SUPPORTED
-  Scheme_UDP_Sble *uw;
+  Scheme_UDP_Evt *uw;
 #endif
 
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type(name, "udp socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
-  uw = MALLOC_ONE_TAGGED(Scheme_UDP_Sble);
-  uw->so.type = scheme_udp_sble_type;
+  uw = MALLOC_ONE_TAGGED(Scheme_UDP_Evt);
+  uw->so.type = scheme_udp_evt_type;
   uw->udp = (Scheme_UDP *)argv[0];
   uw->for_read = for_read;
 
@@ -3356,20 +3356,20 @@ static Scheme_Object *make_udp_sble(const char *name, int argc, Scheme_Object **
 #endif
 }
 
-static Scheme_Object *udp_read_sble(int argc, Scheme_Object *argv[])
+static Scheme_Object *udp_read_evt(int argc, Scheme_Object *argv[])
 {
-  return make_udp_sble("udp-receive-sble", argc, argv, 1);
+  return make_udp_evt("udp-receive-evt", argc, argv, 1);
 }
 
-static Scheme_Object *udp_write_sble(int argc, Scheme_Object *argv[])
+static Scheme_Object *udp_write_evt(int argc, Scheme_Object *argv[])
 {
-  return make_udp_sble("udp-send-sble", argc, argv, 0);
+  return make_udp_evt("udp-send-evt", argc, argv, 0);
 }
 
 #ifdef UDP_IS_SUPPORTED
-static int udp_sble_check_ready(Scheme_Object *_uw)
+static int udp_evt_check_ready(Scheme_Object *_uw)
 {
-  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)_uw;
+  Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)_uw;
 
   if (uw->for_read)
     return udp_check_recv((Scheme_Object *)uw->udp);
@@ -3377,9 +3377,9 @@ static int udp_sble_check_ready(Scheme_Object *_uw)
     return udp_check_send((Scheme_Object *)uw->udp);
 }
 
-static void udp_sble_needs_wakeup(Scheme_Object *_uw, void *fds)
+static void udp_evt_needs_wakeup(Scheme_Object *_uw, void *fds)
 {
-  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)_uw;
+  Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)_uw;
 
   if (uw->for_read)
     udp_recv_needs_wakeup((Scheme_Object *)uw->udp, fds);
@@ -3408,7 +3408,7 @@ static void register_traversers(void)
 # endif
 # ifdef UDP_IS_SUPPORTED
   GC_REG_TRAV(scheme_udp_type, mark_udp);
-  GC_REG_TRAV(scheme_udp_sble_type, mark_udp_sble);
+  GC_REG_TRAV(scheme_udp_evt_type, mark_udp_evt);
 # endif
 #endif
   GC_REG_TRAV(scheme_listener_type, mark_listener);  

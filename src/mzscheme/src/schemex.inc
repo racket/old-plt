@@ -54,12 +54,12 @@
   scheme_extension_table->scheme_schedule_custodian_close = scheme_schedule_custodian_close;
   scheme_extension_table->scheme_add_custodian_extractor = scheme_add_custodian_extractor;
   scheme_extension_table->scheme_add_atexit_closer = scheme_add_atexit_closer;
-  scheme_extension_table->scheme_add_sble = scheme_add_sble;
-  scheme_extension_table->scheme_add_sble_through_sema = scheme_add_sble_through_sema;
-  scheme_extension_table->scheme_is_sble = scheme_is_sble;
+  scheme_extension_table->scheme_add_evt = scheme_add_evt;
+  scheme_extension_table->scheme_add_evt_through_sema = scheme_add_evt_through_sema;
+  scheme_extension_table->scheme_is_evt = scheme_is_evt;
   scheme_extension_table->scheme_sync = scheme_sync;
   scheme_extension_table->scheme_sync_enable_break = scheme_sync_enable_break;
-  scheme_extension_table->scheme_make_sble_set = scheme_make_sble_set;
+  scheme_extension_table->scheme_make_evt_set = scheme_make_evt_set;
   scheme_extension_table->scheme_add_swap_callback = scheme_add_swap_callback;
   scheme_extension_table->scheme_call_enable_break = scheme_call_enable_break;
   scheme_extension_table->scheme_close_should_force_port_closed = scheme_close_should_force_port_closed;
@@ -345,8 +345,8 @@
   scheme_extension_table->scheme_count_lines = scheme_count_lines;
   scheme_extension_table->scheme_close_input_port = scheme_close_input_port;
   scheme_extension_table->scheme_close_output_port = scheme_close_output_port;
-  scheme_extension_table->scheme_make_read_sble = scheme_make_read_sble;
-  scheme_extension_table->scheme_make_write_sble = scheme_make_write_sble;
+  scheme_extension_table->scheme_make_read_evt = scheme_make_read_evt;
+  scheme_extension_table->scheme_make_write_evt = scheme_make_write_evt;
   scheme_extension_table->scheme_make_port_type = scheme_make_port_type;
   scheme_extension_table->scheme_make_input_port = scheme_make_input_port;
   scheme_extension_table->scheme_make_output_port = scheme_make_output_port;

@@ -1026,9 +1026,9 @@ mark_user_input {
  mark:
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcMARK(uip->read_sble_proc);
+  gcMARK(uip->read_evt_proc);
   gcMARK(uip->read_proc);
-  gcMARK(uip->peek_sble_proc);
+  gcMARK(uip->peek_evt_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->peeked);
@@ -1041,10 +1041,10 @@ mark_user_output {
  mark:
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcMARK(uop->sble);
-  gcMARK(uop->write_sble_proc);
+  gcMARK(uop->evt);
+  gcMARK(uop->write_evt_proc);
   gcMARK(uop->write_proc);
-  gcMARK(uop->write_special_sble_proc);
+  gcMARK(uop->write_special_evt_proc);
   gcMARK(uop->write_special_proc);
   gcMARK(uop->close_proc);
  size:
@@ -1155,14 +1155,14 @@ mark_read_special {
   gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
 }
 
-mark_read_write_sble {
+mark_read_write_evt {
  mark:
-  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)p;
+  Scheme_Read_Write_Evt *rww = (Scheme_Read_Write_Evt *)p;
   gcMARK(rww->port);
   gcMARK(rww->v);
   gcMARK(rww->str);
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Evt));
 }
 
 END port;
@@ -1223,14 +1223,14 @@ mark_udp {
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP));
 }
 
-mark_udp_sble {
+mark_udp_evt {
  mark:
-  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)p;
+  Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)p;
 
   gcMARK(uw->udp);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));
 }
 # endif
 #endif
@@ -1354,14 +1354,14 @@ mark_will_registration {
   gcBYTES_TO_WORDS(sizeof(WillRegistration));
 }
 
-mark_sble {
+mark_evt {
  mark:
-  Sble *r = (Sble *)p;
+  Evt *r = (Evt *)p;
  
   gcMARK(r->next);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Sble));
+  gcBYTES_TO_WORDS(sizeof(Evt));
 }
 
 mark_syncing {
@@ -1378,15 +1378,15 @@ mark_syncing {
   gcBYTES_TO_WORDS(sizeof(Syncing));
 }
 
-mark_sble_set {
+mark_evt_set {
  mark:
-  Sble_Set *w = (Sble_Set *)p;
+  Evt_Set *w = (Evt_Set *)p;
  
   gcMARK(w->ws);
   gcMARK(w->argv);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Sble_Set));
+  gcBYTES_TO_WORDS(sizeof(Evt_Set));
 }
 
 mark_thread_set {
@@ -1529,25 +1529,25 @@ mark_struct_property {
   gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }
 
-mark_wrapped_sble {
+mark_wrapped_evt {
  mark:
-  Wrapped_Sble *ww = (Wrapped_Sble *)p;
+  Wrapped_Evt *ww = (Wrapped_Evt *)p;
 
-  gcMARK(ww->sble);
+  gcMARK(ww->evt);
   gcMARK(ww->wrapper);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Evt));
 }
 
-mark_nack_guard_sble {
+mark_nack_guard_evt {
  mark:
-  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)p;
+  Nack_Guard_Evt *nw = (Nack_Guard_Evt *)p;
 
   gcMARK(nw->maker);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Evt));
 }
 
 END struct;

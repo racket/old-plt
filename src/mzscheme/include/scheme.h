@@ -405,7 +405,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_STXP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_stx_type)
 
 #define SCHEME_UDPP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_type)
-#define SCHEME_UDP_SBLEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_sble_type)
+#define SCHEME_UDP_EVTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_evt_type)
 
 #define SCHEME_CPTRP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_c_pointer_type)
 
@@ -1016,12 +1016,12 @@ enum {
 typedef struct Scheme_Input_Port Scheme_Input_Port;
 typedef struct Scheme_Output_Port Scheme_Output_Port;
 
-typedef Scheme_Object *(*Scheme_Get_String_Sble_Fun)(Scheme_Input_Port *port,
+typedef Scheme_Object *(*Scheme_Get_String_Evt_Fun)(Scheme_Input_Port *port,
 							 char *buffer, long offset, long size);
 typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      char *buffer, long offset, long size,
 				      int nonblock);
-typedef Scheme_Object *(*Scheme_Peek_String_Sble_Fun)(Scheme_Input_Port *port,
+typedef Scheme_Object *(*Scheme_Peek_String_Evt_Fun)(Scheme_Input_Port *port,
 							  char *buffer, long offset, long size,
 							  Scheme_Object *skip);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port,
@@ -1032,7 +1032,7 @@ typedef int (*Scheme_In_Ready_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Need_Wakeup_Input_Fun)(Scheme_Input_Port *, void *);
 
-typedef Scheme_Object *(*Scheme_Write_String_Sble_Fun)(Scheme_Output_Port *,
+typedef Scheme_Object *(*Scheme_Write_String_Evt_Fun)(Scheme_Output_Port *,
 							   const char *str, long offset, long size);
 typedef long (*Scheme_Write_String_Fun)(Scheme_Output_Port *,
 					const char *str, long offset, long size,
@@ -1040,7 +1040,7 @@ typedef long (*Scheme_Write_String_Fun)(Scheme_Output_Port *,
 typedef int (*Scheme_Out_Ready_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Close_Output_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Need_Wakeup_Output_Fun)(Scheme_Output_Port *, void *);
-typedef Scheme_Object *(*Scheme_Write_Special_Sble_Fun)(Scheme_Output_Port *, Scheme_Object *);
+typedef Scheme_Object *(*Scheme_Write_Special_Evt_Fun)(Scheme_Output_Port *, Scheme_Object *);
 typedef int (*Scheme_Write_Special_Fun)(Scheme_Output_Port *, Scheme_Object *,
 					int nonblock);
 
@@ -1051,9 +1051,9 @@ struct Scheme_Input_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
-  Scheme_Get_String_Sble_Fun get_string_sble_fun;
+  Scheme_Get_String_Evt_Fun get_string_evt_fun;
   Scheme_Get_String_Fun get_string_fun;
-  Scheme_Peek_String_Sble_Fun peek_string_sble_fun;
+  Scheme_Peek_String_Evt_Fun peek_string_evt_fun;
   Scheme_Peek_String_Fun peek_string_fun;
   Scheme_In_Ready_Fun byte_ready_fun;
   Scheme_Close_Input_Fun close_fun;
@@ -1077,12 +1077,12 @@ struct Scheme_Output_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
-  Scheme_Write_String_Sble_Fun write_string_sble_fun;
+  Scheme_Write_String_Evt_Fun write_string_evt_fun;
   Scheme_Write_String_Fun write_string_fun;
   Scheme_Close_Output_Fun close_fun;
   Scheme_Out_Ready_Fun ready_fun;
   Scheme_Need_Wakeup_Output_Fun need_wakeup_fun;
-  Scheme_Write_Special_Sble_Fun write_special_sble_fun;
+  Scheme_Write_Special_Evt_Fun write_special_evt_fun;
   Scheme_Write_Special_Fun write_special_fun;
   long pos;
   Scheme_Object *name;

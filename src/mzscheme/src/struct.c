@@ -48,14 +48,14 @@ typedef struct {
 
 typedef struct {
   Scheme_Object so;
-  Scheme_Object *sble;
+  Scheme_Object *evt;
   Scheme_Object *wrapper;
-} Wrapped_Sble;
+} Wrapped_Evt;
 
 typedef struct {
   Scheme_Object so;
   Scheme_Object *maker;
-} Nack_Guard_Sble;
+} Nack_Guard_Evt;
 
 static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *inspector_p(int argc, Scheme_Object *argv[]);
@@ -63,15 +63,15 @@ static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv[]);
+static Scheme_Object *check_evt_property_value_ok(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_type(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *nack_sble(int argc, Scheme_Object *argv[]);
-static Scheme_Object *poll_sble(int argc, Scheme_Object *argv[]);
+static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *poll_evt(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -93,14 +93,14 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const 
 
 static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object **a, int always);
 
-static Scheme_Object *sble_property;
-static int sble_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int is_sble_struct(Scheme_Object *);
+static Scheme_Object *evt_property;
+static int evt_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int is_evt_struct(Scheme_Object *);
 
-static int wrapped_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int nack_guard_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int nack_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int poll_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int wrapped_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int nack_guard_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int nack_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int poll_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
 Scheme_Object *make_special_comment(int argc, Scheme_Object **argv);
 Scheme_Object *special_comment_value(int argc, Scheme_Object **argv);
@@ -222,33 +222,33 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_global_keyword_symbol(loc_names[loc_count - 1], loc_et, env);
 
 
-  REGISTER_SO(sble_property);
+  REGISTER_SO(evt_property);
   {
     Scheme_Object *guard;
-    guard = scheme_make_prim_w_arity(check_sble_property_value_ok,
-				     "check-sble-property-value-ok",
+    guard = scheme_make_prim_w_arity(check_evt_property_value_ok,
+				     "check-evt-property-value-ok",
 				     2, 2);
-    sble_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("sble"),
+    evt_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("evt"),
 								 guard);
-    scheme_add_global_constant("prop:sble", sble_property, env);
+    scheme_add_global_constant("prop:evt", evt_property, env);
 
-    scheme_add_sble(scheme_structure_type,
-			(Scheme_Ready_Fun)sble_struct_is_ready,
+    scheme_add_evt(scheme_structure_type,
+			(Scheme_Ready_Fun)evt_struct_is_ready,
 			NULL,
-			is_sble_struct, 1);
+			is_evt_struct, 1);
   }
 
-  scheme_add_sble(scheme_wrapped_sble_type,
-		      (Scheme_Ready_Fun)wrapped_sble_is_ready,
+  scheme_add_evt(scheme_wrapped_evt_type,
+		      (Scheme_Ready_Fun)wrapped_evt_is_ready,
 		      NULL, NULL, 1);
-  scheme_add_sble(scheme_nack_guard_sble_type,
-		      (Scheme_Ready_Fun)nack_guard_sble_is_ready,
+  scheme_add_evt(scheme_nack_guard_evt_type,
+		      (Scheme_Ready_Fun)nack_guard_evt_is_ready,
 		      NULL, NULL, 1);
-  scheme_add_sble(scheme_nack_sble_type,
-		      (Scheme_Ready_Fun)nack_sble_is_ready,
+  scheme_add_evt(scheme_nack_evt_type,
+		      (Scheme_Ready_Fun)nack_evt_is_ready,
 		      NULL, NULL, 1);
-  scheme_add_sble(scheme_poll_sble_type,
-		      (Scheme_Ready_Fun)poll_sble_is_ready,
+  scheme_add_evt(scheme_poll_evt_type,
+		      (Scheme_Ready_Fun)poll_evt_is_ready,
 		      NULL, NULL, 1);
 
   /*** basic interface ****/
@@ -278,19 +278,19 @@ scheme_init_struct (Scheme_Env *env)
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("make-wrapped-sble",
-			     scheme_make_prim_w_arity(scheme_wrap_sble,
-						      "make-wrapped-sble",
+  scheme_add_global_constant("make-wrapped-evt",
+			     scheme_make_prim_w_arity(scheme_wrap_evt,
+						      "make-wrapped-evt",
 						      2, 2),
 			     env);
-  scheme_add_global_constant("make-nack-guard-sble",
-			     scheme_make_prim_w_arity(nack_sble,
-						      "make-nack-guard-sble",
+  scheme_add_global_constant("make-nack-guard-evt",
+			     scheme_make_prim_w_arity(nack_evt,
+						      "make-nack-guard-evt",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("make-poll-guard-sble",
-			     scheme_make_prim_w_arity(poll_sble,
-						      "make-poll-guard-sble",
+  scheme_add_global_constant("make-poll-guard-evt",
+			     scheme_make_prim_w_arity(poll_evt,
+						      "make-poll-guard-evt",
 						      1, 1),
 			     env);
 
@@ -647,18 +647,18 @@ static Scheme_Object *guard_property(Scheme_Object *prop, Scheme_Object *v, Sche
 }
 
 /*========================================================================*/
-/*                            sble structs                            */
+/*                            evt structs                            */
 /*========================================================================*/
 
-static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv[])
-/* This is the guard for prop:sble */
+static Scheme_Object *check_evt_property_value_ok(int argc, Scheme_Object *argv[])
+/* This is the guard for prop:evt */
 {
   Scheme_Object *v, *l;
   int pos, num_islots;
 
   v = argv[0];
 
-  if (scheme_is_sble(v))
+  if (scheme_is_evt(v))
     return v;
 
   if (scheme_check_proc_arity(NULL, 1, 0, 1, &v))
@@ -666,8 +666,8 @@ static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv
   
   if (!((SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
 	|| (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))))
-    scheme_arg_mismatch("prop:sble-guard",
-			"property value is not a sble, procedure (arity 1), or exact non-negative integer: ",
+    scheme_arg_mismatch("prop:evt-guard",
+			"property value is not a evt, procedure (arity 1), or exact non-negative integer: ",
 			v);
 
   l = argv[1];
@@ -685,7 +685,7 @@ static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv
     pos = SCHEME_INT_VAL(v);
 
   if (pos >= num_islots) {
-    scheme_arg_mismatch("sble-property-guard",
+    scheme_arg_mismatch("evt-property-guard",
 			"field index >= initialized-field count for structure type: ",
 			v);
   }
@@ -696,7 +696,7 @@ static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv
   }
 
   if (!SCHEME_PAIRP(l)) {
-    scheme_arg_mismatch("sble-property-guard",
+    scheme_arg_mismatch("evt-property-guard",
 			"field index not declared immutable: ",
 			v);
   }
@@ -704,16 +704,16 @@ static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv
   return v;
 }
 
-static int sble_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int evt_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *v;
 
-  v = scheme_struct_type_property_ref(sble_property, o);
+  v = scheme_struct_type_property_ref(evt_property, o);
 
   if (SCHEME_INTP(v))
     v = ((Scheme_Structure *)o)->slots[SCHEME_INT_VAL(v)];
 
-  if (scheme_is_sble(v)) {
+  if (scheme_is_evt(v)) {
     scheme_set_sync_target(sinfo, v, NULL, NULL, 0, 1);
     return 0;
   }
@@ -730,12 +730,12 @@ static int sble_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
       a[0] = o;
       result = scheme_apply(f, 1, a);
 
-      if (scheme_is_sble(result)) {
+      if (scheme_is_evt(result)) {
 	scheme_set_sync_target(sinfo, result, NULL, NULL, 0, 1);
 	return 0;
       }
 
-      /* non-sble => ready and result is self */
+      /* non-evt => ready and result is self */
       scheme_set_sync_target(sinfo, o, o, NULL, 0, 0);
 
       return 1;
@@ -745,9 +745,9 @@ static int sble_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   return 0;
 }
 
-static int is_sble_struct(Scheme_Object *o)
+static int is_evt_struct(Scheme_Object *o)
 {
-  return !!scheme_struct_type_property_ref(sble_property, o);
+  return !!scheme_struct_type_property_ref(evt_property, o);
 }
 
 /*========================================================================*/
@@ -1382,59 +1382,59 @@ static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[])
 /*                           wraps and nacks                              */
 /*========================================================================*/
 
-Scheme_Object *scheme_wrap_sble(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_wrap_evt(int argc, Scheme_Object *argv[])
 {
-  Wrapped_Sble *ww;
+  Wrapped_Evt *ww;
 
-  if (!scheme_is_sble(argv[0]))
-    scheme_wrong_type("make-wrapped-sble", "sble-object", 0, argc, argv);
-  scheme_check_proc_arity("make-wrapped-sble", 1, 1, argc, argv);
+  if (!scheme_is_evt(argv[0]))
+    scheme_wrong_type("make-wrapped-evt", "evt-object", 0, argc, argv);
+  scheme_check_proc_arity("make-wrapped-evt", 1, 1, argc, argv);
 
-  ww = MALLOC_ONE_TAGGED(Wrapped_Sble);
-  ww->so.type = scheme_wrapped_sble_type;
-  ww->sble = argv[0];
+  ww = MALLOC_ONE_TAGGED(Wrapped_Evt);
+  ww->so.type = scheme_wrapped_evt_type;
+  ww->evt = argv[0];
   ww->wrapper = argv[1];
 
   return (Scheme_Object *)ww;
 }
 
-static Scheme_Object *nack_sble(int argc, Scheme_Object *argv[])
+static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[])
 {
-  Nack_Guard_Sble *nw;
+  Nack_Guard_Evt *nw;
 
-  scheme_check_proc_arity("make-nack-guard-sble", 1, 0, argc, argv);
+  scheme_check_proc_arity("make-nack-guard-evt", 1, 0, argc, argv);
 
-  nw = MALLOC_ONE_TAGGED(Nack_Guard_Sble);
-  nw->so.type = scheme_nack_guard_sble_type;
+  nw = MALLOC_ONE_TAGGED(Nack_Guard_Evt);
+  nw->so.type = scheme_nack_guard_evt_type;
   nw->maker = argv[0];
 
   return (Scheme_Object *)nw;
 }
 
-static Scheme_Object *poll_sble(int argc, Scheme_Object *argv[])
+static Scheme_Object *poll_evt(int argc, Scheme_Object *argv[])
 {
-  Nack_Guard_Sble *nw;
+  Nack_Guard_Evt *nw;
 
-  scheme_check_proc_arity("make-poll-guard-sble", 1, 0, argc, argv);
+  scheme_check_proc_arity("make-poll-guard-evt", 1, 0, argc, argv);
 
-  nw = MALLOC_ONE_TAGGED(Nack_Guard_Sble);
-  nw->so.type = scheme_poll_sble_type;
+  nw = MALLOC_ONE_TAGGED(Nack_Guard_Evt);
+  nw->so.type = scheme_poll_evt_type;
   nw->maker = argv[0];
 
   return (Scheme_Object *)nw;
 }
 
-static int wrapped_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int wrapped_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Wrapped_Sble *ww = (Wrapped_Sble *)o;
+  Wrapped_Evt *ww = (Wrapped_Evt *)o;
 
-  scheme_set_sync_target(sinfo, ww->sble, ww->wrapper, NULL, 0, 1);
+  scheme_set_sync_target(sinfo, ww->evt, ww->wrapper, NULL, 0, 1);
   return 0;
 }
 
-static int nack_guard_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int nack_guard_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)o;
+  Nack_Guard_Evt *nw = (Nack_Guard_Evt *)o;
   Scheme_Object *sema, *a[1], *result;
   Scheme_Object *nack;
 
@@ -1450,9 +1450,9 @@ static int nack_guard_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
      to run the maker. */
   scheme_set_sync_target(sinfo, o, NULL, sema, 0, 0);
 
-  /* Remember both the sema and the current thread's dead sble: */
+  /* Remember both the sema and the current thread's dead evt: */
   nack = scheme_alloc_object();
-  nack->type = scheme_nack_sble_type;
+  nack->type = scheme_nack_evt_type;
   SCHEME_PTR1_VAL(nack) = sema;
   result = scheme_get_thread_dead(scheme_current_thread);
   SCHEME_PTR2_VAL(nack) = result;
@@ -1460,23 +1460,23 @@ static int nack_guard_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
   a[0] = nack;
   result = scheme_apply(nw->maker, 1, a);
 
-  if (scheme_is_sble(result)) {
+  if (scheme_is_evt(result)) {
     scheme_set_sync_target(sinfo, result, NULL, NULL, 0, 1);
     return 0;
   } else
-    return 1; /* Non-sble => ready */
+    return 1; /* Non-evt => ready */
 }
 
-static int nack_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int nack_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *a[2], *wset;
 
   wset = SCHEME_PTR1_VAL(o);
-  /* Lazily construct a sble set: */
+  /* Lazily construct a evt set: */
   if (SCHEME_SEMAP(wset)) {
     a[0] = wset;
     a[1] = SCHEME_PTR2_VAL(o);
-    wset = scheme_make_sble_set(2, a);
+    wset = scheme_make_evt_set(2, a);
     SCHEME_PTR1_VAL(o) = wset;
   }
 
@@ -1486,9 +1486,9 @@ static int nack_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   return 0;
 }
 
-static int poll_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int poll_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)o;
+  Nack_Guard_Evt *nw = (Nack_Guard_Evt *)o;
   Scheme_Object *a[1], *result;
 
   if (sinfo->false_positive_ok) {
@@ -1499,11 +1499,11 @@ static int poll_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   a[0] = (sinfo->is_poll ? scheme_true : scheme_false);
   result = scheme_apply(nw->maker, 1, a);
 
-  if (scheme_is_sble(result)) {
+  if (scheme_is_evt(result)) {
     scheme_set_sync_target(sinfo, result, NULL, NULL, 0, 1);
     return 0;
   } else
-    return 1; /* Non-sble => ready */
+    return 1; /* Non-evt => ready */
 }
 
 /*========================================================================*/
@@ -2586,9 +2586,9 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
   GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 
-  GC_REG_TRAV(scheme_wrapped_sble_type, mark_wrapped_sble);
-  GC_REG_TRAV(scheme_nack_guard_sble_type, mark_nack_guard_sble);
-  GC_REG_TRAV(scheme_poll_sble_type, mark_nack_guard_sble);
+  GC_REG_TRAV(scheme_wrapped_evt_type, mark_wrapped_evt);
+  GC_REG_TRAV(scheme_nack_guard_evt_type, mark_nack_guard_evt);
+  GC_REG_TRAV(scheme_poll_evt_type, mark_nack_guard_evt);
 
   GC_REG_TRAV(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }

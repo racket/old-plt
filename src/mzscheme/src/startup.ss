@@ -3323,12 +3323,12 @@
   (define (port? x) (or (input-port? x) (output-port? x)))
 
   (define-values (struct:guard make-guard guard? guard-ref guard-set!)
-    (make-struct-type 'sble #f 1 0 #f (list (cons prop:sble 0)) (current-inspector) #f '(0)))
+    (make-struct-type 'evt #f 1 0 #f (list (cons prop:evt 0)) (current-inspector) #f '(0)))
 
-  (define (guard-sble proc)
+  (define (guard-evt proc)
     (unless (and (procedure? proc)
 		 (procedure-arity-includes? proc 0))
-      (raise-type-error 'guard-sble "procedure (arity 0)" proc))
+      (raise-type-error 'guard-evt "procedure (arity 0)" proc))
     (make-guard (lambda (self) (proc))))
 
   (define (channel-get ch)
@@ -3344,7 +3344,7 @@
   (define (channel-put ch val)
     (unless (channel? ch)
       (raise-type-error 'channel-put "channel" ch))
-    (and (sync (channel-put-sble ch val)) (void)))
+    (and (sync (channel-put-evt ch val)) (void)))
 
   ;; -------------------------------------------------------------------------
 
@@ -3418,7 +3418,7 @@
 	   load-relative load-relative-extension
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled current-load/use-compiled
-	   port? guard-sble
+	   port? guard-evt
 	   channel-get channel-try-get channel-put
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment

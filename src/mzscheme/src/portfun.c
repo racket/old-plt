@@ -80,10 +80,10 @@ static Scheme_Object *peek_byte_spec (int, Scheme_Object *[]);
 static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
 static Scheme_Object *byte_ready_p (int, Scheme_Object *[]);
-static Scheme_Object *read_bytes_avail_sble(int argc, Scheme_Object *argv[]);
-static Scheme_Object *peek_bytes_avail_sble(int argc, Scheme_Object *argv[]);
-static Scheme_Object *write_bytes_avail_sble(int argc, Scheme_Object *argv[]);
-static Scheme_Object *write_special_sble(int argc, Scheme_Object *argv[]);
+static Scheme_Object *read_bytes_avail_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *peek_bytes_avail_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *write_bytes_avail_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *write_special_evt(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_write (int, Scheme_Object *[]);
 static Scheme_Object *display (int, Scheme_Object *[]);
 static Scheme_Object *sch_print (int, Scheme_Object *[]);
@@ -549,24 +549,24 @@ scheme_init_port_fun(Scheme_Env *env)
 						      1, 2), 
 			     env);
 
-  scheme_add_global_constant("read-sble",
-			     scheme_make_prim_w_arity(read_bytes_avail_sble,
-						      "read-sble",
+  scheme_add_global_constant("read-evt",
+			     scheme_make_prim_w_arity(read_bytes_avail_evt,
+						      "read-evt",
 						      1, 4),
 			     env);
-  scheme_add_global_constant("peek-sble",
-			     scheme_make_prim_w_arity(peek_bytes_avail_sble,
-						      "peek-sble",
+  scheme_add_global_constant("peek-evt",
+			     scheme_make_prim_w_arity(peek_bytes_avail_evt,
+						      "peek-evt",
 						      2, 5),
 			     env);
-  scheme_add_global_constant("write-sble",
-			     scheme_make_prim_w_arity(write_bytes_avail_sble,
-						      "write-sble",
+  scheme_add_global_constant("write-evt",
+			     scheme_make_prim_w_arity(write_bytes_avail_evt,
+						      "write-evt",
 						      1, 4),
 			     env);
-  scheme_add_global_constant("write-special-sble",
-			     scheme_make_prim_w_arity(write_special_sble,
-						      "write-special-sble",
+  scheme_add_global_constant("write-special-evt",
+			     scheme_make_prim_w_arity(write_special_evt,
+						      "write-special-evt",
 						      2, 2),
 			     env);
   
@@ -926,10 +926,10 @@ scheme_get_string_output(Scheme_Object *port)
 
 typedef struct User_Input_Port {
   MZTAG_IF_REQUIRED
-  Scheme_Object *sble;
-  Scheme_Object *read_sble_proc;
+  Scheme_Object *evt;
+  Scheme_Object *read_evt_proc;
   Scheme_Object *read_proc;
-  Scheme_Object *peek_sble_proc;
+  Scheme_Object *peek_evt_proc;
   Scheme_Object *peek_proc;
   Scheme_Object *close_proc;
   Scheme_Object *reuse_str;
@@ -939,7 +939,7 @@ typedef struct User_Input_Port {
 
 static long user_read_result(const char *who,Scheme_Input_Port *port, 
 			     Scheme_Object *val, Scheme_Object *bstr, 
-			     int peek, int nonblock, int sble_ok,
+			     int peek, int nonblock, int evt_ok,
 			     Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *a[1];
@@ -979,8 +979,8 @@ static long user_read_result(const char *who,Scheme_Input_Port *port,
 	} else
 	  val = NULL;
 	n = 0;
-      } else if (sble_ok && scheme_is_sble(val)) {
-	/* A peek/read failed, and we were given a sble that unblocks
+      } else if (evt_ok && scheme_is_evt(val)) {
+	/* A peek/read failed, and we were given a evt that unblocks
 	   when the read/peek (at some offset) succeeds. */
 	if (nonblock) {
 	  if (sinfo) {
@@ -988,8 +988,8 @@ static long user_read_result(const char *who,Scheme_Input_Port *port,
 	  }
 	  return 0;
 	} else {
-	  /* Sync on the given sble. */
-	  sble_ok = 0;
+	  /* Sync on the given evt. */
+	  evt_ok = 0;
 
 	  a[0] = scheme_false;
 	  a[1] = val;
@@ -1014,8 +1014,8 @@ static long user_read_result(const char *who,Scheme_Input_Port *port,
 
       if (!val) {
 	scheme_wrong_type(who, 
-			  (sble_ok
-			   ? "non-negative exact integer, eof, sble, or pair for special"
+			  (evt_ok
+			   ? "non-negative exact integer, eof, evt, or pair for special"
 			   : "non-negative exact integer, eof, or pair for special"),
 			  -1, -1, a);
 	return 0;
@@ -1064,7 +1064,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     val = scheme_apply(fun, peek ? 2 : 1, a);
     
     if ((size <= MAX_USER_INPUT_REUSE_SIZE)
-	&& !scheme_is_sble(val)) {
+	&& !scheme_is_evt(val)) {
       uip->reuse_str = bstr;
     }
     
@@ -1087,7 +1087,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
   }
 }
 
-static Scheme_Object *user_read_sble_wrapper(void *d, int argc, struct Scheme_Object *argv[])
+static Scheme_Object *user_read_evt_wrapper(void *d, int argc, struct Scheme_Object *argv[])
 {
   int peek;
   Scheme_Object *bstr, *val, *port;
@@ -1098,7 +1098,7 @@ static Scheme_Object *user_read_sble_wrapper(void *d, int argc, struct Scheme_Ob
   peek = SCHEME_TRUEP((Scheme_Object *)((void **)d)[3]);
   port = (Scheme_Object *)((void **)d)[4];
 
-  r = user_read_result(peek ? "user port peek-sble" : "user port read-sble",
+  r = user_read_result(peek ? "user port peek-evt" : "user port read-evt",
 		       (Scheme_Input_Port *)port, val, bstr, peek, 0, 0, NULL);  
 
   if (r < 0) {
@@ -1118,7 +1118,7 @@ static Scheme_Object *user_read_sble_wrapper(void *d, int argc, struct Scheme_Ob
 }
 
 static Scheme_Object * 
-user_get_or_peek_bytes_sble(Scheme_Input_Port *port, 
+user_get_or_peek_bytes_evt(Scheme_Input_Port *port, 
 			    char *buffer, long offset, long size,
 			    int peek, Scheme_Object *skip)
 {
@@ -1132,24 +1132,24 @@ user_get_or_peek_bytes_sble(Scheme_Input_Port *port,
   bstr = scheme_make_sized_byte_string(vb, size, 0);
 
   if (peek)
-    fun = uip->peek_sble_proc;
+    fun = uip->peek_evt_proc;
   else
-    fun = uip->read_sble_proc;
+    fun = uip->read_evt_proc;
 
   a[0] = bstr;
   a[1] = skip;
   val = scheme_apply(fun, peek ? 2 : 1, a);  
 
-  if (!scheme_is_sble(val)) {
+  if (!scheme_is_evt(val)) {
     a[0] = val;
     scheme_wrong_type((peek 
-		       ? "user port peek-sble" 
-		       : "user port read-sble"), 
-		      "sble", -1, -1, a);
+		       ? "user port peek-evt" 
+		       : "user port read-evt"), 
+		      "evt", -1, -1, a);
     return NULL;
   }
 
-  /* Wrap the sble for result checking and to wrap special
+  /* Wrap the evt for result checking and to wrap special
      results: */
   args = MALLOC_N(void*, 5);
   args[0] = bstr;
@@ -1157,26 +1157,26 @@ user_get_or_peek_bytes_sble(Scheme_Input_Port *port,
   args[2] = scheme_make_integer(offset);
   args[3] = (peek ? scheme_true : scheme_false);
   args[4] = port;
-  wrapper = scheme_make_closed_prim(user_read_sble_wrapper, args);
+  wrapper = scheme_make_closed_prim(user_read_evt_wrapper, args);
 
   a[0] = val;
   a[1] = wrapper;
-  return scheme_wrap_sble(2, a);
+  return scheme_wrap_evt(2, a);
 }
 
 static Scheme_Object * 
-user_get_bytes_sble(Scheme_Input_Port *port, 
+user_get_bytes_evt(Scheme_Input_Port *port, 
 			char *buffer, long offset, long size)
 {
-  return user_get_or_peek_bytes_sble(port, buffer, offset, size, 0, NULL);
+  return user_get_or_peek_bytes_evt(port, buffer, offset, size, 0, NULL);
 }
 
 static Scheme_Object * 
-user_peek_bytes_sble(Scheme_Input_Port *port, 
+user_peek_bytes_evt(Scheme_Input_Port *port, 
 		     char *buffer, long offset, long size,
 		     Scheme_Object *skip)
 {
-  return user_get_or_peek_bytes_sble(port, buffer, offset, size, 1, skip);
+  return user_get_or_peek_bytes_evt(port, buffer, offset, size, 1, skip);
 }
 
 static long 
@@ -1253,12 +1253,12 @@ user_close_input(Scheme_Input_Port *port)
 
 typedef struct User_Output_Port {
   MZTAG_IF_REQUIRED
-  Scheme_Object *sble;
-  Scheme_Object *write_sble_proc;
+  Scheme_Object *evt;
+  Scheme_Object *write_evt_proc;
   Scheme_Object *write_proc;
   Scheme_Object *flush_proc;
   Scheme_Object *close_proc;
-  Scheme_Object *write_special_sble_proc;
+  Scheme_Object *write_special_evt_proc;
   Scheme_Object *write_special_proc;
 } User_Output_Port;
 
@@ -1270,7 +1270,7 @@ int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Sched
   if (port->closed)
     return 1;
 
-  val = uop->sble;
+  val = uop->evt;
 
   scheme_set_sync_target(sinfo, val, (Scheme_Object *)port, NULL, 0, 1);
   return 0;
@@ -1281,13 +1281,13 @@ static int
 user_write_ready(Scheme_Output_Port *port)
 {
   /* This function should never be called. If we are ready-checking as 
-     a sble, then scheme_user_port_write_probably_ready is called,
+     a evt, then scheme_user_port_write_probably_ready is called,
      instead. */
   return 1;
 }
 
 static long
-user_write_result(const char *who, Scheme_Output_Port *port, int sble_ok,
+user_write_result(const char *who, Scheme_Output_Port *port, int evt_ok,
 		  Scheme_Object *val, int rarely_block, long len)
 {
   Scheme_Object *p[2];
@@ -1317,14 +1317,14 @@ user_write_result(const char *who, Scheme_Output_Port *port, int sble_ok,
       }
 
       return n;
-    } else if (sble_ok && scheme_is_sble(val)) {
-      /* A write failed, and we were given a sble that unblocks when
+    } else if (evt_ok && scheme_is_evt(val)) {
+      /* A write failed, and we were given a evt that unblocks when
 	 the write succeeds. */
       if (rarely_block == 2) {
 	return 0;
       } else {
-	/* Sync on the given sble. */
-	sble_ok = 0;
+	/* Sync on the given evt. */
+	evt_ok = 0;
 
 	p[0] = scheme_false;
 	p[1] = val;
@@ -1343,7 +1343,7 @@ user_write_result(const char *who, Scheme_Output_Port *port, int sble_ok,
       } else {
 	p[0] = val;
 	scheme_wrong_type(who,
-			  "non-negative exact integer, #f, or sble", 
+			  "non-negative exact integer, #f, or evt", 
 			  -1, -1, p);
       }
       return 0;
@@ -1382,7 +1382,7 @@ user_write_bytes(Scheme_Output_Port *port, const char *str, long offset, long le
   }
 }
 
-static Scheme_Object *user_write_sble_wrapper(void *d, int argc, struct Scheme_Object *argv[])
+static Scheme_Object *user_write_evt_wrapper(void *d, int argc, struct Scheme_Object *argv[])
 {
   Scheme_Object *val, *port;
   long r, len;
@@ -1392,12 +1392,12 @@ static Scheme_Object *user_write_sble_wrapper(void *d, int argc, struct Scheme_O
   len = SCHEME_INT_VAL(val);
   val = argv[0];
 
-  r = user_write_result("user port write-sble", (Scheme_Output_Port *)port, 
+  r = user_write_result("user port write-evt", (Scheme_Output_Port *)port, 
 			0, val, 1, len);
 
   if (!r && len) {
     /* Port must have been closed */
-    scheme_arg_mismatch("user port write-sble",
+    scheme_arg_mismatch("user port write-evt",
 			"port is closed: ",
 			port);    
   }
@@ -1406,7 +1406,7 @@ static Scheme_Object *user_write_sble_wrapper(void *d, int argc, struct Scheme_O
 }
 
 static Scheme_Object * 
-user_write_bytes_sble(Scheme_Output_Port *port, 
+user_write_bytes_evt(Scheme_Output_Port *port, 
 			  const char *buffer, long offset, long size)
 {
   Scheme_Object *to_write, *wrapper;
@@ -1419,23 +1419,23 @@ user_write_bytes_sble(Scheme_Output_Port *port,
   a[0] = to_write;
   a[1] = scheme_make_integer(0);
   a[2] = scheme_make_integer(size);
-  val = scheme_apply(uop->write_sble_proc, 3, a);  
+  val = scheme_apply(uop->write_evt_proc, 3, a);  
 
-  if (!scheme_is_sble(val)) {
+  if (!scheme_is_evt(val)) {
     a[0] = val;
-    scheme_wrong_type("user port write-sble", "sble", -1, -1, a);
+    scheme_wrong_type("user port write-evt", "evt", -1, -1, a);
     return NULL;
   }
 
-  /* Wrap the sble for result checking: */
+  /* Wrap the evt for result checking: */
   args = MALLOC_N(void*, 2);
   args[0] = port;
   args[1] = scheme_make_integer(size);
-  wrapper = scheme_make_closed_prim(user_write_sble_wrapper, args);
+  wrapper = scheme_make_closed_prim(user_write_evt_wrapper, args);
 
   a[0] = val;
   a[1] = wrapper;
-  return scheme_wrap_sble(2, a);
+  return scheme_wrap_evt(2, a);
 }
 
 static void
@@ -1462,7 +1462,7 @@ user_write_special (Scheme_Output_Port *port, Scheme_Object *v, int nonblock)
   a[1] = (nonblock ? scheme_true : scheme_false);
   v = scheme_apply(uop->write_special_proc, 2, a);
 
-  if (scheme_is_sble(v)) {
+  if (scheme_is_evt(v)) {
     if (!nonblock) {
       a[0] = scheme_false;
       a[1] = v;
@@ -1475,17 +1475,17 @@ user_write_special (Scheme_Output_Port *port, Scheme_Object *v, int nonblock)
 }
 
 static Scheme_Object*
-user_write_special_sble (Scheme_Output_Port *port, Scheme_Object *v)
+user_write_special_evt (Scheme_Output_Port *port, Scheme_Object *v)
 {
   Scheme_Object *a[1];
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
 
   a[0] = v;
-  v = scheme_apply(uop->write_special_sble_proc, 2, a);
+  v = scheme_apply(uop->write_special_evt_proc, 2, a);
 
-  if (!scheme_is_sble(v)) {
+  if (!scheme_is_evt(v)) {
     a[0] = v;
-    scheme_wrong_type("user port write-special-sble", "sble", -1, -1, a);
+    scheme_wrong_type("user port write-special-evt", "evt", -1, -1, a);
   }
 
   return v;
@@ -1984,18 +1984,18 @@ make_input_port(int argc, Scheme_Object *argv[])
   uip->type = scheme_rt_user_input;
 #endif
 
-  uip->read_sble_proc = argv[1];
+  uip->read_evt_proc = argv[1];
   uip->read_proc = argv[2];
-  uip->peek_sble_proc = argv[3];
+  uip->peek_evt_proc = argv[3];
   uip->peek_proc = argv[4];
   uip->close_proc = argv[5];
 
   ip = scheme_make_input_port(scheme_user_input_port_type,
 			      uip,
 			      name,
-			      user_get_bytes_sble,
+			      user_get_bytes_evt,
 			      user_get_bytes,
-			      user_peek_bytes_sble,
+			      user_peek_bytes_evt,
 			      user_peek_bytes,
 			      user_byte_ready,
 			      user_close_input,
@@ -2014,8 +2014,8 @@ make_output_port (int argc, Scheme_Object *argv[])
   User_Output_Port *uop;
   Scheme_Object *name;
 
-  if (!scheme_is_sble(argv[1])) {
-    scheme_wrong_type("make-output-port", "sble", 1, argc, argv);
+  if (!scheme_is_evt(argv[1])) {
+    scheme_wrong_type("make-output-port", "evt", 1, argc, argv);
   }
   scheme_check_proc_arity("make-output-port", 3, 2, argc, argv);
   scheme_check_proc_arity("make-output-port", 4, 3, argc, argv);
@@ -2042,14 +2042,14 @@ make_output_port (int argc, Scheme_Object *argv[])
   uop->type = scheme_rt_user_output;
 #endif
 
-  uop->sble = argv[1];
-  uop->write_sble_proc = argv[2];
+  uop->evt = argv[1];
+  uop->write_evt_proc = argv[2];
   uop->write_proc = argv[3];
   if (SCHEME_FALSEP(argv[4])) {
     uop->write_special_proc = NULL;
     uop->write_special_proc = NULL;
   } else {
-    uop->write_special_sble_proc = argv[4];
+    uop->write_special_evt_proc = argv[4];
     uop->write_special_proc = argv[5];
   }
   uop->close_proc = argv[6];
@@ -2057,12 +2057,12 @@ make_output_port (int argc, Scheme_Object *argv[])
   op = scheme_make_output_port(scheme_user_output_port_type,
 			       uop,
 			       name,
-			       user_write_bytes_sble,
+			       user_write_bytes_evt,
 			       user_write_bytes,
 			       user_write_ready,
 			       user_close_output,
 			       user_needs_wakeup_output,
-			       uop->write_special_sble_proc ? user_write_special_sble : NULL,
+			       uop->write_special_evt_proc ? user_write_special_evt : NULL,
 			       uop->write_special_proc ? user_write_special : NULL,
 			       0);
 
@@ -2696,7 +2696,7 @@ read_byte_line (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 do_general_read_bytes(int as_bytes, 
 		      const char *who, int argc, Scheme_Object *argv[],
-		      int alloc_mode, int only_avail, int peek, int get_sble)
+		      int alloc_mode, int only_avail, int peek, int get_evt)
 {
   Scheme_Object *port, *str, *peek_skip;
   long size, start, finish, got;
@@ -2794,8 +2794,8 @@ do_general_read_bytes(int as_bytes,
       str = scheme_alloc_char_string(size, 0);
   }
 
-  if (get_sble) {
-    return scheme_make_read_sble(who, port, 
+  if (get_evt) {
+    return scheme_make_read_evt(who, port, 
 				     SCHEME_BYTE_STR_VAL(str), start, size, 
 				     peek, peek_skip);
   } else if (as_bytes) {
@@ -2898,21 +2898,21 @@ sch_peek_string_bang(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-read_bytes_avail_sble(int argc, Scheme_Object *argv[])
+read_bytes_avail_evt(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_bytes(1, "read-sble", argc, argv, 0, 1, 0, 1);
+  return do_general_read_bytes(1, "read-evt", argc, argv, 0, 1, 0, 1);
 }
 
 static Scheme_Object *
-peek_bytes_avail_sble(int argc, Scheme_Object *argv[])
+peek_bytes_avail_evt(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_bytes(1, "peek-sble", argc, argv, 0, 1, 1, 1);
+  return do_general_read_bytes(1, "peek-evt", argc, argv, 0, 1, 1, 1);
 }
 
 static Scheme_Object *
 do_write_bytes_avail(int as_bytes, const char *who, 
 		     int argc, Scheme_Object *argv[], 
-		     int rarely_block, int get_sble)
+		     int rarely_block, int get_evt)
 {
   Scheme_Object *port, *str;
   long size, start, finish, putten;
@@ -2939,8 +2939,8 @@ do_write_bytes_avail(int as_bytes, const char *who,
   else
     port = CURRENT_OUTPUT_PORT(scheme_current_config());
 
-  if (get_sble)
-    return scheme_make_write_sble(who, port,
+  if (get_evt)
+    return scheme_make_write_evt(who, port,
 				  NULL, SCHEME_BYTE_STR_VAL(str), start, size);
   else if (as_bytes)
     putten = scheme_put_byte_string(who, port, 
@@ -2981,13 +2981,13 @@ write_string(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-write_bytes_avail_sble(int argc, Scheme_Object *argv[])
+write_bytes_avail_evt(int argc, Scheme_Object *argv[])
 {
-  return do_write_bytes_avail(1, "write-sble", argc, argv, 1, 1);
+  return do_write_bytes_avail(1, "write-evt", argc, argv, 1, 1);
 }
 
 static Scheme_Object *
-do_write_special(const char *name, int argc, Scheme_Object *argv[], int nonblock, int get_sble)
+do_write_special(const char *name, int argc, Scheme_Object *argv[], int nonblock, int get_evt)
 {
   Scheme_Object *port;
   int ok;
@@ -3000,8 +3000,8 @@ do_write_special(const char *name, int argc, Scheme_Object *argv[], int nonblock
     port = CURRENT_OUTPUT_PORT(scheme_current_config());
 
   if (((Scheme_Output_Port *)port)->write_special_fun) {
-    if (get_sble) {
-      return scheme_make_write_sble(name, port, argv[0], NULL, 0, 0);
+    if (get_evt) {
+      return scheme_make_write_evt(name, port, argv[0], NULL, 0, 0);
     } else {
       Scheme_Write_Special_Fun ws = ((Scheme_Output_Port *)port)->write_special_fun;
       ok = ws((Scheme_Output_Port *)port, argv[0], nonblock);
@@ -3041,9 +3041,9 @@ write_special_nonblock(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-write_special_sble(int argc, Scheme_Object *argv[])
+write_special_evt(int argc, Scheme_Object *argv[])
 {
-  return do_write_special("write-special-sble", argc, argv, 1, 1);
+  return do_write_special("write-special-evt", argc, argv, 1, 1);
 }
 
 

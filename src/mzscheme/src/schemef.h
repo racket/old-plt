@@ -125,19 +125,19 @@ MZ_EXTERN void scheme_add_custodian_extractor(Scheme_Type t, Scheme_Custodian_Ex
 
 MZ_EXTERN void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f);
 
-MZ_EXTERN void scheme_add_sble(Scheme_Type type,
+MZ_EXTERN void scheme_add_evt(Scheme_Type type,
 				   Scheme_Ready_Fun ready,
 				   Scheme_Needs_Wakeup_Fun wakeup,
 				   Scheme_Sync_Filter_Fun filter,
 				   int can_redirect);
-MZ_EXTERN void scheme_add_sble_through_sema(Scheme_Type type,
+MZ_EXTERN void scheme_add_evt_through_sema(Scheme_Type type,
 					    Scheme_Sync_Sema_Fun sema,
 					    Scheme_Sync_Filter_Fun filter);
-MZ_EXTERN int scheme_is_sble(Scheme_Object *o);
+MZ_EXTERN int scheme_is_evt(Scheme_Object *o);
 MZ_EXTERN Scheme_Object *scheme_sync(int argc, Scheme_Object *argv[]);
 MZ_EXTERN Scheme_Object *scheme_sync_enable_break(int argc, Scheme_Object *argv[]);
 
-MZ_EXTERN Scheme_Object *scheme_make_sble_set(int argc, Scheme_Object **argv);
+MZ_EXTERN Scheme_Object *scheme_make_evt_set(int argc, Scheme_Object **argv);
 
 MZ_EXTERN void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data);
 
@@ -616,18 +616,18 @@ MZ_EXTERN void scheme_count_lines(Scheme_Object *port);
 MZ_EXTERN void scheme_close_input_port(Scheme_Object *port);
 MZ_EXTERN void scheme_close_output_port(Scheme_Object *port);
 
-MZ_EXTERN Scheme_Object *scheme_make_read_sble(const char *who, Scheme_Object *port,
+MZ_EXTERN Scheme_Object *scheme_make_read_evt(const char *who, Scheme_Object *port,
 						   char *str, long start, long size,
 						   int peek, Scheme_Object *peek_skip);
-MZ_EXTERN Scheme_Object *scheme_make_write_sble(const char *who, Scheme_Object *port,
+MZ_EXTERN Scheme_Object *scheme_make_write_evt(const char *who, Scheme_Object *port,
 						    Scheme_Object *special, char *str, long start, long size);
 
 MZ_EXTERN Scheme_Object *scheme_make_port_type(const char *name);
 MZ_EXTERN Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void *data,
 						    Scheme_Object *name,
-						    Scheme_Get_String_Sble_Fun get_byte_string_sble_fun,
+						    Scheme_Get_String_Evt_Fun get_byte_string_evt_fun,
 						    Scheme_Get_String_Fun get_byte_string_fun,
-						    Scheme_Peek_String_Sble_Fun peek_string_sble_fun,
+						    Scheme_Peek_String_Evt_Fun peek_string_evt_fun,
 						    Scheme_Peek_String_Fun peek_string_fun,
 						    Scheme_In_Ready_Fun byte_ready_fun,
 						    Scheme_Close_Input_Fun close_fun,
@@ -635,12 +635,12 @@ MZ_EXTERN Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void
 						    int must_close);
 MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype, void *data,
 						      Scheme_Object *name,
-						      Scheme_Write_String_Sble_Fun write_byte_string_sble_fun,
+						      Scheme_Write_String_Evt_Fun write_byte_string_evt_fun,
 						      Scheme_Write_String_Fun write_byte_string_fun,
 						      Scheme_Out_Ready_Fun ready_fun,
 						      Scheme_Close_Output_Fun close_fun,
 						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
-						      Scheme_Write_Special_Sble_Fun write_special_sble_fun,
+						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
 

@@ -71,7 +71,7 @@
        (lambda (p v)
 	 (with-handlers
 	     ((void (lambda (x)
-		      (wx:message-box (exn-message x) "Invalid Library")
+		      (mred:message-box (exn-message x) "Invalid Library")
 		      #f)))
 	   (if v
 	       (let ([new-unit (and (file-exists? v)
@@ -79,7 +79,7 @@
 		 (if ((global-defined-value 'unit/sig?) new-unit)
 		     (set! library-unit new-unit)
 		     (begin
-		       (wx:message-box (format "Invalid Library: ~a" v) "ERROR")
+		       (mred:message-box (format "Invalid Library: ~a" v) "ERROR")
 		       #f)))
 	       (set! library-unit #f)))))
       

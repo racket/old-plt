@@ -56,7 +56,7 @@
 			   tabs)])
 	    (set! tab-widths (map car w+hs))
 	    (if mac-tab?
-		(set! tab-height 27)
+		(set! tab-height (+ 27 (send font get-point-size) -13))
 		(let-values ([(sw sh sd sa) (send dc get-text-extent " " font)])
 		  (let ([th (ceiling (+ (* 2 tab-v-space) (apply max 0 sh (map cdr w+hs))))])
 		    (set! tab-height (if (even? th) th (add1 th)))))))))
@@ -196,7 +196,7 @@
 			     [h tab-height])
 			 (when dc
 			   (when (eq? dark? (= pos selected))
-			     (send dc draw-tab (car l) x 3 w 24
+			     (send dc draw-tab (car l) x 3 w (- tab-height 3)
 				   (+ (if (and (has-focus?)
 					       (= pos current-focus-tab))
 					  ;; Adding 100 means "draw focus ring"
@@ -211,7 +211,7 @@
 					      (if dark? 3 0)
 					      (if dark? 4 2)))))))
 			 (list (list x 3) (list (+ x w) 3)
-			       (list (+ x w) 21) (list x 21)))
+			       (list (+ x w) (- tab-height 6)) (list x (- tab-height 6))))
 		       ;; ----- X-style drawing -----
 		       (append
 			;; start point

@@ -540,6 +540,7 @@ void _ALDrawListBorder(ALHandle hAL)
 	// Get the rectangle to draw.
 	ALGetViewRect(&box, hAL);
 	--box.top;
+	box.right++;
 	// InsetRect(&box, 1, 1);
 
 	// Check the focused state.  Also, check for the Appearance Manager for a bit of speed.
@@ -551,9 +552,9 @@ void _ALDrawListBorder(ALHandle hAL)
 	// If we're not focused or not active, erase the focus rectangle first.
 	if ( 0 && BTST((*hAL)->features, alFDrawFocus) && ( !focused || !BTST((*hAL)->flags, alFActive) ) ) {
 #if ALIST_USEAPPEARANCEMGR
-		if (appearance)
+	  if (appearance) {
 			status = DrawThemeFocusRect(&box, false);
-		else
+	  } else
 #endif
 		{	GetForeColor(&saveColor);
 			// Erase to the background color.

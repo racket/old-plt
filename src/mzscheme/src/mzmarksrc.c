@@ -874,7 +874,6 @@ mark_comp_env {
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
-  gcMARK(e->data.stxes_used);
   gcMARK(e->data.const_names);
   gcMARK(e->data.const_vals);
   gcMARK(e->data.const_uids);
@@ -957,7 +956,6 @@ mark_closure_info {
   
   gcMARK(i->local_flags);
   gcMARK(i->base_closure_map);
-  gcMARK(i->stx_closure_map);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Closure_Info));

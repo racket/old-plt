@@ -2662,9 +2662,12 @@ static Scheme_Object *read_compact(CPort *port,
 
 #if defined(MZ_PRECISE_GC)
 	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, len);
+	if (s != buffer)
+	  len = -len; /* no alloc in sized_byte_string_input_port */
 #else
 	s = (char *)port->start + port->pos;
 	port->pos += len;
+	len = -len; /* no alloc in sized_byte_string_input_port */
 #endif
 
 	ep = scheme_make_sized_byte_string_input_port(s, len);

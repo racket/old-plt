@@ -101,7 +101,7 @@ void MrEdDestroyContext(MrEdFinalizedContext *c)
   XtDestroyWidget(c->toplevel);
 }
 
-Window GetEventWindow(XEvent *e)
+static Window GetEventWindow(XEvent *e)
 {
   Window window = 0;
 
@@ -109,39 +109,41 @@ Window GetEventWindow(XEvent *e)
 #define WINCASE(type, record) WINCASEEX(type, record, window)
 
   switch (e->type) {
-    WINCASE(MappingNotify, xmapping);
-    WINCASE(ClientMessage, xclient);
-    WINCASE(SelectionClear, xselectionclear);
-    WINCASEEX(SelectionNotify, xselection, requestor);
-    WINCASEEX(SelectionRequest, xselectionrequest, owner);
+    WINCASE(KeyPress, xkey);
+    WINCASE(KeyRelease, xkey);
     WINCASE(ButtonPress, xbutton);
     WINCASE(ButtonRelease, xbutton);
     WINCASE(MotionNotify, xmotion);
-    WINCASE(ColormapNotify, xcolormap);
     WINCASE(EnterNotify, xcrossing);
     WINCASE(LeaveNotify, xcrossing);
     WINCASE(FocusIn, xfocus);
     WINCASE(FocusOut, xfocus);
+    WINCASE(KeymapNotify, xkeymap);
     WINCASE(Expose, xexpose);
     WINCASEEX(GraphicsExpose, xgraphicsexpose, drawable);
     WINCASEEX(NoExpose, xnoexpose, drawable);
     WINCASE(VisibilityNotify, xvisibility);
-    WINCASE(KeyPress, xkey);
-    WINCASE(KeyRelease, xkey);
-    WINCASE(KeymapNotify, xkeymap);
-    WINCASE(PropertyNotify, xproperty);
-    WINCASE(ResizeRequest, xresizerequest);
-    WINCASE(CirculateNotify, xcirculate);
-    WINCASE(ConfigureNotify, xconfigure);
     WINCASE(CreateNotify, xcreatewindow);
     WINCASE(DestroyNotify, xdestroywindow);
-    WINCASE(GravityNotify, xgravity);
-    WINCASE(MapNotify, xmap);
-    WINCASE(ReparentNotify, xreparent);
     WINCASE(UnmapNotify, xunmap);
-    WINCASE(CirculateRequest, xcirculaterequest);
-    WINCASE(ConfigureRequest, xconfigurerequest);
+    WINCASE(MapNotify, xmap);
     WINCASE(MapRequest, xmaprequest);
+    WINCASE(ReparentNotify, xreparent);
+    WINCASE(ConfigureNotify, xconfigure);
+    WINCASE(ConfigureRequest, xconfigurerequest);
+    WINCASE(GravityNotify, xgravity);
+    WINCASE(ResizeRequest, xresizerequest);
+    WINCASE(CirculateNotify, xcirculate);
+    WINCASE(CirculateRequest, xcirculaterequest);
+    WINCASE(PropertyNotify, xproperty);
+    WINCASE(SelectionClear, xselectionclear);
+    WINCASEEX(SelectionRequest, xselectionrequest, owner);
+    WINCASEEX(SelectionNotify, xselection, requestor);
+    WINCASE(ColormapNotify, xcolormap);
+    WINCASE(ClientMessage, xclient);
+    WINCASE(MappingNotify, xmapping);
+  default:
+    break;
   }
 
   return window;

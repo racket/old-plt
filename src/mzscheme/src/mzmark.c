@@ -2227,7 +2227,6 @@ int mark_comp_env_MARK(void *p) {
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
-  gcMARK(e->data.stxes_used);
   gcMARK(e->data.const_names);
   gcMARK(e->data.const_vals);
   gcMARK(e->data.const_uids);
@@ -2252,7 +2251,6 @@ int mark_comp_env_FIXUP(void *p) {
   
   gcFIXUP(e->data.stat_dists);
   gcFIXUP(e->data.sd_depths);
-  gcFIXUP(e->data.stxes_used);
   gcFIXUP(e->data.const_names);
   gcFIXUP(e->data.const_vals);
   gcFIXUP(e->data.const_uids);
@@ -2419,7 +2417,6 @@ int mark_closure_info_MARK(void *p) {
   
   gcMARK(i->local_flags);
   gcMARK(i->base_closure_map);
-  gcMARK(i->stx_closure_map);
 
   return
   gcBYTES_TO_WORDS(sizeof(Closure_Info));
@@ -2430,7 +2427,6 @@ int mark_closure_info_FIXUP(void *p) {
   
   gcFIXUP(i->local_flags);
   gcFIXUP(i->base_closure_map);
-  gcFIXUP(i->stx_closure_map);
 
   return
   gcBYTES_TO_WORDS(sizeof(Closure_Info));

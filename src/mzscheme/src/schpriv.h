@@ -571,6 +571,8 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 
 Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 				      Scheme_Object *old_midx, Scheme_Object *new_midx);
+Scheme_Object *scheme_stx_phase_shift_as_rename(long shift, 
+						Scheme_Object *old_midx, Scheme_Object *new_midx);
 
 int scheme_stx_list_length(Scheme_Object *list);
 int scheme_stx_proper_list_length(Scheme_Object *list);
@@ -1394,7 +1396,8 @@ typedef struct Scheme_Object *(*Scheme_Syntax_Resolver)(Scheme_Object *data, Res
 typedef struct CPort Mz_CPort;
 
 typedef void (*Scheme_Syntax_Validater)(Scheme_Object *data, Mz_CPort *port,
-					char *stack, int depth, int letlimit, int delta, int num_toplevels);
+					char *stack, int depth, int letlimit, int delta, 
+					int num_toplevels, int num_stxes);
 
 typedef struct Scheme_Object *(*Scheme_Syntax_Executer)(struct Scheme_Object *data);
 
@@ -1478,7 +1481,6 @@ void scheme_set_local_syntax(int pos, Scheme_Object *name, Scheme_Object *val,
 			     Scheme_Comp_Env *env);
 
 void scheme_env_make_closure_map(Scheme_Comp_Env *frame, mzshort *size, mzshort **map);
-void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, mzshort *size, mzshort **map);
 int scheme_env_uses_toplevel(Scheme_Comp_Env *frame);
 
 Scheme_Object *scheme_make_closure(Scheme_Thread *p,
@@ -1504,7 +1506,8 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
 #define BOXVAL_EXPD        6
 #define MODULE_EXPD        7
 #define REQUIRE_EXPD       8
-#define _COUNT_EXPD_       9
+#define QUOTE_SYNTAX_EXPD  9
+#define _COUNT_EXPD_       10
 
 #define scheme_register_syntax(i, fr, fv, fe, pa) \
      (scheme_syntax_resolvers[i] = fr, \
@@ -1531,14 +1534,14 @@ Scheme_Object *scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info);
 Resolve_Prefix *scheme_resolve_prefix(int phase, Comp_Prefix *cp, int simplify);
 
 Resolve_Info *scheme_resolve_info_create(Resolve_Prefix *rp);
-Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapcount, int stxcount);
+Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapcount);
 void scheme_resolve_info_add_mapping(Resolve_Info *info, int oldp, int newp, int flags);
 int scheme_resolve_info_flags(Resolve_Info *info, int pos);
 int scheme_resolve_info_lookup(Resolve_Info *resolve, int pos, int *flags);
-void scheme_resolve_info_add_stx_mapping(Resolve_Info *info, int oldp, int newp);
 void scheme_resolve_info_set_toplevel_pos(Resolve_Info *info, int pos);
 
 int scheme_resolve_toplevel_pos(Resolve_Info *info);
+int scheme_resolve_quote_syntax_pos(Resolve_Info *info);
 Scheme_Object *scheme_resolve_toplevel(Resolve_Info *info, Scheme_Object *expr);
 int scheme_resolve_quote_syntax(Resolve_Info *info, int oldpos);
 
@@ -1673,11 +1676,16 @@ Scheme_Env *scheme_environment_from_dummy(Scheme_Object *dummy);
 void scheme_validate_code(Mz_CPort *port, Scheme_Object *code, int depth,
 			  int num_toplevels, int num_stxes);
 void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr,
-			  char *stack, int depth, int letlimit, int delta, int num_toplevels);
+			  char *stack, int depth, int letlimit, int delta, 
+			  int num_toplevels, int num_stxes);
 void scheme_validate_toplevel(Scheme_Object *expr, Mz_CPort *port,
-			      char *stack, int depth, int delta, int num_toplevels);
+			      char *stack, int depth, int delta, 
+			      int num_toplevels, int num_stxes);
 void scheme_validate_boxenv(int pos, Mz_CPort *port,
 			    char *stack, int depth, int delta);
+void scheme_validate_quote_syntax(int c, int p, int z, Mz_CPort *port,
+				  char *stack, int depth, int delta, 
+				  int num_toplevels, int num_stxes);
 
 #define TRACK_ILL_FORMED_CATCH_LINES 0
 #if TRACK_ILL_FORMED_CATCH_LINES

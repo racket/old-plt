@@ -975,11 +975,7 @@ Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o)
   return scheme_add_rename(o, barrier_symbol);
 }
 
-Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
-				      Scheme_Object *old_midx, Scheme_Object *new_midx)
-/* Shifts the phase on a syntax object in a module. A 0 shift might be
-   used just to re-direct relative module paths. new_midx might be
-   NULL to shift without redirection. */
+Scheme_Object *scheme_stx_phase_shift_as_rename(long shift, Scheme_Object *old_midx, Scheme_Object *new_midx)
 {
   if (shift || new_midx) {
     Scheme_Object *vec;
@@ -998,10 +994,25 @@ Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 
       last_phase_shift = scheme_box(vec);
     }
-
-    return scheme_add_rename(stx, last_phase_shift);
+    
+    return last_phase_shift;
   } else
-    return (Scheme_Object *)stx;
+    return NULL;
+}
+
+Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
+				      Scheme_Object *old_midx, Scheme_Object *new_midx)
+/* Shifts the phase on a syntax object in a module. A 0 shift might be
+   used just to re-direct relative module paths. new_midx might be
+   NULL to shift without redirection. */
+{
+  Scheme_Object *ps;
+
+  ps = scheme_stx_phase_shift_as_rename(shift, old_midx, new_midx);
+  if (ps) 
+    return scheme_add_rename(stx, ps);
+  else
+    return stx;
 }
 
 void scheme_clear_shift_cache(void)

@@ -114,8 +114,6 @@ typedef struct Compile_Data {
   char **stat_dists; /* (pos, depth) => used? */
   int *sd_depths;
   int used_toplevel;
-  int max_stx_used;
-  char *stxes_used;
   int num_const;
   Scheme_Object **const_names;
   Scheme_Object **const_vals;
@@ -1238,18 +1236,7 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
   /* Register use at lambda, if any: */
   while (env) {
     if (env->flags & SCHEME_LAMBDA_FRAME) {
-      if (COMPILE_DATA(env)->max_stx_used <= pos) {
-	char *p;
-	int max_stx_used = (pos * 2) + 10;
-	
-	p = MALLOC_N_ATOMIC(char, max_stx_used);
-	memset(p, 0, max_stx_used);
-	memcpy(p, COMPILE_DATA(env)->stxes_used, COMPILE_DATA(env)->max_stx_used);
-	COMPILE_DATA(env)->stxes_used = p;
-	COMPILE_DATA(env)->max_stx_used = max_stx_used;
-      }
-      
-      COMPILE_DATA(env)->stxes_used[pos] = 1;
+      COMPILE_DATA(env)->used_toplevel = 1;
       break;
     }
     env = env->next;
@@ -2066,63 +2053,6 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, mzshort *_size, mzshort *
   }
 }
 
-void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, mzshort *size, mzshort **_map)
-{
-  char *used;
-
-  used = COMPILE_DATA(frame)->stxes_used;
-
-  if (used) {
-    mzshort *map;
-    int i, max_stx_used, count = 0;
-    
-    max_stx_used = COMPILE_DATA(frame)->max_stx_used;
-    
-    for (i = 0; i < max_stx_used; i++) {
-      if (used[i])
-	count++;
-    }
-
-    *size = count;
-    map = MALLOC_N_ATOMIC(mzshort, count);
-    *_map = map;
-
-    count = 0;
-    for (i = 0; i < max_stx_used; i++) {
-      if (used[i])
-	map[count++] = i;
-    }
-
-    /* Propagate uses to an enclosing lambda, if any: */
-    frame = frame->next;
-    while (frame) {
-      if (frame->flags & SCHEME_LAMBDA_FRAME) {
-	if (COMPILE_DATA(frame)->max_stx_used < max_stx_used) {
-	  char *p;
-
-	  p = MALLOC_N_ATOMIC(char, max_stx_used);
-	  memset(p, 0, max_stx_used);
-	  memcpy(p, COMPILE_DATA(frame)->stxes_used, 
-		 COMPILE_DATA(frame)->max_stx_used);
-	  COMPILE_DATA(frame)->stxes_used = p;
-	  COMPILE_DATA(frame)->max_stx_used = max_stx_used;
-	}
-
-	for (i = 0; i < max_stx_used; i++) {
-	  if (used[i])
-	    COMPILE_DATA(frame)->stxes_used[i] = 1;
-	}
-
-	break;
-      }
-      frame = frame->next;
-    }
-  } else {
-    *size = 0;
-    *_map = NULL;
-  }
-}
-
 int scheme_env_uses_toplevel(Scheme_Comp_Env *frame)
 {
   int used;
@@ -2319,7 +2249,7 @@ Resolve_Info *scheme_resolve_info_create(Resolve_Prefix *rp)
   return naya;
 }
 
-Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapc, int stxc)
+Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapc)
      /* size = number of appended items in run-time frame */
      /* oldisze = number of appended items in original compile-time frame */
      /* mapc = mappings that will be installed */
@@ -2336,7 +2266,6 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
   naya->oldsize = oldsize;
   naya->count = mapc;
   naya->pos = 0;
-  naya->stx_count = stxc;
   naya->toplevel_pos = -1;
 
   if (mapc) {
@@ -2358,13 +2287,6 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
     }
   }
 
-  if (stxc) {
-    mzshort *sa;
-
-    sa = MALLOC_N_ATOMIC(mzshort, stxc);
-    naya->old_stx_pos = sa;
-  }
-
   return naya;
 }
 
@@ -2380,11 +2302,6 @@ void scheme_resolve_info_add_mapping(Resolve_Info *info, int oldp, int newp, int
   info->flags[info->pos] = flags;
   
   info->pos++;
-}
-
-void scheme_resolve_info_add_stx_mapping(Resolve_Info *info, int oldp, int newp)
-{
-  info->old_stx_pos[newp] = oldp;
 }
 
 void scheme_resolve_info_set_toplevel_pos(Resolve_Info *info, int pos)
@@ -2446,6 +2363,11 @@ int scheme_resolve_toplevel_pos(Resolve_Info *info)
     return info->toplevel_pos + pos;
 }
 
+int scheme_resolve_quote_syntax_pos(Resolve_Info *info)
+{
+  return info->prefix->num_toplevels;
+}
+
 Scheme_Object *scheme_resolve_toplevel(Resolve_Info *info, Scheme_Object *expr)
 {
   int skip;
@@ -2455,32 +2377,6 @@ Scheme_Object *scheme_resolve_toplevel(Resolve_Info *info, Scheme_Object *expr)
   return make_toplevel(skip + SCHEME_TOPLEVEL_DEPTH(expr), /* depth is 0 (normal) or 1 (exp-time) */
 		       SCHEME_TOPLEVEL_POS(expr),
 		       1);
-}
-
-int scheme_resolve_quote_syntax(Resolve_Info *info, int oldpos)
-{
-  Resolve_Info *start = info;
-  int skip = 0;
-
-  while (info) {
-    if (info->old_stx_pos) {
-      int i;
-      for (i = 0; i < info->stx_count; i++) {
-	if (info->old_stx_pos[i] == oldpos)
-	  return (info->count - info->size) + ((info->toplevel_pos >= 0) ? 1 : 0) + i + skip;
-      }
-      scheme_signal_error("internal error: didn't find an stx pos");
-      return 0;
-    } else {
-      skip += info->size;
-      info = info->next;
-    }
-  }
-
-  if (start->prefix->num_toplevels)
-    skip += 1;
-  
-  return skip + oldpos;
 }
 
 /*========================================================================*/

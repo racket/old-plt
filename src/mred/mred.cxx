@@ -1364,7 +1364,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
   c->suspended = 0;
   c->ready = 0;
 
-    scheme_current_thread->error_buf = &newbuf;
+  scheme_current_thread->error_buf = &newbuf;
   if (!scheme_setjmp(newbuf)) {
     if (!TheMrEdApp->initialized)
       TheMrEdApp->RealInit();

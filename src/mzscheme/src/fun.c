@@ -597,8 +597,6 @@ typedef struct {
   int *local_flags;
   mzshort base_closure_size;
   mzshort *base_closure_map;
-  mzshort stx_closure_size;
-  mzshort *stx_closure_map;
   short has_tl;
 } Closure_Info;
 
@@ -607,7 +605,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 {
   Scheme_Closure_Data *data;
   int i, closure_size, offset;
-  mzshort *oldpos, *stx_oldpos, *closure_map;
+  mzshort *oldpos, *closure_map;
   Closure_Info *cl;
   Resolve_Info *new_info;
 
@@ -643,21 +641,12 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
     offset++;
   }
 
-  /* Then the syntax constants, if any: */
-  stx_oldpos = cl->stx_closure_map;
-  for (i = cl->stx_closure_size; i--; ) {
-    int li;
-    li = scheme_resolve_quote_syntax(info, stx_oldpos[i]);
-    closure_map[i + offset] = li;
-  }
-
   /* Set up mappng from old locations on the stack (as if bodies were
      evaluated immediately) to new locations (where closures
      effectively shift and compact valueson the stack): */
 
   new_info = scheme_resolve_info_extend(info, data->num_params, data->num_params,
-					cl->base_closure_size + data->num_params,
-					cl->stx_closure_size);
+					cl->base_closure_size + data->num_params);
   for (i = 0; i < data->num_params; i++) {
     scheme_resolve_info_add_mapping(new_info, i, i + closure_size,
 				    cl->local_flags[i]);
@@ -672,9 +661,6 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 
     scheme_resolve_info_add_mapping(new_info, p, i,
 				    scheme_resolve_info_flags(info, oldpos[i]));
-  }
-  for (i = 0; i < cl->stx_closure_size; i++) {
-    scheme_resolve_info_add_stx_mapping(new_info, stx_oldpos[i], i);
   }
   if (cl->has_tl)
     scheme_resolve_info_set_toplevel_pos(new_info, cl->base_closure_size);
@@ -844,14 +830,10 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   scheme_env_make_closure_map(frame, &dcs, &dcm);
   cl->base_closure_size = dcs;
   cl->base_closure_map = dcm;
-  scheme_env_make_stx_closure_map(frame, &dcs, &dcm);
-  cl->stx_closure_size = dcs;
-  cl->stx_closure_map = dcm;
   if (scheme_env_uses_toplevel(frame))
     cl->has_tl = 1;
 
   data->closure_size = (cl->base_closure_size
-			+ cl->stx_closure_size
 			+ (cl->has_tl ? 1 : 0));
   data->closure_map = (mzshort *)cl;
 

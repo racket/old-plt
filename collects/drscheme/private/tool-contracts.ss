@@ -1,3 +1,4 @@
+
 (module tool-contracts "tool-contract-language.ss"                       
                        
                      ; 
@@ -815,8 +816,7 @@
   . -> .
   any?)
  (ls)
-
-"Extracts the settings field of a language-settings.")
+ "Extracts the settings field of a language-settings.")
 
 (drscheme:language-configuration:language-settings-language
  (drscheme:language-configuration:language-settings?
@@ -830,9 +830,56 @@
  (any? . -> . boolean?)
  (val)
 
-"Determines if the argument is a langauge-settings or not.")
+ "Determines if the argument is a langauge-settings or not.")
 
-
+  (drscheme:language-configuration:language-dialog
+   (opt->
+    (boolean? drscheme:language-configuration:language-settings?)
+    ((union false? (is-a?/c top-level-window<%>)))
+    drscheme:language-configuration:language-settings?)
+   ((show-welcome? language-settings-to-show)
+    ((parent #t)))
+   "Opens the language configuration dialog."
+   "See also"
+   "@flink drscheme:language-configuration:fill-language-dialog %"
+   "."
+   ""
+   "The \\var{show-welcome?} argument determines if"
+   "if a ``Welcome to DrScheme'' message and some"
+   "natural language buttons are shown."
+   ""
+   "The \\var{language-settings-to-show} argument"
+   "must be some default language settings that the dialog"
+   "is initialized to."
+   "If unsure of a default, the currently set language"
+   "in the user's preferences can be obtained via:"
+   "\\begin(schemedisplay)"
+   "(preferences:get (drscheme:language-configuration:get-settings-preferences-symbol))"
+   "\\end{schemedisplay}"
+   ""
+   "The \\var{parent} argument is used as the parent"
+   "to the dialog.")
+  
+  (drscheme:language-configuration:fill-language-dialog
+   ((is-a?/c vertical-panel%)
+    (is-a?/c area-container<%>)
+    drscheme:language-configuration:language-settings?
+    . -> .
+    drscheme:language-configuration:language-settings?)
+   (panel button-panel language-setting)
+   "This procedure accepts two parent panels and"
+   "fills them with the contents of the language dialog."
+   "It is used to include language configuration controls"
+   "in some larger context in another dialog."
+   ""
+   "The \\var{panel} argument is the main panel where the"
+   "language controls will be placed."
+   "The function adds buttons to the \\var{buton-panel}"
+   "to revert a language to its default settings and to"
+   "show the details of a language."
+   ""
+   "The \\var{language-setting} is the default"
+   "language to show in the dialog.")
                                                         
  ;;;                                                    
    ;                                                    

@@ -70,12 +70,6 @@
     (phi-closure set-phi-closure!)
     (add-annotation 'phi-closure (lambda () #f)))
 
-  ; prim is #t iff a node may evaluate to a Scheme primitive
-
-  (define-values
-    (prim set-prim!)
-    (add-annotation 'prim (lambda () #f)))
-
   ; theta is a set of Zodiac lexical-binding's for annotating an ast node e such that:
   ;    IF   x bound to value v in the current environment
   ;    AND  e evaluates to a lambda l
@@ -1465,20 +1459,20 @@
     [lambdas-from-AVs
      (set-from-AVs lambda-lookup)]
 
-    [prop-phi-and-prim-to-binder 
+    [prop-phi-and-unknown-to-binder 
      (lambda (v)
        (when (zodiac:bound-varref? v)
 	     (let ([b (zodiac:bound-varref-binding v)])
 	       (when b
 		     (let* ([v-phi (phi v)]
-			    [v-prim (prim v)]
+			    [v-unknown (unknown? v)]
 			    [b-phi (phi b)]
 			    [new-b-phi (if b-phi
 					 (set-union b-phi v-phi)
 					 v-phi)])
 		       (set-phi! b new-b-phi)
-		       (when v-prim
-			     (set-prim! b #t)))))))]
+		       (when v-unknown
+			     (set-unknown! b #t)))))))]
 
     [do-set-zactor 
      (make-object
@@ -1490,7 +1484,7 @@
 			     (not (phi a)))
 			(let ([avs (get-AVs-at-node a)])
 			  (when (set-find mrspidey:prim-av? avs)
-				(set-prim! a #t))
+				(set-unknown! a #t))
 			  (set-phi! a 
 				    (lambdas-from-AVs avs)))))]
 	      [varref-action
@@ -1521,10 +1515,10 @@
 		    (send this default-action a)
 
 		    (when prim?
-			  (set-prim! rhs #t)
+			  (set-unknown! rhs #t)
 			  (for-each
 			   (lambda (v)
-			     (set-prim! v #t))
+			     (set-unknown! v #t))
 			   vs))
 
 		    (set-phi! rhs rhs-lambdas)
@@ -1539,7 +1533,7 @@
 
 		       ; propagate flow information to ghost binders
 
-		       (prop-phi-and-prim-to-binder v))
+		       (prop-phi-and-unknown-to-binder v))
 
 		     vs)))]
 
@@ -1558,16 +1552,17 @@
 		    (send this default-action a)
 
 		    (when prim?
-			  (set-prim! lhs #t)
-			  (set-prim! rhs #t))
+			  (set-unknown! lhs #t)
+			  (set-unknown! rhs #t))
 
 		    (set-phi! lhs rhs-lambdas)
 		    (set-phi! rhs rhs-lambdas)
 
-		    (prop-phi-and-prim-to-binder lhs)))]
+		    (prop-phi-and-unknown-to-binder lhs)))]
 
 	      [top-level-varref/bind-action
 	       (lambda (a) 
+
 		 (unless (phi a)
 
 			 ; may have been set if subterm of a define
@@ -1578,12 +1573,12 @@
 
 			   (when (or (set-find mrspidey:prim-av? avs)
 				     (varref:has-attribute? a varref:primitive))
-				 (set-prim! a #t))
+				 (set-unknown! a #t))
 
 			   (set-phi! a (lambdas-from-AVs avs)))))]
 	      [quote-form-action
 	       (lambda (a)
-		 (set-prim! a #f)
+		 (set-unknown! a #f)
 		 (set-phi! a empty-set))])
 	     (sequence (super-init))))])
 
@@ -1591,6 +1586,7 @@
 
 (define (escape-analyze ast)
   (letrec ([done #f]
+	   [separate-analysis? (compiler:option:use-mrspidey-for-units)]
 	   [unit-init #f]
 	   [set-unknown-and-set-flag! 
 	    (lambda (a)
@@ -1762,14 +1758,6 @@
 
 			  (prop-unknown rator a)
 
-			  ; an unknown value passed to a Scheme prim is unknown
-			  ; e.g. (car unknown-list)
-
-			  (when (and (prim rator)
-				     (ormap unknown? rands)
-				     (not (unknown? a)))
-				(set-unknown-and-set-flag! a))
-
 			  ; if any function returns an unknown,
 			  ; the app is unknown
 
@@ -1793,23 +1781,25 @@
 
 		     [unit-form-action
 		      (lambda (a)
-			(unless unit-init
-				(let* ([imports (zodiac:unit-form-imports a)]
-				       [unit-code (get-annotation a)]
-				       [export-vs (unit-code-exports unit-code)])
-				  (for-each
-				   init-unknown!
-				   imports)
-				  (for-each
-				   set-escape-and-set-flag!
-				   export-vs))
-				(set! unit-init #t)))]
+			(when separate-analysis?
+			      (unless unit-init
+				      (let* ([imports (zodiac:unit-form-imports a)]
+					     [unit-code (get-annotation a)]
+					     [export-vs (unit-code-exports unit-code)])
+					(for-each
+					 init-unknown!
+					 imports)
+					(for-each
+					 set-escape-and-set-flag!
+					 export-vs))
+				      (set! unit-init #t))))]
 		     [compound-unit-form-action
 		      (lambda (a)
-			(let* ([imports (zodiac:compound-unit-form-imports a)])
-			  (for-each
-			   init-unknown!
-			   imports)))])
+			(when separate-analysis?
+			      (let* ([imports (zodiac:compound-unit-form-imports a)])
+				(for-each
+				 init-unknown!
+				 imports))))])
 		    (sequence (super-init))))])
     (let loop ()
       (set! done #t)
@@ -2039,10 +2029,9 @@
 
 			; lambda's passed to prims use their default protocol
 
-			(when (prim rator)
-			      
-			      (for-each
+			(when (unknown? rator)
 
+			      (for-each
 			       (lambda (rand) 
 				 (let ([rand-lambdas (set->list (phi rand))])
 				   (for-each
@@ -2681,7 +2670,7 @@
 				   [class-rep-pi (pi class-rep)])
 
 			      (cond 
-			       [(prim a)
+			       [(unknown? a)
 				(set-pi! class-rep '())]
 			       [class-rep-pi
 				(set-pi! class-rep
@@ -2707,7 +2696,7 @@
 			    [class-rep-pi (pi class-rep)])
 		       
 		       (cond
-			[(or (prim rator) 
+			[(or (unknown? rator) 
 			     (set-empty? (phi rator)))
 			 (set-pi! class-rep '())]
 
@@ -3337,8 +3326,7 @@
   (for-each 
    (lambda (ast)
      (closure-analyze ast)
-     (when (compiler:option:use-mrspidey-for-units)
-	   (escape-analyze ast))
+     (escape-analyze ast)
      (initialize-invariance-sets ast)
      (initialize-protocol-eq-classes ast))
    asts)

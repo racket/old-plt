@@ -19,7 +19,7 @@
       (define invalid-tokens #f)
 
       ;; The starting position of the invalid-tokens tree
-      (define invalid-tokens-start #f)
+      (define invalid-tokens-start +inf.0)
 
       ;; The position of the next token to be read
       (define current-pos start-pos)
@@ -29,7 +29,6 @@
 
       ;; If the tree is completed
       (define up-to-date? #t)
-      (define up-to-date-sema (make-semaphore 1))
       
       ;; ---------------------- Interactions state ----------------------------
       ;; The position to start the coloring at.
@@ -47,13 +46,11 @@
       (define colors null)
       ;; A channel for communication between the background tokenizer and the foreground
       ;; thread.
-      (define sync (make-channel))
       (define background-thread #f)
-      ;; The input port tokens are read from.  Any change to the text% invalidates this port.
-      (define in #f)
-      ;; The position in the buffer where the input port starts
-      (define input-port-start-pos start-pos)
-
+      ;; When the background thread need to be broken because the text% has changed
+      (define need-break? #f)
+      
+      
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
                get-surrogate set-surrogate get-style-list)
@@ -61,15 +58,14 @@
       (define (reset)
         (set! tokens #f)
         (set! invalid-tokens #f)
-        (set! invalid-tokens-start #f)
+        (set! invalid-tokens-start +inf.0)
+        (set! up-to-date? #t)
         (set! current-pos start-pos)
         (set! colors null)
-        (set! in #f)
-        (set! input-port-start-pos start-pos)
-        (set! up-to-date? #t))
+        (set! need-break? #f))
       
       (define/public (modify)
-        (set! in #f))
+        (set! need-break? #t))
       
       
       (define (color)
@@ -112,12 +108,12 @@
                                           (node-token-length min-tree)))
             (sync-invalid))))
       
-      (define (re-tokenize)
+      (define (re-tokenize in in-start-pos)
         (let-values (((type data new-token-start new-token-end) (get-token in)))
           (let ((old-breaks (break-enabled)))
             (break-enabled #f)
             (cond
-              ((and invalid-tokens-start (not (eq? 'eof type)))
+              ((not (eq? 'eof type))
                (let ((len (- new-token-end new-token-start)))
                  (set! current-pos (+ len current-pos))
                  (sync-invalid)
@@ -127,8 +123,8 @@
                                   (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
                                                                            prefix
                                                                            type)))
-                                  (sub1 (+ input-port-start-pos new-token-start))
-                                  (sub1 (+ input-port-start-pos new-token-end))
+                                  (sub1 (+ in-start-pos new-token-start))
+                                  (sub1 (+ in-start-pos new-token-end))
                                   #f))
                                colors))
                  (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
@@ -136,11 +132,11 @@
                    ((and invalid-tokens (= invalid-tokens-start current-pos))
                     (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
                     (set! invalid-tokens #f)
-                    (set! invalid-tokens-start #f)
+                    (set! invalid-tokens-start +inf.0)
                     (break-enabled old-breaks))
                   (else
                    (break-enabled old-breaks)
-                   (re-tokenize)))))
+                   (re-tokenize in in-start-pos)))))
               (else
                (break-enabled old-breaks))))))
       
@@ -189,7 +185,9 @@
                    (set! should-color? on?)
                    (set-surrogate (get-surrogate))))))
         (unless background-thread
-          (set! background-thread (thread (lambda () (background-colorer #t)))))
+          (break-enabled #f)
+          (set! background-thread (thread (lambda () (background-colorer-entry))))
+          (break-enabled #t))
         (do-insert/delete start-pos 0))
         
         
@@ -204,65 +202,37 @@
         (set! get-token #f))
       
       (define (colorer-callback)
-        (channel-put sync #f)
+        (when need-break?
+          (break-thread background-thread))
+        (thread-resume background-thread)
         (sleep .01)    ;; This is when the background thread is working.
-        (semaphore-wait up-to-date-sema)
-        (unless up-to-date?
-          (break-thread background-thread)
-          (channel-get sync))
-        (semaphore-post up-to-date-sema)
+        (thread-suspend background-thread)
         (begin-edit-sequence #f)
         (color)
         (end-edit-sequence)
         (unless up-to-date?
           (queue-callback colorer-callback #f)))
       
-      (define (background-colorer starting?)
-	(break-enabled #f)
-        (background-colorer
-         (let/ec restart
-           (parameterize ((current-exception-handler
-                           (lambda (exn)
-                             (channel-put sync #f)
-                             (channel-get sync)
-                             (cond
-                               (in #;(printf "continuing~n") ((exn:break-continuation exn)))
-                               (else
-                                #;(printf "restarting~n")
-                                (break-enabled #f)
-                                (restart #f))))))
-             (when starting?
-               (channel-get sync))
-             ;(with-handlers ((not-break-exn? void))
-               (set! input-port-start-pos current-pos)
-               #;(printf "~a~n" current-pos)
-               (set! in (open-input-text-editor this
-                                                input-port-start-pos
-                                                end-pos))
-               (break-enabled #t)
-               (re-tokenize)
-               (semaphore-wait up-to-date-sema)  ;;Can't be broken inside here
-               (set! up-to-date? #t)
-               (set! in #f)
-               (semaphore-post up-to-date-sema)
-               #t))));)
+      (define (background-colorer-entry)
+        (thread-suspend (current-thread))
+        (background-colorer))
       
+      (define (background-colorer)
+        (let/ec restart
+          (parameterize ((current-exception-handler
+                          (lambda (exn)
+                            (break-enabled #f)
+                            (restart))))
+            (with-handlers ((not-break-exn? void))
+              (break-enabled #t)
+              (re-tokenize (open-input-text-editor this current-pos end-pos)
+                           current-pos))
+            (set! need-break? #f)
+            (set! up-to-date? #t)
+            (thread-suspend (current-thread))
+            (break-enabled #f)))
+        (background-colorer))
       
-;      (define (colorer-callback)
-;        (channel-put sync #f)
-;        (channel-get sync)
-;        (begin-edit-sequence #f)
-;        (color)
-;        (end-edit-sequence))
-;      
-;      
-;      (define (background-colorer)
-;        (channel-get sync)
-;        (with-handlers ((void void))
-;          (re-tokenize))
-;        (channel-put sync #f)
-;        (background-colorer))
-  
       (super-instantiate ())))
   
   

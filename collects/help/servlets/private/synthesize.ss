@@ -13,7 +13,7 @@
 		    (system-type #t)
 		    (system-library-subpath))]
 	   [synth:computer-language 
-	    (or (get-dr-bug-report-item 'computer-language)
+	    (or (get-bug-report-item 'computer-language)
 		"unknown")]
 	   [synth:human-language (format "~s" (this-language))]
 	   [synth:docs 

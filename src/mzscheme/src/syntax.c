@@ -26,7 +26,7 @@ Scheme_Object *scheme_def_exp_time_syntax;
 Scheme_Object *scheme_begin_syntax;
 Scheme_Object *scheme_lambda_syntax;
 Scheme_Object *scheme_compiled_void_code;
-Scheme_Object *scheme_undefined;
+Scheme_Object scheme_undefined[1];
 
 /* locals */
 static Scheme_Object *lambda_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
@@ -189,7 +189,6 @@ scheme_init_syntax (Scheme_Env *env)
     REGISTER_SO(let_id_macro_symbol);
     REGISTER_SO(let_expansion_time_symbol);
 
-    scheme_undefined = scheme_alloc_eternal_object();
     scheme_undefined->type = scheme_undefined_type;
 
     define_values_symbol = scheme_intern_symbol("#%define-values");

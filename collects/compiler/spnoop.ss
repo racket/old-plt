@@ -6,6 +6,8 @@
 
   (define (copy-annotations! new old) new)
 
+  (define (get-annotations old) null)
+
   (define (binding-mutated ast) #f)
 
   (define (analyze-program-sexps exprs input-directory)

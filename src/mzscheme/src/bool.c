@@ -32,8 +32,8 @@
 #endif
 
 /* global_constants */
-Scheme_Object *scheme_true;
-Scheme_Object *scheme_false;
+Scheme_Object scheme_true[1];
+Scheme_Object scheme_false[1];
 Scheme_Object *scheme_not_prim;
 
 /* locals */
@@ -50,10 +50,8 @@ void scheme_init_true_false(void)
   REGISTER_SO(scheme_true);
   REGISTER_SO(scheme_false);
   
-  scheme_true = scheme_alloc_eternal_object();
   scheme_true->type = scheme_true_type;
 
-  scheme_false = scheme_alloc_eternal_object();
   scheme_false->type = scheme_false_type;
 }
 

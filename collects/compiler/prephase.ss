@@ -346,7 +346,15 @@
    (let ([fun (zodiac:app-fun ast)])
      (and (zodiac:top-level-varref? fun)
 	  (let ([name (zodiac:varref-var fun)]
-		[args (zodiac:app-args ast)])
+		[args (zodiac:app-args ast)]
+		[new-fun (lambda (newname)
+			   (prephase-it
+			    (zodiac:make-top-level-varref
+			     (zodiac:zodiac-origin fun)
+			     (zodiac:zodiac-start fun)
+			     (zodiac:zodiac-finish fun)
+			     (make-empty-box)
+			     newname)))])
 	    (case name
 	      [(#%void) (if (null? args)
 			    (prephase-it (zodiac:make-special-constant 'void))
@@ -358,17 +366,25 @@
 				    (zodiac:quote-form? (cadr args))
 				    (= 1 (zodiac:read-object (zodiac:quote-form-expr (cadr args)))))
 			   (let ([newname (if (eq? name '#%+) '#%add1 '#%sub1)])
-			     (zodiac:set-app-fun! ast
-						  (prephase-it
-						   (zodiac:make-top-level-varref
-						    (zodiac:zodiac-origin fun)
-						    (zodiac:zodiac-start fun)
-						    (zodiac:zodiac-finish fun)
-						    (make-empty-box)
-						    newname)))
-			     (zodiac:set-app-args! ast
-						   (list (car args)))))
+			     (zodiac:set-app-fun! ast (new-fun newname))
+			     (zodiac:set-app-args! ast (list (car args)))))
 			 #f] ; always return #f => use the (possibly mutated) ast
+	      [(#%memv) ; (memv x '(c)) => (eqv x c); important for `case' elaboration
+	       (when (and (= 2 (length args))
+			  (zodiac:quote-form? (cadr args)))
+		 (let ([quoted (zodiac:quote-form-expr (cadr args))])
+		   (when (and (zodiac:list? quoted)
+			      (= 1 (length (zodiac:read-object quoted))))
+		     (zodiac:set-app-fun! ast (new-fun '#%eqv?))
+		     (zodiac:set-app-args! ast 
+					   (list (car args)
+						 (zodiac:make-quote-form
+						  (zodiac:zodiac-origin fun)
+						  (zodiac:zodiac-start fun)
+						  (zodiac:zodiac-finish fun)
+						  (make-empty-box)
+						  (car (zodiac:read-object quoted))))))))
+	       #f] ; always return #f => use the (possibly mutated) ast
 	      [else #f])))))
 
  ;;----------------------------------------------------------------------------

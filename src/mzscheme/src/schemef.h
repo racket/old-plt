@@ -151,12 +151,12 @@ void scheme_install_type_reader(Scheme_Type type, Scheme_Type_Reader f);
 void scheme_install_type_writer(Scheme_Type type, Scheme_Type_Writer f);
 
 /* Constants */
-extern NONPROC Scheme_Object *scheme_eof;
-extern NONPROC Scheme_Object *scheme_null;
-extern NONPROC Scheme_Object *scheme_true;
-extern NONPROC Scheme_Object *scheme_false;
-extern NONPROC Scheme_Object *scheme_void;
-extern NONPROC Scheme_Object *scheme_undefined;
+extern NONPROC Scheme_Object scheme_eof[1];
+extern NONPROC Scheme_Object scheme_null[1];
+extern NONPROC Scheme_Object scheme_true[1];
+extern NONPROC Scheme_Object scheme_false[1];
+extern NONPROC Scheme_Object scheme_void[1];
+extern NONPROC Scheme_Object scheme_undefined[1];
 extern NONPROC Scheme_Object *scheme_tail_call_waiting;
 extern NONPROC Scheme_Object *scheme_multiple_values;
 

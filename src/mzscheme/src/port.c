@@ -211,7 +211,7 @@ typedef struct Scheme_FD {
 #endif
 
 /* globals */
-Scheme_Object *scheme_eof;
+Scheme_Object scheme_eof[1];
 Scheme_Object *scheme_orig_stdout_port;
 Scheme_Object *scheme_orig_stderr_port;
 Scheme_Object *scheme_orig_stdin_port;
@@ -268,7 +268,6 @@ System_Child *scheme_system_children;
 
 /* generic ports */
 
-static Scheme_Object *scheme_make_eof (void);
 static Scheme_Object *input_port_p (int, Scheme_Object *[]);
 static Scheme_Object *output_port_p (int, Scheme_Object *[]);
 static Scheme_Object *current_input_port (int, Scheme_Object *[]);
@@ -441,7 +440,7 @@ scheme_init_port (Scheme_Env *env)
     if (!scheme_sleep)
       scheme_sleep = default_sleep;
 
-    scheme_eof = scheme_make_eof();
+    scheme_eof->type = scheme_eof_type;
 
     string_input_port_type = scheme_make_port_type("<string-input-port>");
     string_output_port_type = scheme_make_port_type("<string-output-port>");
@@ -1038,16 +1037,6 @@ static void add_fd_handle(OS_SEMAPHORE_TYPE h, void *fds, int repost)
   efd->repost_sema = rps;
 }
 #endif
-
-static Scheme_Object *
-scheme_make_eof (void)
-{
-  Scheme_Object *eof;
-
-  eof = scheme_alloc_eternal_object();
-  eof->type = scheme_eof_type;
-  return eof;
-}
 
 Scheme_Object *scheme_make_port_type(const char *name)
 {

@@ -946,29 +946,29 @@ extern int (*scheme_actual_main)(int argc, char **argv);
 
 #ifdef LINK_EXTENSIONS_BY_TABLE
 /* Constants and function prototypes as function pointers in a struct: */
-#ifdef INCLUDE_WITHOUT_PATHS
-#include "schemex.h"
-#else
-#include "../src/schemex.h"
-#endif
+# ifdef INCLUDE_WITHOUT_PATHS
+#  include "schemex.h"
+# else
+#  include "../src/schemex.h"
+# endif
 
 extern Scheme_Extension_Table *scheme_extension_table;
 
 /* Macro mapping names to record access */
-#ifdef INCLUDE_WITHOUT_PATHS
-#include "schemexm.h"
-#else
-#include "../src/schemexm.h"
-#endif
+# ifdef INCLUDE_WITHOUT_PATHS
+#  include "schemexm.h"
+# else
+#  include "../src/schemexm.h"
+# endif
 
 #else
 
 /* Not LINK_EXTENSIONS_BY_TABLE */
-#ifdef INCLUDE_WITHOUT_PATHS
-#include "schemef.h"
-#else
-#include "../src/schemef.h"
-#endif
+# ifdef INCLUDE_WITHOUT_PATHS
+#  include "schemef.h"
+# else
+#  include "../src/schemef.h"
+# endif
 
 #endif
 

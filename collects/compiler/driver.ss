@@ -318,24 +318,56 @@
        expr)
       wrapper))
 
-  (define (unwrap-unit-from-mrspidey expr)
-    (car (zodiac:let-values-form-vals expr)))
-
-  (define (analyze-units expr)
+  (define (analyze-units! expr)
+    ;; Call spidey on units that are obviously closed because they're not in
+    ;; the scope of any lexical variables
     (cond
      [(zodiac:unit-form? expr)
-      (unwrap-unit-from-mrspidey
-       (car (mrspidey:analyze-program-sexps 
-	     (list (wrap-unit-for-mrspidey expr))
-	     (current-directory))))]
+      (mrspidey:analyze-program-sexps 
+       (list (wrap-unit-for-mrspidey expr))
+       (current-directory))]
+     [(zodiac:case-lambda-form? expr)
+      (let ([argses (zodiac:case-lambda-form-args expr)]
+	    [bodies (zodiac:case-lambda-form-bodies expr)])
+	(for-each
+	 (lambda (args body)
+	   (when (null? args) ; no ew lexical variables? Ok!
+	     (analyze-units! body)))
+	 argses bodies))]
+     [(zodiac:let-values-form? expr)
+      ;; Only RHSes
+      (for-each analyze-units! (zodiac:let-values-form-vals expr))]
      [(zodiac:app? expr)
-      (let* ([exprs (cons (zodiac:app-fun expr) (zodiac:app-args expr))]
-	     [exprs2 (map analyze-units exprs)])
-	(unless (andmap eq? exprs exprs2)
-	  (zodiac:set-app-fun! expr (car exprs2))
-	  (zodiac:set-app-args! expr (cdr exprs2)))
-	expr)]
-     [else expr]))
+      (let* ([exprs (cons (zodiac:app-fun expr) (zodiac:app-args expr))])
+	(for-each analyze-units! exprs))]
+     [(zodiac:if-form? expr)
+      (analyze-units! (zodiac:if-form-test expr))
+      (analyze-units! (zodiac:if-form-then expr))
+      (analyze-units! (zodiac:if-form-else expr))]
+     [(zodiac:begin-form? expr)
+      (for-each analyze-units! (zodiac:begin-form-bodies expr))]
+     [(zodiac:begin0-form? expr)
+      (for-each analyze-units! (zodiac:begin0-form-bodies expr))]
+     [(zodiac:set!-form? expr)
+      (analyze-units! (zodiac:set!-form-val expr))]
+     [(zodiac:define-values-form? expr)
+      (analyze-units! (zodiac:define-values-form-val expr))]
+     [(zodiac:compound-unit-form? expr)
+      (for-each (lambda (link)
+		  (analyze-units! (cadr link)))
+		(zodiac:compound-unit-form-links expr))]
+     [(zodiac:invoke-form? expr)
+      (analyze-units! (zodiac:invoke-form-unit expr))]
+     [(zodiac:struct-form? expr)
+      (analyze-units! (zodiac:struct-form-super expr))]
+     [(zodiac:class*/names-form? expr)
+      (analyze-units! (zodiac:class*/names-form-super-expr expr))
+      (for-each analyze-units! (zodiac:class*/names-form-interfaces expr))]
+     [(zodiac::-form? expr)
+      (analyze-units! (zodiac::-form-exp expr))]
+     [(zodiac:poly-form? expr)
+      (analyze-units! (zodiac:poly-form-exp expr))]
+     [else (void)]))
 
   ;;-------------------------------------------------------------------------------
   ;; ERROR/WARNING REPORTING/HANDLING ROUTINES
@@ -512,6 +544,8 @@
 	
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
+	      ; (print-graph #t) (display (car (block-source s:file-block))) (newline)
+
 	      ;;-----------------------------------------------------------------------
 	      ;; MrSpidey analyze
 	      
@@ -540,19 +574,18 @@
 		(when (compiler:option:verbose) (printf " MrSpidey: analyzing units~n"))
 		(let ([spidey-unit-thunk
 		       (lambda ()
-			 (set-block-source! 
-			  s:file-block
-			  (with-handlers ([void (lambda (x)
-						  (compiler:fatal-error
-						   #f
-						   (format "analysis died: ~a"
-							   (if (exn? x)
-							       (exn-message x)
-							       x))))])
-					 (map analyze-units (block-source s:file-block)))))])
-		(verbose-time spidey-unit-thunk)
-		(compiler:report-messages! #t)))
+			 (with-handlers ([void (lambda (x)
+						 (compiler:fatal-error
+						  #f
+						  (format "analysis died: ~a"
+							  (if (exn? x)
+							      (exn-message x)
+							      x))))])
+			   (for-each analyze-units! (block-source s:file-block))))])
+		  (verbose-time spidey-unit-thunk)
+		  (compiler:report-messages! #t)))
 
+	      ; (print-struct #t)
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 	      
 	      ;;-----------------------------------------------------------------------
@@ -627,7 +660,7 @@
 	      ;;
 
 	      (when (compiler:option:verbose) 
-		(printf " transforming to b-normal form and analyzing~n"))
+		(printf " transforming to b-normal form, analyzing, and inlining~n"))
 	      (when (compiler:option:debug)
 		(debug " = ANALYZE =~n"))
 

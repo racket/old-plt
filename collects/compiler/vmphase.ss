@@ -83,6 +83,7 @@
 			     [(#%cddr) "MZC_CDDR"]
 			     [(#%caar) "MZC_CAAR"]
 			     [(#%cdar) "MZC_CDAR"]
+			     [(#%caddr) "MZC_CADDR"]
 			     [(#%set-car!) "MZC_SET_CAR"]
 			     [(#%set-cdr!) "MZC_SET_CDR"]
 			     [(#%vector-ref) "MZC_VECTOR_REF"]

@@ -105,19 +105,19 @@ schemex.h : schemef.h makex
 	if [ "$(PERL)" = '' ] ; then touch schemex.h ; else $(PERL) ./makex < schemef.h > schemex.h ; fi
 
 schemexm.h : schemef.h makex
-	if [ "$(PERL)" = '' ] ; then touch schemexm.h ; else $(PERL) ./makex -list < schemef.h > schemexm.h ; fi
+	if [ "$(PERL)" = '' ] ; then touch schemexm.h ; else $(PERL) -s -- ./makex -list < schemef.h > schemexm.h ; fi
 
 schemex.inc : schemef.h makex
-	if [ "$(PERL)" = '' ] ; then touch schemex.inc ; else $(PERL) ./makex -assign < schemef.h > schemex.inc ; fi
+	if [ "$(PERL)" = '' ] ; then touch schemex.inc ; else $(PERL) -s -- ./makex -assign < schemef.h > schemex.inc ; fi
 
 ../include/mzscheme.exp : schemef.h makex
-	if [ "$(PERL)" = '' ] ; then touch ../include/mzscheme.exp ; else $(PERL) ./makex -exports < schemef.h > ../include/mzscheme.exp ; fi
+	if [ "$(PERL)" = '' ] ; then touch ../include/mzscheme.exp ; else $(PERL) -s -- ./makex -exports < schemef.h > ../include/mzscheme.exp ; fi
 
 ../include/mzwin.def : schemef.h makex
-	if [ "$(PERL)" = '' ] ; then touch ../include/mzwin.def ; else $(PERL) ./makex -winex < schemef.h > ../include/mzwin.def ; fi
+	if [ "$(PERL)" = '' ] ; then touch ../include/mzwin.def ; else $(PERL) -s -- ./makex -winex < schemef.h > ../include/mzwin.def ; fi
 
 ../include/gmzwin.def : schemef.h makex
-	if [ "$(PERL)" = '' ] ; then touch ../include/gmzwin.def ; else $(PERL) ./makex -gwinex < schemef.h > ../include/gmzwin.def ; fi
+	if [ "$(PERL)" = '' ] ; then touch ../include/gmzwin.def ; else $(PERL) -s -- ./makex -gwinex < schemef.h > ../include/gmzwin.def ; fi
 
 $(OBJDIR)/schsys.h : sysname
 	make objects

@@ -199,22 +199,18 @@
   
 
   ;;----------------------------------------------------------------------
-  ;; Debugging: wrote out the AST as an annotated program
+  ;; Debugging: AST to annotated S-expression
   (define zodiac->sexp/annotate
     (lambda (ast)
-      (zodiac:print-start! (current-error-port) ast)
-      (fprintf (current-error-port) "getting annotation (p: ~a gc: ~a real: ~a)~n"
-	       (current-process-milliseconds) (current-gc-milliseconds) (current-milliseconds))
-      (let ([v (mrspidey:SDL-type ast)])
+      (let ([v (if #f
+		   (mrspidey:get-annotations ast)
+		   (mrspidey:SDL-type ast))])
 	(if v
 	    `(: ,(zodiac->sexp ast) ,v)
 	    (zodiac->sexp ast)))))
   
   (define zodiac->sexp
     (lambda (ast)
-
-      (printf ".")
-      (flush-output)
 
       (cond 
        [(or (zodiac:quote-form? ast) 

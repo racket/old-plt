@@ -69,8 +69,8 @@ static char *dlerror(void) {
 #endif
 
 #ifdef LINK_EXTENSIONS_BY_TABLE
-#undef SCHEME_NO_GC_PROTO
-#include "schemex.h"
+# undef SCHEME_NO_GC_PROTO
+# include "schemex.h"
 #endif
 
 static Scheme_Object *load_extension(int argc, Scheme_Object **argv);
@@ -88,13 +88,13 @@ Scheme_Extension_Table *scheme_extension_table;
 #endif
 
 #ifndef UNIX_DYNAMIC_LOAD
-#ifndef WINDOWS_DYNAMIC_LOAD
-#ifndef CODEFRAGMENT_DYNAMIC_LOAD
-#ifndef BEOS_IMAGE_DYNAMIC_LOAD
-#define NO_DYNAMIC_LOAD
-#endif
-#endif
-#endif
+# ifndef WINDOWS_DYNAMIC_LOAD
+#  ifndef CODEFRAGMENT_DYNAMIC_LOAD
+#   ifndef BEOS_IMAGE_DYNAMIC_LOAD
+#    define NO_DYNAMIC_LOAD
+#   endif
+#  endif
+# endif
 #endif
 
 #ifndef NO_DYNAMIC_LOAD

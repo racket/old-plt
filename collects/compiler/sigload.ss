@@ -444,6 +444,7 @@
 
 (define-signature compiler:mrspidey^
   (copy-annotations!
+   get-annotations
    analyze-program-sexps
    binding-mutated
    constant-value

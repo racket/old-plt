@@ -52,7 +52,7 @@ int scheme_escape_continuations_only;
 
 int scheme_defining_primitives;
 
-Scheme_Object *scheme_void;
+Scheme_Object scheme_void[1];
 Scheme_Object *scheme_void_func;
 
 Scheme_Object *scheme_tail_call_waiting;
@@ -130,7 +130,6 @@ scheme_init_fun (Scheme_Env *env)
     base_time = time(NULL);
 #endif
 
-    scheme_void = scheme_alloc_eternal_object();
     scheme_void->type = scheme_void_type;
 
 #ifdef MZ_APPLY_WAITING_CONSTANT

@@ -479,16 +479,18 @@
     ; emit jump to function...
     (when (> (vehicle-total-labels vehicle) 1)
       ; emit switch dispatcher
-      (fprintf port "~aswitch(*(int*)void_param)~n~a{ " 
+      (fprintf port "~aswitch(*(unsigned int*)void_param)~n~a{ " 
 	       vm->c:indent-spaces
 	       vm->c:indent-spaces )
       (let loop ([n 0])
 	(when (and (zero? (modulo n 3))
 		   (not (= n compiler:label-number)))
 	  (fprintf port "~n~a~a" vm->c:indent-spaces vm->c:indent-spaces))
-	(unless (= n (vehicle-total-labels vehicle))
-	  (fprintf port "case ~a: goto FGN~a;" n n)
-	  (loop (add1 n))))
+	(if (= n (sub1 (vehicle-total-labels vehicle)))
+	    (fprintf port "default: goto FGN~a;" n)
+	    (begin
+	      (fprintf port "case ~a: goto FGN~a;" n n)
+	      (loop (add1 n)))))
       (fprintf port "~n~a}~n" vm->c:indent-spaces))))
 
 (define vm->c:emit-vehicle-epilogue

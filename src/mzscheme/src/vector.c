@@ -23,7 +23,6 @@
 
 #include "schpriv.h"
 
-/* global_constants */
 /* locals */
 static Scheme_Object *vector_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_vector (int argc, Scheme_Object *argv[]);
@@ -35,10 +34,16 @@ static Scheme_Object *vector_to_list (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_to_vector (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_fill (int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *zero_length_vector;
+
 void
 scheme_init_vector (Scheme_Env *env)
 {
   if (scheme_starting_up) {
+    REGISTER_SO(zero_length_vector);
+    zero_length_vector = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Vector));
+    zero_length_vector->type = scheme_vector_type;
+    SCHEME_VEC_SIZE(zero_length_vector) = 0;
   }
 
   scheme_add_global_constant("vector?", 
@@ -94,9 +99,12 @@ scheme_make_vector (int size, Scheme_Object *fill)
   Scheme_Object *vec;
   int i;
 
-  if (size < 0) {
-    vec = scheme_make_integer(size);
-    scheme_wrong_type("make-vector", "non-negative exact integer", -1, 0, &vec);
+  if (size <= 0) {
+    if (size) {
+      vec = scheme_make_integer(size);
+      scheme_wrong_type("make-vector", "non-negative exact integer", -1, 0, &vec);
+    } else
+      return zero_length_vector;
   }
 
   vec = (Scheme_Object *)scheme_malloc_fail_ok(scheme_malloc_tagged,

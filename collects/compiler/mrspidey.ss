@@ -6,6 +6,16 @@
   (import (mrspidey : mrspidey:sba^)
 	  compiler:library^)
   
+  (define get-annotations
+    (lambda (old)
+      (list
+       (mrspidey:parsed-ftype old)
+       (mrspidey:parsed-check old)
+       (mrspidey:parsed-atprim old)
+       (mrspidey:app-tvar-args old)
+       (mrspidey:binding-refs old)
+       (mrspidey:binding-mutated old))))
+
   (define copy-annotations!
     (lambda (new old)
       (mrspidey:set-parsed-ftype! new (mrspidey:parsed-ftype old))

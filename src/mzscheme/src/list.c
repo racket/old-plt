@@ -24,10 +24,9 @@
 #include "schpriv.h"
 
 /* globals */
-Scheme_Object *scheme_null;
+Scheme_Object scheme_null[1];
 
 /* locals */
-static Scheme_Object *scheme_make_null (void);
 static Scheme_Object *pair_p_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cons_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *car_prim (int argc, Scheme_Object *argv[]);
@@ -111,7 +110,7 @@ scheme_init_list (Scheme_Env *env)
   if (scheme_starting_up) {
     REGISTER_SO(scheme_null);
 
-    scheme_null = scheme_make_null ();
+    scheme_null->type = scheme_null_type;
   }
 
   scheme_add_global_constant ("null", scheme_null, env);
@@ -450,16 +449,6 @@ scheme_init_list (Scheme_Env *env)
 						      "weak-box?",
 						      1, 1, 1),
 			     env);
-}
-
-static Scheme_Object *
-scheme_make_null (void)
-{
-  Scheme_Object *null;
-
-  null = scheme_alloc_eternal_object();
-  null->type = scheme_null_type;
-  return (null);
 }
 
 Scheme_Object *

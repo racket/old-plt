@@ -299,6 +299,13 @@
 						 (+ size 3)
 						 (lambda (size)
 						   (loop (zodiac:let-values-form-body body) size k)))]
+	   [(zodiac:begin-form? body) (let bloop ([size size][exprs (zodiac:begin-form-bodies body)])
+					(if (null? exprs)
+					    (k size)
+					    (loop (car exprs)
+						  (+ size 1)
+						  (lambda (size)
+						    (bloop size (cdr exprs))))))]
 	   [else (* 2 (compiler:option:max-inline-size))]))))
 
   ; We copy inlined bodies to generate unique structure values
@@ -415,6 +422,16 @@
 	   (list (copy-inlined-body val binding-map))
 	   (copy-inlined-body (zodiac:let-values-form-body ast) new-binding-map))
 	  ast))]
+      [(zodiac:begin-form? ast)
+       (mrspidey:copy-annotations! 
+	(zodiac:make-begin-form
+	 (zodiac:zodiac-origin ast)
+	 (zodiac:zodiac-start ast)
+	 (zodiac:zodiac-finish ast)
+	 (make-empty-box)
+	 (map (lambda (x) (copy-inlined-body x binding-map))
+	      (zodiac:begin-form-bodies ast)))
+	ast)]
       [else (compiler:internal-error
 	     ast
 	     (format "copy-inlined-body: can't copy ~a"

@@ -101,22 +101,22 @@ static Scheme_Object *let_symbol;
 #define TAIL_COPY_THRESHOLD 5
 
 #ifndef MZ_REAL_THREADS
-#define DO_CHECK_FOR_BREAK(p, e) \
+# define DO_CHECK_FOR_BREAK(p, e) \
 	if ((scheme_fuel_counter--) <= 0) { \
 	  e scheme_process_block(0); \
           (p)->ran_some = 1; \
 	}
 #else
-#define DO_CHECK_FOR_BREAK(p, e) \
+# define DO_CHECK_FOR_BREAK(p, e) \
 	if (((p)->fuel_counter--) <= 0) { \
 	  e scheme_process_block_w_process(0, p); \
 	}
 #endif
 
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) || defined(BEOS_FIND_STACK_BOUNDS)
-#ifndef MZ_REAL_THREADS
+# ifndef MZ_REAL_THREADS
 unsigned long scheme_stack_boundary;
-#endif
+# endif
 #endif
 
 #define REGISTYPE(f) f ## _type

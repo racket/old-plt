@@ -4,24 +4,26 @@
   Scheme_Closed_Primitive_Proc *prim;
   Scheme_Process *p = scheme_current_process;
 
-#ifdef DO_STACK_CHECK
-#define SCHEME_CURRENT_PROCESS p
-#ifdef MZ_REAL_THREADS
-#define SCHEME_STACK_BOUNDARY ((unsigned long)p->stack_end)
-#endif
-#include "mzstkchk.h"
+#if !PRIM_NO_STACK_CHECK
+# ifdef DO_STACK_CHECK
+#  define SCHEME_CURRENT_PROCESS p
+#  ifdef MZ_REAL_THREADS
+#   define SCHEME_STACK_BOUNDARY ((unsigned long)p->stack_end)
+#  endif
+#  include "mzstkchk.h"
   {
-#ifndef ERROR_ON_OVERFLOW
+#  ifndef ERROR_ON_OVERFLOW
     Scheme_Process *p = scheme_current_process;
     p->ku.k.p1 = (void *)rator;
     p->ku.k.i1 = argc;
     p->ku.k.p2 = (void *)argv;
-#endif
+#  endif
     return scheme_handle_stack_overflow(do_apply_known_k);
   }
-#endif
+# endif
 
   DO_CHECK_FOR_BREAK(p, ;);
+#endif
 
   prim = (Scheme_Closed_Primitive_Proc *)rator;
 
@@ -33,7 +35,9 @@
 #endif
 
   v = prim->prim_val(prim->data, argc, argv);
+#if !PRIM_NO_CHECK_VALUE
   v = _scheme_force_value(v);
+#endif
 
 #if PRIM_CHECK_MULTI
   if (v == SCHEME_MULTIPLE_VALUES) {
@@ -46,5 +50,7 @@
 
   return v;
 
+#undef PRIM_NO_STACK_CHECK
+#undef PRIM_NO_CHECK_VALUE
 #undef PRIM_CHECK_ARITY
 #undef PRIM_CHECK_MULTI

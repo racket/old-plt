@@ -56,4 +56,4 @@ objects:
 clean:
 	rm -rf *.o *~ #*#
 	rm -rf test
-	rm -rf tmp/*
+	rm -rf tmp/*.o tmp/*.a

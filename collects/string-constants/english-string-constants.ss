@@ -1149,4 +1149,16 @@ please adhere to these guidelines:
   (ml-cp-remove "Remove")
   (ml-cp-raise "Raise")
   (ml-cp-lower "Lower")
+
+  ;; Profj
+  (profj-java "Java")
+  (profj-java-mode "Java mode")
+  (profj-java-mode-color-keyword "keyword")
+  (profj-java-mode-color-string "string")
+  (profj-java-mode-color-literal "literal")
+  (profj-java-mode-color-comment "comment")
+  (profj-java-mode-color-error "error")
+  (profj-java-mode-color-identifier "identifier")
+  (profj-java-mode-color-default "default")
+
   )

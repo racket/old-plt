@@ -43,4 +43,17 @@
 
 (arity-test compose 1 -1)
 
+(test '(1 2 3) filter number? '(1 a 2 b 3 c d))
+(test '() filter string? '(1 a 2 b 3 c d))
+(error-test '(filter string? '(1 2 3 . 4)) exn:application:list?)
+(error-test '(filter 2 '(1 2 3)))
+(error-test '(filter cons '(1 2 3)))
+(arity-test filter 2 2)
+
+(test 0 assf add1 '(0 1 2))
+(test 0 assf number? '(a 0 1 2 c))
+(test "ok" assf string? '(a 0 1 "ok" 2 c))
+(error-test '(assf cons '(1 2 3)))
+(error-test '(assf string? '(1 2 3 . 4)) exn:application:list?)
+
 (report-errs)

@@ -14,9 +14,10 @@
 #      	 and runs some tests of collector and cords.  Does not add cords or
 #	 c++ interface to $(OBJDIR)/gc.a
 # cord/de - builds dumb editor based on cords.
-CC= gcc
-CXX = $(CC)
-AS=as
+ABI_FLAG=
+CC= gcc $(ABI_FLAG)
+CXX= $(CC) $(ABI_FLAG)
+AS= as $(ABI_FLAG)
 
 OBJDIR = objects
 EXEDIR = $(OBJDIR)
@@ -112,6 +113,15 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT
 #   Works for Solaris and Irix.
 # -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
 #   GC_scratch_alloc() to get stack memory.
+# -DPRINT_BLACK_LIST Whenever a black list entry is added, i.e. whenever
+#   the garbage collector detects a value that looks almost, but not quite,
+#   like a pointer, print both the address containing the value, and the
+#   value of the near-bogus-pointer.  Can be used to identifiy regions of
+#   memory that are likely to contribute misidentified pointers.
+# -DOLD_BLOCK_ALLOC Use the old, possibly faster, large block
+#   allocation strategy.  The new strategy tries harder to minimize
+#   fragmentation, sometimes at the expense of spending more time in the
+#   large block allocator and/or collecting more frequently.
 
 LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
     -DREDIRECT_MALLOC=GC_malloc_uncollectable \
@@ -129,9 +139,9 @@ RANLIB= ranlib
 srcdir = .
 VPATH = $(srcdir)
 
-OBJS= $(OBJDIR)/alloc.o $(OBJDIR)/reclaim.o $(OBJDIR)/allchblk.o $(OBJDIR)/misc.o $(OBJDIR)/mach_dep.o $(OBJDIR)/os_dep.o $(OBJDIR)/mark_rts.o $(OBJDIR)/headers.o $(OBJDIR)/mark.o $(OBJDIR)/obj_map.o $(OBJDIR)/blacklst.o $(OBJDIR)/finalize.o $(OBJDIR)/new_hblk.o $(OBJDIR)/dbg_mlc.o $(OBJDIR)/malloc.o $(OBJDIR)/stubborn.o $(OBJDIR)/checksums.o $(OBJDIR)/solaris_threads.o $(OBJDIR)/irix_threads.o $(OBJDIR)/typd_mlc.o $(OBJDIR)/ptr_chck.o $(OBJDIR)/mallocx.o $(OBJDIR)/solaris_pthreads.o
+OBJS= $(OBJDIR)/alloc.o $(OBJDIR)/reclaim.o $(OBJDIR)/allchblk.o $(OBJDIR)/misc.o $(OBJDIR)/mach_dep.o $(OBJDIR)/os_dep.o $(OBJDIR)/mark_rts.o $(OBJDIR)/headers.o $(OBJDIR)/mark.o $(OBJDIR)/obj_map.o $(OBJDIR)/blacklst.o $(OBJDIR)/finalize.o $(OBJDIR)/new_hblk.o $(OBJDIR)/dbg_mlc.o $(OBJDIR)/malloc.o $(OBJDIR)/stubborn.o $(OBJDIR)/checksums.o $(OBJDIR)/solaris_threads.o $(OBJDIR)/irix_threads.o $(OBJDIR)/linux_threads.o $(OBJDIR)/typd_mlc.o $(OBJDIR)/ptr_chck.o $(OBJDIR)/mallocx.o $(OBJDIR)/solaris_pthreads.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 
@@ -157,7 +167,9 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            include/gc_cpp.h Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c README.solaris2 README.sgi README.hp README.uts \
-           win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj
+           win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj \
+           README.alpha README.linux version.h Makefile.DLLs gc_watcom.asm \
+           WCC_MAKEFILE
 
 CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
            $(srcdir)/cord/private/cord_pos.h
@@ -240,6 +252,7 @@ libalphagc.so: $(OBJS)
 # IRIX shared library version of the collector
 libirixgc.so: $(OBJS) $(OBJDIR)/dyn_load.o
 	ld -shared -o libirixgc.so $(OBJS) $(OBJDIR)/dyn_load.o -lc
+	ln libirixgc.so libgc.so
 
 $(OBJDIR)/mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s $(srcdir)/rs6000_mach_dep.s $(UTILS)
 	rm -f $(OBJDIR)/mach_dep.o
@@ -427,6 +440,8 @@ $(OBJDIR)/solaris_threads.o: solaris_threads.c
 	$(CC) $(CFLAGS) -c solaris_threads.c -o $(OBJDIR)/solaris_threads.o
 $(OBJDIR)/irix_threads.o: irix_threads.c
 	$(CC) $(CFLAGS) -c irix_threads.c -o $(OBJDIR)/irix_threads.o
+$(OBJDIR)/linux_threads.o: linux_threads.c
+	$(CC) $(CFLAGS) -c linux_threads.c -o $(OBJDIR)/linux_threads.o
 $(OBJDIR)/typd_mlc.o: typd_mlc.c
 	$(CC) $(CFLAGS) -c typd_mlc.c -o $(OBJDIR)/typd_mlc.o
 $(OBJDIR)/ptr_chck.o: ptr_chck.c

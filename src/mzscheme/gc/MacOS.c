@@ -157,7 +157,7 @@ void GC_MacFreeTemporaryMemory()
 		}
 		theTemporaryMemory = NULL;
 		
-#if !defined(SHARED_LIBRARY_BUILD)
+#if !defined(SILENT) && !defined(SHARED_LIBRARY_BUILD)
 		fprintf(stdout, "[total memory used:  %ld bytes.]\n", totalMemoryUsed);
 		fprintf(stdout, "[total collections:  %ld.]\n", GC_gc_no);
 #endif

@@ -185,7 +185,7 @@
 	    [orig-stdout (current-output-port)]
 	    [orig-stderr (current-error-port)])
 	  (public
-	    [CACHE-TIME 1] 
+	    [CACHE-TIME 10] 
 	    [CACHE-WRITE-COUNT 100]
 	    
 	    [normal-font wx:const-modern]

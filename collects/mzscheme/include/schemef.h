@@ -105,6 +105,8 @@ Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Objec
 void scheme_remove_managed(Scheme_Custodian_Reference *m, Scheme_Object *o);
 void scheme_close_managed(Scheme_Custodian *m);
 
+void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f);
+
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/

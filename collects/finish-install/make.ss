@@ -7,7 +7,7 @@ exec mzscheme -mvt "$0" "$@"
   (require (lib "launcher.ss" "launcher"))
 
   (define tiny-program
-    '(begin (use-compiled-file-kinds 'none)
+    '(begin [use-compiled-file-paths '()]
             (current-directory (build-path (collection-path "mzlib") 'up 'up))
             (load "install")
             (main '("install" "-i"))))

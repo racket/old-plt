@@ -35,8 +35,9 @@
 	   [(id . args)
 	    (datum->syntax-object 
 	     this-id 
-	     (cons (list method-accessor this-id) 
-		   (syntax args))
+	     (list* (list method-accessor this-id) 
+		    this-id
+		    (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 
@@ -44,7 +45,7 @@
 	     "misuse of method (not in application)" 
 	     stx)])))))
 
-  (define (make-rename-map rename-temp)
+  (define (make-rename-map rename-temp this-id)
     (let ([set!-stx (datum->syntax-object rename-temp 'set!)])
       (make-set!-transformer
        (lambda (stx)
@@ -55,7 +56,7 @@
 	   [(id . args)
 	    (datum->syntax-object 
 	     rename-temp
-	     (cons rename-temp (syntax args))
+	     (list* rename-temp this-id (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 
@@ -63,6 +64,15 @@
 	     "misuse of super method (not in application)" 
 	     stx)])))))
 
-  (provide make-field-map make-method-map make-rename-map))
+  (define init-error-map
+    (make-set!-transformer
+     (lambda (stx)
+       (raise-syntax-error 
+	'class
+	"cannot use non-field init variable in a method"
+	stx))))
+
+  (provide make-field-map make-method-map make-rename-map
+	   init-error-map))
 
     

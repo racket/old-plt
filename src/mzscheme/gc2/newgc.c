@@ -45,10 +45,6 @@
 #define GEN0_GROW_ADDITION (1 * 1024 * 1024)
 #define MAX_GEN0_SIZE (128 * 1024 * 1024)
 
-/* This computes the top generation collected given a collection number (which
-   is zero-based). The collector has 3 generations numbered 0, 1 and 2. */
-#define COMPUTE_GCTOP(x) ((x % 30)==0) ? 2 : (((x % 15)==0) ? 1 : 0)
-
 /* This is the log base 2 of the size of one word, given in bytes */
 #define LOG_WORD_SIZE 2
 
@@ -73,7 +69,6 @@
 #define WORD_SIZE (1 << LOG_WORD_SIZE)
 #define WORD_BITS (8 * WORD_SIZE)
 #define PAGE_SIZE (1 << LOG_PAGE_SIZE)
-#define INCGEN(g) ((g == 2) ? 2 : (g + 1))
 
 /* the externals */
 void (*GC_collect_start_callback)(void);
@@ -322,7 +317,6 @@ struct mpage {
 #define PAGE_XTAGGED 4
 #define PAGE_BIG 5
 #define PAGE_TYPES 6
-#define GENERATIONS 3
 
 static struct mpage *page_map[1 << USEFUL_ADDR_BITS];
 static void **gen0_alloc_region = NULL;
@@ -330,11 +324,11 @@ static void **gen0_alloc_current = NULL;
 static void **gen0_alloc_end = NULL;
 static unsigned long gen0_bigpages_size = 0;
 static unsigned long gen0_size = 0;
-static struct mpage *pages[GENERATIONS][PAGE_TYPES];
-static struct mpage *from_pages[GENERATIONS][PAGE_TYPES];
-static struct mpage *to_pages[GENERATIONS][PAGE_TYPES];
+static struct mpage *pages[2][PAGE_TYPES];
+static struct mpage *from_pages[2][PAGE_TYPES];
+static struct mpage *to_pages[2][PAGE_TYPES];
 static char *zero_sized[4]; /* all 0-sized allocs get this */
-static int gc_top = 0;
+static int gc_full = 0;
 static Mark_Proc mark_table[NUMBER_OF_TAGS];
 static Fixup_Proc fixup_table[NUMBER_OF_TAGS];
 static unsigned long memory_in_use = 0;
@@ -409,6 +403,7 @@ inline static void *allocate(size_t sizeb, int type)
 	retval = gen0_alloc_current;
 	gen0_alloc_current += sizew;
       }
+
       info = (struct objhead *)retval;
       info->type = type;
       info->size = sizew;
@@ -451,7 +446,7 @@ inline static int marked(void *p)
 {
   struct mpage *page = find_page(p);
   if(!p || !page) return 0;
-  if(page->generation > gc_top) return 1;
+  if(!gc_full && page->generation) return 1;
   return ((struct objhead *)(NUM(p) - WORD_SIZE))->mark;
 }
 
@@ -610,7 +605,7 @@ static void dump_heap(void)
   
   fprintf(dump, "Generation 0: (%p - %p)\n", gen0_alloc_region, gen0_alloc_end);
   dump_region(gen0_alloc_region, gen0_alloc_current);
-  for(i = 0; i < GENERATIONS; i++)
+  for(i = 0; i < 2; i++)
     for(j = 0; j < PAGE_TYPES; j++)
       for(page = pages[i][j]; page; page = page->next) {
 	fprintf(dump, "Page %p (gen %i, type %i, big %i, back %i, size %i/%i)\n",
@@ -1434,26 +1429,25 @@ static int current_mark_owner = 0;
 inline static void clear_old_owner_data(void)
 {
   struct mpage *page;
-  int i, j;
+  int j;
 
-  for(i = 0; i < GENERATIONS; i++)
-    for(j = 0; j < PAGE_TYPES; j++)
-      if(j == PAGE_BIG) {
-	for(page = pages[i][j]; page; page = page->next)
-	  ((struct objhead *)((char*)page + HEADER_SIZEB))->btc_mark = 0;
-      } else {
-	for(page = pages[i][j]; page; page = page->next) {
-	  void **start = (void**)((char*)page + HEADER_SIZEB);
-	  void **end = (void**)((char*)page + page->size);
+  for(j = 0; j < PAGE_TYPES; j++)
+    if(j == PAGE_BIG) {
+      for(page = pages[1][j]; page; page = page->next)
+	((struct objhead *)((char*)page + HEADER_SIZEB))->btc_mark = 0;
+    } else {
+      for(page = pages[1][j]; page; page = page->next) {
+	void **start = (void**)((char*)page + HEADER_SIZEB);
+	void **end = (void**)((char*)page + page->size);
+	
+	while(start < end) {
+	  struct objhead *info = (struct objhead *)start;
 	  
-	  while(start < end) {
-	    struct objhead *info = (struct objhead *)start;
-	    
-	    info->btc_mark = 0;
-	    start += info->size;
-	  }
+	  info->btc_mark = 0;
+	  start += info->size;
 	}
       }
+    }
 }
 
 inline static void mark_for_accounting(struct mpage *page, void *ptr)
@@ -1682,7 +1676,6 @@ void GC_init_type_tags(int count, int weakbox)
     ((struct mpage *)gen0_alloc_region)->big_page = 1;
     pagemap_add((struct mpage *)gen0_alloc_region);
     ((struct mpage *)gen0_alloc_region)->big_page = 0;
-    bzero(gen0_alloc_region, gen0_size);
     gen0_alloc_current = PPTR(NUM(gen0_alloc_region) + HEADER_SIZEB);
     
     GC_register_traversers(weakbox, size_weak_box, mark_weak_box,
@@ -1697,9 +1690,11 @@ static char *type_name[PAGE_TYPES] = { "tagged", "atomic", "array",
 				       "tagged array", "xtagged", "big" };
 void GC_dump(void)
 {
+  unsigned long tnum_pages[PAGE_TYPES], tsize_pages[PAGE_TYPES];
+  unsigned long num_pages = 0, size_pages = 0;
   unsigned long gen0_bigs = 0;
   struct mpage *page;
-  int i;
+  int j;
 
   for(page = pages[0][PAGE_BIG]; page; page = page->next)
     gen0_bigs++;
@@ -1707,26 +1702,21 @@ void GC_dump(void)
 	  gen0_bigpages_size + (NUM(gen0_alloc_current)-NUM(gen0_alloc_region)),
 	  gen0_bigpages_size + gen0_size, gen0_bigpages_size, gen0_bigs));
 
-  for(i = 1; i < GENERATIONS; i++) {
-    unsigned long num_pages = 0, size_pages = 0;
-    unsigned long tnum_pages[PAGE_TYPES], tsize_pages[PAGE_TYPES];
-    int j;
 
-    bzero(tnum_pages, sizeof(tnum_pages)); 
-    bzero(tsize_pages, sizeof(tsize_pages));
-    for(j = 0; j < PAGE_TYPES; j++)
-      for(page = pages[i][j]; page; page = page->next) {
-	num_pages += 1; tnum_pages[j] += 1;
-	size_pages += page->size; tsize_pages[j] += page->size;
-      }
-    GCWARN((GCOUTF, "Generation %i: %li bytes used in %li pages\n", 
-	    i, size_pages, num_pages));
-    if(size_pages) 
-      for(j = 0; j < PAGE_TYPES; j++) 
-	GCWARN((GCOUTF, "    ... %li %s pages (%li, %2.2f%%)\n",
-		tnum_pages[j], type_name[j], tsize_pages[j],
-		100.0 * ((float)tsize_pages[j] / (float)size_pages)));
-  }
+  bzero(tnum_pages, sizeof(tnum_pages)); 
+  bzero(tsize_pages, sizeof(tsize_pages));
+  for(j = 0; j < PAGE_TYPES; j++)
+    for(page = pages[1][j]; page; page = page->next) {
+      num_pages += 1; tnum_pages[j] += 1;
+      size_pages += page->size; tsize_pages[j] += page->size;
+    }
+  GCWARN((GCOUTF, "Generation %i: %li bytes used in %li pages\n", 
+	  1, size_pages, num_pages));
+  if(size_pages) 
+    for(j = 0; j < PAGE_TYPES; j++) 
+      GCWARN((GCOUTF, "    ... %li %s pages (%li, %2.2f%%)\n",
+	      tnum_pages[j], type_name[j], tsize_pages[j],
+	      100.0 * ((float)tsize_pages[j] / (float)size_pages)));
 }
 
 void GC_gcollect(void)
@@ -1758,7 +1748,7 @@ long GC_get_memory_use(void *o)
 
     retval += ((unsigned long)gen0_alloc_current) - 
               ((unsigned long)gen0_alloc_region);
-    for(i = 0; i < GENERATIONS; i++)
+    for(i = 0; i < 2; i++)
       for(j = 0; j < PAGE_TYPES; j++)
 	for(page = pages[i][j]; page; page = page->next)
 	  retval += page->size;
@@ -1895,30 +1885,31 @@ inline static void mark_normal_object(struct mpage *page, void *p)
   struct objhead *ohead = (struct objhead *)(NUM(p) - WORD_SIZE);
 
   if(!ohead->mark) {
-    unsigned long tgen = page ? INCGEN(page->generation) : 1;
     unsigned short type = ohead->type;
     struct mpage *work;
     size_t size, sizeb;
     void **dest, **src;
     void *newplace;
 
-    if(tgen == 1)
+    if(!page->generation)
       if(type == PAGE_TAGGED)
 	if((int)mark_table[*(unsigned short*)p] < PAGE_TYPES)
 	  type = ohead->type = (int)mark_table[*(unsigned short*)p];
-    work = to_pages[tgen][type]; size = ohead->size; 
+    work = to_pages[1][type]; size = ohead->size; 
     sizeb = gcWORDS_TO_BYTES(size);
 
-    while(work && ((work->size + sizeb) >= PAGE_SIZE))
-      work = work->next;
+/*     while(work && ((work->size + sizeb) >= PAGE_SIZE)) */
+/*       work = work->next; */
 
-    if(work) newplace = PTR(NUM(work) + work->size); else {
+    if(work && ((work->size + sizeb) < PAGE_SIZE)) 
+      newplace = PTR(NUM(work) + work->size); 
+    else {
       work = (struct mpage *)malloc_pages(PAGE_SIZE, PAGE_SIZE);
-      work->generation = tgen; work->page_type = type; 
+      work->generation = 1; work->page_type = type; 
       work->size = work->previous_size = HEADER_SIZEB;
-      work->next = to_pages[tgen][type]; work->prev = NULL;
+      work->next = to_pages[1][type]; work->prev = NULL;
       if(work->next) work->next->prev = work;
-      to_pages[tgen][type] = work;
+      to_pages[1][type] = work;
       pagemap_add(work);
       newplace = PTR(NUM(work) + HEADER_SIZEB);
     }
@@ -1937,19 +1928,18 @@ inline static void mark_big_object(struct mpage *page)
 {
   if(page->big_page == 1) {
     int oldgen = page->generation;
-    int newgen = INCGEN(oldgen);
 
     page->big_page = 2;
     page->previous_size = HEADER_SIZEB;
-    page->generation = newgen;
+    page->generation = 1;
 
     if(page->prev) page->prev->next = page->next;
     if(!page->prev) from_pages[oldgen][PAGE_BIG] = page->next;
     if(page->next) page->next->prev = page->prev;
 
-    page->next = to_pages[newgen][PAGE_BIG]; page->prev = NULL;
+    page->next = to_pages[1][PAGE_BIG]; page->prev = NULL;
     if(page->next) page->next->prev = page;
-    to_pages[newgen][PAGE_BIG] = page;
+    to_pages[1][PAGE_BIG] = page;
   }
 }
 
@@ -1960,7 +1950,7 @@ void GC_mark(const void *p)
 
     if(page) {
       if(DOING_MEMORY_ACCOUNTING) MEMORY_ACCOUNT_MARK(page, PTR(p)); else {
-	if(page->generation <= gc_top) {
+	if(!page->generation || gc_full) {
 	  if(page->big_page)
 	    mark_big_object(page);
 	  else
@@ -2033,23 +2023,22 @@ inline static void mark_xtagged_page(struct mpage *page)
   }
 }
 
-static void mark_page(struct mpage *page)
-{
-  if(page->big_page) mark_big_page(page); else 
-    switch(page->page_type) {
-      case PAGE_TAGGED: mark_tagged_page(page); break;
-      case PAGE_ATOMIC: break;
-      case PAGE_ARRAY: mark_array_page(page); break;
-      case PAGE_TARRAY: mark_tarray_page(page); break;
-      case PAGE_XTAGGED: mark_xtagged_page(page); break;
-    }
-}
+#define mark_page(page) {                                             \
+    if(page->big_page) mark_big_page(page); else                      \
+      switch(page->page_type) {                                       \
+        case PAGE_TAGGED: mark_tagged_page(page); break;              \
+        case PAGE_ATOMIC: break;                                      \
+        case PAGE_ARRAY: mark_array_page(page); break;                \
+        case PAGE_TARRAY: mark_tarray_page(page); break;              \
+        case PAGE_XTAGGED: mark_xtagged_page(page); break;            \
+      }                                                               \
+  }
 
 /*****************************************************************************/
 /* garbage collection                                                        */
 /*****************************************************************************/
 
-#define CUTOFF ((PAGE_SIZE >> 1) + (PAGE_SIZE >> 2))
+#define CUTOFF (PAGE_SIZE >> 1)
 
 static void prepare_pages_for_collection(void)
 {
@@ -2057,8 +2046,8 @@ static void prepare_pages_for_collection(void)
   int i, j = 0;
 
   /* first move pages in generations we're collecting to from_pages */
-  for(i = 0; i < GENERATIONS; i++)
-    if(i <= gc_top) {
+  for(i = 0; i < 2; i++)
+    if(!i || gc_full) {
       for(j = 0; j < PAGE_TYPES; j++) {
 	from_pages[i][j] = pages[i][j];
 	pages[i][j] = NULL;
@@ -2073,7 +2062,7 @@ static void prepare_pages_for_collection(void)
 
   /* then move anything from an older generation that either has back pointers
      or has sufficient free space to to_pages */
-  for(i = 0; i < GENERATIONS; i++)
+  for(i = 0; i < 2; i++)
     for(j = 0; j < PAGE_TYPES; j++) {
       work = pages[i][j]; to_pages[i][j] = NULL;
 
@@ -2098,7 +2087,7 @@ static void prepare_pages_for_collection(void)
       }
     }
 
-  for(i = 0; i < GENERATIONS; i++)
+  for(i = 0; i < 2; i++)
     for(j = 0; j < PAGE_TYPES; j++) 
       for(work = to_pages[i][j]; work; work = work->next) 
 	if(work->back_pointers) {
@@ -2111,19 +2100,18 @@ static void prepare_pages_for_collection(void)
 static void propagate_marks(void)
 {
   struct mpage *page;
-  int i, j, changed;
+  int j, changed;
 
   do {
     changed = 0;
 
-    for(i = 1; i < GENERATIONS; i++) 
-      for(j = 0; j < PAGE_TYPES; j++)
-	for(page = to_pages[i][j]; page; page = page->next) 
-	  if(page->previous_size != page->size) {
-	    mark_page(page);
-	    page->previous_size = page->size;
-	    changed = 1;
-	  }
+    for(j = 0; j < PAGE_TYPES; j++)
+      for(page = to_pages[1][j]; page; page = page->next) 
+	if(page->previous_size != page->size) {
+	  mark_page(page);
+	  page->previous_size = page->size;
+	  changed = 1;
+	}
   } while(changed);
 }
 
@@ -2132,25 +2120,24 @@ static void repair_heap(void)
   struct mpage *work;
   int i, j;
 
-  for(i = 1; i < GENERATIONS; i++) 
-    for(j = 0; j < PAGE_TYPES; j++) {
-      work = to_pages[i][j];
-
-      while(work) {
-	struct mpage *next = work->next;
-
-	repair_page(work);
-	memory_in_use += work->size;
-	if(work->big_page) work->big_page = 1;
-	work->next = pages[i][j]; work->prev = NULL;
-	if(work->next) work->next->prev = work;
-	pages[i][j] = work;
-
-	work = next;
-      }
+  for(j = 0; j < PAGE_TYPES; j++) {
+    work = to_pages[1][j];
+    
+    while(work) {
+      struct mpage *next = work->next;
+      
+      repair_page(work);
+      memory_in_use += work->size;
+      if(work->big_page) work->big_page = 1;
+      work->next = pages[1][j]; work->prev = NULL;
+      if(work->next) work->next->prev = work;
+      pages[1][j] = work;
+      
+      work = next;
     }
+  }
 
-  for(i = 0; i < GENERATIONS; i++)
+  for(i = 0; i < 2; i++)
     for(j = 0; j < PAGE_TYPES; j++) {
       work = from_pages[i][j];
 
@@ -2169,15 +2156,14 @@ static void repair_heap(void)
 static void protect_older_pages(void)
 {
   struct mpage *work;
-  int i, j;
+  int j;
 
   if(generations_available)
-    for(i = 1; i < GENERATIONS; i++)
-      for(j = 0; j < PAGE_TYPES; j++)
-	if(j != PAGE_ATOMIC)
-	  for(work = pages[i][j]; work; work = work->next)
-	    if(work->page_type != PAGE_ATOMIC)
-	      protect_pages(work, work->size, 0);
+    for(j = 0; j < PAGE_TYPES; j++)
+      if(j != PAGE_ATOMIC)
+	for(work = pages[1][j]; work; work = work->next)
+	  if((work->page_type != PAGE_ATOMIC) && !work->back_pointers)
+	    protect_pages(work, work->size, 0);
 }
 
 static void garbage_collect(int force_full)
@@ -2185,10 +2171,7 @@ static void garbage_collect(int force_full)
   static unsigned long number = 0;
   static unsigned int running_finalizers = 0;
 
-  if(force_full || !generations_available)
-    gc_top = (GENERATIONS - 1);
-  else
-    gc_top = COMPUTE_GCTOP(number);
+  gc_full = force_full || !generations_available || ((number % 20) == 0);
   number++;
   INIT_DEBUG_FILE(); DUMP_HEAP();
   
@@ -2208,11 +2191,11 @@ static void garbage_collect(int force_full)
   propagate_marks();
   check_finalizers(2);
   propagate_marks();
-  if(gc_top == (GENERATIONS-1)) zero_weak_finalizers();
+  if(gc_full) zero_weak_finalizers();
   do_ordered_level3();
   propagate_marks();
   check_finalizers(3);
-  if(gc_top == (GENERATIONS-1)) reset_weak_finalizers();
+  if(gc_full) reset_weak_finalizers();
   propagate_marks();
 
   repair_finalizers();

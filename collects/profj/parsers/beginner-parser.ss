@@ -118,7 +118,7 @@
               (parse-port-list (class:send (class-case-box $1) read-one-special 0 #f #f #f #f)))
           (input-port (car parse-port-list))
           (begin0
-            (car ((cadr parse-port-list) 'beginner))
+            (car (package-defs ((cadr parse-port-list) 'beginner)))
             (input-port old-input-port)))]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])

@@ -4,12 +4,12 @@
   (provide use-plt-browser?
            set-plt-browser!)
 
-  (define definitely-use-plt #f)
+  (define switched-to-plt-browser #f)
 
   (define (set-plt-browser!)
-    (set! definitely-use-plt #t))
+    (set! switched-to-plt-browser #t))
 
   (define (use-plt-browser?)
-    (or definitely-use-plt
+    (or switched-to-plt-browser
 	(eq? (get-preference 'external-browser (lambda () #f))
 	     'plt))))

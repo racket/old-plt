@@ -20,10 +20,11 @@
       (let* ([configuration
 	      (build-developer-configuration
 	       (build-config-exp))]
-	     [exit-proc (serve configuration min-port)])
+	     [exit-proc (serve configuration 
+			       (or (and hd-cookie (hd-cookie->port hd-cookie))
+				   min-port))])
 	(if hd-cookie
 	    (begin
-	      (set-hd-cookie-port! hd-cookie min-port)
 	      (set-hd-cookie-exit-proc! hd-cookie exit-proc)
 	      hd-cookie)
 	    (make-hd-cookie min-port exit-proc))))))

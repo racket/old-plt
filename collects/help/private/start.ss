@@ -4,7 +4,7 @@
            wait-start-semaphore
            browser-timeout)
 
-  (define browser-timeout 12)
+  (define browser-timeout 15)
 
   (define start-semaphore (make-semaphore 0))
   

@@ -2244,6 +2244,9 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     /* for future expansion, shift away from self_modidx: */
     fm = scheme_stx_phase_shift(fm, 0, self_modidx, empty_self_modidx);
 
+    /* make self_modidx like the empty modidx */
+    ((Scheme_Modidx *)self_modidx)->resolved = empty_self_symbol;
+
     return fm;
   }
 }

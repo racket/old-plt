@@ -1,24 +1,19 @@
-
 (define make-invokable-unit
   (lambda (application)
-    (let* ([U
-	    (compound-unit/sig (import)
-	      (link [core : mzlib:core^ (mzlib:core@)]
-		    [trigger : mzlib:trigger^ (mzlib:trigger@)]
-		    [mred : mred^ (mred@ core trigger application)]
-		    [application : mred:application^ (application mred core)])
-	      (export (open mred)
-		      (open application)))])
-      (compound-unit/sig (import)
-	 (link [mred : ((open mred^) (open mred:application^)) (U)])
-	 (export (unit mred))))))
+    (compound-unit/sig (import)
+      (link [wx : wx^ (wx@)]
+	    [core : mzlib:core^ (mzlib:core@)]
+	    [mred : mred^ ((require-library "linkwx.ss" "mred") core wx)]
+	    [application : () (application mred core wx)])
+      (export (unit mred mred2)))))
 
 (define (go flags)
   (define die? #f)
   (define my-app
-    (unit/sig 
-     mred:application^
-     (import mred^ mzlib:core^)
+    (unit/sig ()
+     (import mred^ 
+	     mzlib:core^
+	     [wx : wx^])
      
      (define app-name "Tester")
      (define console (if (memq 'console flags)
@@ -56,17 +51,20 @@
   (let loop ()
     (collect-garbage)
     (collect-garbage)
+    (wx:yield) (sleep) (wx:yield) (sleep)
+    (wx:yield) (sleep) (wx:yield) (sleep)
+    (wx:yield) (sleep) (wx:yield) (sleep)
+    (wx:yield) (sleep) (wx:yield) (sleep)
+    (wx:yield) (sleep) (wx:yield) (sleep)
     (dump-memory-stats)
-    (let ([e (if (memq 'force flags)
-		 (wx:make-eventspace)
-		 (wx:current-eventspace))])
-      (parameterize ([wx:current-eventspace e])
+    (let ([custodian (make-custodian)])
+      (parameterize ([current-custodian custodian]
+		     [wx:current-eventspace 
+		      (if (memq 'force flags)
+			  (wx:make-eventspace)
+			  (wx:current-eventspace))])
 	  (invoke-unit/sig
 	   (make-invokable-unit my-app)))
       (when (memq 'force flags)
-	    (wx:kill-eventspace e)))
+	    (custodian-shutdown-all custodian)))
     (loop)))
-
-
-
-   

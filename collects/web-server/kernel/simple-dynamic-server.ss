@@ -25,6 +25,7 @@
       (let* ([vp (url->virtual-path url)]
              [dir-part (virtual-path-directory-part vp)]
              [f-part (virtual-path-file-part vp)])
+        (myprint "serve/request:~n     dir-part = ~s~n     f-part = ~s~n" dir-part f-part)
         (cond
          [(and (not (null? dir-part))
                (string=? (car dir-part) ".."))
@@ -83,24 +84,26 @@
                            [exn:servlet-continuation?
                             (lambda (the-exn)
                               (report-error 404 conn (request-method req)))])
-            (let* ([inst (hash-table-get instance-table (car k-ref)
+             (let* ([inst (hash-table-get instance-table (car k-ref)
                                          (lambda ()
                                            (raise
                                             (make-exn:servlet-instance
                                              "" (current-continuation-marks)))))]
-                   [k-table
-                    (servlet-instance-k-table inst)])
-              (let/ec suspend
-                (thread-cell-set! current-servlet-context
-                                  (make-servlet-context
-                                   inst conn req
-                                   (lambda () (suspend #t))))
-                ((hash-table-get k-table (cadr k-ref)
-                                 (lambda ()
-                                   (raise
-                                    (make-exn:servlet-continuation
-                                     "" (current-continuation-marks)))))
-                 req)))))]
+                    [k-table
+                     (servlet-instance-k-table inst)])
+               (let/cc suspend
+                 (thread-cell-set! current-servlet-context
+                                   (make-servlet-context
+                                    inst conn req
+                                    (lambda () (suspend #t))))
+                 (semaphore-wait (servlet-instance-mutex inst))
+                 ((hash-table-get k-table (cadr k-ref)
+                                  (lambda ()
+                                    (raise
+                                     (make-exn:servlet-continuation
+                                      "" (current-continuation-marks)))))
+                  req))
+               (semaphore-post (servlet-instance-mutex inst)))))]
      [else (load-servlet/path servlet-path conn req)]))
 
   ;; **************************************************
@@ -109,12 +112,15 @@
   ;; load-servlet/path: path connection -> void
   ;; make a new namespace, load the servlet in and let 'r rip!
   (define (load-servlet/path servlet-path conn req)
-    (let/ec suspend
+    (let/cc suspend
       (parameterize ([current-namespace (make-servlet-namespace)])
-        (thread-cell-set! current-servlet-context
-                          (make-servlet-context (create-new-instance!)
-                                                conn req
-                                                (lambda () (suspend #t))))
+        (thread-cell-set!
+         current-servlet-context
+         (let ([inst (create-new-instance!)])
+           (make-servlet-context inst conn req
+                                 (lambda ()
+                                   (semaphore-post (servlet-instance-mutex inst))
+                                   (suspend #t)))))
         (namespace-require `(file ,(path->string servlet-path))))))
 
   ;; servlet-import-modules is a (listof symbol)
@@ -153,7 +159,8 @@
   (define (create-new-instance!)
     (let ([invoke-id next-invoke-id])
       (set! next-invoke-id (add1 next-invoke-id))
-      (let ([inst (make-servlet-instance invoke-id (make-hash-table) 0)])
+      (let ([inst (make-servlet-instance invoke-id (make-hash-table) 0
+                                         (make-semaphore 0))])
         (hash-table-put! instance-table invoke-id inst)
         inst)))
 

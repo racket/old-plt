@@ -17,13 +17,13 @@
            ;;       see if it can just be stored in the request
            ;;       and simplify the connection struct
            (struct servlet-context (instance connection request suspend))
-           (struct servlet-instance (invoke-id k-table next-k-id))
+           (struct servlet-instance (invoke-id k-table next-k-id mutex))
 
            ;; exceptions
            (struct exn:servlet ())
            )
 
-  (define-struct servlet-instance (invoke-id k-table next-k-id) (make-inspector))
+  (define-struct servlet-instance (invoke-id k-table next-k-id mutex))
   (define-struct servlet-context (instance connection request suspend)
     (make-inspector))
 
@@ -85,22 +85,18 @@
   ;; insert-param: url string -> string
   ;; add a path/param to the path in a url
   ;; (assumes that there is only one path/param)
-  (define (insert-param in-url new-param)
+  (define (insert-param in-url new-param-str)
     (replace-path
      (lambda (old-path)
-       (for-each
-        (lambda (path-elt)
-          (when (path/param? path-elt)
-                (raise
-                 (make-exn:servlet
-                  "embed-ids: url already contains parameters"
-                  (current-continuation-marks)))))
-        old-path)
        (if (null? old-path)
-           (list (make-path/param "" new-param))
-           (cons (make-path/param (car old-path) new-param)
-                 (cdr old-path))))
-       in-url))
+           (list (make-path/param "" new-param-str))
+           (let* ([car-old-path (car old-path)])
+             (cons (make-path/param (if (path/param? car-old-path)
+                                        (path/param-path car-old-path)
+                                        car-old-path)
+                                    new-param-str)
+                   (cdr old-path)))))
+     in-url))
 
   ;; remove-ids: url -> string
   ;; replace all path/params with just the path/param-path part

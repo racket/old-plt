@@ -203,4 +203,28 @@
   (do-tests '("apple" "banana"))
   (do-tests '("ax" "b" "cz")))
 
+;; make-limited-input-port tests
+(let* ([s (open-input-string "123456789")]
+       [s2 (make-limited-input-port s 5)])
+  (test #"123" peek-bytes 3 0 s2)
+  (test #"12345" peek-bytes 6 0 s2)
+  (test #"12" read-bytes 2 s2)
+  (test #"345" read-bytes 6 s2)
+  (test eof read-bytes 6 s2)
+  (test #f port-provides-progress-evts? s2))
+(let-values ([(i o) (make-pipe)])
+  (let ([s (make-limited-input-port i 5)])
+    (test #f char-ready? s)
+    (display "123" o)
+    (test #t char-ready? s)
+    (let ([b (make-bytes 10)])
+      (test 3 peek-bytes-avail!* b 0 #f s)
+      (test 3 read-bytes-avail!* b s)
+      (test 0 peek-bytes-avail!* b 0 #f s)
+      (display "456" o)
+      (test 2 peek-bytes-avail!* b 0 #f s)
+      (test 1 peek-bytes-avail!* b 1 #f s)
+      (test 2 read-bytes-avail!* b s))))
+	     
+
 (report-errs)

@@ -179,12 +179,8 @@
 		  [message
 		   (if (is-a? file wx:media-edit%)
 		       input-string
-		       (format "~a: ~a.~a-~a.~a: ~a" file
-			       (zodiac:location-line start-location)
-			       (zodiac:location-column start-location)
-			       (zodiac:location-line end-location)
-			       (zodiac:location-column end-location)
-			       input-string))])
+		       (string-append (basis:format-source-loc start-location end-location)
+				      input-string))])
 	     (report-unlocated-error message)
 	     (when (is-a? file wx:media-edit%)
 	       (send file begin-edit-sequence)
@@ -566,6 +562,7 @@
 
 	     (set! user-setting (mred:get-preference 'drscheme:settings))
 	     (let ([p (basis:build-parameterization
+		       (list 'wx)
 		       (mred:get-preference 'drscheme:settings)
 		       (let ([l@
 			      (unit/sig ()

@@ -42,6 +42,8 @@
 
    drscheme-print
 
+   format-source-loc
+   
    primitive-eval
    primitive-load
    syntax-checking-primitive-eval

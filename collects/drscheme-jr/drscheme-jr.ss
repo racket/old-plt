@@ -2,7 +2,7 @@
 ;;;                      Debugging                         ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(when (or #t (getenv "MREDDEBUG"))
+(when (getenv "MREDDEBUG")
   (letrec* ([old-handler (current-load)]
 	    [offset 2]
 	    [indent 0]
@@ -25,8 +25,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                    Signatures                          ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(read-case-sensitive #t)
 
-(printf ",DrScheme Jr is loading. Please wait...~n")
+(printf "DrScheme Jr is loading. Please wait...~n")
 (flush-output)
 
 (require-library "refer.ss")
@@ -181,20 +182,22 @@
 		     (lambda (exn)
 		       (printf "error loading saved language settings: ~a~n"
 			       (exn-message exn)))])
-      (with-input-from-file (get-argv-file)
-	(lambda ()
-	  (let ([l (read)]
-		[s (read)])
-	    (when (memq l (map (lambda (l) (cadr l)) language-levels))
-	      (basis:set-setting-vocabulary-symbol! setting l))
-	    (for-each
-	     (lambda (entry)
-	       (let ([tag (car entry)]
-		     [value (cdr entry)])
-		 (let ([a (assoc tag flags)])
-		   (when a
-		     ((cadr a) value)))))
-	     s)))))
+      (let ([argv-file (get-argv-file)])
+	(when (file-exists? argv-file)
+	  (with-input-from-file argv-file
+	    (lambda ()
+	      (let ([l (read)]
+		    [s (read)])
+		(when (memq l (map (lambda (l) (cadr l)) language-levels))
+		  (basis:set-setting-vocabulary-symbol! setting l))
+		(for-each
+		 (lambda (entry)
+		   (let ([tag (car entry)]
+			 [value (cdr entry)])
+		     (let ([a (assoc tag flags)])
+		       (when a
+			 ((cadr a) value)))))
+		 s)))))))
 
     (define (bad-arguments s . args)
       (printf "DrScheme Jr error: ~a~n" (apply format s args))
@@ -229,17 +232,19 @@
 		(choose-mode))))))
 
     (define (set-level level)
-      (let ([p (assoc level (map list basis:level-symbols basis:settings))])
+      (let ([p (assoc level (map vector->list basis:settings))])
 	(if p
-	    (set! setting (mzlib:function:second p))
+	    (set! setting (basis:copy-setting (cadr p)))
 	    (bad-arguments "bad language name: ~s" level))))
 
     (define (make-implies-string vocab-symbol)
       (let ([impl-setting (if vocab-symbol
-			      (let ([a (assoc (map list basis:level-symbols basis:settings))])
+			      (let ([a (assoc vocab-symbol (map (lambda (x y) (list (string->symbol x) y))
+								basis:level-strings
+								basis:settings))])
 				(unless a
-				  (error 'drscheme-jr "unkown level: ~a~n" vocab-symbol))
-				(mzlib:function:second a))
+				  (error 'DrScheme\ Jr "unknown level: ~a~n" vocab-symbol))
+				(vector-ref (mzlib:function:second a) 1))
 			      setting)])
 	(fluid-let ([setting impl-setting])
 	  (let* ([on/off (lambda (x) (if x "on" "off"))]
@@ -322,31 +327,47 @@
 		 (get-argv-file))
 	 (exit 0))))))
 
-(printf "hi~n")
-
 (define dr-jrU
   (unit/sig ()
     (import [zodiac : zodiac:system^]
 	    [print-convert : mzlib:print-convert^]
 	    [basis : userspace:basis^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
+	    [mzlib:function : mzlib:function^]
 	    [settings : drscheme-jr:settings^])
     (define system-parameterization (current-parameterization))
     (define user-parameterization (current-parameterization))
 
-    (define prompt-read
-      (let ([prompt "> "])
-	(lambda ()
-	  (display prompt)
-	  (flush-output)
-	  (let* ([ip (current-input-port)]
-		 [pos (file-position (current-output-port))]
-		 [v ((zodiac:read
-		      ip
-		      (zodiac:make-location 1 1 pos "stdin")))])
-	    (if (zodiac:eof? v)
-		eof
-		v)))))
+    (define (repl)
+      (let ([escape-k void]
+	    [display-prompt
+	     (lambda ()
+	       (display "> ")
+	       (flush-output))])
+	(error-escape-handler (lambda () (escape-k (void))))
+	(let outer-loop ()
+	  (let/ec k
+	    (display-prompt)
+	    (fluid-let ([escape-k k])
+	      (basis:process/zodiac
+	       (zodiac:read (current-input-port)
+			    (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))
+	       (lambda (sexp loop)
+		 (unless (basis:process-finish? sexp)
+		   (dynamic-enable-break
+		    (lambda ()
+		      '(let ([ct (current-thread)])
+			(thread
+			 (lambda () 
+			   (sleep 10)
+			   (break-thread ct))))
+		      ((current-print)
+		       ((current-eval)
+			sexp))))
+		   (display-prompt)
+		   (loop)))
+	       #t)))
+	  (outer-loop))))
 
     (define read/zodiac
       (lambda (port)
@@ -384,39 +405,41 @@
 	  (let ([continue? #f]
 		[param
 		 (basis:build-parameterization
+		  null
 		  settings:setting
 		  (require-library-unit/sig "userspcr.ss" "userspce"))])
 	    (with-parameterization param
 	      (lambda ()
-		(global-defined-value 'read/zodiac read/zodiac)
-		(global-defined-value 'restart
-				      (let* ([c (current-custodian)]
-					     [die (lambda ()
-						    (set! continue? #t)
-						    (custodian-shutdown-all c))])
-					(rec restart
-					     (case-lambda
-					      [(new-file)
-					       (unless (or (relative-path? file)
-							   (absolute-path? file))
-						 (raise-type-error 'restart "path string" file))
-					       (set! file new-file)
-					       (die)]
-					      [() (die)]))))
-		(current-prompt-read prompt-read)
-		(printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
-			(version))
-		(printf "Language: ~a~n"
-			(cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
-				     (map list basis:level-symbols basis:level-strings))))
-		(thread-wait
-		 (thread
-		  (lambda ()
-		    
-		    (when (string? file)
-		      (load/prompt file))
-
-		    (read-eval-print-loop))))))
+		(mzlib:function:dynamic-disable-break
+		 (lambda ()
+		   (global-defined-value 'read/zodiac read/zodiac)
+		   (global-defined-value 'restart
+					 (let* ([c (current-custodian)]
+						[die (lambda ()
+						       (set! continue? #t)
+						       (custodian-shutdown-all c))])
+					   (rec restart
+						(case-lambda
+						 [(new-file)
+						  (unless (or (relative-path? file)
+							      (absolute-path? file))
+						    (raise-type-error 'restart "path string" file))
+						  (set! file new-file)
+						  (die)]
+						 [() (die)]))))
+		   (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
+			   (version))
+		   (printf "Language: ~a~n"
+			   (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
+					(map list basis:level-symbols basis:level-strings))))
+		   (thread-wait
+		    (thread
+		     (lambda ()
+		       
+		       (when (string? file)
+			 (load/prompt file))
+		       
+		       (repl))))))))
 	    (when continue?
 	      (loop))))))
 
@@ -474,6 +497,7 @@
 			print-convert
 			basis
 			(mzlib pretty-print@)
+			(mzlib function@)
 			settings)])
      (export))))
 

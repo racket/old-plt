@@ -270,17 +270,14 @@
 				 (primitive-eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
 			      [exp
 			       (dynamic-wind
-				(lambda ()
-				  (zodiac:interface:set-zodiac-phase 'expander))
-				(lambda ()
-				  (call/nal zodiac:scheme-expand/nal
-					    zodiac:scheme-expand
-					    [expression: zodiac-read]
-					    [vocabulary: vocab]
-					    [user-macro-body-evaluator: user-macro-body-evaluator]
-					    [elaboration-evaluator: evaluator]))
-				(lambda ()
-				  (zodiac:interface:set-zodiac-phase #f)))]
+				(lambda () (zodiac:interface:set-zodiac-phase 'expander))
+				(lambda () (call/nal zodiac:scheme-expand/nal
+						     zodiac:scheme-expand
+						     [expression: zodiac-read]
+						     [vocabulary: vocab]
+						     [user-macro-body-evaluator: user-macro-body-evaluator]
+						     [elaboration-evaluator: evaluator]))
+				(lambda () (zodiac:interface:set-zodiac-phase #f)))]
 			      [heading-out (if annotate? 
 					       (aries:annotate exp)
 					       exp)])
@@ -295,11 +292,25 @@
 	    (f (make-process-finish #f) void)
 	    (f expr loop)))))
 
+  (define (format-source-loc start-location end-location)
+    (let ([file (zodiac:location-file start-location)])
+      (format "~a: ~a.~a - ~a.~a: "
+	      file
+	      (zodiac:location-line start-location)
+	      (zodiac:location-column start-location)
+	      (zodiac:location-line end-location)
+	      (zodiac:location-column end-location))))
+
   ;; (parameter (string debug-info -> void))
   (define error-display/debug-handler
     (make-parameter
      (lambda (msg debug)
-       ((error-display-handler) msg))))
+       ((error-display-handler) 
+	(if (zodiac:zodiac? debug)
+	    (string-append (format-source-loc (zodiac:zodiac-start debug)
+					      (zodiac:zodiac-finish debug))
+			   msg)
+	    msg)))))
 
   ;; drscheme-exception-handler : exn -> A
   ;; effect: displays the exn-message and escapes
@@ -418,15 +429,17 @@
 	  (mzlib:pretty-print:pretty-print-handler value)))))
 
 
-  ;; build-parameterization : setting
+  ;; build-parameterization : (list-of symbols)
+  ;;                          setting
   ;;                          (unit (import plt:userspace:params^))
   ;;                       -> parameterization
-  (define (build-parameterization setting basis@)
+  (define (build-parameterization namespace-flags setting basis@)
     (let* ([parameterization (make-parameterization)]
 	   [custodian (make-custodian)]
-	   [n (if (setting-use-zodiac? setting)
-		  (make-namespace 'no-constants 'wx 'hash-percent-syntax)
-		  (make-namespace 'wx))])
+	   [n (apply make-namespace
+		     (if (setting-use-zodiac? setting)
+			 (append (list 'no-constants 'hash-percent-syntax) namespace-flags)
+			 namespace-flags))])
       (with-parameterization parameterization
 	(lambda ()
 	  (when (setting-use-zodiac? setting)

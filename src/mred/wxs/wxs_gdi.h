@@ -37,12 +37,6 @@ void objscheme_setup_wxPoint(void *env);
 int objscheme_istype_wxPoint(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxPoint(class wxPoint *realobj);
 class wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *obj, const char *where, int nullOK);
-#endif
-void objscheme_setup_wxIntPoint(void *env);
-#ifndef WXS_SETUP_ONLY
-int objscheme_istype_wxIntPoint(Scheme_Object *obj, const char *stop, int nullOK);
-Scheme_Object *objscheme_bundle_wxIntPoint(class wxIntPoint *realobj);
-class wxIntPoint *objscheme_unbundle_wxIntPoint(Scheme_Object *obj, const char *where, int nullOK);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
 extern int objscheme_istype_wxColour(Scheme_Object *, const char *, int);

@@ -28,4 +28,6 @@
  application-file-handler
  get-color-from-user
  get-font-from-user
- middle-queue-key)
+ middle-queue-key
+ id-to-menu-item
+ file-selector)

@@ -245,7 +245,6 @@ static Scheme_Object *bundle_symset_caret(int v) {
 
 
 
-
 class os_wxMediaPasteboard : public wxMediaPasteboard {
  public:
 
@@ -3060,24 +3059,6 @@ static Scheme_Object *os_wxMediaPasteboardFindSnip(Scheme_Object *obj, int n,  S
 }
 
 #pragma argsused
-static Scheme_Object *os_wxMediaPasteboardAddPasteboardFunctions(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxKeymap* x0;
-
-  
-  x0 = objscheme_unbundle_wxKeymap(p[0], "add-pasteboard-functions in pasteboard%", 0);
-
-  
-  ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AddPasteboardFunctions(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetCenter(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4734,7 +4715,7 @@ void objscheme_setup_wxMediaPasteboard(void *env)
 if (os_wxMediaPasteboard_class) {
     objscheme_add_global_class(os_wxMediaPasteboard_class, "pasteboard%", env);
 } else {
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 96);
+  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 95);
 
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step", os_wxMediaPasteboardSetScrollStep, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step", os_wxMediaPasteboardGetScrollStep, 0, 0);
@@ -4764,7 +4745,6 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "is-selected?", os_wxMediaPasteboardIsSelected, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-first-snip", os_wxMediaPasteboardFindFirstSnip, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-snip", os_wxMediaPasteboardFindSnip, 2, 2);
- scheme_add_method_w_arity(os_wxMediaPasteboard_class, "add-pasteboard-functions", os_wxMediaPasteboardAddPasteboardFunctions, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-center", os_wxMediaPasteboardGetCenter, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "remove-selected", os_wxMediaPasteboardRemoveSelected, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "no-selected", os_wxMediaPasteboardNoSelected, 0, 0);

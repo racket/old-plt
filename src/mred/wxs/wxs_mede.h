@@ -38,7 +38,6 @@ extern Scheme_Object *objscheme_bundle_wxMediaWordbreakMap(class wxMediaWordbrea
 extern class wxMediaWordbreakMap *objscheme_unbundle_wxMediaWordbreakMap(Scheme_Object *, const char *, int);
 extern class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *);
-extern class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *, const char *, int);
 extern int objscheme_istype_wxMediaStreamOut(Scheme_Object *, const char *, int);
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);

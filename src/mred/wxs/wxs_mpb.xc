@@ -56,8 +56,6 @@
 
 @ "get-center" : void GetCenter(float*, float*);
 
-@ "add-pasteboard-functions" : void AddPasteboardFunctions(wxKeymap!);
-
 @ "find-snip" : wxSnip^ FindSnip(float,float);
 @ "find-first-snip" : wxSnip^ FindFirstSnip();
 @ "is-selected?" : bool IsSelected(wxSnip^);

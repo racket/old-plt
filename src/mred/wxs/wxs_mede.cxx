@@ -612,7 +612,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-
 static void WordbreakCallbackToScheme(wxMediaEdit *,long*,long*,int,Scheme_Object *);
 
 
@@ -641,7 +640,7 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
       e = XC_SCHEME_NULL;
     p[1] = s;
     p[2] = e;
-    p[3] = scheme_make_integer(reason);
+    p[3] = bundle_symset_breakType(reason);
 
     scheme_apply_multi(f, 4, p);
     if (start)
@@ -3175,24 +3174,6 @@ static Scheme_Object *os_wxMediaEditOnInsert(Scheme_Object *obj, int n,  Scheme_
   
   
   return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxMediaEditAddEditorFunctions(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxKeymap* x0;
-
-  
-  x0 = objscheme_unbundle_wxKeymap(p[0], "add-editor-functions in text%", 0);
-
-  
-  ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->AddEditorFunctions(x0);
-
-  
-  
-  return scheme_void;
 }
 
 #pragma argsused
@@ -6161,7 +6142,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class, "text%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 126);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 125);
 
  scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5);
@@ -6185,7 +6166,6 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-delete", os_wxMediaEditOnDelete, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "after-insert", os_wxMediaEditAfterInsert, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-insert", os_wxMediaEditOnInsert, 2, 2);
- scheme_add_method_w_arity(os_wxMediaEdit_class, "add-editor-functions", os_wxMediaEditAddEditorFunctions, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-tabs", os_wxMediaEditSetTabs, 1, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-tabs", os_wxMediaEditGetTabs, 0, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-overwrite-mode", os_wxMediaEditSetOverwriteMode, 1, 1);

@@ -112,11 +112,6 @@
 @ "get-editor" : wxMediaBuffer^ GetThisMedia();
 @ "set-editor" : void SetMedia(wxMediaBuffer^);
 
-@CONSTANT "const-editor-snip-xmargin" : int wxMSNIPBOX_XMARGIN
-@CONSTANT "const-editor-snip-ymargin" : int wxMSNIPBOX_YMARGIN
-@CONSTANT "const-editor-snip-xinset" : int wxMSNIPBOX_XINSET
-@CONSTANT "const-editor-snip-yinset" : int wxMSNIPBOX_YINSET
-
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
 
@@ -149,7 +144,6 @@
 @CLASSID wxTYPE_BUFFER_DATA_CLASS
 
 @IVAR "classname" : string classname
-@IVAR "required" : bool required
 
 @ V "read" : wxBufferData^ Read(wxMediaStreamIn%); : : : : rNULL
 

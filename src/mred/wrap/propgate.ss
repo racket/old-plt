@@ -18,10 +18,6 @@
  color%
  color-database%
  control-event%
- const-editor-snip-xinset
- const-editor-snip-xmargin
- const-editor-snip-yinset
- const-editor-snip-ymargin
  current-eventspace
  current-ps-setup
  cursor%
@@ -32,7 +28,6 @@
  event-dispatch-handler
  eventspace-parameterization
  eventspace?
- file-selector
  find-graphical-system-path
  flush-display
  font%
@@ -44,9 +39,7 @@
  get-the-editor-data-class-list
  get-the-snip-class-list
  icon%
- id-to-menu-item
  image-snip%
- int-point%
  is-busy?
  is-color-display?
  key-event%

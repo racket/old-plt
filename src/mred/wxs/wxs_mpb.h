@@ -70,7 +70,6 @@ extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
-extern class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern int objscheme_istype_wxSnip(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);

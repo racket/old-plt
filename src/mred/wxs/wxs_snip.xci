@@ -17,7 +17,6 @@
 @ s "blink-caret" : void BlinkCaret(wxDC!,float,float); 
 
 @ s "do-edit-operation" : void DoEdit(int,bool=TRUE,long=0);
-@ s "do-font" : void DoFont(int,bool=TRUE);
 @ s "match?" : bool Match(wxSnip!);
 
 @ s "write" : void Write(wxMediaStreamOut%);

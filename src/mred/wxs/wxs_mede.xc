@@ -163,8 +163,6 @@
 @ "get-tabs" : float[]/bReturnList[float.0] GetTabs(int?=NULL,float?=NULL,bool?=NULL); : : /checkNull/
 @ "set-tabs" : void SetTabs(float[]/bList/ubList/cList,-int,float=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[float.0.0.1.METHODNAME("text%","set-tabs")]//
 
-@ "add-editor-functions" : void AddEditorFunctions(wxKeymap!);
-
 @ v "on-insert" : bool OnInsert(long,long);
 @ v "after-insert" : void AfterInsert(long,long);
 @ v "on-delete" : bool OnDelete(long,long);
@@ -229,7 +227,7 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
       e = XC_SCHEME_NULL;
     p[1] = s;
     p[2] = e;
-    p[3] = scheme_make_integer(reason);
+    p[3] = bundle_symset_breakType(reason);
 
     scheme_apply_multi(f, 4, p);
     if (start)

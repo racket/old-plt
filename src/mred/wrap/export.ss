@@ -55,7 +55,7 @@
  get-display-size
  get-color-from-user
  get-font-from-user
- append-edit-operation-menu-items
- append-edit-font-menu-items
+ append-editor-operation-menu-items
+ append-editor-font-menu-items
  get-top-level-focus-window
  get-top-level-edit-target-window)

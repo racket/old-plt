@@ -4292,7 +4292,6 @@ static Scheme_Object *bundle_symset_breakType(int v) {
 
 
 
-
 class os_wxMediaWordbreakMap : public wxMediaWordbreakMap {
  public:
 
@@ -4316,50 +4315,15 @@ os_wxMediaWordbreakMap::~os_wxMediaWordbreakMap()
 }
 
 #pragma argsused
-static Scheme_Object *os_wxMediaWordbreakMapIsUsed(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxMediaWordbreakMap *)((Scheme_Class_Object *)obj)->primdata)->IsUsed();
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxMediaWordbreakMapAdjustUsage(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  Bool x0;
-
-  
-  x0 = objscheme_unbundle_bool(p[0], "adjust-usage in editor-wordbreak-map%");
-
-  
-  ((wxMediaWordbreakMap *)((Scheme_Class_Object *)obj)->primdata)->AdjustUsage(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxMediaWordbreakMapGetMap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   int r;
   objscheme_check_valid(obj);
-  int x0;
+  unsigned char x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-map in editor-wordbreak-map%");
+  x0 = ((unsigned char)objscheme_unbundle_char(p[0], "get-map in editor-wordbreak-map%"));
 
   
   r = ((wxMediaWordbreakMap *)((Scheme_Class_Object *)obj)->primdata)->GetMap(x0);
@@ -4374,11 +4338,11 @@ static Scheme_Object *os_wxMediaWordbreakMapSetMap(Scheme_Object *obj, int n,  S
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  int x0;
+  unsigned char x0;
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-map in editor-wordbreak-map%");
+  x0 = ((unsigned char)objscheme_unbundle_char(p[0], "set-map in editor-wordbreak-map%"));
   x1 = unbundle_symset_breakType(p[1], "set-map in editor-wordbreak-map%");
 
   
@@ -4413,10 +4377,8 @@ void objscheme_setup_wxMediaWordbreakMap(void *env)
 if (os_wxMediaWordbreakMap_class) {
     objscheme_add_global_class(os_wxMediaWordbreakMap_class, "editor-wordbreak-map%", env);
 } else {
-  os_wxMediaWordbreakMap_class = objscheme_def_prim_class(env, "editor-wordbreak-map%", "object%", os_wxMediaWordbreakMap_ConstructScheme, 4);
+  os_wxMediaWordbreakMap_class = objscheme_def_prim_class(env, "editor-wordbreak-map%", "object%", os_wxMediaWordbreakMap_ConstructScheme, 2);
 
- scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "is-used?", os_wxMediaWordbreakMapIsUsed, 0, 0);
- scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "adjust-usage", os_wxMediaWordbreakMapAdjustUsage, 1, 1);
  scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "get-map", os_wxMediaWordbreakMapGetMap, 1, 1);
  scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "set-map", os_wxMediaWordbreakMapSetMap, 2, 2);
 

@@ -131,16 +131,6 @@
 
 @END
 
-@CLASSBASE wxIntPoint "int-point" : "object"
-
-@CREATOR (); <> no argument
-@CREATOR (int,int) <> xy values
-
-@IVAR "x" : int x
-@IVAR "y" : int y
-
-@END
-
 @BEGINSYMBOLS brushStyle > ONE
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID

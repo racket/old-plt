@@ -82,7 +82,7 @@ static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box
 
 #define INSTALL_COUNT 520
 
-static Scheme_Object *mred_unit;
+static Scheme_Object *mred_unit, *mred_sig;
 
 #define CONS scheme_make_pair
 
@@ -96,7 +96,17 @@ typedef struct {
 
 static void wxScheme_Invoke(Scheme_Env *env)
 {
+  Scheme_Object *save = scheme_get_param(scheme_config, MZCONFIG_ENV);
+  scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env);
+
   scheme_invoke_unit(mred_unit, 0, NULL, NULL, 1, NULL, 0, 0);
+
+  scheme_set_param(scheme_config, MZCONFIG_ENV, save);
+
+  if (!mred_sig)
+    mred_sig = scheme_lookup_global(scheme_intern_symbol("mred^"), env);
+  else
+    scheme_add_global("mred^", mred_sig, env);
 
   if (!get_file) {
     get_file = scheme_lookup_global(scheme_intern_symbol("get-file"), env);
@@ -1424,7 +1434,6 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   objscheme_setup_wxColour(global_env);
   objscheme_setup_wxColourDatabase(global_env);
   objscheme_setup_wxPoint(global_env);
-  objscheme_setup_wxIntPoint(global_env);
   objscheme_setup_wxBrush(global_env);
   objscheme_setup_wxBrushList(global_env);
   objscheme_setup_wxPen(global_env);

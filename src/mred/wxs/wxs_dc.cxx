@@ -241,8 +241,6 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 extern Scheme_Object *objscheme_bundle_wxPoint(wxPoint *);
 extern wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *, const char *, int);
-extern Scheme_Object *objscheme_bundle_wxIntPoint(wxIntPoint *);
-extern wxIntPoint *objscheme_unbundle_wxIntPoint(Scheme_Object *, const char *, int);
 
 #undef l_ADDRESS
 #undef l_DEREF
@@ -275,89 +273,6 @@ extern wxIntPoint *objscheme_unbundle_wxIntPoint(Scheme_Object *, const char *, 
 #define l_LIST_ITEM_UNBUNDLE objscheme_unbundle_wxPoint
 #define l_MAKE_LIST __MakewxPointList
 #define l_MAKE_ARRAY __MakewxPointArray
-
-
-
-
-
-static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
-{
-  Scheme_Object *cdr = scheme_null, *obj;
-
-  while (c--) {
-    obj = l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]);
-    cdr = scheme_make_pair(obj, cdr);
-  }
-  
-  return cdr;
-}
-
-static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
-{
-  int i = 0;
-  long len;
-
-  len = scheme_proper_list_length(l);
-  if (len < 0) scheme_wrong_type(who, "proper-list", -1, 0, &l);
-  if (c) *c = len;
-
-  if (!(len + l_EXTRA))
-    return NULL;
-
-  l_TYPE l_POINT *f = new l_TYPE l_POINT[len + l_EXTRA];
-
-  while (!SCHEME_NULLP(l)) {
-    if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
-
-#define l_COPYDEST f[i]
-#define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
-
-    l_COPY
-
-    l_OKTEST
-
-    i++;
-
-    l = SCHEME_CDR(l);
-  }
-  l_TERMINATE
-
-  return f;
-}
-
-
-#undef l_ADDRESS
-#undef l_DEREF
-#undef l_TEST
-#undef l_POINT
-#undef l_TYPE
-#undef l_LIST_ITEM_BUNDLE
-#undef l_LIST_ITEM_UNBUNDLE
-#undef l_MAKE_LIST
-#undef l_MAKE_ARRAY
-#undef l_EXTRA
-#undef l_TERMINATE
-#undef l_COPY
-#undef l_OKTEST
-#undef l_INTTYPE
-
-#define l_ADDRESS &
-#define l_DEREF *
-#define l_NULLOK 0
-#define l_TEST , l_NULLOK
-#define l_POINT 
-#define l_EXTRA 0
-#define l_TERMINATE 
-#define l_COPY l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y;
-#define l_OKTEST 
-#define l_INTTYPE int
-
-#define l_TYPE wxIntPoint
-#define l_LIST_ITEM_BUNDLE objscheme_bundle_wxIntPoint
-#define l_LIST_ITEM_UNBUNDLE objscheme_unbundle_wxIntPoint
-#define l_MAKE_LIST __MakewxIntPointList
-#define l_MAKE_ARRAY __MakewxIntPointArray
 
 
 
@@ -447,6 +362,10 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 // @ q "get-map-mode" : SYM[mapMode] GetMapMode();
 
 
+// @ q "max-x" : float MaxX();
+// @ q "max-y" : float MaxY();
+// @ q "min-x" : float MinX();
+// @ q "min-y" : float MinY();
 
 
 
@@ -547,74 +466,6 @@ static Scheme_Object *os_wxDCOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
   
   
   return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxDCMinY(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->MinY();
-
-  
-  
-  return scheme_make_double(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxDCMinX(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->MinX();
-
-  
-  
-  return scheme_make_double(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxDCMaxY(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->MaxY();
-
-  
-  
-  return scheme_make_double(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxDCMaxX(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->MaxX();
-
-  
-  
-  return scheme_make_double(r);
 }
 
 #pragma argsused
@@ -1532,17 +1383,13 @@ if (os_wxDC_class) {
     objscheme_add_global_class(os_wxDC_class, "dc%", env);
     objscheme_add_global_interface(os_wxDC_interface, "dc" "<%>", env);
 } else {
-  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 50);
+  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 46);
 
  scheme_add_method_w_arity(os_wxDC_class, "end-page", os_wxDCEndPage, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "end-doc", os_wxDCEndDoc, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "start-page", os_wxDCStartPage, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "start-doc", os_wxDCStartDoc, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "ok?", os_wxDCOk, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "min-y", os_wxDCMinY, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "min-x", os_wxDCMinX, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "max-y", os_wxDCMaxY, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "max-x", os_wxDCMaxX, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-size", os_wxDCGetSize, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-foreground", os_wxDCdcGetTextForeground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-background", os_wxDCdcGetTextBackground, 0, 0);

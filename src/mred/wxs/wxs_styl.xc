@@ -200,18 +200,43 @@
 @ "find-or-create-style" : wxStyle! FindOrCreateStyle(wxStyle^,wxStyleDelta!);
 @ "find-or-create-join-style" : wxStyle! FindOrCreateJoinStyle(wxStyle^,wxStyle!);
 @ "find-named-style" : wxStyle^ FindNamedStyle(string);
-@ "new-named-style" : wxStyle! NewNamedStyle(string,wxStyle^);
-@ "replace-named-style" : wxStyle! ReplaceNamedStyle(string,wxStyle^);
+@ "new-named-style" : wxStyle! NewNamedStyle(string,wxStyle!);
+@ "replace-named-style" : wxStyle! ReplaceNamedStyle(string,wxStyle!);
 
 @ "convert" : wxStyle! Convert(wxStyle!);
 
 @ "index-to-style" : wxStyle^ IndexToStyle(int);
 @ "style-to-index" : int StyleToIndex(wxStyle!);
 
-@ "adjust-usage" : void AdjustUsage(bool);
-@ "is-used? " : bool IsUsed();
-
 @CONSTANT "the-style-list" : wxStyleList! wxTheStyleList
 
+static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
+
+@MACRO ubCallback = (wxStyleNotifyFunc)NotifyCallbackToScheme
+@MACRO ubData = p[0]
+@MACRO spCallback = (wxStyle-object-or-#f -> void)
+
+@MACRO bAnythingFromLong = ((Scheme_Object *){x})
+@MACRO ubAnythingToLong = ((long){x})
+@MACRO cAnything = 1
+
+@ "notify-on-change" : long/bAnythingFromLong NotifyOnChange(wxStyleNotifyFunc//ubCallback//spCallback,-unknown#void*//ubData)
+@ "forget-notification" : void ForgetNotification(long//ubAnythingToLong/cAnything)
+
 @END
+
+static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
+{
+  Scheme_Object *p[1];
+  jmp_buf savebuf;
+
+  p[0] = s ? objscheme_bundle_wxStyle(s) : scheme_false;
+
+  COPY_JMPBUF(savebuf, scheme_error_buf);
+
+  if (!scheme_setjmp(scheme_error_buf))
+    scheme_apply_multi(f, 1, p);
+
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+}
 

@@ -77,8 +77,6 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @CLASSID wxTYPE_MEDIA_BUFFER
 
-@IVAR "buffer-type" : SYM[bufferType] bufferType
-
 @SETMARK Y = V
 @SETMARK Z = v
 @INCLUDE wxs_mbuf.xci

@@ -148,7 +148,6 @@ class os_wxSnip : public wxSnip {
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
   Bool Match(class wxSnip* x0);
-  void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -413,40 +412,6 @@ return wxSnip::Match(x0);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "match? in snip%"", extracting return value");
-  }
-}
-
-void os_wxSnip::DoFont(int x0, Bool x1)
-{
-  Scheme_Object *p[2];
-  Scheme_Object *v;
-  mz_jmp_buf savebuf;
-  Scheme_Object *method;
-  int sj;
-  static void *mcache = 0;
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "do-font", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxSnip::DoFont(x0, x1);
-  } else {
-  
-  p[0] = scheme_make_integer(x0);
-  p[1] = (x1 ? scheme_true : scheme_false);
-  
-
-  v = scheme_apply(method, 2, p);
-  
-  
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1153,32 +1118,6 @@ static Scheme_Object *os_wxSnipMatch(Scheme_Object *obj, int n,  Scheme_Object *
 }
 
 #pragma argsused
-static Scheme_Object *os_wxSnipDoFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  Bool x1;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "do-font in snip%");
-  if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-font in snip%");
-  } else
-    x1 = TRUE;
-
-  
-  if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::DoFont(x0, x1);
-  else
-    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->DoFont(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1837,7 +1776,7 @@ void objscheme_setup_wxSnip(void *env)
 if (os_wxSnip_class) {
     objscheme_add_global_class(os_wxSnip_class, "snip%", env);
 } else {
-  os_wxSnip_class = objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 35);
+  os_wxSnip_class = objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 34);
 
  scheme_add_method_w_arity(os_wxSnip_class, "previous", os_wxSnipPrevious, 0, 0);
  scheme_add_method_w_arity(os_wxSnip_class, "next", os_wxSnipNext, 0, 0);
@@ -1848,7 +1787,6 @@ if (os_wxSnip_class) {
  scheme_add_method_w_arity(os_wxSnip_class, "resize", os_wxSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxSnip_class, "write", os_wxSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxSnip_class, "match?", os_wxSnipMatch, 1, 1);
- scheme_add_method_w_arity(os_wxSnip_class, "do-font", os_wxSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxSnip_class, "do-edit-operation", os_wxSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxSnip_class, "blink-caret", os_wxSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxSnip_class, "own-caret", os_wxSnipOwnCaret, 1, 1);
@@ -1959,7 +1897,6 @@ class os_wxTextSnip : public wxTextSnip {
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
   Bool Match(class wxSnip* x0);
-  void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -2224,40 +2161,6 @@ return wxTextSnip::Match(x0);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "match? in text-snip%"", extracting return value");
-  }
-}
-
-void os_wxTextSnip::DoFont(int x0, Bool x1)
-{
-  Scheme_Object *p[2];
-  Scheme_Object *v;
-  mz_jmp_buf savebuf;
-  Scheme_Object *method;
-  int sj;
-  static void *mcache = 0;
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "do-font", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxTextSnip::DoFont(x0, x1);
-  } else {
-  
-  p[0] = scheme_make_integer(x0);
-  p[1] = (x1 ? scheme_true : scheme_false);
-  
-
-  v = scheme_apply(method, 2, p);
-  
-  
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -2975,32 +2878,6 @@ static Scheme_Object *os_wxTextSnipMatch(Scheme_Object *obj, int n,  Scheme_Obje
 }
 
 #pragma argsused
-static Scheme_Object *os_wxTextSnipDoFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  Bool x1;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "do-font in text-snip%");
-  if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-font in text-snip%");
-  } else
-    x1 = TRUE;
-
-  
-  if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::DoFont(x0, x1);
-  else
-    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->DoFont(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxTextSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3481,7 +3358,7 @@ void objscheme_setup_wxTextSnip(void *env)
 if (os_wxTextSnip_class) {
     objscheme_add_global_class(os_wxTextSnip_class, "text-snip%", env);
 } else {
-  os_wxTextSnip_class = objscheme_def_prim_class(env, "text-snip%", "snip%", os_wxTextSnip_ConstructScheme, 24);
+  os_wxTextSnip_class = objscheme_def_prim_class(env, "text-snip%", "snip%", os_wxTextSnip_ConstructScheme, 23);
 
  scheme_add_method_w_arity(os_wxTextSnip_class, "read", os_wxTextSnipRead, 2, 2);
  scheme_add_method_w_arity(os_wxTextSnip_class, "insert", os_wxTextSnipInsert, 2, 3);
@@ -3492,7 +3369,6 @@ if (os_wxTextSnip_class) {
  scheme_add_method_w_arity(os_wxTextSnip_class, "resize", os_wxTextSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxTextSnip_class, "write", os_wxTextSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxTextSnip_class, "match?", os_wxTextSnipMatch, 1, 1);
- scheme_add_method_w_arity(os_wxTextSnip_class, "do-font", os_wxTextSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxTextSnip_class, "do-edit-operation", os_wxTextSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxTextSnip_class, "blink-caret", os_wxTextSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxTextSnip_class, "own-caret", os_wxTextSnipOwnCaret, 1, 1);
@@ -3591,7 +3467,6 @@ class os_wxTabSnip : public wxTabSnip {
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
   Bool Match(class wxSnip* x0);
-  void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -3856,40 +3731,6 @@ return wxTabSnip::Match(x0);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "match? in tab-snip%"", extracting return value");
-  }
-}
-
-void os_wxTabSnip::DoFont(int x0, Bool x1)
-{
-  Scheme_Object *p[2];
-  Scheme_Object *v;
-  mz_jmp_buf savebuf;
-  Scheme_Object *method;
-  int sj;
-  static void *mcache = 0;
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "do-font", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxTabSnip::DoFont(x0, x1);
-  } else {
-  
-  p[0] = scheme_make_integer(x0);
-  p[1] = (x1 ? scheme_true : scheme_false);
-  
-
-  v = scheme_apply(method, 2, p);
-  
-  
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -4562,32 +4403,6 @@ static Scheme_Object *os_wxTabSnipMatch(Scheme_Object *obj, int n,  Scheme_Objec
 }
 
 #pragma argsused
-static Scheme_Object *os_wxTabSnipDoFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  Bool x1;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "do-font in tab-snip%");
-  if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-font in tab-snip%");
-  } else
-    x1 = TRUE;
-
-  
-  if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::DoFont(x0, x1);
-  else
-    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->DoFont(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxTabSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5063,7 +4878,7 @@ void objscheme_setup_wxTabSnip(void *env)
 if (os_wxTabSnip_class) {
     objscheme_add_global_class(os_wxTabSnip_class, "tab-snip%", env);
 } else {
-  os_wxTabSnip_class = objscheme_def_prim_class(env, "tab-snip%", "text-snip%", os_wxTabSnip_ConstructScheme, 22);
+  os_wxTabSnip_class = objscheme_def_prim_class(env, "tab-snip%", "text-snip%", os_wxTabSnip_ConstructScheme, 21);
 
  scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset", os_wxTabSnipGetScrollStepOffset, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step", os_wxTabSnipFindScrollStep, 1, 1);
@@ -5072,7 +4887,6 @@ if (os_wxTabSnip_class) {
  scheme_add_method_w_arity(os_wxTabSnip_class, "resize", os_wxTabSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxTabSnip_class, "write", os_wxTabSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "match?", os_wxTabSnipMatch, 1, 1);
- scheme_add_method_w_arity(os_wxTabSnip_class, "do-font", os_wxTabSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxTabSnip_class, "do-edit-operation", os_wxTabSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxTabSnip_class, "blink-caret", os_wxTabSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxTabSnip_class, "own-caret", os_wxTabSnipOwnCaret, 1, 1);
@@ -5239,7 +5053,6 @@ class os_wxImageSnip : public wxImageSnip {
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
   Bool Match(class wxSnip* x0);
-  void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -5504,40 +5317,6 @@ return wxImageSnip::Match(x0);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "match? in image-snip%"", extracting return value");
-  }
-}
-
-void os_wxImageSnip::DoFont(int x0, Bool x1)
-{
-  Scheme_Object *p[2];
-  Scheme_Object *v;
-  mz_jmp_buf savebuf;
-  Scheme_Object *method;
-  int sj;
-  static void *mcache = 0;
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "do-font", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxImageSnip::DoFont(x0, x1);
-  } else {
-  
-  p[0] = scheme_make_integer(x0);
-  p[1] = (x1 ? scheme_true : scheme_false);
-  
-
-  v = scheme_apply(method, 2, p);
-  
-  
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -6323,32 +6102,6 @@ static Scheme_Object *os_wxImageSnipMatch(Scheme_Object *obj, int n,  Scheme_Obj
 }
 
 #pragma argsused
-static Scheme_Object *os_wxImageSnipDoFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  Bool x1;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "do-font in image-snip%");
-  if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-font in image-snip%");
-  } else
-    x1 = TRUE;
-
-  
-  if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::DoFont(x0, x1);
-  else
-    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->DoFont(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxImageSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6844,7 +6597,7 @@ void objscheme_setup_wxImageSnip(void *env)
 if (os_wxImageSnip_class) {
     objscheme_add_global_class(os_wxImageSnip_class, "image-snip%", env);
 } else {
-  os_wxImageSnip_class = objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 27);
+  os_wxImageSnip_class = objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 26);
 
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset", os_wxImageSnipSetOffset, 2, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap", os_wxImageSnipSetBitmap, 1, 1);
@@ -6858,7 +6611,6 @@ if (os_wxImageSnip_class) {
  scheme_add_method_w_arity(os_wxImageSnip_class, "resize", os_wxImageSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "write", os_wxImageSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "match?", os_wxImageSnipMatch, 1, 1);
- scheme_add_method_w_arity(os_wxImageSnip_class, "do-font", os_wxImageSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "do-edit-operation", os_wxImageSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxImageSnip_class, "blink-caret", os_wxImageSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxImageSnip_class, "own-caret", os_wxImageSnipOwnCaret, 1, 1);
@@ -6949,7 +6701,6 @@ class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *obj, const char
 
 
 
-
 class os_wxMediaSnip : public wxMediaSnip {
  public:
 
@@ -6962,7 +6713,6 @@ class os_wxMediaSnip : public wxMediaSnip {
   Bool Resize(float x0, float x1);
   void Write(class wxMediaStreamOut& x0);
   Bool Match(class wxSnip* x0);
-  void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -7227,40 +6977,6 @@ return wxMediaSnip::Match(x0);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "match? in editor-snip%"", extracting return value");
-  }
-}
-
-void os_wxMediaSnip::DoFont(int x0, Bool x1)
-{
-  Scheme_Object *p[2];
-  Scheme_Object *v;
-  mz_jmp_buf savebuf;
-  Scheme_Object *method;
-  int sj;
-  static void *mcache = 0;
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "do-font", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaSnip::DoFont(x0, x1);
-  } else {
-  
-  p[0] = scheme_make_integer(x0);
-  p[1] = (x1 ? scheme_true : scheme_false);
-  
-
-  v = scheme_apply(method, 2, p);
-  
-  
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -8228,32 +7944,6 @@ static Scheme_Object *os_wxMediaSnipMatch(Scheme_Object *obj, int n,  Scheme_Obj
 }
 
 #pragma argsused
-static Scheme_Object *os_wxMediaSnipDoFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  Bool x1;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "do-font in editor-snip%");
-  if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-font in editor-snip%");
-  } else
-    x1 = TRUE;
-
-  
-  if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::DoFont(x0, x1);
-  else
-    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->DoFont(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxMediaSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -8834,7 +8524,7 @@ void objscheme_setup_wxMediaSnip(void *env)
 if (os_wxMediaSnip_class) {
     objscheme_add_global_class(os_wxMediaSnip_class, "editor-snip%", env);
 } else {
-  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 38);
+  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 37);
 
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4);
@@ -8857,7 +8547,6 @@ if (os_wxMediaSnip_class) {
  scheme_add_method_w_arity(os_wxMediaSnip_class, "resize", os_wxMediaSnipResize, 2, 2);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "write", os_wxMediaSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "match?", os_wxMediaSnipMatch, 1, 1);
- scheme_add_method_w_arity(os_wxMediaSnip_class, "do-font", os_wxMediaSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "do-edit-operation", os_wxMediaSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "blink-caret", os_wxMediaSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "own-caret", os_wxMediaSnipOwnCaret, 1, 1);
@@ -8881,10 +8570,6 @@ if (os_wxMediaSnip_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaSnip, wxTYPE_MEDIA_SNIP);
 
 }
-  scheme_install_xc_global("const-editor-snip-xmargin", scheme_make_integer(wxMSNIPBOX_XMARGIN), env);
-  scheme_install_xc_global("const-editor-snip-ymargin", scheme_make_integer(wxMSNIPBOX_YMARGIN), env);
-  scheme_install_xc_global("const-editor-snip-xinset", scheme_make_integer(wxMSNIPBOX_XINSET), env);
-  scheme_install_xc_global("const-editor-snip-yinset", scheme_make_integer(wxMSNIPBOX_YINSET), env);
 }
 
 int objscheme_istype_wxMediaSnip(Scheme_Object *obj, const char *stop, int nullOK)
@@ -9052,36 +8737,6 @@ static Scheme_Object *objscheme_wxBufferDataClass_Setclassname(Scheme_Object *ob
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_wxBufferDataClass_Getrequired(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  Bool v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-required in editor-data-class%", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxBufferDataClass *)cobj->primdata)->wxBufferDataClass::required;
-  else
-    v = ((wxBufferDataClass *)cobj->primdata)->required;
-
-  return (v ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *objscheme_wxBufferDataClass_Setrequired(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  Bool v;
-
-  if (n != 1) scheme_wrong_count("set-required in editor-data-class%", 1, 1, n, p);
-
-  v = objscheme_unbundle_bool(p[0], "set-required in editor-data-class%");
-  ((wxBufferDataClass *)cobj->primdata)->required = v;
-
-  return scheme_void;
-}
-
 #pragma argsused
 static Scheme_Object *os_wxBufferDataClass_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
@@ -9106,14 +8761,12 @@ void objscheme_setup_wxBufferDataClass(void *env)
 if (os_wxBufferDataClass_class) {
     objscheme_add_global_class(os_wxBufferDataClass_class, "editor-data-class%", env);
 } else {
-  os_wxBufferDataClass_class = objscheme_def_prim_class(env, "editor-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 5);
+  os_wxBufferDataClass_class = objscheme_def_prim_class(env, "editor-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 3);
 
  scheme_add_method_w_arity(os_wxBufferDataClass_class, "read", os_wxBufferDataClassRead, 1, 1);
 
   scheme_add_method_w_arity(os_wxBufferDataClass_class,"get-classname", objscheme_wxBufferDataClass_Getclassname, 0, 0);
   scheme_add_method_w_arity(os_wxBufferDataClass_class,"set-classname", objscheme_wxBufferDataClass_Setclassname, 1, 1);
-  scheme_add_method_w_arity(os_wxBufferDataClass_class,"get-required", objscheme_wxBufferDataClass_Getrequired, 0, 0);
-  scheme_add_method_w_arity(os_wxBufferDataClass_class,"set-required", objscheme_wxBufferDataClass_Setrequired, 1, 1);
 
   scheme_made_class(os_wxBufferDataClass_class);
 

@@ -15,15 +15,8 @@
 
 extern Scheme_Object *objscheme_bundle_wxPoint(wxPoint *);
 extern wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *, const char *, int);
-extern Scheme_Object *objscheme_bundle_wxIntPoint(wxIntPoint *);
-extern wxIntPoint *objscheme_unbundle_wxIntPoint(Scheme_Object *, const char *, int);
 
 @SET TYPE = wxPoint
-@SET INDIRECT = 1
-@SET POINTWISE = 1
-@INCLUDE list.xci
-
-@SET TYPE = wxIntPoint
 @SET INDIRECT = 1
 @SET POINTWISE = 1
 @INCLUDE list.xci

@@ -414,7 +414,6 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
-
 /* 
    X = Not meant for virtual, defined in wxMediaEdit/wxMediaPasteboard
        and overloaded there
@@ -4350,43 +4349,13 @@ static Scheme_Object *os_wxMediaBufferChangeStyle(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_wxMediaBuffer_GetbufferType(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  int v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-buffer-type in editor%", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxMediaBuffer *)cobj->primdata)->wxMediaBuffer::bufferType;
-  else
-    v = ((wxMediaBuffer *)cobj->primdata)->bufferType;
-
-  return bundle_symset_bufferType(v);
-}
-
-static Scheme_Object *objscheme_wxMediaBuffer_SetbufferType(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  int v;
-
-  if (n != 1) scheme_wrong_count("set-buffer-type in editor%", 1, 1, n, p);
-
-  v = unbundle_symset_bufferType(p[0], "set-buffer-type in editor%");
-  ((wxMediaBuffer *)cobj->primdata)->bufferType = v;
-
-  return scheme_void;
-}
-
 void objscheme_setup_wxMediaBuffer(void *env)
 {
 if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 109);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 107);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4496,8 +4465,6 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert", os_wxMediaBufferInsert, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "change-style", os_wxMediaBufferChangeStyle, 1, 1);
 
-  scheme_add_method_w_arity(os_wxMediaBuffer_class,"get-buffer-type", objscheme_wxMediaBuffer_GetbufferType, 0, 0);
-  scheme_add_method_w_arity(os_wxMediaBuffer_class,"set-buffer-type", objscheme_wxMediaBuffer_SetbufferType, 1, 1);
 
   scheme_made_class(os_wxMediaBuffer_class);
 

@@ -2491,6 +2491,10 @@ class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *obj, const char *where,
 
 
 
+static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
+
+
+
 
 class os_wxStyleList : public wxStyleList {
  public:
@@ -2515,38 +2519,42 @@ os_wxStyleList::~os_wxStyleList()
 }
 
 #pragma argsused
-static Scheme_Object *os_wxStyleListIsUsed(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->IsUsed();
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxStyleListAdjustUsage(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxStyleListForgetNotification(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  Bool x0;
+  long x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "adjust-usage in style-list%");
+  x0 = ((long)p[0]);
 
   
-  ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->AdjustUsage(x0);
+  ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->ForgetNotification(x0);
 
   
   
   return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxStyleListNotifyOnChange(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  long r;
+  objscheme_check_valid(obj);
+  wxStyleNotifyFunc x0;
+  void* x1;
+
+  
+  x0 = (wxStyleNotifyFunc)NotifyCallbackToScheme;
+  x1 = p[0];
+
+  
+  r = ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->NotifyOnChange(x0, x1);
+
+  
+  
+  return ((Scheme_Object *)r);
 }
 
 #pragma argsused
@@ -2617,7 +2625,7 @@ static Scheme_Object *os_wxStyleListReplaceNamedStyle(Scheme_Object *obj, int n,
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "replace-named-style in style-list%");
-  x1 = objscheme_unbundle_wxStyle(p[1], "replace-named-style in style-list%", 1);
+  x1 = objscheme_unbundle_wxStyle(p[1], "replace-named-style in style-list%", 0);
 
   
   r = ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->ReplaceNamedStyle(x0, x1);
@@ -2638,7 +2646,7 @@ static Scheme_Object *os_wxStyleListNewNamedStyle(Scheme_Object *obj, int n,  Sc
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "new-named-style in style-list%");
-  x1 = objscheme_unbundle_wxStyle(p[1], "new-named-style in style-list%", 1);
+  x1 = objscheme_unbundle_wxStyle(p[1], "new-named-style in style-list%", 0);
 
   
   r = ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->NewNamedStyle(x0, x1);
@@ -2803,8 +2811,8 @@ if (os_wxStyleList_class) {
 } else {
   os_wxStyleList_class = objscheme_def_prim_class(env, "style-list%", "object%", os_wxStyleList_ConstructScheme, 14);
 
- scheme_add_method_w_arity(os_wxStyleList_class, "is-used? ", os_wxStyleListIsUsed, 0, 0);
- scheme_add_method_w_arity(os_wxStyleList_class, "adjust-usage", os_wxStyleListAdjustUsage, 1, 1);
+ scheme_add_method_w_arity(os_wxStyleList_class, "forget-notification", os_wxStyleListForgetNotification, 1, 1);
+ scheme_add_method_w_arity(os_wxStyleList_class, "notify-on-change", os_wxStyleListNotifyOnChange, 1, 1);
  scheme_add_method_w_arity(os_wxStyleList_class, "style-to-index", os_wxStyleListStyleToIndex, 1, 1);
  scheme_add_method_w_arity(os_wxStyleList_class, "index-to-style", os_wxStyleListIndexToStyle, 1, 1);
  scheme_add_method_w_arity(os_wxStyleList_class, "convert", os_wxStyleListConvert, 1, 1);
@@ -2876,4 +2884,19 @@ class wxStyleList *objscheme_unbundle_wxStyleList(Scheme_Object *obj, const char
     return (wxStyleList *)o->primdata;
 }
 
+
+static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
+{
+  Scheme_Object *p[1];
+  jmp_buf savebuf;
+
+  p[0] = s ? objscheme_bundle_wxStyle(s) : scheme_false;
+
+  COPY_JMPBUF(savebuf, scheme_error_buf);
+
+  if (!scheme_setjmp(scheme_error_buf))
+    scheme_apply_multi(f, 1, p);
+
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+}
 

@@ -371,11 +371,8 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
 
 @CLASSID wxTYPE_WORDBREAK_MAP
 
-@ "set-map" : void SetMap(int,SYM[breakType]);
-@ "get-map" : SYM[breakType] GetMap(int);
-
-@ "adjust-usage" : void AdjustUsage(bool)
-@ "is-used?" : bool IsUsed();
+@ "set-map" : void SetMap(uchar,SYM[breakType]);
+@ "get-map" : SYM[breakType] GetMap(uchar);
 
 @CONSTANT "the-editor-wordbreak-map" : wxMediaWordbreakMap% wxTheMediaWordbreakMap
 

@@ -98,10 +98,10 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 @ q "get-size" : void GetSize(float*,float*);
 
-@ q "max-x" : float MaxX();
-@ q "max-y" : float MaxY();
-@ q "min-x" : float MinX();
-@ q "min-y" : float MinY();
+// @ q "max-x" : float MaxX();
+// @ q "max-y" : float MaxY();
+// @ q "min-x" : float MinX();
+// @ q "min-y" : float MinY();
 
 @ q "ok?" : bool Ok();
 

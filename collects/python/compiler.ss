@@ -1,13 +1,16 @@
 (module compiler mzscheme
   (require (lib "class.ss")
            (lib "lex.ss" "parser-tools")
+           "runtime-support.ss"
            (lib "readerr.ss" "syntax"))
            
   (provide (all-defined-except stx-orig-prop))
   
   (define stx-orig-prop
     (read-syntax #f (open-input-string "orig")))
-      
+  
+  (define mycontext #'here)
+  
   (define ast-node%
     (class object%
       (init-field start-pos end-pos)
@@ -31,7 +34,7 @@
       ;; to make the syntax object look like it appeared in the
       ;; source text.  This way check syntax will highlight it.
       (define/public (->orig-so datum)
-        (datum->syntax-object #f datum src-loc stx-orig-prop))
+        (datum->syntax-object mycontext datum src-loc stx-orig-prop))
       
       ;; ->lex-so: datum context -> syntax-object
       ;; same as ->orig-so, but with lexical information

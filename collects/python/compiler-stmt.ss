@@ -266,7 +266,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (let ([py-return (syntax pyreturn)])
+        (->orig-so (let ([py-return (gensym)])
                      `(call/cc (lambda (,py-return)
                                ,@(sub-stmt-map (lambda (s)
                                                  (if (is-a? s return%)

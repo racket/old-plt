@@ -4,6 +4,7 @@
            (lib "readerr.ss" "syntax")
            (lib "class.ss")
            (lib "contracts.ss")
+           (lib "mred.ss" "mred") ;; for text% in a contract.. :P
 	   "compiler.ss"
            "compiler-expr.ss"
            "compiler-stmt.ss"
@@ -12,9 +13,11 @@
   
   (provide/contract
    (build-ast (input-port? . -> . (listof (is-a?/c ast-node%))))
-   (build-ast-from-file (string? . -> . (listof (is-a?/c ast-node%)))))
+   (build-ast-from-file (string? . -> . (listof (is-a?/c ast-node%))))
+   (build-ast-from-port (input-port? (union (is-a?/c text%) string?) . -> . (listof (is-a?/c ast-node%)))))
   
   (define (build-ast ip)
+    (port-count-lines! ip)
     (let ((get-token (make-lexer)))
       (p (lambda () 
            (let ((tok (get-token ip)))
@@ -22,12 +25,20 @@
              tok)))))
   
   (define (build-ast-from-file name)
-    (let ((i (open-input-file name 'text)))
-      (port-count-lines! i)
-      (file-path name)
-      (begin0
-        (build-ast i)
-        (close-input-port i))))
+    (with-input-from-file name
+      (lambda ()
+        (file-path name)
+        (build-ast (current-input-port)))
+      'text))
+;    (let ((i (open-input-file name 'text)))
+;      (file-path name)
+;      (begin0
+;        (build-ast i)
+;        (close-input-port i))))
+
+  (define (build-ast-from-port port name)
+    (file-path name)
+    (build-ast port))
   
   (define-lex-abbrevs
    (blank (: #\space #\tab #\page))

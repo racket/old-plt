@@ -513,8 +513,8 @@
 #ifdef _MSC_VER
 # if _MSC_VER < 1300
 #  define NAN_EQUALS_ANYTHING
-#  define INT64_AS_LONG_LONG
 # endif
+# define INT64_AS_LONG_LONG
 # define POW_HANDLES_INF_CORRECTLY
 # define SIN_COS_NEED_DEOPTIMIZE
 #endif

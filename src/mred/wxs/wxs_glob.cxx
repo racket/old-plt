@@ -559,9 +559,9 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   nstring r;
   nstring x0;
-  nstring x1;
+  npathname x1;
   npathname x2;
-  npathname x3;
+  nstring x3;
   nstring x4;
   int x5;
   class wxWindow* x6;
@@ -580,7 +580,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   
   x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[0], "file-selector"));
   if (n > 1) {
-    x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[1], "file-selector"));
+    x1 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[1], "file-selector"));
   } else
     x1 = NULL;
   if (n > 2) {
@@ -588,7 +588,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   } else
     x2 = NULL;
   if (n > 3) {
-    x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[3], "file-selector"));
+    x3 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[3], "file-selector"));
   } else
     x3 = NULL;
   if (n > 4) {

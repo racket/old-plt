@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.5 1998/10/10 15:27:57 mflatt Exp $
+ * $Id: WindowDC.h,v 1.6 1998/10/18 12:04:10 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -101,6 +101,8 @@ public:
     // virtual methods, declared in wxDC
     Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *bm,
 	       float xsrc, float ysrc, int rop=wxSOLID, wxColour *c=NULL);
+    Bool  GCBlit(float xdest, float ydest, float w, float h, wxBitmap *bm,
+		 float xsrc, float ysrc);
     Bool  CanGetTextExtent(void) { return TRUE; }
     Bool  CanDrawBitmap(void) { return TRUE; }
     void  Clear(void);

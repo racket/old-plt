@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2 for FWF V4.0
 #
-# $Id: xwCommon.w,v 1.6 1998/11/09 17:25:08 mflatt Exp $
+# $Id: xwCommon.w,v 1.7 1998/12/06 05:06:18 mflatt Exp $
 
 @class XfwfCommon (Composite)  @file=xwCommon
 
@@ -492,7 +492,7 @@ keyboard events. If so, it sets the focus to itself and returns
     int i;
 
     if (! XtIsRealized($) || ! $sensitive || ! $traversalOn
-        || ! $visible || ! $ancestor_sensitive || ! $managed
+        /* || ! $visible */ || ! $ancestor_sensitive || ! $managed
         || ! $mapped_when_managed || $being_destroyed) return False;
     for (i = 0; i < $num_children; i++)
         if (XtCallAcceptFocus($children[i], time)) return True;

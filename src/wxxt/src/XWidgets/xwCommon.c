@@ -1005,7 +1005,7 @@ static Boolean  accept_focus(self,time)Widget self;Time * time;
     int i;
 
     if (! XtIsRealized(self) || ! ((XfwfCommonWidget)self)->core.sensitive || ! ((XfwfCommonWidget)self)->xfwfCommon.traversalOn
-        || ! ((XfwfCommonWidget)self)->core.visible || ! ((XfwfCommonWidget)self)->core.ancestor_sensitive || ! ((XfwfCommonWidget)self)->core.managed
+        /* || ! $visible */ || ! ((XfwfCommonWidget)self)->core.ancestor_sensitive || ! ((XfwfCommonWidget)self)->core.managed
         || ! ((XfwfCommonWidget)self)->core.mapped_when_managed || ((XfwfCommonWidget)self)->core.being_destroyed) return False;
     for (i = 0; i < ((XfwfCommonWidget)self)->composite.num_children; i++)
         if (XtCallAcceptFocus(((XfwfCommonWidget)self)->composite.children[i], time)) return True;

@@ -1,7 +1,7 @@
 /*
   MzScheme
   Copyright (c) 1995-2001 Matthew Flatt
- 
+
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
     License as published by the Free Software Foundation; either
@@ -60,23 +60,23 @@ void scheme_init_bool (Scheme_Env *env)
   scheme_not_prim = scheme_make_folding_prim(not_prim, "not", 1, 1, 1);
 
   scheme_add_global_constant("not", scheme_not_prim, env);
-  scheme_add_global_constant("boolean?", 
-			     scheme_make_folding_prim(boolean_p_prim, 
+  scheme_add_global_constant("boolean?",
+			     scheme_make_folding_prim(boolean_p_prim,
 						      "boolean?",
-						      1, 1, 1), 
+						      1, 1, 1),
 			     env);
-  scheme_add_global_constant("eq?", 
-			     scheme_make_folding_prim(eq_prim, 
+  scheme_add_global_constant("eq?",
+			     scheme_make_folding_prim(eq_prim,
 						      "eq?",
-						      2, 2, 1), 
+						      2, 2, 1),
 			     env);
-  scheme_add_global_constant("eqv?", 
-			     scheme_make_folding_prim(eqv_prim, 
+  scheme_add_global_constant("eqv?",
+			     scheme_make_folding_prim(eqv_prim,
 						      "eqv?",
-						      2, 2, 1), 
+						      2, 2, 1),
 			     env);
-  scheme_add_global_constant("equal?", 
-			     scheme_make_prim_w_arity(equal_prim, 
+  scheme_add_global_constant("equal?",
+			     scheme_make_prim_w_arity(equal_prim,
 						      "equal?",
 						      2, 2),
 			     env);
@@ -91,7 +91,7 @@ not_prim (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 boolean_p_prim (int argc, Scheme_Object *argv[])
 {
-  return (SCHEME_BOOLP(argv[0]) ? scheme_true : scheme_false);  
+  return (SCHEME_BOOLP(argv[0]) ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *
@@ -185,7 +185,7 @@ static Scheme_Object *equal_k(void)
   Scheme_Object *v2 = (Scheme_Object *)p->ku.k.p2;
 
   p->ku.k.p1 = p->ku.k.p2 = NULL;
-  
+
   return scheme_equal(v1, v2) ? scheme_true : scheme_false;
 }
 
@@ -217,7 +217,7 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
     int l1, l2;
     l1 = SCHEME_STRTAG_VAL(obj1);
     l2 = SCHEME_STRTAG_VAL(obj2);
-    return ((l1 == l2) 
+    return ((l1 == l2)
 	    && !memcmp(SCHEME_STR_VAL(obj1), SCHEME_STR_VAL(obj2), l1));
   } else if (SCHEME_STRUCTP(obj1)) {
     if (SCHEME_STRUCT_TYPE(obj1) != SCHEME_STRUCT_TYPE(obj2))
@@ -279,4 +279,15 @@ int struct_equal(Scheme_Object *obj1, Scheme_Object *obj2)
   }
 
   return 1;
+}
+
+// used by external programs that cannot link to variables.
+Scheme_Object * scheme_make_true (void)
+{
+  return scheme_true;
+}
+
+Scheme_Object * scheme_make_false (void)
+{
+  return scheme_false;
 }

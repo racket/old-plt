@@ -137,15 +137,25 @@
 
   ;; property getter/setter
 
+  (define (get-item-property obj item)
+    (cond
+     [(and (list? item)
+	   (= 2 (length item)))
+      (mxprims:com-get-property obj (car item) (cadr item))]
+     [(string? item)
+      (mxprims:com-get-property obj item)]
+     [else
+      (error "For COM property name, expected a string or a string/value pair")]))
+
   (define (com-get-property obj . path)
     (cond 
      [(null? path) 
       (error 'com-get-property
-	     "Expected one or more property names (strings)")]
+	     "Expected one or more property names (strings), or name/value pairs")]
      [(null? (cdr path))
-	     (mxprims:com-get-property obj (car path))]
+      (get-item-property obj (car path))]
      [else (apply com-get-property
-		  (mxprims:com-get-property obj (car path))
+		  (get-item-property obj (car path))
 		  (cdr path))]))
 
   (define (com-set-property! obj . path-and-value)
@@ -157,7 +167,7 @@
      [(null? (cddr path-and-value))
       (mxprims:com-set-property! obj (car path-and-value) (cadr path-and-value))]
      [else (apply com-set-property!
-		  (mxprims:com-get-property obj (car path-and-value))
+		  (get-item-property obj (car path-and-value))
 		  (cdr path-and-value))]))
 
   ;; style-related procedures 

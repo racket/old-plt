@@ -525,13 +525,14 @@ _MysterX_
   string.  Returns a list of symbols indicating
   the type of the specified property.
 
-> (com-get-property a-com-object property-name-1 property-name-2 ...)
+> (com-get-property a-com-object property property ...)
 
   `a-com-object' is a <com-object>, and each 
-  `property-name' is a string.  Returns the value 
-  of the final property by following the indicated path
-  of properties, where each intermediate property 
-  is a <com-object>. 
+  `property' is a string, or a list whose first element is a string,
+  and whose second element is a Scheme value (an "indexed" 
+  property).  Returns the value of the final property 
+  by following the indicated path of properties, where each 
+  intermediate property is a <com-object>. 
 
 > (com-set-properties a-com-object)
 > (com-set-properties a-com-type)
@@ -541,7 +542,7 @@ _MysterX_
   strings indicating the names of writable
   properties in the object.
 
-> (com-set-property-type a-com-object property-name)
+> (com-set-property-type a-com-object pptyroperty-name)
 > (com-set-property-type a-com-type property-name)
 
   `a-com-object' is a <com-object>, `a-com-type'
@@ -549,10 +550,12 @@ _MysterX_
   string.  Returns a list of symbols indicating
   the type of the specified property.
 
-> (com-set-property! a-com-object property-name-1 property-name-2 ... val)
+> (com-set-property! a-com-object property property ... val)
 
-  `a-com-object' is a <com-object>, each `property-name' is a 
-   string, and `val' is a Scheme value.  Sets the value of the 
+  `a-com-object' is a <com-object>, each `property' is a 
+   string, or a list whose first element is a string and whose
+   second element is a Scheme value (indicating an "indexed"
+   property); `val' is a Scheme value.  Sets the value of the 
    final property by following the indicated path of properties, 
    where each intermediate property is a <com-object>. 
 

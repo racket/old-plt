@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.11 1997/08/15 22:35:37 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.12 1997/08/19 21:59:26 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -62,23 +62,36 @@
   ;; (send <button> command <wx:command-event>)
   ;; button : must explicitly supply the button.
   ;;
-  ;; NEED TO CHECK: BUTTON IS SHOWN AND IN ACTIVE-FRAME.
+  ;; Button must be shown and in active frame.
   ;;
   
+  (define button-tag 'mred:test:button-push)
+  
   (define button-push
-    (let ([tag  'mred:test:button-push])
-      (lambda (button)
-	(cond
-	  [(not (is-a? button wx:button%))
-	   (arg-error tag "button is not a wx:button")]
-	  [else
-	   (mred:test:run-one
-	    (lambda ()
-	      (let ([event  (make-object wx:command-event% 
-					 wx:const-event-type-button-command)])
-		(send button command event)
-		(void))))]))))
-    
+    (lambda (button)
+      (cond
+	[(not (is-a? button wx:button%))
+	 (arg-error button-tag "expected wx:button, given: ~s" button)]
+	[else
+	 (mred:test:run-one
+	  (lambda ()
+	    (cond
+	      [(not (send button is-shown?))
+	       (run-error button-tag "button is not shown")]
+	      [(not (in-active-frame? button))
+	       (run-error button-tag "button is not in active frame")]
+	      [else
+	       (let ([event  (make-button-event button)])
+		 (send button command event)
+		 (void))])))])))
+  
+  (define make-button-event
+    (lambda (button)
+      (let* ([type   wx:const-event-type-button-command]
+	     [event  (make-object wx:command-event% type)])
+	(send event set-event-object button)
+	event)))
+
   
   ;;
   ;; KEYSTROKES 
@@ -104,15 +117,13 @@
     (lambda (key . modifier-list)
       (cond
 	[(not (or (char? key) (integer? key)))
-	 (arg-error key-tag "key must be char or integer, given: ~s" key)]
+	 (arg-error key-tag "expects char or integer, given: ~s" key)]
 	[(verify-list  modifier-list  legal-keystroke-modifiers)
 	 => (lambda (mod) (arg-error key-tag "unknown key modifier: ~s" mod))]
 	[else
 	 (mred:test:run-one
 	  (lambda ()
-	    (let*
-		([window  (mred:test:get-focused-window)]
-		 [event   (make-key-event key window modifier-list)])
+	    (let ([window  (mred:test:get-focused-window)])
 	      (cond
 		[(not window)
 		 (run-error key-tag "no focused window")]
@@ -121,8 +132,9 @@
 		[(not (in-active-frame? window))
 		 (run-error key-tag "focused window is not in active frame")]
 		[else
-		 (send-key-event window event)
-		 (void)]))))])))
+		 (let ([event  (make-key-event key window modifier-list)])
+		   (send-key-event window event)
+		   (void))]))))])))
   
   ;; delay test for on-char until all ancestors decline pre-on-char.
 
@@ -208,12 +220,12 @@
 	[(not (string? item))
 	 (arg-error menu-tag "expects string, given: ~s" item)]
 	[else
-	 (let* ([frame    (mred:test:get-active-frame)]
-		[item-id  (menu-item-id frame menu item)])
-	   (mred:test:run-one
-	    (lambda ()
+	 (mred:test:run-one
+	  (lambda ()
+	    (let* ([frame    (mred:test:get-active-frame)]
+		   [item-id  (menu-item-id frame menu item)])
 	      (send frame command item-id))))])))
-	     
+
   ;; get-active-frame => #f for no active frame.
   ;; get-menu-bar     => () for no menu bar.
   ;; find-menu-item   => -1 for no such item.
@@ -223,16 +235,16 @@
     (lambda (frame menu item)
       (cond
 	[(not frame)
-	 (arg-error menu-tag "no active frame")]
+	 (run-error menu-tag "no active frame")]
 	[(not (ivar-in-class? 'get-menu-bar (object-class frame)))
-	 (arg-error menu-tag "active frame does not have menu bar")]
+	 (run-error menu-tag "active frame does not have menu bar")]
 	[else
 	 (let ([menu-bar  (send frame get-menu-bar)])
 	   (if (null? menu-bar)
-	       (arg-error menu-tag "active frame does not have menu bar")
+	       (run-error menu-tag "active frame does not have menu bar")
 	       (let ([item-id  (send menu-bar find-menu-item menu item)])
 		 (if (= item-id -1)
-		     (arg-error menu-tag "menu ~s does not contain item ~s" menu item)
+		     (run-error menu-tag "menu ~s does not contain item ~s" menu item)
 		     item-id))))])))
   
   

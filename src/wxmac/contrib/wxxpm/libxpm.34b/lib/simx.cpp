@@ -272,7 +272,7 @@ XCreateImage(Display *d, Visual *v,
 #ifdef FOR_MAC
 	/* Looks like we need to build a offscreen GWorld to draw the Picture in */
 	GDHandle savegw;
-	CGrafPtr saveport;
+	GrafPtr saveport;
 	Rect bounds = {0, 0, height, width};
 	GetGWorld(&saveport, &savegw);
 	QDErr err;

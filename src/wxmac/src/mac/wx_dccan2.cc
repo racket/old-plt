@@ -28,7 +28,7 @@ static const char sccsid[] = "%W% %G%";
 //		horiz,
 //		verti;
 
-extern CGrafPtr wxMainColormap;
+extern GrafPtr wxMainColormap;
 
 // constant to convert radian to degree
 #define RAD2DEG 57.2957795131
@@ -596,7 +596,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		Rect destr = {y, x, y+h, x+w };
                 OffsetRect(&destr,SetOriginX,SetOriginY);
 		
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+		GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
                 const BitMap *dstbm;
                 PixMapHandle destpixh;

@@ -2740,17 +2740,11 @@ char *MrEdApp::GetDefaultAboutItemName()
   return "About MrEd...";
 }
 
-#ifndef OS_X // horrible temporary hack (please please please)
-extern "C" {
-CGrafPtr GetDialogPort(DialogRef dialog);
-}
-#endif
-
 void MrEdApp::DoDefaultAboutItem()
 {
   DialogPtr dial;
   short hit;
-  CGrafPtr port;
+  GrafPtr port;
   GDHandle device;
  
   dial = GetNewDialog(129, NULL, (WindowRef)-1);

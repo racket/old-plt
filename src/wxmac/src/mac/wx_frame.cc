@@ -74,7 +74,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 	WindowPtr theMacWindow;
 
 	/* Make sure we have the right device: */
-    CGrafPtr wPort;
+    GrafPtr wPort;
     GDHandle gdh;
     GetGWorld(&wPort,&gdh);
     SetGWorld(wPort, wxGetGDHandle());
@@ -677,7 +677,7 @@ Bool wxFrame::IsVisible(void)
 #ifndef OS_X
 
 //-----------------------------------------------------------------------------
-void wxFrame::wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD, 
+void wxFrame::wxMacStartDrawing(GrafPtr& oldPort, GDHandle& oldGD, 
                                 int& savePortH, int& savePortV)
 {
     ::GetGWorld(&oldPort, &oldGD);
@@ -693,7 +693,7 @@ void wxFrame::wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD,
 }
 
 //-----------------------------------------------------------------------------
-void wxFrame::wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD,
+void wxFrame::wxMacStopDrawing(GrafPtr oldPort, GDHandle oldGD,
                                int savePortH, int savePortV)
 {
 	//::SetOrigin(savePortH, savePortV);
@@ -707,7 +707,7 @@ void wxFrame::wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD,
 //-----------------------------------------------------------------------------
 Rect wxFrame::wxMacGetContRect(void)
 {// express client area in screen window c.s.
-	CGrafPtr oldPort; GDHandle oldGD;
+	GrafPtr oldPort; GDHandle oldGD;
 	int savePortH, savePortV;
 	wxMacStartDrawing(oldPort, oldGD, savePortH, savePortV);
 	Rect theContRect;
@@ -729,7 +729,7 @@ Rect wxFrame::wxMacGetStrucRect(void)
 {// express window area in screen window c.s.
 	Rect theStrucRect;
 
-	CGrafPtr oldPort; GDHandle oldGD;
+	GrafPtr oldPort; GDHandle oldGD;
 	int savePortH, savePortV;
 	wxMacStartDrawing(oldPort, oldGD, savePortH, savePortV);
 

@@ -104,7 +104,7 @@ Bool wxLoadPICTIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		// bm->depth = wxDisplayDepth();
 		bm->SetDepth(wxDisplayDepth());
 		GDHandle savegd;
-		CGrafPtr saveport;
+		GrafPtr saveport;
 		GetGWorld(&saveport, &savegd);
 		QDErr err;
 		GWorldPtr	newGWorld;

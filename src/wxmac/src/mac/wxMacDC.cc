@@ -12,7 +12,7 @@
 #include "wxMacDC.h"
 
 //-----------------------------------------------------------------------------
-wxMacDC::wxMacDC(CGrafPtr port)
+wxMacDC::wxMacDC(GrafPtr port)
 {
 	cMacGrafPort = port;
 	cCurrentUser = NULL;
@@ -31,7 +31,7 @@ Bool wxMacDC::isCurrentPort(void)
 }
 
 //-----------------------------------------------------------------------------
-CGrafPtr wxMacDC::macGrafPort(void)
+GrafPtr wxMacDC::macGrafPort(void)
 {
 	return cMacGrafPort;
 }

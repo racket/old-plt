@@ -78,6 +78,8 @@
 #define PAD_Y 4
 #define PAD_X 2
 #else
+#define PAD_X 0
+#define PAD_Y 0
 #define MSPACEX 4
 #define TRIANGLE_WIDTH 10
 #define TRIANGLE_RIGHT_SPACE 5

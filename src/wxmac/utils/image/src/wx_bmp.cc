@@ -809,14 +809,14 @@ unsigned short Mac_xform24(unsigned char c)
 // bitmap, delete the image
 Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-	CGrafPtr  colorPort;
+	GrafPtr  colorPort;
 	PICINFO		picinfo;		// defined in wx_imgx.h
 	wxImage *xbmImage  = new wxImage();
 	if (xbmImage->LoadBMP(fileName, &picinfo) == 1) {
 		// CreateOffScreenPixMap(&colorPort, gifImage);
 		Rect bounds = {0, 0, picinfo.h, picinfo.w};
 		GDHandle savegw;
-		CGrafPtr saveport;
+		GrafPtr saveport;
 		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;

@@ -26,7 +26,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_image.h"
 #endif
 
-CGrafPtr gMacFontGrafPort = NULL; // mac platform only
+GrafPtr gMacFontGrafPort = NULL; // mac platform only
 
 wxGDIList   *wxTheIconList = NULL;
 wxGDIList   *wxTheCursorList = NULL;
@@ -209,11 +209,11 @@ static long TextFontInfo(int font, int size, int face, FontInfo *finfo, char *st
                 || (fc != face));
       
   if (str || isdiff) {
-    CGrafPtr savep;
+    GrafPtr savep;
     GDHandle savegd;
 		 
     ::GetGWorld(&savep, &savegd);  
-    ::SetGWorld((CGrafPtr)gMacFontGrafPort, wxGetGDHandle());
+    ::SetGWorld((GrafPtr)gMacFontGrafPort, wxGetGDHandle());
 
 	if (isdiff) {
 	  ::TextFont(fn = font);
@@ -732,7 +732,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   height = the_height;
   //Rect bounds = {0, 0, the_height, the_width};
   GDHandle savegd;
-  CGrafPtr saveport;
+  GrafPtr saveport;
   GetGWorld(&saveport, &savegd);
   Create(the_width, the_height, 1);
   if (ok) {
@@ -777,7 +777,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 			width = (*h)->picFrame.right;
 			height = (*h)->picFrame.bottom;
 			GDHandle savegd;
-			CGrafPtr saveport;
+			GrafPtr saveport;
 			GetGWorld(&saveport, &savegd);
 			Rect bounds = {0, 0, height, width};
 			Create(width, height, depth);
@@ -840,7 +840,7 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   Rect bounds = {0, 0, height, width};
   // Build a offscreen GWorld to draw the Picture in
   GDHandle savegw;
-  CGrafPtr saveport;
+  GrafPtr saveport;
   GetGWorld(&saveport, &savegw);
   QDErr err;
   GWorldPtr	newGWorld;
@@ -987,7 +987,7 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
 	  XImage ximage;
 	  
 	  GDHandle savegw;
-	  CGrafPtr saveport;
+	  GrafPtr saveport;
 	  GetGWorld(&saveport, &savegw);
 	
 	  SetGWorld(x_pixmap, 0);
@@ -1035,7 +1035,7 @@ void wxBitmap::DrawMac(int x, int y, int mode)
 		Rect dbounds = {y, x, height+y, width+x};
                 OffsetRect(&dbounds,SetOriginX,SetOriginY);
 		PixMapHandle  srcpixh = ::GetGWorldPixMap(x_pixmap);
-		CGrafPtr portNow;
+		GrafPtr portNow;
                 GDHandle deviceNow;
 		::GetGWorld(&portNow,&deviceNow);
 		PixMapHandle destpixh = GetPortPixMap(portNow);

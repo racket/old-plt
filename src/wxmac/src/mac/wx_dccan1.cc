@@ -39,7 +39,7 @@ static const char sccsid[] = "%W% %G%";
 //		verti;
 
 
-extern CGrafPtr wxMainColormap;
+extern GrafPtr wxMainColormap;
 
 //-----------------------------------------------------------------------------
 // Default constructor
@@ -64,7 +64,7 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
   if (canvas) {
     WXGC_IGNORE(this, canvas);
    cMacDC = canvas->MacDC();
-   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+   GrafPtr theMacGrafPort = cMacDC->macGrafPort();
    pixmap = GetPortPixMap(theMacGrafPort);
   }
 
@@ -165,7 +165,7 @@ GDHandle wxGetGDHandle(void)
   static GDHandle def_dev_handle = 0;
 
   if (!def_dev_handle) {
-    CGrafPtr p;
+    GrafPtr p;
     GetGWorld(&p, &def_dev_handle);
   }
   
@@ -178,7 +178,7 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 {
 	if (!Ok()) return;
 	 
-        CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+        GrafPtr theMacGrafPort = cMacDC->macGrafPort();
         if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
         }
@@ -219,9 +219,9 @@ void wxCanvasDC::SetCanvasClipping(void)
     	wxObject* theCurrentUser = cMacDC->currentUser();
 	if (theCurrentUser == this)
 	{ // must update platfrom
-		CGrafPtr savep;
+		GrafPtr savep;
 		GDHandle savegd;
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+		GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 		 
 		::GetGWorld(&savep, &savegd);  
 		::SetGWorld(theMacGrafPort, wxGetGDHandle());
@@ -236,7 +236,7 @@ void wxCanvasDC::SetCanvasClipping(void)
 void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
 //-----------------------------------------------------------------------------
 {
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
 	if (current_reg)
 	{
@@ -389,9 +389,9 @@ void wxCanvasDC::SetBackground(wxColour* color)
         if (cMacDC->currentUser() == this
 		&& (cMacCurrentTool == kNoTool))
 	{ // must update platform to kNoTool
-		CGrafPtr savep;
+		GrafPtr savep;
 		GDHandle savegd;
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+		GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 		 
 		::GetGWorld(&savep, &savegd);  
 		::SetGWorld(theMacGrafPort, wxGetGDHandle());
@@ -622,7 +622,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			wxBitmap *bm = current_pen->GetStipple();
 			if (bm && bm->Ok() && (bm->GetDepth() == 1)
 			    && (bm->GetWidth() == 8) && (bm->GetHeight() == 8)) {
-			  GDHandle savegd; CGrafPtr saveport;
+			  GDHandle savegd; GrafPtr saveport;
 			  char p[8]; int i, k;
                           GetGWorld(&saveport, &savegd);
                           SetGWorld(bm->x_pixmap, 0);

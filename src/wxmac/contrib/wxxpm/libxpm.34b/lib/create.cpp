@@ -1476,7 +1476,7 @@ MACSetImagePixels(Display *dc, XImage *image, unsigned int width, unsigned int h
     unsigned int *data = pixelindex;
     unsigned int x, y;
 	GDHandle savegd;
-	CGrafPtr saveport;
+	GrafPtr saveport;
 	Pixel 	apix;
 	RGBColor thePixel;
 	GetGWorld(&saveport, &savegd);

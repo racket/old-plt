@@ -30,6 +30,8 @@ static const char sccsid[] = "%W% %G%";
 #  define PAD_X 5
 #  define PAD_Y 5
 # else
+#  define PAD_X 0
+#  define PAD_Y 0
 #  define BUTTON_H_SPACE 12
 #  define BUTTON_V_SPACE 4
 # endif
@@ -91,7 +93,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	label = wxItemStripLabel(label);
 
 	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
 #ifdef OS_X
         // First, create the control with a bogus rectangle;
@@ -186,7 +188,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	cMacControl = NULL;
 	
 	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
 	bounds.bottom += 2 * IB_MARGIN_Y;
 	bounds.right += 2 * IB_MARGIN_X;
@@ -584,11 +586,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
-#ifdef OS_X	
 		::SizeControl(cMacControl, clientWidth - 2 * PAD_X, clientHeight - 2 * PAD_Y);
-#else
-		::SizeControl(cMacControl, clientWidth, clientHeight);
-#endif
 	}
 
 	if (dX || dY)

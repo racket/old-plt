@@ -45,7 +45,7 @@ extern void wxDoEvents();
 extern void wxDoNextEvent();
 extern int wxEventReady();
 
-extern CGrafPtr gMacFontGrafPort;
+extern GrafPtr gMacFontGrafPort;
 
 extern int wxNumHelpItems;
 

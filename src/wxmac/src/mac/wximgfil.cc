@@ -26,7 +26,7 @@
 #include <palettes.h>
 
 //void MacFixupPixelData(unsigned char *, int );
-void CreateOffScreenPixMap (CGrafPtr *,wxGIF *gif);
+void CreateOffScreenPixMap (GrafPtr *,wxGIF *gif);
 CTabHandle XlateColorMap(wxGIF *);
 
 // #pragma pack(1) Yes
@@ -665,7 +665,7 @@ CTabHandle XlateColorMap(wxGIF *gif)
 Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
  
-  CGrafPtr  colorPort;
+  GrafPtr  colorPort;
 
   wxGIF *gifImage  = new wxGIF(fileName);
   if (gifImage && gifImage->GetRawImage() != 0) {
@@ -687,14 +687,14 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 }
 
 
-void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
+void CreateOffScreenPixMap (GrafPtr *cport, wxGIF *gif)
 {
-  CGrafPtr  colorPort;
+  GrafPtr  colorPort;
 	
 	int width = gif->GetWidth(), height = gif->GetHeight();
 	Rect bounds = { 0, 0, height, width };
 	GDHandle savegw;
-	CGrafPtr saveport;
+	GrafPtr saveport;
 	GetGWorld(&saveport, &savegw);
 	QDErr err;
 	GWorldPtr	newGWorld;

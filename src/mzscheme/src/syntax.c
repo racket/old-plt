@@ -636,11 +636,12 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   variables = var;
   
   while (SCHEME_PAIRP(var)) {
-    Scheme_Object *name, *pr;
+    Scheme_Object *name, *pr, *bucket;
 
     name = SCHEME_CAR(var);
 
-    pr = scheme_make_pair((Scheme_Object *)scheme_global_bucket(name, globals), scheme_null);
+    bucket = (Scheme_Object *)scheme_global_bucket(name, globals);
+    pr = scheme_make_pair(bucket, scheme_null);
     if (last)
       SCHEME_CDR(last) = pr;
     else

@@ -2487,7 +2487,9 @@ static Scheme_Object *current_gc_milliseconds(int argc, Scheme_Object **argv)
 
 static Scheme_Object *current_seconds(int argc, Scheme_Object **argv)
 {
-  return scheme_make_integer_value_from_time(get_seconds());
+  long secs;
+  secs = get_seconds();
+  return scheme_make_integer_value_from_time(secs);
 }
 
 #endif

@@ -554,7 +554,9 @@ scheme_named_map_1 (char *name, Scheme_Object *(*fun)(Scheme_Object*, Scheme_Obj
   if (SCHEME_NULLP(lst))
       return (scheme_null);
   else if (SCHEME_PAIRP(lst)) {
-    return scheme_make_pair(fun(SCHEME_CAR(lst), form), 
+    Scheme_Object *v;
+    v = fun(SCHEME_CAR(lst), form);
+    return scheme_make_pair(v,
 			    scheme_named_map_1(name, fun, 
 					       SCHEME_CDR(lst), form));
   } else {

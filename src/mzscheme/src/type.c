@@ -275,6 +275,7 @@ static int variable_obj(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Bucket *b = (Scheme_Bucket *)p;
 
+    gcMARK(b->key);
     gcMARK(b->val);
   }
 
@@ -306,7 +307,7 @@ static int app_rec(void *p, Mark_Proc mark)
   Scheme_App_Rec *r = (Scheme_App_Rec *)p;
 
   if (mark) {
-    int i = r->num_args;
+    int i = r->num_args + 1;
     while (i--)
       gcMARK(r->args[i]);
   }
@@ -384,10 +385,8 @@ static int letrec(void *p, Mark_Proc mark)
 {
   if (mark) {
     Scheme_Letrec *l = (Scheme_Letrec *)p;
-    int i = l->count;
 
-    while (i--)
-      gcMARK(l->procs[i]);
+    gcMARK(l->procs);
     gcMARK(l->body);
   }
 

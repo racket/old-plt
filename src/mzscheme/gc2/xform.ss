@@ -30,7 +30,7 @@
 
 ;; Header:
 (printf "#define FUNCCALL(x) x~n")
-(printf "#define FUNCCALL_EMPTY(x) x~n")
+(printf "#define FUNCCALL_EMPTY(x) (SETUP(0), (x))~n")
 (printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack; __gc_var_stack__[1] = (void *)GC_variable_count;~n")
 (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, GC_variable_count = x)~n")
 (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
@@ -80,6 +80,7 @@
 (define semi '|;|)
 (define START_XFORM_SKIP (string->symbol "START_XFORM_SKIP"))
 (define END_XFORM_SKIP (string->symbol "END_XFORM_SKIP"))
+(define Scheme_Object (string->symbol "Scheme_Object"))
 
 (define (get-constructor v)
   (cond
@@ -235,7 +236,10 @@
    [(function? e)
     (let ([name (register-proto-information e)])
       (when label? (printf "/* FUNCTION ~a */~n" name)))
-    (convert-function e)]
+    (if (assq Scheme_Object pointer-types)
+	(convert-function e)
+	;; Still in headers; probably an inlined function
+	e)]
    [(var-decl? e)
     (when label? (printf "/* VAR */~n"))
     e]
@@ -495,7 +499,7 @@
 	(tok-file body-v)
 	(seq-close body-v)
 	(let-values ([(body-e live-vars)
-		      (convert-body body-e arg-vars (make-live-var-info 0 null null 0) #t)])
+		      (convert-body body-e arg-vars (make-live-var-info -1 null null 0) #t)])
 	  body-e))))))
 
 (define (convert-body body-e extra-vars live-vars setup-stack?)
@@ -523,7 +527,7 @@
 		(lambda (e)
 		  ;; We're not really interested in the conversion.
 		  ;; We just want to complain about function calls:
-		  (convert-function-calls e null (make-live-var-info 0 null null 0) #t))
+		  (convert-function-calls e null (make-live-var-info -1 null null 0) #t))
 		el)))
 	   decls)
 
@@ -534,7 +538,7 @@
 			  (if (null? body)
 			      ;; Start with 0 maxlive in case we want to check whether anything
 			      ;;  was pushed in the block
-			      (values null (make-live-var-info 0 
+			      (values null (make-live-var-info -1
 							       (live-var-info-vars live-vars)
 							       (live-var-info-new-vars live-vars)
 							       (live-var-info-num-calls live-vars)))
@@ -555,7 +559,7 @@
 				    (if setup-stack?
 					(apply append (live-var-info-new-vars live-vars))
 					null)
-				    (if (and setup-stack? (positive? (live-var-info-maxlive live-vars)))
+				    (if (and setup-stack? (not (negative? (live-var-info-maxlive live-vars))))
 					(list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
 										(live-var-info-maxlive live-vars))))
 					null)))
@@ -578,10 +582,12 @@
 					 return sizeof if for while else switch case
 					 __asm __asm__ __volatile __volatile__ volatile __extension__
 					 ;; These are functions, but they don't trigger GC:
-					 strcpy strlen memcpy cos sin exp pow log sqrt atan2
-					 floor ceil round fmod fabs
+					 strcpy strlen memcpy strcat cos sin exp pow log sqrt atan2
+					 floor ceil round fmod fabs __maskrune
 					 fread fwrite socket fcntl setsockopt connect send recv close
+					 __builtin_next_arg printf sprintf vsprintf vprintf
 					 scheme_get_env
+					 scheme_get_milliseconds scheme_get_process_milliseconds
 					 scheme_rational_to_double scheme_bignum_to_double
 					 scheme_rational_to_float scheme_bignum_to_float)))
        (not (string? (tok-n (cadr e-))))
@@ -618,7 +624,7 @@
 	(let ([el (body->lines e #t)])
 	  (let loop ([el el]
 		     [new-args null][setups null][new-vars null]
-		     [ok-calls null][must-convert? #f][live-vars live-vars])
+		     [ok-calls null][must-convert? #t][live-vars live-vars])
 	    (cond
 	     [(null? el)
 	      (if (null? new-vars)
@@ -928,8 +934,8 @@
 		(< 2 (length e))
 		;; Decl ends in seimicolon
 		(eq? semi (tok-n (list-ref e (sub1 (length e)))))
-		;; Doesn't start with a star
-		(not (eq? '* (tok-n (car e))))
+		;; Doesn't start with a star, decrement, or increment
+		(not (memq (tok-n (car e)) '(* -- ++)))
 		;; Not an assignemnt
 		(not (memq (tok-n (cadr e)) '(= += -=)))
 		;; Not a return, case

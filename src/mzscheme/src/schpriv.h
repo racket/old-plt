@@ -462,6 +462,10 @@ typedef struct Scheme_Sema {
 typedef struct Scheme_Local {
   Scheme_Type type;
   short position;
+#ifdef MZ_PRECISE_GC
+  /* Everything has to be at least 2 words in size. */
+  int x;
+#endif
 } Scheme_Local;
 
 typedef struct Scheme_Let_Value {

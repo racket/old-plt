@@ -1081,7 +1081,7 @@ static int mark_struct_type_val(void *p, Mark_Proc mark)
   if (mark) {
     int i;
     for (i = t->name_pos + 1; i--; )
-      t->parent_types[i] = t->parent_types[i];
+      gcMARK(t->parent_types[i]);
     gcMARK(t->type_name);
   }
 

@@ -598,8 +598,9 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
   ATSTEP("making config");
 
-  if (!config) {
-    config = process->config = make_initial_config();
+  if (!config) {    
+    config = make_initial_config();
+    process->config = config;
 
     if (scheme_starting_up) {
       REGISTER_SO(initial_config);
@@ -2543,7 +2544,11 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   scheme_first_process->prev = np;
   scheme_first_process = np;
 
-  np->config = (Scheme_Config *)scheme_make_config(p->config);
+  {
+    Scheme_Config *nconfig;
+    nconfig = (Scheme_Config *)scheme_make_config(p->config);
+    np->config = nconfig;
+  }
   np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
   /* others 0ed already by allocation */
 
@@ -2654,7 +2659,7 @@ static Scheme_Object *parameter_p(int argc, Scheme_Object **argv)
 
 static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *guard, **argv2;
+  Scheme_Object *guard, **argv2, *kv;
 
   if (argc && argv[0]) {
     guard = ((ParamData *)data)->guard;
@@ -2670,9 +2675,12 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
   } else
     argv2 = argv;    
 
+  kv = scheme_make_pair(((ParamData *)data)->key,
+			((ParamData *)data)->defval);
+  
   return scheme_param_config("parameter-procedure", 
-			     (long)scheme_make_pair(((ParamData *)data)->key,
-						    ((ParamData *)data)->defval),
+			     /* FIXME! */
+			     (long)kv,
 			     argc, argv2,
 			     -2, NULL, NULL, 0);
 }

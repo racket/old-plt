@@ -142,9 +142,16 @@ void GC_gcollect()
 
 static Scheme_Type prev_tag, prev_prev_tag;
 
+void *search_for;
+
+void stop()
+{
+  printf("stopped\n");
+}
+
 static void *mark(void *p)
 {
-  if ((p > alloc_space)
+  if ((p >= alloc_space)
       && (p < (alloc_space + alloc_size))) {
 
 #if 1
@@ -182,6 +189,9 @@ static void *mark(void *p)
       ((void **)p)[1] = naya;
 
       new_tagged_high += size;
+      if (naya == search_for) {
+	stop();
+      }
       return naya;
     } else {
       long size;
@@ -205,6 +215,10 @@ static void *mark(void *p)
       ((void **)p)[1] = new_untagged_low + 1;
       ((long *)p)[0] = 0;
 
+      if ((new_untagged_low + 1) == search_for) {
+	stop();
+      }
+
       return new_untagged_low + 1;
     }
   } else
@@ -220,6 +234,8 @@ static void *cautious_mark(void *p)
       long diff = ((char *)p - (char *)alloc_space);
       long diff1 = diff;
       
+      diff &= 0xFFFFFFFC;
+
       while (!(alloc_bitmap[diff >> 5] & (1 << ((diff >> 2) & 0x7)))) {
 	diff -= 4;
       }
@@ -242,6 +258,8 @@ void gcollect(int needsize)
   char *bitmap;
   int i, var_count;
 
+  printf("gc\n");
+
   sort_and_merge_roots();
 
   if (new_size < (heap_size * 2)) {
@@ -256,6 +274,7 @@ void gcollect(int needsize)
   /******************** Make bitmap image: ****************************/
 
   alloc_bitmap = bitmap = (char *)malloc((alloc_size >> 5) + 1);
+  memset(bitmap, 0, (alloc_size >> 5) + 1);
   p = (long *)untagged_low;
   top = (long *)(alloc_space + alloc_size);
   while (p < top) {
@@ -334,12 +353,12 @@ void gcollect(int needsize)
       else {
 	size_t size;
 
-	printf("%d\n", tag);
+	/* printf("%d\n", tag); */
 
 	if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
 	  *(int *)0x0 = 1;
 	}
-	size = tag_table[tag](tagged_mark, mark);
+	size = tag_table[tag](tagged_mark, cautious_mark);
 	tagged_mark += size;
       }
     }
@@ -357,17 +376,20 @@ void gcollect(int needsize)
 	  if (v & 0x80000000) {
 	    /* Array of pointers */
 	    int i;
+	    printf("parray: %d\n", size);
 	    for (i = size; i--; mp++)
-	      *mp = mark(*mp);
+	      *mp = cautious_mark(*mp);
 	  } else {
 	    /* Array of tagged */
 	    int i, elem_size;
 	    Scheme_Type tag = *(Scheme_Type *)mp;
 	    
-	    elem_size = tag_table[tag](mp, mark);
+	    printf("tarray: %d %d\n", size, tag);
+
+	    elem_size = tag_table[tag](mp, cautious_mark);
 	    mp += elem_size;
 	    for (i = elem_size; i < size; i += elem_size, mp += elem_size)
-	      tag_table[tag](mp, mark);
+	      tag_table[tag](mp, cautious_mark);
 	  }
 	} else
 	  mp += v + 1;
@@ -418,6 +440,10 @@ static void *malloc_tagged(size_t size_in_bytes)
   }
   tagged_high = naya;
 
+  if (m == search_for) {
+    stop();
+  }
+
   return m;
 }
 
@@ -450,6 +476,10 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
 
   ((long *)naya)[0] = (size_in_bytes >> 2) | nonatomic;
   
+  if ((naya + 1) == search_for) {
+    stop();
+  }
+
   return naya + 1;
 }
 

@@ -2118,7 +2118,7 @@ If the namespace does not, they are colored the unbound color.
       ;; make-id-set : -> id-set
       (define (make-id-set) (make-module-identifier-mapping))
       
-      ;; add-id : id-set set -> void
+      ;; add-id : id-set identifier -> void
       (define (add-id mapping id)
         (let ([old (module-identifier-mapping-get mapping id (lambda () '()))])
           (module-identifier-mapping-put! mapping id (cons id old))))

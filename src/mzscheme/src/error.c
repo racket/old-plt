@@ -167,7 +167,7 @@ static void
 call_error(char *buffer, int len)
 {
   Scheme_Object *p[1];
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
 
   if (scheme_current_process->error_invoked == 5) {
     scheme_longjmp (scheme_error_buf, 1);
@@ -180,7 +180,7 @@ call_error(char *buffer, int len)
   } else {
     scheme_current_process->error_invoked = 1;
     p[0] = scheme_make_sized_string(buffer, len, 1);
-    memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf));
+    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(scheme_error_buf)) {
       scheme_current_process->error_invoked = 0;
       scheme_longjmp(savebuf, 1);

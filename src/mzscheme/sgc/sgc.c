@@ -182,7 +182,7 @@
 /* Implements GC_prim_stringout using Windows console
    functions. */
 
-#define AUTO_STATIC_ROOTS_IF_POSSIBLE 1
+#define AUTO_STATIC_ROOTS_IF_POSSIBLE 0
 /* Automatically registers static C variables as roots if
    platform-specific code is porvided */
 
@@ -4177,7 +4177,7 @@ void do_GC_gcollect(void *stack_now)
 # if GET_MEM_VIA_SBRK
 	  (long)sbrk(0)
 # else
-#  ifdef WIN32
+#  if defined(WIN32) && AUTO_STATIC_ROOTS_IF_POSSIBLE
 	  total_memory_use()
 #  else
 	  0

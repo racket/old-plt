@@ -157,5 +157,39 @@ void scheme_ensure_stack_start(Scheme_Process *p, void *d)
 }
 
 # if defined(__CYGWIN32__)
-/* Need mzscheme_setjmp & mzscheme_longjmp */
+/* We have to define setjmp & longjmp to remain compatible
+   with MSVC-compiled extensions. It's the mostly same code 
+   as mzsj86.c, just in a slightly different syntax, and it
+   probably only works with -O2. */
+
+int scheme_setjmp(mz_jmp_buf b)
+{
+  asm("mov 4(%EBP), %ECX"); /* return address */
+  asm("mov 8(%EBP), %EAX"); /* jmp_buf ptr */
+  asm("mov (%EBP), %EDX");  /* old EBP */
+  asm("mov %EDX, (%EAX)");
+  asm("mov %EBX, 4(%EAX)");
+  asm("mov %EDI, 8(%EAX)");
+  asm("mov %ESI, 12(%EAX)");
+  asm("mov %ESP, 16(%EAX)");
+  asm("mov %ECX, 20(%EAX)");
+ 
+  return 0;
+}
+
+void scheme_longjmp(mz_jmp_buf b, int v)
+{
+  asm("mov 12(%EBP), %EAX"); /* return value */
+  asm("mov 8(%EBP), %ECX");  /* jmp_buf */
+  asm("mov 16(%ECX), %ESP"); /* restore stack pointer */
+  asm("mov (%ECX), %EBP");   /* old EBP */
+  asm("mov %EBP, (%ESP)");
+  asm("mov %ESP, %EBP");
+  asm("mov 4(%ECX), %EBX");
+  asm("mov 8(%ECX), %EDI");
+  asm("mov 12(%ECX), %ESI");
+  asm("mov 20(%ECX), %ECX"); /* return address */
+  asm("mov %ECX, 4(%EBP)");
+}
+
 #endif

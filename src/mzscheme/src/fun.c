@@ -711,7 +711,7 @@ void *scheme_top_level_do(void *(*k)(void))
   void *v;
   long *old_cc_ok, *ok;
   void *old_cc_start;
-  jmp_buf save, oversave;
+  mz_jmp_buf save, oversave;
 #ifdef ERROR_ON_OVERFLOW
   int orig_overflow;
 #endif
@@ -742,7 +742,7 @@ void *scheme_top_level_do(void *(*k)(void))
   save_current_local_env = p->current_local_env;
 
 #ifndef ERROR_ON_OVERFLOW
-  memcpy(&oversave, &p->overflow_buf, sizeof(jmp_buf));
+  memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(p->overflow_buf)) {
     while (1) {
       Scheme_Overflow *overflow;
@@ -754,7 +754,7 @@ void *scheme_top_level_do(void *(*k)(void))
       overflow->prev = p->overflow;
       p->overflow = overflow;
       
-      memcpy(&overflow->savebuf, &scheme_error_buf, sizeof(jmp_buf));
+      memcpy(&overflow->savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
       if (scheme_setjmp(scheme_error_buf)) {
 	scheme_overflow_reply = NULL; /* means "continue the error" */
       } else {
@@ -782,7 +782,7 @@ void *scheme_top_level_do(void *(*k)(void))
       }
       
       overflow = p->overflow;
-      memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(jmp_buf));
+      memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(mz_jmp_buf));
       p->overflow = overflow->prev;
       memcpy(&scheme_overflow_cont, &overflow->cont, 
 	     sizeof(Scheme_Jumpup_Buf));
@@ -796,7 +796,7 @@ void *scheme_top_level_do(void *(*k)(void))
   }
 #endif
 
-  memcpy(&save, &p->error_buf, sizeof(jmp_buf));
+  memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(p->error_buf)) {
     scheme_restore_env_stack_w_process(envss, p);
@@ -808,7 +808,7 @@ void *scheme_top_level_do(void *(*k)(void))
 #ifdef ERROR_ON_OVERFLOW
     p->stack_overflow = orig_overflow;
 #else
-    memcpy(&p->overflow_buf, &oversave, sizeof(jmp_buf));
+    memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
 #endif
     scheme_longjmp(save, 1);
   }
@@ -817,12 +817,12 @@ void *scheme_top_level_do(void *(*k)(void))
 
   p->current_local_env = save_current_local_env;
 
-  memcpy(&p->error_buf, &save, sizeof(jmp_buf));
+  memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 
 #ifdef ERROR_ON_OVERFLOW
   p->stack_overflow = orig_overflow;
 #else
-  memcpy(&p->overflow_buf, &oversave, sizeof(jmp_buf));
+  memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
 #endif
 
   *ok = 0;
@@ -1696,7 +1696,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->orig_overflow = p->stack_overflow;
 #else
   cont->save_overflow = p->overflow;
-  memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(jmp_buf));
+  memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
 #endif
   cont->current_local_env = p->current_local_env;
   scheme_save_env_stack_w_process(cont->ss, p);
@@ -1722,7 +1722,7 @@ call_cc (int argc, Scheme_Object *argv[])
   }
   isaved->prev = NULL;
 
-  memcpy(&cont->savebuf, &p->error_buf, sizeof(jmp_buf));
+  memcpy(&cont->savebuf, &p->error_buf, sizeof(mz_jmp_buf));
 
   scheme_zero_unneeded_rands(p);
 
@@ -1760,12 +1760,12 @@ call_cc (int argc, Scheme_Object *argv[])
     }
     p->dw = cont->dw;
 
-    memcpy(&p->error_buf, &cont->savebuf, sizeof(jmp_buf));
+    memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
 
 #ifdef ERROR_ON_OVERFLOW
     p->stack_overflow = cont->orig_overflow;
 #else
-    memcpy(&p->overflow_buf, &cont->save_overflow_buf, sizeof(jmp_buf));
+    memcpy(&p->overflow_buf, &cont->save_overflow_buf, sizeof(mz_jmp_buf));
     p->overflow = cont->save_overflow;
 #endif
     scheme_restore_env_stack_w_process(cont->ss, p);
@@ -1865,7 +1865,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   p->dw = dw;
 
-  memcpy(&dw->saveerr, &scheme_error_buf, sizeof(jmp_buf));
+  memcpy(&dw->saveerr, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   scheme_save_env_stack_w_process(dw->envss, p);
 
@@ -1909,7 +1909,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   if (err)
     scheme_longjmp(dw->saveerr, 1);
 
-  memcpy(&p->error_buf, &dw->saveerr, sizeof(jmp_buf));
+  memcpy(&p->error_buf, &dw->saveerr, sizeof(mz_jmp_buf));
 
   if (save_values) {
     p->ku.multiple.count = save_count;
@@ -2166,15 +2166,15 @@ default_prompt_read_handler(int argc, Scheme_Object *argv[])
 
 void scheme_rep()
 {
-  jmp_buf save;
+  mz_jmp_buf save;
   Scheme_Process *p = scheme_current_process;
 
-  memcpy(&save, &p->error_buf, sizeof(jmp_buf));
+  memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(p->error_buf)) {
     /* done */
   } else
     scheme_apply(rep, 0, NULL);
-  memcpy(&p->error_buf, &save, sizeof(jmp_buf));
+  memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 }
 
 /****************************************************************/

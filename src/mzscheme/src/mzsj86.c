@@ -17,16 +17,16 @@
     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include "setjmp.h"
-
 /* Re-implementation of i386 setjmp to avoid Windows-specific work,
    which messes up MzScheme's (MrEd's, really) threads. */
+
+#include "schpriv.h"
 
 /* Got this working for MSVC8 non-optimized. I'm too lazy to get it
    right with optimization. */
 #pragma optimize("", off)
 
-int scheme_setjmp(jmp_buf b)
+int scheme_setjmp(mz_jmp_buf b)
 {
   __asm {
 	mov ECX, [EBP+4] ; return address
@@ -43,23 +43,23 @@ int scheme_setjmp(jmp_buf b)
   return 0;
 }
 
-void scheme_longjmp(jmp_buf b, int v)
+void scheme_longjmp(mz_jmp_buf b, int v)
 {
   __asm {
 	mov EAX, [EBP+12] ; return value
 	mov ECX, [EBP+8] ; jmp_buf
 	mov ESP, [ECX+16]
 	mov EBP, [ECX] ; old EBP
-	mov [ESP + 12], EBP
+	mov [ESP+12], EBP
 	mov EBP, ESP
 	add EBP, 12
 	mov EBX, [ECX+4]
-	mov [ESP + 8], EBX
+	mov [ESP+8], EBX
 	mov EDI, [ECX+8]
 	mov [ESP], EDI
 	mov ESI, [ECX+12]
-	mov [ESP + 4], ESI
+	mov [ESP+4], ESI
 	mov ECX, [ECX+20] ; return address
-	mov [EBP + 4], ECX
+	mov [EBP+4], ECX
   }
 }

@@ -25,9 +25,9 @@
 #define scheme_make_namespace (scheme_extension_table->scheme_make_namespace)
 #ifndef NO_SCHEME_THREADS
 #define scheme_thread (scheme_extension_table->scheme_thread)
-#define scheme_break_thread (scheme_extension_table->scheme_break_thread)
 #define scheme_kill_thread (scheme_extension_table->scheme_kill_thread)
 #endif
+#define scheme_break_thread (scheme_extension_table->scheme_break_thread)
 #ifndef MZ_REAL_THREADS
 #define scheme_process_block (scheme_extension_table->scheme_process_block)
 #define scheme_swap_process (scheme_extension_table->scheme_swap_process)

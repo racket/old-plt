@@ -220,16 +220,16 @@ static void die_now(char *phase, char *file)
 
 #ifdef FIND_WRITEABLE_SECTION
 static unsigned long current_value;
-static jmp_buf goback;
+static mz_jmp_buf goback;
 
 static void bus_error(int ignore)
 {
-  longjmp(goback, 1);
+  scheme_longjmp(goback, 1);
 }
 #endif
 
 static void  do_restore_env_argv(long orig_len, long len, 
-				 char *start, char *carry, jmp_buf b)
+				 char *start, char *carry, mz_jmp_buf b)
 {
   char buffer[1024];
 
@@ -268,7 +268,7 @@ static void  do_restore_env_argv(long orig_len, long len,
       start += strlen(start) + 1;
     }
 
-    longjmp(b, (long)v);
+    scheme_longjmp(b, (long)v);
   } else
     do_restore_env_argv(orig_len, len - 1024, 
 			start ? start : buffer, buffer, b);
@@ -276,11 +276,11 @@ static void  do_restore_env_argv(long orig_len, long len,
 
 static Scheme_Object *restore_env_argv(long len)
 {
-  jmp_buf buf;
+  mz_jmp_buf buf;
   Scheme_Object *v;
 
   /* We're going to trash the stack, so we'll need to escape */
-  v = (Scheme_Object *)setjmp(buf);
+  v = (Scheme_Object *)scheme_setjmp(buf);
   
   if (!v)
     do_restore_env_argv(len, len, NULL, NULL, buf);
@@ -680,7 +680,7 @@ int scheme_image_main(int argc, char **argv)
 
     ds = data_starts[0];
 
-    if (!setjmp(goback)) {
+    if (!scheme_setjmp(goback)) {
       for (current_value = data_ends[0]; (current_value -= sizeof(long)) > ds; )
 	*(unsigned long *)current_value = *(unsigned long *)current_value;
     }

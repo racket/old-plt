@@ -236,10 +236,6 @@ static int num_nsos = 0;
 static Scheme_NSO *namespace_options = NULL;
 
 
-#ifndef PROCESS_STACK_SIZE
-#define PROCESS_STACK_SIZE 300000
-#endif
-
 #if defined(MZ_REAL_THREADS)
 # define SETJMP(p) 1
 # define LONGJMP(p) 0
@@ -1566,7 +1562,7 @@ static int check_sleep(int need_activity, int sleep_now)
 void *scheme_check_sema_callbacks(int (*test)(void *, void *), void *cdata, int check_only)
 {
   Scheme_Sema_Callback *cb, *prev;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   
   port_sema_check();
 
@@ -1617,10 +1613,10 @@ void *scheme_check_sema_callbacks(int (*test)(void *, void *), void *cdata, int 
       }
       SCHEME_RELEASE_LOCK();
 
-      memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf));
+      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
       if (!scheme_setjmp(scheme_error_buf))
 	scheme_apply_multi(cb->callback, 0, NULL);
-      memcpy(&scheme_error_buf, &savebuf, sizeof(jmp_buf));
+      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
       return cb->context;
     }

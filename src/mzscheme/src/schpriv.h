@@ -303,7 +303,7 @@ typedef struct Scheme_Dynamic_Wind {
   void *data;
   void (*pre)(void *);
   void (*post)(void *);
-  jmp_buf saveerr;
+  mz_jmp_buf saveerr;
   Scheme_Comp_Env *current_local_env;
   struct Scheme_Stack_State envss;
   struct Scheme_Cont *cont;
@@ -322,13 +322,13 @@ typedef struct Scheme_Cont {
 #ifdef ERROR_ON_OVERFLOW
   int orig_overflow;
 #else
-  jmp_buf save_overflow_buf;
+  mz_jmp_buf save_overflow_buf;
 #endif
   Scheme_Stack_State ss;
   Scheme_Saved_Stack *runstack_copied;
   struct Scheme_Overflow *save_overflow;
   Scheme_Comp_Env *current_local_env;
-  jmp_buf savebuf; /* save old error buffer here */
+  mz_jmp_buf savebuf; /* save old error buffer here */
 } Scheme_Cont;
 
 typedef struct Scheme_Escaping_Cont {
@@ -577,7 +577,7 @@ int scheme_find_type(Scheme_Object *ts);
 typedef struct Scheme_Overflow {
   Scheme_Jumpup_Buf cont; /* continuation after value obtained in overflowed */
   struct Scheme_Overflow *prev; /* old overflow info */
-  jmp_buf savebuf; /* save old error buffer here */
+  mz_jmp_buf savebuf; /* save old error buffer here */
 } Scheme_Overflow;
 #endif
 
@@ -763,8 +763,13 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    int depth,
 					    Scheme_Object **current_val);
 
+#ifdef NO_TCP_SUPPORT
+# undef USE_UNIX_SOCKETS_TCP
+# undef USE_WINSOCK_TCP
+# undef USE_MAC_TCP
+#endif
 #if defined(USE_UNIX_SOCKETS_TCP) || defined(USE_WINSOCK_TCP) || defined(USE_MAC_TCP)
-#define USE_TCP
+# define USE_TCP
 #endif
 
 #ifndef USE_IEEE_FP_PREDS

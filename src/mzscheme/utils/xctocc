@@ -779,7 +779,7 @@ sub PrintMethod
     } else {
 	print "  Scheme_Object **p = NULL;\n";
     }
-    print "  Scheme_Object *v;\n  jmp_buf savebuf;\n";
+    print "  Scheme_Object *v;\n  mz_jmp_buf savebuf;\n";
     print "  Scheme_Object *method;\n  int sj;\n";
     print "  static void *mcache = 0;\n\n";
 

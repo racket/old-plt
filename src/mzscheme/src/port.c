@@ -212,13 +212,17 @@ static Scheme_Object *fd_input_port_type;
 #endif
 static Scheme_Object *file_input_port_type;
 static Scheme_Object *string_input_port_type;
+#ifdef USE_TCP
 static Scheme_Object *tcp_input_port_type;
+#endif
 #ifdef USE_FD_PORTS
 static Scheme_Object *fd_output_port_type;
 #endif
 static Scheme_Object *file_output_port_type;
 static Scheme_Object *string_output_port_type;
+#ifdef USE_TCP
 static Scheme_Object *tcp_output_port_type;
+#endif
 static Scheme_Object *user_input_port_type;
 static Scheme_Object *user_output_port_type;
 static Scheme_Object *pipe_read_port_type;
@@ -298,6 +302,7 @@ static Scheme_Object *sch_system_star(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
 
+#ifndef NO_TCP_SUPPORT
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listen(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_stop(int argc, Scheme_Object *argv[]);
@@ -305,6 +310,7 @@ static Scheme_Object *tcp_accept_ready(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_port_send_waiting_p(int argc, Scheme_Object *argv[]);
+#endif
 
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[]);
@@ -348,13 +354,17 @@ scheme_init_port (Scheme_Env *env)
 #endif
     REGISTER_SO(file_input_port_type);
     REGISTER_SO(string_input_port_type);
+#ifdef USE_TCP
     REGISTER_SO(tcp_input_port_type);
+#endif
 #ifdef USE_FD_PORTS
     REGISTER_SO(fd_output_port_type);
 #endif
     REGISTER_SO(file_output_port_type);
     REGISTER_SO(string_output_port_type);
+#ifdef USE_TCP
     REGISTER_SO(tcp_output_port_type);
+#endif
     REGISTER_SO(user_input_port_type);
     REGISTER_SO(user_output_port_type);
     REGISTER_SO(pipe_read_port_type);
@@ -404,8 +414,10 @@ scheme_init_port (Scheme_Env *env)
     pipe_read_port_type = scheme_make_port_type("<pipe-input-port>");
     pipe_write_port_type = scheme_make_port_type("<pipe-output-port>");
 
+#ifdef USE_TCP
     tcp_input_port_type = scheme_make_port_type("<tcp-input-port>");
     tcp_output_port_type = scheme_make_port_type("<tcp-output-port>");
+#endif
 
 #ifdef WIN32_FD_HANDLES
     tested_file_input_port_type = scheme_make_port_type("<file-input-port>");
@@ -758,6 +770,7 @@ scheme_init_port (Scheme_Env *env)
 						      3, 5), 
 			     env);
 
+#ifndef NO_TCP_SUPPORT
   scheme_add_global_constant("tcp-connect", 
 			     scheme_make_prim_w_arity2(tcp_connect,
 						       "tcp-connect", 
@@ -795,6 +808,7 @@ scheme_init_port (Scheme_Env *env)
 						      "tcp-port-send-waiting?", 
 						      1, 1), 
 			     env);
+#endif
 }
 
 
@@ -908,6 +922,8 @@ int scheme_fdisset(void *fd, int n)
 {
 #if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP)
   return FD_ISSET(n, ((fd_set *)fd));
+#else
+  return 0;
 #endif
 }
 
@@ -1048,15 +1064,15 @@ scheme_make_output_port(Scheme_Object *subtype,
 
 #ifdef MZ_REAL_THREADS
 # define BEGIN_LOCK_PORT(sema) \
-    { jmp_buf savebuf; \
+    { mz_jmp_buf savebuf; \
       scheme_wait_sema(sema, 0); \
-      memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf)); \
+      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
       if (scheme_setjmp(scheme_error_buf)) { \
         scheme_post_sema(sema); \
         scheme_longjmp(savebuf, 1); \
       } else {
 # define END_LOCK_PORT(sema) \
-      memcpy(&scheme_error_buf, &savebuf, sizeof(jmp_buf)); \
+      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); \
       scheme_post_sema(sema); } }
 #else
 # define BEGIN_LOCK_PORT(sema) /* empty */
@@ -3328,18 +3344,18 @@ current_load_directory(int argc, Scheme_Object *argv[])
 Scheme_Object *scheme_load(const char *file)
 {
   Scheme_Object *p[1];
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *val;
 
   p[0] = scheme_make_string(file);
-  memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf));
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(scheme_error_buf)) {
     val = NULL;
   } else {
     val = scheme_apply(scheme_make_prim((Scheme_Prim *)load),
 		       1, p);
   }
-  memcpy(&scheme_error_buf, &savebuf, sizeof(jmp_buf));
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
   return val;
 }
@@ -4240,10 +4256,12 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 #endif
 }
 
-/******************************************************************************/
+/**************************  T  C  P  *********************************/
 
+/* These two need o be outside of USE_TCP */
 #define PORT_ID_TYPE "exact integer in [1, 65535]"
 #define CHECK_PORT_ID(obj) (SCHEME_INTP(obj) && (SCHEME_INT_VAL(obj) >= 1) && (SCHEME_INT_VAL(obj) <= 65535))
+
 
 #ifdef USE_TCP
 
@@ -5040,7 +5058,7 @@ static Scheme_Object *write_when_possible(void *port, int argc, Scheme_Object **
   Scheme_Tcp *data;
   char *s;
   int len, error;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
 
   data = (Scheme_Tcp *)((Scheme_Output_Port *)port)->port_data;
 
@@ -5056,7 +5074,7 @@ static Scheme_Object *write_when_possible(void *port, int argc, Scheme_Object **
   data->sendbufsize = 0;
   data->sendbuftrying = 1;
 
-  memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf));
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(scheme_error_buf))
     error = 1;
@@ -5071,7 +5089,7 @@ static Scheme_Object *write_when_possible(void *port, int argc, Scheme_Object **
   if (error)
     scheme_longjmp(savebuf, 1);
   else
-    memcpy(&scheme_error_buf, &savebuf, sizeof(jmp_buf));
+    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
   
   return scheme_void;
 }
@@ -5290,8 +5308,9 @@ make_tcp_output_port(void *data)
 						  1);
 }
 
-
 #endif /* USE_TCP */
+
+#ifndef NO_TCP_SUPPORT
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
@@ -5309,7 +5328,9 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   if (!CHECK_PORT_ID(argv[1]))
     scheme_wrong_type("tcp-connect", PORT_ID_TYPE, 1, argc, argv);
 
+#ifdef USE_TCP
   TCP_INIT("tcp-connect");
+#endif
 
   address = SCHEME_STR_VAL(argv[0]);
   origid = (unsigned short)SCHEME_INT_VAL(argv[1]);
@@ -5499,7 +5520,9 @@ tcp_listen(int argc, Scheme_Object *argv[])
     if (!SCHEME_INTP(argv[1]) || (SCHEME_INT_VAL(argv[1]) < 1))
       scheme_wrong_type("tcp-listen", "small positive integer", 1, argc, argv);
     
+#ifdef USE_TCP
   TCP_INIT("tcp-listen");
+#endif
 
   origid = (unsigned short)SCHEME_INT_VAL(argv[0]);
   if (argc > 1)
@@ -5598,6 +5621,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
   return NULL;
 }
 
+#ifdef USE_TCP
 static int stop_listener(Scheme_Object *o)
 {
   int was_closed = 0;
@@ -5632,10 +5656,12 @@ static int stop_listener(Scheme_Object *o)
 
   return was_closed;
 }
+#endif
 
 static Scheme_Object *
 tcp_stop(int argc, Scheme_Object *argv[])
 {
+#ifdef USE_TCP
   int was_closed;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
@@ -5652,12 +5678,10 @@ tcp_stop(int argc, Scheme_Object *argv[])
     return NULL;
   }
 
-#ifndef USE_TCP
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		   "tcp-close: not supported on this platform");
-  return NULL;
-#else
   return scheme_void;
+#else
+  scheme_wrong_type("tcp-close", "tcp-listener", 0, argc, argv);
+  return NULL;
 #endif
 }
 
@@ -5666,7 +5690,6 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
 {
 #ifdef USE_TCP
   int ready;
-#endif
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
     scheme_wrong_type("tcp-accept-rady?", "tcp-listener", 0, argc, argv);
@@ -5680,15 +5703,11 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
     return NULL;
   }
 
-#ifdef USE_TCP
   ready = tcp_check_accept(argv[0]);
-#endif
 
-#ifdef USE_TCP
   return (ready ? scheme_true : scheme_false);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		   "tcp-accept-ready?: not supported on this platform");
+  scheme_wrong_type("tcp-accept-rady?", "tcp-listener", 0, argc, argv);
   return NULL;
 #endif
 }
@@ -5696,18 +5715,19 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 tcp_accept(int argc, Scheme_Object *argv[])
 {
+#ifdef USE_TCP
   int was_closed = 0, errid;
   Scheme_Object *listener;
-#ifdef USE_SOCKETS_TCP
+# ifdef USE_SOCKETS_TCP
   tcp_t s;
   int l;
   tcp_address addr;
-#endif
-#ifdef USE_MAC_TCP
+# endif
+# ifdef USE_MAC_TCP
   listener_t *l;
   int i, count;
   Scheme_Tcp **datas;
-#endif
+# endif
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
     scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);
@@ -5718,7 +5738,6 @@ tcp_accept(int argc, Scheme_Object *argv[])
 
   was_closed = LISTENER_WAS_CLOSED(listener);
 
-#ifdef USE_TCP
   if (!was_closed) {
     if (!tcp_check_accept(listener)) {
       scheme_current_process->block_descriptor = -1;
@@ -5734,7 +5753,6 @@ tcp_accept(int argc, Scheme_Object *argv[])
     }
     was_closed = LISTENER_WAS_CLOSED(listener);
   }
-#endif
 
   if (was_closed) {
     scheme_raise_exn(MZEXN_I_O_TCP_LISTENER_CLOSED,
@@ -5743,7 +5761,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
     return NULL;
   }
   
-#ifdef USE_SOCKETS_TCP
+# ifdef USE_SOCKETS_TCP
   s = ((listener_t *)listener)->s;
 
   l = sizeof(addr);
@@ -5752,12 +5770,12 @@ tcp_accept(int argc, Scheme_Object *argv[])
     Scheme_Object *v[2];
     Scheme_Tcp *tcp = make_tcp_port_data(s, 2);
     
-#ifdef USE_UNIX_SOCKETS_TCP
+#  ifdef USE_UNIX_SOCKETS_TCP
     int size = TCP_SOCKSENDBUF_SIZE;
-# ifndef CANT_SET_SOCKET_BUFSIZE
+#   ifndef CANT_SET_SOCKET_BUFSIZE
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
-# endif
-#endif
+#   endif
+#  endif
 
     v[0] = make_named_tcp_input_port(tcp, "TCP");
     v[1] = make_tcp_output_port(tcp);
@@ -5767,9 +5785,9 @@ tcp_accept(int argc, Scheme_Object *argv[])
     return scheme_values(2, v);
   }
   errid = errno;
-#endif
+# endif
 
-#ifdef USE_MAC_TCP
+# ifdef USE_MAC_TCP
   l = (listener_t *)listener;
   count = l->count;
   datas = l->datas;
@@ -5796,15 +5814,13 @@ tcp_accept(int argc, Scheme_Object *argv[])
       }
     }
   }
-#endif
+# endif
 
-#ifdef USE_TCP
   scheme_raise_exn(MZEXN_I_O_TCP_LISTEN,
 		   listener,
 		   "tcp-accept: accept from listener failed (%d)", errid);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		   "tcp-accept: not supported on this platform");
+  scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);
 #endif
 
   return NULL;
@@ -5819,6 +5835,7 @@ static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *tcp_port_send_waiting_p(int argc, Scheme_Object *argv[])
 {
+#ifdef USE_TCP
   Scheme_Tcp *data;
 
   if (!SCHEME_OUTPORTP(argv[0])
@@ -5828,7 +5845,13 @@ static Scheme_Object *tcp_port_send_waiting_p(int argc, Scheme_Object *argv[])
   data = (Scheme_Tcp *)(((Scheme_Output_Port *)argv[0])->port_data);
 
   return (data->sendbuflen || data->sendbuftrying) ? scheme_true : scheme_false;
+#else
+  scheme_wrong_type("tcp-port-send-waiting?", "tcp-output-port", 0, argc, argv);
+  return NULL;
+#endif
 }
+
+#endif /* !NO_TCP_SUPPORT */
 
 #if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
 typedef struct 

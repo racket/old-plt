@@ -27,8 +27,8 @@ int (*scheme_setjmpup_relative)(Scheme_Jumpup_Buf *b, void *start,
 			     Scheme_Jumpup_Buf *cont);
 void (*scheme_longjmpup)(Scheme_Jumpup_Buf *b);
 #ifdef USE_MZ_SETJMP
-int (*scheme_setjmp)(jmp_buf b);
-void (*scheme_longjmp)(jmp_buf b, int v);
+int (*scheme_setjmp)(mz_jmp_buf b);
+void (*scheme_longjmp)(mz_jmp_buf b, int v);
 #endif
 /* Parameters */
 Scheme_Object *(*scheme_make_config)(Scheme_Config *base);
@@ -56,9 +56,9 @@ int *scheme_fuel_counter_ptr;
 Scheme_Object *(*scheme_make_namespace)(int argc, Scheme_Object *argv[]);
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_thread)(Scheme_Object *thunk, Scheme_Config *config);
-void (*scheme_break_thread)(Scheme_Process *p);
 void (*scheme_kill_thread)(Scheme_Process *p);
 #endif
+void (*scheme_break_thread)(Scheme_Process *p);
 #ifndef MZ_REAL_THREADS
 void (*scheme_process_block)(float sleep_time);
 void (*scheme_swap_process)(Scheme_Process *process);

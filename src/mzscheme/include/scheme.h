@@ -340,13 +340,19 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 				       Scheme_Object *instance,
 				       void *data);
 
+#ifdef USE_MZ_SETJMP
+typedef long mz_jmp_buf[8];
+#else
+# define mz_jmp_buf jmp_buf
+#endif
+
 /* Like setjmp & longjmp, but you can jmp to a deeper stack position */
 /* Intialize a Scheme_Jumpup_Buf record before using it */
 typedef struct Scheme_Jumpup_Buf {
   void *stack_from, *stack_copy;
   long stack_size, stack_max_size;
   struct Scheme_Jumpup_Buf *cont;
-  jmp_buf buf;
+  mz_jmp_buf buf;
 } Scheme_Jumpup_Buf;
 
 enum {
@@ -439,7 +445,7 @@ typedef struct Scheme_Saved_Stack {
 typedef struct Scheme_Process {
   Scheme_Type type;
 
-  jmp_buf error_buf;
+  mz_jmp_buf error_buf;
   int jumping_to_continuation;
 
   Scheme_Config *config;
@@ -454,16 +460,6 @@ typedef struct Scheme_Process {
 
   void *stack_start, *stack_end;
   Scheme_Jumpup_Buf jmpup_buf;
-#if defined(USE_WIN32_THREADS) || defined(SPAWN_NEW_STACK)
-  void *stack_current;
-#ifdef NEW_STACK_VIA_THREAD
-  void *threadinfo;
-#endif
-#endif
-#ifdef USE_WIN32_THREADS
-  void *thread;
-  void *sem;
-#endif
 #ifdef MZ_REAL_THREADS
   void *thread;
 #endif  
@@ -488,7 +484,7 @@ typedef struct Scheme_Process {
 
 #ifndef ERROR_ON_OVERFLOW
   struct Scheme_Overflow *overflow;
-  jmp_buf overflow_buf;
+  mz_jmp_buf overflow_buf;
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
@@ -520,7 +516,7 @@ typedef struct Scheme_Process {
   long print_allocated;
   long print_maxlen;
   Scheme_Object *print_port;
-  jmp_buf print_escape;
+  mz_jmp_buf print_escape;
 
   char exn_raised;
   char error_invoked;

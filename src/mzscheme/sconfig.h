@@ -30,6 +30,8 @@
 
  /* NO_REGEXP_UTILS removes MzScheme's regular expression utilities. */
 
+ /* NO_TCP_SUPPORT removes MzScheme's TCP utilities */
+
  /* NO_SCHEME_THREADS removes MzScheme's threads from the Scheme user. 
     In this case, custodian-shutdown-all doesn't kill threads. */
 
@@ -40,6 +42,7 @@
 
 #if defined(NO_FILE_SYSTEM_UTILS) \
 	|| defined(NO_OBJECT_SYSTEM) \
+	|| defined(NO_TCP_SUPPORT) \
 	|| defined(NO_REGEXP_UTILS) \
 	|| defined(NO_SCHEME_THREADS) \
 	|| defined(NO_SCHEME_EXNS)
@@ -900,11 +903,6 @@ int scheme_win32_semaphore_try_down(void *);
      stack is overflowed. Normally, it would copy out the current
      stack and try to continue the computation. Used only if
      DO_STACK_CHECK is used. */
-
- /* PROCESS_STACK_SIZE <X> sets the size of the allocated stack when
-     SPAWN_NEW_STACK is used. Stack-checking and copying works on these
-     stacks, so that arbitrary computaions can be performed with any
-     size stack. (Well, it can't be *too* small...) */
 
  /* UNIX_LIMIT_STACK <X> limits stack usage to <X> bytes. This may
      be necessary to avoid GC-setup traversal over too much memory

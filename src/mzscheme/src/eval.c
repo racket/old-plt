@@ -390,11 +390,11 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 	|| (SAME_TYPE(SCHEME_TYPE(f), scheme_linked_closure_type)
 	    && (((Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(f))->flags
 		& CLOS_FOLDABLE))) {
-      jmp_buf savebuf;
+      mz_jmp_buf savebuf;
 
       /* Apply the procedure. */
       scheme_current_process->error_invoked = 5;
-      memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf));
+      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
       if (scheme_setjmp(scheme_error_buf))
 	f = NULL;
       else {
@@ -411,7 +411,7 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 	  f = _scheme_apply_to_list(SCHEME_CAR(v), SCHEME_CDR(v));
       }
 
-      memcpy(&scheme_error_buf, &savebuf, sizeof(jmp_buf));
+      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
       scheme_current_process->error_invoked = 0;
 
       if (f)

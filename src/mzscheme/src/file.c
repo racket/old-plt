@@ -3441,7 +3441,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
 }
 
 /* Single-threaded ok: */
-static jmp_buf escape_while_waiting;
+static mz_jmp_buf escape_while_waiting;
 static int escaped = 0;
 
 static int handlerInstalled = 0;
@@ -3454,21 +3454,21 @@ static ReplyItem *reply_queue;
 
 static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *rgn)
 {
-   jmp_buf save;
+   mz_jmp_buf save;
 
 	if (escaped) return TRUE;
 
    if (scheme_handle_aewait_event)
      scheme_handle_aewait_event(e);
    
-   memcpy(&save, &scheme_error_buf, sizeof(jmp_buf));
+   memcpy(&save, &scheme_error_buf, sizeof(mz_jmp_buf));
    if (scheme_setjmp(scheme_error_buf)) {
-     memcpy(&escape_while_waiting, &save, sizeof(jmp_buf));
+     memcpy(&escape_while_waiting, &save, sizeof(mz_jmp_buf));
      escaped = 1;
      return TRUE; /* Immediately return to AESend */
    } else {
      scheme_process_block(0);
-     memcpy(&scheme_error_buf, &save, sizeof(jmp_buf));
+     memcpy(&scheme_error_buf, &save, sizeof(mz_jmp_buf));
    }
    
    return FALSE;
@@ -3601,8 +3601,8 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   if (escaped) {
      reply = NULL;
      escaped = 0;
-     memcpy(&scheme_error_buf, &escape_while_waiting, sizeof(jmp_buf));
-     memset(&escape_while_waiting, 0, sizeof(jmp_buf));
+     memcpy(&scheme_error_buf, &escape_while_waiting, sizeof(mz_jmp_buf));
+     memset(&escape_while_waiting, 0, sizeof(mz_jmp_buf));
      goto escape;
   }
   

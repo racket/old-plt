@@ -101,7 +101,7 @@ char objscheme_unbundle_char(Scheme_Object *, const char *);
 #ifndef WXS_CANT_ASSIGN_STRUCTURES
 #define COPY_JMPBUF(dest, src) (dest = src)
 #else
-#define COPY_JMPBUF(dest, src) memcpy(&dest, &src, sizeof(jmp_buf));
+#define COPY_JMPBUF(dest, src) memcpy(&dest, &src, sizeof(mz_jmp_buf));
 #endif
 
 

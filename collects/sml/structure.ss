@@ -122,9 +122,10 @@
                             (make-str
                              (remove-dups
                               (list
-                               #,@(syntax-case* #'provides (all) (lambda (a b)
-                                                                   (eq? (syntax-e a) (syntax-e b)))
-                                    (all
+                               #,@(syntax-case #'provides () 
+                                    (all (and (identifier? #'all)
+                                              (module-identifier=? (quote-syntax provide-all)
+                                                                   #'all))
                                      (map (lambda (id)
                                             `(cons 
                                               (quote ,(car id))
@@ -151,7 +152,7 @@
                                           (syntax->list #'(provides ...))))
                                     (_ (raise-syntax-error
                                         'structure
-                                        "Export must have the form \"all\" or \"(identifier ...)\""
+                                        "Export must have the form \"provide-all\" or \"(identifier ...)\""
                                         #'provides)))))))))
                       (else
                        (let-values (((marked-def new-defined-ids)

@@ -13,20 +13,22 @@
     [framework : framework^ ((require-library "frameworkr.ss" "framework") core mred)]
     [misc : drscheme:bundle:misc^
 	  ((require-library "misc.ss" "drscheme" "tools" "unit-bundle") mred)]
-    [bundle : drscheme:bundle:bundle^
-	    ((require-library "bundle.ss" "drscheme" "tools" "unit-bundle") mred misc)]
+    [bundle-model : drscheme:bundle:bundle-model^
+                  ((require-library "bundle-model.ss" "drscheme" "tools" "unit-bundle"))]
+    [bundle-view/control : drscheme:bundle:bundle-view/control^
+                         ((require-library "bundle-view-control.ss" "drscheme" "tools" "unit-bundle")
+                          bundle-model mred misc)]
     [compound-unit : drscheme:bundle:compound-unit^
 		   ((require-library "compound-unit.ss" "drscheme" "tools" "unit-bundle")
 		    mred
                     framework)]
     [main : ()
-          
           ((unit/sig ()
-             (import drscheme:bundle:bundle^
+             (import drscheme:bundle:bundle-view/control^
                      drscheme:bundle:compound-unit^)
              
              (new-bundle-table-frame))
-           bundle
+           bundle-view/control
            compound-unit)])
    
    (export))

@@ -11,14 +11,15 @@
 (define-signature drscheme:bundle:compound-unit^
   ())
 
-(define-signature drscheme:bundle:bundle^
-  (new-bundle-table-frame
-   
-   bundle-manager% bundle-manager<%>
+(define-signature drscheme:bundle:bundle-model^
+  (bundle-manager% bundle-manager<%>
    
    bundle% bundle<%>
    leaf-bundle% leaf-bundle<%>
-   node-bundle% node-bundle<%>
+   node-bundle% node-bundle<%>))
+
+(define-signature drscheme:bundle:bundle-view/control^
+  (new-bundle-table-frame
    
    bundle-pasteboard%
    leaf-bundle-snip%

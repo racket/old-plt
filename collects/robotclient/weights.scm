@@ -106,9 +106,9 @@
 				(* (two-home-value) (two-away-base? (board) x y) no-packages)
 				(* (three-home-value) (three-away-base? (board) x y) no-packages))])
 			       (begin
-				 (set-weight (round new-weight) (get-spot (board) x y))
+				 (set-weight (inexact->exact (round new-weight)) (get-spot (board) x y))
 				 (set-valid (get-spot (board) x y))
-				 (round new-weight))))]
+				 (inexact->exact (round new-weight)))))]
 		 [bid (if (could-player-move? (board) x y p)
                           (begin
                            ; (printf "Possible player move, max-bid:~a~n" (max-bid))

@@ -262,7 +262,10 @@
       [(zodiac:vector? ast)
        (construct-vector-constant ast '#%vector known-immutable?)]
 
-      [(void? ast) ; elaboration may return #<void> - should it?
+      ; elaboration may return #<void> - should it?
+      [(or (void? ast)
+	   (and (zodiac:external? ast)
+		(void? (zodiac:read-object ast))))
        (zodiac:make-special-constant 'void)]
 
       [else

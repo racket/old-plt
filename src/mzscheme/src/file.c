@@ -858,7 +858,30 @@ void scheme_file_create_hook(char *filename)
 
 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type)
 {
-  return find_mac_file(filename, 1, spec, 0, 0, NULL, NULL, NULL, NULL, NULL, type, NULL, NULL);
+  int wasdir;
+  
+  if (find_mac_file(filename, 1, spec, 0, 0, NULL, &wasdir, NULL, NULL, NULL, type, NULL, NULL)) {
+    if (wasdir) {
+      CInfoPBRec pb;
+      OSErr myErr;
+      
+      pb.hFileInfo.ioNamePtr = spec->name;
+      pb.hFileInfo.ioVRefNum = spec->vRefNum;
+      pb.hFileInfo.ioFDirIndex = -1;
+      pb.hFileInfo.ioDirID = spec->parID;
+      if (PBGetCatInfo(&pb, 0)) {
+	/* Should never happen; the record should exist, because it
+	   was used to create the spec. But maybe one day the
+	   directory could disappear, in a truly multithreaded
+	   MacOS. */
+	return 0;
+      }           
+      spec->parID = pb.dirInfo.ioDrParID;
+    }
+
+    return 1;
+  } else
+    return 0;
 }
 #endif
 

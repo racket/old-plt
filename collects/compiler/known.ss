@@ -133,7 +133,8 @@
 	     (loop (zodiac:with-continuation-mark-form-body v) extra-known-bindings))]
        [(zodiac:set!-form? v) #f] ; because it changes a variable
        [(zodiac:struct-form? v)
-	(loop (zodiac:struct-form-super v) extra-known-bindings)]
+	(or (not (zodiac:struct-form-super v))
+	    (loop (zodiac:struct-form-super v) extra-known-bindings))]
        [(zodiac:if-form? v)
 	(and (loop (zodiac:if-form-test v) extra-known-bindings)
 	     (loop (zodiac:if-form-then v) extra-known-bindings)

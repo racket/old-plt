@@ -3353,8 +3353,9 @@ static Scheme_Object *write_syntax(Scheme_Object *obj)
     sym = unknown_symbol;
 
   l = rest = (Scheme_Object *)SCHEME_PTR2_VAL(obj);
-  for (c = 0; SCHEME_PAIRP(l) && (c < protect_after); c++)
+  for (c = 0; SCHEME_PAIRP(l) && (c < protect_after); c++) {
     l = SCHEME_CDR(l);
+  }
   if (!SCHEME_NULLP(l) && (c == protect_after)) {
     Scheme_Object *new_l;
 

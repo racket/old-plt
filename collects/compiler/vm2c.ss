@@ -1756,7 +1756,10 @@
 		    (emit ", ")
 		    (process (denominator num))
 		    (emit ")")]))]
-		    
+
+	      [(and (zodiac:external? ast)
+		    (void? (zodiac:read-object ast)))
+	       (emit "scheme_void")]
 		
 	      [else (compiler:internal-error
 		     ast

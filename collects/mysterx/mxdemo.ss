@@ -6,7 +6,7 @@
 
 ; the browser with the calendar
 
-(define calwb (make-object mx-browser% "Demo or die!" 350 400 100 100 '(scrollbars)))
+(define calwb (make-object mx-browser% "Calendar control" 350 400 100 100 '(scrollbars)))
 (define caldoc (send calwb current-document))
 
 (send caldoc insert-html 

@@ -28,9 +28,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-RSC=rc.exe
-
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
 OUTDIR=.\Release
@@ -84,7 +81,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o".\DebugOpt\mzsrc.bsc" 
 BSC32_SBRS= \
@@ -185,7 +215,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzsrc.bsc" 
 BSC32_SBRS= \
@@ -286,7 +349,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzsrc.bsc" 
 BSC32_SBRS= \
@@ -387,7 +483,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o".\DebugOpt\mzsrc.bsc" 
 BSC32_SBRS= \
@@ -488,7 +617,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o".\DebugOpt\mzsrc.bsc" 
 BSC32_SBRS= \
@@ -538,36 +700,6 @@ LIB32_OBJS= \
 
 !ENDIF 
 
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("mzsrc.dep")
@@ -583,7 +715,7 @@ SOURCE=..\..\Mzscheme\Src\Bignum.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Bignum.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -593,7 +725,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Bignum.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -603,7 +735,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Bignum.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -613,7 +745,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Bignum.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -623,7 +755,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Bignum.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -637,7 +769,7 @@ SOURCE=..\..\Mzscheme\Src\Bool.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Bool.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -647,7 +779,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Bool.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -657,7 +789,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Bool.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -667,7 +799,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Bool.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -677,7 +809,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Bool.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -691,7 +823,7 @@ SOURCE=..\..\Mzscheme\Src\Char.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Char.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -701,7 +833,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Char.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -711,7 +843,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Char.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -721,7 +853,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Char.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -731,7 +863,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Char.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -745,7 +877,7 @@ SOURCE=..\..\Mzscheme\Src\Complex.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Complex.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -755,7 +887,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Complex.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -765,7 +897,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Complex.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -775,7 +907,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Complex.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -785,7 +917,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Complex.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -799,7 +931,7 @@ SOURCE=..\..\Mzscheme\Src\Dynext.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Dynext.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -809,7 +941,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Dynext.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -819,7 +951,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Dynext.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -829,7 +961,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Dynext.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -839,7 +971,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Dynext.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -853,7 +985,7 @@ SOURCE=..\..\Mzscheme\Src\Env.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Env.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -863,7 +995,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Env.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -873,7 +1005,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Env.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -883,7 +1015,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Env.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -893,7 +1025,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Env.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -907,7 +1039,7 @@ SOURCE=..\..\Mzscheme\Src\Error.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Error.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -917,7 +1049,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Error.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -927,7 +1059,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Error.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -937,7 +1069,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Error.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -947,7 +1079,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Error.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -961,7 +1093,7 @@ SOURCE=..\..\Mzscheme\Src\Eval.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Eval.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -971,7 +1103,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Eval.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -981,7 +1113,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Eval.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -991,7 +1123,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Eval.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1001,7 +1133,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Eval.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1015,7 +1147,7 @@ SOURCE=..\..\Mzscheme\Src\File.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\File.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1025,7 +1157,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\File.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1035,7 +1167,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\File.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1045,7 +1177,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\File.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1055,7 +1187,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\File.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1069,7 +1201,7 @@ SOURCE=..\..\Mzscheme\Src\Fun.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Fun.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1079,7 +1211,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Fun.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1089,7 +1221,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Fun.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1099,7 +1231,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Fun.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1109,7 +1241,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Fun.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1123,7 +1255,7 @@ SOURCE=..\..\Mzscheme\Src\Hash.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Hash.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1133,7 +1265,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Hash.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1143,7 +1275,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Hash.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1153,7 +1285,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Hash.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1163,7 +1295,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Hash.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1177,7 +1309,7 @@ SOURCE=..\..\MZSCHEME\SRC\image.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\image.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1187,7 +1319,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\image.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1197,7 +1329,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\image.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1207,7 +1339,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\image.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1217,7 +1349,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\image.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1231,7 +1363,7 @@ SOURCE=..\..\Mzscheme\Src\List.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\List.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1241,7 +1373,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\List.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1251,7 +1383,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\List.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1261,7 +1393,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\List.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1271,7 +1403,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\List.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1285,7 +1417,7 @@ SOURCE=..\..\Mzscheme\Src\mzsj86.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\mzsj86.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1295,7 +1427,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\mzsj86.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1305,7 +1437,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\mzsj86.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1315,7 +1447,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\mzsj86.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1325,7 +1457,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\mzsj86.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1339,7 +1471,7 @@ SOURCE=..\..\Mzscheme\Src\Number.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Number.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1349,7 +1481,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Number.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1359,7 +1491,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Number.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1369,7 +1501,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Number.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1379,7 +1511,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Number.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1393,7 +1525,7 @@ SOURCE=..\..\Mzscheme\Src\Object.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Object.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1403,7 +1535,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Object.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1413,7 +1545,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Object.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1423,7 +1555,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Object.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1433,7 +1565,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Object.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1447,7 +1579,7 @@ SOURCE=..\..\Mzscheme\Src\Port.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Port.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1457,7 +1589,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Port.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1467,7 +1599,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Port.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1477,7 +1609,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Port.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1487,7 +1619,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Port.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1501,7 +1633,7 @@ SOURCE=..\..\Mzscheme\Src\Print.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Print.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1511,7 +1643,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Print.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1521,7 +1653,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Print.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1531,7 +1663,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Print.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1541,7 +1673,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Print.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1555,7 +1687,7 @@ SOURCE=..\..\Mzscheme\Src\Process.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Process.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1565,7 +1697,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Process.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1575,7 +1707,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Process.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1585,7 +1717,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Process.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1595,7 +1727,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Process.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1609,7 +1741,7 @@ SOURCE=..\..\Mzscheme\Src\Promise.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Promise.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1619,7 +1751,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Promise.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1629,7 +1761,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Promise.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1639,7 +1771,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Promise.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1649,7 +1781,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Promise.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1663,7 +1795,7 @@ SOURCE=..\..\Mzscheme\Src\Rational.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Rational.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1673,7 +1805,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Rational.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1683,7 +1815,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Rational.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1693,7 +1825,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Rational.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1703,7 +1835,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Rational.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1717,7 +1849,7 @@ SOURCE=..\..\Mzscheme\Src\Read.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Read.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1727,7 +1859,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Read.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1737,7 +1869,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Read.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1747,7 +1879,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Read.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1757,7 +1889,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Read.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1771,7 +1903,7 @@ SOURCE=..\..\Mzscheme\Src\Regexp.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Regexp.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1781,7 +1913,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Regexp.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1791,7 +1923,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Regexp.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1801,7 +1933,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Regexp.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1811,7 +1943,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Regexp.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1825,7 +1957,7 @@ SOURCE=..\..\Mzscheme\Src\Salloc.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Salloc.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1835,7 +1967,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Salloc.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1845,7 +1977,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Salloc.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1855,7 +1987,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Salloc.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1865,7 +1997,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Salloc.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1879,7 +2011,7 @@ SOURCE=..\..\Mzscheme\Src\Sema.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Sema.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1889,7 +2021,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Sema.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1899,7 +2031,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Sema.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1909,7 +2041,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Sema.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1919,7 +2051,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Sema.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1933,7 +2065,7 @@ SOURCE=..\..\Mzscheme\Src\Setjmpup.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Setjmpup.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1943,7 +2075,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Setjmpup.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1953,7 +2085,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Setjmpup.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1963,7 +2095,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Setjmpup.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1973,7 +2105,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Setjmpup.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1987,7 +2119,7 @@ SOURCE=..\..\Mzscheme\Src\String.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\String.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -1997,7 +2129,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\String.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2007,7 +2139,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\String.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2017,7 +2149,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\String.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2027,7 +2159,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\String.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2041,7 +2173,7 @@ SOURCE=..\..\Mzscheme\Src\Struct.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Struct.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2051,7 +2183,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Struct.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2061,7 +2193,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Struct.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2071,7 +2203,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Struct.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2081,7 +2213,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Struct.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2095,7 +2227,7 @@ SOURCE=..\..\Mzscheme\Src\Symbol.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Symbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2105,7 +2237,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Symbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2115,7 +2247,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Symbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2125,7 +2257,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Symbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2135,7 +2267,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Symbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2149,7 +2281,7 @@ SOURCE=..\..\Mzscheme\Src\Syntax.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Syntax.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2159,7 +2291,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Syntax.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2169,7 +2301,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Syntax.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2179,7 +2311,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Syntax.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2189,7 +2321,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Syntax.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2203,7 +2335,7 @@ SOURCE=..\..\Mzscheme\Src\Tsymbol.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2213,7 +2345,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2223,7 +2355,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2233,7 +2365,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2243,7 +2375,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Tsymbol.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2257,7 +2389,7 @@ SOURCE=..\..\Mzscheme\Src\Type.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Type.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2267,7 +2399,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Type.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2277,7 +2409,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Type.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2287,7 +2419,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Type.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2297,7 +2429,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Type.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2311,7 +2443,7 @@ SOURCE=..\..\Mzscheme\Src\Unit.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Unit.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2321,7 +2453,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Unit.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2331,7 +2463,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Unit.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2341,7 +2473,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Unit.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2351,7 +2483,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Unit.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2365,7 +2497,7 @@ SOURCE=..\..\Mzscheme\Src\Vector.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Vector.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2375,7 +2507,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Vector.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2385,7 +2517,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 SGC"
 
-CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Vector.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2395,7 +2527,7 @@ CPP_SWITCHES=/nologo /MTd /W3 /GX /ZI /Od /I "..\..\mzscheme\include" /I "..\..\
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 Threads"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\Vector.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -2405,7 +2537,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ELSEIF  "$(CFG)" == "mzsrc - Win32 MT DLL"
 
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzsrc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /Zm1000 /c 
 
 "$(INTDIR)\Vector.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<

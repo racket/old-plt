@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir ".\Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /D "OLD_BLOCK_ALLOC" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "__STDC__" /D "SILENT" /D "OLD_BLOCK_ALLOC" /YX /FD /c
 # SUBTRACT CPP /X
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
@@ -67,7 +67,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir ".\Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /Z7 /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MTd /W3 /GX /ZI /Od /D "_DEBUG" /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /GX /ZI /Od /D "_DEBUG" /D "__STDC__" /D "SILENT" /YX /FD /c
 # SUBTRACT CPP /X
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
@@ -91,7 +91,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir ".\Threads"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "WIN32_THREADS" /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "WIN32_THREADS" /D "__STDC__" /D "SILENT" /YX /FD /c
 # SUBTRACT CPP /X
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
@@ -116,7 +116,7 @@ LIB32=link.exe -lib
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /YX /FD /c
 # SUBTRACT BASE CPP /X
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /D "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /D "__STDC__" /D "SILENT" /D "NDEBUG" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
 # SUBTRACT CPP /X
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409

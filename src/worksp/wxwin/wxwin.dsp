@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir ".\Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "NDEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /YX"wx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /YX"wx.h" /FD /c
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
 BSC32=bscmake.exe
@@ -65,7 +65,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir ".\Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /Z7 /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MTd /W3 /Z7 /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /YX"wx.h" /FD /c
+# ADD CPP /nologo /MTd /W3 /Z7 /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /YX"wx.h" /FD /c
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
 BSC32=bscmake.exe
@@ -88,7 +88,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir ".\SGC"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Z7 /Od /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\mzscheme\gc" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /YX"wx.h" /c
-# ADD CPP /nologo /MTd /W3 /ZI /Od /I "..\..\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNT" /YX"wx.h" /FD /c
+# ADD CPP /nologo /MTd /W3 /ZI /Od /I "..\..\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNT" /YX"wx.h" /FD /c
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
 BSC32=bscmake.exe
@@ -130,10 +130,6 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_DIALG.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Base\WB_FORM.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Base\WB_FRAME.cxx
 # End Source File
 # Begin Source File
@@ -143,14 +139,6 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_GDI.cxx
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Src\Base\WB_HASH.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WB_HELP.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WB_IPC.cxx
 # End Source File
 # Begin Source File
 
@@ -194,23 +182,11 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_RES.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Base\WB_SCROL.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WB_STAT.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Base\WB_STDEV.cxx
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Src\Base\WB_SYSEV.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WB_TEXT.cxx
 # End Source File
 # Begin Source File
 
@@ -226,15 +202,7 @@ SOURCE=..\..\Wxwindow\Src\Base\WB_UTILS.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Base\WB_VLBOX.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Base\WB_WIN.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_BBAR.cxx
 # End Source File
 # Begin Source File
 
@@ -262,31 +230,11 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_CMDLG.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Base\WX_DATE.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Msw\WX_DB.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Msw\WX_DC.cxx
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Src\Msw\WX_DIALG.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_DOC.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_ENHDG.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_FRAC.cxx
 # End Source File
 # Begin Source File
 
@@ -302,19 +250,7 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_GDI.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Msw\WX_GROUP.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Msw\WX_IPC.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Msw\WX_ITEM.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_LAY.cxx
 # End Source File
 # Begin Source File
 
@@ -323,10 +259,6 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_LBOX.cxx
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Src\Msw\WX_MAIN.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_MEM.cxx
 # End Source File
 # Begin Source File
 
@@ -342,10 +274,6 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_MF.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Msw\WX_MTXT.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Msw\WX_PANEL.cxx
 # End Source File
 # Begin Source File
@@ -358,27 +286,7 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_RBOX.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Msw\WX_SCROL.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Msw\WX_SLIDR.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Msw\WX_STAT.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_TBAR.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Msw\WX_TEXT.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WX_TIME.cxx
 # End Source File
 # Begin Source File
 
@@ -386,15 +294,7 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_TIMER.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Wxwindow\Src\Msw\WX_TXT.cxx
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Wxwindow\Src\Msw\WX_UTILS.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Msw\WX_VLBOX.cxx
 # End Source File
 # Begin Source File
 
@@ -403,10 +303,6 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_WIN.cxx
 # Begin Source File
 
 SOURCE=..\..\WXWINDOW\SRC\MSW\wximgfil.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Wxwindow\Src\Base\WXSTRING.cxx
 # End Source File
 # End Group
 # Begin Group "Header Files"

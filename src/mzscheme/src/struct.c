@@ -171,7 +171,7 @@ scheme_init_struct (Scheme_Env *env)
 
   /* Add arity structure */
   REGISTER_SO(scheme_arity_at_least);
-  scheme_arity_at_least = scheme_make_struct_type_from_string("arity-at-least", NULL, 1, NULL, NULL);
+  scheme_arity_at_least = scheme_make_struct_type_from_string("arity-at-least", NULL, 1, NULL, NULL, 0);
   as_names = scheme_make_struct_names_from_array("arity-at-least",
 						 1, arity_fields,
 						 BUILTIN_STRUCT_FLAGS, 
@@ -189,7 +189,7 @@ scheme_init_struct (Scheme_Env *env)
 #ifdef TIME_SYNTAX
   /* Add date structure: */
   REGISTER_SO(scheme_date);
-  scheme_date = scheme_make_struct_type_from_string("date", NULL, 10, NULL, NULL);
+  scheme_date = scheme_make_struct_type_from_string("date", NULL, 10, NULL, NULL, 0);
   
   ts_names = scheme_make_struct_names_from_array("date",
 						 10, date_fields,
@@ -208,7 +208,7 @@ scheme_init_struct (Scheme_Env *env)
 
   /* Add location structure: */
   REGISTER_SO(location_struct);
-  location_struct = scheme_make_struct_type_from_string("srcloc", NULL, 5, NULL, scheme_make_prim(check_location_fields));
+  location_struct = scheme_make_struct_type_from_string("srcloc", NULL, 5, NULL, scheme_make_prim(check_location_fields), 1);
   
   loc_names = scheme_make_struct_names_from_array("srcloc",
 						  5, location_fields,
@@ -2258,13 +2258,23 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   Scheme_Object *parent,
 						   int num_fields,
 						   Scheme_Object *props,
-						   Scheme_Object *guard)
+						   Scheme_Object *guard,
+						   int immutable)
 {
+  Scheme_Object *imm = scheme_null;
+  int i;
+
+  if (immutable) {
+    for (i = 0; i < num_fields; i++) {
+      imm = scheme_make_pair(scheme_make_integer(i), imm);
+    }
+  }
+
   return _make_struct_type(NULL, base, strlen(base),
 			   parent, scheme_false, 
 			   num_fields, 0, 
 			   NULL, props, 
-			   NULL, scheme_null,
+			   NULL, imm,
 			   guard);
 }
 
@@ -2364,9 +2374,11 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 	    }
 
 	    if (argc > 9) {
-	      guard = argv[9];
-	      if (!SCHEME_PROCP(guard))
-		scheme_wrong_type("make-struct-type", "procedure", 9, argc, argv);
+	      if (SCHEME_TRUEP(argv[9])) {
+		guard = argv[9];
+		if (!SCHEME_PROCP(guard))
+		  scheme_wrong_type("make-struct-type", "procedure or #f", 9, argc, argv);
+	      }
 	    }
 	  }
 	}

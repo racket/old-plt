@@ -87,7 +87,7 @@ static exn_rec *exn_table;
 
 static const char *MZEXN_FIELDS[2] = { "message", "continuation-marks" };
 static const char *MZEXN_FAIL_CONTRACT_VARIABLE_FIELDS[1] = { "id" };
-static const char *MZEXN_FAIL_SYNTAX_FIELDS[1] = { "expr" };
+static const char *MZEXN_FAIL_SYNTAX_FIELDS[1] = { "exprs" };
 static const char *MZEXN_FAIL_READ_FIELDS[1] = { "srclocs" };
 static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
 

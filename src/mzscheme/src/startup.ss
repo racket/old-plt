@@ -925,17 +925,6 @@
 	(list e)
 	(list e de)))
 
-
-  (-define (who->name id)
-    (let ([b (identifier-binding id)])
-      (if (pair? b)
-	  (list (syntax-e id)
-		(caddr b)
-		(cadddr b))
-	  (syntax-e id))))
-
-  (-define syntax-stxsrc '(syntax syntax mzscheme))
-
   ;;----------------------------------------------------------------------
   ;; Input matcher
   
@@ -1006,7 +995,7 @@
 				      (begin
 					(when (...? (stx-car rest))
 					  (raise-syntax-error 
-					   (who->name who)
+					   (syntax-e who)
 					   "misplaced ellipses in pattern (follows other ellipses)"
 					   top
 					   (stx-car rest)))
@@ -1046,7 +1035,7 @@
 		  (let ([dp (stx-car (stx-cdr p))])
 		    (m&e dp dp #f last? #f))
 		  (raise-syntax-error 
-		   (who->name who)
+		   (syntax-e who)
 		   "misplaced ellipses in pattern"
 		   top
 		   hd))
@@ -1096,7 +1085,7 @@
 	    (if (and use-ellipses?
 		     (...? p))
 		(raise-syntax-error 
-		 (who->name who)
+		 (syntax-e who)
 		 "misplaced ellipses in pattern"
 		 top
 		 p)
@@ -1167,7 +1156,7 @@
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
 		  (when (ormap (lambda (i) (bound-identifier=? i r)) l)
 		    (raise-syntax-error 
-		     (who->name who)
+		     (syntax-e who)
 		     "variable used twice in pattern"
 		     top
 		     r))
@@ -1273,7 +1262,7 @@
 	  (when (null? nestings)
 	    (apply
 	     raise-syntax-error 
-	     syntax-stxsrc
+	     'syntax
 	     "no pattern variables before ellipses in template"
 	     (pick-specificity
 	      top
@@ -1300,7 +1289,7 @@
 		      (when (null? proto-rr-deep)
 			(apply
 			 raise-syntax-error 
-			 syntax-stxsrc
+			 'syntax
 			 "too many ellipses in template"
 			 (pick-specificity
 			  top
@@ -1366,7 +1355,7 @@
 		  (let ([dp (stx-car (stx-cdr p))])
 		    (expander dp proto-r dp #f use-tail-pos hash!))
 		  (raise-syntax-error 
-		   syntax-stxsrc
+		   'syntax
 		   "misplaced ellipses in template"
 		   top
 		   hd))
@@ -1397,7 +1386,7 @@
 			(when (and use-ellipses?
 				   (...? p))
 			  (raise-syntax-error 
-			   syntax-stxsrc
+			   'syntax
 			   "misplaced ellipses in template"
 			   top
 			   p))
@@ -1588,7 +1577,7 @@
 	(unless v
 	  (apply
 	   raise-syntax-error 
-	   syntax-stxsrc
+	   'syntax
 	   "too few ellipses for pattern variable in template"
 	   (pick-specificity
 	    src
@@ -1617,7 +1606,7 @@
 		     [(syntax? l)
 		      (when (bound-identifier=? l ssym)
 			(raise-syntax-error 
-			 syntax-stxsrc
+			 'syntax
 			 "missing ellipses with pattern variable in template"
 			 ssym))]
 		     [else (loop (car l))]))))
@@ -2891,7 +2880,7 @@
 	  (cons-path (lambda (default s l) 
 		       (if (bytes=? s #"")
 			   (append default l)
-			     (cons (bytes->path s) l))))))
+			     (cons (bytes->path s) l)))))
       (lambda (s default)
 	(unless (or (bytes? s)
 		    (string? s))
@@ -2977,7 +2966,7 @@
     (unless (path-string? s)
       (raise-type-error who "path or valid-path string" s))
     (unless (relative-path? s)
-      (raise (make-exn:contract
+      (raise (make-exn:fail:contract
 	      (string->immutable-string
 	       (format "~a: invalid relative path: ~s" who s))
 	      (current-continuation-marks)))))
@@ -3185,7 +3174,7 @@
 	      (unless (path? filename)
 		(if stx
 		    (raise-syntax-error
-		     '(require require mzscheme)
+		     'require
 		     (format "bad module path~a" (if filename
 						     (car filename)
 						     ""))

@@ -343,6 +343,60 @@
     (test 8 useless 1 2)
     (err/rt-test (useless 1 2 3) exn:application:arity?)))
 
+;; Test constructor guard
+(let ()
+  (define got null)
+  (define mode 'normal)
+  (define-values (s:a make-a a? a-ref a-set!)
+    (make-struct-type 'a #f 2 1 'adefault
+		      null
+		      (make-inspector) #f
+		      null (lambda (a b n) 
+			     (set! got (cons (list a b n) got))
+			     (case mode
+			       [(normal) (values 1 2)]
+			       [(reject) (/ 1 0)]
+			       [(bad) 'one]))))
+  (define-values (s:b make-b b? b-ref b-set!)
+    (make-struct-type 'b s:a 1 2 'bdefault
+		      null
+		      (make-inspector) #f
+		      null (lambda (a b c n) 
+			     (set! got (cons (list a b c n) got))
+			     (case mode
+			       [(normal) (values 10 20 30)]
+			       [(reject) ((let/ec k k))]))))
+  (let ([a1 (make-a 'x 'y)])
+    (test 1 a-ref a1 0)
+    (test 2 a-ref a1 1)
+    (test 'adefault a-ref a1 2)
+    (test '((x y a)) values got))
+  (let ([b1 (make-b 'x 'y 'z)])
+    (test 1 a-ref b1 0)
+    (test 2 a-ref b1 1)
+    (test 'adefault a-ref b1 2)
+    (test 30 b-ref b1 0)
+    (test 'bdefault b-ref b1 1)
+    (test '((10 20 b) (x y z b) (x y a)) values got))
+  (set! mode 'reject)
+  (err/rt-test (make-a 'x 'y) exn:fail:contract:divide-by-zero?)
+  (err/rt-test (make-b 'x 'y 'z) exn:fail:contract:continuation?)
+  (set! mode 'bad)
+  (err/rt-test (make-a 'x 'y) exn:application:arity?)
+  (err/rt-test (make-b 'x 'y 'z) exn:application:arity?))
+(err/rt-test (make-struct-type 'a #f 2 1 'adefault null (make-inspector) #f null 
+			       ;; Not a proc:
+			       10))
+(err/rt-test (make-struct-type 'a #f 2 1 'adefault null (make-inspector) #f null 
+			       ;; Wrong arg count:
+			       (lambda (x y) (void)))
+	     exn:application:mismatch?)
+(err/rt-test (make-struct-type 'a #f 2 0 'adefault null (make-inspector) #f null 
+			       ;; Wrong arg count, again:
+			       (lambda (x y) (void)))
+	     exn:application:mismatch?)
+
+
 (define-struct a (b c))
 (define-struct aa ())
 (define ai (make-a 1 2))
@@ -565,6 +619,32 @@
   (test 1 a-x (make-a 1 2))
   (test 10 a-x (make-b 10 20 30))
   (test 100 a-x (make-c 100 200 300 400)))
+
+;; ------------------------------------------------------------
+;; Misc. built-in structures
+
+(test #f srcloc? 10)
+(test #t srcloc? (make-srcloc 'ok 1 2 3 4))
+(test 'ok srcloc-source (make-srcloc 'ok 1 2 3 4))
+(test 1 srcloc-line (make-srcloc 'ok 1 2 3 4))
+(test #f srcloc-line (make-srcloc 'ok #f 2 3 4))
+(test 2 srcloc-column (make-srcloc 'ok 1 2 3 4))
+(test 0 srcloc-column (make-srcloc 'ok 1 0 3 4))
+(test #f srcloc-column (make-srcloc 'ok 1 #f 3 4))
+(test 3 srcloc-position (make-srcloc 'ok 1 2 3 4))
+(test #f srcloc-position (make-srcloc 'ok 1 2 #f 4))
+(test 4 srcloc-span (make-srcloc 'ok 1 2 3 4))
+(test 0 srcloc-span (make-srcloc 'ok 1 2 3 0))
+(test #f srcloc-span (make-srcloc 'ok 1 2 3 #f))
+
+(err/rt-test (make-srcloc 'ok 'no 2 3 4))
+(err/rt-test (make-srcloc 'ok 0 2 3 4))
+(err/rt-test (make-srcloc 'ok 1 'no 3 4))
+(err/rt-test (make-srcloc 'ok 1 -1 3 4))
+(err/rt-test (make-srcloc 'ok 1 2 'no 4))
+(err/rt-test (make-srcloc 'ok 1 2 0 4))
+(err/rt-test (make-srcloc 'ok 1 2 3 'no))
+(err/rt-test (make-srcloc 'ok 1 2 3 -1))
 
 
 (report-errs)

@@ -457,7 +457,8 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   Scheme_Object *parent,
 						   int num_fields,
 						   Scheme_Object *props,
-						   Scheme_Object *guard);
+						   Scheme_Object *guard,
+						   int immutable);
 
 Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown_val, Scheme_Object *insp);
 

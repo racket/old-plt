@@ -68,8 +68,6 @@ static long prepared_buf_len;
 
 static Scheme_Object *kernel_symbol;
 
-static Scheme_Object *syntax_sl; /* back-door argument to scheme_wrong_syntax */
-
 typedef struct {
   int args;
   Scheme_Object *type;
@@ -512,8 +510,6 @@ void scheme_init_error(Scheme_Env *env)
 
   REGISTER_SO(kernel_symbol);
   kernel_symbol = scheme_intern_symbol("#%kernel");
-
-  REGISTER_SO(syntax_sl);
 
   scheme_init_error_config();
 }
@@ -1260,11 +1256,6 @@ void scheme_wrong_syntax(const char *where,
     mod = scheme_intern_symbol("mzscheme");
     if (where == scheme_begin_stx_string)
       where = "begin (possibly implicit)";
-  } else if (syntax_sl) {
-    who = SCHEME_CAR(syntax_sl);
-    nomwho = SCHEME_CADR(syntax_sl);
-    mod = SCHEME_CADR(SCHEME_CDR(syntax_sl));
-    syntax_sl = NULL;
   }
 
   if (!detail) {
@@ -1393,6 +1384,11 @@ void scheme_wrong_syntax(const char *where,
     blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
 
   /* We don't actually use nomwho and mod, anymore. */
+
+  if (SCHEME_FALSEP(form))
+    form = scheme_null;
+  else
+    form = scheme_make_immutable_pair(form, scheme_null);
 
   scheme_raise_exn(MZEXN_FAIL_SYNTAX, 
 		   form,
@@ -1682,27 +1678,10 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
 {
   const char *who;
-  Scheme_Object *sl = NULL, *str;
+  Scheme_Object *str;
 
-  if (scheme_proper_list_length(argv[0]) == 3) {
-    if (SCHEME_SYMBOLP(SCHEME_CAR(argv[0]))) {
-      sl = SCHEME_CDR(argv[0]);
-      if (SCHEME_SYMBOLP(SCHEME_CAR(argv[0]))
-	  || SCHEME_FALSEP(SCHEME_CAR(argv[0]))) {
-	sl = SCHEME_CADR(sl);
-	if (!SCHEME_SYMBOLP(sl)
-	    && !SCHEME_FALSEP(sl)
-	    && !SAME_TYPE(SCHEME_TYPE(sl), scheme_module_index_type))
-	  sl = NULL;
-	else
-	  sl = argv[0];
-      } else
-	sl = NULL;
-    }
-  }
-
-  if (!sl && !SCHEME_FALSEP(argv[0]) && !SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("raise-syntax-error", "symbol, module source list, or #f", 0, argc, argv);
+  if (!SCHEME_FALSEP(argv[0]) && !SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("raise-syntax-error", "symbol or #f", 0, argc, argv);
   if (!SCHEME_CHAR_STRINGP(argv[1]))
     scheme_wrong_type("raise-syntax-error", "string", 1, argc, argv);
 
@@ -1710,8 +1689,6 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
     who = scheme_symbol_val(argv[0]);
   else
     who = NULL;
-
-  syntax_sl = sl; /* back-door argument to scheme_wrong_syntax */
 
   str = argv[1];
   if (SCHEME_MUTABLEP(str)) {
@@ -2218,8 +2195,17 @@ static Scheme_Object *variable_field_check(int argc, Scheme_Object **argv)
 
 static Scheme_Object *syntax_field_check(int argc, Scheme_Object **argv)
 {
-  if (!SCHEME_STXP(argv[2]))
-    scheme_wrong_field_type(argv[3], "syntax object", argv[2]);
+  Scheme_Object *l;
+
+  l = argv[2];
+  while (SCHEME_IMMUTABLE_PAIRP(l)) {
+    if (!SCHEME_STXP(SCHEME_CAR(l)))
+      break;
+    l = SCHEME_CDR(l);
+  }
+
+  if (!SCHEME_NULLP(l))
+    scheme_wrong_field_type(argv[3], "immutable list of syntax objects", argv[2]);
 
   return scheme_values(3, argv);
 }
@@ -2252,16 +2238,25 @@ static Scheme_Object *break_field_check(int argc, Scheme_Object **argv)
 static Scheme_Object *extract_syntax_locations(int argc, Scheme_Object **argv)
 {
   if (scheme_is_struct_instance(exn_table[MZEXN_FAIL_SYNTAX].type, argv[0])) {
-    Scheme_Object *stx;
+    Scheme_Object *stxs, *stx, *first = scheme_null, *last = NULL, *loco, *p;
     Scheme_Stx_Srcloc *loc;
-    stx = scheme_struct_ref(argv[0], 2);
-    loc = ((Scheme_Stx *)stx)->srcloc;
-    return scheme_make_pair(scheme_make_location(loc->src ? loc->src : scheme_false,
-						 (loc->line >= 0) ? scheme_make_integer(loc->line) : scheme_false,
-						 (loc->col >= 0) ? scheme_make_integer(loc->col) : scheme_false,
-						 (loc->pos >= 0) ? scheme_make_integer(loc->pos) : scheme_false,
-						 (loc->span >= 0) ? scheme_make_integer(loc->span) : scheme_false),
-			    scheme_null);
+    stxs = scheme_struct_ref(argv[0], 2);
+    while (SCHEME_PAIRP(stxs)) {
+      stx = SCHEME_CAR(stxs);
+      loc = ((Scheme_Stx *)stx)->srcloc;
+      loco = scheme_make_location(loc->src ? loc->src : scheme_false,
+				  (loc->line >= 0) ? scheme_make_integer(loc->line) : scheme_false,
+				  (loc->col >= 0) ? scheme_make_integer(loc->col) : scheme_false,
+				  (loc->pos >= 0) ? scheme_make_integer(loc->pos) : scheme_false,
+				  (loc->span >= 0) ? scheme_make_integer(loc->span) : scheme_false);
+      p = scheme_make_pair(loco, scheme_null);
+      if (last)
+	SCHEME_CDR(last) = p;
+      else
+	first = p;
+      last = p;
+    }
+    return first;
   }
   scheme_wrong_type("exn:fail:syntax-locations-accessor", "exn:fail:syntax", 0, argc, argv);
   return NULL;
@@ -2304,7 +2299,7 @@ void scheme_init_exn(Scheme_Env *env)
 #define EXN_FLAGS SCHEME_STRUCT_EXPTIME | SCHEME_STRUCT_NO_SET
 
 #define SETUP_STRUCT(id, parent, name, argc, args, props, guard) \
-    { tmpo = scheme_make_struct_type_from_string(name, parent, argc, props, guard); \
+    { tmpo = scheme_make_struct_type_from_string(name, parent, argc, props, guard, 1); \
       exn_table[id].type = tmpo; \
       tmpop = scheme_make_struct_names_from_array(name, argc, args, EXN_FLAGS, &exn_table[id].count); \
       exn_table[id].names = tmpop; }

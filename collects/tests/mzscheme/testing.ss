@@ -99,9 +99,9 @@ transcript.
   (list (cons exn? (cons exn-message string?))
 	(cons exn? (cons exn-continuation-marks continuation-mark-set?))
 	(cons exn:fail:contract:variable? (cons exn:fail:contract:variable-id symbol?))
-	(cons exn:fail:syntax? (cons exn:fail:syntax-expr (lambda (x) (or (eq? x #f) (syntax? x)))))
+	(cons exn:fail:syntax? (cons exn:fail:syntax-exprs (lambda (x) (and (list? x) (andmap syntax? x)))))
 	
-	(cons exn:fail:read? (cons exn:fail:read-srclocs (lambda (x) (if x (andmap srcloc? x) #t))))))
+	(cons exn:fail:read? (cons exn:fail:read-srclocs (lambda (x) (and (list? x) (andmap srcloc? x)))))))
 
 (define exn:application:mismatch? exn:fail:contract?)
 (define exn:application:type? exn:fail:contract?)

@@ -775,14 +775,6 @@
 "(if(eq? e de)"
 "(list e)"
 "(list e de)))"
-"(-define(who->name id)"
-"(let((b(identifier-binding id)))"
-"(if(pair? b)"
-"(list(syntax-e id)"
-"(caddr b)"
-"(cadddr b))"
-"(syntax-e id))))"
-"(-define syntax-stxsrc '(syntax syntax mzscheme))"
 "(-define(make-match&env/extract-vars who top p k just-vars? phase-param?)"
 "(-define(m&e p local-top use-ellipses? last? id-is-rest?)"
 "(cond"
@@ -825,7 +817,7 @@
 "(begin"
 "(when(...?(stx-car rest))"
 "(raise-syntax-error "
-"(who->name who)"
+"(syntax-e who)"
 " \"misplaced ellipses in pattern (follows other ellipses)\""
 " top"
 "(stx-car rest)))"
@@ -864,7 +856,7 @@
 "(let((dp(stx-car(stx-cdr p))))"
 "(m&e dp dp #f last? #f))"
 "(raise-syntax-error "
-"(who->name who)"
+"(syntax-e who)"
 " \"misplaced ellipses in pattern\""
 " top"
 " hd))"
@@ -909,7 +901,7 @@
 "(if(and use-ellipses?"
 "(...? p))"
 "(raise-syntax-error "
-"(who->name who)"
+"(syntax-e who)"
 " \"misplaced ellipses in pattern\""
 " top"
 " p)"
@@ -975,7 +967,7 @@
 "(let((l(hash-table-get ht(syntax-e r)(lambda() null))))"
 "(when(ormap(lambda(i)(bound-identifier=? i r)) l)"
 "(raise-syntax-error "
-"(who->name who)"
+"(syntax-e who)"
 " \"variable used twice in pattern\""
 " top"
 " r))"
@@ -1052,7 +1044,7 @@
 "(when(null? nestings)"
 "(apply"
 " raise-syntax-error "
-" syntax-stxsrc"
+" 'syntax"
 " \"no pattern variables before ellipses in template\""
 "(pick-specificity"
 " top"
@@ -1079,7 +1071,7 @@
 "(when(null? proto-rr-deep)"
 "(apply"
 " raise-syntax-error "
-" syntax-stxsrc"
+" 'syntax"
 " \"too many ellipses in template\""
 "(pick-specificity"
 " top"
@@ -1141,7 +1133,7 @@
 "(let((dp(stx-car(stx-cdr p))))"
 "(expander dp proto-r dp #f use-tail-pos hash!))"
 "(raise-syntax-error "
-" syntax-stxsrc"
+" 'syntax"
 " \"misplaced ellipses in template\""
 " top"
 " hd))"
@@ -1170,7 +1162,7 @@
 "(when(and use-ellipses?"
 "(...? p))"
 "(raise-syntax-error "
-" syntax-stxsrc"
+" 'syntax"
 " \"misplaced ellipses in template\""
 " top"
 " p))"
@@ -1325,7 +1317,7 @@
 "(unless v"
 "(apply"
 " raise-syntax-error "
-" syntax-stxsrc"
+" 'syntax"
 " \"too few ellipses for pattern variable in template\""
 "(pick-specificity"
 " src"
@@ -1349,7 +1341,7 @@
 "((syntax? l)"
 "(when(bound-identifier=? l ssym)"
 "(raise-syntax-error "
-" syntax-stxsrc"
+" 'syntax"
 " \"missing ellipses with pattern variable in template\""
 " ssym)))"
 "(else(loop(car l)))))))"
@@ -2498,7 +2490,7 @@
 "(cons-path(lambda(default s l) "
 " (if (bytes=? s #\"\")"
 "(append default l)"
-"(cons(bytes->path s) l))))))"
+"(cons(bytes->path s) l)))))"
 "(lambda(s default)"
 "(unless(or(bytes? s)"
 "(string? s))"
@@ -2513,8 +2505,6 @@
 "(if m"
 "(cons-path default(cadr m)(loop(caddr m)))"
 "(cons-path default s null)))))))"
-);
-  EVAL_ONE_STR(
 "(define find-executable-path"
 "(lambda(program libpath)"
 "(unless(path-string? program) "
@@ -2558,8 +2548,6 @@
 "(loop(cdr paths)))))))"
 "(let((p(path->complete-path program)))"
 "(and(file-exists? p)(found-exec p)))))))"
-);
-  EVAL_ONE_STR(
 "(define-syntax memory-trace-lambda"
 "(lambda(x)"
 "(syntax-case x()"
@@ -2577,23 +2565,17 @@
 " body ...)))))"
 "(set! contmark(new-memtrace-tracking-function func))"
 " func))))))))"
-);
-  EVAL_ONE_STR(
 "(define(-check-relpath who s)"
 "(unless(path-string? s)"
 " (raise-type-error who \"path or valid-path string\" s))"
 "(unless(relative-path? s)"
-"(raise(make-exn:contract"
+"(raise(make-exn:fail:contract"
 "(string->immutable-string"
 " (format \"~a: invalid relative path: ~s\" who s))"
 "(current-continuation-marks)))))"
-);
-  EVAL_ONE_STR(
 "(define(-check-collection who collection collection-path)"
 "(-check-relpath who collection) "
 "(for-each(lambda(p)(-check-relpath who p)) collection-path))"
-);
-  EVAL_ONE_STR(
 "(define(-find-col who collection collection-path)"
 "(let((all-paths(current-library-collection-paths)))"
 "(let cloop((paths all-paths))"
@@ -2614,8 +2596,6 @@
 " cpath"
 "(cloop(cdr paths))))"
 "(cloop(cdr paths))))))))"
-);
-  EVAL_ONE_STR(
 "(define current-load/use-compiled"
 "(make-parameter"
 "(let((default-load/use-compiled"
@@ -2701,31 +2681,15 @@
 " \"procedure (arity 2)\""
 " p))"
 " p)))"
-);
-  EVAL_ONE_STR(
 "(define(collection-path collection . collection-path) "
 "(-check-collection 'collection-path collection collection-path)"
 "(-find-col 'collection-path collection collection-path))"
-);
-  EVAL_ONE_STR(
 "(define(load/use-compiled f)((current-load/use-compiled) f #f))"
-);
-  EVAL_ONE_STR(
 " (define -re:dir (byte-regexp #\"(.+?)/+(.*)\"))"
-);
-  EVAL_ONE_STR(
 " (define -re:auto (byte-regexp #\"^,\"))"
-);
-  EVAL_ONE_STR(
 " (define -re:ok-relpath (byte-regexp #\"^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$\"))"
-);
-  EVAL_ONE_STR(
 "(define -module-hash-table-table(make-hash-table 'weak)) "
-);
-  EVAL_ONE_STR(
 "(define -loading-filename(gensym))"
-);
-  EVAL_ONE_STR(
 "(define(make-standard-module-name-resolver orig-namespace)"
 "(define planet-resolver #f)"
 "(define standard-module-name-resolver"
@@ -2799,7 +2763,7 @@
 "(unless(path? filename)"
 "(if stx"
 "(raise-syntax-error"
-" '(require require mzscheme)"
+" 'require"
 " (format \"bad module path~a\" (if filename"
 "(car filename)"
 " \"\"))"
@@ -2874,8 +2838,6 @@
 " ht)))))"
 "(hash-table-put! ht relto 'attach))))))"
 " standard-module-name-resolver)"
-);
-  EVAL_ONE_STR(
 "(define(find-library-collection-paths)"
 "(path-list-string->path-list"
 " (or (getenv \"PLTCOLLECTS\") \"\")"
@@ -2893,55 +2855,35 @@
 " (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up \"collects\")))"
 " (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up \"collects\")))))"
 " null))))"
-);
-  EVAL_ONE_STR(
 "(define(port? x)(or(input-port? x)(output-port? x)))"
-);
-  EVAL_ONE_STR(
 "(define-values(struct:guard make-guard guard? guard-ref guard-set!)"
 "(make-struct-type 'waitable #f 1 0 #f(list(cons prop:waitable 0))(current-inspector) #f '(0)))"
-);
-  EVAL_ONE_STR(
 "(define(make-guard-waitable proc)"
 "(unless(and(procedure? proc)"
 "(procedure-arity-includes? proc 0))"
 " (raise-type-error 'make-guard-waitable \"procedure (arity 0)\" proc))"
 "(make-guard(lambda(self)(proc))))"
-);
-  EVAL_ONE_STR(
 "(define(channel-get ch)"
 "(unless(channel? ch)"
 " (raise-type-error 'channel-get \"channel\" ch))"
 "(object-wait-multiple #f ch))"
-);
-  EVAL_ONE_STR(
 "(define(channel-try-get ch)"
 "(unless(channel? ch)"
 " (raise-type-error 'channel-try-get \"channel\" ch))"
 "(object-wait-multiple 0 ch))"
-);
-  EVAL_ONE_STR(
 "(define(channel-put ch val)"
 "(unless(channel? ch)"
 " (raise-type-error 'channel-put \"channel\" ch))"
 "(and(object-wait-multiple #f(make-channel-put-waitable ch val))(void)))"
-);
-  EVAL_ONE_STR(
 "(define interaction-environment(lambda()(current-namespace)))"
-);
-  EVAL_ONE_STR(
 "(define(scheme-report-environment n)"
 "(unless(= n 5)"
 " (raise-type-error 'scheme-report-environment \"5\" n))"
 "(mk-r5rs #f))"
-);
-  EVAL_ONE_STR(
 "(define(null-environment n)"
 "(unless(= n 5)"
 " (raise-type-error 'null-environment \"5\" n))"
 "(mk-r5rs #t))"
-);
-  EVAL_ONE_STR(
 "(define(mk-r5rs stx-only?)"
 "(let((n(make-namespace 'empty))"
 "(orig(make-namespace)))"
@@ -2990,8 +2932,6 @@
 " call-with-values values eval port? scheme-report-environment null-environment "
 " interaction-environment dynamic-wind))))"
 " n))"
-);
-  EVAL_ONE_STR(
 "(provide rationalize "
 " path-string? path-replace-suffix normal-case-path"
 " read-eval-print-loop"
@@ -3004,18 +2944,12 @@
 " find-library-collection-paths"
 " interaction-environment scheme-report-environment null-environment"
 " make-standard-module-name-resolver))"
+);
+  EVAL_ONE_STR(
 "(module #%stxmz-body #%kernel"
-);
-  EVAL_ONE_STR(
 "(require #%stxcase-scheme #%define)"
-);
-  EVAL_ONE_STR(
 "(require-for-syntax #%kernel #%stx)"
-);
-  EVAL_ONE_STR(
 "(require(rename #%kernel #%plain-module-begin #%module-begin))"
-);
-  EVAL_ONE_STR(
 "(define-syntax mzscheme-in-stx-module-begin"
 "(lambda(stx)"
 "(if(stx-pair? stx)"
@@ -3028,33 +2962,17 @@
 "(stx-cdr stx))"
 " stx)"
 " (raise-syntax-error #f \"bad syntax\" stx))))"
-);
-  EVAL_ONE_STR(
 "(provide mzscheme-in-stx-module-begin))"
+);
+  EVAL_ONE_STR(
 "(module mzscheme #%kernel"
-);
-  EVAL_ONE_STR(
 "(require #%more-scheme)"
-);
-  EVAL_ONE_STR(
 "(require #%misc)"
-);
-  EVAL_ONE_STR(
 "(require #%stxcase-scheme)"
-);
-  EVAL_ONE_STR(
 "(require #%stx)"
-);
-  EVAL_ONE_STR(
 "(require #%stxmz-body)"
-);
-  EVAL_ONE_STR(
 "(require #%qqstx)"
-);
-  EVAL_ONE_STR(
 "(require #%define)"
-);
-  EVAL_ONE_STR(
 "(provide(all-from #%more-scheme)"
 "(all-from-except #%misc make-standard-module-name-resolver)"
 "(all-from-except #%stxcase-scheme -define -define-syntax)"
@@ -3064,24 +2982,24 @@
 "(all-from-except #%kernel #%module-begin)"
 "(rename mzscheme-in-stx-module-begin #%module-begin)"
 "(rename #%module-begin #%plain-module-begin)))"
-"(module #%r5rs mzscheme"
 );
   EVAL_ONE_STR(
+"(module #%r5rs mzscheme"
 "(provide quasiquote unquote unquote-splicing "
 " if let and or cond case define delay do"
 " letrec let* begin lambda quote set!"
 " define-syntax let-syntax letrec-syntax"
 " #%app #%datum #%top))"
+);
+  EVAL_ONE_STR(
 "(require(rename mzscheme namespace-require/copy namespace-require/copy))"
+);
+  EVAL_ONE_STR(
 "(begin"
-);
-  EVAL_ONE_STR(
 "(namespace-require/copy 'mzscheme)"
-);
-  EVAL_ONE_STR(
 "(require-for-syntax mzscheme))"
-"(current-module-name-resolver "
 );
   EVAL_ONE_STR(
+"(current-module-name-resolver "
 "((dynamic-require '#%misc 'make-standard-module-name-resolver)(current-namespace)))"
 );

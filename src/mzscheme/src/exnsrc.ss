@@ -23,11 +23,11 @@ propeties (the latter in curly braces), strings are contracts/comments.
 				(id "symbol" "the variable's identifier")]
 			       "unbound/not-yet-defined global or module variable"))
 	   (syntax [syntax_field_check
-		    (expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)")
+		    (exprs "immutable list of syntax objects" "illegal expression(s)")
 		    {exn:source scheme_source_property |scheme_make_prim(extract_syntax_locations)|}]
 		   "syntax error, but not a \\scmfirst{read} error")
 	   (read [read_field_check
-		  (srclocs "list of \\rawscm{srclocs}s" "source location(s) of error")
+		  (srclocs "immutable list of \\scmk{srcloc}s (see \\SecRef{linecol})" "source location(s) of error")
 		  {exn:source scheme_source_property  |scheme_make_prim(extract_read_locations)|}]
 		 "\\rawscm{read} parsing error"
 		 (eof [] "unexpected end-of-file")

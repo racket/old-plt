@@ -503,8 +503,10 @@
   (define (check-var-init init check-e dec-type name type-recs)
     (if (array-init? init)
         (if (array-type? dec-type)
-            (check-array-init (array-init-vals init) check-e 
-                              (array-type-type dec-type) name type-recs)
+            (begin
+              (send type-recs add-req (make-req 'array null))
+              (check-array-init (array-init-vals init) check-e 
+                                (array-type-type dec-type) name type-recs))
             (var-init-error name dec-type (array-init-src init)))
         (check-e init)))
   

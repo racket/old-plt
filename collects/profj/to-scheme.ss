@@ -996,17 +996,17 @@
         ;Note This has the wrong type for recursive cases! must fix PROBLEM! Still PROBLEM!
         ((array-init? (car inits))
          (make-syntax #f
-                        `(make-java-array ,(translate-type-spec type)
-                                          0
-                                          ,(map (lambda (a) (initialize-array (array-init-vals a) type))
-                                                inits))
-                        (build-src (array-init-src (car inits)))))
+                      `(make-java-array ,(translate-type-spec type)
+                                        0
+                                        (reverse (list ,@(map (lambda (a) (initialize-array (array-init-vals a) type))
+                                                              inits))))
+                      (build-src (array-init-src (car inits)))))
         (else
          (make-syntax #f
-                               `(make-java-array ,(translate-type-spec type)
-                                                 0
-                                                 ,(map translate-expression inits))
-                        (build-src (if (name? (car inits)) (name-src (car inits)) (expr-src (car inits)))))))))
+                      `(make-java-array ,(translate-type-spec type)
+                                        0
+                                        (reverse (list ,@(map translate-expression inits))))
+                      (build-src (if (name? (car inits)) (name-src (car inits)) (expr-src (car inits)))))))))
   
   ;Converted
   ;translate-try: syntax (list catch) (U syntax boolean) src src type-records-> syntax
@@ -1258,7 +1258,6 @@
   
   ;Converted
   ;translate-bin-op: symbol syntax type syntax type src src type-> syntax
-  ; Note, need to see if mathematical operations with char are present, so char can be converted to a number
   (define translate-bin-op
     (lambda (op left left-type right right-type key src type)
       (let ((source (build-src src))
@@ -1274,11 +1273,11 @@
           ;PROBLEM! + and - do not take into account the possibility of overflow
           ((+)
            (cond 
-             ((and (is-string? type) (is-string? left-type))
+             ((and (is-string-type? type) (is-string-type? left-type))
               (make-syntax #f `(send ,left |concat_java.lang.String| (javaRuntime:convert-to-string ,right)) source))
-             ((and (is-string? type) (is-string? right-type))
+             ((and (is-string-type? type) (is-string-type? right-type))
               (make-syntax #f `(send (javaRuntime:convert-to-string ,left) |concat_java.lang.String| ,right) source))
-             ((is-string? type)
+             ((is-string-type? type)
               (make-syntax #f `(send (javaRuntime:convert-to-string ,left) |concat_java.lang.String| (javaRuntime:convert-to-string ,right)) source))
              (else
               (create-syntax #f `(,op-syntax ,left ,right) source))))

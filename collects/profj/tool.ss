@@ -7,6 +7,9 @@
            (lib "file.ss")
            (lib "list.ss")
 	   (lib "string-constant.ss" "string-constants")
+           (lib "Object.ss" "profj" "libs" "java" "lang")
+           (lib "array.ss" "profj" "libs" "java" "lang")
+           (lib "String.ss" "profj" "libs" "java" "lang")
            "compile.ss"
            "parameters.ss")
 
@@ -19,21 +22,17 @@
       (define (phase1) (void))
       (define (phase2) 
         (drscheme:language-configuration:add-language
-         (make-object (override-render-value-set
-                       ((drscheme:language:get-default-mixin) 
-                        full-lang%))))
+         (make-object ((drscheme:language:get-default-mixin) 
+                       full-lang%)))
         (drscheme:language-configuration:add-language
-         (make-object (override-render-value-set
-                       ((drscheme:language:get-default-mixin) 
-                        advanced-lang%))))
+         (make-object ((drscheme:language:get-default-mixin) 
+                       advanced-lang%)))
         (drscheme:language-configuration:add-language
-         (make-object (override-render-value-set
-                       ((drscheme:language:get-default-mixin) 
-                        intermediate-lang%))))
+         (make-object ((drscheme:language:get-default-mixin) 
+                       intermediate-lang%)))
         (drscheme:language-configuration:add-language
-         (make-object (override-render-value-set
-                       ((drscheme:language:get-default-mixin) 
-                        beginner-lang%)))))
+         (make-object ((drscheme:language:get-default-mixin) 
+                       beginner-lang%))))
       
       (define (override-render-value-set %)
         (class %
@@ -68,10 +67,8 @@
                      (pair? (caddr s)))
                 (make-profj-settings (caar s) (caadr s) (caddr s))
                 #f))
-          
-          (define/public (config-panel parent) (profj-config-panel parent))
 
-          (define (profj-config-panel _parent)
+          (define/public (config-panel _parent)
             (letrec ([parent (instantiate vertical-panel% ()
                                (parent _parent)
                                (alignment '(center center))
@@ -338,20 +335,69 @@
           (define/public (get-teachpack-names) null)
 
           (define/public (on-execute settings run-in-user-thread)
-            (run-in-user-thread
-             (lambda ()
-               (error-display-handler 
-                (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
-               (current-eval 
-                (drscheme:debug:make-debug-eval-handler (current-eval)))
-               (with-handlers ([void (lambda (x)  (printf "~a~n" (exn-message x)))])
-                 (namespace-require 'mzscheme)
-                 (namespace-require '(lib "class.ss"))
-                 (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))))))
+            (dynamic-require '(lib "Object.ss" "profj" "libs" "java" "lang") #f)
+            (let ([path ((current-module-name-resolver) '(lib "Object.ss" "profj" "libs" "java" "lang") #f #f)]
+                  [n (current-namespace)])
+              (run-in-user-thread
+               (lambda ()
+                 (error-display-handler 
+                  (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
+                 (current-eval 
+                  (drscheme:debug:make-debug-eval-handler (current-eval)))
+                 (with-handlers ([void (lambda (x)  (printf "~a~n" (exn-message x)))])
+                   (namespace-attach-module n path)
+                   (namespace-require 'mzscheme)
+                   (namespace-require '(lib "class.ss"))
+                   (namespace-require path)
+                   (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
-          (define/public (render-value value settings port port-write) (write value port))
-          (define/public (render-value/format value settings port port-write width) (write value port))
-	  (define/public (create-executable fn parent . args)
+          (define/public (render-value value settings port port-write)
+            (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings)) port))
+            ;(write value port))
+          (define/public (render-value/format value settings port port-write width) 
+            (render-value value settings port port-write)(newline port))
+            ;(write value port))
+
+	  ;format-java: java-value bool symbol -> string
+          (define (format-java value full-print? style)
+            (cond
+              ((null? value) "null")
+              ((number? value) (format "~a" value))
+              ((char? value) (format "'~a'" value))
+              ((boolean? value) (if value "true" "false"))
+              ((is-java-array? value) 
+               (if full-print?
+                   (array->string value (send value length) -1 #t style)
+                   (array->string value 3 (- (send value length) 3) #f style)))
+              ((is-a? value String) (send value get-mzscheme-string))
+              ((is-a? value ObjectI)
+               (case style
+                 ((type) (send value my-name))
+                 (else (send value my-name))))
+              (else (format "~a" value))))
+
+          ;array->string: java-value int int bool symbol -> string
+          (define (array->string value stop restart full-print? style)
+            (letrec ((len (send value length))
+                     (make-partial-string
+                      (lambda (idx first-test second-test)
+                        (cond
+                          ((first-test idx) "")
+                          ((second-test idx)
+                           (string-append (format-java (send value access idx) full-print? style)
+                                          (make-partial-string (add1 idx) first-test second-test)))
+                          (else
+                           (string-append (format-java (send value access idx) full-print? style)
+                                          " "
+                                          (make-partial-string (add1 idx) first-test second-test)))))))
+              (if (or full-print? (< restart stop))
+                  (format "[~a]" (make-partial-string 0 (lambda (i) (>= i len)) (lambda (i) (= i (sub1 len)))))
+                  (format "[~a~a~a]"                      
+                          (make-partial-string 0 (lambda (i) (or (>= i stop) (>= i len))) (lambda (i) (= i (sub1 stop))))
+                          " ... "
+                          (make-partial-string restart (lambda (i) (>= i len)) (lambda (i) (= i (sub1 len))))))))
+          
+          (define/public (create-executable fn parent . args)
 	    (message-box "Unsupported"
 			 "Sorry - executables are not supported for Java"
 			 parent))

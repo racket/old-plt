@@ -40,7 +40,7 @@
   
   (define ObjectI
     (interface () Object-constructor clone equals_java.lang.Object finalize getClass
-      hashCode notify notifyAll toString wait wait_long wait_long_int))
+      hashCode notify notifyAll toString wait wait_long wait_long_int my-name))
   
   (define Object-Mix
     (lambda (parent)
@@ -71,7 +71,7 @@
         
         (define/public (my-name) "Object")
         (define/public (toString)
-          (make-java-string (format "~s@~s" (send this my-name) (send this hashCode))))
+          (make-java-string (format "~a@~a" (send this my-name) (send this hashCode))))
         
         (public-final wait wait_long wait_long_int)
         (define wait (lambda () void))
@@ -124,12 +124,12 @@
       (define/public (length) (vector-length array))
       
       (define (array-out-of-bounds i)
-        (create-java-exception ArrayIndexOutOfBoundsException
-                               (format "Array index out of bounds. Range is 0 to ~a, given ~a"
-                                       (sub1 (vector-length array)) i)
-                               (lambda (obj msg)
-                                 (send obj ArrayIndexOutOfBoundsException-constructor_java.lang.String msg))
-                               (current-continuation-marks)))
+        (raise (create-java-exception ArrayIndexOutOfBoundsException
+                                      (format "Array index out of bounds. Range is 0 to ~a, given ~a"
+                                              (sub1 (vector-length array)) i)
+                                      (lambda (obj msg)
+                                        (send obj ArrayIndexOutOfBoundsException-constructor_java.lang.String msg))
+                                      (current-continuation-marks))))
       
       (define/public (access index) 
         (when (or (< index 0) (>= index (length)))

@@ -266,9 +266,9 @@
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       ;; new-mailer : ... -> frame[with send-message method]
-      (define (new-mailer file to cc subject other-headers body enclosures)
-	(define f% (class frame:basic%
-		     (inherit get-menu-bar set-icon get-eventspace)
+      (define (new-mailer file to cc subject other-headers body enclosures message-count)
+        (define f% (class frame:basic%
+                     (inherit get-menu-bar set-icon get-eventspace)
                      [define/public (send-message)
                        (send-msg)]
                      (define/augment (can-close?)
@@ -279,135 +279,135 @@
                                       "Warning"
                                       "The message is not saved or sent. Close anyway?"
                                       this)))
-			    (inner #t can-close?)))
+                            (inner #t can-close?)))
                      (define/augment (on-close)
-		       (send message-editor on-close)
-		       (inner (void) on-close)
+                       (send message-editor on-close)
+                       (inner (void) on-close)
                        (exit-sirmail "mailer close"))
                      (super-instantiate ())
                      (when send-icon
                        (set-icon send-icon send-icon-mask))))
-	(define mailer-frame (make-object f% "Send Mail" #f FRAME-WIDTH FRAME-HEIGHT))
+        (define mailer-frame (make-object f% "Send Mail" #f FRAME-WIDTH FRAME-HEIGHT))
         
-	(define mb (send mailer-frame get-menu-bar))
-	(define file-menu (make-object menu% "File" mb))
-	(define edit-menu (make-object menu% "Edit" mb))
-	(define composer-menu (and (USE-EXTERNAL-COMPOSER?)
-				   (make-object menu% "Composer" mb)))
-	(define button-pane (make-object horizontal-pane% (send mailer-frame get-area-container)))
-	(define title-message (make-object message% "Compose message" button-pane)) 
-	(define button-pane-spacer (make-object vertical-pane%  button-pane))
-	(define cancel-button
-	  (make-object button% "Stop" button-pane
-		       (lambda (b e) (cancel-button-todo))))
-	(define cancel-button-todo void)
-
-	(define external-composer-button
-	  (and (USE-EXTERNAL-COMPOSER?)
-	       (make-object
-		button%
-		"External Composer"
-		button-pane
-		(lambda (button control-event)
-		  (let ([t (make-temporary-file "sirmail~a")])
-
-		    (send message-editor save-file t 'text #t)
-
-		    ; To get rid of the Standard Output window: Set
-		    ; the current output & error ports to something
-		    ; else. Or use `process' instead.  Warning: be sure
-		    ; to test in error circumstances (eg, when the
-		    ; external program can't be found).
-
-		    (system
-		     (case external-composer
-		       [(xemacs)
-			(string-append "gnuclient +5 " t)]
-		       [(gnu-emacs)
-			(string-append "emacsclient +5 " t)]))
-
-		    (send message-editor load-file t 'guess #t)
-
-		    (with-handlers
-			([exn:fail:filesystem?
-			  (lambda (exn)
-			    (message-box "Error Deleting Temporary File"
-					 (string-append
-					  "Attempted to delete the "
-					  "temporary file "
-					  "`" t "'"
-					  "but couldn't find it.")
-					 #f
-					 '(ok)))])
-		      (delete-file t)))))))
-
-	(define c (new editor-canvas% 
-		       [parent (send mailer-frame get-area-container)]
-		       [style '(auto-hscroll)]))
+        (define mb (send mailer-frame get-menu-bar))
+        (define file-menu (make-object menu% "File" mb))
+        (define edit-menu (make-object menu% "Edit" mb))
+        (define composer-menu (and (USE-EXTERNAL-COMPOSER?)
+                                   (make-object menu% "Composer" mb)))
+        (define button-pane (make-object horizontal-pane% (send mailer-frame get-area-container)))
+        (define title-message (make-object message% "Compose message" button-pane)) 
+        (define button-pane-spacer (make-object vertical-pane%  button-pane))
+        (define cancel-button
+          (make-object button% "Stop" button-pane
+            (lambda (b e) (cancel-button-todo))))
+        (define cancel-button-todo void)
+        
+        (define external-composer-button
+          (and (USE-EXTERNAL-COMPOSER?)
+               (make-object
+                   button%
+                 "External Composer"
+                 button-pane
+                 (lambda (button control-event)
+                   (let ([t (make-temporary-file "sirmail~a")])
+                     
+                     (send message-editor save-file t 'text #t)
+                     
+                     ; To get rid of the Standard Output window: Set
+                     ; the current output & error ports to something
+                     ; else. Or use `process' instead.  Warning: be sure
+                     ; to test in error circumstances (eg, when the
+                     ; external program can't be found).
+                     
+                     (system
+                      (case external-composer
+                        [(xemacs)
+                         (string-append "gnuclient +5 " t)]
+                        [(gnu-emacs)
+                         (string-append "emacsclient +5 " t)]))
+                     
+                     (send message-editor load-file t 'guess #t)
+                     
+                     (with-handlers
+                         ([exn:fail:filesystem?
+                           (lambda (exn)
+                             (message-box "Error Deleting Temporary File"
+                                          (string-append
+                                           "Attempted to delete the "
+                                           "temporary file "
+                                           "`" t "'"
+                                           "but couldn't find it.")
+                                          #f
+                                          '(ok)))])
+                       (delete-file t)))))))
+        
+        (define c (new editor-canvas% 
+                       [parent (send mailer-frame get-area-container)]
+                       [style '(auto-hscroll)]))
         (define message-editor-super%
           (color:text-mixin 
            (editor:backup-autosave-mixin
             text:standard-style-list%)))
-	(define message-editor (make-object (class message-editor-super%
-					      (inherit reset-region)
-					      
-					      (define immutable-start 0)
-					      (define immutable-end 0)
-					      
-					      (define/override (set-modified mod?)
-						(send mailer-frame modified mod?)
-						(super set-modified mod?))
-					      (define/public (set-no-change-region start end)
-						(set! immutable-start start)
-						(set! immutable-end end)
-						(reset-region end 'end))
-
-					      (define/augment (can-insert? start len)
-						(and (or (<= (+ start len) immutable-start)
-							 (>= start immutable-end))
-						     (inner #t can-insert? start len)))
-					      (define/augment (on-insert start len)
-						(if (<= start immutable-start)
-						    (begin
-						      (set! immutable-start (+ immutable-start len))
-						      (set! immutable-end (+ immutable-end len))
-						      (reset-region immutable-end 'end)))
-						(inner (void) on-insert start len))
-					      
-					      (define/augment (can-delete? start len)
-						(and (or (<= (+ start len) immutable-start)
-							 (>= start immutable-end))
-						     (inner #t can-delete? start len)))
-					      (define/augment (on-delete start len)
-						(if (<= start immutable-start)
-						    (begin
-						      (set! immutable-start (- immutable-start len))
-						      (set! immutable-end (- immutable-end len))
-						      (reset-region immutable-end 'end)))
-						(inner (void) on-delete start len))
-					      
-					      (super-new))))
-	(define enclosure-list (make-object hierarchical-list% (send mailer-frame get-area-container)))
-	
-	(define plain-cursor (make-object cursor% 'arrow))
-	(define arrow+watch-cursor (make-object cursor% 'arrow+watch))
-
-	(define (enable on? refocus cancel-proc)
-	  (let ([w (send mailer-frame get-focus-window)])
-	    (set! cancel-button-todo cancel-proc)
-	    (send mb enable on?)
-	    (send c enable on?)
-	    (send cancel-button enable (not on?))
-	    (let* ([cursor (if on? plain-cursor arrow+watch-cursor)])
-	      (send mailer-frame set-cursor cursor)
-	      (send (send c get-editor) set-cursor (if on? #f cursor) #t))
-	    (when (and on? refocus)
-	      (send refocus focus))
-	    w))
-
-	(define (send-msg)
-	  (define-values (smtp-server-to-use smtp-port-to-use)
-	    (parse-server-name (SMTP-SERVER) 25))
+        (define message-editor (make-object (class message-editor-super%
+                                              (inherit reset-region)
+                                              
+                                              (define immutable-start 0)
+                                              (define immutable-end 0)
+                                              
+                                              (define/override (set-modified mod?)
+                                                (send mailer-frame modified mod?)
+                                                (super set-modified mod?))
+                                              (define/public (set-no-change-region start end)
+                                                (set! immutable-start start)
+                                                (set! immutable-end end)
+                                                (reset-region end 'end))
+                                              
+                                              (define/augment (can-insert? start len)
+                                                (and (or (<= (+ start len) immutable-start)
+                                                         (>= start immutable-end))
+                                                     (inner #t can-insert? start len)))
+                                              (define/augment (on-insert start len)
+                                                (if (<= start immutable-start)
+                                                    (begin
+                                                      (set! immutable-start (+ immutable-start len))
+                                                      (set! immutable-end (+ immutable-end len))
+                                                      (reset-region immutable-end 'end)))
+                                                (inner (void) on-insert start len))
+                                              
+                                              (define/augment (can-delete? start len)
+                                                (and (or (<= (+ start len) immutable-start)
+                                                         (>= start immutable-end))
+                                                     (inner #t can-delete? start len)))
+                                              (define/augment (on-delete start len)
+                                                (if (<= start immutable-start)
+                                                    (begin
+                                                      (set! immutable-start (- immutable-start len))
+                                                      (set! immutable-end (- immutable-end len))
+                                                      (reset-region immutable-end 'end)))
+                                                (inner (void) on-delete start len))
+                                              
+                                              (super-new))))
+        (define enclosure-list (make-object hierarchical-list% (send mailer-frame get-area-container)))
+        
+        (define plain-cursor (make-object cursor% 'arrow))
+        (define arrow+watch-cursor (make-object cursor% 'arrow+watch))
+        
+        (define (enable on? refocus cancel-proc)
+          (let ([w (send mailer-frame get-focus-window)])
+            (set! cancel-button-todo cancel-proc)
+            (send mb enable on?)
+            (send c enable on?)
+            (send cancel-button enable (not on?))
+            (let* ([cursor (if on? plain-cursor arrow+watch-cursor)])
+              (send mailer-frame set-cursor cursor)
+              (send (send c get-editor) set-cursor (if on? #f cursor) #t))
+            (when (and on? refocus)
+              (send refocus focus))
+            w))
+        
+        (define (send-msg)
+          (define-values (smtp-server-to-use smtp-port-to-use)
+            (parse-server-name (SMTP-SERVER) 25))
           (send-message
            (send message-editor get-text)
            smtp-server-to-use
@@ -428,11 +428,12 @@
                  (let ([f (put-file)])
                    (if f
                        (send message-editor save-file f 'text)
-                       (loop))))))))
-
+                       (loop))))))
+           message-count))
+        
         ;; enq-msg : -> void
         ;; enqueues a message for a later send
-	(define (enq-msg)
+        (define (enq-msg)
           (let ([filename (get-fresh-queue-filename)])
             (send message-editor save-file filename 'text))
           
@@ -445,126 +446,126 @@
           (build-path queue-directory 
                       (format "enq~a" (+ 1 (length (directory-list queue-directory))))))
         
-	(define external-composer (get-pref 'sirmail:external-composer))
-
+        (define external-composer (get-pref 'sirmail:external-composer))
+        
         (frame:reorder-menus mailer-frame)
         (send button-pane stretchable-height #f)
-	(send cancel-button enable #f)
-
-	(send enclosure-list stretchable-height #f)
-	(send enclosure-list min-height FORWARD-LIST-HEIGHT)
-	(when (null? enclosures)
-	  (send (send mailer-frame get-area-container) delete-child enclosure-list))
-	(for-each
-	 (lambda (enc)
-	   (let ([i (send enclosure-list new-item)])
-	     (send (send i get-editor) insert (enclosure-name enc))
-	     (send i user-data enc)))
-	 enclosures)
-	
-	(when (USE-EXTERNAL-COMPOSER?)
-	  (letrec ([switch (lambda (item e)
-			     (if (send item is-checked?)
-				 (begin
-				   ;; Disable others:
-				   (send xemacs check (eq? xemacs item))
-				   (send gnu-emacs check (eq? gnu-emacs item))
-				   ;; Update flags
-				   (set! external-composer
-					 (cond
-					  [(send xemacs is-checked?)
-					   'xemacs]
-					  [(send gnu-emacs is-checked?)
-					   'gnu-emacs]))
-				   (put-pref 'sirmail:external-composer external-composer))
-				 ;; Turn it back on
-				 (send item check #t)))]
-		   [xemacs (make-object checkable-menu-item% "XEmacs" composer-menu switch)]
-		   [gnu-emacs (make-object checkable-menu-item% "GNU Emacs" composer-menu switch)])
-	    (send
-	     (case external-composer
-	       [(xemacs) xemacs]
-	       [(gnu-emacs) gnu-emacs])
-	     check #t)))
-
-	(make-object menu-item% "Save" file-menu 
-		     (lambda (i ev) (send message-editor save-file #f 'text)))
-	(make-object menu-item% "Send" file-menu (lambda (i ev) (send-msg)))
+        (send cancel-button enable #f)
+        
+        (send enclosure-list stretchable-height #f)
+        (send enclosure-list min-height FORWARD-LIST-HEIGHT)
+        (when (null? enclosures)
+          (send (send mailer-frame get-area-container) delete-child enclosure-list))
+        (for-each
+         (lambda (enc)
+           (let ([i (send enclosure-list new-item)])
+             (send (send i get-editor) insert (enclosure-name enc))
+             (send i user-data enc)))
+         enclosures)
+        
+        (when (USE-EXTERNAL-COMPOSER?)
+          (letrec ([switch (lambda (item e)
+                             (if (send item is-checked?)
+                                 (begin
+                                   ;; Disable others:
+                                   (send xemacs check (eq? xemacs item))
+                                   (send gnu-emacs check (eq? gnu-emacs item))
+                                   ;; Update flags
+                                   (set! external-composer
+                                         (cond
+                                           [(send xemacs is-checked?)
+                                            'xemacs]
+                                           [(send gnu-emacs is-checked?)
+                                            'gnu-emacs]))
+                                   (put-pref 'sirmail:external-composer external-composer))
+                                 ;; Turn it back on
+                                 (send item check #t)))]
+                   [xemacs (make-object checkable-menu-item% "XEmacs" composer-menu switch)]
+                   [gnu-emacs (make-object checkable-menu-item% "GNU Emacs" composer-menu switch)])
+            (send
+             (case external-composer
+               [(xemacs) xemacs]
+               [(gnu-emacs) gnu-emacs])
+             check #t)))
+        
+        (make-object menu-item% "Save" file-menu 
+          (lambda (i ev) (send message-editor save-file #f 'text)))
+        (make-object menu-item% "Send" file-menu (lambda (i ev) (send-msg)))
         (make-object menu-item% "Enqueue message" file-menu (lambda (i ev) (enq-msg)))
-	(make-object separator-menu-item% file-menu)
-	(make-object menu-item% "Add Enclosure..." file-menu
-		     (lambda (i env)
-		       (let ([file (get-file "Get Enclosure" mailer-frame)])
-			 (when file
-                           (let-values ([(type encoding inline?) (get-enclosure-type-and-encoding file mailer-frame)])
-                             (when (and type encoding)
-                               (let ([i (send enclosure-list new-item)]
-                                     [enc (make-enclosure
-                                           (path->string file)
-					   (let ([fn (clean-filename
-						      (with-handlers ([void (lambda (x) "unknown")])
-							(let-values ([(base name dir?) (split-path file)])
-							  (path->string name))))])
-					     (insert-field
-					      "Content-Type" 
-					      (data-lines->data
-					       (list
-						(string-append type ";")
-						(format "name=~s" fn)))
-					      (insert-field
-					       "Content-Transfer-Encoding" encoding
-					       (insert-field
-						"Content-Disposition"
-						(data-lines->data
-						 (list
-						  (format "~a; " (if inline? 'inline 'attachment))
-						  (format "filename=~s" fn)))
-						empty-header))))
-                                           (lambda ()
-                                             (let ([content (with-input-from-file file
-                                                              (lambda ()
-                                                                (read-bytes (file-size file))))])
-                                               (case (string->symbol encoding)
-                                                 [(base64) (split-crlf (base64-encode content))]
-                                                 [(quoted-printable) (split-crlf (qp-encode (lf->crlf content)))]
-                                                 [(7bit) (split-lf (crlf->lf content))]))))])
-                                 (send (send i get-editor) insert (enclosure-name enc))
-                                 (send i user-data enc)
-				 (let ([p (send mailer-frame get-area-container)])
-				   (unless (memq enclosure-list (send p get-children))
-				     (send p add-child enclosure-list))))))))))
-	(make-object separator-menu-item% file-menu)
-	(make-object (class menu% 
-		       (inherit get-items)
-		       (define/override (on-demand)
-			 (for-each (lambda (i) (send i delete)) (get-items))
-			 (let ([server (SMTP-SERVER)]
-			       [servers (SMTP-SERVERS)])
-			   (for-each
-			    (lambda (s)
-			      (let ([i (make-object checkable-menu-item% s this
-						    (lambda (i e)
-						      (for-each (lambda (i) (send i check #f)) (get-items))
-						      (set-SMTP-SERVER! s)
-						      (send i check #t)))])
-				(when (string=? s server)
-				  (send i check #t))))
-			    servers)))
-		       (super-make-object "SMTP Server" file-menu)))
-	(make-object separator-menu-item% file-menu)
-	(make-object menu-item% "Close" file-menu
-		     (lambda (i e) 
-		       (when (send mailer-frame can-close?)
-			 (send mailer-frame on-close)
-			 (send mailer-frame show #f)))
-		     (if (eq? (system-type) 'windows) #f #\W))
-	(append-editor-operation-menu-items edit-menu #t)
-	;; Strip menu key bindings
-	(for-each
-	 (lambda (i)
-	   (when (is-a? i selectable-menu-item<%>)
-	     (send i set-shortcut #f)))
-	 (send edit-menu get-items))
+        (make-object separator-menu-item% file-menu)
+        (make-object menu-item% "Add Enclosure..." file-menu
+          (lambda (i env)
+            (let ([file (get-file "Get Enclosure" mailer-frame)])
+              (when file
+                (let-values ([(type encoding inline?) (get-enclosure-type-and-encoding file mailer-frame)])
+                  (when (and type encoding)
+                    (let ([i (send enclosure-list new-item)]
+                          [enc (make-enclosure
+                                (path->string file)
+                                (let ([fn (clean-filename
+                                           (with-handlers ([void (lambda (x) "unknown")])
+                                             (let-values ([(base name dir?) (split-path file)])
+                                               (path->string name))))])
+                                  (insert-field
+                                   "Content-Type" 
+                                   (data-lines->data
+                                    (list
+                                     (string-append type ";")
+                                     (format "name=~s" fn)))
+                                   (insert-field
+                                    "Content-Transfer-Encoding" encoding
+                                    (insert-field
+                                     "Content-Disposition"
+                                     (data-lines->data
+                                      (list
+                                       (format "~a; " (if inline? 'inline 'attachment))
+                                       (format "filename=~s" fn)))
+                                     empty-header))))
+                                (lambda ()
+                                  (let ([content (with-input-from-file file
+                                                   (lambda ()
+                                                     (read-bytes (file-size file))))])
+                                    (case (string->symbol encoding)
+                                      [(base64) (split-crlf (base64-encode content))]
+                                      [(quoted-printable) (split-crlf (qp-encode (lf->crlf content)))]
+                                      [(7bit) (split-lf (crlf->lf content))]))))])
+                      (send (send i get-editor) insert (enclosure-name enc))
+                      (send i user-data enc)
+                      (let ([p (send mailer-frame get-area-container)])
+                        (unless (memq enclosure-list (send p get-children))
+                          (send p add-child enclosure-list))))))))))
+        (make-object separator-menu-item% file-menu)
+        (make-object (class menu% 
+                       (inherit get-items)
+                       (define/override (on-demand)
+                         (for-each (lambda (i) (send i delete)) (get-items))
+                         (let ([server (SMTP-SERVER)]
+                               [servers (SMTP-SERVERS)])
+                           (for-each
+                            (lambda (s)
+                              (let ([i (make-object checkable-menu-item% s this
+                                         (lambda (i e)
+                                           (for-each (lambda (i) (send i check #f)) (get-items))
+                                           (set-SMTP-SERVER! s)
+                                           (send i check #t)))])
+                                (when (string=? s server)
+                                  (send i check #t))))
+                            servers)))
+                       (super-make-object "SMTP Server" file-menu)))
+        (make-object separator-menu-item% file-menu)
+        (make-object menu-item% "Close" file-menu
+          (lambda (i e) 
+            (when (send mailer-frame can-close?)
+              (send mailer-frame on-close)
+              (send mailer-frame show #f)))
+          (if (eq? (system-type) 'windows) #f #\W))
+        (append-editor-operation-menu-items edit-menu #t)
+        ;; Strip menu key bindings
+        (for-each
+         (lambda (i)
+           (when (is-a? i selectable-menu-item<%>)
+             (send i set-shortcut #f)))
+         (send edit-menu get-items))
         
         (make-object separator-menu-item% edit-menu)
         (send (instantiate menu-item% ("Delete Enclosure" edit-menu)
@@ -574,88 +575,88 @@
                 [demand-callback (lambda (m)
                                    (send m enable (send enclosure-list get-selected)))])
               enable #f)
-                  
         
-	(add-preferences-menu-items edit-menu)
-
-	(let ([km (send message-editor get-keymap)])
-	  (send km add-function "reflow-paragraph"
-		(lambda (e ev) (reflow-paragraph 
-				e
-				(add1 (send e find-string SEPARATOR
-					    'forward 0 'eof #f)))))
-	  (send km map-function ":m:q" "reflow-paragraph")
-	  (send km map-function ":a:q" "reflow-paragraph")
-	  (special-option-key #t)
-
-	  (add-text-keymap-functions km)
-	  (keymap:setup-global km)
-	  
-	  (send km add-function "send-message"
-		(lambda (w e) (send-msg)))
-	  (send km map-function ":m:return" "send-message")
-	  (send km map-function ":a:return" "send-message"))
-
-	(make-fixed-width c message-editor #t return-bitmap)
-	(send message-editor set-paste-text-only #t)
-	(send message-editor set-max-undo-history 5000) ;; Many undos!
-	(send c set-editor message-editor)
-
+        
+        (add-preferences-menu-items edit-menu)
+        
+        (let ([km (send message-editor get-keymap)])
+          (send km add-function "reflow-paragraph"
+                (lambda (e ev) (reflow-paragraph 
+                                e
+                                (add1 (send e find-string SEPARATOR
+                                            'forward 0 'eof #f)))))
+          (send km map-function ":m:q" "reflow-paragraph")
+          (send km map-function ":a:q" "reflow-paragraph")
+          (special-option-key #t)
+          
+          (add-text-keymap-functions km)
+          (keymap:setup-global km)
+          
+          (send km add-function "send-message"
+                (lambda (w e) (send-msg)))
+          (send km map-function ":m:return" "send-message")
+          (send km map-function ":a:return" "send-message"))
+        
+        (make-fixed-width c message-editor #t return-bitmap)
+        (send message-editor set-paste-text-only #t)
+        (send message-editor set-max-undo-history 5000) ;; Many undos!
+        (send c set-editor message-editor)
+        
         (activate-spelling message-editor)
         
         (send message-editor begin-edit-sequence)
         (if file
             ;; Resume a composition...
-	    (send message-editor load-file file)
+            (send message-editor load-file file)
             ;; Build message skeleton
-	    (begin
-	      (send message-editor insert "To: ")
-	      (send message-editor insert (string-crlf->lf to))
-	      (send message-editor insert #\newline)
-	      (unless (string=? cc "")
-		(send message-editor insert "CC: ")
-		(send message-editor insert (string-crlf->lf cc))
-		(send message-editor insert #\newline))
-	      (send message-editor insert "Subject: ")
-	      (send message-editor insert (string-crlf->lf subject))
-	      (send message-editor insert #\newline)
-	      (send message-editor insert (string-crlf->lf other-headers))
-	      (send message-editor insert "X-Mailer: SirMail under MrEd ")
-	      (send message-editor insert (version))
-	      (send message-editor insert " (")
-	      (send message-editor insert (path->string (system-library-subpath)))
-	      (send message-editor insert ")")
-	      (let ([start-no-change (send message-editor last-position)])
-		(send message-editor insert #\newline)
-		(send message-editor insert SEPARATOR)
-		(send message-editor insert #\newline)
-		(send message-editor set-no-change-region 
-		      start-no-change
-		      (send message-editor last-position)))
-	      (let ([message-start (send message-editor last-position)])
-		(send message-editor insert body)
-		(if (string=? to "")
-		    (send message-editor set-position (send message-editor paragraph-end-position 0))
-		    (send message-editor set-position message-start)))
-	      (send message-editor clear-undos)))
-
-	(send message-editor set-modified #f)
-	(send message-editor scroll-to-position 0)
+            (begin
+              (send message-editor insert "To: ")
+              (send message-editor insert (string-crlf->lf to))
+              (send message-editor insert #\newline)
+              (unless (string=? cc "")
+                (send message-editor insert "CC: ")
+                (send message-editor insert (string-crlf->lf cc))
+                (send message-editor insert #\newline))
+              (send message-editor insert "Subject: ")
+              (send message-editor insert (string-crlf->lf subject))
+              (send message-editor insert #\newline)
+              (send message-editor insert (string-crlf->lf other-headers))
+              (send message-editor insert "X-Mailer: SirMail under MrEd ")
+              (send message-editor insert (version))
+              (send message-editor insert " (")
+              (send message-editor insert (path->string (system-library-subpath)))
+              (send message-editor insert ")")
+              (let ([start-no-change (send message-editor last-position)])
+                (send message-editor insert #\newline)
+                (send message-editor insert SEPARATOR)
+                (send message-editor insert #\newline)
+                (send message-editor set-no-change-region 
+                      start-no-change
+                      (send message-editor last-position)))
+              (let ([message-start (send message-editor last-position)])
+                (send message-editor insert body)
+                (if (string=? to "")
+                    (send message-editor set-position (send message-editor paragraph-end-position 0))
+                    (send message-editor set-position message-start)))
+              (send message-editor clear-undos)))
+        
+        (send message-editor set-modified #f)
+        (send message-editor scroll-to-position 0)
         (send message-editor end-edit-sequence)
         
-	(send c focus)
-
-	(send mailer-frame create-status-line)
-
-	(send mailer-frame show #t)
-
+        (send c focus)
+        
+        (send mailer-frame create-status-line)
+        
+        (send mailer-frame show #t)
+        
         (initial-exception-handler
          (lambda (x)
            (show-error x mailer-frame)
            ((error-escape-handler))))
         (current-exception-handler
          (initial-exception-handler))
-
+        
         mailer-frame)
 
       
@@ -677,7 +678,8 @@
                             status-message-enclosures
                             status-message-clear
                             status-done
-                            save-before-killing)
+                            save-before-killing
+                            message-count)
         (let ([re (regexp (format "~a\n" SEPARATOR))])
           (let ([m (regexp-match-positions re message-str)])
             (if m
@@ -685,7 +687,8 @@
 			       '("To" "CC" "BCC" "Subject")
 			       (string-append
 				(string-lf->crlf (substring message-str 0 (caar m)))
-				(build-uptime-field) "\r\n"
+				(build-uptime-field message-count) 
+                                "\r\n"
 				empty-header))]
                       [body-lines (regexp-split 
 				   #rx"\n" 
@@ -871,12 +874,13 @@
   ;;  Uptime                                                ;;
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define (build-uptime-field)
+  (define (build-uptime-field msg-count)
     (string-append "X-Uptime: "
 		   (how-long-ago (- (current-seconds) invoked-time))
 		   ", using "
 		   (how-much-memory)
-		   " bytes"))
+		   " bytes"
+                   (if (number? msg-count) (format " (s: ~A)" msg-count) "")))
 
   (define invoked-time (current-seconds))
   

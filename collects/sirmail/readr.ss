@@ -2221,7 +2221,7 @@
         (start-new-window
 	 (lambda ()
            (let ([full-filename (build-path queue-directory filename)])
-             (send (new-mailer full-filename "" "" "" "" "" null)
+             (send (new-mailer full-filename "" "" "" "" "" null (length mailbox))
                    send-message)
              (delete-file full-filename)))))
             
@@ -2617,12 +2617,12 @@
       (define (start-new-mailer file to cc subject other-headers body enclosures)
 	(start-new-window
 	 (lambda ()
-	   (new-mailer file to cc subject other-headers body enclosures))))
+	   (new-mailer file to cc subject other-headers body enclosures (length mailbox)))))
       
       (define (start-new-mailer/send-message file to cc subject other-headers body enclosures)
 	(start-new-window
 	 (lambda ()
-           (send (new-mailer file to cc subject other-headers body enclosures)
+           (send (new-mailer file to cc subject other-headers body enclosures (length mailbox))
                  send-message))))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

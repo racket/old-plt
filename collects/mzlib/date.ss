@@ -115,14 +115,14 @@
 		[(chinese)
 		 (values
 		  (list year "/" num-month "/" day
-			" libai" (case (date-week-day date)
-				   [(0) "tian"]
-				   [(1) "yi"]
-				   [(2) "er"]
-				   [(3) "san"]
-				   [(4) "si"]
-				   [(5) "wu"]
-				   [(6) "liu"]
+			" \u793C\u62DC" (case (date-week-day date)
+				   [(0) "\u5929"]
+				   [(1) "\u4E00"]
+				   [(2) "\u4E8C"]
+				   [(3) "\u4e09"]
+				   [(4) "\u56DB"]
+				   [(5) "\u4E94"]
+				   [(6) "\u516D"]
 				   [else ""]))
 		  (list " " hour24 ":" minute ":" second))]
 		[(indian) 

@@ -76,6 +76,11 @@ static MX_PRIM mxPrims[] = {
   { mx_com_set_property_type,"com-set-property-type",2,2 },
   { mx_com_event_type,"com-event-type",2,2 },
   { mx_com_help,"com-help",1,2 },
+
+  // COM types
+
+  { mx_com_get_object_type,"com-object-type",1,1 },
+  { mx_com_has_type,"com-has-type?",2,2 },
   
   // COM events
   
@@ -337,16 +342,23 @@ DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
 };
 
 void scheme_release_com_object(void *comObject,void *pIDispatch) {
+  ITypeInfo *pITypeInfo;
   ITypeInfo *pEventTypeInfo;
   IConnectionPoint *pIConnectionPoint;
   ISink *pISink;
   
-  // when COM object GC'd, release interface pointer
+  // when COM object GC'd, release associated interfaces
+
+  pITypeInfo = MX_COM_OBJ_TYPEINFO(comObject);
 
   pEventTypeInfo = MX_COM_OBJ_EVENTTYPEINFO(comObject);
   pIConnectionPoint = MX_COM_OBJ_CONNECTIONPOINT(comObject);
   pISink = MX_COM_OBJ_EVENTSINK(comObject);
   
+  if (pITypeInfo) {
+    pITypeInfo->Release();
+  }
+
   if (pEventTypeInfo) {
     pEventTypeInfo->Release();
   }
@@ -534,6 +546,7 @@ Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
   
   com_object->type = mx_com_object_type; 
   com_object->pIDispatch = pIDispatch;
+  com_object->pITypeInfo = NULL;
   com_object->pEventTypeInfo = NULL;
   com_object->pIConnectionPoint = NULL;
   com_object->pISink = NULL;
@@ -544,11 +557,137 @@ Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
   return (Scheme_Object *)com_object;
 }
 
+ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
+  HRESULT hr;
+  ITypeInfo *pITypeInfo;
+  IDispatch *pIDispatch;
+  unsigned int count;
+
+  pITypeInfo = obj->pITypeInfo;
+
+  if (pITypeInfo) {
+    return pITypeInfo;
+  }
+
+  pIDispatch = obj->pIDispatch;
+
+  pIDispatch->GetTypeInfoCount(&count);
+  
+  if (count == 0) {
+    scheme_signal_error("COM object does not expose type information");
+  }
+  
+  hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
+  
+  if (hr != S_OK || pITypeInfo == NULL) {
+    codedComError("Error getting COM type information",hr);
+  }
+
+  obj->pITypeInfo = pITypeInfo;
+  pITypeInfo->AddRef();
+
+  return pITypeInfo;
+}
+
+Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
+  ITypeInfo *pITypeInfo;
+  MX_COM_Type *retval;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-object-type","com-object",0,argc,argv);
+  }
+
+  pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+
+  retval = (MX_COM_Type *)scheme_malloc(sizeof(MX_COM_Type));
+
+  retval->type = mx_com_type_type;
+  retval->pITypeInfo = pITypeInfo;
+  
+  return (Scheme_Object *)retval;
+}
+
+BOOL typeInfoEq(ITypeInfo *pITypeInfo1,ITypeInfo *pITypeInfo2) {
+  HRESULT hr;
+  ITypeInfo *pITypeInfo[2];
+  ITypeLib *pITypeLib[2];
+  TLIBATTR *pTLibAttr[2];
+  unsigned int index[2];
+  BOOL retval;
+  short i;
+
+  // intensional equality
+
+  if (pITypeInfo1 == pITypeInfo2) {
+    return TRUE;
+  }
+
+  pITypeInfo[0] = pITypeInfo1;
+  pITypeInfo[1] = pITypeInfo2;
+
+  for (i = 0; i < 2; i++) {
+    hr = pITypeInfo[i]->GetContainingTypeLib(&pITypeLib[i],&index[i]);
+    if (hr != S_OK || pITypeLib[i] == NULL) {
+      if (i > 0) {
+	pITypeLib[0]->Release();      
+      }
+      codedComError("Error getting type library",hr);
+    }
+  }
+
+  // if not intensional equality, see if index within containing
+  // TypeLib's are the same, and GUID's of the TypeLib are the same
+
+  if (index[0] != index[1]) {
+    for (i = 0; i < 2; i++) {
+      pITypeLib[i]->Release();      
+    }
+    return FALSE;
+  }
+
+  for (i = 0; i < 2; i++) {
+    hr = pITypeLib[i]->GetLibAttr(&pTLibAttr[i]);
+    if (hr != S_OK || pTLibAttr[i] == NULL) {
+      if (i > 0) {
+	pITypeLib[0]->ReleaseTLibAttr(pTLibAttr[0]);
+      }
+      for (i = 0; i < 2; i++) {
+	pITypeLib[i]->Release();      
+      }
+      codedComError("Error getting type library attributes",hr);
+    }
+  }
+
+  retval = (pTLibAttr[0]->guid == pTLibAttr[1]->guid);
+
+  for (i = 0; i < 2; i++) {
+    pITypeLib[i]->ReleaseTLibAttr(pTLibAttr[i]);
+    pITypeLib[i]->Release();      
+  }
+
+  return retval;
+}
+
+Scheme_Object *mx_com_has_type(int argc,Scheme_Object **argv) {
+  ITypeInfo *pITypeInfo1,*pITypeInfo2;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-has-type?","com-object",0,argc,argv);
+  }
+
+  if (MX_COM_TYPEP(argv[1]) == FALSE) {
+    scheme_wrong_type("com-has-type?","com-type",1,argc,argv);
+  }
+
+  pITypeInfo1 = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+  pITypeInfo2 = MX_COM_TYPE_VAL((MX_COM_Type *)argv[1]);
+
+  return typeInfoEq(pITypeInfo1,pITypeInfo2) ? scheme_true : scheme_false;
+}
+
 Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   HRESULT hr;
-  IDispatch *pIDispatch;
   ITypeInfo *pITypeInfo;
-  UINT typeInfoCount;
   BSTR helpFileName;
   char buff[MAX_PATH];
   int len;
@@ -557,24 +696,12 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
     scheme_wrong_type("com-help","com-object",0,argc,argv);
   }
   
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
-  
   if (argc == 2 && SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("com-help","string",1,argc,argv);
   }
-  
-  pIDispatch->GetTypeInfoCount(&typeInfoCount);
-  
-  if (typeInfoCount == 0) {
-    scheme_signal_error("COM object does not expose type information");
-  }
-  
-  hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
-  
-  if (hr != S_OK) {
-    codedComError("Error getting COM type information",hr);
-  }
-  
+
+  pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+
   hr = pITypeInfo->GetDocumentation(MEMBERID_NIL,NULL,NULL,NULL,
 				    &helpFileName);
   
@@ -843,60 +970,21 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
+MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
+				  ITypeInfo *pITypeInfo) {
   HRESULT hr;
-  IDispatch *pIDispatch;
   TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
   VARDESC *pVarDesc;
-  MX_TYPEDESC *pTypeDesc;
   MEMBERID memID;
   MX_DESCKIND descKind;
-  BOOL foundDesc;
-  ITypeInfo *pITypeInfo;
-  UINT typeInfoCount;
+  MX_TYPEDESC *pTypeDesc;
+  BSTR unicodeName;
   BSTR bstr;
   UINT nameCount;
+  BOOL foundDesc;
   int i;
-  BSTR unicodeName;
-  
-  // need Unicode version of name to please ITypeInfo::GetIDsOfNames
-  // note that we need string length + 1
-  
-  pIDispatch = obj->pIDispatch;
-  
-  // check in hash table to see if we already have the type information
-  
-  pTypeDesc = lookupTypeDesc(pIDispatch,name,invKind);
-  
-  if (pTypeDesc) {
-    return pTypeDesc;
-  }
-  
-  if (invKind == INVOKE_EVENT) {
-    pITypeInfo = eventTypeInfoFromComObject(obj);
-    
-    if (pITypeInfo == NULL) {
-      scheme_signal_error("Can't find event type information");
-    }
-  }
-  
-  else {
-    
-    pIDispatch->GetTypeInfoCount(&typeInfoCount);
-    
-    if (typeInfoCount == 0) {
-      scheme_signal_error("COM object does not expose type information");
-    }
-    
-    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
-    
-    if (hr != S_OK) {
-      codedComError("Error getting COM type information",hr);
-    }
-    
-  }
-  
+
   unicodeName = stringToBSTR(name,strlen(name));
   
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
@@ -969,7 +1057,7 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
   SysFreeString(unicodeName);
   
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
-  
+
   if (foundDesc == FALSE) {
     scheme_signal_error("Error finding type description for \"%s\"",name);
   }
@@ -985,6 +1073,40 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
   else {
     pTypeDesc->pVarDesc = pVarDesc;
   }
+
+  return pTypeDesc;
+}
+  
+MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
+  IDispatch *pIDispatch;
+  MX_TYPEDESC *pTypeDesc;
+  ITypeInfo *pITypeInfo;
+  
+  // need Unicode version of name to please ITypeInfo::GetIDsOfNames
+  // note that we need string length + 1
+  
+  pIDispatch = obj->pIDispatch;
+  
+  // check in hash table to see if we already have the type information
+  
+  pTypeDesc = lookupTypeDesc(pIDispatch,name,invKind);
+  
+  if (pTypeDesc) {
+    return pTypeDesc;
+  }
+  
+  if (invKind == INVOKE_EVENT) {
+    pITypeInfo = eventTypeInfoFromComObject(obj);
+    
+    if (pITypeInfo == NULL) {
+      scheme_signal_error("Can't find event type information");
+    }
+  }
+  else {
+    pITypeInfo = typeInfoFromComObject(obj);
+  }
+
+  pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
   
   addTypeToTable(pIDispatch,name,invKind,pTypeDesc);
   
@@ -992,7 +1114,6 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
 }
 
 Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKind) {
-  IDispatch *pIDispatch;
   ITypeInfo *pITypeInfo;
   BSTR bstr;
   HRESULT hr;
@@ -1001,37 +1122,26 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   VARDESC *pVarDesc;
   Scheme_Object *retval;
   char buff[256];
-  unsigned int count,typeInfoCount;
+  unsigned int count;
   int i;
   
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-methods","com-object",0,argc,argv);
+  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-methods","com-object or com-type",0,argc,argv);
   }
   
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
-  
-  if (pIDispatch == NULL) {
-    scheme_signal_error("NULL COM object");
+  if (MX_COM_OBJP(argv[0])) {
+    pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+  }  
+  else {
+    pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
   }
-  
-  pIDispatch->GetTypeInfoCount(&typeInfoCount);
-  
-  if (typeInfoCount == 0) {
-    scheme_signal_error("COM object does not expose type information");
-  }
-  
-  hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
-  
-  if (hr != S_OK || pITypeInfo == NULL) {
-    codedComError("Error getting COM type information",hr);
-  }
-  
+
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
   
   if (hr != S_OK || pTypeAttr == NULL) {
     codedComError("Error getting type attributes",hr);
   }
-  
+
   retval = scheme_null;
   
   // properties can appear in list of functions
@@ -1064,7 +1174,7 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
     SysFreeString(bstr);
     pITypeInfo->ReleaseVarDesc(pVarDesc);
   } 
-  
+
   return retval;
 }
 
@@ -1080,128 +1190,108 @@ Scheme_Object *mx_com_set_properties(int argc,Scheme_Object **argv) {
   return mx_do_get_methods(argc,argv,INVOKE_PROPERTYPUT);
 }
 
-ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
+ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
   HRESULT hr;
-  IDispatch *pIDispatch;
-  ITypeInfo *pITypeInfo,*pEventTypeInfo;
-  IProvideClassInfo *pIProvideClassInfo;
+  ITypeLib *pITypeLib;
+  ITypeInfo *pCoclassTypeInfo;
+  ITypeInfo *pCandidateTypeInfo;
+  TYPEATTR *pTypeAttr;
+  TYPEKIND typeKind;
+  HREFTYPE hRefType;
+  UINT ndx;
+  UINT typeInfoCount;
+  BOOL foundCoclass;
+  UINT typeCount;
+  UINT i,j;
+
+  hr = pITypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
+
+  if (hr != S_OK) {
+    scheme_signal_error("Can't get dispatch type library");
+  }
+
+  typeInfoCount = pITypeLib->GetTypeInfoCount();
+
+  foundCoclass = FALSE;
+
+  for (i = 0; i < typeInfoCount; i++) {
+    
+    pITypeLib->GetTypeInfoType(i,&typeKind);
+
+    if (typeKind == TKIND_COCLASS) {
+
+      hr = pITypeLib->GetTypeInfo(i,&pCoclassTypeInfo);
+
+      if (hr != S_OK || pCoclassTypeInfo == NULL) {
+	codedComError("Error getting type info for coclass",hr);
+      }
+  
+      hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
+	
+      if (hr != S_OK || pTypeAttr == NULL) {
+	codedComError("Error getting type attributes",hr);
+      }
+  
+      typeCount = pTypeAttr->cImplTypes; 
+  
+      pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
+  
+      for (j = 0; j < typeCount; j++) {
+	hr = pCoclassTypeInfo->GetRefTypeOfImplType(j,&hRefType);
+	  
+	if (hr != S_OK) {
+	  codedComError("Error retrieving type info handle",hr);
+	}
+  
+	hr = pCoclassTypeInfo->GetRefTypeInfo(hRefType,&pCandidateTypeInfo);
+
+	if (hr != S_OK || pCandidateTypeInfo == NULL) {
+	  codedComError("Error retrieving candidate type info",hr);
+	}
+
+	pCandidateTypeInfo->Release();
+
+	if (pCandidateTypeInfo == pITypeInfo) {
+
+	  // we found the coclass with the typeinfo for our object
+	  // event interface is in the same coclass 
+
+	  foundCoclass = TRUE;
+	  break;
+
+	}
+      }
+
+      if (foundCoclass == FALSE) {
+	pCoclassTypeInfo->Release();
+      }
+    }
+
+    if (foundCoclass) {
+      break;
+    }
+  }
+
+  pITypeLib->Release();
+
+  if (foundCoclass == FALSE) {
+    return NULL;
+  }
+
+  return pCoclassTypeInfo;
+}
+
+ITypeInfo *eventTypeInfoFromCoclassTypeInfo(ITypeInfo *pCoclassTypeInfo) {
+  HRESULT hr;
+  ITypeInfo *pEventTypeInfo;
   TYPEATTR *pTypeAttr;
   HREFTYPE hRefType;
   UINT typeCount;
   UINT eventTypeInfoNdx;
   int typeFlags;
   UINT i;
-  
-  if (obj->pEventTypeInfo) {
-    return obj->pEventTypeInfo;
-  }
-  
-  pIDispatch = obj->pIDispatch;
-
-  /* preferred mechanism for finding coclass ITypeInfo */
-
-  hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,(void **)&pIProvideClassInfo);
-  
-  if (hr == S_OK && pIProvideClassInfo != NULL) {
-    hr = pIProvideClassInfo->GetClassInfo(&pITypeInfo);
-  }
-  else if (hr == E_NOINTERFACE) {
-    ITypeLib *pITypeLib;
-    ITypeInfo *pDispatchTypeInfo,*pCandidateTypeInfo;
-    TYPEKIND typeKind;
-    UINT ndx;
-    UINT typeInfoCount;
-    BOOL foundCoclass;
-    UINT j;
-
-    /* alternate mechanism */
-
-    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pDispatchTypeInfo);
-
-    hr = pDispatchTypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
-
-    typeInfoCount = pITypeLib->GetTypeInfoCount();
-
-    foundCoclass = FALSE;
-
-    for (i = 0; i < typeInfoCount; i++) {
-
-      pITypeLib->GetTypeInfoType(i,&typeKind);
-
-      if (typeKind == TKIND_COCLASS) {
-
-	hr = pITypeLib->GetTypeInfo(i,&pITypeInfo);
-
-	if (hr != S_OK || pITypeInfo == NULL) {
-	  codedComError("Error getting type info for coclass",hr);
-	}
-  
-	hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
-	
-	if (hr != S_OK || pTypeAttr == NULL) {
-	  codedComError("Error getting type attributes",hr);
-	}
-  
-	typeCount = pTypeAttr->cImplTypes; 
-  
-	pITypeInfo->ReleaseTypeAttr(pTypeAttr);
-  
-	for (j = 0; j < typeCount; j++) {
-	  hr = pITypeInfo->GetRefTypeOfImplType(j,&hRefType);
-  
-	  if (hr != S_OK) {
-	    codedComError("Error retrieving type info handle",hr);
-	  }
-  
-	  hr = pITypeInfo->GetRefTypeInfo(hRefType,&pCandidateTypeInfo);
-
-	  if (hr != S_OK || pCandidateTypeInfo == NULL) {
-	    codedComError("Error retrieving candidate type info",hr);
-	  }
-
-	  pCandidateTypeInfo->Release();
-
-	  if (pCandidateTypeInfo == pDispatchTypeInfo) {
-
-	    // we found the coclass with the typeinfo for our object
-	    // event interface is in the same coclass 
-
-	    foundCoclass = TRUE;
-	    break;
-
-	  }
-	}
-
-	if (foundCoclass == FALSE) {
-	  pITypeInfo->Release();
-	}
-      }
-
-      if (foundCoclass) {
-	break;
-      }
-    }
-
-    pITypeLib->Release();
-    pDispatchTypeInfo->Release();
-
-    if (foundCoclass == FALSE) {
-      hr = E_NOINTERFACE;
-    }
-  }
-
-  else {
-    codedComError("Error getting COM event type information",hr);
-  }
-
-  if (hr != S_OK || pITypeInfo == NULL) {
-    codedComError("Error getting event type information",hr);
-  }
-  
-  // have type info for coclass
-  // event type info is one of the "implemented" interfaces
-  
-  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+ 
+  hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
   
   if (hr != S_OK || pTypeAttr == NULL) {
     codedComError("Error getting type attributes",hr);
@@ -1209,13 +1299,13 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   
   typeCount = pTypeAttr->cImplTypes; 
   
-  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
   
   eventTypeInfoNdx = -1;
   
   for (i = 0; i < typeCount; i++) {
     
-    hr = pITypeInfo->GetImplTypeFlags(i,&typeFlags);
+    hr = pCoclassTypeInfo->GetImplTypeFlags(i,&typeFlags);
     
     if (hr != S_OK) {
       codedComError("Error retrieving type flags",hr);
@@ -1234,21 +1324,83 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
     return NULL;
   }
   
-  hr = pITypeInfo->GetRefTypeOfImplType(eventTypeInfoNdx,&hRefType);
+  hr = pCoclassTypeInfo->GetRefTypeOfImplType(eventTypeInfoNdx,&hRefType);
   
   if (hr != S_OK) {
     codedComError("Error retrieving type info handle",hr);
   }
   
-  hr = pITypeInfo->GetRefTypeInfo(hRefType,&pEventTypeInfo);
+  hr = pCoclassTypeInfo->GetRefTypeInfo(hRefType,&pEventTypeInfo);
 
-  pITypeInfo->Release();
-  
-  if (hr != S_OK || pEventTypeInfo == NULL) {
+  if (hr != S_OK) {
     codedComError("Error retrieving event type info",hr);
+  }
+
+  return pEventTypeInfo;
+}
+
+ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
+  HRESULT hr;
+  IDispatch *pIDispatch;
+  ITypeInfo *pCoclassTypeInfo,*pEventTypeInfo;
+  IProvideClassInfo *pIProvideClassInfo;
+
+  pEventTypeInfo = obj->pEventTypeInfo;
+  
+  if (pEventTypeInfo) {
+    return pEventTypeInfo;
+  }
+  
+  pIDispatch = obj->pIDispatch;
+
+  /* preferred mechanism for finding coclass ITypeInfo */
+
+  hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,(void **)&pIProvideClassInfo);
+  
+  if (hr == S_OK && pIProvideClassInfo != NULL) {
+
+    hr = pIProvideClassInfo->GetClassInfo(&pCoclassTypeInfo);
+
+    if (hr != S_OK || pCoclassTypeInfo == NULL) {
+      scheme_signal_error("Error getting coclass type information");
+    }
+  }
+  else if (hr == E_NOINTERFACE) {
+    ITypeInfo *pDispatchTypeInfo;
+
+    /* alternate mechanism */
+
+    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pDispatchTypeInfo);
+
+    if (hr != S_OK) {
+      codedComError("Can't get dispatch type information",hr);
+    }
+
+    pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(pDispatchTypeInfo);
+    pDispatchTypeInfo->Release();
+
+    if (pCoclassTypeInfo == NULL) {
+      scheme_signal_error("Error getting coclass type information");
+    }
+  }
+
+  else {
+    codedComError("Error getting COM event type information",hr);
+  }
+
+  // have type info for coclass
+  // event type info is one of the "implemented" interfaces
+
+  pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo(pCoclassTypeInfo);
+ 
+  pCoclassTypeInfo->Release();
+  
+  if (pEventTypeInfo == NULL) {
+    scheme_signal_error("Error retrieving event type info");
   }
   
   obj->pEventTypeInfo = pEventTypeInfo;
+  pEventTypeInfo->AddRef();
   
   return pEventTypeInfo;
 }
@@ -1275,7 +1427,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   // query for outbound interface info
   
   pEventTypeInfo = eventTypeInfoFromComObject((MX_COM_Object *)argv[0]);
-  
+
   if (pEventTypeInfo == NULL) {
     scheme_signal_error("Can't find event type information");
   }
@@ -1303,6 +1455,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   
   return retval;
 }
+
 
 VARTYPE getVarTypeFromElemDesc(ELEMDESC *pElemDesc) {
   unsigned short flags;
@@ -1593,13 +1746,20 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   short int hiBound;
   BOOL lastParamIsRetval;
   int i;
-  
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-method-type","com-object",0,argc,argv);
+
+  if (invKind == INVOKE_EVENT) {
+    if (MX_COM_OBJP(argv[0])) {
+      scheme_wrong_type("com-method-type","com-object",0,argc,argv);
+    }
   }
-  
+  else { 
+    if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
+      scheme_wrong_type("com-method-type","com-object or com-type",0,argc,argv);
+    }
+  }
+
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("mx-method-type","string",1,argc,argv);
+    scheme_wrong_type("com-method-type","string",1,argc,argv);
   }
   
   if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
@@ -1608,7 +1768,12 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   
   name = SCHEME_STR_VAL(argv[1]);
   
-  pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
+  if (MX_COM_OBJP(argv[0])) {
+    pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
+  }
+  else {
+    pTypeDesc = typeDescFromTypeInfo(name,invKind,MX_COM_TYPE_VAL(argv[0]));
+  }
   
   if (pTypeDesc->descKind == funcDesc) {
     pFuncDesc = pTypeDesc->pFuncDesc;
@@ -2914,11 +3079,12 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
     
     com_object->type = mx_com_object_type; 
     com_object->pIDispatch = pObjectDispatch;
+    com_object->pITypeInfo = NULL;
     com_object->pEventTypeInfo = NULL;
     com_object->pIConnectionPoint = NULL;
     com_object->pISink = NULL;
     com_object->connectionCookie = (DWORD)0;
-    
+
     mx_register_com_object((Scheme_Object *)com_object,pObjectDispatch);
     
     retval = scheme_make_pair((Scheme_Object *)com_object,retval);
@@ -3095,7 +3261,7 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
   
-  mx_register_com_object((Scheme_Object *)retval,pIHTMLElement);
+  mx_register_simple_com_object((Scheme_Object *)retval,pIHTMLElement);
   
   return (Scheme_Object *)retval;
 }
@@ -3553,6 +3719,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   int i;
   
   mx_com_object_type = scheme_make_type("<com-object>");
+  mx_com_type_type = scheme_make_type("<com-type>");
   mx_document_type = scheme_make_type("<mx-document>");
   mx_element_type = scheme_make_type("<mx-element>");
   mx_event_type = scheme_make_type("<mx-event>");
@@ -3633,5 +3800,3 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
   
   return TRUE;
 }
-
-

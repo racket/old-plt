@@ -22,6 +22,7 @@
 #include "mysterx.h"
 
 Scheme_Type mx_com_object_type;     
+Scheme_Type mx_com_type_type;     
 Scheme_Type mx_document_type;
 Scheme_Type mx_element_type;
 Scheme_Type mx_event_type;
@@ -87,6 +88,7 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
 
   retval->type = mx_com_object_type;
   retval->pIDispatch = pIDispatch;
+  retval->pITypeInfo = NULL;
   retval->pEventTypeInfo = NULL;
   retval->pIConnectionPoint = NULL;
   retval->pISink = NULL;

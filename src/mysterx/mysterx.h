@@ -44,11 +44,17 @@ typedef struct _MX_prim_ {
 typedef struct _scheme_com_obj_ { 
   Scheme_Type type;
   IDispatch *pIDispatch;
+  ITypeInfo *pITypeInfo;
   ITypeInfo *pEventTypeInfo;
   IConnectionPoint *pIConnectionPoint;
   DWORD connectionCookie;
   ISink *pISink;
 } MX_COM_Object;
+
+typedef struct _scheme_com_type_ { 
+  Scheme_Type type;
+  ITypeInfo *pITypeInfo;
+} MX_COM_Type;
 
 typedef struct _scheme_mx_event_ { 
   Scheme_Type type;
@@ -135,8 +141,12 @@ typedef struct _document_window_style_option {
 #define MX_COM_OBJP(o) (!SCHEME_INTP(o) && o->type == mx_com_object_type)
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
 #define MX_COM_OBJ_CONNECTIONPOINT(o) (((MX_COM_Object *)o)->pIConnectionPoint)
+#define MX_COM_OBJ_TYPEINFO(o) (((MX_COM_Object *)o)->pITypeInfo)
 #define MX_COM_OBJ_EVENTTYPEINFO(o) (((MX_COM_Object *)o)->pEventTypeInfo)
 #define MX_COM_OBJ_EVENTSINK(o) (((MX_COM_Object *)o)->pISink)
+
+#define MX_COM_TYPEP(o) (!SCHEME_INTP(o) && o->type == mx_com_type_type)
+#define MX_COM_TYPE_VAL(o) (((MX_COM_Type *)o)->pITypeInfo)
 
 #define MX_DOCUMENTP(o) (!SCHEME_INTP(o) && o->type == mx_document_type)
 #define MX_DOCUMENT_VAL(o) (((MX_Document_Object *)o)->pIHTMLDocument2)
@@ -162,6 +172,7 @@ typedef struct _document_window_style_option {
 #define MX_IUNKNOWN_VAL(o) (((MX_COM_Data_Object *)o)->pIUnknown)
 
 extern Scheme_Type mx_com_object_type; 
+extern Scheme_Type mx_com_type_type; 
 extern Scheme_Type mx_document_type;
 extern Scheme_Type mx_element_type;
 extern Scheme_Type mx_event_type;
@@ -215,6 +226,8 @@ MX_PRIM_DECL(mx_cocreate_instance);
 MX_PRIM_DECL(mx_com_object_eq);
 MX_PRIM_DECL(mx_com_object_pred);
 MX_PRIM_DECL(mx_com_register_object);
+MX_PRIM_DECL(mx_com_get_object_type);
+MX_PRIM_DECL(mx_com_has_type);
 MX_PRIM_DECL(mx_com_help);
 MX_PRIM_DECL(mx_com_register_event_handler);
 MX_PRIM_DECL(mx_com_unregister_event_handler);

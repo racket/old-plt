@@ -295,7 +295,7 @@ Scheme_Object *mx_get_event(int argc,Scheme_Object **argv) {
   event_object->type = mx_event_type;
   event_object->pEvent = pEvent;
 
-  mx_register_com_object((Scheme_Object *)event_object,pEvent);
+  mx_register_simple_com_object((Scheme_Object *)event_object,pEvent);
 
   return (Scheme_Object *)event_object;
 }

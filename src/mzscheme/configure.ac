@@ -814,17 +814,23 @@ if test "${enable_cairo}" = "" ; then
 fi
 
 if test "${enable_cairo}" = "yes" ; then  
-  AC_CHECK_HEADER(cairo.h, enable_cairo=yes, enable_cairo=no)
-  if test "${enable_xrender}" = "yes" ; then  
-    AC_CHECK_LIB(cairo, cairo_create, enable_cairo="yes", enable_xrender="no", $X_LIBS -lX11 -lXext)
+  cairo_config_ok=`pkg-config --cflags cairo 2> /dev/null`
+  if test "$cairo_config_ok" = "" ; then
+    echo "no information from pkg-config; Cairo support disabled"
+  else
+    echo "Using pkg-config for Cairo..."
+    cairo_cflags=`pkg-config --cflags cairo`
+    cairo_libs=`pkg-config --libs cairo`
+    echo "Cairo flags: $cairo_cflags"
+    echo "Cairo libs: $cairo_libs"
+    AC_CHECK_LIB(cairo, cairo_create, enable_cairo="yes", enable_xrender="no", $X_LIBS $X_EXTRA_LIBS $cairo_libs)
     if test "${enable_cairo}" = "yes" ; then  
       MROPTIONS="$MROPTIONS -DWX_USE_CAIRO"
-      X_EXTRA_LIBS="$X_EXTRA_LIBS -lcairo"
+      X_CFLAGS="$X_CFLAGS $cairo_cflags"
+      X_EXTRA_LIBS="$X_EXTRA_LIBS $cairo_libs"      
     else
       echo "no Cairo libs; Cairo support disabled"
     fi
-  else
-    echo "no Cairo headers; Cairo support disabled"
   fi
 fi
 

@@ -1939,7 +1939,7 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
   int shift = 0, shift2 = -1;
   Scheme_Object *devn, *inon, *a[2];
 
-#ifdef UNIX_FILE_SYSTEM
+#ifdef FILES_HAVE_FDS
   struct MSC_IZE(stat) buf;
 
   while (1) {
@@ -1958,7 +1958,7 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
     shift = sizeof(dev_t);
   }
 #endif
-#ifdef DOS_FILE_SYSTEM
+#ifdef WINDOWS_FILE_HANDLES
   BY_HANDLE_FILE_INFORMATION info;
 
   if (GetFileInformationByHandle((HANDLE)fd, &info))

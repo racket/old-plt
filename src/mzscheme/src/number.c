@@ -140,6 +140,8 @@ static Scheme_Object *single_inf_object, *single_minus_inf_object, *single_nan_o
 #endif
 
 double scheme_floating_point_zero = 0.0;
+double scheme_floating_point_nzero = 0.0; /* negated below; many compilers treat -0.0 as 0.0, 
+					     but otherwise correctly implement fp negation */
 
 #ifdef FREEBSD_CONTROL_387
 #include <machine/floatingpoint.h>
@@ -207,11 +209,13 @@ scheme_init_number (Scheme_Env *env)
 #endif
 #endif
 
+    scheme_floating_point_nzero = - scheme_floating_point_nzero;
+
     scheme_minus_infinity_val = -scheme_infinity_val;
     not_a_number_val = scheme_infinity_val + scheme_minus_infinity_val;
 
     zerod = scheme_make_double(0.0);
-    nzerod = scheme_make_double(-0.0);
+    nzerod = scheme_make_double(scheme_floating_point_nzero);
     scheme_pi = scheme_make_double(atan2(0, -1));
 #ifdef MZ_USE_SINGLE_FLOATS
     zerof = scheme_make_float(0.0f);
@@ -647,7 +651,7 @@ static int minus_zero_p(double d) {
   long *f, *s;
 
   a[0] = d;
-  a[1] = -0.0;
+  a[1] = scheme_floating_point_nzero;
 
   f = (long *)a;
   s = (long *)(a + 1);

@@ -18,6 +18,13 @@
 
 #define SRP_PRIM_DECL(f) Scheme_Object *f(int,Scheme_Object **)
 
+#ifdef NO_SQLUCODE
+#define SQL_WCHAR              (-8)
+#define SQL_WVARCHAR           (-9)
+#define SQL_WLONGVARCHAR       (-10)
+#define SQL_C_WCHAR            SQL_WCHAR
+#endif
+
 #define namedConstSearch(s,array) \
      (SRP_NAMED_CONSTANT *) \
      bsearch(s,array,sizeray(array),sizeof(*array), \

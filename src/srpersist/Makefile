@@ -6,7 +6,7 @@ ODBCVER=0x0351
 # static library that implements driver manager
 DRIVER_MGR_LIB=odbc
 
-# installation directory
+# driver manager library directory
 LIBDIR=/usr/site/unixODBC/lib
 
 # driver manager include directory
@@ -15,6 +15,10 @@ INCDIR=/usr/local/include
 MZC=../../bin/mzc 
 
 CPP=gcc 
+
+# Add -DNO_SQLUCODE if driver manager does not have SQLUCODE.H
+# Remove HAVE_CHAR, etc. if CHAR, etc. not defined by compiler
+#  or driver manager 
 CPP_FLAGS=-g -DODBCVER=$(ODBCVER) \
 	-DHAVE_CHAR -DHAVE_LPWSTR -DHAVE_WCHAR \
 	-I. -I../../include -I$(INCDIR) -c
@@ -39,8 +43,8 @@ clean :
 	rm -f *.so
 
 srpmain.so : $(OBJS)
-	$(MZC) --ld srpmain.so $(OBJS) -L$(LIBDIR) -L../../lib \
-	  -l$(DRIVER_MGR_LIB) -lmzgc
+	$(MZC) --ld srpmain.so $(OBJS) -L$(LIBDIR) \
+	  -l$(DRIVER_MGR_LIB)
 
 srpersist.o : srpersist.cxx srptypes.h srpbuffer.h srpersist.h srpprims.tbl \
 	srpstructs.tbl srpexns.tbl srpconsts.tbl srpinfo.tbl srpbitmask.tbl

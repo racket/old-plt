@@ -42,7 +42,7 @@ typedef short unsigned int WCHAR;
 #include <sqlext.h>
 #include <sqltypes.h>
 
-#if (ODBCVER >= 0x0300)
+#ifndef NO_SQLUCODE
 #include <sqlucode.h>
 #endif
 

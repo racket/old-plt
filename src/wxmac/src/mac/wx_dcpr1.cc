@@ -146,6 +146,9 @@ void wxPrinterDC::StartPage(void)
   if (ok) {
     CGrafPtr theGrafPtr;
 
+    if (cMacDC)
+      cMacDC->EndCG();
+
     if (PMSessionBeginPage(cPrintData->cPrintSession,
 			   cPrintData->cPageFormat,
 			   NULL) != noErr) {
@@ -172,6 +175,8 @@ void wxPrinterDC::EndPage(void)
 {
   if (current_phase != 2)
     return;
+  if (cMacDC)
+    cMacDC->EndCG();
   PMSessionEndPage(cPrintData->cPrintSession);
   cMacDC = NULL;
   current_phase = 1;

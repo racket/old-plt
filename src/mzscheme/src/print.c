@@ -346,8 +346,8 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
     obj = SCHEME_CDR(obj);
     goto top;
   } else if (p->quick_print_box && SCHEME_BOXP(obj)) {
-    if (check_cycles(SCHEME_BOX_VAL(obj), p, ht))
-      return 1;
+    obj = SCHEME_BOX_VAL(obj);
+    goto top;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
 

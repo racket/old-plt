@@ -1065,6 +1065,7 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
 	bufmax = 0;
     } else {
       scheme_wrong_type("make-pipe", "positive exact integer", 1, argc, args);
+      return NULL;
     }
   } else
     bufmax = 0;

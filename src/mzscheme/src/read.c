@@ -58,6 +58,14 @@ static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
 static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 
+#define mzSPAN(port, pos)  (scheme_tell(port) - pos + 1)
+
+#ifdef MZ_PRECISE_GC
+static long SPAN(Scheme_Object *port, long pos) { return mzSPAN(port, pos); }
+#else
+#define SPAN(port, pos) mzSPAN(port, pos)
+#endif
+
 /* To make reading more efficient with OS threads, pass the
    process (thread) pointer along. */
 #ifndef MZ_REAL_THREADS
@@ -422,7 +430,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
   SCHEME_USE_FUEL(1);
 
   do {
-    ch = scheme_getc(port);
+    ch = scheme_getc_special_ok(port);
   } while (isspace(ch));
 
   line = scheme_tell_line(port);
@@ -432,20 +440,34 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
   switch ( ch )
     {
     case EOF: return (scheme_eof);
+    case SCHEME_SPECIAL:
+      {
+	Scheme_Object *v;
+	v = scheme_get_special(port, stxsrc, line, col, pos);
+	if (SCHEME_STXP(v)) {
+	  if (!stxsrc)
+	    v = scheme_syntax_to_datum(v, 0, NULL);
+	} else if (stxsrc) {
+	  Scheme_Object *s;
+	  s = scheme_make_stx_w_offset(scheme_false, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+	  v = scheme_datum_to_syntax(v, s, scheme_false, 1, 0);
+	}
+	return v;
+      }
     case ']': 
       if (!local_square_brackets_are_parens) {
 	scheme_ungetc(ch, port);
 	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
       } else
-        scheme_read_err(port, stxsrc, line, col, pos, 0, "read: unexpected '%c'", ch);
+        scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: unexpected '%c'", ch);
     case '}': 
       if (!local_curly_braces_are_parens) {
 	scheme_ungetc(ch, port);
 	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
       } else
-        scheme_read_err(port, stxsrc, line, col, pos, 0, "read: unexpected '%c'", ch);
+        scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: unexpected '%c'", ch);
     case ')': 
-      scheme_read_err(port, stxsrc, line, col, pos, 0, "read: unexpected '%c'", ch);
+      scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: unexpected '%c'", ch);
     case '(': 
       return read_list(port, stxsrc, line, col, pos, ')', 0, 0, ht CURRENTPROCARG);
     case '[': 
@@ -464,31 +486,36 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
     case '\'': return read_quote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
     case '`': 
       if (!local_can_read_quasi) {
-	scheme_read_err(port, stxsrc, line, col, pos, 0, "read: illegal use of backquote");
+	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: illegal use of backquote");
 	return NULL;
       } else
 	return read_quasiquote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
     case ',':
       if (!local_can_read_quasi) {
-	scheme_read_err(port, stxsrc, line, col, pos, 0, "read: illegal use of `,'");
+	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: illegal use of `,'");
 	return NULL;
       } else {
-	if (scheme_peekc(port) == '@') {
-	  ch = scheme_getc(port);
+	if (scheme_peekc_special_ok(port) == '@') {
+	  ch = scheme_getc(port); /* must be '@' */
 	  return read_unquote_splicing(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
 	} else
 	  return read_unquote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
       }
     case ';':
-      while (((ch = scheme_getc(port)) != '\n') && (ch != '\r')) {
+      while (((ch = scheme_getc_special_ok(port)) != '\n') && (ch != '\r')) {
 	if (ch == EOF)
 	  return scheme_eof;
+	if (ch == SCHEME_SPECIAL)
+	  scheme_get_special(port, stxsrc,
+			     scheme_tell_line(port), 
+			     scheme_tell_column(port), 
+			     scheme_tell(port));
       }
       goto start_over;
     case '+':
     case '-':
     case '.':
-      ch2 = scheme_peekc(port);
+      ch2 = scheme_peekc_special_ok(port);
       if (isdigit(ch2) || (ch2 == '.') 
 	  || (ch2 == 'i') || (ch2 == 'I') /* Maybe inf */
 	  || (ch2 == 'n') || (ch2 == 'N') /* Maybe nan*/ ) {
@@ -499,9 +526,13 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
       }
     case '#':
-      ch = scheme_getc(port);
+      ch = scheme_getc_special_ok(port);
       switch ( ch )
 	{
+	case EOF:
+	case SCHEME_SPECIAL:
+	  scheme_read_err(port, stxsrc, line, col, pos, 1, ch, "read: bad syntax `#'");
+	  break;
 	case '%':
 	  scheme_ungetc('%', port);
 	  scheme_ungetc('#', port);
@@ -509,13 +540,13 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	case '(': return read_vector(port, stxsrc, line, col, pos, ')', -1, NULL, ht CURRENTPROCARG);
 	case '[': 
 	  if (!local_square_brackets_are_parens) {
-	    scheme_read_err(port, stxsrc, line, col, pos, 0, "read: bad syntax `#['");
+	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, "read: bad syntax `#['");
 	    return NULL;
 	  } else
 	    return read_vector(port, stxsrc, line, col, pos, ']', -1, NULL, ht CURRENTPROCARG);
 	case '{': 
 	  if (!local_curly_braces_are_parens) {
-	    scheme_read_err(port, stxsrc, line, col, pos, 0, "read: bad syntax `#{'");
+	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, "read: bad syntax `#{'");
 	    return NULL;
 	  } else
 	    return read_vector(port, stxsrc, line, col, pos, '}', -1, NULL, ht CURRENTPROCARG);
@@ -524,16 +555,16 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    Scheme_Object *chr;
 	    chr = read_character(port, stxsrc, line, col, pos CURRENTPROCARG);
 	    if (stxsrc)
-	      chr = scheme_make_stx_w_offset(chr, line, col, pos, stxsrc, STX_SRCTAG);
+	      chr = scheme_make_stx_w_offset(chr, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	    return chr;
 	  }
 	case 'T':
 	case 't': return (stxsrc 
-			  ? scheme_make_stx_w_offset(scheme_true, line, col, pos, stxsrc, STX_SRCTAG) 
+			  ? scheme_make_stx_w_offset(scheme_true, line, col, pos, 2, stxsrc, STX_SRCTAG) 
 			  : scheme_true);
 	case 'F':
 	case 'f': return (stxsrc 
-			  ? scheme_make_stx_w_offset(scheme_false, line, col, pos, stxsrc, STX_SRCTAG) 
+			  ? scheme_make_stx_w_offset(scheme_false, line, col, pos, 2, stxsrc, STX_SRCTAG) 
 			  : scheme_false);
 	case 'X':
 	case 'x': return read_number(port, stxsrc, line, col, pos, 0, 0, 16, 1 CURRENTPROCARG);
@@ -553,21 +584,29 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    Scheme_Object *cpld;
 	    cpld = read_compiled(port, ht CURRENTPROCARG);
 	    if (stxsrc) 
-	      cpld = scheme_make_stx_w_offset(cpld, line, col, pos, stxsrc, STX_SRCTAG);
+	      cpld = scheme_make_stx_w_offset(cpld, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	    return cpld;
 	  } else {
-	    scheme_read_err(port, stxsrc, line, col, pos, 0, 
+	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, 
 			    "read: #~ compiled expressions not currently enabled");
 	    return NULL;
 	  }
 	case '|':
+	  /* FIXME: integer overflow possible */
 	  depth = 0;
 	  ch2 = 0;
 	  do {
-	    ch = scheme_getc(port);
+	    ch = scheme_getc_special_ok(port);
+
 	    if (ch == EOF)
-	      scheme_read_err(port, stxsrc, line, col, pos, 1, 
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
 			      "read: end of file in #| comment");
+	    else if (ch == SCHEME_SPECIAL)
+	      scheme_get_special(port, stxsrc,
+				 scheme_tell_line(port), 
+				 scheme_tell_column(port), 
+				 scheme_tell(port));
+
 	    if ((ch2 == '|') && (ch == '#')) {
 	      if (!(depth--))
 		goto start_over;
@@ -580,27 +619,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	  if (local_can_read_box)
 	    return read_box(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
 	  else {
-	    scheme_read_err(port, stxsrc, line, col, pos, 0, 
+	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, 
 			    "read: #& expressions not currently enabled");
 	    return scheme_void;
-	  }
-	case '$':
-	  if (((Scheme_Input_Port *)port)->get_special_fun) {
-	    Scheme_Object *v;
-	    v = scheme_get_special(port, stxsrc, line, col, pos);
-	    if (SCHEME_STXP(v)) {
-	      if (!stxsrc)
-		v = scheme_syntax_to_datum(v, 0, NULL);
-	    } else if (stxsrc) {
-	      Scheme_Object *s;
-	      s = scheme_make_stx_w_offset(scheme_false, line, col, pos, stxsrc, STX_SRCTAG);
-	      v = scheme_datum_to_syntax(v, s, scheme_false, 1, 0);
-	    }
-	    return v;
-	  } else {
-	    scheme_read_err(port, stxsrc, line, col, pos, 0, 
-			    "read: port does not support `#$' input");
-	    return NULL;
 	  }
 	default:
 	  {
@@ -608,7 +629,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    int i = 0, j = 0, overflow = 0, digits = 0;
 	    char tagbuf[64], vecbuf[64]; /* just for errors */
 	    
-	    while (isdigit(ch)) {
+	    while ((ch != EOF) && (ch != SCHEME_SPECIAL) && isdigit(ch)) {
 	      if (digits <= MAX_GRAPH_ID_DIGITS)
 		digits++;
 
@@ -646,7 +667,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 		  overflow = 1;
 		}
 	      }
-	      ch = scheme_getc(port);
+	      ch = scheme_getc_special_ok(port);
 	    }
 
 	    if (overflow)
@@ -666,11 +687,11 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	      Scheme_Object *ph;
 	      
 	      if (!local_can_read_graph)
-		scheme_read_err(port, stxsrc, line, col, pos, 0,
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 				"read: #..# expressions not currently enabled");
 	      
 	      if (digits > MAX_GRAPH_ID_DIGITS)
-		scheme_read_err(port, stxsrc, line, col, pos, 0,
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 				"read: graph id too long in #%s#",
 				tagbuf);
 	    
@@ -680,7 +701,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 		ph = NULL;
 	      
 	      if (!ph) {
-		scheme_read_err(port, stxsrc, line, col, pos, 0,
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 				"read: no #%ld= for #%ld#",
 				vector_length, vector_length);
 		return scheme_void;
@@ -692,17 +713,17 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	      Scheme_Object *v, *ph;
 	      
 	      if (!local_can_read_graph)
-		scheme_read_err(port, stxsrc, line, col, pos, 0,
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 				 "read: #..= expressions not currently enabled");
 	      
 	      if (digits > MAX_GRAPH_ID_DIGITS)
-		scheme_read_err(port, stxsrc, line, col, pos, 0,
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 				 "read: graph id too long in #%s=",
 				 tagbuf);
 	      
 	      if (*ht) {
 		if (scheme_hash_get(*ht, scheme_make_integer(vector_length))) {
-		  scheme_read_err(port, stxsrc, line, col, pos, 0,
+		  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 				  "read: multiple #%ld= tags",
 				  vector_length);
 		  return NULL;
@@ -719,7 +740,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	      
 	      v = read_inner(port, stxsrc, ht CURRENTPROCARG);
 	      if (SCHEME_EOFP(v))
-		scheme_read_err(port, stxsrc, line, col, pos, 1,
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
 				"read: expected an element for graph (found end-of-file)");
 	      if (stxsrc)
 		v = scheme_make_graph_stx(v, line, col, pos);
@@ -736,7 +757,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	      
 	      sprintf(lbuffer, "%s%c", tagbuf, ch);
 	      
-	      scheme_read_err(port, stxsrc, line, col, pos, 0,
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 			      "read: bad syntax `#%s'",
 			       lbuffer);
 
@@ -800,7 +821,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
     obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
     while (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
       if (SAME_OBJ(start, obj)) {
-	scheme_read_err(port, NULL, -1, -1, -1, 0,
+	scheme_read_err(port, NULL, -1, -1, -1, -1, 0,
 			"read: illegal cycle");
 	return NULL;
       }
@@ -954,7 +975,7 @@ read_list(Scheme_Object *port,
       char s[2];
       s[0] = closer;
       s[1] = 0;
-      scheme_read_err(port, stxsrc, startline, startcol, start, 1, 
+      scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF, 
 		      "read: expected a '%c'; started",
 		      closer);
     }
@@ -963,7 +984,7 @@ read_list(Scheme_Object *port,
       if (!list)
 	list = scheme_null;
       return (stxsrc
-	      ? scheme_make_stx_w_offset(list, line, col, pos, stxsrc, STX_SRCTAG)
+	      ? scheme_make_stx_w_offset(list, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG)
 	      : list);
     }
 
@@ -1006,12 +1027,13 @@ read_list(Scheme_Object *port,
       }
 
       return (stxsrc
-	      ? scheme_make_stx_w_offset(list, line, col, pos, stxsrc, STX_SRCTAG)
+	      ? scheme_make_stx_w_offset(list, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG)
 	      : list);
     } else if (!local_can_read_dot
 	       && (ch == '.')
-	       && (next = scheme_peekc(port),
+	       && (next = scheme_peekc_special_ok(port),
 		   ((next == EOF)
+		    || (next == SCHEME_SPECIAL)
 		    || isspace(next)
 		    || (next == '(')
 		    || (next == ')')
@@ -1029,7 +1051,7 @@ read_list(Scheme_Object *port,
       dotline = scheme_tell_line(port);
       
       if (vec || infixed) {
-	scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 0,
+	scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0,
 			"read: illegal use of \".\"");
 	return NULL;
       }
@@ -1047,7 +1069,7 @@ read_list(Scheme_Object *port,
 	    SCHEME_CDR(last) = pair;
 	  last = pair;
 	} else {
-	  scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 0,
+	  scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0,
 			  "read: illegal use of \".\"");
 	  return NULL;
 	}
@@ -1067,7 +1089,7 @@ read_list(Scheme_Object *port,
 	}
 
 	return (stxsrc
-		? scheme_make_stx_w_offset(list, line, col, pos, stxsrc, STX_SRCTAG)
+		? scheme_make_stx_w_offset(list, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG)
 		: list);
       }
     } else {
@@ -1103,17 +1125,32 @@ read_string(Scheme_Object *port,
   startcol = scheme_tell_column(port);
   startline = scheme_tell_line(port);
   buf = onstack;
-  while ((ch = scheme_getc (port)) != '"') {
-    if (ch == EOF)
-      scheme_read_err(port, stxsrc, startline, startcol, start, 1,
+  while ((ch = scheme_getc_special_ok(port)) != '"') {
+    if (ch == EOF) {
+      scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF,
 		      "read: expected a '\"'; started");
+    } else if (ch == SCHEME_SPECIAL) {
+      scheme_get_special(port, stxsrc,
+			 scheme_tell_line(port), 
+			 scheme_tell_column(port), 
+			 scheme_tell(port));
+      scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), SCHEME_SPECIAL,
+		      "read: found non-character while reading a string; started");
+    }
     /* Note: errors will tend to leave junk on the port, with an open \". */
     /* Escape-sequence handling by Eli Barzilay. */
     if (ch == '\\') {
-      ch = scheme_getc(port);
+      ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
-	scheme_read_err(port, stxsrc, startline, startcol, start, 1,
+	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF,
 			"read: expected a '\"'; started");
+      } else if (ch == SCHEME_SPECIAL) {
+	scheme_get_special(port, stxsrc,
+			   scheme_tell_line(port), 
+			   scheme_tell_column(port), 
+			   scheme_tell(port));
+	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), SCHEME_SPECIAL,
+			"read: found non-character while reading a string; started");
       }
       switch ( ch ) {
       case '\\': case '\"': break;
@@ -1126,24 +1163,29 @@ read_string(Scheme_Object *port,
       case 't': ch = '\t'; break;
       case 'v': ch = '\v'; break;
       case '\r':
-        if (scheme_peekc(port) == '\n')
+        if (scheme_peekc_special_ok(port) == '\n')
 	  scheme_getc(port);
 	continue; /* <---------- !!!! */
       case '\n': 
         continue; /* <---------- !!!! */
       case 'x':
-	ch = scheme_getc(port);
+	ch = scheme_getc_special_ok(port);
 	if (isxdigit(ch)) {
 	  n = ch<='9' ? ch-'0' : (toupper(ch)-'A'+10);
-	  ch = scheme_getc(port);
-	  if (isxdigit(ch)) {
+	  ch = scheme_getc_special_ok(port);
+	  if ((ch != EOF) && (ch != SCHEME_SPECIAL) && isxdigit(ch)) {
 	    n = n*16 + (ch<='9' ? ch-'0' : (toupper(ch)-'A'+10));
 	  } else {
 	    scheme_ungetc(ch, port);
 	  }
 	  ch = n;
 	} else {
-	  scheme_read_err(port, stxsrc, startline, startcol, start, ch == EOF,
+	  if (ch == SCHEME_SPECIAL)
+	    scheme_get_special(port, stxsrc,
+			       scheme_tell_line(port), 
+			       scheme_tell_column(port), 
+			       scheme_tell(port));
+	  scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch,
 			  "read: no hex digit following \\x in string");
 	}
 	break;
@@ -1152,12 +1194,12 @@ read_string(Scheme_Object *port,
 	  for (n = j = 0; j < 3; j++) {
 	    n1 = 8*n + ch - '0';
 	    if (n1 > 255) {
-	      scheme_read_err(port, stxsrc, startline, startcol, start, 0,
+	      scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), 0,
 			      "read: escape sequence \\%o out of range in string", n1);
 	    }
 	    n = n1;
 	    if (j < 2) {
-	      ch = scheme_getc(port);
+	      ch = scheme_getc_special_ok(port);
 	      if (!((ch >= '0') && (ch <= '7'))) {
 		scheme_ungetc(ch, port);
 		break;
@@ -1166,7 +1208,7 @@ read_string(Scheme_Object *port,
 	  }
 	  ch = n;
 	} else {
-	  scheme_read_err(port, stxsrc, startline, startcol, start, 0,
+	  scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), 0,
 			  "read: unknown escape sequence \\%c in string", ch);
 	}
 	break;
@@ -1187,7 +1229,7 @@ read_string(Scheme_Object *port,
 
   result = scheme_make_immutable_sized_string(buf, i, i <= 31);
   if (stxsrc)
-    result =  scheme_make_stx_w_offset(result, line, col, pos, stxsrc, STX_SRCTAG);
+    result =  scheme_make_stx_w_offset(result, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return result;
 }
 
@@ -1227,7 +1269,7 @@ read_vector (Scheme_Object *port,
   if (requestLength >= 0 && len > requestLength) {
     char buffer[20];
     sprintf(buffer, "%ld", requestLength);
-    scheme_read_err(port, stxsrc, line, col, pos, 0,
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 		    "read: vector length %ld is too small, "
 		    "%d values provided",
 		    requestLength, len);
@@ -1291,20 +1333,26 @@ read_number_or_symbol(Scheme_Object *port,
   int decimal_inexact = local_read_decimal_inexact;
   Scheme_Object *o;
   int ungetc_ok;
+  Getc_Fun_r getc_special_ok_fun;
   Getc_Fun_r getc_fun;
 
   ungetc_ok = scheme_peekc_is_ungetc(port);
 
-  if (ungetc_ok)
+  if (ungetc_ok) {
+    getc_special_ok_fun = scheme_getc_special_ok;
     getc_fun = scheme_getc;
-  else
+  } else {
+    getc_special_ok_fun = scheme_peekc_special_ok;
     getc_fun = scheme_peekc;
+  }
 
   i = 0;
   size = MAX_QUICK_SYMBOL_SIZE - 1;
   buf = onstack;
 
-  while (((ch = getc_fun(port)) != EOF)
+  ch = getc_special_ok_fun(port);
+  while ((ch != EOF)
+	 && (ch != SCHEME_SPECIAL)
 	 && (running_quote
 	     || (!isspace(ch)
 		 && (ch != '(')
@@ -1319,12 +1367,20 @@ read_number_or_symbol(Scheme_Object *port,
 		 && ((ch != ']') || !brackets)
 		 && ((ch != '}') || !braces)))) {
     if (!ungetc_ok)
-      scheme_getc(port);
+      scheme_getc(port); /* must be a character */
     if (ch == '\\' && !running_quote) {
-      ch = scheme_getc(port);
+      ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
-	scheme_read_err(port, stxsrc, line, col, pos, 1, 
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
 			"read: EOF following \\ in symbol; started");
+	return NULL;
+      } else if (ch == SCHEME_SPECIAL) {
+	scheme_get_special(port, stxsrc,
+			   scheme_tell_line(port), 
+			   scheme_tell_column(port), 
+			   scheme_tell(port));
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
+			"read: non-character following \\ in symbol; started");
 	return NULL;
       }
       quoted = 1;
@@ -1338,7 +1394,8 @@ read_number_or_symbol(Scheme_Object *port,
       rq_col = scheme_tell_column(port);
       rq_line = scheme_tell_line(port);
 
-      continue;
+      ch = getc_fun(port);
+      continue; /* <-- !!! */
     } else 
       quoted = 0;
 
@@ -1355,13 +1412,18 @@ read_number_or_symbol(Scheme_Object *port,
       ch = tolower(ch);
 
     buf[i++] = ch;
+
+    if (running_quote)
+      ch = getc_fun(port);
+    else
+      ch = getc_special_ok_fun(port);
   }
 
   if (ungetc_ok)
     scheme_ungetc(ch, port);
 
   if (running_quote) {
-    scheme_read_err(port, stxsrc, rq_line, rq_col, rq_pos, 1,
+    scheme_read_err(port, stxsrc, rq_line, rq_col, rq_pos, SPAN(port, rq_pos), EOF,
 		    "read: unbalanced `|'");
     return NULL;
   }
@@ -1370,7 +1432,7 @@ read_number_or_symbol(Scheme_Object *port,
 
   if (!quoted_ever && (i == 1) && (buf[0] == '.') && !local_can_read_dot) {
     scheme_read_err(port, stxsrc, scheme_tell_line(port), scheme_tell_column(port), 
-		    scheme_tell(port), 0,
+		    scheme_tell(port), 1, 0,
 		    "read: illegal use of \".\"");
     return NULL;
   }
@@ -1382,13 +1444,13 @@ read_number_or_symbol(Scheme_Object *port,
 			   is_float, is_not_float, decimal_inexact, 
 			   radix, radix_set,
 			   port, NULL, 0,
-			   stxsrc, line, col, pos);
+			   stxsrc, line, col, pos, SPAN(port, pos));
 
   if (SAME_OBJ(o, scheme_false))
     o = scheme_intern_exact_symbol(buf, i);
 
   if (stxsrc)
-    o = scheme_make_stx_w_offset(o, line, col, pos, stxsrc, STX_SRCTAG);
+    o = scheme_make_stx_w_offset(o, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 
   return o;
 }
@@ -1429,19 +1491,32 @@ read_character(Scheme_Object *port,
 {
   int ch, next;
 
-  ch = scheme_getc(port);
-  next = scheme_peekc(port);
+  ch = scheme_getc_special_ok(port);
+
+  if (ch == SCHEME_SPECIAL) {
+    scheme_get_special(port, stxsrc,
+		       scheme_tell_line(port), 
+		       scheme_tell_column(port), 
+		       scheme_tell(port));
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
+		    "read: found non-character after #\\");
+    return NULL;
+  }
+
+  next = scheme_peekc_special_ok(port);
   
   if ((ch >= '0' && ch <= '7') && (next >= '0' && next <= '7')) {
     /* a is the same as next */
     int last;
 
-    last = (scheme_getc(port), scheme_getc(port));
+    last = (scheme_getc(port) /* is char */, scheme_getc_special_ok(port));
 
     if (last < '0' || last > '7' || ch > '3') {
-      scheme_read_err(port, stxsrc, line, col, pos, 0,
+      if (last == SCHEME_SPECIAL)
+	scheme_ungetc(last, port);
+      scheme_read_err(port, stxsrc, line, col, pos, ((last == EOF) || (last == SCHEME_SPECIAL)) ? 3 : 4, last,
 		      "read: bad character constant #\\%c%c%c",
-		      ch, next, (last == EOF ? ' ' : last));
+		      ch, next, ((last == EOF) || (last == SCHEME_SPECIAL)) ? ' ' : last);
       return NULL;
     }
 
@@ -1450,7 +1525,7 @@ read_character(Scheme_Object *port,
     return scheme_make_char(ch);
   }
 
-  if (isalpha(next)) {
+  if ((ch != EOF) && (next != EOF) && (next != SCHEME_SPECIAL) && isalpha(next)) {
     char *buf, *oldbuf, onstack[32];
     int i;
     long size = 31, oldsize;
@@ -1458,8 +1533,8 @@ read_character(Scheme_Object *port,
     i = 1;
     buf = onstack;
     buf[0] = tolower(ch);
-    while ((ch = scheme_peekc(port), (ch != EOF) && isalpha(ch))) {
-      scheme_getc(port);
+    while ((ch = scheme_peekc_special_ok(port), (ch != EOF) && (ch != SCHEME_SPECIAL) && isalpha(ch))) {
+      scheme_getc(port); /* is alpha character */
       if (i >= size) {
 	oldsize = size;
 	oldbuf = buf;
@@ -1513,13 +1588,13 @@ read_character(Scheme_Object *port,
       break;
     }
 
-    scheme_read_err(port, stxsrc, line, col, pos, 0,
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 		    "read: bad character constant: #\\%s",
 		    buf);
   }
 
   if (ch == EOF) {
-    scheme_read_err(port, stxsrc, line, col, pos, 1,
+    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
 		    "read: expected a character after #\\");
   }
 
@@ -1540,14 +1615,14 @@ read_quote(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1,
+    scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
 		    "read: expected an element for quote (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx_w_offset(quote_symbol, line, col, pos, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(quote_symbol, line, col, pos, 1, stxsrc, STX_SRCTAG)
 	 : quote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1561,15 +1636,15 @@ read_quasiquote(Scheme_Object *port,
   
   quoted_obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   if (SCHEME_EOFP(quoted_obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1,
+    scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
 		    "read: expected an element for backquote (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx_w_offset(quasiquote_symbol, line, col, pos, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(quasiquote_symbol, line, col, pos, 1, stxsrc, STX_SRCTAG)
 	 : quasiquote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(quoted_obj, scheme_null));
   
   if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1583,15 +1658,15 @@ read_unquote(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1,
+    scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
 		    "read: expected an element for unquoting comma (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx_w_offset(unquote_symbol, line, col, pos, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(unquote_symbol, line, col, pos, 1, stxsrc, STX_SRCTAG)
 	 : unquote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
 
   if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1605,14 +1680,14 @@ read_unquote_splicing(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1,
+    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
 		    "read: expected an element for unquoting ,@ (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx_w_offset(unquote_splicing_symbol, line, col, pos, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(unquote_splicing_symbol, line, col, pos, 2,stxsrc, STX_SRCTAG)
 	 : unquote_splicing_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1627,13 +1702,13 @@ static Scheme_Object *read_box(Scheme_Object *port,
   o = read_inner(port, stxsrc, ht CURRENTPROCARG);
   
   if (SCHEME_EOFP(o))
-    scheme_read_err(port, stxsrc, line, col, pos, 1,
+    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
 		    "read: expected an element for #& box (found end-of-file)");
 
   bx = scheme_box(o);
 
   if (stxsrc)
-    bx = scheme_make_stx_w_offset(bx, line, col, pos, stxsrc, STX_SRCTAG);
+    bx = scheme_make_stx_w_offset(bx, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 
   return bx;
 }
@@ -1648,14 +1723,14 @@ read_syntax_quote(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1,
+    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
 		    "read: expected an element for #' syntax (found end-of-file)");
   ret = (stxsrc
-	 ? scheme_make_stx_w_offset(syntax_symbol, line, col, pos, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(syntax_symbol, line, col, pos, 2, stxsrc, STX_SRCTAG)
 	 : syntax_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, stxsrc, STX_SRCTAG);
+    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1670,15 +1745,20 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 
  start_over:
 
-  while ((ch = scheme_getc(port), isspace(ch))) {}
+  while ((ch = scheme_getc_special_ok(port), isspace(ch))) {}
 
   if (ch == ';') {
     do {
-      ch = scheme_getc(port);
+      ch = scheme_getc_special_ok(port);
+      if (ch == SCHEME_SPECIAL)
+	scheme_get_special(port, stxsrc, 
+			   scheme_tell_line(port), 
+			   scheme_tell_column(port), 
+			   scheme_tell(port));
     } while (ch != '\n' && ch != '\r' && ch != EOF);
     goto start_over;
   }
-  if (ch == '#' && (scheme_peekc(port) == '|')) {
+  if (ch == '#' && (scheme_peekc_special_ok(port) == '|')) {
     int depth = 0;
     int ch2 = 0;
     long col, pos, line;
@@ -1689,10 +1769,17 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
     
     (void)scheme_getc(port); /* re-read '|' */
     do {
-      ch = scheme_getc(port);
+      ch = scheme_getc_special_ok(port);
+
       if (ch == EOF)
-	scheme_read_err(port, stxsrc, line, col, pos, 1,
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
 			"read: end of file in #| comment; started");
+      else if (ch == SCHEME_SPECIAL)
+	scheme_get_special(port, stxsrc, 
+			   scheme_tell_line(port), 
+			   scheme_tell_column(port), 
+			   scheme_tell(port));
+
       if ((ch2 == '|') && (ch == '#')) {
 	if (!(depth--))
 	  goto start_over;
@@ -2144,7 +2231,7 @@ static Scheme_Object *read_compact(CPort *port,
     default:
       {
 	v = NULL;
-	scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), 0,
+	scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0,
 			"read (compiled): bad #~ contents: %d", ch);
       }
     }
@@ -2280,7 +2367,7 @@ static Scheme_Object *read_marshalled(int type,
   reader = scheme_type_readers[type];
 
   if (!reader)
-    scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), 0,
+    scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0,
 		    "read (compiled): bad #~ type number: %d");
   
   return reader(l);
@@ -2375,7 +2462,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
     buf[got] = 0;
 
     if (strcmp(buf, MZSCHEME_VERSION))
-      scheme_read_err(port, NULL, -1, -1, -1, 0,
+      scheme_read_err(port, NULL, -1, -1, -1, -1, 0,
 		      "read (compiled): code compiled for version %s, not %s",
 		      (buf[0] ? buf : "???"), MZSCHEME_VERSION);
   }
@@ -2388,7 +2475,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   cp.base = scheme_tell(port);
   cp.orig_port = port;
   if ((got = scheme_get_chars(port, size, (char *)cp.start, 0)) != size)
-    scheme_read_err(port, NULL, -1, -1, -1, 0,
+    scheme_read_err(port, NULL, -1, -1, -1, -1, 0,
 		    "read (compiled): bad count: %ld != %ld");
   rp = &cp;
 

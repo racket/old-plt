@@ -408,7 +408,7 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 
 typedef struct Scheme_Stx_Srcloc {
   MZTAG_IF_REQUIRED
-  long line, col, pos;
+  long line, col, pos, span;
   Scheme_Object *src;
 } Scheme_Stx_Srcloc;
 
@@ -438,7 +438,7 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 			       Scheme_Stx_Srcloc *srcloc,
 			       Scheme_Object *props);
 Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val, 
-					long line, long col, long pos,
+					long line, long col, long pos, long span,
 					Scheme_Object *src,
 					Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
@@ -1086,7 +1086,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  Scheme_Object *port,
 				  int *div_by_zero,
 				  int test_only,
-				  Scheme_Object *stxsrc, long line, long col, long pos);
+				  Scheme_Object *stxsrc, long line, long col, long pos, long span);
 
 Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2);
 Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2);
@@ -1620,7 +1620,7 @@ void scheme_clean_dead_env(Scheme_Env *env);
 
 void scheme_read_err(Scheme_Object *port, 
 		     Scheme_Object *stxsrc,
-		     long line, long column, long pos, 
+		     long line, long column, long pos, long span,
 		     int is_eof, const char *detail, ...);
 
 void scheme_wrong_syntax(const char *where, 
@@ -1796,13 +1796,14 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 #endif
 
 Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos);
+void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
+extern int scheme_special_ok;
 
 typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
 typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
 typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
 typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
 typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
-typedef Scheme_Object *(*Get_Special_Fun)(struct Scheme_Input_Port *port, Scheme_Object *, long, long, long);
 
 Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   void *data,
@@ -1811,7 +1812,6 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   Char_Ready_Fun char_ready_fun,
 					   Close_Fun_i close_fun,
 					   Need_Wakeup_Fun need_wakeup_fun,
-					   Get_Special_Fun get_special_fun,
 					   int must_close);
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)

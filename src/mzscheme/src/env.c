@@ -379,13 +379,11 @@ static void make_init_env(void)
 						      1, 1),
 			     env);
 
-#if 0
   scheme_add_global_constant("set!-transformer?", 
 			     scheme_make_prim_w_arity(set_transformer_p,
 						      "set!-transformer?",
 						      1, 1),
 			     env);
-#endif
 
   DONE_TIME(env);
 

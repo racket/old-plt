@@ -835,11 +835,11 @@ typedef struct Scheme_Input_Port
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);
   void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
-  Scheme_Object *(*get_special_fun)(struct Scheme_Input_Port *, Scheme_Object *, long, long, long);
   Scheme_Object *read_handler;
   char *name;
   unsigned char *ungotten;
   int ungotten_count, ungotten_allocated;
+  Scheme_Object *special, *ungotten_special;
   long position, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
@@ -870,6 +870,8 @@ typedef struct Scheme_Output_Port
 #define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
 #define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
 #define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
+
+#define SCHEME_SPECIAL (-2)
 
 /*========================================================================*/
 /*                              exceptions                                */

@@ -44,12 +44,14 @@ static Scheme_Object *with_output_to_file (int, Scheme_Object *[]);
 static Scheme_Object *read_f (int, Scheme_Object *[]);
 static Scheme_Object *read_syntax_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
+static Scheme_Object *read_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *sch_read_string (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang_break (int, Scheme_Object *[]);
 static Scheme_Object *write_string_avail_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
+static Scheme_Object *peek_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
 static Scheme_Object *sch_write (int, Scheme_Object *[]);
@@ -274,7 +276,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
 						      "make-input-port", 
-						      3, 5), 
+						      3, 4), 
 			     env);
   scheme_add_global_constant("make-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
@@ -295,6 +297,11 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("read-char", 
 			     scheme_make_prim_w_arity(read_char, 
 						      "read-char", 
+						      0, 1), 
+			     env);
+  scheme_add_global_constant("read-char-or-special", 
+			     scheme_make_prim_w_arity(read_char_spec, 
+						      "read-char-or-special", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("read-line", 
@@ -330,6 +337,11 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("peek-char", 
 			     scheme_make_prim_w_arity(peek_char, 
 						      "peek-char", 
+						      0, 1), 
+			     env);
+  scheme_add_global_constant("peek-char-or-special", 
+			     scheme_make_prim_w_arity(peek_char_spec, 
+						      "peek-char-or-special", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("eof-object?", 
@@ -545,7 +557,6 @@ scheme_make_sized_string_input_port(const char *str, long len)
 			       NULL,
 			       string_char_ready,
 			       string_close_in,
-			       NULL, 
 			       NULL,
 			       0);
 
@@ -658,6 +669,10 @@ static int
 user_getc (Scheme_Input_Port *port)
 {
   Scheme_Object *fun, *val;
+  int special_ok;
+
+  special_ok = scheme_special_ok;
+  scheme_special_ok = 0;
 
   fun = ((Scheme_Object **) port->port_data)[0];
 
@@ -667,10 +682,18 @@ user_getc (Scheme_Input_Port *port)
     return EOF;
   else {
     if (!SCHEME_CHARP(val)) {
-      if (scheme_return_eof_for_error()) {
+      if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
+	if (special_ok) {
+	  port->special = val;
+	  return SCHEME_SPECIAL;
+	} else {
+	  scheme_bad_time_for_special("read-char", (Scheme_Object *)port);
+	  return 0;
+	}
+      } else if (scheme_return_eof_for_error()) {
 	return EOF;
       } else {
-	scheme_wrong_type("user port read-char", "character", -1, -1, &val);
+	scheme_wrong_type("user port read-char", "character, eof, or procedure of arity 4", -1, -1, &val);
       }
     }
     return (unsigned char)SCHEME_CHAR_VAL(val);
@@ -681,14 +704,26 @@ static int
 user_peekc (Scheme_Input_Port *port)
 {
   Scheme_Object *fun, *val;
+  int special_ok;
+
+  special_ok = scheme_special_ok;
+  scheme_special_ok = 0;
 
   fun = ((Scheme_Object **) port->port_data)[3];
   val = _scheme_apply(fun, 0, NULL);
   if (SCHEME_EOFP(val))
     return EOF;
   else {
-    if (!SCHEME_CHARP(val))
-      scheme_wrong_type("user port peek-char", "character", -1, -1, &val);
+    if (!SCHEME_CHARP(val)) {
+      if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
+	if (special_ok)
+	  return SCHEME_SPECIAL;
+	else
+	  scheme_bad_time_for_special("peek-char", (Scheme_Object *)port);
+      } else
+	scheme_wrong_type("user port peek-char", "character, eof, or procedure of arity 4", -1, -1, &val);
+      return 0;
+    }
     return (unsigned char)SCHEME_CHAR_VAL(val);
   }
 }
@@ -710,22 +745,6 @@ user_close_input(Scheme_Input_Port *port)
 
   fun = ((Scheme_Object **) port->port_data)[2];
   _scheme_apply_multi(fun, 0, NULL);
-}
-
-static Scheme_Object * 
-user_get_special (Scheme_Input_Port *port, Scheme_Object *src, long line, long col, long pos)
-{
-  Scheme_Object *fun, *val, *a[4];
-
-  fun = ((Scheme_Object **) port->port_data)[4];
-
-  a[0] = (src ? src : scheme_false);
-  a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
-  a[2] = (col > 0) ? scheme_make_integer(col) : scheme_false;
-  a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
-  val = _scheme_apply_multi(fun, 4, a);
-
-  return val;
 }
 
 /*========================================================================*/
@@ -1090,7 +1109,6 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
 				  pipe_char_ready,
 				  pipe_in_close,
 				  NULL,
-				  NULL,
 				  0);
 
   readp->name = "PIPE";
@@ -1185,8 +1203,6 @@ make_input_port(int argc, Scheme_Object *argv[])
     if (!scheme_check_proc_arity(NULL, 0, 3, argc, argv))
       scheme_wrong_type("make-input-port", "procedure (arity 0) or #f", 3, argc, argv);
   }
-  if (argc > 4)
-    scheme_check_proc_arity("make-input-port", 4, 4, argc, argv);
   
   copy = MALLOC_N(Scheme_Object *, argc);
   memcpy(copy, argv, argc * sizeof(Scheme_Object *));
@@ -1200,7 +1216,6 @@ make_input_port(int argc, Scheme_Object *argv[])
 			       user_char_ready,
 			       user_close_input,
 			       NULL,
-			       (argc > 4) ? user_get_special : NULL,
 			       0);
 
   ip->name = "USERPORT";
@@ -1598,7 +1613,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-do_read_char(char *name, int argc, Scheme_Object *argv[], int peek)
+do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec)
 {
   Scheme_Object *port;
   int ch;
@@ -1611,13 +1626,25 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek)
   else
     port = CURRENT_INPUT_PORT(scheme_config);
 
-  if (peek)
-    ch = scheme_peekc(port);
-  else
-    ch = scheme_getc(port);
+  if (peek) {
+    if (spec)
+      ch = scheme_peekc_special_ok(port);
+    else
+      ch = scheme_peekc(port);
+  } else {
+    if (spec)
+      ch = scheme_getc_special_ok(port);
+    else
+      ch = scheme_getc(port);
+  }
 
-  if (ch == EOF)
-    return (scheme_eof);
+  if (ch == SCHEME_SPECIAL) {
+    if (peek)
+      return scheme_intern_symbol("special");
+    else
+      return scheme_get_special(port, scheme_false, -1, -1, scheme_tell(port));
+  } else if (ch == EOF)
+    return scheme_eof;
   else
     return _scheme_make_char(ch);
 }
@@ -1625,13 +1652,25 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek)
 static Scheme_Object *
 read_char (int argc, Scheme_Object *argv[])
 {
-  return do_read_char("read-char", argc, argv, 0);
+  return do_read_char("read-char", argc, argv, 0, 0);
+}
+
+static Scheme_Object *
+read_char_spec (int argc, Scheme_Object *argv[])
+{
+  return do_read_char("read-char-or-special", argc, argv, 0, 1);
 }
 
 static Scheme_Object *
 peek_char (int argc, Scheme_Object *argv[])
 {
-  return do_read_char("peek-char", argc, argv, 1);
+  return do_read_char("peek-char", argc, argv, 1, 0);
+}
+
+static Scheme_Object *
+peek_char_spec (int argc, Scheme_Object *argv[])
+{
+  return do_read_char("peek-char-or-special", argc, argv, 1, 1);
 }
 
 static Scheme_Object *

@@ -34,6 +34,7 @@ static Scheme_Object *syntax_e(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_line(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_col(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_span(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
@@ -263,6 +264,11 @@ void scheme_init_stx(Scheme_Env *env)
 						      "syntax-position",
 						      1, 1, 1),
 			     env);
+  scheme_add_global_constant("syntax-span", 
+			     scheme_make_folding_prim(syntax_span,
+						      "syntax-span",
+						      1, 1, 1),
+			     env);
   scheme_add_global_constant("syntax-source", 
 			     scheme_make_folding_prim(syntax_src,
 						      "syntax-source",
@@ -373,7 +379,7 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 }
 
 Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val, 
-					long line, long col, long pos,
+					long line, long col, long pos, long span,
 					Scheme_Object *src,
 					Scheme_Object *props)
 {
@@ -402,6 +408,7 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
   srcloc->line = line;
   srcloc->col = col;
   srcloc->pos = pos;
+  srcloc->span = span;
    
   return scheme_make_stx(val, srcloc, props);
 }
@@ -2275,7 +2282,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* Re-use rename table or env rename */
       a = scheme_hash_get(rns, a);
       if (!a) {
-	scheme_read_err(scheme_false, NULL, -1, -1, -1, 0,
+	scheme_read_err(scheme_false, NULL, -1, -1, -1, -1, 0,
 			"read (compiled): unknown rename table index: %d",
 			SCHEME_INT_VAL(a));
       }
@@ -2721,23 +2728,30 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 
     if (!SCHEME_FALSEP(src) 
 	&& !SCHEME_STXP(src)
-	&& !((ll == 4)
+	&& !(((ll == 4) || (ll == 5))
 	     && scheme_nonneg_exact_p(SCHEME_CADR(src))
 	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(src)))
-	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src)))))
-	&& !((ll == 2)
-	     && scheme_nonneg_exact_p(SCHEME_CADR(src))))
+	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src))))
+	     && ((ll == 4)
+		 || scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src)))))))
+	&& !(((ll == 2) || (ll == 3))
+	     && scheme_nonneg_exact_p(SCHEME_CADR(src))
+	     && ((ll == 2)
+		 || scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(src))))))
       scheme_wrong_type("datum->syntax-object", "syntax, source location list, or #f", 2, argc, argv);
 
-    if (ll == 4) {
-      /* line--column--pos format */
-      Scheme_Object *line, *col, *pos;
+    if (ll >= 4) {
+      /* line--column--pos--span format */
+      Scheme_Object *line, *col, *pos, *span;
       line = SCHEME_CADR(src);
       col = SCHEME_CADR(SCHEME_CDR(src));
       pos = SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src)));
+      if (ll == 5)
+	span = SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src))));
+      else
+	span = NULL;
       src = SCHEME_CAR(src);
       
-
       /* FIXME: what to do with too-large positions? */
       if (SCHEME_BIGNUMP(line))
 	line = scheme_make_integer(0);
@@ -2745,27 +2759,37 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 	col = scheme_make_integer(0);
       if (SCHEME_BIGNUMP(pos))
 	pos = scheme_make_integer(0);
+      if (span && SCHEME_BIGNUMP(span))
+	span = scheme_make_integer(0);
 
       src = scheme_make_stx_w_offset(scheme_false,
 				     SCHEME_INT_VAL(line),
 				     SCHEME_INT_VAL(col),
 				     SCHEME_INT_VAL(pos),
+				     span ? SCHEME_INT_VAL(span) : -1,
 				     src,
 				     NULL);
-    } else if (ll == 2) {
-      /* position format */
-      Scheme_Object *pos;
+    } else if (ll >= 2) {
+      /* position--span format */
+      Scheme_Object *pos, *span;
       pos = SCHEME_CADR(src);
+      if (ll == 3) 
+	span = SCHEME_CADR(SCHEME_CDR(src));
+      else
+	span = NULL;
       src = SCHEME_CAR(src);
 
       /* FIXME: what to do with too-large positions? */
       if (SCHEME_BIGNUMP(pos))
 	pos = scheme_make_integer(0);
+      if (span && SCHEME_BIGNUMP(span))
+	span = scheme_make_integer(0);
 
       src = scheme_make_stx_w_offset(scheme_false,
 				     -1,
 				     -1,
 				     SCHEME_INT_VAL(pos),
+				     span ? SCHEME_INT_VAL(span) : -1,
 				     src,
 				     NULL);
     }
@@ -2820,6 +2844,19 @@ static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv)
     return scheme_false;
   else
     return scheme_make_integer(stx->srcloc->pos);
+}
+
+static Scheme_Object *syntax_span(int argc, Scheme_Object **argv)
+{
+  Scheme_Stx *stx = (Scheme_Stx *)argv[0];
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-span", "syntax", 0, argc, argv);
+    
+  if (stx->srcloc->span < 0)
+    return scheme_false;
+  else
+    return scheme_make_integer(stx->srcloc->span);
 }
 
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)

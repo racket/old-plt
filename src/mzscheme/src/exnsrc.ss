@@ -32,11 +32,13 @@ strings are types/comments.
      
      (read [port "input-port" "port being read"
 		 source "value" "source name"
-		 line "non-negative exact integer or {\\scmfalse}" "source line"
-		 column "non-negative exact integer or {\\scmfalse}" "source column"
-		 position "non-negative exact integer or {\\scmfalse}" "source position"]
+		 line "positive exact integer or {\\scmfalse}" "source line"
+		 column "positive exact integer or {\\scmfalse}" "source column"
+		 position "positive exact integer or {\\scmfalse}" "source position"
+		 span "non-negative exact integer or {\\scmfalse}" "source span"]
 	   "\\rawscm{read} parsing error"
-	   (eof [] "unexpected end-of-file"))
+	   (eof [] "unexpected end-of-file")
+	   (non-char [] "unexpected non-character"))
      
      (i/o [] -
 	  (port [port "port" "port for attempted operation"] -

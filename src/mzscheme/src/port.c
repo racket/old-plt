@@ -184,6 +184,8 @@ int scheme_internal_checking_char;
 
 int scheme_binary_mode_stdio;
 
+int scheme_special_ok;
+
 /* locals */
 #ifdef USE_FD_PORTS
 static Scheme_Object *fd_input_port_type;
@@ -840,7 +842,6 @@ _scheme_make_input_port(Scheme_Object *subtype,
 			Char_Ready_Fun char_ready_fun,
 			Close_Fun_i close_fun,
 			Need_Wakeup_Fun need_wakeup_fun,
-			Get_Special_Fun get_special_fun,
 			int must_close)
 {
   Scheme_Input_Port *ip;
@@ -854,7 +855,6 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->char_ready_fun = char_ready_fun;
   ip->need_wakeup_fun = need_wakeup_fun;
   ip->close_fun = close_fun;
-  ip->get_special_fun = get_special_fun;
   ip->name = "stdin";
   ip->ungotten = NULL;
   ip->ungotten_count = 0;
@@ -893,12 +893,11 @@ scheme_make_input_port(Scheme_Object *subtype,
 		       Char_Ready_Fun char_ready_fun,
 		       Close_Fun_i close_fun,
 		       Need_Wakeup_Fun need_wakeup_fun,
-		       Get_Special_Fun get_special_fun,
 		       int must_close)
 {
   return _scheme_make_input_port(subtype, data,
 				 getc_fun, peekc_fun, char_ready_fun, close_fun, 
-				 need_wakeup_fun, get_special_fun, must_close);
+				 need_wakeup_fun, must_close);
 }
 
 Scheme_Output_Port *
@@ -971,7 +970,7 @@ int scheme_port_lock_c;
 #endif
 
 int
-scheme_getc (Scheme_Object *port)
+scheme_getc(Scheme_Object *port)
 {
   int c;
   Scheme_Input_Port *ip;
@@ -984,7 +983,17 @@ scheme_getc (Scheme_Object *port)
 
   if (ip->ungotten_count)
     c = ip->ungotten[--ip->ungotten_count];
-  else {
+  else if (ip->ungotten_special) {
+    if (scheme_special_ok) {
+      scheme_special_ok = 0;
+      ip->special = ip->ungotten_special;
+      ip->ungotten_special = NULL;
+      c = SCHEME_SPECIAL;
+    } else {
+      scheme_bad_time_for_special("read-char", port);
+      return 0;
+    }
+  } else {
     Getc_Fun f;
     CHECK_PORT_CLOSED("#<primitive:get-port-char>", "input", port, ip->closed);
     f = ip->getc_fun;
@@ -1022,6 +1031,22 @@ scheme_getc (Scheme_Object *port)
   END_LOCK_PORT(ip->sema);
 
   return c;
+}
+
+int
+scheme_getc_special_ok(Scheme_Object *port)
+{
+  Scheme_Input_Port *ip;
+
+  ip = (Scheme_Input_Port *)port;
+
+  if (SAME_OBJ(ip->sub_type, scheme_user_input_port_type)
+      && !ip->ungotten_count
+      && !ip->closed) {
+    scheme_special_ok = 1;
+  }
+   
+  return scheme_getc(port);
 }
 
 long 
@@ -1070,6 +1095,9 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
     }
     
     ip->ungotten_count = i;
+  } else if (ip->ungotten_special) {
+    scheme_bad_time_for_special("read-string", port);
+    return 0;
   }
 
   use_getc = 0;
@@ -1349,7 +1377,15 @@ int scheme_peekc(Scheme_Object *port)
     
     if (ip->ungotten_count)
       ch = ip->ungotten[ip->ungotten_count - 1];
-    else {
+    else if (ip->ungotten_special) {
+      if (scheme_special_ok) {
+	scheme_special_ok = 0;
+	ch = SCHEME_SPECIAL;
+      } else {
+	scheme_bad_time_for_special("peek-char", port);
+	return 0;
+      }
+    } else {
       Peekc_Fun f;
       CHECK_PORT_CLOSED("#<primitive:peek-port-char>", "input", port, ip->closed);
       f = ip->peekc_fun;
@@ -1360,6 +1396,22 @@ int scheme_peekc(Scheme_Object *port)
 
     return ch;
   }
+}
+
+int
+scheme_peekc_special_ok(Scheme_Object *port)
+{
+  Scheme_Input_Port *ip;
+
+  ip = (Scheme_Input_Port *)port;
+
+  if (SAME_OBJ(ip->sub_type, scheme_user_input_port_type)
+      && !ip->ungotten_count
+      && !ip->closed) {
+    scheme_special_ok = 1;
+  }
+   
+  return scheme_peekc(port);
 }
 
 int scheme_peekc_is_ungetc(Scheme_Object *port)
@@ -1401,26 +1453,31 @@ scheme_ungetc (int ch, Scheme_Object *port)
 
   CHECK_PORT_CLOSED("#<primitive:peek-port-char>", "input", port, ip->closed);
 
-  if (ip->ungotten_count == ip->ungotten_allocated) {
-    unsigned char *old;
-    int oldc;
+  if (ch == SCHEME_SPECIAL) {
+    ip->ungotten_special = ip->special;
+    ip->special = NULL;
+  } else {
+    if (ip->ungotten_count == ip->ungotten_allocated) {
+      unsigned char *old;
+      int oldc;
 
-    old = ip->ungotten;
-    oldc = ip->ungotten_count;
-    if (oldc)
-      ip->ungotten_allocated = 2 * oldc;
-    else
-      ip->ungotten_allocated = 5;
+      old = ip->ungotten;
+      oldc = ip->ungotten_count;
+      if (oldc)
+	ip->ungotten_allocated = 2 * oldc;
+      else
+	ip->ungotten_allocated = 5;
 
-    {
-      unsigned char *uca;
-      uca = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
-      ip->ungotten = uca;
+      {
+	unsigned char *uca;
+	uca = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
+	ip->ungotten = uca;
+      }
+      if (oldc)
+	memcpy(ip->ungotten, old, oldc);
     }
-    if (oldc)
-      memcpy(ip->ungotten, old, oldc);
+    ip->ungotten[ip->ungotten_count++] = ch;
   }
-  ip->ungotten[ip->ungotten_count++] = ch;
 
   --ip->position;
   --ip->column;
@@ -1451,7 +1508,7 @@ scheme_char_ready (Scheme_Object *port)
    
   CHECK_PORT_CLOSED("char-ready?", "input", port, ip->closed);
 
-  if (ip->ungotten_count)
+  if (ip->ungotten_count || ip->ungotten_special)
     retval = 1;
   else {
     Char_Ready_Fun f = ip->char_ready_fun;
@@ -1465,8 +1522,7 @@ scheme_char_ready (Scheme_Object *port)
 
 Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long line, long col, long pos)
 {
-  Get_Special_Fun f;
-  Scheme_Object *r, *val, *pd;
+  Scheme_Object *r, *val, *pd, *f, *a[4];
   Scheme_Input_Port *ip;
   long pos_delta;
   
@@ -1502,8 +1558,15 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
 
 
   CHECK_PORT_CLOSED("#<primitive:get-special>", "input", port, ip->closed);
-  f = ip->get_special_fun;
-  r = f(ip, src, line, col, pos);
+
+  f = ip->special;
+  ip->special = NULL;
+
+  a[0] = (src ? src : scheme_false);
+  a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
+  a[2] = (col > 0) ? scheme_make_integer(col) : scheme_false;
+  a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
+  r = _scheme_apply_multi(f, 4, a);
 
   /* Should be multiple values: */
   if (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES)) {
@@ -1517,9 +1580,9 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
     pd = scheme_multiple_array[1];
 
     if (SCHEME_INTP(pd) && SCHEME_INT_VAL(pd) >= 0) {
-      pos_delta = SCHEME_INT_VAL(pd) - 2;
+      pos_delta = SCHEME_INT_VAL(pd) - 1;
     } else if (SCHEME_BIGNUMP(pd) && SCHEME_BIGPOS(pd)) {
-      pos_delta = -2; /* FIXME - what to do with reading overflows? */
+      pos_delta = -1; /* FIXME - what to do with reading overflows? */
     } else {
       scheme_wrong_type("port read-special result", 
 			"exact non-negative integer", 1, 
@@ -1540,6 +1603,11 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
   END_LOCK_PORT(ip->sema);
 
   return val;
+}
+
+void scheme_bad_time_for_special(const char *who, Scheme_Object *port)
+{
+  scheme_arg_mismatch(who, "non-character in an unsupported context, from port:", port);
 }
 
 void
@@ -1643,6 +1711,7 @@ scheme_close_input_port (Scheme_Object *port)
     }
     ip->closed = 1;
     ip->ungotten_count = 0;
+    ip->ungotten_special = NULL;
   }
 
   END_LOCK_PORT(ip->sema);
@@ -2793,7 +2862,6 @@ _scheme_make_named_file_input_port(FILE *fp, const char *filename,
 			       file_char_ready,
 			       file_close_input,
 			       file_need_wakeup,
-			       NULL,
 			       1);
 
   {
@@ -2999,7 +3067,6 @@ make_fd_input_port(int fd, const char *filename, int regfile)
 			       fd_char_ready,
 			       fd_close_input,
 			       fd_need_wakeup,
-			       NULL,
 			       1);
 
   {
@@ -3191,7 +3258,6 @@ make_oskit_console_input_port()
 			       osk_char_ready,
 			       osk_close_input,
 			       osk_need_wakeup,
-			       NULL,
 			       1);
   
   ip->name = "STDIN";
@@ -3668,7 +3734,6 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 			       tested_file_char_ready,
 			       tested_file_close_input,
 			       tested_file_need_wakeup,
-			       NULL,
 			       1);
 
   {

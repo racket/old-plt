@@ -1024,7 +1024,8 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
 
 void scheme_read_err(Scheme_Object *port, 
 		     Scheme_Object *stxsrc,
-		     long line, long col, long pos, int is_eof,
+		     long line, long col, long pos, long span, 
+		     int gotc,
 		     const char *detail, ...)
 {
   va_list args;
@@ -1068,12 +1069,13 @@ void scheme_read_err(Scheme_Object *port,
   } else
     ls = "";
 
-  scheme_raise_exn(is_eof ? MZEXN_READ_EOF : MZEXN_READ, 
+  scheme_raise_exn((gotc == EOF) ? MZEXN_READ_EOF : ((gotc == SCHEME_SPECIAL) ? MZEXN_READ_NON_CHAR : MZEXN_READ), 
 		   port ? port : scheme_false, 
 		   stxsrc ? stxsrc : scheme_false,
 		   (line < 0) ? scheme_false : scheme_make_integer(line),
 		   (col < 0) ? scheme_false : scheme_make_integer(col),
 		   (pos < 0) ? scheme_false : scheme_make_integer(pos),
+		   (span < 0) ? scheme_false : scheme_make_integer(span),
 		   "%t in %s%s", 
 		   s, slen, port ? SCHEME_IPORT_NAME(port) : "UNKNOWN",
 		   ls);

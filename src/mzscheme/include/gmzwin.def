@@ -189,6 +189,8 @@ EXPORTS
  scheme_printf
  scheme_getc
  scheme_peekc
+ scheme_getc_special_ok
+ scheme_peekc_special_ok
  scheme_ungetc
  scheme_char_ready
  scheme_peekc_is_ungetc

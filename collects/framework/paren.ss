@@ -7,13 +7,13 @@
   
   (define skip-whitespace
     (lambda (edit pos dir)
-      (let ([left (if (= dir 1) pos (sub1 pos))]
-	    [okay (if (= dir 1)(<= pos (send edit last-position))
+      (let ([left (if (eq? dir 'forward) pos (sub1 pos))]
+	    [okay (if (eq? dir 'forward)(<= pos (send edit last-position))
 		      (> pos 0))])
 	(if okay	
 	    (let ([next-char (send edit get-character left)])
 	      (if (char-whitespace? next-char)
-		  (skip-whitespace edit ((if (= dir 1) add1 sub1) pos) dir)
+		  (skip-whitespace edit ((if (eq? dir 'forward) add1 sub1) pos) dir)
 		  pos))
 	    pos))))
   
@@ -30,7 +30,7 @@
 				 paren-pairs quote-pairs eol-comments)]
 		 [end-point 
 		  (and balance-point
-		       (skip-whitespace edit balance-point 1))])
+		       (skip-whitespace edit balance-point 'forward))])
 	    (and balance-point
 		 (or (and (<= balance-point end) (>= end-point end))
 		     (balanced? edit end-point end paren-pairs quote-pairs 

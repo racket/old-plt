@@ -656,7 +656,7 @@
 		   ;; ensure that there is a newline before the snip is inserted
 		   (unless (member 'hard-newline
 				   (send (find-snip (last-position) 'before) get-flags))
-		     (insert #\newline (last-position) (last-position)))
+		     (insert #\newline (last-position) (last-position) #f))
 		   
 		   (when starting-at-prompt-mode?
 		     (set-prompt-mode #f))
@@ -666,8 +666,8 @@
 		   (send transparent-edit auto-wrap #t)
 		   (let ([snip (make-object mred:editor-snip% transparent-edit)])
 		     (set! transparent-snip snip)
-		     (insert snip (last-position) (last-position))
-		     (insert (string #\newline) (last-position) (last-position))
+		     (insert snip (last-position) (last-position) #f)
+		     (insert (string #\newline) (last-position) (last-position) #f)
 		     (for-each (lambda (c) (send c add-wide-snip snip))
 			       (get-canvases)))
 		   (when grab-focus?
@@ -714,26 +714,27 @@
 	  [generic-write
 	   (let ([time-of-last-call (current-milliseconds)])
 	     (lambda (edit s style-func)
-	       (let ([handle-insertion
-		      (lambda ()
-			(let* ([start (send edit last-position)]
-			       [c-locked? (send edit locked?)])
-			  (send edit begin-edit-sequence)
-			  (send edit lock #f)
-			  (send edit insert
-				(if (is-a? s mred:snip%)
-				    (send s copy)
-				    s))
-			  (let ([end (send edit last-position)])
-			    ;(send edit change-style null start end) ; wx
-			    (send edit set-prompt-position end)
-			    (style-func start end))
-			  (send edit lock c-locked?)
-			  (send edit end-edit-sequence)))])
-		 (when prompt-mode?
-		   (insert #\newline)
-		   (set-prompt-mode #f))
-		 (handle-insertion))))]
+	       (when prompt-mode?
+		 (insert #\newline (last-position) (last-position) #f)
+		 (set-prompt-mode #f))
+
+	       (let* ([start (send edit last-position)]
+		      [c-locked? (send edit locked?)])
+		 (send edit begin-edit-sequence)
+		 (send edit lock #f)
+		 (send edit insert
+		       (if (is-a? s mred:snip%)
+			   (send s copy)
+			   s)
+		       start
+		       start
+		       #f)
+		 (let ([end (send edit last-position)])
+		   ;(send edit change-style null start end) ; wx
+		   (send edit set-prompt-position end)
+		   (style-func start end))
+		 (send edit lock c-locked?)
+		 (send edit end-edit-sequence))))]
 	  [generic-close (lambda () '())]
 	  
 	  
@@ -855,7 +856,7 @@
 	[insert-delta
 	 (lambda (s delta)
 	   (let ([before (last-position)])
-	     (insert s before before)
+	     (insert s before before #f)
 	     (let ([after (last-position)])
 	       (change-style delta before after)
 	       (values before after))))])

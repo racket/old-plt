@@ -107,7 +107,7 @@
 		  (map number->string times)
 		  top-panel
 		  (lambda (choice event)
-		    (let ([time (list-ref times (send event get-command-int))])
+ 		    (let ([time (list-ref times (send choice get-selection))])
 		      (fw:preferences:set 'drscheme:test-suite:run-interval time)
 		      (fw:test:run-interval time))))])
 	    (send choice set-selection

@@ -170,13 +170,15 @@
 			  (set-cdr! l null)]
 	 [else (loop (cdr l))]))))
   (define (remember exp)
-    (set! previous-expressions
-	  (let loop ([n 50]
-		     [l (cons (substring exp 0 (- (string-length exp) 1))
-			      previous-expressions)])
-	    (cond
-	     [(or (zero? n) (null? l)) previous-expressions]
-	     [else (cons (car l) (loop (- n 1) (cdr l)))]))))
+    (unless (string=? exp "")
+      (set! previous-expressions
+	    (let loop ([n 50]
+		       [l (cons
+			   (substring exp 0 (- (string-length exp) 1))
+			   previous-expressions)])
+	      (cond
+	       [(or (zero? n) (null? l)) previous-expressions]
+	       [else (cons (car l) (loop (- n 1) (cdr l)))])))))
 
   (define (evaluate expr-str)
     (remember expr-str)

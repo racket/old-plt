@@ -118,9 +118,18 @@
 			(let ([old-load (current-load)])
 			  (lambda (f)
 			    (set! mred:splash-counter (add1 mred:splash-counter))
-			    (when (and (mred:change-splash-message (format "Loading ~a..." f))
-				       (<= mred:splash-counter mred:splash-max))
-			      (send gauge set-value mred:splash-counter))
+			    (let*-values ([(absf) (if (relative-path? f)
+						      (build-path (current-directory) f)
+						      f)]
+					  [(base name _1) (split-path absf)]
+					  [(finalf)
+					   (if base
+					       (let-values ([(base2 name2 _2) (split-path base)])
+						 (build-path name2 name))
+					       name)])
+			      (when (and (mred:change-splash-message (format "Loading ~a..." finalf))
+					 (<= mred:splash-counter mred:splash-max))
+				(send gauge set-value mred:splash-counter)))
 			    (old-load f)))))))
 		 (begin (printf "WARNING: bad bitmap ~s" filename)
 			(mred:no-more-splash-messages))))

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.32 1999/07/09 17:34:26 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.33 1999/11/29 19:01:49 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -491,7 +491,9 @@ static wxWnd *wxCurrentWindow(int in_content)
       return NULL;
     
     hwnd = WindowFromPoint(pos);
-  }
+  } else
+    /* Grab => always considered inside: */
+    in_content = 0;
   if (!hwnd)
     return NULL;
 
@@ -2235,7 +2237,8 @@ void wxWnd::OnLButtonDown(int x, int y, UINT flags)
   last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DOWN;
   if (wx_window)
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnLButtonUp(int x, int y, UINT flags)
@@ -2263,7 +2266,8 @@ void wxWnd::OnLButtonUp(int x, int y, UINT flags)
 
   if (wx_window) 
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnLButtonDClick(int x, int y, UINT flags)
@@ -2291,7 +2295,8 @@ void wxWnd::OnLButtonDClick(int x, int y, UINT flags)
   /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnMButtonDown(int x, int y, UINT flags)
@@ -2319,7 +2324,8 @@ void wxWnd::OnMButtonDown(int x, int y, UINT flags)
   last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DOWN;
   if (wx_window) 
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnMButtonUp(int x, int y, UINT flags)
@@ -2346,7 +2352,8 @@ void wxWnd::OnMButtonUp(int x, int y, UINT flags)
   last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_UP;
   if (wx_window)
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnMButtonDClick(int x, int y, UINT flags)
@@ -2374,8 +2381,8 @@ void wxWnd::OnMButtonDClick(int x, int y, UINT flags)
   /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnRButtonDown(int x, int y, UINT flags)
@@ -2402,7 +2409,8 @@ void wxWnd::OnRButtonDown(int x, int y, UINT flags)
   last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_RIGHT_DOWN;
   if (wx_window) 
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnRButtonUp(int x, int y, UINT flags)
@@ -2428,10 +2436,9 @@ void wxWnd::OnRButtonUp(int x, int y, UINT flags)
 
   last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_RIGHT_UP;
   if (wx_window) 
-
-	if (!wx_window->CallPreOnEvent(wx_window, event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, event))
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnRButtonDClick(int x, int y, UINT flags)
@@ -2457,7 +2464,8 @@ void wxWnd::OnRButtonDClick(int x, int y, UINT flags)
 
   if (wx_window)
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 static wxWindow *el_PARENT(wxWindow *w)
@@ -2592,7 +2600,8 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
   last_x_pos = event->x; last_y_pos = event->y;
   if (wx_window) 
     if (!wx_window->CallPreOnEvent(wx_window, event))
-      wx_window->GetEventHandler()->OnEvent(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnMouseEnter(int x, int y, UINT flags)
@@ -2621,7 +2630,8 @@ static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
   event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
   if (!wx_window->CallPreOnEvent(wx_window, event))
-    wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->IsGray())
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnMouseLeave(int x, int y, UINT flags)
@@ -2650,7 +2660,8 @@ static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
   event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
   if (!wx_window->CallPreOnEvent(wx_window, event))
-    wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->IsGray())
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
@@ -2716,7 +2727,8 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     CalcUnscrolledPosition((int)fx,(int)fy,&event->x,&event->y) ;
 
     if (!wx_window->CallPreOnChar(wx_window, event))
-      wx_window->GetEventHandler()->OnChar(event);
+      if (!wx_window->IsGray())
+	wx_window->GetEventHandler()->OnChar(event);
   }
 }
 

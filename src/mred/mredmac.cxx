@@ -648,7 +648,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
         
         event->what = nullEvent;
         event->when = TickCount();
-        if (cont_event_context && StillDown()) {
+        if (cont_event_context) {
 	  /* Dragging... */
 	  event->modifiers = GetMods() | btnState;
 	  event->message = 1;

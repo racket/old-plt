@@ -1548,7 +1548,7 @@ static Scheme_Object *build_sequence(Scheme_Object *seq,
 {
   Scheme_Object **array, *list, *v, *good, **linked;
   Scheme_Sequence *o;
-  int count, i, k, total, last, first, setgood;
+  int count, i, k, total, last, first, setgood, addconst;
   Scheme_Type type;
 
   type = scheme_sequence_type;
@@ -1591,14 +1591,22 @@ static Scheme_Object *build_sequence(Scheme_Object *seq,
 
   if (!count)
     return scheme_compiled_void(to_linked);
+  
+  if (count == 1) {
+    if ((opt < 0) && !scheme_omittable_expr(SCHEME_CAR(seq))) {
+      /* We can't optimize (begin expr cont) to expr because
+	 exp is not in tail position in the original (so we'd mess
+	 up continuation marks. */
+      addconst = 1;
+    } else
+      return good;
+  } else
+    addconst = 0;
 
-  if (count == 1)
-    return good;
-
-  o = malloc_sequence(count);
+  o = malloc_sequence(count + addconst);
 
   o->type = ((opt < 0) ? scheme_begin0_sequence_type : scheme_sequence_type);
-  o->count = count;
+  o->count = count + addconst;
   array = o->array;
   
   --total;
@@ -1623,6 +1631,9 @@ static Scheme_Object *build_sequence(Scheme_Object *seq,
       array[i++] = v;
   }
 
+  if (addconst)
+    array[i] = scheme_make_integer(0);
+  
   scheme_end_stubborn_change(o);
 
   return (Scheme_Object *)o;

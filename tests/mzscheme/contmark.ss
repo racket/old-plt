@@ -36,6 +36,40 @@
 					(with-continuation-mark 'key 10 (extract-current-continuation-marks 'key))
 					(extract-current-continuation-marks 'key))))
 
+(test '(11) 'wcm-invoke/tail (with-continuation-mark 'x 10
+			       (invoke-unit
+				(unit 
+				  (import)
+				  (export)
+				  
+				  (with-continuation-mark 'x 11
+				    (continuation-mark-set->list
+				     (current-continuation-marks)
+				     'x))))))
+
+(test '(11 10) 'wcm-invoke/nontail (with-continuation-mark 'x 10
+				     (invoke-unit
+				      (unit 
+					(import)
+					(export)
+					
+					(define l (with-continuation-mark 'x 11
+						    (continuation-mark-set->list
+						     (current-continuation-marks)
+						     'x)))
+					l))))
+
+(test '(11 10) 'wcm-begin0 (with-continuation-mark 'x 10
+			     (begin0
+			      (with-continuation-mark 'x 11
+				(extract-current-continuation-marks 'x))
+			      (+ 2 3))))
+(test '(11 10) 'wcm-begin0/const (with-continuation-mark 'x 10
+				   (begin0
+				    (with-continuation-mark 'x 11
+				      (extract-current-continuation-marks 'x))
+				    'constant)))
+
 (define (get-marks)
   (extract-current-continuation-marks 'key))
 

@@ -1940,14 +1940,19 @@ static Scheme_Object *debug_bind(Scheme_Debug_Request *request,
   return (Scheme_Object *)&b->val;
 }
 
-static Scheme_Object *do_invoke_k(void)
+typedef struct {
+  Scheme_Object **boxes;
+  Scheme_Object **anchors;
+  Scheme_Unit *unit;
+  void *request;
+} Do_Invoke_Data;
+
+/* Tail-called by InvokeUnit: */
+static Scheme_Object *do_invoke_unit(void *data, int argc, Scheme_Object **argv)
 {
-  Scheme_Process *p = scheme_current_process;
-  Scheme_Object *data_in = (Scheme_Object *)p->ku.k.p1;
+  Do_Invoke_Data *diu = (Do_Invoke_Data *)data;
 
-  p->ku.k.p1 = NULL;
-
-  return InvokeUnit(data_in);
+  return diu->unit->init_func(diu->boxes, diu->anchors, diu->unit, diu->request);
 }
 
 static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
@@ -1961,17 +1966,6 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 #ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
 #endif
-
-#ifdef DO_STACK_CHECK  
-# include "mzstkchk.h"
-  {
-    Scheme_Process *p = scheme_current_process;
-    p->ku.k.p1 = (void *)data_in;
-
-    return scheme_handle_stack_overflow(do_invoke_k);
-  }
-#endif
-  SCHEME_USE_FUEL(1);
 
   data = (InvokeUnitData *)data_in;
 
@@ -2055,7 +2049,22 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
   }
 
   /* Invoke the unit: */
-  return unit->init_func(boxes, anchors, unit, request);
+  /* We tail-call do_invoke_unit to ensure that the invoked unit
+     starts with a minimal stack and reset the continuation marks
+     counter: */
+  {
+    Do_Invoke_Data *diu = MALLOC_ONE(Do_Invoke_Data);
+    Scheme_Object *invoke_unit_f;
+
+    diu->boxes = boxes;
+    diu->anchors = anchors;
+    diu->unit = unit;
+    diu->request = request;
+
+    invoke_unit_f = scheme_make_closed_prim(do_invoke_unit, diu);
+
+    return _scheme_tail_apply(invoke_unit_f, 0, NULL);
+  }
 }
 
 Scheme_Object *scheme_invoke_unit(Scheme_Object *unit, int num_ins, 
@@ -2133,6 +2142,20 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
   Scheme_Object *v, *result_expr = NULL;
   Scheme_Process *p = scheme_current_process;
 
+#ifdef DO_STACK_CHECK  
+# include "mzstkchk.h"
+  {
+    p->ku.k.p1 = (void *)boxes;
+    p->ku.k.p2 = (void *)anchors;
+    p->ku.k.p3 = (void *)m;
+    p->ku.k.p4 = (void *)debug_request;
+
+    return scheme_handle_stack_overflow((Scheme_Object *(*)())do_unit_k);
+  }
+#endif
+  SCHEME_USE_FUEL(1);
+
+
   cl = (UnitDataClosure *)m->data;
   data = (BodyData *)cl->data;
 
@@ -2141,10 +2164,10 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
 
   total = (2 * c) + (2 * data->num_locals) + i + data->max_let_depth;
   if (!scheme_check_runstack(total)) {
-    p->ku.k.p1 = boxes;
-    p->ku.k.p2 = anchors;
-    p->ku.k.p3 = m;
-    p->ku.k.p4 = debug_request;
+    p->ku.k.p1 = (void *)boxes;
+    p->ku.k.p2 = (void *)anchors;
+    p->ku.k.p3 = (void *)m;
+    p->ku.k.p4 = (void *)debug_request;
     return (Scheme_Object *)scheme_enlarge_runstack(total, do_unit_k);
   }
 
@@ -2274,6 +2297,27 @@ static void *sub_debug(CompoundLinkedData *data,
 # pragma optimize("", off)
 #endif
 
+static Scheme_Object *do_compound_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object **boxes;
+  Scheme_Object **anchors;
+  Scheme_Unit *m;
+  void *debug_request;
+  
+  boxes = (Scheme_Object **)p->ku.k.p1;
+  anchors = (Scheme_Object **)p->ku.k.p2;
+  m = (Scheme_Unit *)p->ku.k.p3;
+  debug_request = p->ku.k.p4;
+  
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
+
+  return do_compound_unit(boxes, anchors, m, debug_request);
+}
+
 static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object **anchors_in,
 				       Scheme_Unit *m, void *debug_request)
 {
@@ -2286,6 +2330,20 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
   Scheme_Object ***anchorsList, **anchors;
   CompoundLinkedData *data;
   int num_mods, i, j, k;
+
+#ifdef DO_STACK_CHECK  
+# include "mzstkchk.h"
+  {
+    Scheme_Process *p = scheme_current_process;
+    p->ku.k.p1 = (void *)boxes_in;
+    p->ku.k.p2 = (void *)anchors_in;
+    p->ku.k.p3 = (void *)m;
+    p->ku.k.p4 = (void *)debug_request;
+
+    return scheme_handle_stack_overflow(do_compound_k);
+  }
+#endif
+  SCHEME_USE_FUEL(1);
 
   data = (CompoundLinkedData *)m->data;
 
@@ -3076,7 +3134,7 @@ void scheme_init_unit(Scheme_Env *env)
     scheme_install_type_writer(scheme_unit_compound_data_type, write_compound_data);
     scheme_install_type_reader(scheme_unit_compound_data_type, read_compound_data);
     scheme_install_type_writer(scheme_invoke_unit_data_type, write_invoke_data);
-    scheme_install_type_reader(scheme_invoke_unit_data_type, read_invoke_data);    
+    scheme_install_type_reader(scheme_invoke_unit_data_type, read_invoke_data);  
   }
 
   scheme_add_global_keyword(MAKE_UNIT, 

@@ -28,6 +28,9 @@
 (test-comp 5 '(begin0 (begin0 5 'hi "apple" 1.5)))
 (test-comp 5 '(begin0 (begin0 5 'hi "apple") 1.5))
 
+; Can't drop `begin0' if the first expresson is not valueable:
+(test-comp '(begin0 (begin0 (+ 1 2) 0) 0) '(begin0 (begin0 (+ 1 2) 'hi "apple") 1.5))
+
 (test-comp 5 '(begin 'hi "apple" 1.5 5))
 (test-comp 5 '(begin (begin 'hi "apple" 1.5) 5))
 (test-comp 5 '(begin (begin 'hi "apple") 1.5 5))

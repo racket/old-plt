@@ -761,7 +761,7 @@ static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
   c = new wxColour(0xE8, 0xE8, 0xE8);
 #endif
 #ifdef wx_msw
-  DWORD v = GetSysColor(COLOR_WINDOW);
+  DWORD v = GetSysColor(COLOR_BTNFACE);
 
   c = new wxColour(GetRValue(v), GetGValue(v), GetBValue(v));
 #endif

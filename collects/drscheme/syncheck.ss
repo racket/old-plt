@@ -205,7 +205,7 @@
                                            (let ([style (send (get-style-list)
                                                               find-named-style
                                                               style-name)])
-                                             (change-style style pos (+ pos offset))))
+                                             (change-style style pos (+ pos offset) #f)))
                                          (super-instantiate ())))]
                        [_ (fw:preferences:add-callback sym
                                                        (lambda (sym v)
@@ -651,7 +651,7 @@
                      [style (send list find-named-style "Standard")])
                 (when style
                   (send definitions change-style
-                        style 0 (send definitions last-position))))
+                        style 0 (send definitions last-position) #f)))
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
           
@@ -1777,7 +1777,7 @@
         (let ([style (send (send source get-style-list)
                            find-named-style
                            style-name)])
-          (send source change-style style start finish)))
+          (send source change-style style start finish #f)))
       
       ;; make-rename-menu : stx[original] (hash-table symbol (listof syntax)) -> void
       (define (make-rename-menu stx vars-ht)

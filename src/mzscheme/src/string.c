@@ -1391,7 +1391,7 @@ static void machine_details(char *s)
    OSErr err;
    long lng;
    char sysvers[30];
-   unsigned char machine_name[256];
+   char machine_name[256];
    int i;
 
    err = Gestalt(gestaltSystemVersion, &lng);
@@ -1408,9 +1408,10 @@ static void machine_details(char *s)
    if (err != noErr) {
      strcpy(machine_name, "<unknown machine>");
    } else {
-     memset(machine_name, 0, 256);
-     GetIndString(machine_name, kMachineNameStrID,lng);
-     memmove(machine_name, machine_name + 1, machine_name[0] + 1);
+   	 Str255 machine_name_pascal;
+   	 
+   	 GetIndString(machine_name_pascal, kMachineNameStrID, lng);
+	 CopyPascalStringToC(machine_name_pascal, machine_name);
    }
 
    sprintf(s, "%s %s", sysvers, machine_name);

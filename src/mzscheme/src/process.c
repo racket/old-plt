@@ -3470,7 +3470,7 @@ void scheme_solaris_create_thread(void (*f)(void *), void *data,
 
   thr_create(stack, size,
 	     start_solaris_thread, (void *)cl, 
-	     THR_SUSPENDED, &naya);
+	     THR_SUSPENDED | THR_DETACHED, &naya);
 
   *thp = (void *)naya;
   

@@ -801,4 +801,7 @@
  (show-recent-items-window-menu-item "Montrer les fichiers récemment ouverts dans une fenêtre séparée")
  (show-recent-items-window-label "Fichiers récemment ouverts")
  (switch-anyway "Changer de fichier quand même")
+
+ (stepper-program-has-changed "Avertissement: le programme a été modifié.")
+ (stepper-program-window-closed "Avertissement: la fenêtre du programme a disparu.")
  )

@@ -350,18 +350,6 @@ DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
   { "no-thick-border",WS_THICKFRAME,FALSE },
 };
 
-/**************************
-
-void debug_msg(char *s) {
-  char buff[2048];
-
-  sprintf(buff,"%s~n",s);
-
-  scheme_printf(buff,strlen(buff),0,NULL);
-}
-
-*****************************/
-
 void scheme_release_typedesc(void *p,void *) {
   MX_TYPEDESC *pTypeDesc;
   ITypeInfo *pITypeInfo;

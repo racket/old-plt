@@ -80,7 +80,7 @@
 			  [(eof-object? c) (void)] ; signal the error below
 			  [else (error 
 				 (format
-				  "unexpected character setting up ~a, looking for #\*"
+				  "unexpected character setting up ~a, looking for *"
 				  path)
 				 c)])))
 		     ;; Copy file data

@@ -84,7 +84,7 @@
 	"tmp1" f 'truncate))
 (check-test-file "tmp1")
 
-(test (string #\null #\null #\" #\\ #\0 #\0 #\0 #\")
+(test (string #\null #\null #\" #\\ #\0 #\")
       'write-null
       (let ([p (open-output-string)])
 	(write-char #\null p)
@@ -92,6 +92,14 @@
 	(write (string #\null) p)
 	(let ([s (get-output-string p)])
 	  s)))
+
+;; Test escapes:
+(test (apply 
+       string 
+       (map 
+	integer->char 
+	'(7 8 9 10 11 12 13 27 92 34 65 32 5 65 16 80)))
+      values "\a\b\t\n\f\r\e\v\\\"\101\40\5A\x1P")
 
 ; Test string ports with file-position:
 (let ([s (open-output-string)])

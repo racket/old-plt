@@ -916,8 +916,7 @@ int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos)
 	prev = stype->parent_types[p]->inspector;
 	if (!scheme_is_subinspector(prev, insp))
 	  return 0;
-      } else
-	return 0;
+      }
       p--;
     }
 

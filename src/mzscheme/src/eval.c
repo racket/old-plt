@@ -1911,7 +1911,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   old_runstack = RUNSTACK;
   old_cont_mark_chain = MZ_CONT_MARK_CHAIN;
-  MZ_CONT_MARK_POS++;
+
+# define INC_MARK_POS() MZ_CONT_MARK_POS++
+# define DEC_MARK_POS() --MZ_CONT_MARK_POS
 
   if (num_rands >= 0) {
 
@@ -2379,7 +2381,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    obj = SCHEME_ENVBOX_VAL(stack[SCHEME_LOCAL_POS(obj)]);
 	    break;
 	  default:
+	    INC_MARK_POS();
 	    obj = _scheme_eval_compiled_expr_wp(obj, p);
+	    DEC_MARK_POS();
 	    break;
 	  }
 
@@ -2406,7 +2410,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 		*(randsp++) = SCHEME_ENVBOX_VAL(stack[SCHEME_LOCAL_POS(v)]);
 		break;
 	      default:
+		INC_MARK_POS();
 		*(randsp++) = _scheme_eval_compiled_expr_wp(v, p);
+		DEC_MARK_POS();
 		break;
 	      }
 
@@ -2427,8 +2433,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  array = ((Scheme_Sequence *)obj)->array;
 	  
 	  UPDATE_THREAD_RSPTR();
+	  INC_MARK_POS();
 	  while (--i)
 	    (void)_scheme_eval_compiled_expr_multi_wp(*(array++), p);
+	  DEC_MARK_POS();
 
 	  obj = *array;
 	  goto eval_top;
@@ -2451,8 +2459,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 
 	  UPDATE_THREAD_RSPTR();
+	  INC_MARK_POS();
 	  obj = NOT_SAME_OBJ(_scheme_eval_compiled_expr_wp(b->test, p), scheme_false)
 	    ? b->tbranch : b->fbranch;
+	  DEC_MARK_POS();
 
 	  goto eval_top;
 	}
@@ -2493,7 +2503,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  UPDATE_THREAD_RSPTR();
 
 	  if (c == 1) {
+	    INC_MARK_POS();
 	    value = _scheme_eval_compiled_expr_wp(value, p);
+	    DEC_MARK_POS();
 	    if (ab)
 	      SCHEME_ENVBOX_VAL(RUNSTACK[i]) = value;
 	    else
@@ -2502,7 +2514,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    int c2;
 	    Scheme_Object **stack;
 
+	    INC_MARK_POS();
 	    value = _scheme_eval_compiled_expr_multi_wp(value, p);
+	    DEC_MARK_POS();
 	    c2 = (SAME_OBJ(value, SCHEME_MULTIPLE_VALUES) ? p->ku.multiple.count : 1);
 	    if (c2 != c) {
 	      scheme_wrong_return_arity(NULL, c, c2, 
@@ -2622,7 +2636,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    break;
 	  default:
 	    UPDATE_THREAD_RSPTR();
+	    INC_MARK_POS();
 	    RUNSTACK[0] = _scheme_eval_compiled_expr_wp(lo->value, p);
+	    DEC_MARK_POS();
 	    break;
 	  }
 
@@ -2638,11 +2654,17 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  
 	  UPDATE_THREAD_RSPTR();
 	  key = wcm->key;
-	  if (SCHEME_TYPE(key) < _scheme_values_types_)
+	  if (SCHEME_TYPE(key) < _scheme_values_types_) {
+	    INC_MARK_POS();
 	    key = _scheme_eval_compiled_expr_wp(wcm->key, p);
+	    DEC_MARK_POS();
+	  }
 	  val = wcm->val;
-	  if (SCHEME_TYPE(val) < _scheme_values_types_)
+	  if (SCHEME_TYPE(val) < _scheme_values_types_) {
+	    INC_MARK_POS();
 	    val = _scheme_eval_compiled_expr_wp(wcm->val, p);
+	    DEC_MARK_POS();
+	  }
 
 	  PUSH_RUNSTACK(p, RUNSTACK, MZ_CONT_MARK_SPACE);
 	  RUNSTACK_CHANGED();
@@ -2749,7 +2771,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   MZ_RUNSTACK = old_runstack;
   MZ_CONT_MARK_CHAIN = old_cont_mark_chain;
-  --MZ_CONT_MARK_POS;
 
   DEBUG_CHECK_TYPE(v);
 

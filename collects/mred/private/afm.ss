@@ -2,12 +2,12 @@
   (require (lib "file.ss")
 	   (lib "list.ss"))
 
-  (provide afm-draw-text
-	   afm-get-text-extent
-	   afm-expand-name
-	   afm-glyph-exists?
-	   current-ps-afm-file-paths
-	   current-ps-cmap-file-paths)
+  (provide (protect afm-draw-text
+		    afm-get-text-extent
+		    afm-expand-name
+		    afm-glyph-exists?
+		    current-ps-afm-file-paths
+		    current-ps-cmap-file-paths))
 
   (define orig-err (current-error-port))
   (define (report-exn exn)

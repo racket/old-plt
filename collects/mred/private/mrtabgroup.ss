@@ -10,7 +10,7 @@
 	   "wxtabgroup.ss"
 	   "mritem.ss")
 
-  (provide tab-group%)
+  (provide (protect tab-group%))
 
   ;; Not exported from MrEd:
   (define tab-group%

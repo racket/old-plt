@@ -11,7 +11,7 @@
 	   "mrcontainer.ss"
 	   "mritem.ss")
 
-  (provide group-box%)
+  (provide (protect group-box%))
 
   ;; Not exported from MrEd:
   (define group-box%

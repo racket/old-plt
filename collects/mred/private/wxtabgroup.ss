@@ -11,8 +11,8 @@
 	   "wxitem.ss"
 	   "wxcanvas.ss")
 
-  (provide wx-tab-group%
-	   canvas-based-tab-group%)
+  (provide (protect wx-tab-group%
+		    canvas-based-tab-group%))
 
   (define mac-tab? (eq? 'macosx (system-type)))
 

@@ -1,8 +1,8 @@
 (module kw mzscheme
   (require (lib "class100.ss"))
 
-  (provide define-keywords
-	   class100*/kw)
+  (provide (protect define-keywords
+		    class100*/kw))
 
   ;; ---------------- Keyword propagation macros -------------------
 

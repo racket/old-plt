@@ -11,7 +11,7 @@
 	   "wxitem.ss"
 	   "wxcanvas.ss")
 
-  (provide wx-group-box%)
+  (provide (protect wx-group-box%))
 
   (define group-right-inset 4)
 

@@ -823,7 +823,27 @@
 
 ;; Make these operations available for unsafe interfaces (they can be used to
 ;; grab a hidden tag value and break code).
-(provide* (unsafe cpointer-tag) (unsafe set-cpointer-tag!))
+(provide* (unsafe cpointer-tag) (unsafe set-cpointer-tag!)
+          (unsafe cpointer-has-tag?) (unsafe cpointer-push-tag!))
+
+;; Defined as syntax for efficiency, but can be used as procedures too.
+(define-syntax (cpointer-has-tag? stx)
+  (syntax-case stx ()
+    [(_ cptr tag)
+     #'(let ([ptag (cpointer-tag cptr)])
+         (if (pair? ptag) (memq tag ptag) (eq? tag ptag)))]
+    [id (identifier? #'id)
+     #'(lambda (cptr tag) (cpointer-has-tag? cptr tag))]))
+(define-syntax (cpointer-push-tag! stx)
+  (syntax-case stx ()
+    [(_ cptr tag)
+     #'(let ([ptag (cpointer-tag cptr)])
+         (set-cpointer-tag! cptr
+           (cond [(not ptag) tag]
+                 [(pair? ptag) (cons tag ptag)]
+                 [else (list tag ptag)])))]
+    [id (identifier? #'id)
+     #'(lambda (cptr tag) (cpointer-push-tag! cptr tag))]))
 
 (define (cpointer-maker nullable?)
   (case-lambda
@@ -834,44 +854,40 @@
            [error-str (format "~a`~a' pointer"
                               (if nullable? "" "non-null ") tag)]
            [error* (lambda (p) (raise-type-error tag->C error-str p))])
-      (make-ctype (or ptr-type _pointer)
-        ;; bad hack: cond outside the lambda for efficiency
-        (if nullable?
-          (if scheme->c
-            (lambda (p)
-              (let ([p (scheme->c p)])
-                (if (cpointer? p)
-                  (when p (unless (eq? tag (cpointer-tag p)) (error* p)))
-                  (error* p))
-                p))
-            (lambda (p)
-              (if (cpointer? p)
-                (when p (unless (eq? tag (cpointer-tag p)) (error* p)))
-                (error* p))
-              p))
-          (if scheme->c
-            (lambda (p)
-              (let ([p (scheme->c p)])
-                (if (cpointer? p)
-                  (unless (eq? tag (cpointer-tag p)) (error* p))
-                  (error* p))
-                p))
-            (lambda (p)
-              (if (cpointer? p)
-                (unless (eq? tag (cpointer-tag p)) (error* p))
-                (error* p))
-              p)))
-        (if nullable?
-          (if c->scheme
-            (lambda (p) (when p (set-cpointer-tag! p tag)) (c->scheme p))
-            (lambda (p) (when p (set-cpointer-tag! p tag)) p))
-          (if c->scheme
-            (lambda (p)
-              (if p (set-cpointer-tag! p tag) (error* p))
-              (c->scheme p))
-            (lambda (p)
-              (if p (set-cpointer-tag! p tag) (error* p))
-              p)))))]))
+      (let-syntax ([tag-or-error
+                    (syntax-rules ()
+                      [(tag-or-error ptr t)
+                       (let ([p ptr])
+                         (if (cpointer? p)
+                           (unless (cpointer-has-tag? p t) (error* p))
+                           (error* p)))])]
+                   [tag-or-error/null
+                    (syntax-rules ()
+                      [(tag-or-error/null ptr t)
+                       (let ([p ptr])
+                         (if (cpointer? p)
+                           (when p (unless (cpointer-has-tag? p t) (error* p)))
+                           (error* p)))])])
+        (make-ctype (or ptr-type _pointer)
+          ;; bad hack: cond outside the lambda for efficiency
+          (if nullable?
+            (if scheme->c
+              (lambda (p) (tag-or-error/null (scheme->c p) tag) p)
+              (lambda (p) (tag-or-error/null p tag) p))
+            (if scheme->c
+              (lambda (p) (tag-or-error (scheme->c p) tag) p)
+              (lambda (p) (tag-or-error p tag) p)))
+          (if nullable?
+            (if c->scheme
+              (lambda (p) (when p (cpointer-push-tag! p tag)) (c->scheme p))
+              (lambda (p) (when p (cpointer-push-tag! p tag)) p))
+            (if c->scheme
+              (lambda (p)
+                (if p (cpointer-push-tag! p tag) (error* p))
+                (c->scheme p))
+              (lambda (p)
+                (if p (cpointer-push-tag! p tag) (error* p))
+                p))))))]))
 
 ;; This is a kind of a pointer that gets a specific tag when converted to
 ;; Scheme, and accepts only such tagged pointers when going to C.  An optional
@@ -911,7 +927,7 @@
                (values (_cpointer      TYPE-tag ptr-type scheme->c c->scheme)
                        (_cpointer/null TYPE-tag ptr-type scheme->c c->scheme)
                        (lambda (x)
-                         (and (cpointer? x) (eq? TYPE-tag (cpointer-tag x))))
+                         (and (cpointer? x) (cpointer-has-tag? x TYPE-tag)))
                        TYPE-tag)))))]))
 
 ;; ----------------------------------------------------------------------------
@@ -929,7 +945,7 @@
 
 ;; Simple structs: call this with a list of types, and get a type that marshals
 ;; C structs to/from Scheme lists.
-(define* (_list-struct types)
+(define* (_list-struct . types)
   (let ([stype (make-cstruct-type types)]
         [offsets (compute-offsets types)])
     (make-ctype stype
@@ -942,75 +958,131 @@
         (map (lambda (type ofs) (ptr-ref block type 'abs ofs))
              types offsets)))))
 
-;; (define-cstruct _foo ((slot type) ...)) defines a type called _foo for a C
-;; struct, with user-procedues: make-foo, foo? foo-slot ... and set-foo-slot!
-;; ....  The `_' prefix is required.  Objects of this new type are actually
-;; cpointers, with a type tag that is "foo", provided as foo-tag, and tags of
-;; pointers are checked before attempting to use them (see define-cpointer-type
-;; above).  Note that since structs are implemented as pointers, they can be
-;; used for a _pointer input to a foreign function: their address will be used,
-;; to make this a little safer, the corresponding cpointer type is defined as
-;; _foo-pointer.
+;; (define-cstruct _foo ([slot type] ...))
+;; or
+;; (define-cstruct (_foo _super) ([slot type] ...))
+;; defines a type called _foo for a C struct, with user-procedues: make-foo,
+;; foo? foo-slot... and set-foo-slot!....  The `_' prefix is required.  Objects
+;; of this new type are actually cpointers, with a type tag that is "foo" and
+;; (possibly more if the first type is itself a cstruct type or if a super type
+;; is given,) provided as foo-tag, and tags of pointers are checked before
+;; attempting to use them (see define-cpointer-type above).  Note that since
+;; structs are implemented as pointers, they can be used for a _pointer input
+;; to a foreign function: their address will be used, to make this possible,
+;; the corresponding cpointer type is defined as _foo-pointer.  If a super
+;; cstruct type is given, the constructor function expects values for every
+;; field of the super type as well as other fields that are specified, and a
+;; slot named `super' can be used to extract this initial struct -- although
+;; pointers to the new struct type can be used as pointers to the super struct
+;; type.
 (provide define-cstruct)
 (define-syntax (define-cstruct stx)
-  ;; It would be nice to extend this to handle inheritance...
+  (define (make-syntax _TYPE-stx has-super? slot-names-stx slot-types-stx)
+    (define name
+      (cadr (regexp-match #rx"^_(.+)$" (symbol->string (syntax-e _TYPE-stx)))))
+    (define slot-names (map (lambda (x) (symbol->string (syntax-e x)))
+                            (syntax->list slot-names-stx)))
+    (define (id . strings)
+      (datum->syntax-object
+       _TYPE-stx (string->symbol (apply string-append strings)) _TYPE-stx))
+    (define (ids name-func)
+      (map (lambda (s stx)
+             (datum->syntax-object
+              stx (string->symbol (apply string-append (name-func s))) stx))
+           slot-names (syntax->list slot-names-stx)))
+    (with-syntax
+        ([first-type           (let ([xs (syntax->list slot-types-stx)])
+                                 (and (pair? xs) (car xs)))]
+         [has-super?           has-super?]
+         [name-string          name]
+         [struct-string        (format "struct:~a" name)]
+         [(slot ...)           slot-names-stx]
+         [(slot-type ...)      slot-types-stx]
+         [_TYPE                _TYPE-stx]
+         [_TYPE-pointer        (id "_"name"-pointer")]
+         [_TYPE*               (id "_"name"*")]
+         [TYPE?                (id name"?")]
+         [make-TYPE            (id "make-"name)]
+         [TYPE->C              (id name"->C")]
+         [TYPE-tag             (id name"-tag")]
+         [(stype ...)          (ids (lambda (s) `(,name"-",s"-type")))]
+         [(TYPE-SLOT ...)      (ids (lambda (s) `(,name"-",s)))]
+         [(set-TYPE-SLOT! ...) (ids (lambda (s) `("set-",name"-",s"!")))]
+         [(offset ...) (generate-temporaries
+                               (ids (lambda (s) `(,s"-offset"))))])
+      #'(define-values (_TYPE _TYPE-pointer TYPE? TYPE-tag make-TYPE
+                        TYPE-SLOT ... set-TYPE-SLOT! ...)
+          (let*-values ([(stype ...)  (values slot-type ...)]
+                        [(types)      (list stype ...)]
+                        [(offsets)    (compute-offsets types)]
+                        [(offset ...) (apply values offsets)])
+            (define-values (super-pointer super-tags
+                            super-types super-offsets)
+              (cstruct-info first-type (lambda () (values #f '() #f #f))))
+            (define-cpointer-type _TYPE super-pointer)
+            (define _TYPE* (_cpointer TYPE-tag (make-cstruct-type types)))
+            (define all-tags (cons TYPE-tag super-tags))
+            (define-values (all-types all-offsets)
+              (if (and has-super? super-types super-offsets)
+                (values (append super-types   (cdr types))
+                        (append super-offsets (cdr offsets)))
+                (values #f #f)))
+            (cstruct-info _TYPE* 'set!
+              _TYPE all-tags (or all-types types) (or all-offsets offsets))
+            (values
+             _TYPE* _TYPE TYPE? TYPE-tag
+             (if (and has-super? super-types super-offsets)
+               ;; init using all slots
+               (lambda values
+                 (if (= (length values) (length all-types))
+                   (let ([block (malloc _TYPE*)])
+                     (set-cpointer-tag! block all-tags)
+                     (for-each (lambda (type ofs value)
+                                 (ptr-set! block type 'abs ofs value))
+                               all-types all-offsets values)
+                     block)
+                   (error '_TYPE "expecting ~s values, got ~s: ~e"
+                          (length all-types) (length values) values)))
+               ;; normal initializer
+               (lambda (slot ...)
+                 (let ([block (malloc _TYPE*)])
+                   (set-cpointer-tag! block all-tags)
+                   (ptr-set! block stype 'abs offset slot)
+                   ...
+                   block)))
+             (lambda (x)
+               (unless (TYPE? x)
+                 (raise-type-error 'TYPE-SLOT struct-string x))
+               (ptr-ref x stype 'abs offset))
+             ...
+             (lambda (x slot)
+               (unless (TYPE? x)
+                 (raise-type-error 'set-TYPE-SLOT! struct-string 0 x slot))
+               (ptr-set! x stype 'abs offset slot))
+             ...)))))
+  (define (identifiers? stx)
+    (andmap identifier? (syntax->list stx)))
+  (define (_-identifier? stx)
+    (and (identifier? stx)
+         (regexp-match #rx"^_.+" (symbol->string (syntax-e stx)))))
   (syntax-case stx ()
-    [(_ _TYPE ((slot slot-type) ...))
-     (and (identifier? #'_TYPE)
-          (andmap identifier? (syntax->list #'(slot ...)))
-          (regexp-match #rx"^_.+" (symbol->string (syntax-e #'_TYPE))))
-     (let ([name (cadr (regexp-match #rx"^_(.+)$"
-                                     (symbol->string (syntax-e #'_TYPE))))]
-           [slot-names (map (lambda (x) (symbol->string (syntax-e x)))
-                            (syntax->list #'(slot ...)))])
-       (define (id . strings)
-         (datum->syntax-object
-          #'_TYPE (string->symbol (apply string-append strings)) #'_TYPE))
-       (define (ids name-func)
-         (map (lambda (s stx)
-                (datum->syntax-object
-                 stx (string->symbol (apply string-append (name-func s))) stx))
-              slot-names (syntax->list #'(slot ...))))
-       (with-syntax
-           ([name-string          name]
-            [struct-string        (format "struct:~a" name)]
-            [_TYPE-pointer        (id "_"name"-pointer")]
-            [_TYPE*               (id "_"name"*")]
-            [TYPE?                (id name"?")]
-            [make-TYPE            (id "make-"name)]
-            [TYPE->C              (id name"->C")]
-            [TYPE-tag             (id name"-tag")]
-            [(stype ...)          (ids (lambda (s) `(,name"-",s"-type")))]
-            [(TYPE-SLOT ...)      (ids (lambda (s) `(,name"-",s)))]
-            [(set-TYPE-SLOT! ...) (ids (lambda (s) `("set-",name"-",s"!")))]
-            [(offset ...) (generate-temporaries
-                                  (ids (lambda (s) `(,s"-offset"))))])
-         #'(define-values (_TYPE _TYPE-pointer TYPE? TYPE-tag make-TYPE
-                           TYPE-SLOT ... set-TYPE-SLOT! ...)
-             (let*-values ([(stype ...) (values slot-type ...)]
-                           [(types) (list stype ...)]
-                           [(offset ...) (apply values
-                                                (compute-offsets types))])
-               (define-cpointer-type _TYPE)
-               (define _TYPE* (_cpointer TYPE-tag (make-cstruct-type types)))
-               (values _TYPE* _TYPE TYPE? TYPE-tag
-                       (lambda (slot ...)
-                         (let ([block (malloc _TYPE*)])
-                           (set-cpointer-tag! block TYPE-tag)
-                           (ptr-set! block stype 'abs offset slot)
-                           ...
-                           block))
-                       (lambda (x)
-                         (unless (TYPE? x)
-                           (raise-type-error 'TYPE-SLOT struct-string x))
-                         (ptr-ref x stype 'abs offset))
-                       ...
-                       (lambda (x slot)
-                         (unless (TYPE? x)
-                           (raise-type-error 'set-TYPE-SLOT! struct-string
-                                             0 x slot))
-                         (ptr-set! x stype 'abs offset slot))
-                       ...)))))]))
+    [(_ _TYPE ([slot slot-type] ...))
+     (and (_-identifier? #'_TYPE) (identifiers? #'(slot ...)))
+     (make-syntax #'_TYPE #f #'(slot ...) #'(slot-type ...))]
+    [(_ (_TYPE _SUPER) ([slot slot-type] ...))
+     (and (_-identifier? #'_TYPE) (identifiers? #'(slot ...)))
+     (with-syntax ([super (datum->syntax-object #'_TYPE 'super #'_TYPE)])
+       (make-syntax #'_TYPE #t #'(super slot ...) #'(_SUPER slot-type ...)))]))
+
+;; helper for the above: keep runtime information on structs
+(define cstruct-info
+  (let ([table (make-hash-table 'weak)])
+    (lambda (cstruct msg/fail-thunk . args)
+      (cond [(eq? 'set! msg/fail-thunk) (hash-table-put! table cstruct args)]
+            [(and cstruct ; might get a #f if there were no slots
+                  (hash-table-get table cstruct (lambda () #f)))
+             => (lambda (xs) (apply values xs))]
+            [else (msg/fail-thunk)]))))
 
 ;; ----------------------------------------------------------------------------
 ;; Misc utilities

@@ -57,7 +57,7 @@ abstract out the `hole and `(hole name) patterns.
               bindings?)))
   (define-struct rib (name exp) (make-inspector)) ;; for testing, add inspector
 
-  ;; hole-binding = (make-hole sexp (listof (union 'car 'cdr)))
+  ;; hole-binding = (make-hole sexp (listof (union 'car 'cdr)) sym)
   (define-struct hole-binding (exp path id) (make-inspector))
   
   ;; repeat = (make-repeat compiled-pattern (listof rib))
@@ -68,7 +68,7 @@ abstract out the `hole and `(hole name) patterns.
   ;;                                     hash-table[sym -o> compiled-pattern]
   ;;                                     hash-table[sym -o> compiled-pattern])
   ;; hole-path = (make-hole-path (union #f symbol) symbol (listof (union 'car 'cdr)))
-  (define-struct hole-path (name id path))
+  (define-struct hole-path (name id path) (make-inspector))
   
   (define compiled-pattern (any? (listof hole-path?) . -> . (union false? (listof bindings?))))
   
@@ -429,8 +429,7 @@ abstract out the `hole and `(hole name) patterns.
             #f
             (begin
               (unless (null? (cdr relevant-hole-paths))
-                (when (null? relevant-hole-paths)
-                  (error 'match "too many hole paths, ~e" relevant-hole-paths)))
+                (error 'match "too many hole paths, ~e" relevant-hole-paths))
               (let ([the-hole-path (car relevant-hole-paths)])
                 (list 
                  (make-bindings 
@@ -442,7 +441,6 @@ abstract out the `hole and `(hole name) patterns.
                      (reverse (hole-path-path the-hole-path))
                      hole-id)))))))))))
   
-  ;; match-in-hole : sexp sexp sexp compiled-pattern compiled-pattern symbol boolean (union symbol #f) -> compiled-pattern
   (define (match-in-hole context contractum exp match-context match-contractum this-hole-name bind-hole? hole-id)
     (lambda (exp hole-paths)
       (when (this-hole-id-used? hole-id hole-paths)
@@ -451,50 +449,53 @@ abstract out the `hole and `(hole name) patterns.
             (error 'match "multiple hole interference")))
       (let ([bindingss (match-context exp (cons (make-hole-path this-hole-name hole-id '()) hole-paths))])
         (and bindingss
-             (apply
-              append
-              (filter
-               (lambda (x) x)
-               (map (lambda (pre-bindings)
-                      (let* ([same-hole?
-                              (lambda (x) 
-                                (and (hole-binding? (rib-exp x))
-                                     (eq? this-hole-name (rib-name x))
-                                     (eq? hole-id (hole-binding-id (rib-exp x)))))]
-                             [bindings
-                              (if bind-hole?
-                                  pre-bindings
-                                  (make-bindings
-                                   (filter (lambda (x) (not (same-hole? x)))
-                                           (bindings-table pre-bindings))))]
-                             [holes (filter same-hole? (bindings-table pre-bindings))])
-                        (when (null? holes)
-                          (error 'match-pattern "no hole~a in ~e for ~e" 
-                                 (if hole-id
-                                     (format " with id ~s" hole-id)
-                                     "")
-                                 context
-                                 exp))
-                        (unless (null? (cdr holes))
-                          (error 'match-pattern "found more than one hole match in ~e ~e, holes: ~e" 
-                                 context exp holes))
-                        (let* ([hole-rib (car holes)]
-                               [a-hole (rib-exp hole-rib)]
-                               [a-hole-exp (hole-binding-exp a-hole)]
-                               [a-hole-path (hole-binding-path a-hole)]
-                               [contractum-bindingss (match-contractum a-hole-exp hole-paths)]
-                               [ans 
-                                (and contractum-bindingss
-                                     (map (lambda (contractum-bindings)
-                                            (make-bindings
-                                             (append (bindings-table contractum-bindings)
-                                                     (bindings-table bindings))))
-                                          contractum-bindingss))])
-                          '(print-struct #t)
-                          '(printf "context ~s\ncontractum ~s\na-hole-exp ~s\ncontractum-bindings ~s\nans ~s\n\n"
-                                  context contractum a-hole-exp contractum-bindingss ans)
-                          ans)))
-                    bindingss)))))))
+             (let loop ([bindingss bindingss]
+                        [acc null])
+               (cond
+                 [(null? bindingss) acc]
+                 [else 
+                  (let ([pre-bindings (car bindingss)])
+                    (let* ([same-hole?
+                            (lambda (x) 
+                              (and (hole-binding? (rib-exp x))
+                                   (eq? this-hole-name (rib-name x))
+                                   (eq? hole-id (hole-binding-id (rib-exp x)))))]
+                           [bindings
+                            (if bind-hole?
+                                pre-bindings
+                                (make-bindings
+                                 (filter (lambda (x) (not (same-hole? x)))
+                                         (bindings-table pre-bindings))))]
+                           [holes (filter same-hole? (bindings-table pre-bindings))])
+                      (when (null? holes)
+                        (error 'match-pattern "no hole~a in ~e for ~e" 
+                               (if hole-id
+                                   (format " with id ~s" hole-id)
+                                   "")
+                               context
+                               exp))
+                      (unless (null? (cdr holes))
+                        (error 'match-pattern "found more than one hole match in ~e ~e, holes: ~e" 
+                               context exp holes))
+                      (let* ([hole-rib (car holes)]
+                             [a-hole (rib-exp hole-rib)]
+                             [a-hole-exp (hole-binding-exp a-hole)]
+                             [a-hole-path (hole-binding-path a-hole)]
+                             [contractum-bindingss (match-contractum a-hole-exp hole-paths)])
+                        (if contractum-bindingss
+                            (let i-loop ([contractum-bindingss contractum-bindingss]
+                                         [acc acc])
+                              (cond
+                                [(null? contractum-bindingss) (loop (cdr bindingss) acc)]
+                                [else (let ([contractum-bindings (car contractum-bindingss)])
+                                        (i-loop
+                                         (cdr contractum-bindingss)
+                                         (cons
+                                          (make-bindings
+                                           (append (bindings-table contractum-bindings)
+                                                   (bindings-table bindings)))
+                                          acc)))]))
+                            (loop (cdr bindingss) acc)))))]))))))
 
   ;; this-hole-id-used? : (union #f symbol) (listof hole-path) -> boolean
   (define (this-hole-id-used? hole-id hole-paths)
@@ -920,13 +921,13 @@ abstract out the `hole and `(hole name) patterns.
               (list (make-bindings (list (make-rib 'hole (make-hole-binding 1 '() #f))))))
     (test-xab '(in-hole ctxt any) 
               '(+ 1 2)
-              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '() #f))))
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding 1 '(cdr car) #f))))
                     (make-bindings (list (make-rib 'hole (make-hole-binding 2 '(cdr cdr car) #f))))
-                    (make-bindings (list (make-rib 'hole (make-hole-binding 1 '(cdr car) #f))))))
+                    (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '() #f))))))
     (test-xab '(in-hole ctxt (+ number number))
               '(+ (+ 1 2) (+ 3 4))
-              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 3 4) '(cdr cdr car) #f))))
-                    (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car) #f))))))
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car) #f))))
+                    (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 3 4) '(cdr cdr car) #f))))))
     
     (test-empty '(in-hole ((z hole)) any)
                 '((z a))
@@ -934,14 +935,14 @@ abstract out the `hole and `(hole name) patterns.
     (test-empty '(in-hole (z ... hole z ...) any)
                 '(z z)
                 (list 
-                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(cdr car) #f))))
-                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(car) #f))))))
+                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(car) #f))))
+                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(cdr car) #f))))))
     (test-empty '(in-hole (z ... hole z ...) any)
                 '(z z z)
                 (list 
-                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(cdr cdr car) #f))))
+                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(car) #f))))
                  (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(cdr car) #f))))
-                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(car) #f))))))
+                 (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(cdr cdr car) #f))))))
     
     (test-empty '(z (in-hole (z hole) a))
                 '(z (z a))
@@ -995,6 +996,15 @@ abstract out the `hole and `(hole name) patterns.
     (test-xab 'nesting-names
               '(a (a (a (a b))))
               (list (make-bindings (list))))
+    
+    (test-xab '(in-hole ec-multi (+ number number))
+              '(+ 1 2)
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '() #f))))))
+    
+    (test-xab '(in-hole ec-multi (+ number number))
+              '(+ (+ 3 4) (+ 1 2))
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car) #f))))
+                    (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 3 4) '(cdr cdr car) #f))))))
     
     (run-test
      'compatible-context-language1
@@ -1107,6 +1117,14 @@ abstract out the `hole and `(hole name) patterns.
                                              (list (make-rhs '(+ ctxt exp))
                                                    (make-rhs '(+ exp ctxt))
                                                    (make-rhs 'hole)))
+                                    
+                                    (make-nt 'ec-multi
+                                             (list (make-rhs 'hole)
+                                                   (make-rhs '(in-named-hole+ xx ec-one ec-multi))))
+                                    (make-nt 'ec-one
+                                             (list (make-rhs '(+ (hole xx) exp))
+                                                   (make-rhs '(+ exp (hole xx)))))
+                                    
                                     (make-nt 'nesting-names
                                              (list (make-rhs '(a (name x nesting-names)))
                                                    (make-rhs 'b)))))))

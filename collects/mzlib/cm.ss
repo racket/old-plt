@@ -95,7 +95,7 @@
 			      (exn-message ex)))])
             (let* ([param
                     ;; Avoid using cm while loading cm-ctime:
-                    (parameterize ([use-compiled-file-kinds null])
+                    (parameterize ([use-compiled-file-paths null])
                       (dynamic-require '(lib "cm-ctime.ss" "mzlib" "private")
                                        'current-external-file-registrar))]
                    [external-deps null]
@@ -225,7 +225,7 @@
     (let ([cache (make-hash-table 'equal)])
       (lambda (zo)
 	(parameterize ([current-load/use-compiled (make-compilation-manager-load/use-compiled-handler/table cache)])
-	  (compile-root (car (use-compiled-file-kinds)) (path->complete-path zo) cache)))))
+	  (compile-root (car (use-compiled-file-paths)) (path->complete-path zo) cache)))))
 
   (define (make-compilation-manager-load/use-compiled-handler)
     (make-compilation-manager-load/use-compiled-handler/table (make-hash-table 'equal)))
@@ -235,17 +235,17 @@
 	  [orig-load (current-load)]
 	  [orig-namespace (current-namespace)]
 	  [default-handler (current-load/use-compiled)]
-	  [modes (use-compiled-file-kinds)])
+	  [modes (use-compiled-file-paths)])
       (when (null? modes)
-	(error 'make-compilation-manager-... "empty use-compiled-file-kinds list"))
+	(error 'make-compilation-manager-... "empty use-compiled-file-paths list"))
       (letrec ([compilation-manager-load-handler
 		(lambda (path mod-name)
 		  (cond
                     [(not mod-name)
                      ((trace) (format "~askipping:  ~a mod-name ~s" (indent) path mod-name))
                      (default-handler path mod-name)]
-                    [(not (member (car modes) (use-compiled-file-kinds)))
-                     ((trace) (format "~askipping:  ~a file-kinds ~s" (indent) path (use-compiled-file-kinds)))
+                    [(not (member (car modes) (use-compiled-file-paths)))
+                     ((trace) (format "~askipping:  ~a compiled-paths ~s" (indent) path (use-compiled-file-paths)))
                      (default-handler path mod-name)]
                     [(not (eq? compilation-manager-load-handler (current-load/use-compiled)))
                      ((trace) (format "~askipping:  ~a current-load/use-compiled changed ~s"

@@ -14,7 +14,7 @@
     ;; Load the command-line parser without using .zos, 
     ;;  and in its own namespace to avoid poluuting the cm-managed
     ;;  namespace later
-    (parameterize ([use-compiled-file-kinds null]
+    (parameterize ([use-compiled-file-paths null]
 		   [current-namespace (make-namespace)])
       ((dynamic-require '(lib "setup-cmdline.ss" "setup") 'parse-cmdline)
        (current-command-line-arguments))))
@@ -27,13 +27,13 @@
 	  (on? 'make-zo not))
       ;; Don't use .zos, in case they're out of date, and don't load
       ;;  cm:
-      (use-compiled-file-kinds null)
+      (use-compiled-file-paths null)
   
       ;; Load the cm instance to be installed while loading Setup PLT.
       ;; This has to be dynamic, so we get a chance to turn off compiled
       ;; file loading, and so it can be in a separate namespace.
       (let-values ([(mk trust-zos)
-		    (parameterize ([use-compiled-file-kinds null])
+		    (parameterize ([use-compiled-file-paths null])
 		      ;; Load cm.ss into its own namespace, so that cm compiles
 		      ;; itself and its required modules in the right order
 		      ;; (i.e., when some module requires cm or one of its

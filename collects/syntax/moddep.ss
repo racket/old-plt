@@ -111,25 +111,20 @@
       (let*-values ([(path) (resolve path)]
 		    [(base file dir?) (split-path path)]
 		    [(base) (if (eq? base 'relative) 'same base)]
-		    [(mode) (use-compiled-file-kinds)]
-		    [(comp?) (not (eq? mode 'none))])
+		    [(mode) (use-compiled-file-paths)])
 	(let* ([get-so (lambda (file)
-			 (if comp?
-			     (build-path base
-					 sub-path
-					 "native"
-					 (system-library-subpath)
-					 (path-replace-suffix
-					  file
-					  (case (system-type)
-					    [(windows) #".dll"]
-					    [else #".so"])))
-			     #f))]
-	       [ok-kind? (lambda (file) (eq? mode 'all))]
-	       [zo (and comp?
-			(build-path base
-				    sub-path
-				    (path-replace-suffix file #".zo")))]
+			 (build-path base
+				     sub-path
+				     "native"
+				     (system-library-subpath)
+				     (path-replace-suffix
+				      file
+				      (case (system-type)
+					[(windows) #".dll"]
+					[else #".so"]))))]
+	       [zo (build-path base
+			       sub-path
+			       (path-replace-suffix file #".zo"))]
 	       [so (get-so file)]
 	       [_loader-so (get-so (string->path "_loader.ss"))]
 	       [path-d (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])

@@ -185,17 +185,19 @@ next section.
  Loading compiler support
  ------------------------
 
-The compiler unit loads certain tools on demand via `dynamic-require'.
-If the namespace used during compilation is different from the
-namespace used to load the compiler, then the namespace used to load
-the compiler should be designated with the following parameter:
+The compiler unit loads certain tools on demand via `dynamic-require'
+and `get-info'. If the namespace used during compilation is different
+from the namespace used to load the compiler, or if other load-related
+parameters are set, then the following parameter can be used to
+restore settings for `dyanmic-require'.
 
->  current-compiler-dynamic-require-namespace
+>  current-compiler-dynamic-require-wrapper
 
-    A parameter whose value is either #f or a namespace. If it is a
-    namespace, then the namespace is used when loading additional
-    parts of the compiler. The default value is the current namespace
-    at the time that the "compiler-unit.ss" module is evaluated.
+    A parameter whose value is a procedure that takes a thunk to
+    apply. The default wrapper sets the current namespace (via
+    `parameterize') before calling the thunk; it sets it to the
+    namespace that was current at the time that the "compiler-unit.ss"
+    module was evaluated.
 
 ---------------------------------------------------------------------------
 

@@ -252,10 +252,18 @@ currently exist).
   `filename-string-or-#f' is a string, a suitable exception is raised,
   and if `filename-string-or-#f' is #f, #f is returned.
 
-> (get-module-code module-path-v) - returns a compiled expression for
-  the declaration of the module specified by `module-path-v'. The
-  `module-path-v' argument is a quoted module path, as for MzScheme's
-  `dynamic-require' using the default module path resolver.
+> (get-module-code module-path-v [compiled-subdir compile-proc]) - returns
+  a compiled expression for the declaration of the module specified by
+  `module-path-v'. The `module-path-v' argument is a quoted module
+  path, as for MzScheme's `dynamic-require' using the default module
+  path resolver.
+
+  The `compiled-subdir' argument defaults to "compiled"; it specifies
+  the sub-directory to search for a compiled version of the module.
+
+  The `compile-proc' argument defaults to `compile'. This procedure is
+  used to compile module source if an already-compiled version is not
+  available.
 
 > (resolve-module-path module-path-v rel-to-path-string/thunk/#f) -
   resolves a module path to filename string. The module path is

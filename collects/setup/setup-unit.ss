@@ -465,14 +465,14 @@
 							    (exn-message exn)
 							    exn)))])
 				(dynamic-require `(lib "zo-compile.ss" ,(compile-mode)) 'zo-compile))]
-		  [orig-kinds (use-compiled-file-kinds)])
+		  [orig-kinds (use-compiled-file-paths)])
 	      (parameterize ([current-namespace (make-namespace)]
 			     [current-managed-zo-compile zo-compile]
-			     [use-compiled-file-kinds (list mode-dir)]
+			     [use-compiled-file-paths (list mode-dir)]
 			     [current-compiler-dynamic-require-wrapper
 			      (lambda (thunk)
 				(parameterize ([current-namespace orig-namespace]
-					       [use-compiled-file-kinds orig-kinds])
+					       [use-compiled-file-paths orig-kinds])
 				  (thunk)))])
 		(thunk)))))
 

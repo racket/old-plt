@@ -3542,7 +3542,7 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   scheme_make_string(filename),
 		   fail_err_symbol,
-		   "%s: %s: \"%.255s\"%s%.255s%s (%d%s)", 
+		   "%s: %s: \"%q\"%s%q%s (%d%s)", 
 		   name, msg, filename,
 		   pre, rel, post,
 		   err,
@@ -3574,13 +3574,18 @@ do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
       mode = "rt";
     else if (SAME_OBJ(argv[offset + 1], binary_symbol)) {
       /* This is the default */
-    } else
+    } else {
+      char *astr;
+      long alen;
+
+      astr = scheme_make_args_string("other ", offset + 1, argc, argv, &alen);
       scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       argv[offset + 1],
 		       scheme_intern_symbol("input file mode"),
-		       "%s: bad mode: %s%s", name,
+		       "%s: bad mode: %s%t", name,
 		       scheme_make_provided_string(argv[offset + 1], 1, NULL),
-		       scheme_make_args_string("other ", offset + 1, argc, argv));
+		       astr, alen);
+    }
   }
   
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -3664,20 +3669,30 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
     } else if (SAME_OBJ(argv[i], binary_symbol)) {
       /* This is the default */
       m_set++;
-    } else
+    } else {
+      char *astr;
+      long alen;
+
+      astr = scheme_make_args_string("other ", i, argc, argv, &alen);
       scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       argv[i],
 		       scheme_intern_symbol("output file mode"),
 		       "%s: bad mode: %s%s", name,
 		       scheme_make_provided_string(argv[i], 1, NULL),
-		       scheme_make_args_string("other ", i, argc, argv));
+		       astr, alen);
+    }
 
-    if (m_set > 1 || e_set > 1)
+    if (m_set > 1 || e_set > 1) {
+      char *astr;
+      long alen;
+
+      astr = scheme_make_args_string("", -1, argc, argv, &alen);
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[i],
 		       "%s: conflicting or redundant "
-		       "file modes given%s", name,
-		       scheme_make_args_string("", -1, argc, argv));
+		       "file modes given%t", name,
+		       astr, alen);
+    }
   }
 
   filename = SCHEME_STR_VAL(argv[0]);
@@ -3690,7 +3705,7 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       argv[0],
 		       scheme_intern_symbol("already-exists"),
-		       "%s: \"%.255s\" exists as a directory", 
+		       "%s: \"%q\" exists as a directory", 
 		       name, filename);
     else
       filename_exn(name, "cannot open directory as a file", filename, errno);
@@ -3705,7 +3720,7 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 scheme_intern_symbol("already-exists"),
-			 "%s: file \"%.255s\" exists", name, filename);
+			 "%s: file \"%q\" exists", name, filename);
 #ifdef MAC_FILE_SYSTEM
       if (existsok > 0) {
 #endif
@@ -3713,7 +3728,7 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
-			   "%s: error deleting \"%.255s\"", 
+			   "%s: error deleting \"%q\"", 
 			   name, filename);
 #ifdef MAC_FILE_SYSTEM
       } else
@@ -3733,7 +3748,7 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
-			   "%s: error deleting \"%.255s\"", 
+			   "%s: error deleting \"%q\"", 
 			   name, filename);
 	else {
 	  fp = fopen(filename, mode);
@@ -4726,7 +4741,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       d,
 		       scheme_intern_symbol("ill-formed-path"),
-		       "current-load-relative-directory: not a complete path: \"%.255s\"",
+		       "current-load-relative-directory: not a complete path: \"%q\"",
 		       s);
 
     expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
@@ -4735,7 +4750,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       ed,
 		       fail_err_symbol,
-		       "current-load-relative-directory: directory not found or not a directory: \"%.255s\"",
+		       "current-load-relative-directory: directory not found or not a directory: \"%q\"",
 		       expanded);
     }
 
@@ -4850,6 +4865,7 @@ file_position(int argc, Scheme_Object *argv[])
 {
   FILE *f;
   Scheme_Indexed_String *is;
+  int fd, had_fd;
   int wis;
 
   if (!SCHEME_OUTPORTP(argv[0]) && !SCHEME_INPORTP(argv[0]))
@@ -4872,6 +4888,8 @@ file_position(int argc, Scheme_Object *argv[])
   f = NULL;
   is = NULL;
   wis = 0;
+  fd = 0;
+  had_fd = 0;
 
   if (SCHEME_OUTPORTP(argv[0])) {
     Scheme_Output_Port *op;
@@ -4879,7 +4897,10 @@ file_position(int argc, Scheme_Object *argv[])
     op = (Scheme_Output_Port *)argv[0];
     if (SAME_OBJ(op->sub_type, file_output_port_type))
       f = ((Scheme_Output_File *)op->port_data)->f;
-    else if (SAME_OBJ(op->sub_type, string_output_port_type)) {
+    else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
+      fd = ((Scheme_FD *)op->port_data)->fd;
+      had_fd = 1;
+    } else if (SAME_OBJ(op->sub_type, string_output_port_type)) {
       is = (Scheme_Indexed_String *)op->port_data;
       wis = 1;
     } else if (argc < 2)
@@ -4890,16 +4911,19 @@ file_position(int argc, Scheme_Object *argv[])
     ip = (Scheme_Input_Port *)argv[0];
     if (SAME_OBJ(ip->sub_type, file_input_port_type))
       f = ((Scheme_Input_File *)ip->port_data)->f;
-    else if (SAME_OBJ(ip->sub_type, string_input_port_type))
+    else if (SAME_OBJ(ip->sub_type, fd_input_port_type)) {
+      fd = ((Scheme_FD *)ip->port_data)->fd;
+      had_fd = 1;
+    } else if (SAME_OBJ(ip->sub_type, string_input_port_type))
       is = (Scheme_Indexed_String *)ip->port_data;
     else if (argc < 2)
       return scheme_make_integer(scheme_tell(argv[0]));
   }
 
-  if (!f && !is)
+  if (!f && !is && !had_fd)
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[0],
-		     "file-position: setting position allowed for file and string ports only;"
+		     "file-position: setting position allowed for file-stream and string ports only;"
 		     " given %s and position %s",
 		     scheme_make_provided_string(argv[0], 2, NULL),
 		     scheme_make_provided_string(argv[1], 2, NULL));
@@ -4914,7 +4938,27 @@ file_position(int argc, Scheme_Object *argv[])
   if (argc > 1) {
     long n = SCHEME_INT_VAL(argv[1]);
     if (f) {
-      fseek(f, n, 0);
+      if (fseek(f, n, 0)) {
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+			 argv[0],
+			 fail_err_symbol,
+			 "file-position: position change failed on file (%d)",
+			 errno);
+      }
+    } else if (had_fd) {
+      long n = SCHEME_INT_VAL(argv[1]);
+
+      if (SCHEME_OUTPORTP(argv[0])) {
+	flush_fd((Scheme_Output_Port *)argv[0], NULL, 0);
+      }
+
+      if (lseek(fd, n, 0) < 0) {
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+			 argv[0],
+			 fail_err_symbol,
+			 "file-position: position change failed on stream (%d)",
+			 errno);
+      }
     } else {
       if (wis) {
 	if (is->index > is->u.hot)
@@ -4957,7 +5001,20 @@ file_position(int argc, Scheme_Object *argv[])
     long p;
     if (f)
       p = ftell(f);
-    else if (wis)
+    else if (had_fd) {
+      p = lseek(fd, 0, 1);
+      if (p < 0) {
+	if (SCHEME_INPORTP(argv[0])) {
+	  p = scheme_tell(argv[0]);
+	} else {
+	  p = scheme_output_tell(argv[0]);
+	}
+      } else {
+	if (SCHEME_OUTPORTP(argv[0])) {
+	  p += ((Scheme_FD *)((Scheme_Output_Port *)argv[0])->port_data)->bufcount;
+	}
+      }
+    } else if (wis)
       p = is->index;
     else {
       /* u.pos > index implies we previously moved past the end with file-position */

@@ -307,8 +307,7 @@ scheme_init_getenv(void)
 	}
 
 	if (v)
-	  scheme_signal_error("bad environment specification: %s",
-			      scheme_make_provided_string(v, 1, NULL));
+	  scheme_signal_error("bad environment specification: %V", v);
       }
     }
     memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
@@ -407,13 +406,17 @@ void scheme_out_of_string_range(const char *name, const char *which,
 				long start, long len)
 {
   if (SCHEME_STRTAG_VAL(s)) {
+    char *sstr;
+    long slen;
+    
+    sstr = scheme_make_provided_string(s, 2, &slen);
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     scheme_make_integer(i),
-		     "%s: %sindex %s out of range [%d, %d] for string: %s",
+		     "%s: %sindex %s out of range [%d, %d] for string: %t",
 		     name, which,
 		     scheme_make_provided_string(i, 2, NULL), 
 		     start, len,
-		     scheme_make_provided_string(s, 2, NULL));
+		     sstr, slen);
   } else {
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     scheme_make_integer(i),
@@ -1001,36 +1004,38 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   }
   if (used != argc) {
     char *args;
+    long alen;
 
-    args = scheme_make_args_string("", -1, argc, argv);
+    args = scheme_make_args_string("", -1, argc, argv, &alen);
 
     if (used > argc) {
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[fpos],
-		       "%s: format string requires %d arguments, given %d%s",
-		       procname, used - offset, argc - offset, args);
+		       "%s: format string requires %d arguments, given %d%t",
+		       procname, used - offset, argc - offset, args, alen);
     } else {
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[fpos],
-		       "%s: format string requires %d arguments, given %d%s",
-		       procname, used - offset, argc - offset, args);
+		       "%s: format string requires %d arguments, given %d%t",
+		       procname, used - offset, argc - offset, args, alen);
     }
     return;
   }
   if (num_err || char_err) {
     int pos = (num_err ? num_err : char_err) - 1;
-    char *args;
+    char *args, *bstr;
+    long alen, blen;
     char *type = (num_err ? "exact-number" : "character");
     Scheme_Object *bad = argv[pos];
 
-    args = scheme_make_args_string("other ", pos, argc, argv);
-
+    args = scheme_make_args_string("other ", pos, argc, argv, &alen);
+    bstr = scheme_make_provided_string(bad, 1, &blen);
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     bad,
-		     "%s: format string requires argument of type <%s>, given %s%s",
+		     "%s: format string requires argument of type <%s>, given %t%t",
 		     procname, type, 
-		     scheme_make_provided_string(bad, 1, NULL),
-		     args);
+		     bstr, blen,
+		     args, alen);
     return;
   }
 

@@ -25,6 +25,7 @@
 
 /* globals */
 void (*scheme_console_printf)(char *str, ...);
+void (*scheme_console_output)(char *str, long len);
 void (*scheme_exit)(int v);
 
 #ifdef MEMORY_COUNTING_ON
@@ -54,8 +55,9 @@ static Scheme_Object *def_err_val_proc;
 static Scheme_Object *def_error_esc_proc;
 Scheme_Object *scheme_def_exit_proc;
 
-static char *init_buf(long *len);
+static char *init_buf(long *len, long *blen);
 static char *prepared_buf;
+static long prepared_buf_len;
 
 typedef struct {
   int args;
@@ -93,6 +95,163 @@ void scheme_init_error_escape_proc(Scheme_Process *p)
 void scheme_init_format_procedure(Scheme_Env *env)
 {
   /* No longer needed... */
+}
+
+/*
+  Recognized by scheme_[v]sprintf:
+
+  %c = char
+  %d = int
+  %ld = long int
+  %f = double
+  %% = percent
+
+  %s = string
+  %S = Scheme symbol
+  %t = string with size
+  %T = Scheme string
+  %q = truncated-to-256 string
+  %Q = truncated-to-256 Scheme string
+  %V = scheme_value
+*/
+
+static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
+{
+  long i, j;
+  char buf[100];
+
+  --maxlen;
+
+  i = j = 0;
+  while ((i < maxlen) && msg[j]) {
+    if (msg[j] == '%') {
+      int type;
+
+      j++;
+      type = msg[j++];
+
+      if (type == '%')
+	s[i++] = '%';
+      else {
+	const char *t;
+	int tlen;
+	int dots = 0;
+	
+	switch (type) {
+	case 'c':	  
+	  {
+	    int c;
+	    c = va_arg(args, int);
+	    buf[0] = c;
+	    t = buf;
+	    tlen = 1;
+	  }
+	  break;
+	case 'd':	  
+	  {
+	    int d;
+	    d = va_arg(args, int);
+	    sprintf(buf, "%d", d);
+	    t = buf;
+	    tlen = strlen(t);
+	  }
+	  break;
+	case 'l':
+	  {
+	    long d;
+	    j++;
+	    d = va_arg(args, long);
+	    sprintf(buf, "%ld", d);
+	    t = buf;
+	    tlen = strlen(t);
+	  }
+	  break;
+	case 'f':
+	  {
+	    double f;
+	    j++;
+	    f = va_arg(args, double);
+	    sprintf(buf, "%f", f);
+	    t = buf;
+	    tlen = strlen(t);
+	  }
+	  break;
+	case 'S':
+	  {
+	    Scheme_Object *sym;
+	    sym = va_arg(args, Scheme_Object*);
+	    t = scheme_symbol_name_and_size(sym, &tlen, 0);
+	  }
+	  break;
+	case 'V':
+	  {
+	    Scheme_Object *o;
+	    o = va_arg(args, Scheme_Object*);
+	    t = scheme_make_provided_string(o, 1, &tlen);
+	  }
+	  break;
+	case 'T':
+	case 'Q':
+	  {
+	    Scheme_Object *str;
+	    str = va_arg(args, Scheme_Object*);
+	    t = SCHEME_STR_VAL(str);
+	    tlen = SCHEME_STRLEN_VAL(str);
+	  }
+	  break;
+	default:
+	  {
+	    t = va_arg(args, char*);
+	    if (type == 't') {
+	      tlen = va_arg(args, long);
+	      if (tlen < 0)
+		tlen = strlen(t);
+	    } else
+	      tlen = strlen(t);
+	  }
+	  break;
+	}
+
+	if ((type == 'q') || (type == 'Q')) {
+	  if (tlen > 256) {
+	    tlen = 3;
+	    dots = 1;
+	  }
+	}
+	
+	while (tlen && i < maxlen) {
+	  s[i++] = *(t++);
+	  tlen--;
+	}
+	
+	if (dots) {
+	  if (i < maxlen - 3) {
+	    s[i++] = '.';
+	    s[i++] = '.';
+	    s[i++] = '.';
+	  }
+	}
+      }
+    } else {
+      s[i++] = msg[j++];
+    }
+  }
+
+  s[i] = 0;
+
+  return i;
+}
+
+static long scheme_sprintf(char *s, long maxlen, const char *msg, ...)
+{
+  long len;
+
+  va_list args;
+  va_start(args, msg);
+  len = scheme_vsprintf(s, maxlen, msg, args);
+  va_end(args);
+
+  return len;
 }
 
 void scheme_init_error(Scheme_Env *env)
@@ -178,7 +337,7 @@ void scheme_init_error(Scheme_Env *env)
 		     def_err_val_proc);
 
     REGISTER_SO(prepared_buf);
-    prepared_buf = init_buf(NULL);
+    prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
 }
 
@@ -190,11 +349,13 @@ scheme_inescapeable_error(const char *a, const char *b)
 
   al = strlen(a);
   bl = strlen(b);
-  t = scheme_malloc_atomic(al + bl + 1);
+  t = scheme_malloc_atomic(al + bl + 2);
   memcpy(t, a, al);
   memcpy(t + al, b, bl + 1);
+  t[al + bl] = '\n';
+  t[al + bl + 1] = 0;
 
-  scheme_console_printf("%s\n", t);
+  scheme_console_output(t, al + bl + 1);
 }
 
 #define RAISE_RETURNED "exception handler did not escape"
@@ -248,7 +409,7 @@ static long get_print_width(void)
   return print_width;
 }
 
-static char *init_buf(long *len)
+static char *init_buf(long *len, long *_size)
 {
   long size, print_width;
 
@@ -259,12 +420,15 @@ static char *init_buf(long *len)
 
   size = (3 * scheme_max_found_symbol_name + 500
 	  + 2 * print_width);
+  if (_size)
+    *_size = size;
+
   return (char *)scheme_malloc_atomic(size);
 }
 
 void scheme_reset_prepared_error_buffer(void)
 {
-  prepared_buf = init_buf(NULL);
+  prepared_buf = init_buf(NULL, &prepared_buf_len);
 }
 
 void
@@ -272,28 +436,35 @@ scheme_signal_error (char *msg, ...)
 {
   va_list args;
   char *buffer;
+  long len;
 
   /* Precise GC: Don't allocate before getting hidden args off stack */
   buffer = prepared_buf;
 
   va_start(args, msg);
-  vsprintf(buffer, msg, args);
+  len = scheme_vsprintf(buffer, prepared_buf_len, msg, args);
   va_end(args);
 
-  prepared_buf = init_buf(NULL);
+  prepared_buf = init_buf(NULL, &prepared_buf_len);
 
-  if (scheme_current_process->current_local_env)
-    strcat(buffer, " [during expansion]");
+  if (scheme_current_process->current_local_env) {
+    char *s2 = " [during expansion]";
+    strcpy(buffer + len, s2);
+    len = strlen(s2);
+  }
+
+  buffer[len++] = '\n';
+  buffer[len] = 0;
 
   if (scheme_starting_up) {
-    scheme_console_printf("%s\n", buffer);
+    scheme_console_output(buffer, len);
     exit(0);
   }
 
 #ifndef SCHEME_NO_EXN
-  scheme_raise_exn(MZEXN_MISC, "%s", buffer);
+  scheme_raise_exn(MZEXN_MISC, "%t", buffer, len);
 #else
-  call_error(buffer, -1);
+  call_error(buffer, len);
 #endif
 }
 
@@ -301,18 +472,21 @@ void scheme_warning(char *msg, ...)
 {
   va_list args;
   char *buffer;
+  long len;
 
   /* Precise GC: Don't allocate before getting hidden args off stack */
   buffer = prepared_buf;
 
   va_start(args, msg);
-  vsprintf(buffer, msg, args);
+  len = scheme_vsprintf(buffer, prepared_buf_len, msg, args);
   va_end(args);
 
-  prepared_buf = init_buf(NULL);
+  prepared_buf = init_buf(NULL, &prepared_buf_len);
 
-  strcat(buffer, "\n");
-  scheme_write_string(buffer, strlen(buffer),
+  buffer[len++] = '\n';
+  buffer[len] = 0;
+
+  scheme_write_string(buffer, len,
 		      scheme_get_param(scheme_config, MZCONFIG_ERROR_PORT));
 }
 
@@ -372,46 +546,57 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
   }
 }
 
-static char *make_arity_expect_string(const char *name, int minc, int maxc, 
-				      int argc, Scheme_Object **argv)
+static char *make_arity_expect_string(const char *name, int namelen,
+				      int minc, int maxc, 
+				      int argc, Scheme_Object **argv,
+				      long *_len)
 {
-  long len;
+  long len, pos, slen;
   char *s;
 
-  s = init_buf(&len);
+  s = init_buf(&len, &slen);
 
   if (!name)
     name = "#<procedure>";
   
   if (minc < 0) {
     const char *n;
-    if (minc == -2)
+    int nlen;
+
+    if (minc == -2) {
       n = name;
-    else
-      n = scheme_get_proc_name((Scheme_Object *)name, NULL, 1);
-    sprintf(s, "%s: no clause matching %d argument%s",
-	    n ? n : "#<case-lambda-procedure>",
-	    argc, argc == 1 ? "" : "s");
+      nlen = (namelen < 0 ? strlen(n) : namelen);
+    } else
+      n = scheme_get_proc_name((Scheme_Object *)name, &nlen, 1);
+
+    if (!n) {
+      n = "#<case-lambda-procedure>";
+      nlen = strlen(n);
+    }
+
+    pos = scheme_sprintf(s, slen, "%t: no clause matching %d argument%s",
+			 n, nlen,
+			 argc, argc == 1 ? "" : "s");
   } else if (!maxc)
-    sprintf(s, "%s: expects no arguments, given %d",
-	    name, argc);
+    pos = scheme_sprintf(s, slen, "%t: expects no arguments, given %d",
+			 name, namelen, argc);
   else if (maxc < 0)
-    sprintf(s, "%s: expects at least %d argument%s, given %d",
-	    name, minc, (minc == 1) ? "" : "s", argc);
+    pos = scheme_sprintf(s, slen, "%t: expects at least %d argument%s, given %d",
+			 name, namelen, minc, (minc == 1) ? "" : "s", argc);
   else if (minc == maxc)
-    sprintf(s, "%s: expects %d argument%s, given %d",
-	    name, minc, (minc == 1) ? "" : "s", argc);
+    pos = scheme_sprintf(s, slen, "%t: expects %d argument%s, given %d",
+			 name, namelen, minc, (minc == 1) ? "" : "s", argc);
   else
-    sprintf(s, "%s: expects %d to %d arguments, given %d",
-	    name, minc, maxc, argc);
+    pos = scheme_sprintf(s, slen, "%t: expects %d to %d arguments, given %d",
+			 name, namelen, minc, maxc, argc);
 
   if (argc && argv) {
     len /= argc;
     if ((argc < 50) && (len >= 3)) {
-      int i, pos;
+      int i;
       
-      strcat(s, ":");
-      pos = strlen(s);
+      strcpy(s + pos, ":");
+      pos++;
       
       for (i = 0; i < argc; i++) {
 	int l;
@@ -426,6 +611,8 @@ static char *make_arity_expect_string(const char *name, int minc, int maxc,
     }
   }
 
+  *_len = pos;
+
   return s;
 }
 
@@ -435,17 +622,18 @@ void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
   Scheme_Object *arity; 
   Scheme_Object *v = scheme_make_integer(argc);
   char *s;
+  long len;
 
-  s = make_arity_expect_string(name, minc, maxc, argc, argv);
+  s = make_arity_expect_string(name, -1, minc, maxc, argc, argv, &len);
 
   if (minc >= 0)
     arity = scheme_make_arity((short)minc, (short)maxc);
   else if (minc == -1)
     arity = scheme_arity((Scheme_Object *)name);
   else
-    arity = scheme_false; /* BUG! */
+    arity = scheme_false; /* BUG! if this happens */
 
-  scheme_raise_exn(MZEXN_APPLICATION_ARITY, v, arity, "%s", s);
+  scheme_raise_exn(MZEXN_APPLICATION_ARITY, v, arity, "%t", s, len);
 }
 
 void scheme_case_lambda_wrong_count(const char *name, 
@@ -454,6 +642,7 @@ void scheme_case_lambda_wrong_count(const char *name,
 {
   Scheme_Object *arity, *a;
   char *s;
+  long len;
   va_list args;
   int i;
 
@@ -464,7 +653,7 @@ void scheme_case_lambda_wrong_count(const char *name,
     short mina, maxa;
     Scheme_Object *av;
 
-    mina= va_arg(args, int);
+    mina = va_arg(args, int);
     maxa = va_arg(args, int);
     
     av = scheme_make_arity(mina, maxa);
@@ -472,16 +661,18 @@ void scheme_case_lambda_wrong_count(const char *name,
   }
   va_end(args);
 
-  s = make_arity_expect_string(name, -2, 0, argc, argv);
+  s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len);
 
   scheme_raise_exn(MZEXN_APPLICATION_ARITY, scheme_make_integer(argc), 
-		   arity, "%s", s);
+		   arity, "%t", s, len);
 }
 
 char *scheme_make_arity_expect_string(Scheme_Object *proc,
-				      int argc, Scheme_Object **argv)
+				      int argc, Scheme_Object **argv,
+				      long *_slen)
 {
   const char *name;
+  int namelen = -1;
   int mina, maxa;
 
   if (SCHEME_PRIMP(proc)) {
@@ -493,7 +684,7 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
     mina = ((Scheme_Closed_Primitive_Proc *)proc)->mina;
     maxa = ((Scheme_Closed_Primitive_Proc *)proc)->maxa;
   } else if (SAME_TYPE(SCHEME_TYPE(proc), scheme_case_closure_type)) {
-    name = scheme_get_proc_name(proc, NULL, 1);
+    name = scheme_get_proc_name(proc, &namelen, 1);
     mina = -2;
     maxa = 0;
   } else {
@@ -505,18 +696,18 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
       --mina;
       maxa = -1;
     }
-    name = scheme_get_proc_name(proc, NULL, 1);
+    name = scheme_get_proc_name(proc, &namelen, 1);
   }
 
-  return make_arity_expect_string(name, mina, maxa, argc, argv);
+  return make_arity_expect_string(name, namelen, mina, maxa, argc, argv, _slen);
 }
 
-char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv)
+char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv, long *_olen)
 {
   char *other;
   long len;
   
-  other = init_buf(&len);
+  other = init_buf(&len, NULL);
   
   len /= (argc - (((which >= 0) && (argc > 1)) ? 1 : 0));
   if ((argc < 50) && (len >= 3)) {
@@ -535,8 +726,10 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
       }
     }
     other[pos] = 0;
+    *_olen = pos;
   } else {
     sprintf(other, "; given %d arguments total", argc);
+    *_olen = strlen(other);
   }
 
   return other;
@@ -562,45 +755,50 @@ void scheme_wrong_type(const char *name, const char *expected,
 {
   Scheme_Object *o;
   char *s;
+  int slen;
   Scheme_Object *typesym;
 
   o = argv[which < 0 ? 0 : which];
 
-  s = scheme_make_provided_string(o, 1, NULL);
+  s = scheme_make_provided_string(o, 1, &slen);
 
   typesym = scheme_intern_symbol(expected);
 
   if ((which < 0) || (argc == 1))
     scheme_raise_exn(MZEXN_APPLICATION_TYPE, o, typesym,
 		     "%s: expects argument of type <%s>; "
-		     "given %s",
-		     name, expected, s);
+		     "given %t",
+		     name, expected, s, slen);
   else {
     char *other;
+    long olen;
 
     if ((which >= 0) && (argc > 1))
-      other = scheme_make_args_string("other ", which, argc, argv);
-    else
+      other = scheme_make_args_string("other ", which, argc, argv, &olen);
+    else {
       other = "";
+      olen = 0;
+    }
 
     scheme_raise_exn(MZEXN_APPLICATION_TYPE, o, typesym,
 		     "%s: expects type <%s> as %d%s argument, "
-		     "given: %s%s",
+		     "given: %t%t",
 		     name, expected, which + 1,
 		     scheme_number_suffix(which + 1),
-		     s, other);
+		     s, slen, other, olen);
   }
 }
 
 void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
 {
   char *s;
+  int slen;
 
-  s = scheme_make_provided_string(o, 1, NULL);
+  s = scheme_make_provided_string(o, 1, &slen);
 
   scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, o,
-		   "%s: %s%s",
-		   name, msg, s);
+		   "%s: %s%t",
+		   name, msg, s, slen);
 }
 
 void scheme_wrong_syntax(const char *where, 
@@ -608,12 +806,13 @@ void scheme_wrong_syntax(const char *where,
 			 Scheme_Object *form, 
 			 const char *detail, ...)
 {
-  long len;
+  long len, slen, vlen, dvlen, blen;
   char *s, *buffer;
   char *v, *dv;
 
   if (!detail) {
     s = "bad syntax";
+    slen = strlen(s);
   } else {
     va_list args;
 
@@ -621,69 +820,82 @@ void scheme_wrong_syntax(const char *where,
     s = prepared_buf;
 
     va_start(args, detail);
-    vsprintf(s, detail, args);
+    slen = scheme_vsprintf(s, prepared_buf_len, detail, args);
     va_end(args);
 
-    prepared_buf = init_buf(NULL);
+    prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
   
-  buffer = init_buf(&len);
+  buffer = init_buf(&len, &blen);
 
   if (form) 
     /* don't use error_write_to_string_w_max since this is code */
-    v = scheme_write_to_string_w_max(form, NULL, len);
+    v = scheme_write_to_string_w_max(form, &vlen, len);
   else {
     form = scheme_false;
     v = NULL;
+    vlen = 0;
   }
 
   if (detail_form)
     /* don't use error_write_to_string_w_max since this is code */
-    dv = scheme_write_to_string_w_max(detail_form, NULL, len);
-  else
+    dv = scheme_write_to_string_w_max(detail_form, &dvlen, len);
+  else {
     dv = NULL;
+    dvlen = 0;
+  }
 
   if (v) {
     if (dv)
-      sprintf(buffer, "%s: %s at: %s in: %s", where, s, dv, v);
+      blen = scheme_sprintf(buffer, blen, "%s: %t at: %t in: %t", where, s, slen, dv, dvlen, v, vlen);
     else
-      sprintf(buffer, "%s: %s in: %s", where, s, v);
+      blen = scheme_sprintf(buffer, blen, "%s: %t in: %t", where, s, slen, v, vlen);
   } else
-    sprintf(buffer, "%s: %s", where, s);
-
-  scheme_raise_exn(MZEXN_SYNTAX, form, "%s", buffer);
+    blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
+  
+  scheme_raise_exn(MZEXN_SYNTAX, form, "%t", buffer, blen);
 }
 
 void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv)
 {
-  long len;
+  long len, slen;
+  int rlen;
   char *s, *r;
 
-  s = init_buf(&len);
+  s = init_buf(&len, NULL);
 
-  r = scheme_make_provided_string(rator, 1, NULL);
+  r = scheme_make_provided_string(rator, 1, &rlen);
 
   if (argc)
     len /= argc;
 
+  slen = 0;
   if (argc && (argc < 50) && (len >= 3)) {
     int i;
 
     strcpy(s, "; arguments were:");
+    slen = 17;
     for (i = 0; i < argc; i++) {
       char *o;
-      o = error_write_to_string_w_max(argv[i], len, NULL);
-      strcat(s, " ");
-      strcat(s, o);
+      int olen;
+
+      o = error_write_to_string_w_max(argv[i], len, &olen);
+      memcpy(s + slen, " ", 1);
+      memcpy(s + slen + 1, o, olen);
+      slen += 1 + olen;
     }
-  } else if (argc)
-    sprintf(s, " (%d args)", argc);
-  else
-    s = " (no arguments)";
+    s[slen] = 0;
+  } else {
+    slen = -1;
+    if (argc)
+      sprintf(s, " (%d args)", argc);
+    else
+      s = " (no arguments)";
+  }
 
   scheme_raise_exn(MZEXN_APPLICATION_TYPE, rator, scheme_intern_symbol("procedure"),
-		   "procedure application: expected procedure, given: %s%s",
-		   r, s);
+		   "procedure application: expected procedure, given: %t%t",
+		   r, rlen, s, slen);
 }
 
 void scheme_wrong_return_arity(const char *where, 
@@ -691,13 +903,15 @@ void scheme_wrong_return_arity(const char *where,
 			       Scheme_Object **argv,
 			       const char *detail, ...)
 {
+  long len, slen, vlen, blen;
   char *s, *buffer;
   char *v;
 
-  buffer = init_buf(NULL);
+  buffer = init_buf(&len, &blen);
 
   if (!detail) {
     s = NULL;
+    slen = 0;
   } else {
     va_list args;
 
@@ -705,20 +919,21 @@ void scheme_wrong_return_arity(const char *where,
     s = prepared_buf;
 
     va_start(args, detail);
-    vsprintf(s, detail, args);
+    slen = scheme_vsprintf(s, prepared_buf_len, detail, args);
     va_end(args);
 
-    prepared_buf = init_buf(NULL);
+    prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
 
   if (!got || !argv) {
     v = "";
+    vlen = 0;
   } else {
     int i;
     long len, origlen, maxpos;
     Scheme_Object **array;
 
-    v = init_buf(&len);
+    v = init_buf(&len, NULL);
     v[0] = ':';
     v[1] = 0;
 
@@ -733,43 +948,55 @@ void scheme_wrong_return_arity(const char *where,
       len = 3;
     }
 
+    vlen = 1;
     for (i = 0; i < maxpos; i++) {
       char *o;
-      o = error_write_to_string_w_max(array[i], len, NULL);
-      strcat(v, " ");
-      strcat(v, o);
+      int olen;
+
+      o = error_write_to_string_w_max(array[i], len, &olen);
+      memcpy(v + vlen, " ", 1);
+      memcpy(v + vlen + 1, o, olen);
+      vlen += 1 + olen;
     }
 
-    if (maxpos != got)
-      strcat(v, " ...");
+    if (maxpos != got) {
+      strcpy(v + vlen, " ...");
+      vlen += 4;
+    }
+    v[vlen] = 0;
   }
 
-  sprintf(buffer, 
-	  "%s%scontext%s%s%s expected %d value%s,"
-	  " received %d value%s%s",
-	  where ? where : "",
-	  where ? ": " : "",
-	  s ? " (" : "",
-	  s ? s : "",
-	  s ? ")" : "",
-	  expected,
-	  (expected == 1) ? "" : "s",
-	  got,
-	  (got == 1) ? "" : "s",
-	  v);
+  blen = scheme_sprintf(buffer, 
+			blen,
+			"%s%scontext%s%t%s expected %d value%s,"
+			" received %d value%s%t",
+			where ? where : "",
+			where ? ": " : "",
+			s ? " (" : "",
+			s ? s : "",
+			slen,
+			s ? ")" : "",
+			expected,
+			(expected == 1) ? "" : "s",
+			got,
+			(got == 1) ? "" : "s",
+			v, vlen);
 
   scheme_raise_exn(MZEXN_APPLICATION_ARITY, 
 		   scheme_make_integer(got),
 		   scheme_make_integer(expected),
-		   buffer);
+		   "%t",
+		   buffer, blen);
 }
 
 void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
 {
   char *s;
+  long slen;
 
   if (!msg) {
     s = "";
+    slen = 0;
   } else {
     va_list args;
 
@@ -777,36 +1004,37 @@ void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
     s = prepared_buf;
 
     va_start(args, msg);
-    vsprintf(s, msg, args);
+    slen = scheme_vsprintf(s, prepared_buf_len, msg, args);
     va_end(args);
 
-    prepared_buf = init_buf(NULL);
+    prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
 
   scheme_raise_exn(MZEXN_MISC_OUT_OF_MEMORY,
-		   "%s%sout of memory %s",
+		   "%s%sout of memory %t",
 		   where ? where : "",
 		   where ? ": " : "",
-		   s);
+		   s, slen);
 }
 
 void scheme_raise_else(const char *where, Scheme_Object *v)
 {
   char *r;
+  int rlen;
 
-  r = scheme_make_provided_string(v, 1, NULL);
+  r = scheme_make_provided_string(v, 1, &rlen);
 
   scheme_raise_exn(MZEXN_ELSE, 
-		   "%s: no match found for %s",
-		   where, r);
+		   "%s: no match found for %t",
+		   where, r, rlen);
 }
 
 void scheme_unbound_global(Scheme_Object *name)
 {
   scheme_raise_exn(MZEXN_VARIABLE, 
 		   name,
-		   "reference to undefined identifier: %s",
-		   scheme_symbol_name(name));
+		   "reference to undefined identifier: %S",
+		   name);
 }
 
 char *scheme_make_provided_string(Scheme_Object *o, int count, int *lenout)
@@ -819,26 +1047,6 @@ char *scheme_make_provided_string(Scheme_Object *o, int count, int *lenout)
     len /= count;
 
   return error_write_to_string_w_max(o, len, lenout);
-
-  /* Old style, with type string: */
-#if 0
-  long len;
-  char *s, *r;
-
-  s = init_buf(&len);
-
-  if (count)
-    len /= count;
-
-  r = error_write_to_string_w_max(o, len, lenout);
-
-  if (count == 1)
-    sprintf(s, "%s (type %s)", r, scheme_get_type_name(SCHEME_TYPE(o)));
-  else
-    s = r;
-
-  return s;
-#endif
 }
 
 static Scheme_Object *error(int argc, Scheme_Object *argv[])
@@ -927,7 +1135,7 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
   scheme_wrong_syntax(SCHEME_SYM_VAL(argv[0]), 
 		      (argc > 3) ? argv[3] : NULL,
 		      (argc > 2) ? argv[2] : NULL,
-		      "%s", SCHEME_STR_VAL(argv[1]));
+		      "%T", argv[1]);
 
   return NULL;
 }
@@ -1113,6 +1321,7 @@ void
 scheme_raise_exn(int id, ...)
 {
   va_list args;
+  long alen;
   char *msg;
   int i, c;
   Scheme_Object *eargs[MZEXN_MAXARGS];
@@ -1134,20 +1343,20 @@ scheme_raise_exn(int id, ...)
 
   msg = va_arg(args, char*);
 
-  vsprintf(buffer, msg, args);
+  alen = scheme_vsprintf(buffer, prepared_buf_len, msg, args);
   va_end(args);
 
-  prepared_buf = init_buf(NULL);
+  prepared_buf = init_buf(NULL, &prepared_buf_len);
 
 #ifndef NO_SCHEME_EXNS
-  eargs[0] = scheme_make_immutable_sized_string(buffer, strlen(buffer), 1);
+  eargs[0] = scheme_make_immutable_sized_string(buffer, alen, 1);
   eargs[1] = scheme_void;
 
   do_raise(scheme_make_struct_instance(exn_table[id].type, 
 				       c, eargs),
 	   0, 1);
 #else
-  call_error(buffer, -1);
+  call_error(buffer, alen);
 #endif
 }
 
@@ -1227,51 +1436,54 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 
  if (scheme_current_process->error_invoked) {
    char *s;
+   long slen = -1;
    if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
        && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
      Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
      if (SCHEME_STRINGP(str)) {
        char *msg;
-       int len;
+       long len;
        msg = SCHEME_STR_VAL(str);
-       len = strlen(msg);
+       len = SCHEME_STRLEN_VAL(str);
        s = (char *)scheme_malloc_atomic(len + 20);
        memcpy(s, "exception raised: ", 20);
-       strcat(s, msg);
+       memcpy(s + 20, msg, len);
+       slen = 20 + len;
      } else
        s = "exception raised [message field is not a string]";
    } else
      s = "raise called (with non-exception value)";
-   call_error(s, -1);
+   call_error(s, slen);
  }
 
  if (scheme_current_process->exn_raised) {
-   long len;
+   long len, mlen = -1, blen;
    char *buffer, *msg, *raisetype;
 
-   buffer = init_buf(&len);
+   buffer = init_buf(&len, &blen);
 
    if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
        && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
      Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
      raisetype = "exception raised";
-     if (SCHEME_STRINGP(str))
+     if (SCHEME_STRINGP(str)) {
        msg = SCHEME_STR_VAL(str);
-     else
+       mlen = SCHEME_STRLEN_VAL(str);
+     } else
        msg = "[exception message field is not a string]";
    } else {
      msg = error_write_to_string_w_max(arg, len, NULL);
      raisetype = "raise called (with non-exception value)";
    }
 
-   sprintf(buffer, "%s by %s: %s",
-	   raisetype,
-	   (scheme_current_process->exn_raised < 2) 
-	   ? "exception handler"
-	   : "debug info handler",
-	   msg);
+   blen = scheme_sprintf(buffer, blen, "%s by %s: %t",
+			 raisetype,
+			 (scheme_current_process->exn_raised < 2) 
+			 ? "exception handler"
+			 : "debug info handler",
+			 msg, mlen);
 
-   call_error(buffer, -1);
+   call_error(buffer, blen);
 
    return scheme_void;
  }

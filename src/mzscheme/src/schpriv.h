@@ -1105,7 +1105,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[]);
 
 Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj);
 
-char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv);
+char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv, long *olen);
 
 Scheme_Object **scheme_make_struct_names_from_array(const char *base, 
 						    int fcount,
@@ -1136,7 +1136,8 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 		      int fpos, int offset, int argc, Scheme_Object **argv);
 
 char *scheme_make_arity_expect_string(Scheme_Object *proc,
-				      int argc, Scheme_Object **argv);
+				      int argc, Scheme_Object **argv,
+				      long *len);
 
 #ifdef TIME_TYPE_IS_UNSIGNED
 #define scheme_make_integer_value_from_time(t) scheme_make_integer_value_from_unsigned((unsigned long)t)

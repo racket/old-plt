@@ -507,19 +507,19 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
       && b->val) {
     Scheme_Object *key = (Scheme_Object *)b->key;
     scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, key,
-		     "%s: cannot redefine %s: %s", 
+		     "%s: cannot redefine %s: %S", 
 		     who,
 		     (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
 		     ? "constant"
 		     : "keyword",
-		     scheme_symbol_name((Scheme_Object *)key));
+		     (Scheme_Object *)key);
   } else if (b->val || set_undef)
     b->val = val;
   else {
     scheme_raise_exn(MZEXN_VARIABLE, b->key,
-		     "%s: cannot set undefined identifier: %s", 
+		     "%s: cannot set undefined identifier: %S",
 		     who,
-		     scheme_symbol_name((Scheme_Object *)b->key));
+		     (Scheme_Object *)b->key);
     
   }
 }
@@ -1572,8 +1572,8 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 	for (m = j + 1; m < k; m++) {
 	  if (SAME_OBJ(names[m], names[j]))
 	    scheme_wrong_syntax(formname, NULL, form,
-				"multiple bindings of \"%s\" in the same clause", 
-				scheme_symbol_name(names[m]));
+				"multiple bindings of `%S' in the same clause", 
+				names[m]);
 	}
       }
     } else {

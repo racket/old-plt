@@ -1558,22 +1558,26 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
       size = l;
     else if (size != l) {
       char *argstr;
-      argstr = scheme_make_args_string("", -1, argc, argv);
+      long alen;
+
+      argstr = scheme_make_args_string("", -1, argc, argv, &alen);
 
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[i],
-		       "%s: all lists must have same size%s", 
-		       name, argstr);
+		       "%s: all lists must have same size%t", 
+		       name, argstr, alen);
       return NULL;
     }
   }
 
   if (SCHEME_FALSEP(get_or_check_arity(argv[0], argc - 1))) {
     char *s;
+    long aelen;
 
-    s = scheme_make_arity_expect_string(argv[0], argc - 1, NULL);
+    s = scheme_make_arity_expect_string(argv[0], argc - 1, NULL, &aelen);
 
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
-		     "%s: arity mismatch for %s", name, s);
+		     "%s: arity mismatch for %t", name, 
+		     s, aelen);
     return NULL;
   }
   
@@ -2549,11 +2553,13 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
 
   if (SCHEME_FALSEP(get_or_check_arity(argv[0], num_rands))) {
     char *s;
+    long aelen;
 
-    s = scheme_make_arity_expect_string(argv[0], num_rands, NULL);
+    s = scheme_make_arity_expect_string(argv[0], num_rands, NULL, &aelen);
 
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
-		     "time-apply: arity mismatch for %s", s);
+		     "time-apply: arity mismatch for %t", 
+		     s, aelen);
     return NULL;
   }
 

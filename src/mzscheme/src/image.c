@@ -209,7 +209,7 @@ extern char **environ;
 
 static void die_now(char *phase, char *file)
 {
-  printf("Restore from \"%s\" failed at %s (%d).\n", file, phase, errno);
+  printf("Restore from \"%q\" failed at %s (%d).\n", file, phase, errno);
   exit(-1);
 }
 
@@ -304,7 +304,7 @@ static Scheme_Object *dump_image(char *filename)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       scheme_false,
-		       "write-image-to-file: couldn't write file %s", 
+		       "write-image-to-file: couldn't write file \"%q\"", 
 		       filename);
     } else {
       int i;
@@ -558,7 +558,7 @@ static void restore_image(char *file, int argc, char **argv,
 static void read_image_exn(char *phase, char *file)
 {
   scheme_raise_exn(MZEXN_MISC,
-		   "read-image-from-file: restore from \"%s\" failed at %s (%d).", 
+		   "read-image-from-file: restore from \"%q\" failed at %s (%d).", 
 		   file, phase, errno);
 }
 

@@ -371,7 +371,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
       scheme_raise_exn(MZEXN_READ,
 		       port,
 		       "read: unexpected '%c' at %ld, "
-		       "line %ld in %s", 
+		       "line %ld in %q", 
 		       (unsigned char)ch,
 		       scheme_tell(port),
 		       scheme_tell_line(port), 
@@ -432,7 +432,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	    scheme_raise_exn(MZEXN_READ,
 			     port,
 			     "read: bad syntax `#[' at position %ld, "
-			     "line %ld in %s",
+			     "line %ld in %q",
 			     scheme_tell(port),
 			     scheme_tell_line(port),
 			     SCHEME_IPORT_NAME(port));
@@ -444,7 +444,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	    scheme_raise_exn(MZEXN_READ,
 			     port,
 			     "read: bad syntax `#[' at position %ld, "
-			     "line %ld in %s",
+			     "line %ld in %q",
 			     scheme_tell(port),
 			     scheme_tell_line(port),
 			     SCHEME_IPORT_NAME(port));
@@ -630,7 +630,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      scheme_raise_exn(MZEXN_READ,
 			       port,
 			       "read: bad syntax `#%s' at position %ld, "
-			       "line %ld in %s",
+			       "line %ld in %q",
 			       lbuffer,
 			       scheme_tell(port),
 			       scheme_tell_line(port),
@@ -773,7 +773,7 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
       scheme_raise_exn(MZEXN_READ_EOF,
 		       port,
 		       "read: expected a '%c'; started at "
-		       "position %ld, line %ld in %s", closer, start, 
+		       "position %ld, line %ld in %q", closer, start, 
 		       startline, SCHEME_IPORT_NAME(port));
     }
 
@@ -824,14 +824,14 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
       if (vec)
 	scheme_raise_exn(MZEXN_READ,
 			 port,
-			 "read: illegal use of \".\" at position %ld line %ld in %s",
+			 "read: illegal use of \".\" at position %ld line %ld in %q",
 			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
       cdr = read_inner(port, ht CURRENTPROCARG);
       ch = skip_whitespace_comments (port);
       if (ch != closer)
 	scheme_raise_exn(MZEXN_READ,
 			 port,
-			 "read: illegal use of \".\" at position %ld line %ld in %s",
+			 "read: illegal use of \".\" at position %ld line %ld in %q",
 			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
       SCHEME_CDR(pair) = cdr;
       cdr = pair;
@@ -870,7 +870,7 @@ read_string(Scheme_Object *port CURRENTPROCPRM)
       scheme_raise_exn(MZEXN_READ_EOF,
 		       port,
 		       "read: expected a '\"'; started at position %ld"
-		       ", line %ld in %s", 
+		       ", line %ld in %q", 
 		       start, startline, SCHEME_IPORT_NAME(port));
     if (ch == '\\')
       ch = scheme_getc (port);
@@ -1053,7 +1053,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   if (!quoted_ever && (i == 1) && (buf[0] == '.')) {
     scheme_raise_exn(MZEXN_READ,
 		     port,
-		     "read: illegal use of \".\" at position %ld line %ld in %s",
+		     "read: illegal use of \".\" at position %ld line %ld in %q",
 		     scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
     return NULL;
   }
@@ -1208,7 +1208,7 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
     scheme_raise_exn(MZEXN_READ_EOF,
 		     port,
 		     "read: expected a character after #\\"
-		     " at %ld, line %ld in %s",
+		     " at %ld, line %ld in %q",
 		     pos, l, SCHEME_IPORT_NAME(port));
   }
 

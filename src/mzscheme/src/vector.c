@@ -138,7 +138,7 @@ make_vector (int argc, Scheme_Object *argv[])
 
   if (len == -1) {
     scheme_raise_out_of_memory("make-vector", "making vector of length %s",
-			       scheme_make_provided_string(argv[0], 0, NULL));
+			       scheme_make_provided_string(argv[0], 1, NULL));
   }
 
   if (argc == 2)
@@ -179,15 +179,18 @@ bad_index(char *name, Scheme_Object *i, Scheme_Object *vec)
 {
   int n = SCHEME_VEC_SIZE(vec) - 1;
 
-  if (SCHEME_VEC_SIZE(vec))
+  if (SCHEME_VEC_SIZE(vec)) {
+    char *vstr;
+    long vlen;
+    vstr = scheme_make_provided_string(vec, 2, &vlen);
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     i,
-		     "%s: index %s out of range [%d, %d] for vector: %s",
+		     "%s: index %s out of range [%d, %d] for vector: %t",
 		     name, 
 		     scheme_make_provided_string(i, 2, NULL), 
 		     0, n,
-		     scheme_make_provided_string(vec, 2, NULL));
-  else
+		     vstr, vlen);
+  } else
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     i,
 		     "%s: bad index %s for empty vector",

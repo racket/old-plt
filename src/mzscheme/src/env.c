@@ -618,16 +618,16 @@ scheme_remove_global_symbol(Scheme_Object *sym, Scheme_Env *env)
 
   if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_KEYWORD)
     scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, sym,
-		     "undefine: can't undefine keyword %s",
-		     scheme_symbol_name(sym));
+		     "undefine: can't undefine keyword %S",
+		     sym);
   if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
     scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, sym,
-		     "undefine: can't undefine constant %s",
-		     scheme_symbol_name(sym));
+		     "undefine: can't undefine constant %S",
+		     sym);
   if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_PERMANENT)
     scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, sym,
-		     "undefine: can't undefine permanent global %s",
-		     scheme_symbol_name(sym));
+		     "undefine: can't undefine permanent global %S",
+		     sym);
 
   b->val = NULL;
 }
@@ -1518,8 +1518,8 @@ global_defined_value(int argc, Scheme_Object *argv[])
     
     if (!v)
       scheme_raise_exn(MZEXN_VARIABLE, argv[0],
-		       "global-defined-value: %s is not defined",
-		       scheme_symbol_name(argv[0]));
+		       "global-defined-value: %S is not defined",
+		       argv[0]);
 
     return v;
   }
@@ -1549,9 +1549,9 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_exp_time_type))
     scheme_raise_exn(MZEXN_MISC,
-		     "local-expansion-time-value: %s is not defined "
+		     "local-expansion-time-value: %S is not defined "
 		     "as an expansion-time value",
-		     scheme_symbol_name(argv[0]));
+		     argv[0]);
   
   return SCHEME_PTR_VAL(v);
 }
@@ -1579,9 +1579,9 @@ global_exp_time_value(int argc, Scheme_Object *argv[])
 
   if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_exp_time_type))
     scheme_raise_exn(MZEXN_MISC,
-		     "global-expansion-time-value: %s is not defined "
+		     "global-expansion-time-value: %S is not defined "
 		     "as an expansion-time value",
-		     scheme_symbol_name(argv[0]));
+		     argv[0]);
   
   return SCHEME_PTR_VAL(v);
 }

@@ -651,8 +651,8 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     if (!e)
       scheme_wrong_syntax(MAKE_UNIT, 
 			  NULL, form,
-			  "cannot export undefined id \"%s\"",
-			  scheme_symbol_name(id->int_id));
+			  "cannot export undefined id `%S'",
+			  id->int_id);
   }
 
   /* Check that imported ids are not redefined: */
@@ -1284,9 +1284,9 @@ make_compound_unit_record(int count, /* subunits */
 	if ((export_srcs[j].submod_index == which)
 	    && SAME_OBJ(export_srcs[j].ext_id, eid)) {
 	  scheme_wrong_syntax(MAKE_COMPOUND_UNIT, NULL, form,
-			      "\"%s\" of sub-unit tagged \"%s\" is exported twice",
-			      scheme_symbol_name(eid),
-			      scheme_symbol_name(tags[which]));
+			      "`%S' of sub-unit tagged `%S' is exported twice",
+			      eid,
+			      tags[which]);
 	}
       }
     }
@@ -1698,12 +1698,12 @@ static void wrong_import(char *where,
 			 Scheme_Object *id)
 {
   scheme_raise_exn(MZEXN_UNIT,
-		   "%s: import at tag \"%s\" failed from tag \"%s\", "
-		   "name \"%s\"",
+		   "%s: import at tag `%S' failed from tag `%S', "
+		   "name `%S'",
 		   where,
-		   scheme_symbol_name(tag),
-		   scheme_symbol_name(stag),
-		   scheme_symbol_name(id));
+		   tag,
+		   stag,
+		   id);
 }
 
 typedef struct {
@@ -1791,10 +1791,10 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 
     if (!SCHEME_UNITP(v)) {
       scheme_raise_exn(MZEXN_UNIT,
-		       MAKE_COMPOUND_UNIT ": not a " KIND " for \"%s\" "
-		       "in compound unit; provided %s",
-		       scheme_symbol_name(data->tags[i]),
-		       scheme_make_provided_string(v, 1, NULL));
+		       MAKE_COMPOUND_UNIT ": not a " KIND " for `%S' "
+		       "in compound unit; provided %V",
+		       data->tags[i],
+		       v);
       return NULL;
     }
     
@@ -1802,9 +1802,9 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 
     if (sm->num_imports != data->param_counts[i]) {
       scheme_raise_exn(MZEXN_UNIT,
-		       MAKE_COMPOUND_UNIT ": " KIND " tagged \"%s\" "
+		       MAKE_COMPOUND_UNIT ": " KIND " tagged `%S' "
 		       "expects %d imports, given %d",
-		       scheme_symbol_name(data->tags[i]),
+		       data->tags[i],
 		       sm->num_imports,
 		       data->param_counts[i]);
     }
@@ -1831,9 +1831,9 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 		       1, &pos)) {
       scheme_raise_exn(MZEXN_UNIT,
 		       MAKE_COMPOUND_UNIT ": compound " KIND " exported variable "
-		       "not found for tag \"%s\", name \"%s\"",
-		       scheme_symbol_name(data->tags[data->exports[i].submod_index]),
-		       scheme_symbol_name(data->exports[i].ext_id));
+		       "not found for tag `%S', name `%S'",
+		       data->tags[data->exports[i].submod_index],
+		       data->exports[i].ext_id);
       return NULL;
     }
   }
@@ -1933,8 +1933,8 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 
   if (!SCHEME_UNITP(v))
     scheme_raise_exn(MZEXN_UNIT,
-		     INVOKE_UNIT ": not a " KIND "; provided %s",
-		     scheme_make_provided_string(v, 1, NULL));
+		     INVOKE_UNIT ": not a " KIND "; provided %V",
+		     v);
   
   unit = (Scheme_Unit *)v;
 
@@ -1967,7 +1967,7 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 	  Scheme_Object *name = (Scheme_Object *)((Scheme_Bucket *)e)->key;
 	  scheme_raise_exn(MZEXN_UNIT,
 			   INVOKE_UNIT ": cannot link to undefined identifier: %s",
-			   scheme_symbol_name(name));
+			   name);
 	  return NULL;
 	}
 	((Scheme_Bucket_With_Const_Flag *)e)->flags |= GLOB_IS_PERMANENT;
@@ -2887,11 +2887,11 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	char *p;
 	p = sig_path_name(s, path);
 	scheme_raise_exn(MZEXN_UNIT,
-			 "%s: %.255s is missing a value name \"%.255s\", required by %.255s",
+			 "%s: %Q is missing a value name `%q', required by %Q",
 			 scheme_symbol_name(who),
-			 SCHEME_STR_VAL(src_context),
+			 src_context,
 			 p,
-			 SCHEME_STR_VAL(dest_context));
+			 dest_context);
 	return 0;
       } else if (SCHEME_FALSEP((Scheme_Object *)b->val))
 	return 0;
@@ -2900,11 +2900,11 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	char *p;
 	p = sig_path_name(s, path);
 	scheme_raise_exn(MZEXN_UNIT,
-			 "%s: %.255s contains \"%.255s\" as a sub-unit name, but %.255s contains \"%.255s\" as a value name",
+			 "%s: %Q contains `%q' as a sub-unit name, but %Q contains `%q' as a value name",
 			 scheme_symbol_name(who),
-			 SCHEME_STR_VAL(src_context),
+			 src_context,
 			 p,
-			 SCHEME_STR_VAL(dest_context),
+			 dest_context,
 			 p);
 	return 0;
       }
@@ -2926,11 +2926,11 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	char *p;
 	p = sig_path_name(name, path);
 	scheme_raise_exn(MZEXN_UNIT,
-			 "%s: %.255s is missing a sub-unit name \"%.255s\", required by %.255s",
+			 "%s: %Q is missing a sub-unit name `%q', required by %Q",
 			 scheme_symbol_name(who),
-			 SCHEME_STR_VAL(src_context),
+			 src_context,
 			 p,
-			 SCHEME_STR_VAL(dest_context));
+			 dest_context);
       } else if (SCHEME_FALSEP((Scheme_Object *)b->val))
 	return 0;
       else if (!SCHEME_HASHTP((Scheme_Object *)b->val)) {
@@ -2938,11 +2938,11 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	char *p;
 	p = sig_path_name(name, path);
 	scheme_raise_exn(MZEXN_UNIT,
-			 "%s: %.255s contains \"%.255s\" as a value name, but %.255s contains \"%.255s\" as a sub-unit name",
+			 "%s: %Q contains `%q' as a value name, but %Q contains `%q' as a sub-unit name",
 			 scheme_symbol_name(who),
-			 SCHEME_STR_VAL(src_context),
+			 src_context,
 			 p,
-			 SCHEME_STR_VAL(dest_context),
+			 dest_context,
 			 p);
 
       }
@@ -2968,12 +2968,12 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	  char *p;
 	  p = sig_path_name(name, path);
 	  scheme_raise_exn(MZEXN_UNIT,
-			   "%s: %.255s contains an extra %s name \"%.255s\" that is not required by %.255s",
+			   "%s: %Q contains an extra %s name `%q' that is not required by %Q",
 			   scheme_symbol_name(who),
-			   SCHEME_STR_VAL(src_context),
+			   src_context,
 			   SCHEME_SYMBOLP((Scheme_Object *)b->val) ? "value" : "sub-unit",
 			   p,
-			   SCHEME_STR_VAL(dest_context));
+			   dest_context);
 	}
       }
     }

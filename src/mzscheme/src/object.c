@@ -515,8 +515,8 @@ static int MergeArray(int ac, Scheme_Object **ak, Scheme_Object **a, short *as,
 	if (nodup == 2) {
 	  /* Error: interface adds names that are already in the superinterfaces. */
 	  scheme_raise_exn(MZEXN_OBJECT,
-			   "interface: superinterface already contains name: %s",
-			   scheme_symbol_name(ak[ai]));
+			   "interface: superinterface already contains name: %S",
+			   ak[ai]);
 	  return 0;
 	}
 	if (d)
@@ -877,9 +877,9 @@ static short *CheckInherited(Scheme_Class *sclass, ClassVariable *item)
 	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
 
 	scheme_raise_exn(MZEXN_OBJECT,
-			 CLASS_STAR ": %s ivar not found: %s%s%s",
+			 CLASS_STAR ": %s ivar not found: %S%s%s",
 			 isoverride(item) ? "overridden" : "inherited",
-			 scheme_symbol_name(name),
+			 name,
 			 sc,
 			 cl);
       } else {
@@ -895,8 +895,8 @@ static short *CheckInherited(Scheme_Class *sclass, ClassVariable *item)
 	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
 
 	scheme_raise_exn(MZEXN_OBJECT,
-			 CLASS_STAR ": superclass already includes public ivar: %s%s%s",
-			 scheme_symbol_name(name),
+			 CLASS_STAR ": superclass already includes public ivar: %S%s%s",
+			 name,
 			 sc,
 			 cl);
       }
@@ -987,8 +987,8 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
       symname = (data->defname ? scheme_symbol_name(data->defname) : "");
       scheme_raise_exn(MZEXN_OBJECT,
 		       "interface: interface expression returned "
-		       "a non-interface: %s%s%s",
-		       scheme_make_provided_string(sin, 1, NULL),
+		       "a non-interface: %V%s%s",
+		       sin,
 		       data->defname ? " for interface: " : "",
 		       symname);
       return NULL;
@@ -1649,9 +1649,9 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
 	  bf = "";
 	
 	scheme_raise_exn(MZEXN_OBJECT,
-			 CLASS_STAR ": ivar not implemented: %s%s"
+			 CLASS_STAR ": ivar not implemented: %S%s"
 			 " as required by the %sinterface%s",
-			 scheme_symbol_name(in->names[j]),
+			 in->names[j],
 			 cl, bf, inn);
 	return NULL;
       }
@@ -3753,8 +3753,8 @@ static Scheme_Object *MakeGeneric(int argc, Scheme_Object *argv[])
       s = get_interface_name(src, " in interface: ");
   
     scheme_raise_exn(MZEXN_OBJECT,
-		     MAKE_GENERIC ": can't find instance variable: %s%s",
-		     scheme_symbol_name(argv[1]),
+		     MAKE_GENERIC ": can't find instance variable: %S%s",
+		     argv[1],
 		     s);
 
     return NULL;
@@ -3803,8 +3803,8 @@ static Scheme_Object *IVar(int argc, Scheme_Object *argv[])
     cl = get_class_name(obj->o.sclass, " in class: ");
     
     scheme_raise_exn(MZEXN_OBJECT,
-		     IVAR ": instance variable not found: %s%s",
-		     scheme_symbol_name(name),
+		     IVAR ": instance variable not found: %S%s",
+		     name,
 		     cl);
   }
 

@@ -618,7 +618,7 @@ int scheme_check_proc_arity(const char *where, int a,
 			    int which, int argc, Scheme_Object **argv);
 
 char *scheme_make_provided_string(Scheme_Object *o, int count, int *len);
-char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv);
+char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv, long *len);
 
 void scheme_no_dumps(char *why);
 

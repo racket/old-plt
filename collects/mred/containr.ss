@@ -11,15 +11,28 @@
 
 ;-----------------------------------------------------------------------
 
+(define-signature mred:container^
+  (frame%
+   dialog-box%
+   button%   ... items ...
+   panel%
+   horizontal-panel%
+   vertical-panel%
+   single-panel%))
+
+(define mred:container@
+  (unit/s mred:container^
+    (import [mred:debug mred:debug^]
+	    [mzlib:function mzlib:function^])
 ; this constant is used by several MrEd primitives to signify the default
 ; size of an object.
-(define mred:const-default-size -1)
-(define mred:const-default-posn -1)  ;; ditto for position.
+    (define const-default-size -1)
+    (define const-default-posn -1)  ;; ditto for position.
 
 ; default spacing between items.
-(define mred:default-spacing 10)
+    (define default-spacing 10)
 
-(define counter 0)
+    (define counter 0)
 
 ; this structure holds the information that a child will need to send to
 ; its parent when the parent must resize itself.
@@ -27,7 +40,7 @@
 ;  x-min/y-min: numbers which indicate the minimum size of the child.
 ;  x-stretch/y-stretch: booleans which indicate whether the child can
 ;    stretch in the appropriate direction to fill otherwise empty space.
-(define-struct mred:child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
+    (define-struct mred:child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
 
 
 ; mred:get-two-int-results: a wrapper around functions that need to return
@@ -799,5 +812,4 @@
 		   [y-size (if y-stretch
 			       height
 			       y-min)])
-	      (send active set-size x-posn y-posn x-size y-size))))])))
-                                                                                
+	      (send active set-size x-posn y-posn x-size y-size))))])))))                                                                                

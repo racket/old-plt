@@ -1024,32 +1024,41 @@
                                   [is-built-in? (built-in? id)]
                                   [start (zodiac:location-offset (zodiac:zodiac-start var))]
                                   [finish (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))])
-                             (send text syncheck:add-menu start finish 
-                                   (lambda ()
-                                     (prims:initialize-tables)
-                                     (let ([ht (cond
-                                                 [(drscheme:basis:beginner-language? setting) prims:beginning]
-                                                 [(drscheme:basis:intermediate-language? setting) prims:intermediate]
-                                                 [(drscheme:basis:advanced-language? setting) prims:advanced]
-                                                 [else #f])])
-                                       (cond
-                                         [(and ht (hash-table-get ht id (lambda () #f)))
-                                          =>
-                                          (lambda (txt)
+                             (when is-built-in?
+                               (send text syncheck:add-menu start finish 
+                                     (lambda ()
+                                       (prims:initialize-tables)
+                                       (let ([ht (cond
+                                                   [(drscheme:basis:beginner-language? setting) prims:beginning]
+                                                   [(drscheme:basis:intermediate-language? setting) prims:intermediate]
+                                                   [(drscheme:basis:advanced-language? setting) prims:advanced]
+                                                   [else #f])])
+                                         (cond
+                                           [(and ht (hash-table-get ht id (lambda () #f)))
+                                            =>
+                                            (lambda (txt)
+                                              (let ([m (make-object mred:popup-menu%)])
+                                                (make-object mred:menu-item% (format "Show summary of ~a" id)
+                                                  m
+                                                  (lambda x
+                                                    (set-docs-messages (car txt) (cadr txt))))
+                                                (send 
+                                                 (make-object mred:menu-item% "Hide primitive summary pane"
+                                                   m
+                                                   (lambda x
+                                                     (hide-docs-messages)))
+                                                 enable
+                                                 docs-messages-shown?)
+                                                m))]
+                                           [(drscheme:basis:full-language? setting)
                                             (let ([m (make-object mred:popup-menu%)])
-                                              (make-object mred:menu-item% (format "Show summary of ~a" id)
+                                              (make-object mred:menu-item% 
+                                                (format "Show documentation for ~a" id)
                                                 m
                                                 (lambda x
-                                                  (set-docs-messages (car txt) (cadr txt))))
-                                              (send 
-                                               (make-object mred:menu-item% "Hide primitive summary pane"
-                                                 m
-                                                 (lambda x
-                                                   (hide-docs-messages)))
-                                               enable
-                                               docs-messages-shown?)
-                                              m))]
-                                         [else #f]))))
+                                                  (drscheme:help-desk:help-desk (symbol->string id))))
+                                              m)]
+                                           [else #f])))))
                              (change-style
                               (cond
                                 [(hash-table-get defineds id (lambda () #f))

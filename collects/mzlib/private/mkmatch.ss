@@ -141,12 +141,11 @@
       (for-each
        (lambda (x)
 	 (if (not (car (cddddr x)))
-	     (begin
-	       (display "Warning: unreachable pattern ")
-	       (display (car x))
-	       (display " in ")
-	       (display match-expr)
-	       (newline))))
+	     (fprintf
+	      (current-error-port)
+	      "Warning: unreachable pattern ~e in ~e~n"
+	      (syntax-object->datum (car x))
+	      (syntax-object->datum match-expr))))
        plist)))
   
   (define validate-pattern

@@ -147,7 +147,7 @@
                  (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
                    (script-unit-param unit)
                    (namespace-require `(lib "script.ss" "file-browser"))
-                   ;(load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
+                   (load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
                    (trace "no exception in setup-namespace user-thread"))
                  (semaphore-post s)
                  (trace "semaphore posted")))

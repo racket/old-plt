@@ -57,7 +57,7 @@
     [cell-number-sequence (: (digit) (@ (digit) (digit))
                              (@ (digit) (digit) (digit))
                              (@ (digit) (digit) (digit) (digit)))]
-    [cell-reference (@ (cell-letter-sequence) (cell-number-sequence))]
+    [cell-reference (@ (? "$") (cell-letter-sequence) (cell-number-sequence))]
     [whitespace (: #\space #\tab #\newline #\return)]
     [add-op (: "+" "-")]
     [mult-op (: "*" "/")]

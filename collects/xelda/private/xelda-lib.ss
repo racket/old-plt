@@ -1,7 +1,7 @@
 (module xelda-lib mzscheme
-
+  
   (require (lib "list.ss"))
-
+  
   (provide 
    average
    gen-equal-units
@@ -12,7 +12,7 @@
    check-empty-units
    check-equal-units
    verify-equal-units)
-
+  
   (define (split-list lst p?)
     (let loop ([lst lst]
 	       [yes null]
@@ -22,7 +22,7 @@
 	  (if (p? (car lst))
 	      (loop (cdr lst) (cons (car lst) yes) no)
 	      (loop (cdr lst) yes (cons (car lst) no))))))
-
+  
   (define (canonicalize-units us)
     (filter 
      (lambda (u)
@@ -31,23 +31,28 @@
 		     (string<=?  
 		      (symbol->string (car u1))
 		      (symbol->string (car u2)))))))
-
+  
   (define (average . ns)
-      (/ (apply + ns) (length ns)))
+    (/ (apply + ns) (length ns)))
   
   (define (gen-equal-units . us)
     (let ([u1 (car us)])
       (if (andmap (lambda (u) (equal? u u1))
 		  (cdr us))
 	  u1
-	  '((@error-equality 1)))))
+	  '((error/equality 1)))))
   
-  (define (check-equal-units us)
-    (let ([base-unit (first us)])
+  (define (check-equal-units unts)
+    (let* ([us (map (lambda (_us)
+                      (map (lambda (u)
+                             (cond ((eq? (car u) 'empty-unit)
+                                    (list 'empty-unit 1))
+                                   (else u))) _us)) unts)]
+           [base-unit (first us)])
       (if (andmap (lambda (u) (equal? u base-unit)) us)
           base-unit
-          '((@error-equality 1)))))
-
+          '((error/equality 1)))))
+  
   (define (verify-equal-units cell-name u1 u2)
     (if (equal? u1 u2)
 	(printf "Verified units for cell ~a~n" cell-name)
@@ -55,7 +60,7 @@
 		 "Units problem with cell ~a:~n"
 		 "Cell annotated with ~a, formula yields ~a~n")
 		cell-name u1 u2)))
-
+  
   (define (gen-mult-units u1 u2)
     (let ([raw-us (append u1 u2)])
       (let loop ([new-us raw-us]
@@ -73,25 +78,25 @@
 				 (apply + (map cadr (car u-and-non-u))))]
 		   [non-u (cadr u-and-non-u)])
 	      (loop non-u (cons (list u-name new-u-exp) result)))))))
-
+  
   (define (gen-div-units u1 u2)
     (gen-mult-units u1 (map (lambda (u)
 			      (let ([u-name (car u)]
 				    [u-exp (cadr u)])
 				(list u-name (- 0 u-exp)))) u2)))
-
+  
   (define (gen-exp-units u exp)
     (if (not (integer? exp))
-	'((@error-exponentiation 1))
+	'((error/exponentiation 1))
 	(map (lambda (u)
-		 (let ([u-name (car u)]
-		       [u-exp (cadr u)])
-		   (list u-name (inexact->exact 
-				 (* exp u-exp)))))
+               (let ([u-name (car u)]
+                     [u-exp (cadr u)])
+                 (list u-name (inexact->exact 
+                               (* exp u-exp)))))
 	     u)))
-
+  
   (define (check-empty-units . us)
     (if (andmap null? us)
 	null
-	'((@error-empty-unit 1)))))
+	'((error/empty-unit 1)))))
 

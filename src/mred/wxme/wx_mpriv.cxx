@@ -2741,8 +2741,10 @@ Bool wxMediaEdit::CaretOff(void)
   if (B > y + h)
     B = y + h;
 
-  if (!caretPen)
+  if (!caretPen) {
+    wxREGGLOB(caretPen);
     caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
+  }
 
   {
     wxPen *oldpen;

@@ -653,7 +653,9 @@
            run-in-evaluation-thread
            
            shutdown
-	   kill-evaluation))
+	   kill-evaluation
+
+	   eof-received))
         
         (unless (is-a? context context<%>)
           (error 'drscheme:rep:text% "expected an object that implements drscheme:rep:context<%> as initialization argument, got: ~e"
@@ -736,13 +738,17 @@
                 (mred:yield)) ; flush output again
               text)))
         
+	(define eof-received? #f)
+	(define (eof-received)
+	  (set! eof-received? #t))
+
         (define init-transparent-io-do-work  ; =Kernel=, =Handler=
           (lambda (grab-focus?)
             (let ([c-locked? (locked?)])
               (begin-edit-sequence)
               (lock #f)
               (let ([starting-at-prompt-mode? prompt-mode?])
-                (set! transparent-text (make-object transparent-io-text%))
+                (set! transparent-text (make-object transparent-io-text% this))
                 
                 (send transparent-text auto-wrap #t)
                 (send transparent-text balance-required #f)
@@ -788,8 +794,10 @@
 		       (queue-system-callback
 			ut
 			(lambda () ; =Kernel=, =Handler=
-			  (let ([text (init-transparent-input)])
-			    (set! char-fetched (send text fetch-char)))
+			  (if eof-received?
+			      (set! char-fetched eof)
+			      (let ([text (init-transparent-input)])
+				(set! char-fetched (send text fetch-char))))
 			  (semaphore-post char-fetched-sema))))
 					; Wait for a char, allow breaks:
 		     (with-handlers ([void (lambda (x)
@@ -833,8 +841,10 @@
                  (queue-system-callback
                   ut
                   (lambda () ; =Kernel=, =Handler=
-                    (let ([text (init-transparent-input)])
-                      (set! answer (send text check-char-ready?)))
+		    (if eof-received?
+			#t
+			(let ([text (init-transparent-input)])
+			  (set! answer (send text check-char-ready?))))
                     (semaphore-post s)))
                  ; enable-break in case the thread dies and the callback never 
                  ;  happens:
@@ -1789,7 +1799,9 @@
             (clear-previous-expr-positions)
             (set! should-collect-garbage? #t)
             
-            ;; in case the last evaluation thread was killed, clean up some state.
+	    (set! eof-received? #f)
+
+	    ;; in case the last evaluation thread was killed, clean up some state.
             (lock #f)
             (set! in-evaluation? #f)
             (update-running)
@@ -2243,108 +2255,127 @@
   (define input-delta (make-object mred:style-delta%))
   (send input-delta set-delta-foreground (make-object mred:color% 0 150 0))
   (define transparent-io-text<%> (interface ()))
-  (define make-transparent-io-text%
-    (lambda (super%)
-      (rec transparent-io-text%
-        (class* super% (transparent-io-text<%>) args
-          (inherit change-style
-                   prompt-position set-prompt-position
-                   resetting? set-resetting lock get-text
-                   set-position last-position get-character
-                   clear-undos set-cursor
-                   do-pre-eval do-post-eval balance-required)
-          (rename [super-after-insert after-insert]
-                  [super-on-local-char on-local-char])
-          (private
-            [data null]
-            [stream-start 0]
-            [stream-end 0])
-          (private [shutdown? #f])
-          
-          (public
-            [stream-start/end-protect (make-semaphore 1)]
-            [wait-for-sexp (make-semaphore 0)]
-            
-            [auto-set-wrap #t]
-            [shutdown
-             (lambda ()
-               (set! shutdown? #t)
-               (semaphore-post wait-for-sexp)
-               (lock #t))]
-            [consumed-delta 
-             (make-object mred:style-delta% 'change-bold)]
-            [mark-consumed
-             (lambda (start end)
-               (let ([old-resetting resetting?])
-                 (set-resetting #t)
-                 (change-style consumed-delta start end)
-                 (set-resetting old-resetting)))]
-            [ibeam-cursor (make-object mred:cursor% 'ibeam)]
-            [check-char-ready? ; =Reentrant=
-             (lambda ()
-               (semaphore-wait stream-start/end-protect)
-               (begin0
-                 (cond
-                   [(< stream-start stream-end) #t]
-                   [else #f])
-                 (semaphore-post stream-start/end-protect)))]
-            [fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
-             (lambda ()
-               (let ([found-char
-                      (lambda ()
-                        (let ([s stream-start])
-                          (mark-consumed s (add1 s))
-                          (set! stream-start (add1 s))
-                          (get-character s)))])
-                 (let ([ready-char #f])
-                   (let loop ()
-                     (semaphore-wait stream-start/end-protect)
-                     (cond
-                       [(< stream-start stream-end)
-                        (set! ready-char (found-char))]
-                       [else (void)])
-                     (semaphore-post stream-start/end-protect)
-                     (or ready-char
-                         (begin
-                           (mred:yield wait-for-sexp)
-                           (if shutdown? 
-                               eof
-                               (loop))))))))])
-          (override
-            [get-prompt (lambda () "")])
-          (private 
-            [program-output? #f])
-          (public
-            [set-program-output
-             (lambda (_program-output?)
-               (set! program-output? _program-output?))])
-          (override
-            [after-insert
-             (lambda (start len)
-               (super-after-insert start len)
-               (unless program-output?
-                 (let ([old-r resetting?])
-                   (set-resetting #t)
-                   (change-style input-delta start (+ start len))
-                   (set-resetting old-r))))])
-          (override
-            [do-eval
-             (lambda (start end)
-               (do-pre-eval)
-               (unless (balance-required)
-                 (set! stream-end (+ end 1)))
-               (semaphore-post wait-for-sexp)
-               (do-post-eval))])
-          (inherit insert-prompt)
-          (sequence
-            (apply super-init args)
-            (insert-prompt))))))
+
+  (define transparent-io-super% 
+    (make-console-text%
+     (fw:scheme:text-mixin
+      fw:text:searching%)))
   
-  (define transparent-io-text% 
-    (make-transparent-io-text%
-     (make-console-text%
-      (fw:scheme:text-mixin
-       fw:text:searching%))))
+  (define transparent-io-text%
+    (class* transparent-io-super% (transparent-io-text<%>) (rep-text)
+      (inherit change-style
+	       prompt-position set-prompt-position
+	       resetting? set-resetting lock get-text
+	       set-position last-position get-character
+	       clear-undos set-cursor
+	       do-pre-eval do-post-eval balance-required)
+      (rename [super-after-insert after-insert]
+	      [super-on-local-char on-local-char])
+      (private
+	[data null]
+	[stream-start 0]
+	[stream-end 0])
+      (private [shutdown? #f])
+      
+      (public
+	[stream-start/end-protect (make-semaphore 1)]
+	[wait-for-sexp (make-semaphore 0)]
+	
+	[auto-set-wrap #t]
+	[shutdown
+	 (lambda ()
+	   (set! shutdown? #t)
+	   (semaphore-post wait-for-sexp)
+	   (hide-eof-frame)
+	   (lock #t))]
+	[consumed-delta 
+	 (make-object mred:style-delta% 'change-bold)]
+	[mark-consumed
+	 (lambda (start end)
+	   (let ([old-resetting resetting?])
+	     (set-resetting #t)
+	     (change-style consumed-delta start end)
+	     (set-resetting old-resetting)))]
+	[ibeam-cursor (make-object mred:cursor% 'ibeam)]
+	[check-char-ready? ; =Reentrant=
+	 (lambda ()
+	   (semaphore-wait stream-start/end-protect)
+	   (begin0
+	    (cond
+	     [(< stream-start stream-end) #t]
+	     [else #f])
+	    (semaphore-post stream-start/end-protect)))]
+
+	[eof-submitted? #f]
+	[submit-eof
+	 (lambda x ; =Kernel=, =Handler=
+	   (set! eof-submitted? #t)
+	   (send rep-text eof-received)
+	   (semaphore-post wait-for-sexp))]
+	[eof-frame (let ([f (make-object mred:frame% "eof frame")])
+		     (make-object mred:button% "submit eof" f submit-eof)
+		     f)]
+	[eof-frame-shown? #f]
+	[hide-eof-frame
+	 (lambda ()
+	   (send eof-frame show #f)
+	   (set! eof-frame #f))]
+	[show-eof-frame
+	 (lambda ()
+	   (unless eof-frame-shown?
+	     (send eof-frame show #t)))]
+
+	[fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
+	 (lambda ()
+	   (show-eof-frame)
+	   (let* ([ready-char #f])
+	     (let loop ()
+	       (semaphore-wait stream-start/end-protect)
+	       (cond
+		[eof-submitted?
+		 (set! ready-char eof)]
+		[(< stream-start stream-end)
+		 (let ([s stream-start])
+		   (mark-consumed s (add1 s))
+		   (set! stream-start (add1 s))
+		   (set! ready-char (get-character s)))]
+		[else (void)])
+	       (semaphore-post stream-start/end-protect)
+	       (or ready-char
+		   (begin
+		     (mred:yield wait-for-sexp)
+		     (if shutdown? 
+			 eof
+			 (loop)))))))])
+      (override
+       [get-prompt (lambda () "")])
+      (private 
+	[program-output? #f])
+      (public
+	[set-program-output
+	 (lambda (_program-output?)
+	   (set! program-output? _program-output?))])
+      (override
+       [after-insert
+	(lambda (start len)
+	  (super-after-insert start len)
+	  (unless program-output?
+	    (let ([old-r resetting?])
+	      (set-resetting #t)
+	      (change-style input-delta start (+ start len))
+	      (set-resetting old-r))))])
+      (override
+       [do-eval
+	(lambda (start end)
+	  (do-pre-eval)
+	  (unless (balance-required)
+	    (set! stream-end (+ end 1)))
+	  (semaphore-post wait-for-sexp)
+	  (do-post-eval))])
+      (inherit insert-prompt)
+      (sequence
+	(super-init)
+	(insert-prompt))))
   
   (define text% 
     (drs-bindings-keymap-mixin

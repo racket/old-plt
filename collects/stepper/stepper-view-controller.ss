@@ -1,3 +1,5 @@
+(require-library "errortrace.ss" "errortrace")
+
 (unit/sig ()
   (import [c : mzlib:core^]
           [e : stepper:error^]

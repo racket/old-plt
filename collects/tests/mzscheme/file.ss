@@ -181,7 +181,7 @@
 (error-test '(read-line (current-input-port) 8))
 (error-test '(read-line (current-input-port) 'anyx))
 
-(arity-test open-input-file 1 2)
+(arity-test open-input-file 1 3)
 (error-test '(open-input-file 8))
 (error-test '(open-input-file "x" 8))
 (error-test '(open-input-file "x" 'something-else))
@@ -300,9 +300,9 @@
 (test eof read p)
 (close-input-port p)
 
-(arity-test call-with-input-file 2 3)
+(arity-test call-with-input-file 2 4)
 (arity-test call-with-output-file 2 4)
-(arity-test with-input-from-file 2 3)
+(arity-test with-input-from-file 2 4)
 (arity-test with-output-to-file 2 4)
 
 (error-test '(call-with-input-file "x" 8))

@@ -157,7 +157,10 @@
           (when (url-host url)
             (url-error "Don't know how to get files from remote hosts"))
           (open-input-file (url-path url))))
-      
+
+      (define (schemeless-url url)
+	(url-error "Missing protocol (usually \"http:\") at the beginning of URL: ~a" url))
+
       ;; get-impure-port : url [x list (str)] -> in-port
       (define get-impure-port
         (case-lambda
@@ -166,7 +169,7 @@
           (let ((scheme (url-scheme url)))
             (cond
 	     ((not scheme)
-	      (url-error "Scheme unspecified in ~a" url))
+	      (schemeless-url url))
 	     ((string=? scheme "http")
 	      (http://get-impure-port url strings))
 	     ((string=? scheme "file")
@@ -182,7 +185,7 @@
           (let ((scheme (url-scheme url)))
             (cond
 	     ((not scheme)
-	      (url-error "Scheme unspecified in ~a" url))
+	      (schemeless-url url))
 	     ((string=? scheme "http")
 	      (let ((port (http://get-impure-port url strings)))
 		(purify-port port)

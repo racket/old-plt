@@ -431,6 +431,46 @@ scheme_make_integer_value_from_unsigned(unsigned long i)
     return scheme_make_bignum_from_unsigned(i);
 }
 
+static Scheme_Object * fixnum_expt (int x, int y);
+
+Scheme_Object *
+scheme_make_integer_value_from_unsigned_long_long(unsigned long lowhalf,
+                                                  unsigned long hihalf)
+{
+  /*  Paste the two halves together by 
+      hihalf * (2 ** 32) + lowhalf
+
+      There may be a more efficient way to do this, but this way
+      does not depend upon the representation of bignums.
+  */
+
+  return
+      scheme_bin_plus
+        (scheme_make_integer_value_from_unsigned (lowhalf),
+         scheme_bin_mult (scheme_make_integer_value_from_unsigned (hihalf),
+                          fixnum_expt (2, 32)));
+}
+
+Scheme_Object *
+scheme_make_integer_value_from_long_long (unsigned long lowhalf,
+                                          unsigned long hihalf)
+{
+    /* hihalf and lowhalf form the two halves of a 64bit 
+       number in 2's complement form.  This means that if the 
+       topmost bit in hihalf is set, the number is actually 
+       the negative version of the complement plus one.
+    */
+
+  return
+      hihalf < 0x80000000L
+      ? scheme_make_integer_value_from_unsigned_long_long (lowhalf, hihalf)
+      : scheme_bin_minus
+          (scheme_make_integer (0),
+           scheme_make_integer_value_from_unsigned_long_long
+             ((lowhalf ^ 0xFFFFFFFFL) + 1,
+              (hihalf  ^ 0xFFFFFFFFL) + (lowhalf == 0)));
+}
+
 int scheme_get_int_val(Scheme_Object *o, long *v)
 {
   if (SCHEME_INTP(o)) {

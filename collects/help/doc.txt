@@ -45,7 +45,9 @@ Starts a Help Desk browser on the page suggested by `sym'.
 
 Starts the Help Desk browser on the Help Desk home page.  The 
 `hd-cookie' argument is obtained from `start-help-server', described 
-below.
+below.  If the user's default browser does not contact the
+Help Desk server within a certain time period, an internal PLT 
+browser is started instead.
 
 The following functions are provided by both `help-desk-mz.ss' and
 `help-desk.ss'.  These functions rely only on MzScheme:

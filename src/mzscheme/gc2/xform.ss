@@ -581,7 +581,7 @@
 		      ;; End of function ptr
 		      ;; (and we don't care about func ptrs)
 		      (values pointers non-pointers)])]
-		   [(memq (tok-n v) '(|,| *))
+		   [(memq (tok-n v) '(|,| * : 1))
 		    (loop (sub1 l) #f pointers non-pointers)]
 		   [else (let* ([name (tok-n v)]
 				[pointer? (or (eq? 'pointer array-size)
@@ -860,7 +860,7 @@
 	      ;; Make `new' expression look like a function call
 	      (let ([t (cadr e)])
 		(if (and (pair? (cddr e))
-			 (parens? (caddr e)))
+			 (seq? (caddr e)))
 		    (loop (list*
 			   v
 			   (make-parens

@@ -150,4 +150,34 @@
 (syntax-test #'(fluid-let-syntax ([(x) 1 2]) 1))
 (syntax-test #'(fluid-let-syntax ([(x) 1] . y) 1))
 
+(test 7 'set!-transformer
+      (let ([x 3])
+	(let-syntax ([f (make-set!-transformer
+			 (lambda (stx)
+			   (syntax-case stx ()
+			     [(_ __ val)
+			      #'(set! x val)])))])
+	  (set! f 7)
+	  x)))
+
+(test 7 'rename-transformer
+      (let ([x 3])
+	(let-syntax ([f (make-rename-transformer #'x)])
+	  (set! f 6)
+	  (set! x (add1 x))
+	  f)))
+
+(test #t set!-transformer? (make-set!-transformer void))
+(test #t rename-transformer? (make-rename-transformer #'void))
+
+(err/rt-test (make-set!-transformer 5))
+(err/rt-test (make-set!-transformer #'x))
+(err/rt-test (make-rename-transformer 5))
+(err/rt-test (make-rename-transformer void))
+
+(arity-test make-set!-transformer 1 1)
+(arity-test set!-transformer? 1 1)
+(arity-test make-rename-transformer 1 1)
+(arity-test rename-transformer? 1 1)
+
 (report-errs)

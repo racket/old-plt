@@ -26,6 +26,9 @@ extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 
 static wxList *ClipboardFormats = NULL;
 
+static TextToUnicodeInfo t2uinfo;
+static t2u_ready = 0;
+
 #define CUSTOM_ID_START 100
 
 class ClipboardFormat : public wxObject
@@ -102,7 +105,39 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
     return FALSE;
 
   if (format == 'TEXT') {
+    /* TEXT means MacRoman to the OS, but Latin-1 to MrEd.
+       Convert Latin-1 to Unicode and use utxt. */
+    ByteCount ubytes, converted, usize;
+    UniCharCount ulen;
+    char *unicode;
+    int i;
+
     length = strlen((char *)obj);
+
+    if (!t2u_ready) {
+      CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
+      t2u_ready = 1;
+    }
+
+    usize = length * 2;
+    unicode = new WXGC_ATOMIC char[usize];
+    
+    ConvertFromTextToUnicode(t2uinfo, length, (char *)obj, 0,
+			     0, NULL,
+			     NULL, NULL,
+			     usize, &converted, &ubytes,
+			     (UniCharArrayPtr)unicode);
+    
+    obj = (wxObject *)unicode;
+    
+    /* Fixup one more detail: convert newlines to CRs: */
+    for (i = 0; i < length; i++) {
+      if (((UInt16 *)unicode)[i] == '\n') {
+	((UInt16 *)unicode)[i] == '\r';
+      }
+    }
+    format = 'utxt';
+    length = usize;
   } else {
     length = (long)width * height;
   }
@@ -111,7 +146,7 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   if (err != noErr) {
     return FALSE;
   }
-  err = PutScrapFlavor(scrap,format,kScrapFlavorMaskNone,length,(const void *)obj);
+  err = PutScrapFlavor(scrap, format, kScrapFlavorMaskNone, length, (const void *)obj);
   return (err == noErr);
 }
 

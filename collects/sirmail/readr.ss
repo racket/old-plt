@@ -1612,30 +1612,32 @@
       
       (define vsz #f)
       (define rss #f)
-      '(thread
-       (lambda ()
-         (define (get-numbers)
-           (with-handlers ([not-break-exn? (lambda (x) #f)])
-             (let ([re:nums #rx"[^ \t]*[ \t]*[^ \t]*[ \t]*[^ \t]*[ \t]*[^ \t]*[ \t]*([0-9]*)[ \t]*([0-9]*)[ \t]*"])
-               (let ([m (regexp-match re:nums (get-lines))])
-                 (and m
-                      (map string->number (cdr m)))))))
-         (define command "ps wwaux | grep SirMail | grep -v grep")
-         
-         (define (get-lines)
-           (let ([p (open-output-string)])
-             (parameterize ([current-output-port p]
-                            [current-input-port (open-input-string "")])
-               (system command))
-             (get-output-string p)))
-         
-         (let loop ()
-           (let ([v (get-numbers)])
-             (when (and v (send main-frame is-shown?))
-	       (set! vsz (format-number (car v)))
-               (set! rss (format-number (cadr v)))
-               (sleep 10)
-               (loop))))))
+      (define (start-vsz/rss-thread)
+        (thread
+         (lambda ()
+           (define (get-numbers)
+             (with-handlers ([not-break-exn? (lambda (x) 
+                                               #f)])
+               (let ([re:nums #rx"[^ \t]*[ \t]*[^ \t]*[ \t]*[^ \t]*[ \t]*[^ \t]*[ \t]*([0-9]*)[ \t]*([0-9]*)[ \t]*"])
+                 (let ([m (regexp-match re:nums (get-lines))])
+                   (and m
+                        (map string->number (cdr m)))))))
+           (define command "ps wwaux | grep SirMail | grep -v grep")
+           
+           (define (get-lines)
+             (let ([p (open-output-string)])
+               (parameterize ([current-output-port p]
+                              [current-input-port (open-input-string "")])
+                 (system command))
+               (get-output-string p)))
+           
+           (let loop ()
+             (let ([v (get-numbers)])
+               (when (and v (send main-frame is-shown?))
+                 (set! vsz (format-number (car v)))
+                 (set! rss (format-number (cadr v)))
+                 (sleep 10)
+                 (loop)))))))
 
       ;; copied from framerok/private/frame.sss -- be sure to propogate fixes....
       ;; or establish single point of control.
@@ -1916,6 +1918,7 @@
       (send sm-frame create-status-line)
       
       (send sm-frame show #t)
+      (start-vsz/rss-thread)
       (set! got-started? #t)
       
       (unless (null? mailbox)

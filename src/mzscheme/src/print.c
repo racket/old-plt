@@ -655,12 +655,15 @@ print_to_string(Scheme_Object *obj,
   params.print_vec_shorthand = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_PRINT_HASH_TABLE);
   params.print_hash_table = SCHEME_TRUEP(v);
-  if (write && (maxl > 0))
-    params.print_unreadable = 1;
-  else {
-    v = scheme_get_param(config, MZCONFIG_PRINT_UNREADABLE);
-    params.print_unreadable = SCHEME_TRUEP(v);
-  }
+  if (write) {
+    if (maxl > 0)
+      params.print_unreadable = 1;
+    else {
+      v = scheme_get_param(config, MZCONFIG_PRINT_UNREADABLE);
+      params.print_unreadable = SCHEME_TRUEP(v);
+    }
+  } else
+    params.print_unreadable = 0;
   v = scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE);
   params.can_read_pipe_quote = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CASE_SENS);

@@ -79,7 +79,7 @@ in several significant ways:
             waitables->waitable-set    choice-evt
             make-channel-put-waitable  channel-put-evt
             make-semaphore-peek        semaphore-peek-evt
-            make-wrapped-waitable      convert-evt or finish-evt
+            make-wrapped-waitable      wrap-evt or handle-evt
             make-guard-waitable        guard-evt
             make-nack-guard-waitable   nack-guard-evt
             make-poll-guard-waitable   poll-guard-evt

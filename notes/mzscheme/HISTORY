@@ -6,10 +6,10 @@ Version 299.9
 Changed convert-evt to wrap-evt, and finish-evt to handle-evt
 Added print-unreadable parameter
 Changed module expansion/compilation so that it's deterministic,
- as long as macros do not use `gensym' or external side-effects;
- using `generate-temporaries' preserves determinism
-Changed `file-stream-buffer-mode' to work on input ports
-Changed internal stragegy for evaluating `quote-syntax' expressions
+ as long as macros do not use gensym or external side-effects;
+ using generate-temporaries preserves determinism
+Changed file-stream-buffer-mode to work on input ports
+Changed internal strategy for evaluating `quote-syntax' expressions
 
 Version 299.8
 Added an err-char argument to bytes-utf-8-length, bytes-utf-8-index,

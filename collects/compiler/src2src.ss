@@ -1,7 +1,7 @@
 
  ;; Source-to-source optimizer
 
- (module optsrc2src mzscheme
+ (module src2src mzscheme
    (require (lib "class.ss")
 	    (lib "class100.ss")
 	    (lib "kerncase.ss" "syntax")
@@ -89,6 +89,8 @@
 	 ;;  variable. It's used, for example, on the RHSs of a letrec
 	 ;;  to determine known bindings.
 	 [valueable? (lambda () (andmap (lambda (x) (send x valueable?)) (nonbind-sub-exprs)))]
+
+	 [can-dup/move? (lambda () #f)]
 
 	 [set-known-value (lambda (x) (set! known-value x))]
 	 [get-value (lambda () (or known-value this))])
@@ -201,6 +203,8 @@
 	 [valueable? (lambda () (or (bucket-inited-before-use? bucket)
 				    (is-kernel?)))]
 
+	 [can-dup/move? (lambda () (valueable?))]
+
 	 [clone (lambda (env) (make-object global% stx trans?))]
 
 	 [global->local (lambda (env)
@@ -303,6 +307,7 @@
 	  (lambda () (send binding set-known-values))]
 
 	 [valueable? (lambda () (send binding valueable?))]
+	 [can-dup/move? (lambda () (valueable?))]
 
 	 [drop-uses (lambda () (send binding drop-uses))]
 
@@ -313,9 +318,7 @@
 	 [simplify (lambda (ctx)
 		     (if (context-need ctx)
 			 (let ([v (get-value)])
-			   (if (or (is-a? v constant%)
-				   (and (is-a? v global%)
-					(send v is-kernel?)))
+			   (if (and v (send v can-dup/move?))
 			       (begin
 				 (drop-uses)
 				 (send v simplify ctx))
@@ -458,6 +461,13 @@
 	 [get-value (lambda () this)]
 
 	 [valueable? (lambda () #t)]
+
+	 [can-dup/move? (lambda ()
+			  (or (number? val)
+			      (boolean? val)
+			      (char? val)
+			      (symbol? val)
+			      (void? val)))]
 
 	 [get-result-arity (lambda () 1)]
 
@@ -616,7 +626,9 @@
 					     [(caddr) (values 2 1)]
 					     [(cadddr) (values 3 1)]
 					     [(list-ref) (values (and (= 2 (length rands))
-								      (send (cadr rands) get-value))
+								      (let ([v (send (cadr rands) get-value)])
+									(and (v . is-a? . constant%)
+									     (send v get-const-val))))
 								 2)]
 					     [else (values #f #f)])])
 		     (and (number? pos)
@@ -684,12 +696,9 @@
 		 (eq? 'list (send rator orig-name))
 		 ((length rands) . > . n)
 		 (let ([i (list-ref rands n)])
-		   (cond
-		    [(i . is-a? . constant%) i]
-		    [(and (i . is-a? . ref%)
-			  (send i valueable?))
-		     i]
-		    [else #f]))))])
+		   (if (send i can-dup/move?)
+		       i
+		       #f))))])
       (sequence
 	(super-init stx))))
 

@@ -136,197 +136,208 @@
   (require-for-syntax #%stx #%kernel)
 
   (define-syntaxes (quasiquote)
-    (lambda (in-form)
-      (if (identifier? in-form)
-	  (raise-syntax-error 'quasiquote "bad syntax" in-form))
-      (let-values
-	  (((form) (if (stx-pair? (stx-cdr in-form))
-		       (if (stx-null? (stx-cdr (stx-cdr in-form)))
-			   (stx-car (stx-cdr in-form))
-			   (raise-syntax-error 'quasiquote "bad syntax" in-form))
-		       (raise-syntax-error 'quasiquote "bad syntax" in-form)))
-	   ((normal)
-	    (lambda (x old)
-	      (if (eq? x old)
-		  (if (stx-null? x) 
-		      (quote-syntax ())
-		      (list (quote-syntax quote) x))
-		  x))))
-	(datum->syntax-object
-	 (quote-syntax here)
-	 (normal
-	  (letrec-values
-	      (((qq)
-		(lambda (x level)
-		  (let-values
-		      (((qq-list)
-			(lambda (x level)
-			  (let-values
-			      (((old-first) (stx-car x)))
+    (let ([here (quote-syntax here)]) ; id with module bindings, but not lexical
+      (lambda (in-form)
+	(if (identifier? in-form)
+	    (raise-syntax-error 'quasiquote "bad syntax" in-form))
+	(let-values
+	    (((form) (if (stx-pair? (stx-cdr in-form))
+			 (if (stx-null? (stx-cdr (stx-cdr in-form)))
+			     (stx-car (stx-cdr in-form))
+			     (raise-syntax-error 'quasiquote "bad syntax" in-form))
+			 (raise-syntax-error 'quasiquote "bad syntax" in-form)))
+	     ((normal)
+	      (lambda (x old)
+		(if (eq? x old)
+		    (if (stx-null? x) 
+			(quote-syntax ())
+			(list (quote-syntax quote) x))
+		    x))))
+	  (datum->syntax-object
+	   here
+	   (normal
+	    (letrec-values
+		(((qq)
+		  (lambda (x level)
+		    (let-values
+			(((qq-list)
+			  (lambda (x level)
 			    (let-values
-				(((old-second) (stx-cdr x)))
+				(((old-first) (stx-car x)))
 			      (let-values
-				  (((first) (qq old-first level)))
+				  (((old-second) (stx-cdr x)))
 				(let-values
-				    (((second) (qq old-second level)))
+				    (((first) (qq old-first level)))
 				  (let-values
-				      ()
-				    (if (if (eq? first old-first)
-					    (eq? second old-second)
-					    #f)
-					x
-					(list
-					 (quote-syntax cons)
-					 (normal first old-first)
-					 (normal second old-second)))))))))))
-		    (if (stx-pair? x)
-			(let-values
-			    (((first) (stx-car x)))
-			  (if (if (module-identifier=? first (quote-syntax unquote))
-				  (stx-list? x)
-				  #f)
-			      (let-values
-				  (((rest) (stx-cdr x)))
-				(if (let-values
-					(((g35) (not (stx-pair? rest))))
-				      (if g35 g35 (not (stx-null? (stx-cdr rest)))))
-				    (raise-syntax-error
-				     'unquote
-				     "takes exactly one expression"
-				     in-form))
-				(if (zero? level)
-				    (stx-car rest)
-				    (qq-list x (sub1 level))))
-			      (if (if (module-identifier=? first (quote-syntax quasiquote))
-				      (stx-list? x)
-				      #f)
-				  (qq-list x (add1 level))
-				  (if (if (module-identifier=? first (quote-syntax unquote-splicing))
-					  (stx-list? x)
-					  #f)
-				      (raise-syntax-error
-				       'unquote-splicing
-				       "invalid context within quasiquote"
-				       in-form)
-				      (if (if (stx-pair? first)
-					      (if (module-identifier=? (stx-car first)
-								       (quote-syntax unquote-splicing))
-						  (stx-list? first)
-						  #f)
-					      #f)
-					  (let-values
-					      (((rest) (stx-cdr first)))
-					    (if (let-values
-						    (((g34) (not (stx-pair? rest))))
-						  (if g34
-						      g34
-						      (not (stx-null? (stx-cdr rest)))))
-						(raise-syntax-error
-						 'unquote-splicing
-						 "takes exactly one expression"
-						 in-form))
-					    (let-values
-						(((uqsd) (stx-car rest))
-						 ((old-l) (stx-cdr x))
-						 ((l) (qq (stx-cdr x) level)))
-					      (if (zero? level)
-						  (let-values
-						      (((l) (normal l old-l)))
-						    (let-values
-							()
-						      (list (quote-syntax append) uqsd l)))
-						  (let-values
-						      (((restx) (qq-list rest (sub1 level))))
-						    (let-values
-							()
-						      (if (if (eq? l old-l)
-							      (eq? restx rest)
-							      #f)
-							  x
-							  (list
-							   (quote-syntax cons)
-							   (list
-							    (quote-syntax cons)
-							    (quote-syntax (quote unquote-splicing))
-							    (normal restx rest))
-							   (normal l old-l))))))))
-					  (qq-list x level))))))
-			(if (if (syntax? x) 
-				(vector? (syntax-e x))
-				#f)
-			    (let-values
-				(((l) (vector->list (syntax-e x))))
-			      (let-values
-				  (((l2) (qq l level)))
-				(let-values
-				    ()
-				  (if (eq? l l2)
-				      x
-				      (list (quote-syntax list->vector) l2)))))
-			    (if (if (syntax? x) (box? (syntax-e x)) #f)
-				(let-values
-				    (((v) (unbox (syntax-e x))))
-				  (let-values
-				      (((qv) (qq v level)))
+				      (((second) (qq old-second level)))
 				    (let-values
 					()
-				      (if (eq? v qv)
+				      (if (if (eq? first old-first)
+					      (eq? second old-second)
+					      #f)
 					  x
-					  (list (quote-syntax box) qv)))))
-				x)))))))
-	    (qq form 0))
-	  form)
-	 in-form))))
+					  (list
+					   (quote-syntax cons)
+					   (normal first old-first)
+					   (normal second old-second)))))))))))
+		      (if (stx-pair? x)
+			  (let-values
+			      (((first) (stx-car x)))
+			    (if (if (if (identifier? first)
+					(module-identifier=? first (quote-syntax unquote))
+					#f)
+				    (stx-list? x)
+				    #f)
+				(let-values
+				    (((rest) (stx-cdr x)))
+				  (if (let-values
+					  (((g35) (not (stx-pair? rest))))
+					(if g35 g35 (not (stx-null? (stx-cdr rest)))))
+				      (raise-syntax-error
+				       'unquote
+				       "takes exactly one expression"
+				       in-form))
+				  (if (zero? level)
+				      (stx-car rest)
+				      (qq-list x (sub1 level))))
+				(if (if (if (identifier? first)
+					    (module-identifier=? first (quote-syntax quasiquote))
+					    #f)
+					(stx-list? x)
+					#f)
+				    (qq-list x (add1 level))
+				    (if (if (if (identifier? first)
+						(module-identifier=? first (quote-syntax unquote-splicing))
+						#f)
+					    (stx-list? x)
+					    #f)
+					(raise-syntax-error
+					 'unquote-splicing
+					 "invalid context within quasiquote"
+					 in-form)
+					(if (if (stx-pair? first)
+						(if (identifier? (stx-car first))
+						    (if (module-identifier=? (stx-car first)
+									     (quote-syntax unquote-splicing))
+							(stx-list? first)
+							#F)
+						    #f)
+						#f)
+					    (let-values
+						(((rest) (stx-cdr first)))
+					      (if (let-values
+						      (((g34) (not (stx-pair? rest))))
+						    (if g34
+							g34
+							(not (stx-null? (stx-cdr rest)))))
+						  (raise-syntax-error
+						   'unquote-splicing
+						   "takes exactly one expression"
+						   in-form))
+					      (let-values
+						  (((uqsd) (stx-car rest))
+						   ((old-l) (stx-cdr x))
+						   ((l) (qq (stx-cdr x) level)))
+						(if (zero? level)
+						    (let-values
+							(((l) (normal l old-l)))
+						      (let-values
+							  ()
+							(list (quote-syntax append) uqsd l)))
+						    (let-values
+							(((restx) (qq-list rest (sub1 level))))
+						      (let-values
+							  ()
+							(if (if (eq? l old-l)
+								(eq? restx rest)
+								#f)
+							    x
+							    (list
+							     (quote-syntax cons)
+							     (list
+							      (quote-syntax cons)
+							      (quote-syntax (quote unquote-splicing))
+							      (normal restx rest))
+							     (normal l old-l))))))))
+					    (qq-list x level))))))
+			  (if (if (syntax? x) 
+				  (vector? (syntax-e x))
+				  #f)
+			      (let-values
+				  (((l) (vector->list (syntax-e x))))
+				(let-values
+				    (((l2) (qq l level)))
+				  (let-values
+				      ()
+				    (if (eq? l l2)
+					x
+					(list (quote-syntax list->vector) l2)))))
+			      (if (if (syntax? x) (box? (syntax-e x)) #f)
+				  (let-values
+				      (((v) (unbox (syntax-e x))))
+				    (let-values
+					(((qv) (qq v level)))
+				      (let-values
+					  ()
+					(if (eq? v qv)
+					    x
+					    (list (quote-syntax box) qv)))))
+				  x)))))))
+	      (qq form 0))
+	    form)
+	   in-form)))))
 
   (define-syntaxes (and)
-    (lambda (x)
-      (if (not (stx-list? x))
-	  (raise-syntax-error 'and "bad syntax" x))
-      (let ([e (stx-cdr x)])
-	(if (stx-null? e)
-	    (quote-syntax #t)
-	    (if (if (stx-pair? e)
-		    (stx-null? (stx-cdr e))
-		    #t)
-		(stx-car e)
-		(datum->syntax-object
-		 (quote-syntax here)
-		 (list (quote-syntax if)
-		       (stx-car e)
-		       (cons (quote-syntax and)
-			     (stx-cdr e))
-		       (quote-syntax #f))
-		 x))))))
+    (let ([here (quote-syntax here)])
+      (lambda (x)
+	(if (not (stx-list? x))
+	    (raise-syntax-error 'and "bad syntax" x))
+	(let ([e (stx-cdr x)])
+	  (if (stx-null? e)
+	      (quote-syntax #t)
+	      (if (if (stx-pair? e)
+		      (stx-null? (stx-cdr e))
+		      #t)
+		  (stx-car e)
+		  (datum->syntax-object
+		   here
+		   (list (quote-syntax if)
+			 (stx-car e)
+			 (cons (quote-syntax and)
+			       (stx-cdr e))
+			 (quote-syntax #f))
+		   x)))))))
 
   (define-syntaxes (or)
-    (lambda (x)
-      (if (identifier? x)
-	  (raise-syntax-error 'or "bad syntax" x))
-      (let ([e (stx-cdr x)])
-	(if (stx-null? e) 
-	    (quote-syntax #f)
-	    (if (if (stx-pair? e)
-		    (stx-null? (stx-cdr e))
-		    #f)
-		(stx-car e)
-		(if (stx-list? e)
-		    (let ([tmp 'or-part])
-		      (datum->syntax-object
-		       (quote-syntax here)
-		       (list (quote-syntax let) (list
-						 (list
-						  tmp
-						  (stx-car e)))
-			     (list (quote-syntax if)
-				   tmp
-				   tmp
-				   (cons (quote-syntax or)
-					 (stx-cdr e))))
-		       x))
-		    (raise-syntax-error 
-		     'or
-		     "bad syntax"
-		     x)))))))
+    (let ([here (quote-syntax here)])
+      (lambda (x)
+	(if (identifier? x)
+	    (raise-syntax-error 'or "bad syntax" x))
+	(let ([e (stx-cdr x)])
+	  (if (stx-null? e) 
+	      (quote-syntax #f)
+	      (if (if (stx-pair? e)
+		      (stx-null? (stx-cdr e))
+		      #f)
+		  (stx-car e)
+		  (if (stx-list? e)
+		      (let ([tmp 'or-part])
+			(datum->syntax-object
+			 here
+			 (list (quote-syntax let) (list
+						   (list
+						    tmp
+						    (stx-car e)))
+			       (list (quote-syntax if)
+				     tmp
+				     tmp
+				     (cons (quote-syntax or)
+					   (stx-cdr e))))
+			 x))
+		      (raise-syntax-error 
+		       'or
+		       "bad syntax"
+		       x))))))))
 
   (provide quasiquote and or))
 
@@ -337,59 +348,62 @@
   (require-for-syntax #%stx #%qq-and-or #%kernel)
 
   (define-syntaxes (cond)
-    (lambda (in-form)
-      (if (identifier? in-form)
-	  (raise-syntax-error 'cond "bad syntax" in-form))
-      (datum->syntax-object
-       (quote-syntax here)
-       (let ([form (stx-cdr in-form)]
-	     [serror
-	      (lambda (msg at)
-		(raise-syntax-error 'cond msg in-form at))])
-	 (let loop ([tests form])
-	   (if (stx-null? tests)
-	       (quote-syntax (void))
-	       (if (not (stx-pair? tests))
-		   (serror
-		    "bad syntax (body must contain a list of pairs)"
-		    tests)
-		   (let ([line (stx-car tests)]
-			 [rest (stx-cdr tests)])
-		     (if (not (stx-pair? line))
-			 (serror
-			  "bad syntax (clause is not a test-value pair)"
-			  line)
-			 (let* ([test (stx-car line)]
-				[value (stx-cdr line)]
-				[else? (module-identifier=? test (quote-syntax else))])
-			   (if (and else? (stx-pair? rest))
-			       (serror "bad syntax (`else' clause must be last)" line))
-			   (if (and (stx-pair? value)
-				    (module-identifier=? (stx-car value) (quote-syntax =>)))
-			       (if (and (stx-pair? (stx-cdr value))
-					(stx-null? (stx-cdr (stx-cdr value))))
-				   (let ([test (if else?
-						   #t 
-						   test)]
-					 [gen (gensym)])
-				     `(,(quote-syntax let) ([,gen ,test])
-					(,(quote-syntax if) ,gen
-					    (,(stx-car (stx-cdr value)) ,gen)
-					    ,(loop rest))))
-				   (serror
-				    "bad syntax (bad clause form with =>)"
-				    line))
-			       (if else?
-				   (cons (quote-syntax begin) value)
-				   (if (stx-null? value)
-				       (let ([gen (gensym)])
-					 `(,(quote-syntax let) ([,gen ,test])
-					    (,(quote-syntax if) ,gen ,gen ,(loop rest))))
-				       (list
-					(quote-syntax if) test
-					(cons (quote-syntax begin) value)
-					(loop rest))))))))))))
-       in-form)))
+    (let ([here (quote-syntax here)])
+      (lambda (in-form)
+	(if (identifier? in-form)
+	    (raise-syntax-error 'cond "bad syntax" in-form))
+	(datum->syntax-object
+	 here
+	 (let ([form (stx-cdr in-form)]
+	       [serror
+		(lambda (msg at)
+		  (raise-syntax-error 'cond msg in-form at))])
+	   (let loop ([tests form])
+	     (if (stx-null? tests)
+		 (quote-syntax (void))
+		 (if (not (stx-pair? tests))
+		     (serror
+		      "bad syntax (body must contain a list of pairs)"
+		      tests)
+		     (let ([line (stx-car tests)]
+			   [rest (stx-cdr tests)])
+		       (if (not (stx-pair? line))
+			   (serror
+			    "bad syntax (clause is not a test-value pair)"
+			    line)
+			   (let* ([test (stx-car line)]
+				  [value (stx-cdr line)]
+				  [else? (and (identifier? test)
+					      (module-identifier=? test (quote-syntax else)))])
+			     (if (and else? (stx-pair? rest))
+				 (serror "bad syntax (`else' clause must be last)" line))
+			     (if (and (stx-pair? value)
+				      (identifier? (stx-car value))
+				      (module-identifier=? (stx-car value) (quote-syntax =>)))
+				 (if (and (stx-pair? (stx-cdr value))
+					  (stx-null? (stx-cdr (stx-cdr value))))
+				     (let ([test (if else?
+						     #t 
+						     test)]
+					   [gen (gensym)])
+				       `(,(quote-syntax let) ([,gen ,test])
+					 (,(quote-syntax if) ,gen
+					  (,(stx-car (stx-cdr value)) ,gen)
+					  ,(loop rest))))
+				     (serror
+				      "bad syntax (bad clause form with =>)"
+				      line))
+				 (if else?
+				     (cons (quote-syntax begin) value)
+				     (if (stx-null? value)
+					 (let ([gen (gensym)])
+					   `(,(quote-syntax let) ([,gen ,test])
+					     (,(quote-syntax if) ,gen ,gen ,(loop rest))))
+					 (list
+					  (quote-syntax if) test
+					  (cons (quote-syntax begin) value)
+					  (loop rest))))))))))))
+	 in-form))))
 
   (provide cond))
 
@@ -400,58 +414,59 @@
   (require-for-syntax #%kernel #%stx #%qq-and-or #%cond)
 
   (define-syntaxes (define define-syntax)
-    (let ([mk-define
-	   (lambda (who base)
-	     (lambda (code)
-	       (if (or (identifier? code)
-		       (not (stx-pair? (stx-cdr code))))
-		   (raise-syntax-error who "bad syntax" code))
-	       (let ([body (stx-cdr code)])
-		 (if (stx-null? body)
-		     (raise-syntax-error
-		      who
-		      "bad syntax (no definition body)"
-		      code))
-		 (let ([first (stx-car body)]) 
-		   (cond
-		    [(identifier? first)
-		     (if (and (stx-pair? (stx-cdr body))
-			      (stx-null? (stx-cdr (stx-cdr body))))
-			 (datum->syntax-object
-			  (quote-syntax here)
-			  `(,base (,first) ,@(stx->list (stx-cdr body)))
-			  code)
-			 (raise-syntax-error
-			  who
-			  "bad syntax (zero or multiple expressions after identifier)"
-			  code))]
-		    [(stx-pair? first)
-		     (let ([bad-symbol  (lambda (s) (raise-syntax-error who
-									"bad identifier"
-									code
-									s))])
-		       (let loop ([l first])
-			 (cond
-			  [(stx-null? l) #f]
-			  [(stx-pair? l) 
-			   (if (identifier? (stx-car l))
-			       (loop (stx-cdr l))
-			       (bad-symbol (stx-car l)))]
-			  [(identifier? l) #f]
-			  [else (bad-symbol l)])))
-		     (datum->syntax-object
-		      (quote-syntax here)
-		      `(,base (,(stx-car first)) 
-			 (lambda ,(stx-cdr first) ,@(stx->list (stx-cdr body))))
-		      code)]
-		    [else
-		     (raise-syntax-error
-		      who
-		      "not an identifier"
-		      code
-		      first)])))))])
-      (values (mk-define 'define (quote-syntax define-values))
-	      (mk-define 'define-syntax (quote-syntax define-syntaxes)))))
+    (let ([here (quote-syntax here)])
+      (let ([mk-define
+	     (lambda (who base)
+	       (lambda (code)
+		 (if (or (identifier? code)
+			 (not (stx-pair? (stx-cdr code))))
+		     (raise-syntax-error who "bad syntax" code))
+		 (let ([body (stx-cdr code)])
+		   (if (stx-null? body)
+		       (raise-syntax-error
+			who
+			"bad syntax (no definition body)"
+			code))
+		   (let ([first (stx-car body)]) 
+		     (cond
+		      [(identifier? first)
+		       (if (and (stx-pair? (stx-cdr body))
+				(stx-null? (stx-cdr (stx-cdr body))))
+			   (datum->syntax-object
+			    here
+			    `(,base (,first) ,@(stx->list (stx-cdr body)))
+			    code)
+			   (raise-syntax-error
+			    who
+			    "bad syntax (zero or multiple expressions after identifier)"
+			    code))]
+		      [(stx-pair? first)
+		       (let ([bad-symbol  (lambda (s) (raise-syntax-error who
+									  "bad identifier"
+									  code
+									  s))])
+			 (let loop ([l first])
+			   (cond
+			    [(stx-null? l) #f]
+			    [(stx-pair? l) 
+			     (if (identifier? (stx-car l))
+				 (loop (stx-cdr l))
+				 (bad-symbol (stx-car l)))]
+			    [(identifier? l) #f]
+			    [else (bad-symbol l)])))
+		       (datum->syntax-object
+			(quote-syntax here)
+			`(,base (,(stx-car first)) 
+				(lambda ,(stx-cdr first) ,@(stx->list (stx-cdr body))))
+			code)]
+		      [else
+		       (raise-syntax-error
+			who
+			"not an identifier"
+			code
+			first)])))))])
+	(values (mk-define 'define (quote-syntax define-values))
+		(mk-define 'define-syntax (quote-syntax define-syntaxes))))))
 
   (define-syntax when
     (lambda (x)

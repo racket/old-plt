@@ -3,7 +3,7 @@
 
 (define DIGS-PER-LINE 20)
 
-(require (lib "optsrc2src.ss" "compiler"))
+(require (lib "src2src.ss" "compiler"))
 
 (require mzscheme)
 

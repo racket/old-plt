@@ -115,7 +115,7 @@
                      (lambda ()
                        (set! folders-window #f)
                        (exit-sirmail))))]
-                 [mailbox-name "INBOX"]
+                 [mailbox-name inbox-name]
                  [mailbox-options default-mailbox-options])
              (start-new-window
               (lambda ()

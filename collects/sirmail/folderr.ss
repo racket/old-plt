@@ -413,6 +413,10 @@
                          (imap-create-mailbox imap t))
                        #t))
                 (refresh-mailboxes))))))
+      (make-object separator-menu-item% file-menu)
+      (make-object menu-item% "Close" file-menu
+		   (lambda (i e)
+		     (send frame close)))
       
       (frame:reorder-menus frame)
       

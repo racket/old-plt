@@ -716,8 +716,8 @@
                 (send disconnected-msg show #t))
               #\i))
           
-          (define/override (file-menu:create-close?) #f)
-          (define/override (file-menu:quit-callback i e) (logout))
+          (define/override (file-menu:close-callback i e) (logout))
+          (define/override (file-menu:create-quit?) #f)
           
           (rename [super-help-menu:after-about help-menu:after-about])
           (define/override (help-menu:after-about menu)

@@ -152,7 +152,7 @@
 						    (cons (syntax (init id))
 							  (loop (cdr init-ids)
 								(cdr init-defs))))]))])
-		 (syntax
+		 (syntax/loc stx
 		  (class*/names 
 		   (this-id super-initialize super-init-id) super-expr (interface-expr ...)
 		   init-expr ...

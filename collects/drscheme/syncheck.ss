@@ -542,7 +542,8 @@
       
       (define (make-new-unit-frame% super%)
         (class* super% (syncheck-frame<%>)
-          (rename [super-clear-annotations clear-annotations])
+          (rename [super-clear-annotations clear-annotations]
+		  [super-on-close on-close])
           (define/override (clear-annotations)
             (super-clear-annotations)
             (hide-error-report)
@@ -581,6 +582,10 @@
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
           
+	  (define/override (on-close)
+	    (send report-error-text on-close)
+	    (super-on-close))
+
           (field
            [report-error-parent-panel 'uninitialized-report-error-parent-panel]
            [report-error-panel 'uninitialized-report-error-panel]

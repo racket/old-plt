@@ -5,26 +5,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_mf.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "@(#)wb_mf.cc	1.2 5/9/94"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_setup.h"
-
-#endif
+#include "wx.h"
 
 #if USE_METAFILE
 #include "wb_mf.h"

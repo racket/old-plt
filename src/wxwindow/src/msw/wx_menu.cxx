@@ -7,23 +7,9 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_frame.h"
-#include "wx_menu.h"
-#include "wx_itemp.h"
-#include "wx_utils.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 wxNonlockingHashTable *wxMenuItemIDs = NULL;
-
-IMPLEMENT_DYNAMIC_CLASS(wxMenuItem, wxObject)
 
 wxMenuItem::wxMenuItem(void)
 {
@@ -40,7 +26,6 @@ wxMenuItem::~wxMenuItem(void)
 // Menus
 
 // Construct a menu with optional title (then use append)
-IMPLEMENT_DYNAMIC_CLASS(wxMenu, wxItem)
 
 wxMenu::wxMenu(char *Title, wxFunction func):wxbMenu(Title, func)
 {
@@ -105,8 +90,10 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
 
   WORD menuId;
 
-  if (!wxMenuItemIDs)
+  if (!wxMenuItemIDs) {
+    wxREGGLOB(wxMenuItemIDs);
     wxMenuItemIDs = new wxNonlockingHashTable;
+  }
 
   do {
     menuId = (WORD)rand();
@@ -459,7 +446,6 @@ wxMenuItem *wxMenu::FindItemForMenuId(WORD menuId)
 }
 
 // Menu Bar
-IMPLEMENT_DYNAMIC_CLASS(wxMenuBar, wxItem)
 
 wxMenuBar::wxMenuBar(void)
 {

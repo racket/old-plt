@@ -4,63 +4,10 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	March 1995
- * RCS_ID:      $Id: wb_item.cxx,v 1.9 1998/11/17 21:40:37 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-
-#pragma implementation "wb_item.h"
-#pragma implementation "wb_lbox.h"
-#pragma implementation "wb_rbox.h"
-#pragma implementation "wb_buttn.h"
-#pragma implementation "wb_choic.h"
-#pragma implementation "wb_check.h"
-#pragma implementation "wb_messg.h"
-#pragma implementation "wb_slidr.h"
-#pragma implementation "wb_slidr.h"
-#pragma implementation "wb_menu.h"
-#pragma implementation "wb_mnuit.h"
-#pragma implementation "wb_txt.h"
-#pragma implementation "wb_mtxt.h"
-#pragma implementation "wb_menu.h"
-#pragma implementation "wb_group.h"
-#pragma implementation "wb_gauge.h"
-#endif
-
-#include "common.h"
-#include "wx_setup.h"
-
-#include "wx_item.h"
-#include "wx_lbox.h"
-#include "wx_rbox.h"
-#include "wx_buttn.h"
-#include "wx_choic.h"
-#include "wx_check.h"
-#include "wx_messg.h"
-#include "wx_slidr.h"
-#include "wx_group.h"
-#include "wx_menu.h"
-#include "wx_txt.h"
-#include "wx_mtxt.h"
-
-#if USE_GAUGE
-#include "wx_gauge.h"
-#endif
-
-#include "wx_stdev.h"
-#include "wx_utils.h"
-
-#endif
+#include "wx.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -76,18 +23,6 @@
  * - to find panel position if coordinates are (-1, -1), use GetPosition
  * - call AdvanceCursor after creation, for panel layout mechanism.
  *
- */
-
-/*
-   Motif notes
-
-   A panel is a form.
-   Each item is created on a RowColumn or Form of its own, to allow a label to
-   be positioned. wxListBox and wxMultiText have forms, all the others have RowColumns.
-   This is to allow labels to be positioned to the top left (can't do it with a
-   RowColumn as far as I know).
-   AttachWidget positions widgets relative to one another (left->right, top->bottom)
-   unless the x, y coordinates are given (more than -1).
  */
 
 // Item members
@@ -188,8 +123,10 @@ wxbButton::wxbButton (void)
   buttonColour = NULL;
 }
 
-wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), char *WXUNUSED(label),
-	   int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), 
+		      char *WXUNUSED(label),
+		      int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), 
+		      int WXUNUSED(height), long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_BUTTON;
   windowStyle = style;
@@ -202,8 +139,10 @@ wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), char *WXUN
   buttonColour = panel->buttonColour;
 }
 
-wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), wxBitmap * WXUNUSED(bitmap),
-	   int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), 
+		      wxBitmap * WXUNUSED(bitmap),
+		      int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width),
+		      int WXUNUSED(height), long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_BUTTON;
   windowStyle = style;
@@ -243,33 +182,6 @@ wxbMenu::~wxbMenu (void)
 {
   if (title)
     delete[]title;
-}
-
-// Finds the item id matching the given string, -1 if not found.
-int wxbMenu::FindItem (char *itemString)
-{
-  char buf1[200];
-  char buf2[200];
-  wxStripMenuCodes (itemString, buf1);
-
-  for (wxNode * node = menuItems.First (); node; node = node->Next ())
-    {
-      wxMenuItem *item = (wxMenuItem *) node->Data ();
-      if (item->subMenu)
-	{
-	  int ans = item->subMenu->FindItem (itemString);
-	  if (ans > -1)
-	    return ans;
-	}
-      if ((item->itemId > -1) && item->itemName)
-	{
-	  wxStripMenuCodes (item->itemName, buf2);
-	  if (strcmp (buf1, buf2) == 0)
-	    return item->itemId;
-	}
-    }
-
-  return -1;
 }
 
 wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
@@ -433,23 +345,6 @@ int wxbMenuBar::Number(void)
   return n;
 }
 
-// Find the menu menuString, item itemString, and return the item id.
-// Returns -1 if none found.
-int wxbMenuBar::FindMenuItem (char *menuString, char *itemString)
-{
-  char buf1[200];
-  char buf2[200];
-  wxStripMenuCodes (menuString, buf1);
-  int i;
-  for (i = 0; i < n; i++)
-    {
-      wxStripMenuCodes (titles[i], buf2);
-      if (strcmp (buf1, buf2) == 0)
-	return menus[i]->FindItem (itemString);
-    }
-  return -1;
-}
-
 wxMenuItem *wxbMenuBar::FindItemForId (long Id, wxMenu ** itemMenu)
 {
   if (itemMenu)
@@ -602,10 +497,12 @@ wxbListBox::wxbListBox (void)
   buttonColour = NULL;
 }
 
-wxbListBox::wxbListBox (wxPanel * panel, wxFunction WXUNUSED(func),
-	    char *WXUNUSED(Title), Bool Multiple,
-	    int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height),
-	    int WXUNUSED(N), char **WXUNUSED(Choices), long style, char *WXUNUSED(name))
+wxbListBox::wxbListBox(wxPanel * panel, wxFunction WXUNUSED(func),
+		       char *WXUNUSED(Title), Bool Multiple,
+		       int WXUNUSED(x), int WXUNUSED(y), 
+		       int WXUNUSED(width), int WXUNUSED(height),
+		       int WXUNUSED(N), char **WXUNUSED(Choices),
+		       long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_LIST_BOX;
   windowStyle = style;
@@ -671,10 +568,11 @@ wxbRadioBox::wxbRadioBox (void)
 }
 
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
-	     char *WXUNUSED(Title),
-	     int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height),
-	     int WXUNUSED(N), char **WXUNUSED(Choices),
-	     int WXUNUSED(majorDim), long style, char *WXUNUSED(name))
+			  char *WXUNUSED(Title),
+			  int WXUNUSED(x), int WXUNUSED(y),
+			  int WXUNUSED(width), int WXUNUSED(height),
+			  int WXUNUSED(N), char **WXUNUSED(Choices),
+			  int WXUNUSED(majorDim), long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_RADIO_BOX;
   windowStyle = style;
@@ -689,12 +587,12 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
   buttonColour = panel->buttonColour;
 }
 
-// #ifndef __BORLANDC__
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
-	     char *WXUNUSED(Title),
-	     int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height),
-	     int WXUNUSED(N), wxBitmap ** WXUNUSED(Choices),
-	     int WXUNUSED(majorDim), long style, char *WXUNUSED(name))
+			  char *WXUNUSED(Title),
+			  int WXUNUSED(x), int WXUNUSED(y),
+			  int WXUNUSED(width), int WXUNUSED(height),
+			  int WXUNUSED(N), wxBitmap ** WXUNUSED(Choices),
+			  int WXUNUSED(majorDim), long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_RADIO_BOX;
   windowStyle = style;
@@ -708,7 +606,6 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
   labelColour = panel->labelColour;
   buttonColour = panel->buttonColour;
 }
-// #endif
 
 wxbRadioBox::~wxbRadioBox (void)
 {
@@ -756,8 +653,9 @@ wxbMessage::wxbMessage (void)
   buttonColour = NULL;
 }
 
-wxbMessage::wxbMessage (wxPanel * panel, char *WXUNUSED(label), int WXUNUSED(x), int WXUNUSED(y),
-   long style, char *WXUNUSED(name))
+wxbMessage::wxbMessage (wxPanel * panel, char *WXUNUSED(label),
+			int WXUNUSED(x), int WXUNUSED(y),
+			long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
@@ -770,9 +668,9 @@ wxbMessage::wxbMessage (wxPanel * panel, char *WXUNUSED(label), int WXUNUSED(x),
   buttonColour = panel->buttonColour;
 }
 
-#if USE_BITMAP_MESSAGE
-wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *WXUNUSED(image), int WXUNUSED(x), int WXUNUSED(y),
- long style, char *WXUNUSED(name))
+wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *WXUNUSED(image), 
+			int WXUNUSED(x), int WXUNUSED(y),
+			long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
@@ -784,7 +682,6 @@ wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *WXUNUSED(image), int WXUNUSED
   labelColour = panel->labelColour;
   buttonColour = panel->buttonColour;
 }
-#endif
 
 wxbMessage::~wxbMessage (void)
 {
@@ -804,9 +701,10 @@ wxbSlider::wxbSlider (void)
   buttonColour = NULL;
 }
 
-wxbSlider::wxbSlider (wxPanel * panel, wxFunction WXUNUSED(func), char *WXUNUSED(label), int WXUNUSED(value),
-	   int WXUNUSED(min_value), int WXUNUSED(max_value), int WXUNUSED(width),
-           int WXUNUSED(x), int WXUNUSED(y), long style, char *WXUNUSED(name))
+wxbSlider::wxbSlider (wxPanel * panel, wxFunction WXUNUSED(func), 
+		      char *WXUNUSED(label), int WXUNUSED(value),
+		      int WXUNUSED(min_value), int WXUNUSED(max_value), int WXUNUSED(width),
+		      int WXUNUSED(x), int WXUNUSED(y), long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_SLIDER;
   windowStyle = style;
@@ -827,7 +725,6 @@ wxbSlider::~wxbSlider (void)
  * Gauge
  */
  
-#if USE_GAUGE
 wxbGauge::wxbGauge (void)
 {
   __type = wxTYPE_GAUGE;
@@ -841,8 +738,9 @@ wxbGauge::wxbGauge (void)
 }
 
 wxbGauge::wxbGauge (wxPanel * panel, char *WXUNUSED(label),
-	   int WXUNUSED(range), int WXUNUSED(x), int WXUNUSED(y),
-           int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+		    int WXUNUSED(range), int WXUNUSED(x), int WXUNUSED(y),
+		    int WXUNUSED(width), int WXUNUSED(height), 
+		    long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_GAUGE;
   windowStyle = style;
@@ -858,4 +756,3 @@ wxbGauge::wxbGauge (wxPanel * panel, char *WXUNUSED(label),
 wxbGauge::~wxbGauge (void)
 {
 }
-#endif

@@ -7,24 +7,7 @@
  * Copyright:
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_stdev.h"
-
-#endif
-
-#if USE_SCROLLBAR
-
-#include "wx_scrol.h"
+#include "wx.h"
 
 wxbScrollBar::wxbScrollBar(void)
 {
@@ -37,7 +20,7 @@ wxbScrollBar::wxbScrollBar(void)
 }
 
 wxbScrollBar::wxbScrollBar(wxPanel *panel, wxFunction func, int direction,
-			int x, int y, int width, int height, long style, char *name)
+			   int x, int y, int width, int height, long style, char *name)
 {
     __type = wxTYPE_SCROLL_BAR;
     if (!panel)
@@ -72,5 +55,3 @@ void wxbScrollBar::ProcessCommand(wxCommandEvent& event)
     }
     wxNotifyEvent(event, FALSE);
 }
-
-#endif

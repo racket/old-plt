@@ -7,44 +7,15 @@
  * Copyright:   (c) 1995, AIAI, University of Edinburgh
  */
 
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
+#include "wx.h"
 
-#ifdef __GNUG__
-#pragma implementation "wx_print.h"
-#endif
-
-// For some reason, this must be defined for common dialogs to work.
-#ifdef __WATCOMC__
-#define INCLUDE_COMMDLG_H	1
-#endif
-
-#include "common.h"
-
-#endif
-
-#if !defined(_MSC_VER)
-# include "wx_utils.h"
-# include "wx_dc.h"
-# include "wx_main.h"
-# include "wx_dialg.h"
-# include "wx_cmdlg.h"
-# include "wx_frame.h"
-# include "wx_messg.h"
-#endif
-
-# include "wx_print.h"
+#include "wx_print.h"
 
 #include <stdlib.h>
 
 #include "wx_pdf.h"
 
 #include <commdlg.h>
-
-#ifndef WIN32
-#include <print.h>
-#endif
 
 #if !defined(APIENTRY)	// NT defines APIENTRY, 3.x not
 #define APIENTRY FAR PASCAL
@@ -111,8 +82,6 @@ wxDC *wxPrintDialog::GetPrintDC(void)
 /*
  * Print data
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxPrintData, wxObject)
 
 wxPrintData::wxPrintData(void)
 {
@@ -239,7 +208,6 @@ void wxPrintData::SetSetupDialog(Bool flag)
 wxPrinter::wxPrinter()
 {
   currentPrintout = NULL;
-  abortWindow = NULL;
   abortIt = FALSE;
   lpAbortProc = MakeProcInstance((FARPROC) wxAbortProc, wxhInstance);
 }
@@ -324,6 +292,8 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     wxMessageBox("Sorry, could not create an abort dialog.", "Print Error", wxOK, parent);
     delete dc;
   }
+
+  wxREGGLOB(abortWindow);
   abortWindow = win;
   abortWindow->Show(TRUE);
   wxYield();
@@ -415,8 +385,6 @@ void wxPrinter::ReportError(wxWindow *parent, wxPrintout *WXUNUSED(printout), ch
  * Printout class
  */
  
-IMPLEMENT_ABSTRACT_CLASS(wxPrintout, wxObject)
-
 wxPrintout::wxPrintout(char *title)
 {
   printoutTitle = title ? copystring(title) : (char *)NULL;

@@ -1,7 +1,5 @@
 
-#if defined(_MSC_VER)
-# include "wx.h"
-#endif
+#include "wx.h"
 
 /* No longer supported */
 

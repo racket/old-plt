@@ -7,18 +7,7 @@
  * Copyright:	(c) 1995, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_panel.h"
-#include "wx_check.h"
-#include "wx_itemp.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 BOOL wxCheckBox::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
 {
@@ -28,15 +17,13 @@ BOOL wxCheckBox::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
   return TRUE;
 }
 
-IMPLEMENT_DYNAMIC_CLASS(wxCheckBox, wxItem)
-
 // Single check box item
 wxCheckBox::wxCheckBox(void)
 {
   wxWinType = wxTYPE_HWND;
   windows_id = 0;
   ms_handle = 0;
-  isFafa = CHECK_IS_FAFA ;
+  isFafa = 0;
 }
 
 // Single check box item
@@ -78,7 +65,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title,
 
   windows_id = (int)NewId(this);
 
-  isFafa = CHECK_IS_FAFA ;
+  isFafa = 0;
   checkWidth = -1 ;
   checkHeight = -1 ;
   HWND wx_button = wxwmCreateWindowEx(0, CHECK_CLASS, Title,
@@ -100,9 +87,6 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title,
     SendMessage((HWND)ms_handle,WM_SETFONT,
                 (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
 */
-  // I think on reflection the font for a checkbox should be the
-  // label font, because it _is_ effectively a label, not a button.
-  // N'est ce pas? -- JACS 2/1/95
   if (labelFont && labelFont->GetInternalFont(the_dc))
     SendMessage((HWND)ms_handle,WM_SETFONT,
                 (WPARAM)labelFont->GetInternalFont(the_dc),0L);
@@ -142,7 +126,6 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
 
   windows_id = (int)NewId(this);
 
-#if FAFA_LIB // && !CTL3D
   if (width<0)
     width = bitmap->GetWidth() ;
   if (height<0)
@@ -163,18 +146,6 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
                   (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
                   (LPARAM)bitmap->ms_bitmap);
   isFafa = TRUE;
-#else
-  isFafa = CHECK_IS_FAFA;
-  checkWidth = -1 ;
-  checkHeight = -1 ;
-  HWND wx_button = wxwmCreateWindowEx(0, CHECK_CLASS, "toggle",
-                    CHECK_FLAGS | WS_CLIPSIBLINGS,
-                    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-                    wxhInstance, NULL);
-#if CTL3D
-  Ctl3dSubclassCtl(wx_button);
-#endif
-#endif
 
   ms_handle = (HANDLE)wx_button;
 
@@ -225,13 +196,12 @@ void wxCheckBox::SetLabel(char *label)
   if (bm_label)
     return;
 
-#if FAFA_LIB && !CTL3D
-    checkWidth = checkHeight = -1 ;
-    // This message will switch from FB_BITMAP style to FB_TEXT, if needed.
-    SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
-                (WPARAM)0,
-                (LPARAM)NULL);
-#endif
+  checkWidth = checkHeight = -1 ;
+  // This message will switch from FB_BITMAP style to FB_TEXT, if needed.
+  SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
+	      (WPARAM)0,
+	      (LPARAM)NULL);
+
   SetWindowText((HWND)ms_handle, label);
 }
 
@@ -251,17 +221,15 @@ void wxCheckBox::SetLabel(wxBitmap *bitmap)
   bm_label = bitmap;
   bm_label->selectedIntoDC++;
 
-#if FAFA_LIB // && !CTL3D
-    checkWidth = bitmap->GetWidth() ;
-    checkHeight = bitmap->GetHeight() ;
-    SetBitmapDimensionEx(bitmap->ms_bitmap,
-			 bitmap->GetWidth(),
-			 bitmap->GetHeight(),
-			 NULL);
-    SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
-                (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-                (LPARAM)bitmap->ms_bitmap);
-#endif
+  checkWidth = bitmap->GetWidth() ;
+  checkHeight = bitmap->GetHeight() ;
+  SetBitmapDimensionEx(bitmap->ms_bitmap,
+		       bitmap->GetWidth(),
+		       bitmap->GetHeight(),
+		       NULL);
+  SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
+	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
+	      (LPARAM)bitmap->ms_bitmap);
 }
 
 void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
@@ -282,10 +250,7 @@ void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
   float cyf;
 
   HWND button = (HWND)ms_handle;
-#if FAFA_LIB && !CTL3D
-  if (checkWidth<0)
-#endif
-  {
+  if (checkWidth < 0) {
     wxGetCharSize(button, &cx, &cy, labelFont);
 
     GetWindowText(button, buf, 300);
@@ -294,16 +259,13 @@ void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
       width = (int)(current_width + RADIO_SIZE) ;
     if (height<0)
       height = (int)(cyf) ;
-  }
-#if FAFA_LIB && !CTL3D
-  else
-  {
+  } else {
     if (width<0)
       width = checkWidth + FB_MARGIN ;
     if (height<0)
       height = checkHeight + FB_MARGIN ;
   }
-#endif
+
   MoveWindow(button, x, y, width, height, TRUE);
 
   GetEventHandler()->OnSize(width, height);
@@ -312,35 +274,12 @@ void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
 
 void wxCheckBox::SetValue(Bool val)
 {
-/*
-// Following necessary for Win32s, because Win32s translate BM_SETCHECK
-#if FAFA_LIB && !CTL3D
-  SendMessage((HWND)ms_handle, FAFA_SETCHECK, val, 0);
-#else
-  SendMessage((HWND)ms_handle, BM_SETCHECK, val, 0);
-#endif
-*/
-#if FAFA_LIB
-  SendMessage((HWND)ms_handle, isFafa?FAFA_SETCHECK:BM_SETCHECK, val, 0);
-#else
-  SendMessage((HWND)ms_handle, BM_SETCHECK, val, 0);
-#endif
+  SendMessage((HWND)ms_handle, isFafa ? FAFA_SETCHECK : BM_SETCHECK, val, 0);
 }
 
 Bool wxCheckBox::GetValue(void)
 {
-/*
-// Following necessary for Win32s, because Win32s translate BM_SETCHECK
-#if FAFA_LIB && !CTL3D
-  return (Bool)(0x003 & SendMessage((HWND)ms_handle, FAFA_GETCHECK, 0, 0));
-#else
-  return (Bool)(0x003 & SendMessage((HWND)ms_handle, BM_GETCHECK, 0, 0));
-#endif
-*/
-#if FAFA_LIB
   return (Bool)(0x003 & SendMessage((HWND)ms_handle,
-                isFafa?FAFA_GETCHECK:BM_GETCHECK, 0, 0));
-#else
-  return (Bool)(0x003 & SendMessage((HWND)ms_handle, BM_GETCHECK, 0, 0));
-#endif
+				    isFafa ? FAFA_GETCHECK : BM_GETCHECK, 
+				    0, 0));
 }

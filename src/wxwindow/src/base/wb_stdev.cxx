@@ -4,35 +4,15 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_stdev.cxx,v 1.3 1998/08/15 02:15:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "@(#)wb_stdev.cc	1.2 5/9/94"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation "wx_stdev.h"
-#endif
-
-#include "common.h"
-#include "wx_item.h"
-#include "wx_stdev.h"
-#include "wx_utils.h"
-
-#endif
+#include "wx.h"
 
 /*
  * Command events
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxCommandEvent, wxEvent)
 
 wxCommandEvent::wxCommandEvent(WXTYPE commandType)
 {
@@ -56,8 +36,6 @@ wxScrollEvent::wxScrollEvent()
  * Mouse events
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxMouseEvent, wxEvent)
 
 wxMouseEvent::wxMouseEvent(WXTYPE commandType)
 {
@@ -277,8 +255,6 @@ void wxMouseEvent::Position(float *xpos, float *ypos)
  * Keyboard events
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxKeyEvent, wxEvent)
 
 wxKeyEvent::wxKeyEvent(WXTYPE type)
 {

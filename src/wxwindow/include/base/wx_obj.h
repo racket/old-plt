@@ -18,6 +18,9 @@
 
 #include "common.h"
 
+/* Even with normal GC, MrEd for Windows registers globals: */
+#define WX_REGISTER_GLOBAL_MEMORY
+
 #include "../../../wxcommon/wxGC.h"
 
 #ifndef WXGC_CLEANUP_CLASS

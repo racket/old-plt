@@ -4,44 +4,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dialg.cxx,v 1.1.1.1 1997/12/22 16:11:57 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "@(#)wb_dialg.cc	1.2 5/9/94"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_setup.h"
-#include "wx_dialg.h"
-#include "wx_utils.h"
-//#include "wx_gdi.h"
-#include "wx_frame.h"
-#include "wx_panel.h"
-#include "wx_item.h"
-#include "wx_buttn.h"
-#include "wx_messg.h"
-#include "wx_choic.h"
-#include "wx_check.h"
-#include "wx_menu.h"
-#include "wx_txt.h"
-#include "wx_mtxt.h"
-#include "wx_slidr.h"
-#include "wx_lbox.h"
-#include "wx_mgstr.h"
-
-#endif
-
-#include <stdio.h>
+#include "wx.h"
 
 // Dialog box - like panel but doesn't need a frame, and is modal or
 // non-modal
@@ -54,7 +20,8 @@ wxbDialogBox::wxbDialogBox(void)
 }
 
 wxbDialogBox::wxbDialogBox(wxWindow *WXUNUSED(Parent), char *WXUNUSED(Title), Bool Modal, 
-                         int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name)):
+			   int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), 
+			   long style, char *WXUNUSED(name)):
   wxPanel()
 {
   __type = wxTYPE_DIALOG_BOX;
@@ -64,7 +31,8 @@ wxbDialogBox::wxbDialogBox(wxWindow *WXUNUSED(Parent), char *WXUNUSED(Title), Bo
 }
 
 Bool wxbDialogBox::Create(wxWindow *Parent, char *WXUNUSED(Title), Bool Modal, 
-                         int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+			  int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), 
+			  int WXUNUSED(height), long style, char *WXUNUSED(name))
 {
   windowStyle = style;
   modal = Modal;

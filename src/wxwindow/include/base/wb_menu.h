@@ -51,9 +51,6 @@ class wxbMenu: public wxItem
   virtual void SetHelpString(long id, char *helpString);
   virtual char *GetHelpString(long id);
 
-  // Finds the item id matching the given string, -1 if not found.
-  virtual int FindItem(char *itemString);
-
   // Find wxMenuItem for item ID, and return item's
   // menu too if itemMenu is non-NULL.
   wxMenuItem *FindItemForId(long itemId, wxMenu **itemMenu = NULL, int *pos = NULL);
@@ -87,8 +84,6 @@ class wxbMenuBar: public wxItem
   virtual Bool Checked(long id) = 0;
   virtual void SetHelpString(long id, char *helpString);
   virtual char *GetHelpString(long id);
-
-  virtual int FindMenuItem(char *menuString, char *itemString);
 
   // Find wxMenuItem for item ID, and return item's
   // menu too if itemMenu is non-NULL.

@@ -9,11 +9,7 @@
 
   */
 
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-# include "wx.h"
-#endif
+#include "wx.h"
 
 #include "wx_pdf.h"
 #include "wx_timer.h"

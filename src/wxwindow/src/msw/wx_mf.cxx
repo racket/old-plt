@@ -4,30 +4,14 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_mf.cxx,v 1.3 1998/09/21 05:21:17 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_setup.h"
-
-#endif
+#include "wx.h"
 
 #if USE_METAFILE
 
 #include "wx_mf.h"
-
-#if !defined(_MSC_VER)
-# include "wx_utils.h"
-# include "wx_canvs.h"
-# include "wx_main.h"
-# include "wx_privt.h"
-#endif
 
 #include <stdio.h>
 
@@ -38,8 +22,6 @@ extern Bool wxClipboardIsOpen;
  * Currently, the only purpose for making a metafile is to put
  * it on the clipboard.
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxMetaFile, wxObject)
 
 wxMetaFile::wxMetaFile(char *file)
 {
@@ -109,8 +91,6 @@ Bool wxMetaFile::Play(wxDC *dc)
  * Metafile device context
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxMetaFileDC, wxDC)
 
 wxMetaFileDC::wxMetaFileDC(char *file)
 {

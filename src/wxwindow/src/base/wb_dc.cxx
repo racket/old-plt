@@ -4,38 +4,10 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cxx,v 1.5 1999/10/05 16:31:50 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "@(#)wb_dc.cc      1.2 5/9/94"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation "wb_dc.h"
-#pragma implementation "wb_dccan.h"
-#pragma implementation "wb_dcmem.h"
-#endif
-
-#include "common.h"
-//#include "wx_frame.h"
-#include "wx_dc.h"
-#include "wx_dcps.h"
-// wx_dcmem.h not strictly necessary but required
-// for GNU GCC when using pragmas.
-#include "wx_dcmem.h"
-#include "wx_stdev.h"
-#include "wx_utils.h"
-//#include "wx_canvs.h"
-//#include "wx_dialg.h"
-//#include "wx_main.h"
-
-#endif
+#include "wx.h"
 
 #include <math.h>
 
@@ -148,12 +120,6 @@ void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y
     delete p;
   }
   delete point_list;
-/*
-  wxSpline spline(point_list);
-
-  wx_draw_open_spline(this, &spline);
-  spline.DeletePoints();
- */
 }
 #endif
 

@@ -7,8 +7,4 @@
  * Copyright:	(c) 1994, Julian Smart
  */
 
-// static const char sccsid[] = "%W% %G%";
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#endif
+#include "wx.h"

@@ -4,25 +4,10 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.7 1999/02/21 00:29:53 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_frame.h"
-#include "wx_dc.h"
-#include "wx_canvs.h"
-#include "wx_panel.h"
-#include "wx_stdev.h"
-#include "wx_utils.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 #include <math.h>
 
@@ -105,13 +90,6 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 
 wxCanvas::~wxCanvas (void)
 {
-  // NB THIS CODE RELIES on destructor ordering:
-  // this must be called BEFORE the window is destroyed.
-  // This may not be true for some compilers (Borland?)
-  // in which case we need to do something messy in ~wxWindow
-  // to call this code BEFORE we destroy the window (or how
-  // do we get hold of the DC?)
-    
   if (wx_dc) {
     wxWnd *wnd = (wxWnd *)handle;
     HDC dc = wxwmGetDC(wnd->handle);
@@ -442,20 +420,6 @@ wxCanvasWnd::wxCanvasWnd (wxWnd * parent, wxWindow * wx_win,
 wxSubWnd (parent, wxCanvasClassName, wx_win, x, y, width, height, style)
 {
   is_canvas = TRUE;
-
-#if 0
-  long wstyle = wx_window->GetWindowStyleFlag();
-
-  if (wstyle & (wxHSCROLL | wxVSCROLL)) {
-	if (wstyle & wxHSCROLL) {
-	  if (wstyle & wxVSCROLL)
-        ShowScrollBar(handle, SB_BOTH, TRUE);
-	  else
-		ShowScrollBar(handle, SB_HORZ, TRUE);
-	} else 
-		ShowScrollBar(handle, SB_VERT, TRUE);
-  }
-#endif
 }
 
 

@@ -4,34 +4,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_win.cxx,v 1.3 1998/10/16 18:19:39 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "@(#)wb_win.cc	1.2 5/9/94"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_win.h"
-#include "wx_gdi.h"
-#include "wx_utils.h"
-
-#endif
-
-#if USE_CONSTRAINTS
-#include "wx_lay.h"
-#endif
-
-IMPLEMENT_DYNAMIC_CLASS(wxRectangle, wxObject)
+#include "wx.h"
 
 // Constructor
 wxbWindow::wxbWindow(void)
@@ -52,36 +28,14 @@ wxbWindow::wxbWindow(void)
   editUIMode = FALSE;
   internal_disabled = 0;
   is_shown = 1;
-#if USE_CONSTRAINTS
-  constraints = NULL;
-  constraintsInvolvedIn = NULL;
-  windowSizer = NULL;
-  sizerParent = NULL;
-  autoLayout = FALSE;
-#endif
   WXGC_IGNORE(window_parent);
 }
 
 // Destructor
 wxbWindow::~wxbWindow(void)
 {
-  if (windowName) delete[] windowName;
-#if USE_CONSTRAINTS
-  DeleteRelatedConstraints();
-  if (constraints)
-  {
-    // This removes any dangling pointers to this window
-    // in other windows' constraintsInvolvedIn lists.
-    UnsetConstraints(constraints);
-    delete constraints;
-    constraints = NULL;
-  }
-  if (windowSizer)
-  {
-    delete windowSizer;
-    windowSizer = NULL;
-  }
-#endif
+  if (windowName)
+    delete[] windowName;
 }
 
 char *wxbWindow::GetHandle(void)
@@ -201,42 +155,12 @@ void wxbWindow::OnSize(int WXUNUSED(width), int WXUNUSED(height))
  * Event handler
  */
 
-IMPLEMENT_DYNAMIC_CLASS(wxEvtHandler, wxObject)
-
 wxEvtHandler::wxEvtHandler(void)
 {
-  nextHandler = NULL;
-  previousHandler = NULL;
 }
 
 wxEvtHandler::~wxEvtHandler(void)
 {
-  // Takes itself out of the list of handlers
-  if (previousHandler)
-    previousHandler->nextHandler = nextHandler;
-
-  if (nextHandler)
-    nextHandler->previousHandler = previousHandler;
-}
-
-wxEvtHandler *wxEvtHandler::GetNextHandler(void)
-{
-  return nextHandler;
-}
-
-wxEvtHandler *wxEvtHandler::GetPreviousHandler(void)
-{
-  return previousHandler;
-}
-
-void wxEvtHandler::SetNextHandler(wxEvtHandler *handler)
-{
-  nextHandler = handler;
-}
-
-void wxEvtHandler::SetPreviousHandler(wxEvtHandler *handler)
-{
-  previousHandler = handler;
 }
 
 void wxbWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)

@@ -7,28 +7,9 @@
  * Copyright:	(c) 1995, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "common.h"
-
-#endif
-
-#if USE_GAUGE 
-
-#if !defined(_MSC_VER)
-# include "wx_panel.h"
-# include "wx_gauge.h"
-# include "wx_itemp.h"
-# include "wx_wmgr.h"
-#endif
+#include "wx.h"
 
 #include "..\..\contrib\gauge\zyzgauge.h"
-
-IMPLEMENT_DYNAMIC_CLASS(wxGauge, wxItem)
 
 wxGauge::wxGauge(void)
 {
@@ -39,16 +20,16 @@ wxGauge::wxGauge(void)
 }
 
 wxGauge::wxGauge(wxPanel *panel, char *label,
-		   int range, int x, int y, int width, int height,
-                   long style, char *name):
+		 int range, int x, int y, int width, int height,
+		 long style, char *name):
   wxbGauge(panel, label, range, x, y, width, height, style, name)
 {
   Create(panel, label, range, x, y, width, height, style, name);
 }
 
 Bool wxGauge::Create(wxPanel *panel, char *label,
-		   int range, int x, int y, int width, int height,
-                   long style, char *name)
+		     int range, int x, int y, int width, int height,
+		     long style, char *name)
 {
   SetName(name);
   if (panel) panel->AddChild(this);
@@ -75,9 +56,6 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-#if CTL3D
-    Ctl3dSubclassCtl(static_label);
-#endif
     HDC the_dc = GetWindowDC(static_label) ;
     if (labelFont && labelFont->GetInternalFont(the_dc))
       SendMessage(static_label,WM_SETFONT,
@@ -331,6 +309,4 @@ void wxGauge::ChangeToGray(Bool gray)
   if (static_label)
     ::EnableWindow(static_label, !gray);
 }
-
-#endif
 

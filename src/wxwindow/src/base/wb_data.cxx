@@ -1,48 +1,14 @@
 /*
  * Global Data
  *
- * RCS_ID:      $Id: wb_data.cxx,v 1.1.1.1 1997/12/22 16:11:58 mflatt Exp $
  */
 
-/* static const char sccsid[] = "@(#)wb_data.cc	1.2 5/9/94"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_list.h"
-#include "wx_gdi.h"
-
-#endif
+#include "wx.h"
 
 #define _MAXPATHLEN 500
 
 // Useful buffer, initialized in wxCommonInit
 char *wxBuffer = NULL;
-
-#if 0
-// Windows List
-wxList wxTopLevelWindows;
-#endif
-
-// Message Strings for Internationalization
-char **wx_msg_str = (char**)NULL;
-
-/*
-// Some global printer parameters
-char wx_printer_file[_MAXPATHLEN];
-float wx_printer_scale_x = 1.0;
-float wx_printer_scale_y = 1.0;
-float wx_printer_translate_x = 0.0;
-float wx_printer_translate_y = 0.0;
-*/
 
 // GDI Object Lists
 wxBrushList *wxTheBrushList = NULL;

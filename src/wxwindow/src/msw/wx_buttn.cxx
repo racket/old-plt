@@ -7,18 +7,7 @@
  * Copyright:	(c) 1995, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_panel.h"
-#include "wx_buttn.h"
-#include "wx_itemp.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 #define BUTTON_HEIGHT_FACTOR (EDIT_CONTROL_FACTOR * 1.1)
 
@@ -35,8 +24,6 @@ BOOL wxButton::MSWCommand(UINT param, WORD WXUNUSED(id))
   }
   else return FALSE;
 }
-
-IMPLEMENT_DYNAMIC_CLASS(wxButton, wxItem)
 
 wxButton::wxButton(void)
 {
@@ -92,10 +79,6 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, char *label,
 		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 		       wxhInstance, NULL);
 
-#if CTL3D
-  Ctl3dSubclassCtl(wx_button);
-#endif
-
   ms_handle = (HANDLE)wx_button;
 
   // Subclass again for purposes of dialog editing mode
@@ -147,7 +130,6 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, wxBitmap *bitmap,
 
   windows_id = (int)NewId(this);
 
-#if FAFA_LIB
   if (width<0)
 	 width = bitmap->GetWidth() ;
   if (height<0)
@@ -166,16 +148,6 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, wxBitmap *bitmap,
   SendMessage((HWND)wx_button, WM_CHANGEBITMAP,
 	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
 	      (LPARAM)bitmap->ms_bitmap);
-#else
-  HWND wx_button =
-    wxwmCreateWindowEx(0, "wxBUTTON", "not implemented", 
-		       BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD | WS_CLIPSIBLINGS,
-		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-		       wxhInstance, NULL);
-#if CTL3D
-  Ctl3dSubclassCtl(wx_button);
-#endif
-#endif
 
   ms_handle = (HANDLE)wx_button;
 
@@ -222,12 +194,11 @@ void wxButton::SetLabel(char *label)
   if (bm_label)
       return;
 
-#if FAFA_LIB
-    // This message will switch from FB_BITMAP style to FB_TEXT, if needed.
-    SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
-                (WPARAM)0,
-                (LPARAM)NULL);
-#endif
+  // This message will switch from FB_BITMAP style to FB_TEXT, if needed.
+  SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
+	      (WPARAM)0,
+	      (LPARAM)NULL);
+  
   SetWindowText((HWND)ms_handle, label);
 }
 
@@ -240,15 +211,13 @@ void wxButton::SetLabel(wxBitmap *bitmap)
   bm_label = bitmap;
   bm_label->selectedIntoDC++;
 
-#if FAFA_LIB
-    SetBitmapDimensionEx(bitmap->ms_bitmap,
-			 bitmap->GetWidth(),
-			 bitmap->GetHeight(),
-			 NULL);
-    SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
-                (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-                (LPARAM)bitmap->ms_bitmap);
-#endif
+  SetBitmapDimensionEx(bitmap->ms_bitmap,
+		       bitmap->GetWidth(),
+		       bitmap->GetHeight(),
+		       NULL);
+  SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
+	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
+	      (LPARAM)bitmap->ms_bitmap);
 }
 
 char *wxButton::GetLabel(void)

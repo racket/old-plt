@@ -27,7 +27,7 @@
                         	// 0 for no PostScript device context
 #define USE_AFM_FOR_POSTSCRIPT 1
                                 // 1 to use font metric files in GetTextExtent
-#define USE_METAFILE    1
+#define USE_METAFILE    0
                                 // 0 for no Metafile and metafile device context
 #define USE_FORM        1
                                 // 0 for no wxForm
@@ -249,18 +249,6 @@ FAFA_LIB=1 , CTL3D=1 , WINDOWS_LOOK=1
                                     // in FAFA and non-FAFA, non-CTL3D modes.
                                     // I (JACS) think the controls look better
                                     // this way. CTL3D always uses grey panels.
-#ifdef WIN32
-#define CTL3D                      0
-                                    // Don't change this
-#elif defined(__WATCOMC__)
-#define CTL3D                      0
-                                    // Added by Chubraev for WATCOM. CTL3D & WATCOM
-                                    // don't mix. ** SUPPORT NOW ADDED FOR WATCOM ***
-#else
-#define CTL3D                      0
-                                    // Define 1 to use Microsoft CTL3D library.
-                                    // See note above about using FAFA and CTL3D.
-#endif
 
 #define WINDOWS_LOOK		   1
 				    // Define 1 to use as many as possible

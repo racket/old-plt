@@ -4,38 +4,14 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.19 1999/07/22 12:11:57 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
+#include "wx.h"
 
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_setup.h"
-#include "wx_privt.h"
-#include "wx_frame.h"
-#include "wx_menu.h"
-#include "wx_gdi.h"
-#include "wx_main.h"
-#include "wx_utils.h"
-#include "wx_wmgr.h"
-
-#endif
-
-#if FAFA_LIB
-# include "fafa.h"
-#endif
-
-#if USE_ITSY_BITSY
-# include "..\..\contrib\itsybits\itsybits.h"
-#endif
+#include "fafa.h"
 
 static HMENU emptyMenu;
-
-extern wxList wxModelessWindows;
 
 wxPen *wxStatusGreyPen = NULL;
 wxPen *wxStatusWhitePen = NULL;
@@ -57,8 +33,6 @@ extern char wxFrameClassName[];
 extern char wxMDIFrameClassName[];
 extern char wxMDIChildFrameClassName[];
 extern char wxPanelClassName[];
-
-IMPLEMENT_DYNAMIC_CLASS(wxFrame, wxWindow)
 
 wxFrame::wxFrame(void)
 {
@@ -132,10 +106,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
       break;
   }
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxModelessWindows.Append(this);
-#endif
-
   wx_cursor = wxSTANDARD_CURSOR;  
 
   wxCreatedWindow(this);
@@ -158,11 +128,6 @@ wxFrame::~wxFrame(void)
   if (wx_menu_bar)
     delete wx_menu_bar;
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  if (icon)
-    delete icon;
-#endif
-
   int i;
   for (i = 0; i < wxMAX_STATUS; i++)
     if (status_window[i])
@@ -179,9 +144,6 @@ wxFrame::~wxFrame(void)
 
 
   wxDestroyedWindow(context, this);
-
-
-  wxModelessWindows.DeleteObject(this);
 }
 
 HMENU wxFrame::GetWinMenu(void)
@@ -403,13 +365,6 @@ Bool wxFrame::Show(Bool show)
     cshow = SW_HIDE;
   }
   
-  if (show)  {
-    if (!wxModelessWindows.Member(this))
-      wxModelessWindows.Append(this);
-  } else {
-    wxModelessWindows.DeleteObject(this);
-  }
-
   wxTopLevelWindows(this)->Show(this, show);
   if (window_parent)
     window_parent->GetChildren()->Show(this, show);
@@ -586,6 +541,8 @@ void wxFrame::CreateStatusLine(int number, char *WXUNUSED(name))
 
   if (!wxStatusGreyPen)
   {
+    wxREGGLOB(wxStatusGreyPen);
+    wxREGGLOB(wxStatusWhitePen);
     wxStatusGreyPen = new wxPen("DIM GREY", wxTHICK_LINE_WIDTH, wxSOLID);
     wxStatusWhitePen = new wxPen("WHITE", wxTHICK_LINE_WIDTH, wxSOLID);
   }
@@ -604,10 +561,8 @@ void wxFrame::SetStatusText(char *text, int number)
   if ((number < 0) || (number >= nb_status))
     return;
 
-#if FAFA_LIB
   // Microsoft standard: use button colors for status line
   status_window[number]->light_grey_brush = brushFace ;
-#endif
 
   if (status_window[number]->status_text)
     delete[] status_window[number]->status_text;
@@ -721,12 +676,8 @@ wxStatusWnd::wxStatusWnd(wxFrameWnd *parent, int the_height)
 {
   status_text = NULL;
   height = the_height;
-#if FAFA_LIB
   // Microsoft standard: use button colors for status line
   light_grey_brush = brushFace ;
-#else
-  light_grey_brush = GetStockObject(LTGRAY_BRUSH);
-#endif
 
   Create(parent, wxPanelClassName, NULL, NULL, 0, 0, 100, 100, WS_CHILD);
   ShowWindow(handle, SW_SHOW);
@@ -740,16 +691,13 @@ wxStatusWnd::~wxStatusWnd(void)
 
 BOOL wxStatusWnd::OnPaint()
 {
-#if DEBUG > 1
-  wxDebugMsg("wxStatusWnd::OnPaint %d\n", handle);
-#endif
   RECT rect;
   if (GetUpdateRect(handle, &rect, FALSE))
   {
-#if FAFA_LIB
+
   // Microsoft standard: use button colors for status line
     light_grey_brush = brushFace ;
-#endif
+
     PAINTSTRUCT ps;
     // Hold a pointer to the dc so long as the OnPaint() message
     // is being processed
@@ -764,32 +712,6 @@ BOOL wxStatusWnd::OnPaint()
     ::SetBkMode(cdc, TRANSPARENT);
     ::FillRect(cdc, &rect, light_grey_brush);
 
-#if !FAFA_LIB
-    wxGREY_BRUSH->ChangeBrush() ;
-    HBRUSH old_brush = wxGREY_BRUSH->SelectBrush(cdc);
-
-    // Draw border
-    // Have grey background, plus 3-d border -
-    // One black rectangle.
-    // Inside this, left and top sides - dark grey. Bottom and right -
-    // white.
-
-    // Right and bottom white lines
-    wxStatusWhitePen->ChangePen() ;
-    HPEN old_pen = wxStatusWhitePen->SelectPen(cdc);
-    MoveToEx(cdc, width-wxTHICK_LINE_BORDER,
-                  wxTHICK_LINE_BORDER, NULL);
-    LineTo(cdc, width-wxTHICK_LINE_BORDER,
-                height-wxTHICK_LINE_BORDER);
-    LineTo(cdc, wxTHICK_LINE_BORDER,
-              height-wxTHICK_LINE_BORDER);
-
-    // Left and top grey lines
-    wxStatusGreyPen->ChangePen() ;
-    wxStatusGreyPen->SelectPen(cdc);
-    LineTo(cdc, wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
-    LineTo(cdc, width-wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
-#else
     HBRUSH old_brush = (HBRUSH)::SelectObject(cdc,brushFace) ;
 
     // Draw border
@@ -811,7 +733,6 @@ BOOL wxStatusWnd::OnPaint()
     ::SelectObject(cdc,penShadow) ;
     LineTo(cdc, wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
     LineTo(cdc, width-wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
-#endif
 
     SetTextColor(cdc, ::GetSysColor( COLOR_BTNTEXT ) );
 
@@ -857,10 +778,7 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
 {
   defaultIcon = wxSTD_FRAME_ICON;
 
-//  DWORD msflags = WS_OVERLAPPED;
   DWORD msflags = WS_POPUP;
-//  if (((style & wxCAPTION) == 0) && (style & wxTHICK_FRAME))
-//    msflags = WS_DLGFRAME;
   
   DWORD extendedStyle = 0;
   if (!(style & wxNO_THICK_FRAME) && !(style & wxNO_RESIZE_BORDER)) {
@@ -888,9 +806,6 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
   // style instead of WS_OVERLAPPED
   if (width > -1 && height > -1)
     ::PostMessage(handle, WM_SIZE, SIZE_RESTORED, MAKELPARAM(width, height));
-#if DEBUG > 1
-  wxDebugMsg("wxFrameWnd::wxFrameWnd %d\n", handle);
-#endif
 }
 
 wxFrameWnd::~wxFrameWnd(void)
@@ -903,9 +818,6 @@ wxFrameWnd::~wxFrameWnd(void)
 
 BOOL wxFrameWnd::OnPaint(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxFrameWnd::OnPaint %d\n", handle);
-#endif
   RECT rect;
   if (GetUpdateRect(handle, &rect, FALSE))
   {
@@ -976,9 +888,6 @@ void wxFrameWnd::OnSize(int bad_x, int bad_y, UINT id)
 
 BOOL wxFrameWnd::OnClose(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxFrameWnd::OnClose %d\n", handle);
-#endif
   if (wx_window) {
     wxWindow *modal = wxGetModalWindow(wx_window);
     if (modal && (modal != wx_window))
@@ -1029,12 +938,6 @@ void wxFrameWnd::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 
 BOOL wxFrameWnd::ProcessMessage(MSG* pMsg)
 {
-#if 0
-  if (accelerator_table != NULL &&
-      ::TranslateAccelerator(handle, (HACCEL)accelerator_table, pMsg))
-    return TRUE;
-#endif
-
   return FALSE;
 }
 
@@ -1071,9 +974,6 @@ wxMDIFrame::wxMDIFrame(wxWnd *parent, wxWindow *wx_win, char *title,
 
   Create(parent, wxMDIFrameClassName, wx_win, title, x, y, width, height,
          msflags);
-#if DEBUG > 1
-  wxDebugMsg("End of wxMDIFrame::wxMDIFrame %d\n", handle);
-#endif
 }
 
 wxMDIFrame::~wxMDIFrame(void)
@@ -1158,50 +1058,6 @@ BOOL wxMDIFrame::OnCommand(WORD id, WORD cmd, HWND control)
   }
   
   return FALSE;
-
-#if 0
-  if (cmd == 0)
-  {
-    switch (id)
-    {
-      case IDM_WINDOWCASCADE:
-        SendMessage(client_hwnd, WM_MDICASCADE, MDITILE_SKIPDISABLED, 0);
-        return TRUE;
-      case IDM_WINDOWTILE:
-        SendMessage(client_hwnd, WM_MDITILE, MDITILE_HORIZONTAL, 0);
-        return TRUE;
-      case IDM_WINDOWICONS:
-        SendMessage(client_hwnd, WM_MDIICONARRANGE, 0, 0);
-        return TRUE;
-      case IDM_WINDOWNEXT:
-//        SendMessage(client_hwnd, WM_MDINEXT, current_child->handle, 0);
-        SendMessage(client_hwnd, WM_MDINEXT, 0, 0);
-        return TRUE;
-      default:
-        break;
-     }
-    if (id >= 0xF000)
-    {
-      return FALSE; // Get WndProc to call default proc
-    }
-    
-    if (parent_frame_active && (id < wxFIRST_MDI_CHILD || id > wxLAST_MDI_CHILD))
-    {
-      ((wxFrame *)wx_window)->Command(id);
-      return TRUE;
-    }
-    else if (current_child && (id < wxFIRST_MDI_CHILD || id > wxLAST_MDI_CHILD))
-    {
-/*
-      ((wxFrame *)(current_child->wx_window))->Command(id);
-      return TRUE;
-*/
-      return current_child->OnCommand(id, cmd, control);
-    }
-  }
-#endif
-
-  return FALSE;
 }
 
 void wxMDIFrame::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
@@ -1215,9 +1071,6 @@ void wxMDIFrame::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 
 long wxMDIFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIFrame::DefWindowProc %d, message = %d\n", handle, message);
-#endif
   return DefFrameProc(handle, client_hwnd, message, wParam, lParam);
 }
 

@@ -4,35 +4,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cxx,v 1.6 1999/02/23 18:27:45 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_setup.h"
-#include "wb_frame.h"
-#include "wx_stdev.h"
-#include "wx_main.h"
-#include "wx_utils.h"
-#include "wx_menu.h"
-#include "wx_mnuit.h"
-#include "wx_stdev.h"
-
-#endif
-
-class wxFrame;
+#include "wx.h"
 
 wxbFrame::wxbFrame(void)
 {
@@ -42,8 +17,10 @@ wxbFrame::wxbFrame(void)
   SetShown(FALSE);
 }
 
-wxbFrame::wxbFrame(wxFrame *WXUNUSED(Parent), char *WXUNUSED(title), int WXUNUSED(x), int WXUNUSED(y),
-                 int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+wxbFrame::wxbFrame(wxFrame *WXUNUSED(Parent), char *WXUNUSED(title),
+		   int WXUNUSED(x), int WXUNUSED(y),
+		   int WXUNUSED(width), int WXUNUSED(height),
+		   long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_FRAME;
   windowStyle = style;
@@ -51,13 +28,14 @@ wxbFrame::wxbFrame(wxFrame *WXUNUSED(Parent), char *WXUNUSED(title), int WXUNUSE
   SetShown(FALSE);
 }
 
-Bool wxbFrame::Create(wxFrame *Parent, char *WXUNUSED(title), int WXUNUSED(x), int WXUNUSED(y),
-                 int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
+Bool wxbFrame::Create(wxFrame *Parent, char *WXUNUSED(title),
+		      int WXUNUSED(x), int WXUNUSED(y),
+		      int WXUNUSED(width), int WXUNUSED(height),
+		      long style, char *WXUNUSED(name))
 {
   windowStyle = style;
 
   context = (void *)wxGetContextForFrame();
-  /* WXGC_IGNORE(context); - NO context itself is not finalized */
 
   wxTopLevelWindows(this)->Append(this);
   wxTopLevelWindows(this)->Show(this, FALSE);
@@ -76,9 +54,6 @@ wxbFrame::~wxbFrame(void)
 // resize to client rectangle size
 void wxbFrame::OnSize(int WXUNUSED(x), int WXUNUSED(y))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxbFrame::OnSize\n");
-#endif
   if (frame_type == wxMDI_PARENT)
     return;
 
@@ -102,19 +77,9 @@ void wxbFrame::OnSize(int WXUNUSED(x), int WXUNUSED(y))
 
   // If not one child, call the Layout function if compiled in
   if (!child || (noChildren > 1))
-  {
-#if USE_CONSTRAINTS
-    if (GetAutoLayout())
-      Layout();
-#endif
     return;
-  }
 
   int client_x, client_y;
-
-#if DEBUG > 1
-  wxDebugMsg("wxbFrame::OnSize: about to set the child's size.\n");
-#endif
 
   GetClientSize(&client_x, &client_y);
   child->SetSize(0, 0, client_x, client_y);
@@ -124,29 +89,6 @@ void wxbFrame::OnSize(int WXUNUSED(x), int WXUNUSED(y))
 // subwindow found.
 void wxbFrame::OnActivate(Bool WXUNUSED(flag))
 {
-#if 0
-#ifndef wx_msw
-  if (!flag)
-    return;
-
-  for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
-  {
-    // Find a child that's a subwindow, but not a dialog box.
-    wxWindow *child = (wxWindow *)node->Data();
-    if ((wxSubType(child->__type, wxTYPE_PANEL) &&
-         !wxSubType(child->__type, wxTYPE_DIALOG_BOX)) ||
-        wxSubType(child->__type, wxTYPE_TEXT_WINDOW) ||
-        wxSubType(child->__type, wxTYPE_CANVAS))
-    {
-#if DEBUG > 1
-      wxDebugMsg("wxbFrame::OnActivate: about to set the child's focus.\n");
-#endif
-      child->SetFocus();
-      return;
-    }
-  }
-#endif
-#endif
 }
 
 // Default menu selection behaviour - display a help string

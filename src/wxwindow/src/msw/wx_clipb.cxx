@@ -7,27 +7,10 @@
  * Copyright:	(c) 1995, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "@(#)wx_clipb.cc	1.2 5/9/94"; */
+#include "wx.h"
 
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_setup.h"
-
-#endif
-
-#if USE_CLIPBOARD
 #include "wx_clipb.h"
 #include "wx_mf.h"
-
-#if !defined(_MSC_VER)
-#include "wx_privt.h"
-#include "wx_main.h"
-#include "wx_frame.h"
-#include "wx_gdi.h"
-#include "wx_utils.h"
-#endif
 
 Bool wxClipboardIsOpen = FALSE;
 
@@ -133,37 +116,12 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
 
       LPSTR lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
 
-#ifdef WIN32
       memcpy(lpGlobalMemory, s, l);
-#elif defined(__WATCOMC__) && defined(__WINDOWS_386__)
-      memcpy(lpGlobalMemory, s, l);
-#else
-      hmemcpy(lpGlobalMemory, s, l);
-#endif
 
       GlobalUnlock(hGlobalMemory);
       HANDLE success = SetClipboardData(dataFormat, hGlobalMemory);
       return (Bool)success;
       break;
-/*
-      char *s = (char *)obj;
-      int length = strlen(s);
-      HANDLE hGlobalMemory = GlobalAlloc(GHND, (DWORD) length + 1);
-      if (!hGlobalMemory)
-        return FALSE;
-
-      LPSTR lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
-
-      int i;
-      for (i = 0; i < length; i ++)
-        *lpGlobalMemory++ = *s++;
-      *lpGlobalMemory++ = 0;
-
-      GlobalUnlock(hGlobalMemory);
-      HANDLE success = SetClipboardData(CF_TEXT, hGlobalMemory);
-      return (Bool)success;
-      break;
-*/
     }
   }
   return FALSE;
@@ -241,16 +199,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *len)
         return NULL;
 
       LPSTR lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
-//      int i;
-//      for (i = 0; i < GlobalSize(hGlobalMemory); i++)
-//        s[i] = lpGlobalMemory[i];
-#ifdef WIN32
       memcpy(s, lpGlobalMemory, GlobalSize(hGlobalMemory));
-#elif __WATCOMC__ && defined(__WINDOWS_386__)
-      memcpy(s, lpGlobalMemory, GlobalSize(hGlobalMemory));
-#else
-      hmemcpy(s, lpGlobalMemory, GlobalSize(hGlobalMemory));
-#endif
 
       GlobalUnlock(hGlobalMemory);
 
@@ -284,8 +233,10 @@ wxClipboard *wxTheClipboard = NULL;
 
 void wxInitClipboard(void)
 {
-  if (!wxTheClipboard)
+  if (!wxTheClipboard) {
+    wxREGGLOB(wxTheClipboard);
     wxTheClipboard = new wxClipboard;
+  }
 }
 
  wxClipboardClient::wxClipboardClient()
@@ -431,6 +382,3 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     return receivedString;
   }
 }
-
-
-#endif // USE_CLIPBOARD

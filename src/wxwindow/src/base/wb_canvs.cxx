@@ -4,28 +4,12 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_canvs.cxx,v 1.3 1998/09/21 05:21:14 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
 /* static const char sccsid[] = "@(#)wb_canvs.cc	1.2 5/9/94"; */
 
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_setup.h"
-#include "wx_dc.h"
-#include "wb_canvs.h"
-
-#endif
+#include "wx.h"
 
 class wxFrame;
 

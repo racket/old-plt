@@ -4,31 +4,13 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.7 1999/03/09 19:53:23 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_setup.h"
-#include "wx_panel.h"
-#include "wx_frame.h"
-#include "wx_utils.h"
-#include "wx_privt.h"
-
-#endif
+#include "wx.h"
 
 #include "wx_dcpan.h"
 
-#if USE_EXTENDED_STATICS
-#include "wx_stat.h"
-#endif
-
-extern char wxPanelClassName[];
 extern char wxCanvasClassName[];
 
 class wxPanelWnd : public wxSubWnd
@@ -75,8 +57,6 @@ BOOL wxPanelWnd::OnEraseBkgnd(HDC pDC)
   }
   else return FALSE;
 }
-
-IMPLEMENT_DYNAMIC_CLASS(wxPanel, wxCanvas)
 
 wxPanel::wxPanel(void)
 {
@@ -367,22 +347,6 @@ void wxPanel::RealAdvanceCursor(void)
 // Update next cursor position
 void wxPanel::AdvanceCursor(wxWindow *item)
 {
-/*
-  int width, height;
-  int x, y;
-  item->GetSize(&width, &height);
-  item->GetPosition(&x, &y);
-
-  if ((x + width) > max_width)
-    max_width = x + width;
-  if ((y + height) > max_height)
-    max_height = y + height;
-  if (height > max_line_height)
-    max_line_height = height;
-
-  cursor_x = x + width + hspacing;
-  cursor_y = y;
-*/
    last_created = item ;
 }
 

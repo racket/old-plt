@@ -18,10 +18,6 @@
 #ifndef wxb_winh
 #define wxb_winh
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include "common.h"
 #include "wx_obj.h"
 #include "wx_stdev.h"
@@ -56,19 +52,9 @@ typedef void (*wxFunction) (wxObject*, wxEvent*);
  
 class wxEvtHandler: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxEvtHandler)
- protected:
-  wxEvtHandler *nextHandler;
-  wxEvtHandler *previousHandler;
-  
  public:
   wxEvtHandler(void);
   ~wxEvtHandler(void);
-
-  wxEvtHandler *GetNextHandler(void);
-  wxEvtHandler *GetPreviousHandler(void);
-  void SetNextHandler(wxEvtHandler *handler);
-  void SetPreviousHandler(wxEvtHandler *handler);
 
   virtual void OnMenuCommand(long WXUNUSED(cmd)) {};
   virtual void OnMenuSelect(long WXUNUSED(cmd)) {};
@@ -99,9 +85,6 @@ class wxEvtHandler: public wxObject
   virtual void OnDefaultAction(wxItem *WXUNUSED(initiatingItem)) {};
   virtual void OnChangeFocus(wxItem *WXUNUSED(from), wxItem *WXUNUSED(to)) {};
   virtual Bool OnFunctionKey(wxKeyEvent *WXUNUSED(event)) { return FALSE; };
-
-  char *GetClientData(void);
-  void SetClientData(char *WXUNUSED(clientData));
 };
 
 /*

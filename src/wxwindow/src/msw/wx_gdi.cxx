@@ -4,29 +4,12 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.19 1999/11/29 23:24:18 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
+#include "wx.h"
 
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_setup.h"
-
-#include "wx_utils.h"
-#include "wx_main.h"
-#include "wx_gdi.h"
-#include "wx_list.h"
-#include "wx_wmgr.h"
-
-#endif
-
-#if USE_IMAGE_LOADING_IN_MSW
-# include "..\..\utils\dib\dib.h"
-#endif
+#include "..\..\utils\dib\dib.h"
 
 #include "xpm34.h"
 #include "wximgfil.h"
@@ -46,11 +29,6 @@ void RegisterGDIObject(HANDLE x);
 void DeleteRegisteredGDIObject(HANDLE x);
 
 Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo, HPALETTE * phPal, HBITMAP * phBitmap);
-
-// #define DEBUG_CREATE
-// #define TRACE_GDI
-
-IMPLEMENT_DYNAMIC_CLASS(wxFont, wxObject)
 
 wxFont::wxFont(void)
 {
@@ -203,8 +181,6 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
  * Colour map
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxColourMap, wxObject)
 
 wxColourMap::wxColourMap(void)
 {
@@ -538,7 +514,6 @@ int wx2msPenStyle(int wx_style)
 
 
 // Brushes
-IMPLEMENT_DYNAMIC_CLASS(wxBrush, wxObject)
 
 wxBrush::wxBrush(void)
 {
@@ -675,7 +650,6 @@ wxBrush::wxBrush(const char *col, int Style)
 }
 
 // Cursors
-IMPLEMENT_DYNAMIC_CLASS(wxCursor, wxBitmap)
 
 wxCursor::wxCursor(void)
 {
@@ -820,13 +794,6 @@ wxCursor::wxCursor(int cursor_type)
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_SIZING");
       break;
     }
-#if 0
-    case wxCURSOR_WATCH:
-    {
-      ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_WATCH");
-      break;
-    }
-#endif
     case wxCURSOR_SPRAYCAN:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_ROLLER");
@@ -909,29 +876,17 @@ int wxDisplayDepth(void)
 // Get size of display
 void wxDisplaySize(int *width, int *height)
 {
-
   RECT r;
 
-
-
   if (SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0)) {
-
-	*width = (r.right - r.left);
-
-	*height = (r.bottom - r.top);
-
+    *width = (r.right - r.left);
+    *height = (r.bottom - r.top);
   } else {
-
-	HDC dc = ::GetDC(NULL);
-
+    HDC dc = ::GetDC(NULL);
     *width = GetDeviceCaps(dc, HORZRES); *height = GetDeviceCaps(dc, VERTRES);
-
     ReleaseDC(NULL, dc);
-
   }
 }
-
-IMPLEMENT_DYNAMIC_CLASS(wxBitmap, wxObject)
 
 wxBitmap::wxBitmap(void)
 {
@@ -1243,7 +1198,6 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
       bitmapColourMap = cmap;
   }
 #endif
-#if 1
   else if (flags & wxBITMAP_TYPE_GIF)
   {
     wxColourMap *cmap = NULL;
@@ -1260,7 +1214,6 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
     if (cmap)
       bitmapColourMap = cmap;
   }
-#endif
   
   if (oldSel && ok)
 	oldSel->SelectObject(this);

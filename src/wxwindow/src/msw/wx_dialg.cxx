@@ -4,64 +4,19 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.13 1999/07/25 00:53:39 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_dialg.h"
-#include "wx_utils.h"
-#include "wx_frame.h"
-#include "wx_main.h"
-
-#include "wx_setup.h"
-#include "wx_wmgr.h"
-#endif
+#include "wx.h"
 
 #if USE_COMMON_DIALOGS
-#include <commdlg.h>
-#endif
-
-#if CTL3D
-#include <ctl3d.h>
-#endif
-
-#if FAFA_LIB
-#include "fafa.h"
-#endif
-
-#if !defined(APIENTRY)	// NT defines APIENTRY, 3.x not
-#define APIENTRY far pascal
-#endif
- 
-#ifdef WIN32
-#define _EXPORT /**/
-#else
-#define _EXPORT _export
-typedef signed short int SHORT ;
-#endif
- 
-#if !defined(WIN32)	// 3.x uses FARPROC for dialogs
-#define DLGPROC FARPROC
+# include <commdlg.h>
 #endif
 
 #define wxDIALOG_DEFAULT_X 300
 #define wxDIALOG_DEFAULT_Y 300
 
-// Lists to keep track of windows, so we can disable/enable them
-// for modal dialogs
-#if 0
-wxList wxModalDialogs;
-#endif
-wxList wxModelessWindows;  // Frames and modeless dialogs
-
 extern void wxCreatedWindow(wxWindow *w);
-
 extern void wxDestroyedWindow(void *context, wxWindow *w);
 
 class wxDialogWnd : public wxSubWnd
@@ -92,15 +47,7 @@ LONG wxDialogWnd::DefWindowProc(UINT nMsg, UINT wParam, LONG lParam)
 
 BOOL wxDialogWnd::ProcessMessage(MSG* pMsg)
 {
-#if 0
-  wxWindow *w = wx_window->FindItemByHWND(::GetFocus());
-
-  if (w && !wxSubType(w->__type, wxTYPE_CANVAS))
-    return ::IsDialogMessage(handle, pMsg);
-  else
-#endif
-
-    return FALSE;
+  return FALSE;
 }
 
 BOOL wxDialogWnd::OnClose(void)
@@ -110,14 +57,10 @@ BOOL wxDialogWnd::OnClose(void)
     if (modal && (modal != wx_window))
       return FALSE;
     
-    if (wx_window->GetEventHandler()->OnClose()) {
-      /* MATTHEW: [11] */
-#if !WXGARBAGE_COLLECTION_ON
-      ((wxDialogBox *)wx_window)->Show(FALSE);
-      delete wx_window;
-#endif
+    if (wx_window->GetEventHandler()->OnClose())
       return TRUE;
-    } else return FALSE;
+    else 
+      return FALSE;
   }
   return FALSE;
 }
@@ -170,8 +113,6 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 {
   SetName(name);
 
-  if (!Parent) Parent = wxDefaultParent;
-
   // Do anything that needs to be done in the generic base class
   wxbDialogBox::Create(Parent, Title, Modal, x, y, width, height, style, name);
 
@@ -222,11 +163,6 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   handle = (char *)wnd;
   SetWindowText(wnd->handle, Title);
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  if (!Modal)
-    wxModelessWindows.Append(this);
-#endif
-
   wxCreatedWindow(this);
 
   wx_cursor = wxSTANDARD_CURSOR;  
@@ -247,9 +183,6 @@ wxDialogBox::~wxDialogBox()
   if (wnd) {
     ShowWindow(wnd->handle, SW_HIDE);
   }
-
-  if (!modal)
-    wxModelessWindows.DeleteObject(this);
 
   wxDestroyedWindow(context, this);
 }
@@ -278,15 +211,10 @@ void wxDialogBox::Fit(void)
 }
 
 void wxDialogBox::ChangeToGray(Bool gray)
-
 {
-
   wxWindow::ChangeToGray(gray);
-
   InternalGrayChildren(gray);
-
 }
-
 
 
 void wxDialogBox::Iconize(Bool WXUNUSED(iconize))
@@ -357,13 +285,6 @@ Bool wxDialogBox::Show(Bool show)
 
   SetShown(show);
 
-  if (!modal) {
-    if (show) {
-      if (!wxModelessWindows.Member(this))
-	wxModelessWindows.Append(this);
-    } else
-      wxModelessWindows.DeleteObject(this);
-  }
   wxTopLevelWindows(this)->Show(this, show);
   if (window_parent)
     window_parent->GetChildren()->Show(this, show);

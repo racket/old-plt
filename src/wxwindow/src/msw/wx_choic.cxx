@@ -7,18 +7,7 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_panel.h"
-#include "wx_itemp.h"
-#include "wx_choic.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 extern Bool wxIsPrimEventspace();
 
@@ -33,9 +22,9 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
 
   if (param == CBN_SELENDOK)
   {
-   /* Callback possibly via popup window, which does not
-      know its eventspace. If so, re-post the event to get
-      eventspaces right. */
+    /* Callback possibly via popup window, which does not
+       know its eventspace. If so, re-post the event to get
+       eventspaces right. */
     if (wxIsPrimEventspace()) {
       PostMessage(GetParent()->GetHWND(),
 	          WM_COMMAND,
@@ -115,9 +104,6 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-#if CTL3D
-    Ctl3dSubclassCtl(static_label);
-#endif
     HDC the_dc = GetWindowDC(static_label) ;
     if (labelFont && labelFont->GetInternalFont(the_dc))
       SendMessage(static_label,WM_SETFONT,
@@ -133,10 +119,6 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 				     | WS_BORDER | WS_TABSTOP | WS_VISIBLE | WS_CLIPSIBLINGS,
 				     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				     wxhInstance, NULL);
-#if CTL3D
-  Ctl3dSubclassCtl(wx_combo);
-#endif
-
   ms_handle = (HANDLE)wx_combo;
 
   // Subclass again for purposes of dialog editing mode

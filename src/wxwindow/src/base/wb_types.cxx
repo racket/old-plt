@@ -4,32 +4,16 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_types.cxx,v 1.2 1998/08/16 19:23:12 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation "wx_types.h"
-#endif
-
 #include "wx.h"
-#endif
-
-IMPLEMENT_DYNAMIC_CLASS(wxTypeDef, wxObject)
-IMPLEMENT_DYNAMIC_CLASS(wxTypeTree, wxHashTable)
 
 wxTypeTree *wxAllTypes;
 
 void wxInitStandardTypes(void)
 {
+  wxREGGLOB(wxAllTypes);
   wxAllTypes = new wxTypeTree;
 
   // Define explicit type hierarchy

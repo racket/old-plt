@@ -4,47 +4,16 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.20 1999/11/29 19:01:47 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_setup.h"
-#include "wx_list.h"
-#include "wx_utils.h"
-#include "wx_main.h"
-#include "wx_gdi.h"
-
-#endif
-
-#ifdef wx_x
-# define UseXtRegions
-#endif
+#include "wx.h"
 
 #include "../../../wxcommon/Region.h"
 
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
-
-IMPLEMENT_DYNAMIC_CLASS(wxColour, wxObject)
-IMPLEMENT_CLASS(wxColourDatabase, wxList)
-IMPLEMENT_DYNAMIC_CLASS(wxFontList, wxList)
-IMPLEMENT_DYNAMIC_CLASS(wxPenList, wxList)
-IMPLEMENT_DYNAMIC_CLASS(wxBrushList, wxList)
-IMPLEMENT_DYNAMIC_CLASS(wxGDIList, wxList)
 
 wxbFont::wxbFont (void)
 {
@@ -278,10 +247,6 @@ wxColourDatabase::~wxColourDatabase (void)
     }
 }
 
-#ifndef wx_msw
-static wxHashTable *aux = NULL;
-#endif
-
 // Colour database stuff
 void wxColourDatabase::Initialize (void)
 {
@@ -289,13 +254,7 @@ void wxColourDatabase::Initialize (void)
   // in FindColour below. But to ensure that all of these names
   // are present, add them to an auxiliary list:
 
-#ifdef wx_msw
 # define APPEND_TO_DB Append
-#else
-  if (!aux)
-    return;
-# define APPEND_TO_DB aux->Put
-#endif
 
   wxColour *tmpc;
 #define APPEND_C(name, c) tmpc = c; tmpc->Lock(1); APPEND_TO_DB(name, tmpc);
@@ -396,14 +355,6 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   return NULL;
 }
 
-/* Old FindColour
-wxColour *wxColourDatabase::FindColour (const char *colour)
-{
-  wxNode *node = Find (colour);
-  return node ? (wxColour *) node->Data () : NULL ;
-}
-*/
-
 char *wxColourDatabase::FindName (wxColour * colour)
 {
   unsigned char red = colour->Red();
@@ -428,17 +379,55 @@ char *wxColourDatabase::FindName (wxColour * colour)
 void 
 wxInitializeStockObjects (void)
 {
+  wxREGGLOB(wxTheBrushList);
+  wxREGGLOB(wxThePenList);
+  wxREGGLOB(wxTheFontList);
+  wxREGGLOB(wxTheBitmapList);
+
+  wxREGGLOB(wxNORMAL_FONT);
+  wxREGGLOB(wxSMALL_FONT);
+  wxREGGLOB(wxITALIC_FONT);
+  wxREGGLOB(wxSWISS_FONT);
+
+  wxREGGLOB(wxRED_PEN);
+  wxREGGLOB(wxCYAN_PEN);
+  wxREGGLOB(wxGREEN_PEN);
+  wxREGGLOB(wxBLACK_PEN);
+  wxREGGLOB(wxWHITE_PEN);
+  wxREGGLOB(wxTRANSPARENT_PEN);
+  wxREGGLOB(wxBLACK_DASHED_PEN);
+  wxREGGLOB(wxGREY_PEN);
+  wxREGGLOB(wxMEDIUM_GREY_PEN);
+  wxREGGLOB(wxLIGHT_GREY_PEN);
+
+  wxREGGLOB(wxBLUE_BRUSH);
+  wxREGGLOB(wxGREEN_BRUSH);
+  wxREGGLOB(wxWHITE_BRUSH);
+  wxREGGLOB(wxBLACK_BRUSH);
+  wxREGGLOB(wxTRANSPARENT_BRUSH);
+  wxREGGLOB(wxCYAN_BRUSH);
+  wxREGGLOB(wxRED_BRUSH);
+  wxREGGLOB(wxGREY_BRUSH);
+  wxREGGLOB(wxMEDIUM_GREY_BRUSH);
+  wxREGGLOB(wxLIGHT_GREY_BRUSH);
+
+  wxREGGLOB(wxBLACK);
+  wxREGGLOB(wxWHITE);
+  wxREGGLOB(wxRED);
+  wxREGGLOB(wxBLUE);
+  wxREGGLOB(wxGREEN);
+  wxREGGLOB(wxCYAN);
+  wxREGGLOB(wxLIGHT_GREY);
+
+  wxREGGLOB(wxSTANDARD_CURSOR);
+  wxREGGLOB(wxHOURGLASS_CURSOR);
+  wxREGGLOB(wxCROSS_CURSOR);
+  wxREGGLOB(wxIBEAM_CURSOR);
+
   wxTheBrushList = new wxBrushList;
   wxThePenList = new wxPenList;
   wxTheFontList = new wxFontList;
   wxTheBitmapList = new wxGDIList;
-  // wxTheColourList =  new wxGDIList;
-
-#ifdef wx_motif
-#endif
-#ifdef wx_x
-  wxFontPool = new XFontPool;
-#endif
 
   wxNORMAL_FONT = new wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
   wxSMALL_FONT = new wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
@@ -866,17 +855,14 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 	each_font->GetUnderlined () == underline)
       return each_font;
   }
-  /* MATTHEW: [8] With GC, must explicitly add: */
+
   fnt = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline);
 
-#if WXGARBAGE_COLLECTION_ON
   AddFont(fnt);
-#endif
 
   return fnt;
 }
 
-/* MATTHEW: [4] New font system */
 wxFont *wxFontList::
 FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline)
 {
@@ -887,7 +873,6 @@ FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int We
 			  underline);
 }
 
-#if (!USE_TYPEDEFS)
 wxPoint::wxPoint (void) : wxObject(WXGC_NO_CLEANUP)
 {
 }
@@ -901,12 +886,6 @@ wxPoint::wxPoint (float the_x, float the_y) : wxObject(WXGC_NO_CLEANUP)
 wxPoint::~wxPoint (void)
 {
 }
-#endif
-
-#if (!USE_TYPEDEFS)
-
-IMPLEMENT_DYNAMIC_CLASS(wxPoint, wxObject)
-IMPLEMENT_DYNAMIC_CLASS(wxIntPoint, wxObject)
 
 wxIntPoint::wxIntPoint (void) : wxObject(WXGC_NO_CLEANUP)
 {
@@ -921,7 +900,6 @@ wxIntPoint::wxIntPoint (int the_x, int the_y) : wxObject(WXGC_NO_CLEANUP)
 wxIntPoint::~wxIntPoint (void)
 {
 }
-#endif
 
 #include "../../../wxcommon/FontDirectory.cxx"
 

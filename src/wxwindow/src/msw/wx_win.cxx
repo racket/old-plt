@@ -4,30 +4,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.35 2000/03/04 17:22:00 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_setup.h"
-#include "wx_panel.h"
-#include "wx_rbox.h"
-#include "wx_txt.h"
-#include "wx_text.h"
-#include "wx_menu.h"
-#include "wx_privt.h"
-#include "wx_itemp.h"
-#include "wx_dcpan.h"
-#include "wx_utils.h"
-#include "wx_main.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 #include <math.h>
 #include <shellapi.h>
@@ -36,41 +16,12 @@
 
 #define SIGNED_WORD short
 
-
-/*
-#if HAVE_SOCKET
-#include "winsock.h"
-#include "dde_ipc.h"
-#endif
-*/
-
-#ifdef WIN32
 #include <windowsx.h>
-#endif
 
-#if CTL3D
-#include <ctl3d.h>
-#endif
-
-#if FAFA_LIB
 #include "fafa.h"
 extern HBRUSH SetupBackground(HWND wnd) ; // in wx_main.cc
-#endif
 
-#if USE_ITSY_BITSY
-#include "..\..\contrib\itsybits\itsybits.h"
-#endif
-
-#if !defined(APIENTRY)	// NT defines APIENTRY, 3.x not
-#define APIENTRY FAR PASCAL
-#endif
- 
-#ifdef WIN32
 #define _EXPORT /**/
-#else
-#define _EXPORT _export
-typedef signed short int SHORT ;
-#endif
  
 #if !defined(WIN32)	// 3.x uses FARPROC for dialogs
 #define DLGPROC FARPROC
@@ -86,12 +37,24 @@ wxMenu **wxCurrentPopupMenu = NULL;
 static wxWindow *current_mouse_wnd = NULL;
 static void *current_mouse_context = NULL;
 
+// Hook for new window just as it's being created,
+// when the window isn't yet associated with the handle
+wxWnd *wxWndHook = NULL;
+
 extern void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags);
 
 extern long last_msg_time; /* MATTHEW: timeStamp implementation */
 
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags);
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags);
+
+void wxWindowInit(void)
+{
+  wxREGGLOB(wxCurrentPopupMenu);
+  wxREGGLOB(current_mouse_wnd);
+  wxREGGLOB(current_mouse_context);
+  wxREGGLOB(wxWndHook);
+}
 
 // Find an item given the MS Windows id
 wxWindow *wxWindow::FindItem(int id)
@@ -200,7 +163,6 @@ HWND wxWindow::GetHWND(void)
 }
 
 // Constructor
-IMPLEMENT_ABSTRACT_CLASS(wxWindow, wxEvtHandler)
 
 wxWindow::wxWindow(void)
 {
@@ -393,24 +355,6 @@ void wxWindow::DragAcceptFiles(Bool accept)
   HWND hWnd = GetHWND();
   if (hWnd)
     ::DragAcceptFiles(hWnd, (BOOL)accept);
-/*
-  switch (wxWinType) {
-    case wxTYPE_XWND:
-    {
-      wxWnd *wnd = (wxWnd *)handle;
-      ::DragAcceptFiles(wnd->handle, accept);
-      break;
-    }
-    case wxTYPE_HWND:
-    {
-      if (ms_handle)
-        ::DragAcceptFiles((HWND)ms_handle, accept);
-      break;
-    }
-    default:
-      break;
-  }
-*/
 }
 
 // Get total size
@@ -736,20 +680,6 @@ wxWindow *wxWindow::FindFocusWindow()
   return NULL;
 }
 
-// Hook for new window just as it's being created,
-// when the window isn't yet associated with the handle
-wxWnd *wxWndHook = NULL;
-
-/*
-#if HAVE_SOCKET
-// DDE Interface Handler
-extern	"C" {
-  long	ddeWindowProc(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam);
-  void __ddeUnblock(HWND hWnd, WPARAM wParam);
-};
-#endif
-*/
-
 // Main Windows 3 window proc
 LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -765,9 +695,7 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	 if (!wnd)
 		return 0;
   }
-#if (DEBUG > 1)
-  wxDebugMsg("hWnd = %d, wnd->handle = %d, msg = %d\n", hWnd, wnd ? wnd->handle : 0, message);
-#endif
+
   // Stop right here if we don't have a valid handle
   // in our wxWnd object.
   if (wnd && !wnd->handle) {
@@ -794,21 +722,13 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
   int retval = 0;
 
-  Bool cimr = wxwmCheckInMain();
-
   switch (message)
   {
         case WM_ACTIVATE:
         {
-#ifdef WIN32
             WORD state = LOWORD(wParam);
             WORD minimized = HIWORD(wParam);
             HWND hwnd = (HWND)lParam;
-#else
-            WORD state = (WORD)wParam;
-            WORD minimized = LOWORD(lParam);
-            HWND hwnd = (HWND)HIWORD(lParam);
-#endif
             wnd->OnActivate(state, minimized, hwnd);
 	    retval = 0;
             break;
@@ -953,15 +873,9 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 */
         case WM_COMMAND:
 	{
-#ifdef WIN32
             WORD id = LOWORD(wParam);
             HWND hwnd = (HWND)lParam;
             WORD cmd = HIWORD(wParam);
-#else
-            WORD id = (WORD)wParam;
-            HWND hwnd = (HWND)LOWORD(lParam) ;
-            WORD cmd = HIWORD(lParam);
-#endif
             if (!wnd->OnCommand(id, cmd, hwnd))
               retval = wnd->DefWindowProc(message, wParam, lParam );
             break;
@@ -973,15 +887,9 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	  }
         case WM_MENUSELECT:
         {
-#ifdef WIN32
 //            WORD id = LOWORD(wParam);
             WORD flags = HIWORD(wParam);
             HMENU sysmenu = (HMENU)lParam;
-#else
-//            WORD id = wParam;
-            WORD flags = LOWORD(lParam);
-            HMENU sysmenu = (HMENU)HIWORD(lParam);
-#endif
             wnd->OnMenuSelect((WORD)wParam, flags, sysmenu);
             break;
         }
@@ -1025,33 +933,20 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         }
         case WM_HSCROLL:
         {
-#ifdef WIN32
             WORD code = LOWORD(wParam);
             WORD pos = HIWORD(wParam);
             HWND control = (HWND)lParam;
-#else
-            WORD code = (WORD)wParam;
-            WORD pos = LOWORD(lParam);
-            HWND control = (HWND)HIWORD(lParam);
-#endif
             wnd->OnHScroll(code, pos, control);
             break;
         }
         case WM_VSCROLL:
         {
-#ifdef WIN32
             WORD code = LOWORD(wParam);
             WORD pos = HIWORD(wParam);
             HWND control = (HWND)lParam;
-#else
-            WORD code = (WORD)wParam;
-            WORD pos = LOWORD(lParam);
-            HWND control = (HWND)HIWORD(lParam);
-#endif
             wnd->OnVScroll(code, pos, control);
             break;
         }
-#ifdef WIN32
         case WM_CTLCOLORBTN:
 	{
           int nCtlColor = CTLCOLOR_BTN;
@@ -1115,17 +1010,6 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
                                         message, wParam, lParam);
           break;
 	}
-#else
-        case WM_CTLCOLOR:
-        {
-          HWND control = (HWND)LOWORD(lParam);
-          int nCtlColor = (int)HIWORD(lParam);
-          HDC pDC = (HDC)wParam;
-          retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-        }
-#endif
         case WM_SYSCOLORCHANGE:
         {
           retval = (DWORD)wnd->OnColorChange(hWnd, message, wParam, lParam);
@@ -1144,20 +1028,10 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         }
         case WM_MDIACTIVATE:
         {
-#ifdef WIN32
-            // Never trust a 3rd-party book!
-	  // Use MS macros!!!
-	  //HWND hWndActivate = (HWND)wParam;
-	  //HWND hWndDeactivate = (HWND)lParam;
-	  //BOOL activate = (hWndActivate == hWnd);
 	  HWND hWndActivate = GET_WM_MDIACTIVATE_HWNDACTIVATE(wParam,lParam);
 	  HWND hWndDeactivate = GET_WM_MDIACTIVATE_HWNDDEACT(wParam,lParam);
 	  BOOL activate = GET_WM_MDIACTIVATE_FACTIVATE(hWnd,wParam,lParam);
 	  retval = wnd->OnMDIActivate(activate, hWndActivate, hWndDeactivate);
-#else
-	  retval = wnd->OnMDIActivate((BOOL)wParam, (HWND)LOWORD(lParam),
-				      (HWND)HIWORD(lParam));
-#endif
 	  break;
         }
       case WM_DROPFILES:
@@ -1194,8 +1068,6 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
   
   wxwmNotify("end", message);
   
-  wxwmCheckOutMain(cimr);
-  
   return retval; // Success: we processed this command.
 }
 
@@ -1224,33 +1096,11 @@ LONG APIENTRY _EXPORT
     return 0;
 
   switch (message) {
-#if CTL3D
-        case WM_SETTEXT:
-        case WM_NCPAINT:
-        case WM_NCACTIVATE:
-        {
-          // Panels/dialogs with user colours don't use CTL3D
-          if (!wnd->userColours)
-          {
-            SetWindowLong(hWnd, DWL_MSGRESULT,
-                          Ctl3dDlgFramePaint(hWnd, message, wParam, lParam));
-            return TRUE;
-          }
-          else return FALSE;
-          break;
-        }
-#endif
         case WM_ACTIVATE:
         {
-#ifdef WIN32
             WORD state = LOWORD(wParam);
             WORD minimized = HIWORD(wParam);
             HWND hwnd = (HWND)lParam;
-#else
-            WORD state = (WORD)wParam;
-            WORD minimized = LOWORD(lParam);
-            HWND hwnd = (HWND)HIWORD(lParam);
-#endif
             wnd->OnActivate(state, minimized, hwnd);
             return 0;
             break;
@@ -1284,27 +1134,11 @@ LONG APIENTRY _EXPORT
 	    return FALSE;
 	  break;
         }
-/*
-        case WM_DESTROY:
-            if (wnd)
-            {
-              if (wnd->OnDestroy())
-                return 0;
-            }
-            return FALSE;
-            break;
-*/
         case WM_COMMAND:
 	{
-#ifdef WIN32
             WORD id = LOWORD(wParam);
             HWND hwnd = (HWND)lParam;
             WORD cmd = HIWORD(wParam);
-#else
-            WORD id = (WORD)wParam;
-            HWND hwnd = (HWND)LOWORD(lParam);
-            WORD cmd = HIWORD(lParam);
-#endif
             if (!wnd->OnCommand(id, cmd, hwnd))
               return wnd->DefWindowProc(message, wParam, lParam );
             break;
@@ -1424,33 +1258,20 @@ LONG APIENTRY _EXPORT
 
         case WM_HSCROLL:
         {
-#ifdef WIN32
             WORD code = LOWORD(wParam);
             WORD pos = HIWORD(wParam);
             HWND control = (HWND)lParam;
-#else
-            WORD code = (WORD)wParam;
-            WORD pos = LOWORD(lParam);
-            HWND control = (HWND)HIWORD(lParam);
-#endif
             wnd->OnHScroll(code, pos, control);
             break;
         }
         case WM_VSCROLL:
         {
-#ifdef WIN32
             WORD code = LOWORD(wParam);
             WORD pos = HIWORD(wParam);
             HWND control = (HWND)lParam;
-#else
-            WORD code = (WORD)wParam;
-            WORD pos = LOWORD(lParam);
-            HWND control = (HWND)HIWORD(lParam);
-#endif
             wnd->OnVScroll(code, pos, control);
             break;
         }
-#ifdef WIN32
         case WM_CTLCOLORBTN:
 	{
           int nCtlColor = CTLCOLOR_BTN;
@@ -1514,33 +1335,14 @@ LONG APIENTRY _EXPORT
                                         message, wParam, lParam);
           break;
 	}
-#else
-        case WM_CTLCOLOR:
-        {
-          HWND control = (HWND)LOWORD(lParam);
-          int nCtlColor = (int)HIWORD(lParam);
-          HDC pDC = (HDC)wParam;
-          return (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-                                        message, wParam, lParam);
-          break;
-        }
-#endif
         case WM_SYSCOLORCHANGE:
         {
           if (wnd->userColours)
             return ::DefWindowProc( hWnd, message, wParam, lParam );
-#if FAFA_LIB
           HBRUSH br = SetupBackground(hWnd) ;
           if (br)
               wnd->SetBackgroundBrush(br, FALSE) ;
           return 0 ;
-#endif
-#if CTL3D
-          Ctl3dColorChange();
-#endif
-#if !USE_FAFA && !CTL3D
-          return ::DefWindowProc( hWnd, message, wParam, lParam );
-#endif
           break;
         }
         case WM_ERASEBKGND:
@@ -1615,15 +1417,12 @@ wxWnd::wxWnd(void)
   background_colour = GetSysColor(COLOR_BTNFACE);
   background_transparent = FALSE;
   
-#if (FAFA_LIB && !USE_GREY_BACKGROUND)
-  SetBackgroundBrush(brushFace, FALSE) ;
-#else
   //background_brush = GetStockObject( LTGRAY_BRUSH );
   // No no no... After investigations, I found that Ctl3d use BTNFACE color
   // (which is ALWAYS grey :-))
   // So, respect the behavior!
   SetBackgroundBrush(CreateSolidBrush(GetSysColor(COLOR_BTNFACE)), TRUE) ;
-#endif
+
   last_x_pos = -1.0;
   last_y_pos = -1.0;
   last_event = -1;
@@ -1636,10 +1435,9 @@ wxWnd::wxWnd(void)
 wxWnd::~wxWnd(void)
 {
   wxWinHandleList->DeleteObject(this);
-#if !(FAFA_LIB && !USE_GREY_BACKGROUND)
+
   if (background_brush && canDeleteBackgroundBrush)
     ::DeleteObject(background_brush) ;
-#endif
 
   if (wx_window) {
     wxWindow *p = wx_window->GetTopLevel();
@@ -1677,26 +1475,6 @@ void wxWnd::DestroyWindow(void)
   SetWindowLong(handle, 0, (long)0);
   HWND oldHandle = handle;
   handle = NULL;
-
-#if 0
-  /* We can't use this because DestroyWindow() is called at
-     finalization time, which is during GC, which might be during
-     a context switch. BringWindowToTop is going to callback
-     to Scheme. */
-
-  // For some reason, wxWindows can activate another task altogether
-  // when a frame is destroyed after a modal dialog has been invoked.
-  // Try to bring the parent or main frame to the top.
-  if (wx_window && (wxSubType(wx_window->__type, wxTYPE_FRAME) 
-		    || wxSubType(wx_window->__type, wxTYPE_DIALOG_BOX)))
-  {
-    HWND hWnd = 0;
-    if (wx_window->GetParent())
-      hWnd = wx_window->GetParent()->GetHWND();
-    if (hWnd)
-      ::BringWindowToTop(hWnd);
-  }
-#endif
 
   wxwmDestroyWindow(oldHandle);
 }
@@ -1756,18 +1534,8 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
     // other compilers???
 //    DLGPROC dlgproc = (DLGPROC)MakeProcInstance(wxWndProc, wxhInstance);
 
-#ifndef USE_SEP_WIN_MANAGER
 	 handle = ::CreateDialog(wxhInstance, dialog_template, hParent,
 				 (DLGPROC)wxDlgProc);
-#else
-	 wxwmCreateDialog r;
-
-	 r.hparent = hParent;
-	 r.dialog_template = dialog_template;
-	 r.proc = (DLGPROC)wxDlgProc;
-	 wxwmMessage(WXM_CREATE_DIALOG, (LPARAM)&r);
-	 handle = r.result;
-#endif
 
 	 if (handle == 0)
 	   MessageBox(NULL, "Can't find dummy dialog template!\nCheck resource include path for finding wx.rc.",
@@ -1961,15 +1729,11 @@ void wxWnd::CalcUnscrolledPosition(int x, int y, float *xx, float *yy)
 HBRUSH wxWnd::OnCtlColor(HDC pDC, HWND pWnd, UINT nCtlColor,
                          UINT message, WPARAM wParam, LPARAM lParam)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnCtlColour %d\n", handle);
-#endif
   // Ignores CTL3D and FAFA settings of background colour,
   // uses current background colour for background,
   // and COLOR_BTNFACE for foreground.
   if (userColours && wx_window)
   {
-    // Is this OK for WIN32???
     wxWindow *item = wx_window->FindItemByHWND((HWND)LOWORD(lParam));
     if ((nCtlColor == CTLCOLOR_STATIC || nCtlColor == CTLCOLOR_BTN) && background_brush)
     {
@@ -1994,13 +1758,6 @@ HBRUSH wxWnd::OnCtlColor(HDC pDC, HWND pWnd, UINT nCtlColor,
     else return NULL;
   }
 
-#if CTL3D
-  HBRUSH hbrush = Ctl3dCtlColorEx(message, wParam, lParam);
-  if (hbrush != (HBRUSH) 0)
-    return hbrush;
-  else
-    return (HBRUSH)::DefWindowProc(pWnd, message, wParam, lParam);
-#elif (!FAFA_LIB || USE_GREY_BACKGROUND)
   if ((nCtlColor == CTLCOLOR_STATIC || nCtlColor == CTLCOLOR_BTN) && background_brush)
   {
     // After investigations, I found that Ctl3d use BTNFACE color
@@ -2010,19 +1767,6 @@ HBRUSH wxWnd::OnCtlColor(HDC pDC, HWND pWnd, UINT nCtlColor,
     return background_brush;
   }
   else return NULL;
-#else
-  if ((nCtlColor==CTLCOLOR_BTN || nCtlColor==CTLCOLOR_SCROLLBAR) && brushFace)
-  {
-    SetBkColor(pDC, GetSysColor(COLOR_BTNFACE)) ;
-    return brushFace;
-  }
-  else if (brushBack)
-  {
-    SetBkColor(pDC, GetSysColor(COLOR_WINDOW)) ;
-    return brushBack;
-  }
-  else return NULL;
-#endif
 }
 
 // Set background brush, possibly deleting old one and
@@ -2041,42 +1785,18 @@ BOOL wxWnd::OnColorChange(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   if (userColours)
     return (BOOL)::DefWindowProc( hWnd, message, wParam, lParam );
 
-#if FAFA_LIB
   HBRUSH br = SetupBackground(hWnd) ;
-#if !USE_GREY_BACKGROUND
-  if (br) {
-    SetBackgroundBrush(br, FALSE);
-  }
-  return 0;
-#endif
-#endif
-#if CTL3D
-  Ctl3dColorChange();
-#endif
-#if !FAFA_LIB && !CTL3D
-  return (BOOL)::DefWindowProc( hWnd, message, wParam, lParam );
-#else
   // We processed this message.
   return 0;
-#endif
 }
 
 BOOL wxWnd::OnEraseBkgnd(HDC WXUNUSED(pDC))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnEraseBkgnd %d\n", handle);
-#endif
   return FALSE;
 }
 
 LONG wxWnd::DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam)
 {
-#if USE_ITSY_BITSY
-  if (wx_window && ((wx_window->GetWindowStyleFlag() & wxTINY_CAPTION_HORIZ) ||
-                    (wx_window->GetWindowStyleFlag() & wxTINY_CAPTION_VERT)))
-    return ::ibDefWindowProc(handle, nMsg, wParam, lParam);
-  else                  
-#endif
   return ::DefWindowProc(handle, nMsg, wParam, lParam);
 }
 
@@ -2087,9 +1807,6 @@ BOOL wxWnd::ProcessMessage(MSG* WXUNUSED(pMsg))
 
 BOOL wxWnd::OnMDIActivate(BOOL WXUNUSED(flag), HWND WXUNUSED(activate), HWND WXUNUSED(deactivate))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnMDIActivate %d\n", handle);
-#endif
   return 1;
 }
 
@@ -2133,16 +1850,8 @@ wxSubWnd::~wxSubWnd(void)
 
 BOOL wxSubWnd::OnPaint(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxSubWnd::OnPaint %d\n", handle);
-#endif
-#ifdef WIN32
   HRGN	tRgn=CreateRectRgn(0,0,0,0);	//Dummy call to get a handle!
   if (GetUpdateRgn(handle, tRgn, FALSE))
-#else
-  RECT tRect;
-  if (GetUpdateRect(handle, &tRect, FALSE))
-#endif
   {
     PAINTSTRUCT ps;
     // Hold a pointer to the dc so long as the OnPaint() message
@@ -2161,9 +1870,7 @@ BOOL wxSubWnd::OnPaint(void)
     }
     cdc = NULL;
     EndPaint(handle, &ps);
-#ifdef WIN32
     DeleteObject(tRgn);
-#endif
 
     if (isPanel)
       // Do default processing
@@ -2171,9 +1878,8 @@ BOOL wxSubWnd::OnPaint(void)
     else
       return TRUE;
   }
-#ifdef WIN32
+
   DeleteObject(tRgn);
-#endif
   return FALSE;
 }
 
@@ -2201,9 +1907,6 @@ void wxSubWnd::OnSize(int bad_w, int bad_h, UINT WXUNUSED(flag))
 // Deal with child commands from buttons etc.
 BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxSubWnd::OnCommand %d\n", handle);
-#endif
   if (wxCurrentPopupMenu)
   {
     wxMenu *popupMenu = *wxCurrentPopupMenu;
@@ -2224,7 +1927,6 @@ BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
 
 void wxWnd::OnLButtonDown(int x, int y, UINT flags)
 {
-//wxDebugMsg("LButtonDown\n") ;
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_LEFT_DOWN);
 
   float px = (float)x;
@@ -2253,7 +1955,6 @@ void wxWnd::OnLButtonDown(int x, int y, UINT flags)
 
 void wxWnd::OnLButtonUp(int x, int y, UINT flags)
 {
-//wxDebugMsg("LButtonUp\n") ;
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_LEFT_UP);
   float px = (float)x;
   float py = (float)y;
@@ -2282,8 +1983,7 @@ void wxWnd::OnLButtonUp(int x, int y, UINT flags)
 
 void wxWnd::OnLButtonDClick(int x, int y, UINT flags)
 {
-//wxDebugMsg("LButtonDClick\n") ;
-  /* MATTHEW: If dclick not allowed, generate another single-click */
+  /* If dclick not allowed, generate another single-click */
   wxMouseEvent *event = new wxMouseEvent((wx_window && wx_window->doubleClickAllowed) ?
 					 wxEVENT_TYPE_LEFT_DCLICK : wxEVENT_TYPE_LEFT_DOWN);
   float px = (float)x;
@@ -2302,7 +2002,6 @@ void wxWnd::OnLButtonDClick(int x, int y, UINT flags)
 
   last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
 
-  /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, event))
       if (!wx_window->IsGray())
@@ -2311,7 +2010,6 @@ void wxWnd::OnLButtonDClick(int x, int y, UINT flags)
 
 void wxWnd::OnMButtonDown(int x, int y, UINT flags)
 {
-//wxDebugMsg("MButtonDown\n") ;
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_DOWN);
 
   float px = (float)x;
@@ -2340,7 +2038,6 @@ void wxWnd::OnMButtonDown(int x, int y, UINT flags)
 
 void wxWnd::OnMButtonUp(int x, int y, UINT flags)
 {
-//wxDebugMsg("MButtonUp\n") ;
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_UP);
   float px = (float)x;
   float py = (float)y;
@@ -2368,8 +2065,7 @@ void wxWnd::OnMButtonUp(int x, int y, UINT flags)
 
 void wxWnd::OnMButtonDClick(int x, int y, UINT flags)
 {
-//wxDebugMsg("MButtonDClick\n") ;
-  /* MATTHEW: If dclick not allowed, generate another single-click */
+  /* If dclick not allowed, generate another single-click */
   wxMouseEvent *event = new wxMouseEvent((wx_window && wx_window->doubleClickAllowed) ?
 					 wxEVENT_TYPE_MIDDLE_DCLICK : wxEVENT_TYPE_MIDDLE_DOWN);
   float px = (float)x;
@@ -2388,7 +2084,6 @@ void wxWnd::OnMButtonDClick(int x, int y, UINT flags)
 
   last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
   
-  /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, event))
       if (!wx_window->IsGray())
@@ -2397,7 +2092,6 @@ void wxWnd::OnMButtonDClick(int x, int y, UINT flags)
 
 void wxWnd::OnRButtonDown(int x, int y, UINT flags)
 {
-  //wxDebugMsg("RButtonDown\n") ;
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_DOWN);
   float px = (float)x;
   float py = (float)y;
@@ -2411,7 +2105,7 @@ void wxWnd::OnRButtonDown(int x, int y, UINT flags)
   event->leftDown = (flags & MK_LBUTTON);
   event->middleDown = (flags & MK_MBUTTON);
   event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event->SetTimestamp(last_msg_time);
 
   if (wx_window && is_canvas)
     wx_window->CaptureMouse();
@@ -2425,7 +2119,6 @@ void wxWnd::OnRButtonDown(int x, int y, UINT flags)
 
 void wxWnd::OnRButtonUp(int x, int y, UINT flags)
 {
-//wxDebugMsg("RButtonUp\n") ;
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_UP);
   float px = (float)x;
   float py = (float)y;
@@ -2453,7 +2146,7 @@ void wxWnd::OnRButtonUp(int x, int y, UINT flags)
 
 void wxWnd::OnRButtonDClick(int x, int y, UINT flags)
 {
-  /* MATTHEW: If dclick not allowed, generate another single-click */
+  /* If dclick not allowed, generate another single-click */
   wxMouseEvent *event = new wxMouseEvent((wx_window && wx_window->doubleClickAllowed) ?
 					 wxEVENT_TYPE_RIGHT_DCLICK : wxEVENT_TYPE_RIGHT_DOWN);
   float px = (float)x;
@@ -2850,17 +2543,11 @@ void wxGetCharSize(HWND wnd, int *x, int *y,wxFont *the_font)
   HFONT was = 0;
   if (the_font&&(fnt=the_font->GetInternalFont(dc)))
   {
-#if DEBUG > 1
-	 wxDebugMsg("wxGetCharSize: Selecting HFONT %X\n", fnt);
-#endif
     was = (HFONT)SelectObject(dc,fnt) ;
   }
   GetTextMetrics(dc, &tm);
   if (the_font && fnt && was)
   {
-#if DEBUG > 1
-    wxDebugMsg("wxGetCharSize: Selecting old HFONT %X\n", was);
-#endif
     SelectObject(dc,was) ;
   }
   wxwmReleaseDC(wnd, dc);
@@ -3279,9 +2966,6 @@ void wxWindow::SetScrollPage(int orient, int page)
     wnd->yscroll_lines_per_page = page;
   }
 
-  if (wxGetOsVersion(NULL, NULL) == wxWIN32S)
-    return;
-
   info.cbSize = sizeof(SCROLLINFO);
   info.nPage = page;
   info.nMin = 0;
@@ -3343,11 +3027,6 @@ int wxWindow::GetScrollPage(int orient)
 // Default OnSize resets scrollbars, if any
 void wxWindow::OnSize(int bad_w, int bad_h)
 {
-#if USE_CONSTRAINTS
-  if (GetAutoLayout())
-    Layout();
-#endif
-
   if (wxWinType != wxTYPE_XWND)
     return;
   wxWnd *wnd = (wxWnd *)handle;
@@ -3429,42 +3108,13 @@ int APIENTRY _EXPORT
 
 void wxSetKeyboardHook(Bool doIt)
 {
-#if 0
-  if (doIt) {
-    wxTheKeyboardHookProc = MakeProcInstance((FARPROC) wxKeyboardHook, wxhInstance);
-    wxTheKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, 
-					 (HOOKPROC)wxTheKeyboardHookProc, 
-					 wxhInstance, GetCurrentThreadId());
-  } else {
-    UnhookWindowsHookEx(wxTheKeyboardHook);
-    FreeProcInstance(wxTheKeyboardHookProc);
-  }
-#endif
 }
 
 int APIENTRY _EXPORT
   wxKeyboardHook(int nCode, WORD wParam, DWORD lParam)
 {
-#if 0
-  DWORD hiWord = HIWORD(lParam);
-  if (nCode != HC_NOREMOVE && ((hiWord & KF_UP) == 0)) {
-    int id;
-    if ((id = wxCharCodeMSWToWX(wParam)) != 0) {
-      wxKeyEvent *event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
-
-      if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
-        event->metaDown = TRUE;
-          
-      event->keyCode = id;
-      event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-      return 0;
-    }
-  }
-#else
   if (nCode >= 0)
     return 0;
-#endif
 
   return (int)CallNextHookEx(wxTheKeyboardHook, nCode, wParam, lParam);
 }

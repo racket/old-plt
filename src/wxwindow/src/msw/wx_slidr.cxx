@@ -7,24 +7,11 @@
  * Copyright:	(c) 1995, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_panel.h"
-#include "wx_slidr.h"
-#include "wx_itemp.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 #define SHOW_MIN_MAX 0
 
 // Slider
-IMPLEMENT_DYNAMIC_CLASS(wxSlider, wxItem)
-
 wxNonlockingHashTable *wxSliderList;
 
 wxSlider::wxSlider(void)
@@ -93,9 +80,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-#if CTL3D
-    Ctl3dSubclassCtl(static_label);
-#endif
     HDC the_dc = GetWindowDC(static_label) ;
     if (labelFont && labelFont->GetInternalFont(the_dc))
       SendMessage(static_label,WM_SETFONT,
@@ -109,9 +93,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 				    STATIC_FLAGS | WS_CLIPSIBLINGS,
 				    0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				    wxhInstance, NULL);
-#if CTL3D
-    Ctl3dSubclassCtl(edit_value);
-#endif
   } else
     edit_value = NULL;
 
@@ -122,9 +103,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 				  STATIC_FLAGS | WS_CLIPSIBLINGS,
 				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				  wxhInstance, NULL);
-# if CTL3D
-  Ctl3dSubclassCtl(static_min);
-# endif
 #else
   static_min = NULL;
 #endif
@@ -142,9 +120,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 				       msStyle | WS_CLIPSIBLINGS,
 				       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				       wxhInstance, NULL);
-#if CTL3D
-  Ctl3dSubclassCtl(scroll_bar);
-#endif
 
   page_size = (int)((max_value-min_value)/10);
   s_max = max_value;
@@ -168,9 +143,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 				  STATIC_FLAGS | WS_CLIPSIBLINGS,
 				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				  wxhInstance, NULL);
-# if CTL3D
-  Ctl3dSubclassCtl(static_max);
-# endif
 #else
   static_max = NULL;
 #endif
@@ -237,11 +209,7 @@ void wxSliderEvent(HWND bar, WORD wParam, WORD pos)
     break;
     
   case SB_THUMBTRACK:
-#ifdef WIN32
     nScrollInc = (signed short)pos - position;
-#else
-    nScrollInc = pos - position;
-#endif
     break;
 
   default:

@@ -7,18 +7,7 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_panel.h"
-#include "wx_lbox.h"
-#include "wx_itemp.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 #define DEFAULT_ITEM_WIDTH  80
 #define DEFAULT_ITEM_HEIGHT 80
@@ -41,7 +30,6 @@ BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 }
 
 // Listbox item
-IMPLEMENT_DYNAMIC_CLASS(wxListBox, wxItem)
 
 wxListBox::wxListBox(void)
 {
@@ -107,9 +95,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-#if CTL3D
-    Ctl3dSubclassCtl(static_label);
-#endif
     HDC the_dc = GetWindowDC(static_label) ;
     if (labelFont && labelFont->GetInternalFont(the_dc))
       SendMessage(static_label,WM_SETFONT,
@@ -140,9 +125,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 				    wstyle | WS_CHILD | WS_CLIPSIBLINGS,
 				    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				    wxhInstance, NULL);
-#if CTL3D
-  Ctl3dSubclassCtl(wx_list);
-#endif
 
   int i;
 
@@ -601,14 +583,6 @@ void wxListBox::SetHorizontalExtent(char *s)
 void
 wxListBox::InsertItems(int nItems, char **Items, int pos)
 {
-#if 0
-  int i;
-  for (i = 0; i < nItems; i++)
-    SendMessage((HWND)ms_handle, LB_INSERTSTRING, i + pos, (LPARAM)Items[i]);
-  no_items += nItems;
-  SetHorizontalExtent(NULL);
-  no_items += nItems;
-#endif
 }
 
 void wxListBox::SetString(int N, char *s)

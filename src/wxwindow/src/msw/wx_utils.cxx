@@ -4,60 +4,21 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_utils.cxx,v 1.5 1998/08/16 19:23:13 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_setup.h"
-#include "wx_utils.h"
-#include "wx_main.h"
-#include "wx_timer.h"
-#include "wx_gdi.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 #include <ctype.h>
 #include <direct.h>
 
 #include <dos.h>
-#ifdef __BORLANDC__ // Please someone tell me which version of Borland needs
-                    // this (3.1 I believe) and how to test for it.
-                    // If this works for Borland 4.0 as well, then no worries.
-#include <dir.h>
-#endif
 
-
-
-#if 0
-#ifdef WIN32
-#include <io.h>
-#endif
-#endif
-
-
-
-/* MATTHEW: [5] Normalize wxSleep(): */
 #define WX_USE_GLOBAL_SLEEP 1
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if 0
-
-
-#ifndef __WATCOMC__
-#include <errno.h>
-#endif
-
-
-#endif
 #include <stdarg.h>
 
 // In the WIN.INI file
@@ -75,38 +36,6 @@ static const char eUSERNAME[]  = "UserName";
 // Get full hostname (eg. DoDo.BSn-Germany.crg.de)
 Bool wxGetHostName(char *buf, int maxSize)
 {
-#if 0
-// This code is Moving to the configuration utility....
-# define MAXHOSTNAMELEN 128
-  char hostname[MAXHOSTNAMELEN + 1];
-  int nRC;
-
-  if ((nRc = gethostname (hostname, MAXHOSTNAMELEN)) == 0)
-    {
-      struct hostent *hostptr;
-      char fullname[MAXHOSTNAMELEN + 1];
-
-      if ((hostptr = gethostbyname (hostname)) != NULL)
-	{
-	  char *tp1, *tp2;
-	  if ((tp1 = strchr (hostname, '.')) == NULL)
-	    {
-	      if ((tp2 = strchr (hostptr->h_name, '.')) != NULL)
-		{
-		  sprintf (fullname, "%s.%s", hostname, tp2 + 1);
-		  strcpy (hostname, fullname);
-		}
-	      else
-		hostname[0] = '\0';	/* better none than not complete */
-	    }
-	  /* else we have complete address */
-	}
-	strncpy(buf, hostname, maxSize - 1);
-	buf[maxSize] = '\0';
-	return TRUE;
-    }
-  return FALSE;
-#else
   char *sysname;
   const char *default_host = "noname";
 
@@ -115,7 +44,6 @@ Bool wxGetHostName(char *buf, int maxSize)
   } else
     strncpy(buf, sysname, maxSize - 1);
   buf[maxSize] = '\0';
-#endif
   return *buf ? TRUE : FALSE;
 }
 
@@ -141,91 +69,16 @@ Bool wxGetUserName(char *buf, int maxSize)
 {
   const char *default_name = "Unknown User";
 
-  extern HANDLE hPenWin; // PenWindows Running?
-  if (hPenWin) {
-    // PenWindows Does have a user concept!
-    // Get the current owner of the recognizer
-    GetPrivateProfileString("Current", "User", default_name, wxBuffer, maxSize - 1, "PENWIN.INI");
-    strncpy(buf, wxBuffer, maxSize - 1);
-  } else {
-    // Could use NIS, MS-Mail or other site specific programs
-    // Use wxWindows configuration data 
-    GetProfileString(WX_SECTION, eUSERNAME, default_name, buf, maxSize - 1);
-  }
+  // Could use NIS, MS-Mail or other site specific programs
+  // Use wxWindows configuration data 
+  GetProfileString(WX_SECTION, eUSERNAME, default_name, buf, maxSize - 1);
+
   return *buf ? TRUE : FALSE;
 }
 
-// Execute a command (e.g. another program) in a
-// system-independent manner.
-
-Bool wxExecute(char **argv, Bool Async)
-{
-  if (*argv == NULL)
-    return FALSE;
-
-  char command[1024];
-  command[0] = '\0';
-
-  int argc;
-  for (argc = 0; argv[argc]; argc++)
-   {
-    if (argc)
-      strcat(command, " ");
-    strcat(command, argv[argc]);
-   }
-
-  return wxExecute((char *)command, Async);
-}
-
-Bool wxExecute(const char *command, Bool Async)
-{
-  if (command == NULL || *command == '\0')
-    return FALSE;
-
-  long Instance_ID = WinExec((LPCSTR)command, SW_SHOW);
-  if (Instance_ID < 32) return(FALSE);
-// WIN32 doesn't have GetModuleUsage!!
-#ifndef WIN32
-  if (Async) {
-    int running;
-    do {
-      wxYield();
-      running = GetModuleUsage((HANDLE)Instance_ID);
-    } while (running);
-  }
-#endif
-  return(TRUE);
-}
-
-//
-// Execute a program in an Interactive Shell
-//
-Bool
-wxShell(const char *command)
-{
-  char *shell;
-  if ((shell = getenv("COMSPEC")) == NULL)
-    shell = "\\COMMAND.COM";
-
-  char tmp[255];
-  if (command && *command)
-    sprintf(tmp, "%s /c %s", shell, command);
-  else
-    strcpy(tmp, shell);
-
-  return wxExecute((char *)tmp, FALSE); /* MATTHEW: BC */
-}
-
-
-
 Bool wxRemoveFile(const char *file)
 {
-// Zortech -- what's the proper define?
-#ifdef ZTC
-  int flag = unlink(file);
-#else
   int flag = remove(file);
-#endif
   if (flag == 0) return TRUE;
   return FALSE;
 }
@@ -242,277 +95,29 @@ Bool wxRmdir(const char *dir)
 
 Bool wxDirExists(const char *dir)
 {
-  /* MATTHEW: [6] Always use same code for Win32, call FindClose */
-#if defined(WIN32)
   WIN32_FIND_DATA fileInfo;
-#else
-#ifdef __BORLANDC__
-  struct ffblk fileInfo;
-#else
-  struct find_t fileInfo;
-#endif
-#endif
 
-#if defined(WIN32)
-	HANDLE h = FindFirstFile((LPTSTR)dir,(LPWIN32_FIND_DATA)&fileInfo);
+  HANDLE h = FindFirstFile((LPTSTR)dir,(LPWIN32_FIND_DATA)&fileInfo);
 
-	if (h==INVALID_HANDLE_VALUE)
-	 return FALSE;
-	else {
-	 FindClose(h);
-	 return (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-	}
-#else
-  // In Borland findfirst has a different argument
-  // ordering from _dos_findfirst. But _dos_findfirst
-  // _should_ be ok in both MS and Borland... why not?
-#ifdef __BORLANDC__
-  return (findfirst(dir, &fileInfo, _A_SUBDIR) == 0  && (fileInfo.ff_attrib & _A_SUBDIR));
-#else
-  return ((_dos_findfirst(dir, _A_SUBDIR, &fileInfo) == 0) && (fileInfo.attrib & _A_SUBDIR));
-#endif
-#endif
+  if (h==INVALID_HANDLE_VALUE)
+    return FALSE;
+  else {
+    FindClose(h);
+    return (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+  }
 }
 
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName(const char *prefix, char *buf)
 {
-#ifndef	WIN32
-  char tmp[144];
-  ::GetTempFileName(0, prefix, 0, tmp);
-#else
   char tmp[MAX_PATH];
   char tmpPath[MAX_PATH];
   ::GetTempPath(MAX_PATH, tmpPath);
   ::GetTempFileName(tmpPath, prefix, 0, tmp);
-#endif
+
   if (buf) strcpy(buf, tmp);
   else buf = copystring(tmp);
   return buf;
-/**** old
-  char tmp[64];
-  ::GetTempFileName(0, prefix, 0, tmp);
-  if (buf) strcpy(buf, tmp);
-  else buf = copystring(tmp);
-  return buf;
-*/
-}
-
-// Get first file name matching given wild card.
-// Flags are reserved for future use.
-
-#ifdef WIN32
-HANDLE wxFileStrucHandle = INVALID_HANDLE_VALUE;
-WIN32_FIND_DATA wxFileStruc;
-#else
-#ifdef __BORLANDC__
-static struct ffblk wxFileStruc;
-#else
-static struct _find_t wxFileStruc;
-#endif
-#endif
-static char *wxFileSpec = NULL;
-static int wxFindFileFlags;
-
-char *wxFindFirstFile(const char *spec, int flags)
-{
-  if (wxFileSpec)
-	 delete[] wxFileSpec;
-  wxFileSpec = copystring(spec);
-  wxFindFileFlags = flags; /* MATTHEW: [5] Remember flags */
-
-  // Find path only so we can concatenate
-  // found file onto path
-  char *p = wxPathOnly(wxFileSpec);
-  if (p && (strlen(p) > 0))
-	 strcpy(wxBuffer, p);
-  else
-	 wxBuffer[0] = 0;
-
-#ifdef WIN32
-  if (wxFileStrucHandle != INVALID_HANDLE_VALUE)
-	 FindClose(wxFileStrucHandle);
-
-  wxFileStrucHandle = FindFirstFile(spec, &wxFileStruc);
-
-  if (wxFileStrucHandle == INVALID_HANDLE_VALUE)
-	 return NULL;
-
-  Bool isdir = !!(wxFileStruc.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-
-  if (isdir && !(flags & wxDIR))
-	 return wxFindNextFile();
-  else if (!isdir && flags && !(flags & wxFILE))
-	 return wxFindNextFile();
-
-  if (wxBuffer[0] != 0)
-	 strcat(wxBuffer, "\\");
-  strcat(wxBuffer, wxFileStruc.cFileName);
-  return wxBuffer;
-#else
-
-  int flag = _A_NORMAL;
-  if (flags & wxDIR) /* MATTHEW: [5] Use & */
-    flag = _A_SUBDIR;
-
-#ifdef __BORLANDC__
-  if (findfirst(spec, &wxFileStruc, flag) == 0)
-#else
-  if (_dos_findfirst(spec, flag, &wxFileStruc) == 0)
-#endif
-  {
-    /* MATTHEW: [5] Check directory flag */
-    char attrib;
-
-#ifdef __BORLANDC__
-    attrib = wxFileStruc.ff_attrib;
-#else
-    attrib = wxFileStruc.attrib;
-#endif
-
-    if (attrib & _A_SUBDIR) {
-      if (!(wxFindFileFlags & wxDIR))
-	return wxFindNextFile();
-    } else if (wxFindFileFlags && !(wxFindFileFlags & wxFILE))
-		return wxFindNextFile();
-
-	 if (wxBuffer[0] != 0)
-		strcat(wxBuffer, "\\");
-
-#ifdef __BORLANDC__
-	 strcat(wxBuffer, wxFileStruc.ff_name);
-#else
-	 strcat(wxBuffer, wxFileStruc.name);
-#endif
-	 return wxBuffer;
-  }
-  else
-    return NULL;
-#endif // WIN32
-}
-
-char *wxFindNextFile(void)
-{
-  // Find path only so we can concatenate
-  // found file onto path
-  char *p = wxPathOnly(wxFileSpec);
-  if (p && (strlen(p) > 0))
-	 strcpy(wxBuffer, p);
-  else
-	 wxBuffer[0] = 0;
-  
- try_again:
-
-#ifdef WIN32
-  if (wxFileStrucHandle == INVALID_HANDLE_VALUE)
-	 return NULL;
-
-  Bool success = FindNextFile(wxFileStrucHandle, &wxFileStruc);
-  if (!success) {
-		FindClose(wxFileStrucHandle);
-      wxFileStrucHandle = INVALID_HANDLE_VALUE;
-		return NULL;
-  }
-
-  Bool isdir = !!(wxFileStruc.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-  
-  if (isdir && !(wxFindFileFlags & wxDIR))
-    goto try_again;
-  else if (!isdir && wxFindFileFlags && !(wxFindFileFlags & wxFILE))
-	 goto try_again;
-
-  if (wxBuffer[0] != 0)
-    strcat(wxBuffer, "\\");
-  strcat(wxBuffer, wxFileStruc.cFileName);
-  return wxBuffer;  
-#else
-
-#ifdef __BORLANDC__
-  if (findnext(&wxFileStruc) == 0)
-#else
-  if (_dos_findnext(&wxFileStruc) == 0)
-#endif
-  {
-    /* MATTHEW: [5] Check directory flag */
-    char attrib;
-
-#ifdef __BORLANDC__
-    attrib = wxFileStruc.ff_attrib;
-#else
-    attrib = wxFileStruc.attrib;
-#endif
-
-    if (attrib & _A_SUBDIR) {
-      if (!(wxFindFileFlags & wxDIR))
-	goto try_again;
-    } else if (wxFindFileFlags && !(wxFindFileFlags & wxFILE))
-      goto try_again;
-
-
-	 if (wxBuffer[0] != 0)
-      strcat(wxBuffer, "\\");
-#ifdef __BORLANDC__
-	 strcat(wxBuffer, wxFileStruc.ff_name);
-#else
-	 strcat(wxBuffer, wxFileStruc.name);
-#endif
-	 return wxBuffer;
-  }
-  else
-    return NULL;
-#endif
-}
-
-// Get current working directory.
-// If buf is NULL, allocates space using new, else
-// copies into buf.
-char *wxGetWorkingDirectory(char *buf, int sz)
-{
-  if (!buf)
-    buf = new char[1000];
-#ifdef __BORLANDC__
-  (void)getcwd(buf, sz);
-#elif __WATCOMC__
-  (void)getcwd(buf, sz);
-#else
-  (void)_getcwd(buf, sz);
-#endif
-  return buf;
-}
-
-Bool wxSetWorkingDirectory(char *d)
-{
-  Bool success = (chdir(d) == 0);
-
-  // Must change drive, too.
-  // How is this implemented in WIN32/NT???
-
-#if !defined(WIN32)
-  Bool isDriveSpec = ((strlen(d) > 1) && (d[1] == ':'));
-  if (isDriveSpec)
-  {
-    char firstChar = d[0];
-
-    // To upper case
-    if (firstChar > 90)
-      firstChar = firstChar - 32;
-
-    // To a drive number
-    unsigned int driveNo = firstChar - 64;
-    if (driveNo > 0)
-    {
-       unsigned int noDrives;
-       _dos_setdrive(driveNo, &noDrives);
-    }
-  }
-#endif
-  return success;
-}
-
-// Get free memory in bytes, or -1 if cannot determine amount (e.g. on UNIX)
-long wxGetFreeMemory(void)
-{
-  return (long)GetFreeSpace(0);
 }
 
 // Consume all events until no more left
@@ -544,19 +149,8 @@ void wxError(const char *msg, const char *title)
 
   int msAns;
 
-#ifndef USE_SEP_WIN_MANAGER
   msAns = MessageBox(NULL, (LPCSTR)wxBuffer, (LPCSTR)title,
 							MB_ICONSTOP | MB_YESNO);
-#else
-  wxwmMessageBox r;
-
-  r.owner = NULL;
-  r.text = (LPCSTR)wxBuffer;
-  r.title = (LPCSTR)title;
-  r.style = MB_ICONSTOP | MB_YESNO;
-  wxwmMessage(WXM_MESSAGE_BOX, (LPARAM)&r);
-  msAns = r.result;
-#endif
 
   if (msAns == IDNO)
 	 wxExit();
@@ -572,11 +166,7 @@ void wxFatalError(const char *msg, const char *title)
 // Emit a beeeeeep
 void wxBell(void)
 {
-// #ifdef WIN32
-//  Beep(1000,1000) ;	// 1kHz during 1 sec.
-// #else
   MessageBeep(MB_OK) ;
-// #endif
 }
 
 int wxGetOsVersion(int *majorVsn, int *minorVsn)
@@ -659,16 +249,6 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
     if (n == 0 || strcmp(wxBuffer, defunkt) == 0)
       return FALSE;
   }
-
-  /* No longer using WIN.INI: */
-#if 0  
-  if (!no_file) {
-    int n = GetProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)defunkt,
-			     (LPSTR)wxBuffer, 1000);
-    if (n == 0 || strcmp(wxBuffer, defunkt) == 0)
-      return FALSE;
-  }
-#endif
 
   if (*value) delete[] (*value);
   *value = copystring(wxBuffer);

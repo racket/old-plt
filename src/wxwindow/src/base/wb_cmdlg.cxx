@@ -7,35 +7,7 @@
  * Copyright:	(c) 1995, Julian Smart
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation "wb_cmdlg.h"
-#endif
-
-#include "common.h"
-#include "wx_gdi.h"
-#include "wx_utils.h"
-#include "wx_mgstr.h"
-#include "wx_types.h"
-#include "wx_frame.h"
-#include "wx_dialg.h"
-#include "wx_slidr.h"
-#include "wx_check.h"
-#include "wx_choic.h"
-#include "wx_txt.h"
-#include "wx_lbox.h"
-#include "wx_rbox.h"
-#include "wx_buttn.h"
-#include "wx_messg.h"
-
-#include "wb_cmdlg.h"
-
-#endif
+#include "wx.h"
 
 #include <stdlib.h>
 
@@ -43,7 +15,7 @@ static char *
 wxDefaultFileSelector(Bool load, const char *what, char *extension, char *default_name)
 {
   char prompt[50];
-  sprintf(prompt, load ? wxSTR_LOAD_FILE : wxSTR_SAVE_FILE, what);
+  sprintf(prompt, load ? "Select file" : "Save file", what);
 
   if (*extension == '.') extension++;
   char wild[60];
@@ -106,11 +78,6 @@ void wxCentreMessage(wxList *messageList)
  * A general purpose dialog box with an OnClose that returns TRUE.
  *
  */
-
-#ifdef __GNUG__
-#pragma implementation
-#pragma interface
-#endif
 
 class wxMessageBoxDialog: public wxDialogBox
 {
@@ -233,7 +200,6 @@ void wxDialogNoButton(wxButton& but, wxEvent& WXUNUSED(event))
   // delete dialog;
 }
 
-/* MATTHEW: So hitting return hit OK button */
 void wxDialogReturn(wxButton& but, wxEvent& event)
 /* "but" isn't really a button, but it's parent is what counts */
 {
@@ -306,12 +272,7 @@ int wxbMessageBox(char *message, char *caption, long type,
   dialog->NewLine();
 
   // Create Buttons in a sub-panel, so they can be centered.
-#if (!defined(wx_xview) && USE_PANEL_IN_PANEL)
-  wxPanel *but_panel = new wxPanel(dialog) ;
-#else
-  // Until sub panels work in XView mode
   wxPanel *but_panel = dialog ;
-#endif
 
   wxButton *ok = NULL;
   wxButton *cancel = NULL;
@@ -319,16 +280,16 @@ int wxbMessageBox(char *message, char *caption, long type,
   wxButton *no = NULL;
 
   if (type & wxYES_NO) {
-    yes = new wxButton(but_panel, (wxFunction)&wxDialogYesButton, wxSTR_YES);
-    no = new wxButton(but_panel, (wxFunction)&wxDialogNoButton, wxSTR_NO);
+    yes = new wxButton(but_panel, (wxFunction)&wxDialogYesButton, "Yes");
+    no = new wxButton(but_panel, (wxFunction)&wxDialogNoButton, "No");
   }
 
   if (type & wxOK) {
-    ok = new wxButton(but_panel, (wxFunction)&wxDialogOkButton, wxSTR_BUTTON_OK);
+    ok = new wxButton(but_panel, (wxFunction)&wxDialogOkButton, "Ok");
   }
 
   if (type & wxCANCEL) {
-    cancel = new wxButton(but_panel, (wxFunction)&wxDialogCancelButton, wxSTR_BUTTON_CANCEL);
+    cancel = new wxButton(but_panel, (wxFunction)&wxDialogCancelButton, "Cancel");
   }
 
   if (ok)
@@ -342,23 +303,11 @@ int wxbMessageBox(char *message, char *caption, long type,
     yes->SetFocus();
   }
 
-#if (!defined(wx_xview) && USE_PANEL_IN_PANEL)
-  but_panel->Fit() ;
-#endif
   dialog->Fit();
-#if (!defined(wx_xview) && USE_PANEL_IN_PANEL)
-  but_panel->Centre(wxHORIZONTAL) ;
-#endif
 
   // Do the message centering
   if (centre)
     wxCentreMessage(messageList);
-
-#if (defined(wx_xview) || !USE_PANEL_IN_PANEL)
-  // Since subpanels don't work on XView, we must center ok button
-  if (ok && !cancel && !yes && !no)
-    ok->Centre();
-#endif
 
   if ((x < 0) && (y < 0))
     dialog->Centre(wxBOTH);

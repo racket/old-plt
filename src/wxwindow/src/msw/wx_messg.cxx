@@ -7,21 +7,7 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_panel.h"
-#include "wx_messg.h"
-#include "wx_itemp.h"
-#include "wx_wmgr.h"
-
-#endif
-
-// Message
-IMPLEMENT_DYNAMIC_CLASS(wxMessage, wxItem)
+#include "wx.h"
 
 wxMessage::wxMessage(void)
 {
@@ -35,13 +21,11 @@ wxMessage::wxMessage(wxPanel *panel, char *label, int x, int y, long style, char
   Create(panel, label, x, y, style, name);
 }
 
-#if USE_BITMAP_MESSAGE
 wxMessage::wxMessage(wxPanel *panel, wxBitmap *image, int x, int y, long style, char *name):
   wxbMessage(panel, image, x, y, style, name)
 {
   Create(panel, image, x, y, style, name);
 }
-#endif
   
 Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, char *name)
 {
@@ -62,9 +46,6 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
 					STATIC_FLAGS | WS_CLIPSIBLINGS,
 					0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 					wxhInstance, NULL);
-#if CTL3D
-  Ctl3dSubclassCtl(static_item);
-#endif
 
   ms_handle = (HANDLE)static_item;
 
@@ -85,7 +66,6 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
   return TRUE;
 }
 
-#if USE_BITMAP_MESSAGE
 Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style, char *name)
 {
   if (!image->Ok() || (image->selectedIntoDC < 0))
@@ -133,7 +113,7 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style
   panel->AdvanceCursor(this);
   return TRUE;
 }
-#endif
+
 
 wxMessage::~wxMessage(void)
 {
@@ -216,16 +196,9 @@ void wxMessage::SetLabel(char *label)
     ::ScreenToClient(cparent->handle, &point);
   }
 
-#if 0
-  /* No resize. */
-  GetTextExtent(label, &w, &h, NULL, NULL, labelFont);
-  MoveWindow((HWND)ms_handle, point.x, point.y, (int)(w + 10), (int)h,
-             TRUE);
-#endif
   SetWindowText((HWND)ms_handle, label);
 }
 
-#if USE_BITMAP_MESSAGE
 void wxMessage::SetLabel(wxBitmap *bitmap)
 {
   if (!bm_label || !bitmap->Ok() || (bitmap->selectedIntoDC < 0))
@@ -235,19 +208,12 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   bm_label = bitmap;
   bm_label->selectedIntoDC++;
 
-#if FAFA_LIB
   int x, y;
   int w, h;
   GetPosition(&x, &y);
   GetSize(&w, &h);
   RECT rect;
   rect.left = x; rect.top = y; rect.right = x + w; rect.bottom = y + h;
-
-#if 0  
-  /* No resize */
-  MoveWindow((HWND)ms_handle, x, y, bitmap->GetWidth(), bitmap->GetHeight(),
-             FALSE);
-#endif
 
   SetBitmapDimensionEx(bitmap->ms_bitmap,
 		       bitmap->GetWidth(),
@@ -258,6 +224,4 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 	      (LPARAM)bitmap->ms_bitmap);
   
   InvalidateRect(GetParent()->GetHWND(), &rect, TRUE);
-#endif
 }
-#endif

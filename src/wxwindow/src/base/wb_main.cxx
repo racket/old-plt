@@ -4,37 +4,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_main.cxx,v 1.2 1998/08/09 20:55:19 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#ifdef __GNUG__
-#pragma implementation
-#endif
-
-#include "common.h"
-#include "wx_setup.h"
-
-#include "wx_panel.h"
-#include "wx_frame.h"
-#include "wx_main.h"
-#include "wx_utils.h"
-#include "wx_gdi.h"
-#include "wx_dc.h"
-#include "wx_dialg.h"
-#include "wx_types.h"
-
-#include "wx_sysev.h"
-#include "wx_dcps.h"
-#endif
+#include "wx.h"
 
 #include <string.h>
 
@@ -51,11 +24,7 @@ wxbApp::wxbApp(wxlanguage_t )
   argc = 0;
   argv = NULL;
   death_processed = FALSE;
-#ifdef wx_msw
   printMode = wxPRINT_WINDOWS;
-#else
-  printMode = wxPRINT_POSTSCRIPT;
-#endif
   work_proc = NULL;
   wx_frame = NULL;
 }
@@ -124,10 +93,12 @@ wxWindow *wxbApp::GetTopWindow(void)
 
 void wxCommonInit(void)
 {
+  wxREGGLOB(wxBuffer);
   wxBuffer = new char[1500];
   
   wxInitializeFontNameDirectory();
 
+  wxREGGLOB(wxTheColourDatabase);
   wxTheColourDatabase = new wxColourDatabase(wxKEY_STRING);
   wxTheColourDatabase->Initialize();
   wxInitializeStockObjects();
@@ -135,9 +106,9 @@ void wxCommonInit(void)
 
   // For PostScript printing
   wxInitializePrintSetupData();
+  wxREGGLOB(wxThePrintPaperDatabase);
   wxThePrintPaperDatabase = new wxPrintPaperDatabase;
   wxThePrintPaperDatabase->CreateDatabase();
-
 }
 
 void wxCommonCleanUp(void)

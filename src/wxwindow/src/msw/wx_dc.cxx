@@ -4,35 +4,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.26 1999/11/29 19:01:48 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-// For some reason, this must be defined for common dialogs to work.
-#ifdef __WATCOMC__
-#define INCLUDE_COMMDLG_H	1
-#endif
-
-#include "wx_privt.h"
-#include "wx_dcpan.h"
-#include "wx_frame.h"
-#include "wx_dc.h"
-#include "wx_dccan.h"
-#include "wx_dcmem.h"
-#include "wx_dcps.h"
-#include "wx_utils.h"
-#include "wx_canvs.h"
-#include "wx_dialg.h"
-#include "wx_main.h"
-#include "wx_wmgr.h"
-
-#endif
+#include "wx.h"
 
 #include "../../../wxcommon/Region.h"
 #include "wx_pdf.h"
@@ -40,11 +15,7 @@
 #include <math.h>
 
 #if USE_COMMON_DIALOGS
-#include <commdlg.h>
-#endif
-
-#ifndef WIN32
-#include <print.h>
+# include <commdlg.h>
 #endif
 
 // Declarations local to this file
@@ -129,9 +100,6 @@ wxDC::~wxDC(void)
 // DC.
 void wxDC::SelectOldObjects(HDC dc)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxDC::SelectOldObjects %X\n", this);
-#endif
   if (dc)
   {
     if (old_bitmap) {
@@ -1299,8 +1267,10 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   if (!dc) return FALSE;
 
-  if (!blit_dc)
+  if (!blit_dc) {
+    wxREGGLOB(blit_dc);
     blit_dc = new wxMemoryDC(1);
+  }
 
   wxMemoryDC *sel = (wxMemoryDC *)source->selectedInto;
   if (sel) sel->SelectObject(NULL);
@@ -1389,8 +1359,6 @@ void wxDC::GetSizeMM(float *width, float *height)
   DoneDC(dc);
 }
 
-IMPLEMENT_DYNAMIC_CLASS(wxCanvasDC, wxDC)
-
 wxCanvasDC::wxCanvasDC(void)
 {
   __type = wxTYPE_DC_CANVAS;
@@ -1460,34 +1428,6 @@ static BOOL DoPrintDlg(PRINTDLG *pd, HWND parent)
 
   return PrintDlg(pd);
 }
-
-#if 0
-extern "C" void (*scheme_console_printf)(char *str, ...);
-static void ShowCaps(char *who, HDC dc)
-{
-  char buffer[1024];
-  SIZE vp, wp;
-
-  ::GetViewportExtEx(dc, &vp);
-  ::GetWindowExtEx(dc, &wp);
-
-  sprintf(buffer,
-	  "%s: size: %d %d; res: %d %d; pixels: %d %d; physical: %d %d vp: %ld %ld; wp: %ld %ld",
-	  who,
-	  GetDeviceCaps(dc, HORZSIZE),
-	  GetDeviceCaps(dc, VERTSIZE),
-	  GetDeviceCaps(dc, HORZRES),
-	  GetDeviceCaps(dc, VERTRES),
-	  GetDeviceCaps(dc, LOGPIXELSX),
-	  GetDeviceCaps(dc, LOGPIXELSY),
-	  GetDeviceCaps(dc, PHYSICALWIDTH),
-	  GetDeviceCaps(dc, PHYSICALHEIGHT),
-	  vp.cx, vp.cy,
-	  wp.cx, wp.cy);
-  
-  scheme_console_printf("%s\n", buffer);
-}
-#endif
 
 wxPrinterDC::wxPrinterDC(char *driver_name, char *device_name, char *file, Bool interactive)
 {
@@ -1569,7 +1509,6 @@ wxPrinterDC::~wxPrinterDC(void)
 
 HDC wxGetPrinterDC(void)
 {
-#if USE_COMMON_DIALOGS
     HDC         hDC;
     LPDEVMODE   lpDevMode = NULL;
     LPDEVNAMES  lpDevNames;
@@ -1600,11 +1539,7 @@ HDC wxGetPrinterDC(void)
     if (pd->hDevMode)
         lpDevMode = (LPDEVMODE)GlobalLock(pd->hDevMode);
 
-#ifdef WIN32
     hDC = CreateDC(lpszDriverName, lpszDeviceName, lpszPortName, (DEVMODE *)lpDevMode);
-#else
-    hDC = CreateDC(lpszDriverName, lpszDeviceName, lpszPortName, (LPSTR)lpDevMode);
-#endif
 
     if (pd->hDevMode && lpDevMode)
         GlobalUnlock(pd->hDevMode);
@@ -1620,9 +1555,6 @@ HDC wxGetPrinterDC(void)
        pd->hDevMode=NULL;
     }
     return(hDC);
-#else
-  return 0;
-#endif
 }
 
 /*
@@ -1710,7 +1642,6 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   // a device context
   if ((!read_only && bitmap->selectedIntoDC) || !bitmap->Ok())
   {
-    // wxFatalError("Error in wxMemoryDC::SelectObject\nBitmap is selected in another wxMemoryDC.\nDelete the first wxMemoryDC or use SelectObject(NULL)");
     return;
   }
 
@@ -1733,7 +1664,6 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 
   if (bm == ERROR)
   {
-    // wxFatalError("Error in wxMemoryDC::SelectObject\nBitmap may not be loaded, or may be selected in another wxMemoryDC.\nDelete the first wxMemoryDC to deselect bitmap.");
     selected_bitmap = NULL;
     if (!read_only) {
       bitmap->selectedInto = NULL;
@@ -1784,8 +1714,6 @@ void wxMemoryDC::GetSize(float *width, float *height)
  * Panel device context
  */
  
-IMPLEMENT_DYNAMIC_CLASS(wxPanelDC, wxCanvasDC)
-
 wxPanelDC::wxPanelDC(void)
 {
   __type = wxTYPE_DC_PANEL;
@@ -1802,9 +1730,7 @@ wxPanelDC::~wxPanelDC(void)
 {
 }
 
-
 // Create a DC representing the whole screen
-IMPLEMENT_DYNAMIC_CLASS(wxScreenDC, wxCanvasDC)
 
 wxScreenDC::wxScreenDC(void)
 {

@@ -540,21 +540,24 @@ static void Key(w, event, params, num_params)
     } else {
       /* Change top-level menu: */
       if (mw->menu.state && mw->menu.state->prev && mw->menu.state->prev->selected) {
-	menu_item *item = mw->menu.state->prev->selected;
-	if (keysym == XK_Right) {
-	  if (item->next)
-	    item = item->next;
-	  else
-	    item = mw->menu.state->prev->menu;
-	} else {
-	  if (item->prev)
-	    item = item->prev;
-	  else {
-	    while (item->next)
+	menu_item *item, *orig_item;
+	item = orig_item = mw->menu.state->prev->selected;
+	do {
+	  if (keysym == XK_Right) {
+	    if (item->next)
 	      item = item->next;
+	    else
+	      item = mw->menu.state->prev->menu;
+	  } else {
+	    if (item->prev)
+	      item = item->prev;
+	    else {
+	      while (item->next)
+		item = item->next;
+	    }
 	  }
-	}
-	if (item) {
+	} while (item && (item != orig_item) && !item->enabled);
+	if (item && (item != orig_item)) {
 	  UnhighlightItem(mw, mw->menu.state->prev, mw->menu.state->prev->selected);
 	  HighlightItem(mw, mw->menu.state, item);
 	}

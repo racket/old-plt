@@ -121,7 +121,7 @@
 
  ;; menu item title
  (log-definitions-and-interactions "Log Definitions and Interactions...")
- (stop-logging "Stop loggging")
+ (stop-logging "Stop logging")
  (please-choose-a-log-directory "Please choose a log directory")
  (logging-to "Logging to: ")
  (erase-log-directory-contents "Erase contents of log directory: ~a?")

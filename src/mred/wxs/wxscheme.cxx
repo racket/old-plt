@@ -1536,10 +1536,17 @@ static int check_sema(void *s)
   if (!*(void **)s)
     return 1;
   else {
-    if (!scheme_wait_sema(*(Scheme_Object **)s, 1))
+    if (!scheme_wait_on_waitable(*(Scheme_Object **)s, 1))
       return 0;
     *(void **)s = NULL;
     return 1;
+  }
+}
+
+static void sema_needs_wakeup(void *s, void *fds)
+{
+  if (*(void **)s) {
+    scheme_waitable_needs_wakeup(*(Scheme_Object **)s, fds);
   }
 }
 
@@ -1556,13 +1563,13 @@ Bool wxSchemeYield(void *sema)
   } else if (sema) {
     void **s;
 
-    if (!SCHEME_SEMAP((Scheme_Object *)sema))
-      scheme_wrong_type("yield", "semaphore or 'wait", -1, 0, (Scheme_Object **)&sema);
+    if (!scheme_is_waitable((Scheme_Object *)sema))
+      scheme_wrong_type("yield", "waitable or 'wait", -1, 0, (Scheme_Object **)&sema);
 
     s = new void*;
     *s = sema;
 
-    wxDispatchEventsUntil(check_sema, s);
+    wxDispatchEventsUntilWakeable(check_sema, sema_needs_wakeup, s);
 
     return 1;
   } else

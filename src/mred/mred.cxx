@@ -1394,7 +1394,7 @@ void wxDoEvents()
   }
 }
 
-void wxDispatchEventsUntil(int (*f)(void *), void *data)
+void wxDispatchEventsUntilWakeable(wxDispatch_Check_Fun f, wxDispatch_Needs_Wakeup_Fun wu, void *data)
 {
   MrEdContext *c;
   c = MrEdGetContext();
@@ -1407,7 +1407,7 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
       scheme_current_thread->block_descriptor = -1;
       scheme_current_thread->blocker = (Scheme_Object *)data;
       scheme_current_thread->block_check = (Scheme_Ready_Fun)f;
-      scheme_current_thread->block_needs_wakeup = NULL;
+      scheme_current_thread->block_needs_wakeup = (Scheme_Needs_Wakeup_Fun)wu;
       do {
 	scheme_thread_block(0);
       } while (!f(data));
@@ -1420,6 +1420,11 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
       MrEdDoNextEvent(c, f, data);
     } while (!f(data));
   }
+}
+
+void wxDispatchEventsUntil(wxDispatch_Check_Fun f, void *data)
+{
+  wxDispatchEventsUntilWakeable(f, NULL, data);
 }
 
 static SLEEP_PROC_PTR mzsleep;
@@ -2770,6 +2775,11 @@ wxFrame *MrEdApp::OnInit(void)
 			 fixup_eventspace_hop_val,
 			 1, 0);
 #endif
+
+  scheme_add_waitable(mred_eventspace_type,
+		      (Scheme_Ready_Fun)check_eventspace_inactive,
+		      NULL,
+		      NULL);
 
 #ifdef MZ_PRECISE_GC
   mmc = (MrEdContext *)GC_malloc_one_tagged(sizeof(MrEdContext));

@@ -1,11 +1,11 @@
 
 (module file-unit mzscheme
-  (import (lib "unitsig.ss"))
-  (import (lib "include.ss"))
+  (require (lib "unitsig.ss"))
+  (require (lib "include.ss"))
 
-  (import "file-sig.ss")
+  (require "file-sig.ss")
 
-  (export dynext:file@)
+  (provide dynext:file@)
 
   (define dynext:file@
     (unit/sig dynext:file^

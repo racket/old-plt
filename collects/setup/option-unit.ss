@@ -1,10 +1,10 @@
 
 (module option-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "option-sig.ss")
+  (require "option-sig.ss")
 
-  (export setup:option@)
+  (provide setup:option@)
 
   (define setup:option@
     (unit/sig setup-option^

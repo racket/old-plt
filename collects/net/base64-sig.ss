@@ -1,8 +1,8 @@
 
 (module base64-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export net:base64^)
+  (provide net:base64^)
 
   (define-signature net:base64^
     (base64-encode-stream

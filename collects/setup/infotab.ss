@@ -37,9 +37,9 @@
 		       [(name) name]
 		       ...
 		       [else (fail)])]))
-		 (export #%info-lookup))))))])))
+		 (provide #%info-lookup))))))])))
 
-  (export (rename info-module-begin #%module-begin)
+  (provide (rename info-module-begin #%module-begin)
 	  #%app #%datum #%unbound
 	  define quote
 	  list cons car cdr quasiquote unquote unquote-splicing))

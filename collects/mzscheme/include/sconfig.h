@@ -91,6 +91,7 @@
 # endif
 # define USE_OSKIT_CONSOLE
 # define FILES_HAVE_FDS
+# define USE_FD_PORTS
 # define FIXED_FD_LIMIT 256
 # define USE_UNIX_SOCKETS_TCP
 # define USE_FCNTL_O_NONBLOCK
@@ -342,6 +343,40 @@ int scheme_solaris_semaphore_try_down(void *);
 
 #endif
 
+  /************** Mac OS X with cc (MzScheme only?) ****************/
+
+# if defined(__APPLE__) && defined(__ppc__) && !defined(__MWERKS__)
+  /* hard to believe we can't do better */
+
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosx"
+
+# include "uconfig.h"
+# undef HAS_STANDARD_IOB
+
+# define HAS_BSD_IOB
+
+# define STACK_GROWS_DOWN
+# define USE_MAP_ANON
+
+/* can't figure out how (or even whether) dynamic loading works */
+# undef UNIX_DYNAMIC_LOAD
+/*# ifdef FREEBSD_VERSION_2x
+#  define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
+# endif*/
+
+# define USE_IEEE_FP_PREDS
+# define POW_HANDLES_INF_CORRECTLY
+
+# define USE_DYNAMIC_FDSET_SIZE
+
+# define SIGSET_IS_SIGNAL
+
+# define USE_TM_GMTOFF_FIELD
+
+# define FLAGS_ALREADY_SET
+
+#endif
+
   /************** BeOS with egcs (and CodeWarrior?) ****************/
 
 #if defined(__BEOS__)
@@ -498,7 +533,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
   /************** ALPHA/OSF1 with gcc ****************/
 
-#if defined(__digital__) && defined(__unix__)
+# if (defined(__alpha) || defined(__alpha__)) && !defined(LINUX)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-osf1"
 
@@ -1333,6 +1368,9 @@ int scheme_pthread_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
+
+ /* USE_MAP_ANON indicates that mmap should use BSD's MAP_ANON flag
+    rather than trying to open /dev/zero */
 
  /* REGISTER_POOR_MACHINE guides a hand optimization that seems to
     be work best one way for Sparc machines, and better the other

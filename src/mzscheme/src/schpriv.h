@@ -413,21 +413,23 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
+
 Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c);
 void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname);
-Scheme_Object *scheme_make_module_rename(long phase, int nonmodule);
+
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o);
 
-Scheme_Object *scheme_stx_content(Scheme_Object *o);
-Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
-
+Scheme_Object *scheme_make_module_rename(long phase, int nonmodule);
 void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname, 
 				 Scheme_Object *locname, Scheme_Object *exname);
 void scheme_extend_module_rename_with_kernel(Scheme_Object *rn);
 void scheme_remove_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname);
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
+
+Scheme_Object *scheme_stx_content(Scheme_Object *o);
+Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase);
@@ -1497,6 +1499,7 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 extern Scheme_Env *scheme_initial_env;
 
 void scheme_install_initial_module_set(Scheme_Env *env);
+Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

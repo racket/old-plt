@@ -1,11 +1,11 @@
 
 
 (module base64-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "base64-sig.ss")
+  (require "base64-sig.ss")
 
-  (export net:base64@)
+  (provide net:base64@)
   (define net:base64@
     (unit/sig net:base64^
       (import)

@@ -36,16 +36,16 @@
 ;;; ------------------------------------------------------------
 
 (module analyze mzscheme
-  (import (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	  (lib "list.ss")
 	  (lib "etc.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
-  (import "../sig.ss")
+  (require "sig.ss")
+  (require "../sig.ss")
 
-  (export analyze@)
+  (provide analyze@)
   (define analyze@
     (unit/sig compiler:analyze^
       (import (compiler:option : compiler:option^)
@@ -1195,7 +1195,7 @@
 			 (let* ([fun (let ([v (analyze!-sv (zodiac:app-fun ast) env inlined)])
 				       (if (zodiac:varref? v)
 					   v
-					; known non-procedure!
+					   ;; known non-procedure!
 					   (let ([var (zodiac:app-fun ast)])
 					     ((if (compiler:option:stupid)
 						  compiler:warning 
@@ -1209,7 +1209,7 @@
 				[primfun (app-prim-name (get-annotation ast))]
 				[multi (if primfun
 					   (let ([a (primitive-result-arity 
-						     (global-defined-value primfun))])
+						     (dynamic-require '#%kernel primfun))])
 					     (cond
 					      [(and (number? a) (= a 1)) #f]
 					      [(number? a) #t]

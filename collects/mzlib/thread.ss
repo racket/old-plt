@@ -1,8 +1,8 @@
 
 (module thread mzscheme
-  (import "spidey.ss")
+  (require "spidey.ss")
 
-  (export consumer-thread
+  (provide consumer-thread
 	  merge-input
 	  with-semaphore
 	  semaphore-wait-multiple

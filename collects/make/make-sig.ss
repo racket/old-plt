@@ -1,8 +1,8 @@
 
 (module make-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export make^)
+  (provide make^)
 
   (define-signature make^
     (make/proc

@@ -32,14 +32,14 @@
 ;;; ------------------------------------------------------------
 
 (module prephase mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
-  (import "../sig.ss")
+  (require "sig.ss")
+  (require "../sig.ss")
 
-  (export prephase@)
+  (provide prephase@)
   (define prephase@
     (unit/sig
 	compiler:prephase^

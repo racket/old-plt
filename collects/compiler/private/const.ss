@@ -11,16 +11,16 @@
 ;  that is prefixed onto the beginning of the program.
 
 (module const mzscheme
-  (import (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	  (lib "list.ss")
 	  (lib "etc.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
-  (import "../sig.ss")
+  (require "sig.ss")
+  (require "../sig.ss")
 
-  (export const@)
+  (provide const@)
   (define const@
     (unit/sig compiler:const^
       (import (compiler:option : compiler:option^)

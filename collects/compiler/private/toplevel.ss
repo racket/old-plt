@@ -3,11 +3,11 @@
 ;; (c) 1997-2001 PLT
 
 (module toplevel mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "sig.ss")
+  (require "sig.ss")
 
-  (export toplevel@)
+  (provide toplevel@)
   (define toplevel@
     (unit/sig
 	compiler:top-level^

@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995-2000 Matthew Flatt
+  Copyright (c) 1995-2001 Matthew Flatt
   All rights reserved.
 
   Please see the full copyright in the documentation.
@@ -106,7 +106,7 @@ void (*scheme_wrong_return_arity)(const char *where,
 			       int expected, int got,
 			       Scheme_Object **argv,
 			       const char *context_detail, ...);
-void (*scheme_unbound_global)(Scheme_Object *name) ;
+void (*scheme_unbound_global)(Scheme_Bucket *b);
 Scheme_Object *(*scheme_dynamic_wind)(void (*pre)(void *),
 				   Scheme_Object *(*act)(void *),
 				   void (*post)(void *), 
@@ -116,6 +116,7 @@ Scheme_Object *(*scheme_dynamic_wind)(void (*pre)(void *),
 /*                                 types                                  */
 /*========================================================================*/
 Scheme_Type (*scheme_make_type)(const char *name);
+char *(*scheme_get_type_name)(Scheme_Type type);
 /* Type readers & writers for compiled code data */
 void (*scheme_install_type_reader)(Scheme_Type type, Scheme_Type_Reader f);
 void (*scheme_install_type_writer)(Scheme_Type type, Scheme_Type_Writer f);
@@ -135,10 +136,10 @@ Scheme_Object *scheme_multiple_values;
 /*========================================================================*/
 Scheme_Object *(*scheme_eval)(Scheme_Object *obj, Scheme_Env *env);
 Scheme_Object *(*scheme_eval_multi)(Scheme_Object *obj, Scheme_Env *env);
-Scheme_Object *(*scheme_eval_compiled)(Scheme_Object *obj);
-Scheme_Object *(*scheme_eval_compiled_multi)(Scheme_Object *obj);
-Scheme_Object *(*_scheme_eval_compiled)(Scheme_Object *obj);
-Scheme_Object *(*_scheme_eval_compiled_multi)(Scheme_Object *obj);
+Scheme_Object *(*scheme_eval_compiled)(Scheme_Object *obj, Scheme_Env *env);
+Scheme_Object *(*scheme_eval_compiled_multi)(Scheme_Object *obj, Scheme_Env *env);
+Scheme_Object *(*_scheme_eval_compiled)(Scheme_Object *obj, Scheme_Env *env);
+Scheme_Object *(*_scheme_eval_compiled_multi)(Scheme_Object *obj, Scheme_Env *env);
 #ifndef MZ_REAL_THREADS
 Scheme_Object *(*scheme_apply)(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 Scheme_Object *(*scheme_apply_multi)(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
@@ -260,8 +261,8 @@ Scheme_Object *(*scheme_make_folding_closed_prim)(Scheme_Closed_Prim *prim,
 					       void *data, const char *name,
 					       short mina, short maxa,
 					       short functional);
-Scheme_Object *(*scheme_make_closure)(Scheme_Env *env, Scheme_Object *code);
 Scheme_Object *(*scheme_make_pair)(Scheme_Object *car, Scheme_Object *cdr);
+Scheme_Object *(*scheme_make_immutable_pair)(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *(*scheme_make_string)(const char *chars);
 Scheme_Object *(*scheme_make_sized_string)(char *chars, long len, int copy);
 Scheme_Object *(*scheme_make_sized_offset_string)(char *chars, long d, long len, int copy);
@@ -277,8 +278,6 @@ Scheme_Object *(*scheme_make_double)(double d);
 Scheme_Object *(*scheme_make_float)(float f) ;
 #endif
 Scheme_Object *(*scheme_make_char)(char ch);
-Scheme_Object *(*scheme_make_promise)(Scheme_Object *expr, Scheme_Env *env);
-Scheme_Object *(*scheme_make_promise_from_thunk)(Scheme_Object *expr);
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_make_sema)(long v);
 void (*scheme_post_sema)(Scheme_Object *o);
@@ -338,7 +337,7 @@ int (*scheme_is_inexact)(Scheme_Object *n);
 /*========================================================================*/
 Scheme_Object *(*scheme_expand)(Scheme_Object *form, Scheme_Env *env);
 Scheme_Object *(*scheme_compile)(Scheme_Object *form, Scheme_Env *env, int writeable);
-Scheme_Object *(*scheme_make_promise_value)(Scheme_Object *compiled_expr);
+Scheme_Object *(*scheme_link)(Scheme_Object *compiled, Scheme_Env *env);
 /*========================================================================*/
 /*                               ports                                    */
 /*========================================================================*/
@@ -428,21 +427,24 @@ int (*scheme_return_eof_for_error)();
 /*========================================================================*/
 Scheme_Object *(*scheme_make_namespace)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_namespace_option)(Scheme_Object *key, void (*f)(Scheme_Env *));
+void (*scheme_copy_from_original_env)(Scheme_Env *env);
 void (*scheme_add_global)(const char *name, Scheme_Object *val, Scheme_Env *env);
-void (*scheme_add_global_constant)(const char *name, Scheme_Object *v, Scheme_Env *env);
 void (*scheme_add_global_keyword)(const char *name, Scheme_Object *v, Scheme_Env *env);
+void (*scheme_add_global_constant)(const char *name, Scheme_Object *v, Scheme_Env *env);
 void (*scheme_remove_global)(const char *name, Scheme_Env *env);
-void (*scheme_remove_global_constant)(const char *name, Scheme_Env *env);
 void (*scheme_add_global_symbol)(Scheme_Object *name, Scheme_Object *val, 
 			      Scheme_Env *env);
 void (*scheme_remove_global_symbol)(Scheme_Object *name, Scheme_Env *env);
 void (*scheme_add_global_constant_symbol)(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
-void (*scheme_set_keyword)(Scheme_Object *name, Scheme_Env *env);
 Scheme_Object *(*scheme_make_envunbox)(Scheme_Object *value);
 Scheme_Object *(*scheme_lookup_global)(Scheme_Object *symbol, Scheme_Env *env);
 Scheme_Bucket *(*scheme_global_bucket)(Scheme_Object *symbol, Scheme_Env *env);
+Scheme_Bucket *(*scheme_global_keyword_bucket)(Scheme_Object *symbol, Scheme_Env *env);
 void (*scheme_set_global_bucket)(char *proc, Scheme_Bucket *var, Scheme_Object *val,
 			      int set_undef);
+void (*scheme_save_initial_module_set)(Scheme_Env *env);
+Scheme_Env *(*scheme_primitive_module)(Scheme_Object *name, Scheme_Env *for_env);
+void (*scheme_finish_primitive_module)(Scheme_Env *env);
 /*========================================================================*/
 /*                                symbols                                 */
 /*========================================================================*/
@@ -464,6 +466,7 @@ Scheme_Object **(*scheme_make_struct_names)(Scheme_Object *base,
 					 int flags, int *count_out);
 Scheme_Object *(*scheme_make_struct_type)(Scheme_Object *base, 
 				       Scheme_Object *parent, 
+				       Scheme_Object *inspector,
 				       int num_fields);
 Scheme_Object *(*scheme_make_struct_instance)(Scheme_Object *stype,
 					   int argc,
@@ -471,61 +474,6 @@ Scheme_Object *(*scheme_make_struct_instance)(Scheme_Object *stype,
 int (*scheme_is_struct_instance)(Scheme_Object *type, Scheme_Object *v);
 Scheme_Object *(*scheme_struct_ref)(Scheme_Object *s, int pos);
 void (*scheme_struct_set)(Scheme_Object *s, int pos, Scheme_Object *v);
-/*========================================================================*/
-/*                                objects                                 */
-/*========================================================================*/
-#ifndef NO_OBJECT_SYSTEM
-int (*scheme_is_subclass)(Scheme_Object *sub, Scheme_Object *parent);
-int (*scheme_is_implementation)(Scheme_Object *cl, Scheme_Object *in);
-int (*scheme_is_interface_extension)(Scheme_Object *n1, Scheme_Object *n2);
-int (*scheme_is_a)(Scheme_Object *obj, Scheme_Object *sclass);
-const char *(*scheme_get_class_name)(Scheme_Object *cl, int *len);
-const char *(*scheme_get_interface_name)(Scheme_Object *cl, int *len);
-Scheme_Object *(*scheme_make_object)(Scheme_Object *sclass, 
-				  int argc, Scheme_Object **argv);
-Scheme_Object *(*scheme_make_uninited_object)(Scheme_Object *sclass);
-Scheme_Object *(*scheme_find_ivar)(Scheme_Object *obj, Scheme_Object *sym, int force);
-/* OLD class-making interface (Still used by xctocc) */
-Scheme_Object *(*scheme_make_class)(const char *name, Scheme_Object *sup, 
-				 Scheme_Method_Prim *init, int num_methods);
-void (*scheme_add_method)(Scheme_Object *cl, const char *name, 
-		       Scheme_Method_Prim *f);
-void (*scheme_add_method_w_arity)(Scheme_Object *cl, const char *name, 
-			       Scheme_Method_Prim *f, int mina, int maxa);
-void (*scheme_made_class)(Scheme_Object *cl);
-Scheme_Object *(*scheme_class_to_interface)(Scheme_Object *cl, char *name);
-/* NEW class-making interface */
-struct Scheme_Class_Assembly *(*scheme_make_class_assembly)(const char *name, int n_interfaces,
-							 int n_public, Scheme_Object **names,
-							 int n_override, Scheme_Object **onames,
-							 int n_inh, Scheme_Object **inheritd,
-							 int n_ren, Scheme_Object **renames,
-							 int mina, int maxa,
-							 Scheme_Instance_Init_Proc *initproc);
-Scheme_Object *(*scheme_create_class)(struct Scheme_Class_Assembly *a, void *data,
-				   Scheme_Object *super, Scheme_Object **interfaces);
-struct Scheme_Interface_Assembly *(*scheme_make_interface_assembly)(const char *name, int n_supers, 
-								 int n_names, 
-								 Scheme_Object **names);
-Scheme_Object *(*scheme_create_interface)(struct Scheme_Interface_Assembly *a,
-				       Scheme_Object **supers);
-Scheme_Object *(*scheme_apply_generic_data)(Scheme_Object *gdata, 
-					 Scheme_Object *sobj, int force);
-Scheme_Object *(*scheme_get_generic_data)(Scheme_Object *cl, 
-				       Scheme_Object *name);
-#endif
-/*========================================================================*/
-/*                                 units                                  */
-/*========================================================================*/
-Scheme_Object *(*scheme_invoke_unit)(Scheme_Object *functor, int num_ins, 
-				  Scheme_Object **ins, Scheme_Object **anchors,
-				  int tail, int multi);
-Scheme_Object *(*scheme_assemble_compound_unit)(Scheme_Object *imports,
-					     Scheme_Object *links,
-					     Scheme_Object *exports);
-Scheme_Object *(*scheme_make_compound_unit)(Scheme_Object *data_in, 
-					 Scheme_Object **subs_in);
-const char *(*scheme_get_unit_name)(Scheme_Object *cl, int *len);
 /*========================================================================*/
 /*                              utilities                                 */
 /*========================================================================*/
@@ -557,7 +505,6 @@ Scheme_Object *(*scheme_load_extension)(const char *filename, Scheme_Env *env);
 void (*scheme_register_extension_global)(void *ptr, long size);
 long (*scheme_get_milliseconds)(void);
 long (*scheme_get_process_milliseconds)(void);
-void (*scheme_rep)(void);
 char *(*scheme_banner)(void);
 char *(*scheme_version)(void);
 int (*scheme_check_proc_arity)(const char *where, int a,

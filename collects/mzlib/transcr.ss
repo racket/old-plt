@@ -1,6 +1,6 @@
 
 (module transcr mzscheme
-  (export (rename -transcript-on transcript-on)
+  (provide (rename -transcript-on transcript-on)
 	  (rename -transcript-off transcript-off))
 
   (define-values (-transcript-on -transcript-off)

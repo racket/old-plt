@@ -2,9 +2,9 @@
 (module sigutil mzscheme
   ;; Used by signedunit.ss 
 
-  (import "sigmatch.ss")
-  (import "../exstruct.ss")
-  (import "../unit.ss")
+  (require "sigmatch.ss")
+  (require "../exstruct.ss")
+  (require "../unit.ss")
 
   (define-struct signature (name    ; sym
 			    src     ; sym
@@ -953,7 +953,7 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (export parse-unit
+  (provide parse-unit
 	  parse-compound-unit
 	  parse-invoke-vars
 

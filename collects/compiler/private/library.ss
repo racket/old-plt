@@ -3,15 +3,15 @@
 ;; (c) 1997-8 PLT, Rice University
 
 (module library mzscheme
-  (import (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	  (lib "list.ss")
 	  (lib "etc.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
+  (require "sig.ss")
 
-  (export library@)
+  (provide library@)
   (define library@
     (unit/sig compiler:library^
       (import (zodiac : zodiac^))
@@ -336,4 +336,4 @@
 	 " "))
 
       (define (global-defined-value* v)
-	(and v (global-defined-value v))))))
+	(and v (namespace-variable-binding v))))))

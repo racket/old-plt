@@ -1,12 +1,11 @@
 
 (module compat mzscheme
-  (import "list.ss")
+  (require "list.ss")
 
-  (export real-time
+  (provide real-time
 	  1+ 1-
 	  >=? <=? >? <? =?
 	  flush-output-port
-	  bound?
 	  sort
 	  gentemp
 	  atom?
@@ -30,8 +29,6 @@
   (define sort ; Chez argument order
     (lambda (less-than? l)
       (mergesort l less-than?)))
-
-  (define bound? defined?)
 
   (define flush-output-port flush-output)
 

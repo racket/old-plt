@@ -1,8 +1,8 @@
 
 (module head-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export net:head^)
+  (provide net:head^)
   (define-signature net:head^
     (empty-header
      validate-header

@@ -1,8 +1,8 @@
 
 (module compile-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export dynext:compile^)
+  (provide dynext:compile^)
   
   (define-signature dynext:compile^
     (compile-extension

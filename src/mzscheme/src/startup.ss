@@ -4,13 +4,14 @@
 ;; It implements, in a non-bootstrapping way, all of the MzScheme syntax
 ;; and "primitives" that are not implemented in the kernel.
 
-;; Replace the content of this file to get a new set of initial module
-;; definitions, but beware that the stand-alone MzScheme program
-;; relies on some of the definitions. For example, it requires
-;; `mzscheme' into the initial namespace. (This is not an issue
-;; when using libmzscheme in an embedding application.)
+;; Replace the content of this file to get a different set of initial
+;; module definitions and initial imports. The top-level `require'
+;; works in a special way for this file: for each variable
+;; (non-syntax) import, it copies the binding to a fresh top-level
+;; variable.
 
-;; Do not use block comments (with #| and |#) in this file.
+;; Do not use block comments (with #| and |#) in this file. The 
+;; pre-processing script can't handle them.
 
 ;;----------------------------------------------------------------------
 ;; basic syntax utilities
@@ -2114,3 +2115,13 @@
 	   (all-from-except #%kernel #%module-begin)
 	   (rename syntax-rules-module-begin #%module-begin)
 	   (rename #%module-begin #%plain-module-begin)))
+
+;;----------------------------------------------------------------------
+;; init namespace
+
+(begin
+  ;; Special start-up require copies bindings to top-level
+  (require mzscheme)
+  (require-for-syntax mzscheme))
+
+(current-module-name-resolver standard-module-name-resolver)

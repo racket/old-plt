@@ -54,13 +54,12 @@ static Scheme_Object *kernel_symbol;
 /* locals */
 static Scheme_Env *make_env(Scheme_Env *base, int semi);
 static void make_init_env(void);
-static Scheme_Object *list_globals(int argc, Scheme_Object *argv[]);
-static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
-static Scheme_Object *global_defined_value(int, Scheme_Object *[]);
+
+static Scheme_Object *namespace_variable_binding(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
-static Scheme_Object *id_macro(int argc, Scheme_Object *argv[]);
+static Scheme_Object *set_expander(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_variable(Scheme_Object *obj);
 static Scheme_Object *read_variable(Scheme_Object *obj);
@@ -133,6 +132,8 @@ Scheme_Env *scheme_basic_env()
 
     scheme_make_thread();
     scheme_init_error_escape_proc(scheme_current_thread);
+
+    /* FIXME: this isn't right */
 
     env = scheme_make_empty_env();
     scheme_require_from_original_env(env, 0);
@@ -245,23 +246,20 @@ Scheme_Env *scheme_basic_env()
   make_init_env();
 
   env = scheme_make_empty_env();
-  scheme_require_from_original_env(env, 0);
-
-  scheme_prepare_exp_env(env);
-  scheme_require_from_original_env(env->exp_env, 0);
-
-  scheme_add_embedded_builtins(env);
+  scheme_require_from_original_env(env, 1); /* Need kernel syntax... */
 
   scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
+
+  scheme_add_embedded_builtins(env);
+
+  scheme_save_initial_module_set(env);
 
   scheme_init_error_escape_proc(scheme_current_thread);
 
   scheme_starting_up = 0;
 
   scheme_init_getenv();
-
-  scheme_save_initial_module_set(env);
 
 #ifdef TIME_STARTUP_PROCESS
   printf("done @ %ld\n#endif\n", scheme_get_process_milliseconds());
@@ -345,23 +343,12 @@ static void make_init_env(void)
 
   MARK_START_TIME();
 
-  scheme_add_global_constant("make-global-value-list",
-			     scheme_make_prim_w_arity(list_globals,
-						      "make-global-value-list",
-						      0, 0),
-			     env);
-  
-  scheme_add_global_constant("defined?", 
-			     scheme_make_prim_w_arity(defined,
-						      "defined?",
-						      1, 1),
-			     env);
-  scheme_add_global_constant("global-defined-value", 
-			     scheme_make_prim_w_arity(global_defined_value,
-						      "global-defined-value",
+  scheme_add_global_constant("namespace-variable-binding",
+			     scheme_make_prim_w_arity(namespace_variable_binding,
+						      "namespace-variable-binding",
 						      1, 2),
 			     env);
-  
+
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
 						      "syntax-local-value",
@@ -379,7 +366,7 @@ static void make_init_env(void)
 			     env);
 
   scheme_add_global_constant("set!-expander", 
-			     scheme_make_prim_w_arity(id_macro,
+			     scheme_make_prim_w_arity(set_expander,
 						      "set!-expander",
 						      1, 1),
 			     env);
@@ -535,6 +522,35 @@ void scheme_prepare_exp_env(Scheme_Env *env)
   }
 }
 
+Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home)
+{
+  Scheme_Hash_Table *r;
+  Scheme_Bucket **bs;
+  int i;
+
+  r = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  if (home)
+    r->with_home = 1;
+
+  bs = ht->buckets;
+
+  for (i = ht->size; i--; ) {
+    Scheme_Bucket *b = bs[i];
+    if (b && b->val) {
+      Scheme_Object *name = (Scheme_Object *)b->key;
+      Scheme_Object *val = (Scheme_Object *)b->val;
+
+      b = scheme_bucket_from_table(r, (const char *)name);
+      b->val = val;
+      if (home)
+	((Scheme_Bucket_With_Home *)b)->home = home;
+    }
+  }
+
+  return r;
+}
+
+
 void
 scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym, 
 			    Scheme_Object *obj, 
@@ -610,41 +626,6 @@ scheme_remove_global(const char *name, Scheme_Env *env)
   sym = scheme_intern_symbol(name);
 
   scheme_remove_global_symbol(sym, env);
-}
-
-void scheme_copy_from_original_env(Scheme_Env *env)
-{
-  Scheme_Hash_Table *ht;
-  Scheme_Bucket **bs;
-  Scheme_Object *call_ec;
-  int i;
-  
-  ht = scheme_initial_env->toplevel;
-  bs = ht->buckets;
-
-  if (scheme_escape_continuations_only)
-    call_ec = scheme_lookup_global(scheme_intern_symbol("call/ec"), scheme_initial_env);
-  else
-    call_ec = NULL;
-  
-  for (i = ht->size; i--; ) {
-    Scheme_Bucket *b = bs[i];
-    if (b && b->val) {
-      Scheme_Object *name = (Scheme_Object *)b->key;
-      Scheme_Object *val = (Scheme_Object *)b->val;
-
-      if (call_ec) {
-	char *s = SCHEME_SYM_VAL(name);
-	/* WARNING: s is GC-misaligned... */
-	if ((s[0] == 'c') && (!strcmp(s, "call/cc") || !strcmp(s, "call-with-current-continuation")))
-	  val = call_ec;
-      }
-
-      scheme_add_global_constant_symbol(name, val, env);
-
-      scheme_shadow(env, name, 0);
-    }
-  }
 }
 
 Scheme_Object **scheme_make_builtin_references_table(void)
@@ -1060,8 +1041,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	  return NULL;
 	}
 	if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
-	  if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
-	      || SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_type))
+	  if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))
 	    return val;
 	  else
 	    scheme_wrong_syntax("set!", NULL, symbol,
@@ -1517,43 +1497,14 @@ Scheme_Object *scheme_make_envunbox(Scheme_Object *value)
   return obj;
 }
 
-static Scheme_Object *list_globals(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *l = scheme_null;
-  int i;
-  Scheme_Hash_Table *toplevel;
-  Scheme_Bucket *b;
-
-  toplevel = scheme_get_env(scheme_config)->toplevel;
-
-  for (i = 0; i < toplevel->size; i++) {
-    b = toplevel->buckets[i];
-    if (b && b->val)
-      l = scheme_make_pair(scheme_make_pair((Scheme_Object *)b->key, 
-					    (Scheme_Object *)b->val),
-			   l);
-  }
-
-  return l;
-}
-
-static Scheme_Object *defined(int argc, Scheme_Object *argv[])
-{
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("defined?", "symbol", 0, argc, argv);
-
-  return scheme_lookup_global(argv[0], scheme_get_env(scheme_config))
-    ? scheme_true : scheme_false;
-}
-
 static Scheme_Object *
-global_defined_value(int argc, Scheme_Object *argv[])
+namespace_variable_binding(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v;
   Scheme_Env *env;
 
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("global-defined-value", "symbol", 0, argc, argv);
+    scheme_wrong_type("namespace-defined-value", "symbol", 0, argc, argv);
 
   env = scheme_get_env(scheme_config);
 
@@ -1562,7 +1513,7 @@ global_defined_value(int argc, Scheme_Object *argv[])
 
     bucket = scheme_global_bucket(argv[0], env);
 
-    scheme_set_global_bucket("global-defined-value", bucket, argv[1], 1);
+    scheme_set_global_bucket("namespace-defined-value", bucket, argv[1], 1);
 
     return scheme_void;
   } else {
@@ -1570,7 +1521,7 @@ global_defined_value(int argc, Scheme_Object *argv[])
     
     if (!v)
       scheme_raise_exn(MZEXN_VARIABLE, argv[0],
-		       "global-defined-value: %S is not defined",
+		       "namespace-defined-value: %S is not defined",
 		       argv[0]);
 
     return v;
@@ -1611,8 +1562,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
 
-  if (!v || (NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type)
-	     && NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_syntax_type))) {
+  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type)) {
     if (argc > 1)
       return _scheme_tail_apply(argv[1], 0, NULL);
     else
@@ -1657,7 +1607,7 @@ local_context(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-id_macro(int argc, Scheme_Object *argv[])
+set_expander(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v;
 

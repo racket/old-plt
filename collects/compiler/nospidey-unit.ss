@@ -3,19 +3,19 @@
 ;;  analysis.
 
 (module nospidey-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import (lib "file-sig.ss" "dynext")
+  (require (lib "file-sig.ss" "dynext")
 	  (lib "link-sig.ss" "dynext")
 	  (lib "compile-sig.ss" "dynext"))
 
-  (import "sig.ss")
-  (import "private/sig.ss")
+  (require "sig.ss")
+  (require "private/sig.ss")
 
-  (import "private/base.ss")
-  (import "private/spnoop.ss")
+  (require "private/base.ss")
+  (require "private/spnoop.ss")
 
-  (export compiler-linked@)
+  (provide compiler-linked@)
 
   (define compiler-linked@
     (compound-unit/sig

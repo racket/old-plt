@@ -1,7 +1,7 @@
 
 (module sigmatch mzscheme
 
-  (import "../unit.ss")
+  (require "../unit.ss")
 
   (define (hash-sig src-sig table)
     (and (vector? src-sig)
@@ -130,4 +130,4 @@
 			       exact? who src-context dest-context)
 	(raise-type-error 'verify-signature-match "signature" dest-sig))))
 
-  (export verify-signature-match))
+  (provide verify-signature-match))

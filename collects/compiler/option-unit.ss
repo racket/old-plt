@@ -1,10 +1,10 @@
 
 (module option-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "sig.ss")
+  (require "sig.ss")
 
-  (export compiler:option@)
+  (provide compiler:option@)
 
   (define compiler:option@
     (unit/sig compiler:option^

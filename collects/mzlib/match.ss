@@ -97,17 +97,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module match mzscheme
-  (import-for-syntax "private/mkmatch.ss")
+  (require-for-syntax "private/mkmatch.ss")
 
-  (export
+  (provide
    match
    match-lambda
    match-lambda*
    match-letrec
    match-let
    match-let*)
-
- (export-indirect  match:error)
 
  (define match:version "Version 1.10mz, Feb 5, 1996")
 

@@ -1,11 +1,11 @@
 
 (module compile-unit mzscheme
-  (import (lib "unitsig.ss"))
-  (import (lib "include.ss"))
+  (require (lib "unitsig.ss"))
+  (require (lib "include.ss"))
 
-  (import "compile-sig.ss")
+  (require "compile-sig.ss")
 
-  (export dynext:compile@)
+  (provide dynext:compile@)
 
   (define dynext:compile@
     (unit/sig dynext:compile^ 

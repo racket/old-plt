@@ -1,11 +1,11 @@
 
 (module sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "../sig.ss")
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require "../sig.ss")
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (export compiler:library^)
+  (provide compiler:library^)
   (define-signature compiler:library^
     (logical-inverse
      one-of
@@ -49,7 +49,7 @@
      compiler:get-label-number
      compiler:reset-label-number!))
 
-  (export compiler:cstructs^)
+  (provide compiler:cstructs^)
   (define-signature compiler:cstructs^
     (varref:empty-attributes
      varref:add-attribute!
@@ -100,7 +100,7 @@
      (struct compiler:internal-error ())
      (struct compiler:warning ())))
 
-  (export compiler:zlayer^)
+  (provide compiler:zlayer^)
   (define-signature compiler:zlayer^
     (static-error
      dynamic-error
@@ -133,7 +133,7 @@
 
      zodiac->sexp/annotate))
 
-  (export compiler:prephase^)
+  (provide compiler:prephase^)
   (define-signature compiler:prephase^
     (prephase:init-binding-properties!
      prephase:set-mutable!
@@ -146,11 +146,11 @@
 
      prephase!))
 
-  (export compiler:anorm^)
+  (provide compiler:anorm^)
   (define-signature compiler:anorm^
     (a-normalize))
 
-  (export compiler:const^)
+  (provide compiler:const^)
   (define-signature compiler:const^
     (const:init-tables!
      const:the-per-load-statics-table
@@ -173,7 +173,7 @@
 
      compiler:make-const-constructor))
 
-  (export compiler:rep^)
+  (provide compiler:rep^)
   (define-signature compiler:rep^
     ((struct rep:atomic (type))
      (struct rep:pointer (to))
@@ -188,14 +188,14 @@
      choose-binding-representations!
      choose-closure-representation!))
 
-  (export compiler:known^)
+  (provide compiler:known^)
   (define-signature compiler:known^
     (make-unknown-letbound-binding
      extract-varref-known-val
      extract-ast-known-value
      analyze-knowns!))
 
-  (export compiler:analyze^)
+  (provide compiler:analyze^)
   (define-signature compiler:analyze^
     (compiler:get-global-symbols
      compiler:get-primitive-refs
@@ -215,15 +215,15 @@
 
      analyze-expression!))
 
-  (export compiler:lift^)
+  (provide compiler:lift^)
   (define-signature compiler:lift^
     (lift-lambdas!))
 
-  (export compiler:lightweight^)
+  (provide compiler:lightweight^)
   (define-signature compiler:lightweight^
     (lightweight-analyze-and-transform))
 
-  (export compiler:closure^)
+  (provide compiler:closure^)
   (define-signature compiler:closure^
     (compiler:get-closure-list
 
@@ -240,7 +240,7 @@
 
      closure-expression!))
 
-  (export compiler:vehicle^)
+  (provide compiler:vehicle^)
   (define-signature compiler:vehicle^
     ((struct vehicle (total-labels lambdas max-arity))
      (struct procedure-vehicle (max-args))
@@ -258,7 +258,7 @@
 
      choose-vehicles!))
 
-  (export compiler:vmstructs^)
+  (provide compiler:vmstructs^)
   (define-signature compiler:vmstructs^
     ((struct vm:sequence (vals))
      (struct vm:if (test then else))
@@ -330,16 +330,16 @@
      
      vm:literal-constant?))
 
-  (export compiler:vmphase^)
+  (provide compiler:vmphase^)
   (define-signature compiler:vmphase^
     (vm:convert-bound-varref
      vm-phase))
 
-  (export compiler:vmopt^)
+  (provide compiler:vmopt^)
   (define-signature compiler:vmopt^
     (vm-optimize!))
 
-  (export compiler:driver^)
+  (provide compiler:driver^)
   (define-signature compiler:driver^
     ((open compiler:inner^)
 
@@ -357,7 +357,7 @@
      debug
      debug:get-port))
 
-  (export compiler:top-level^)
+  (provide compiler:top-level^)
   (define-signature compiler:top-level^
     ((struct block (source codes max-arity))
      make-empty-block
@@ -366,7 +366,7 @@
      add-code-local+used-vars!
      remove-code-free-vars!))
 
-  (export compiler:vm2c^)
+  (provide compiler:vm2c^)
   (define-signature compiler:vm2c^
     (vm->c:generate-modglob-name
 
@@ -399,7 +399,7 @@
      vm->c:emit-function-epilogue
      vm->c-expression))
 
-  (export compiler:mrspidey^)
+  (provide compiler:mrspidey^)
   (define-signature compiler:mrspidey^
     (copy-annotations!
      get-annotations
@@ -417,7 +417,7 @@
      ast->AVs
      AV->AVs))
 
-  (export compiler:basic-link^)
+  (provide compiler:basic-link^)
   (define-signature compiler:basic-link^
     ((unit ZODIAC : zodiac^)
      (unit ZLAYER : compiler:zlayer^)

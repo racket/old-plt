@@ -1,10 +1,9 @@
 
 (module shared mzscheme
 
-  (export shared)
+  (provide shared)
 
   (define undefined (letrec ([x x]) x))
-  (export-indirect undefined)
   
   (define-syntax shared
     (lambda (stx)

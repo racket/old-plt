@@ -3,16 +3,16 @@
 ;; (c)1997-2001 PLT
 
 (module zlayer mzscheme
-  (import (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	  (lib "list.ss")
 	  (lib "etc.ss"))
   
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "../sig.ss")
-  (import "sig.ss")
+  (require "../sig.ss")
+  (require "sig.ss")
   
-  (export zlayer@)
+  (provide zlayer@)
   (define zlayer@
     (unit/sig compiler:zlayer^
       (import (compiler:option : compiler:option^)

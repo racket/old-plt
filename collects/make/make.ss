@@ -1,13 +1,13 @@
 
 (module make mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "make-sig.ss"
+  (require "make-sig.ss"
 	  "make-unit.ss")
   
   (define-values/invoke-unit/sig make^ make@)
 
-  (export-signature-elements make^)
+  (provide-signature-elements make^)
 
   (define-syntax make
     (lambda (stx)
@@ -42,4 +42,4 @@
 			(list line ...)
 			argv)))))])))
 
-  (export make))
+  (provide make))

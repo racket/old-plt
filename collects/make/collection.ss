@@ -1,14 +1,14 @@
 
 (module collection mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import (lib "file-sig.ss" "dynext")
+  (require (lib "file-sig.ss" "dynext")
 	  (lib "file.ss" "dynext")
 	  (lib "sig.ss" "compiler")
 	  (lib "compiler.ss" "compiler")
 	  (lib "option.ss" "compiler"))
 
-  (import "make-sig.ss"
+  (require "make-sig.ss"
 	  "make.ss"
 	  "collection-sig.ss"
 	  "collection-unit.ss")
@@ -21,4 +21,4 @@
     compiler:option^
     compiler^)
 
-  (export-signature-elements make:collection^))
+  (provide-signature-elements make:collection^))

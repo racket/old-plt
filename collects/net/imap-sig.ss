@@ -1,9 +1,9 @@
 
 
 (module imap-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export net:imap^)
+  (provide net:imap^)
   (define-signature net:imap^
     (imap-port-number
 

@@ -1,6 +1,6 @@
 
 (module pread mzscheme
-  (import "readline.ss")
+  (require "readline.ss")
 
   (define .history "~/.mzrl.history")
   (define MAX-HISTORY 100)
@@ -63,4 +63,4 @@
 			 (car rs)
 			 (set! leftovers (cdr rs)))))))))))
 
-  (export prompt-read-using-readline))
+  (provide prompt-read-using-readline))

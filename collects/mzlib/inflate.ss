@@ -1,7 +1,7 @@
 
 (module inflate mzscheme
 
-  (export inflate 
+  (provide inflate 
 	  gunzip-through-ports
 	  gunzip)
 

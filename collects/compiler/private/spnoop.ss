@@ -2,11 +2,11 @@
 ;; Implements a MrSpidey that doesn't do anything
 
 (module spnoop mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "sig.ss")
+  (require "sig.ss")
 
-  (export spidey-noop@)
+  (provide spidey-noop@)
   (define spidey-noop@
     (unit/sig compiler:mrspidey^
       (import)

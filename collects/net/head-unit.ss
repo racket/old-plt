@@ -1,10 +1,10 @@
 
 (module head-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "head-sig.ss")
+  (require "head-sig.ss")
 
-  (export net:head@)
+  (provide net:head@)
   (define net:head@
     (unit/sig net:head^
       (import)

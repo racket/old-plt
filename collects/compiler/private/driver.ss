@@ -62,20 +62,20 @@
 ;;    the binding.
 
 (module driver mzscheme
-  (import (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	  (lib "list.ss")
 	  (lib "etc.ss")
 	  (lib "pretty.ss"))
   
-  (import (lib "zodiac-sig.ss" "syntax")
+  (require (lib "zodiac-sig.ss" "syntax")
 	  (lib "compile-sig.ss" "dynext")
 	  (lib "link-sig.ss" "dynext")
 	  (lib "file-sig.ss" "dynext"))
 
-  (import "../sig.ss")
-  (import "sig.ss")
+  (require "../sig.ss")
+  (require "sig.ss")
 
-  (export driver@)
+  (provide driver@)
 
   (define driver@
     (unit/sig compiler:driver^

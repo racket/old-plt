@@ -199,7 +199,6 @@ static int tls_pos = 0;
 
 extern long GC_get_memory_use();
 
-static Scheme_Object *callcc_is_callec_symbol, *callcc_is_not_callec_symbol;
 static Scheme_Object *empty_symbol;
 
 static Scheme_Object *nested_exn_handler;
@@ -363,7 +362,7 @@ void scheme_init_thread(Scheme_Env *env)
   scheme_add_global_constant("make-namespace",
 			     scheme_make_prim_w_arity(scheme_make_namespace,
 						      "make-namespace",
-						      0, -1),
+						      0, 1),
 			     env);
 #ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("thread",
@@ -515,12 +514,8 @@ void scheme_init_thread(Scheme_Env *env)
   nestee_mutex = SCHEME_MAKE_MUTEX();
 #endif
 
-  REGISTER_SO(callcc_is_callec_symbol);
-  REGISTER_SO(callcc_is_not_callec_symbol);
   REGISTER_SO(empty_symbol);
   
-  callcc_is_callec_symbol = scheme_intern_symbol("call/cc=call/ec");
-  callcc_is_not_callec_symbol = scheme_intern_symbol("call/cc!=call/ec");
   empty_symbol = scheme_intern_symbol("empty");
 }
 
@@ -3083,9 +3078,7 @@ void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *))
 Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
 {
   int save_ec_only;
-  int i, with_nso = 0;
   int empty = 0;
-  Scheme_Object *v;
   Scheme_Env *env;
 
 #ifdef MZ_REAL_THREADS
@@ -3093,52 +3086,22 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
 #endif
 
   save_ec_only = scheme_escape_continuations_only;
+  scheme_escape_continuations_only = 0;
 
-  for (i = 0; i < argc; i++) {
-    v = argv[i];
-    if (v == callcc_is_callec_symbol)
-      scheme_escape_continuations_only = 1;
-    else if (v == callcc_is_not_callec_symbol)
-      scheme_escape_continuations_only = 0;
-    else if (v == empty_symbol)
+  if (argc) {
+    if (SAME_OBJ(argv[0], empty_symbol))
       empty = 1;
-    else {
-      int j;
-      for (j = 0; j < num_nsos; j++) {
-	if (namespace_options[j].key == v) {
-	  with_nso = 1;
-	  break;
-	}
-      }
-      
-      if (j >= num_nsos)
-	scheme_wrong_type("make-namespace", "symbol-flag", i, argc, argv);
-    }
+    else
+      scheme_wrong_type("make-namespace", "'empty", 0, argc, argv);
   }
   
-  /* Copy from original namespace: */
   env = scheme_make_empty_env();
   if (!empty) {
-    scheme_require_from_original_env(env, 1);
-    scheme_copy_from_original_env(env);
+    /* Copy from initial namespace: */
+    scheme_install_initial_module_set(env);
   }
-  scheme_install_initial_module_set(env);
 
   scheme_escape_continuations_only = save_ec_only;
-
-  if (with_nso && !empty) {
-    int j;
-
-    for (i = 0; i < argc; i++) {
-      v = argv[i];
-      for (j = 0; j < num_nsos; j++) {
-	if (namespace_options[j].key == v) {
-	  namespace_options[j].f(env);
-	  break;
-	}
-      }
-    }
-  }
 
 #ifdef MZ_REAL_THREADS
   SCHEME_UNLOCK_MUTEX(make_namespace_mutex);

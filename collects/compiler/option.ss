@@ -1,12 +1,12 @@
 
 (module option mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "sig.ss")
-  (import "option-unit.ss")
+  (require "sig.ss")
+  (require "option-unit.ss")
 
   (define-values/invoke-unit/sig
     compiler:option^
     compiler:option@)
 
-  (export-signature-elements compiler:option^))
+  (provide-signature-elements compiler:option^))

@@ -1,7 +1,7 @@
 
 (module compile mzscheme
-  (import "file.ss")
-  (export compile-file)
+  (require "file.ss")
+  (provide compile-file)
   
   (define -re:suffix (regexp "\\..?.?.?$"))
 

@@ -21,16 +21,16 @@
 ;;; ------------------------------------------------------------
 
 (module known mzscheme
-  (import (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	  (lib "list.ss")
 	  (lib "etc.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
-  (import "../sig.ss")
+  (require "sig.ss")
+  (require "../sig.ss")
 
-  (export known@)
+  (provide known@)
   (define known@
     (unit/sig compiler:known^
       (import (compiler:option : compiler:option^)
@@ -78,7 +78,7 @@
       (define (analyze:prim-fun fun)
 	(and (zodiac:top-level-varref? fun)
 	     (varref:has-attribute? fun varref:primitive)
-	     (primitive? (global-defined-value (zodiac:varref-var fun)))
+	     (primitive? (namespace-variable-binding (zodiac:varref-var fun)))
 	     (zodiac:varref-var fun)))
 
       ;; Some prims call given procedures directly, some install procedures
@@ -224,7 +224,7 @@
 		      [(char->integer) 
 		       (with-handlers ([void (lambda (x) v)])
 			 (let ([args (map (lambda (a) (syntax-e (zodiac:zodiac-stx (zodiac:quote-form-expr a)))) args)])
-			   (let ([new-v (apply (global-defined-value fun) args)])
+			   (let ([new-v (apply (namespace-variable-binding fun) args)])
 			     (zodiac:make-quote-form
 			      (zodiac:zodiac-stx v)
 			      (make-empty-box)
@@ -479,7 +479,7 @@
 			      (and primfun
 				   (let* ([num-args (length args)]
 					  [arity-ok? (procedure-arity-includes?
-						      (global-defined-value primfun)
+						      (namespace-variable-binding primfun)
 						      num-args)])
 				     (unless arity-ok?
 				       ((if (compiler:option:stupid)

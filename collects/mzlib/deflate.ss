@@ -10,11 +10,11 @@
 
 (module deflate mzscheme
 
-  (export deflate 
+  (provide deflate 
 	  gzip-through-ports
 	  gzip)
 
-  (import "unit.ss")
+  (require "unit.ss")
 
   (define-syntax INSERT_STRING 
     (lambda (stx)

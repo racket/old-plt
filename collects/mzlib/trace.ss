@@ -8,15 +8,9 @@
 ;   of a trace, the behavior is not well-defined.
 
 (module trace mzscheme
-  (import "pretty.ss")
+  (require "pretty.ss")
 
-  (export trace untrace)
-
-  (export-indirect -:trace-level -:trace-print-args 
-		   -:trace-print-results
-		   -:trace-table
-		   -:make-traced-entry -:traced-entry-original-proc
-		   -:traced-entry-trace-proc)
+  (provide trace untrace)
 
   (define max-dash-space-depth 10)
   (define number-nesting-depth 6)

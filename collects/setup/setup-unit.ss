@@ -3,20 +3,20 @@
 ; Calls `exit' when done.
 
 (module setup-unit mzscheme
-  (import (lib "unitsig.ss"))
-  (import (lib "unit.ss"))
-  (import (lib "file.ss"))
-  (import (lib "list.ss"))
+  (require (lib "unitsig.ss"))
+  (require (lib "unit.ss"))
+  (require (lib "file.ss"))
+  (require (lib "list.ss"))
 
-  (import "option-sig.ss")
-  (import (lib "sig.ss" "compiler"))
-  (import (lib "launcher-sig.ss" "launcher"))
+  (require "option-sig.ss")
+  (require (lib "sig.ss" "compiler"))
+  (require (lib "launcher-sig.ss" "launcher"))
 
-  (import "get-info.ss")
-  (import (lib "inflate.ss"))
-  (import (lib "base64.ss" "net"))
+  (require "get-info.ss")
+  (require (lib "inflate.ss"))
+  (require (lib "base64.ss" "net"))
 
-  (export setup@)
+  (provide setup@)
 
   (define setup@
     (unit/sig ()
@@ -444,11 +444,7 @@
 			 (lambda (x)
 			   (if (exn? x)
 			       (begin
-				 (fprintf (current-error-port) "~a~n" (exn-message x))
-				 (when (defined? 'print-error-trace)
-				   ((global-defined-value 'print-error-trace)
-				    (current-error-port)
-				    x)))
+				 (fprintf (current-error-port) "~a~n" (exn-message x)))
 			       (fprintf (current-error-port) "~s~n" x))
 			   (set! errors (cons (list cc desc x) errors)))])
 	  (go)))

@@ -1,8 +1,8 @@
 
 (module collection-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export make:collection^)
+  (provide make:collection^)
 
   (define-signature make:collection^
     (make-collection)))

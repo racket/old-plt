@@ -1,8 +1,8 @@
 
 (module link-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export dynext:link^)
+  (provide dynext:link^)
 
   (define-signature dynext:link^
     (link-extension

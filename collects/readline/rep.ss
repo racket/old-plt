@@ -1,8 +1,8 @@
 
 (module rep mzscheme
-  (import "pread.ss")
+  (require "pread.ss")
 
-  (import "pread.ss")
+  (require "pread.ss")
 
   (current-prompt-read 
    (let ([orig-read (current-prompt-read)]

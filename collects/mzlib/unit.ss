@@ -2,7 +2,7 @@
 ;; Unit system
 
 (module unit mzscheme
-  (import-for-syntax (lib "kerncase.ss" "syntax")
+  (require-for-syntax (lib "kerncase.ss" "syntax")
 		     "private/unitidmap.ss")
 
   (define undefined (letrec ([x x]) x))
@@ -683,9 +683,7 @@
 	  [(_ exports unit) 
 	   (syntax (do-define-values/invoke-unit #t exports unit #f () orig))]))))
   
-  (export-indirect make-unit check-unit undefined unit-go
-		   check-expected-interface)
-  (export unit compound-unit invoke-unit unit?
+  (provide unit compound-unit invoke-unit unit?
 	  exn:unit? struct:exn:unit make-exn:unit
 
 	  define-values/invoke-unit

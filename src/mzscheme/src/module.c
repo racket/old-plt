@@ -27,6 +27,9 @@ Scheme_Object *scheme_sys_wraps1;
 static Scheme_Object *current_module_name_resolver(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_module_name_prefix(int argc, Scheme_Object *argv[]);
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[]);
+static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
+static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
+static Scheme_Object *namespace_transfer_module(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *module_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *module_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
@@ -78,6 +81,8 @@ static Scheme_Object *unbound_stx;
 
 static int num_initial_modules;
 static Scheme_Object **initial_modules;
+static Scheme_Object *initial_renames;
+static Scheme_Hash_Table *initial_toplevel;
 
 typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname, 
 			   Scheme_Object *modname, Scheme_Object *srcname, 
@@ -163,6 +168,22 @@ void scheme_init_module(Scheme_Env *env)
   scheme_add_global_constant("dynamic-require", 
 			     scheme_make_prim_w_arity(dynamic_require,
 						      "dynamic-require",
+						      2, 2),
+			     env);
+
+  scheme_add_global_constant("namespace-require",
+			     scheme_make_prim_w_arity(namespace_require,
+						      "namespace-require",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("namespace-transformer-require",
+			     scheme_make_prim_w_arity(namespace_trans_require,
+						      "namespace-transformer-require",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("namespace-transfer-module",
+			     scheme_make_prim_w_arity(namespace_transfer_module,
+						      "namespace-transfer-module",
 						      2, 2),
 			     env);
 }
@@ -339,9 +360,10 @@ void scheme_save_initial_module_set(Scheme_Env *env)
 
   num_initial_modules = count;
   
-  if (!initial_modules)
+  if (!initial_modules) {
     REGISTER_SO(initial_modules);
-  initial_modules = MALLOC_N(Scheme_Object *, 2 * count);
+  }
+  initial_modules = MALLOC_N(Scheme_Object *, 3 * count);
 
   count = 0;
   for (i = 0; i < c; i++) {
@@ -349,19 +371,60 @@ void scheme_save_initial_module_set(Scheme_Env *env)
     if (b && b->val) {
       initial_modules[count++] = (Scheme_Object *)b->key;
       initial_modules[count++] = (Scheme_Object *)b->val;
+      initial_modules[count++] = NULL;
     }
   }
+
+  /* Make sure all initial modules are running: */
+  for (i = 0; i < num_initial_modules; i++) {
+    Scheme_Module *m = (Scheme_Module *)initial_modules[(i * 3) + 1];
+    start_module(m, env, 0, m->modname);
+    initial_modules[(i * 3) + 2] = scheme_lookup_in_table(MODCHAIN_TABLE(env->modchain), (char *)m->modname);
+  }
+
+  /* Clone renames: */
+  if (!initial_renames) {
+    REGISTER_SO(initial_renames);
+  }
+  initial_renames = scheme_make_module_rename(0, 0);
+  scheme_append_module_rename(env->rename, initial_renames);
+
+  /* Clone variable bindings: */
+  if (!initial_toplevel) {
+     REGISTER_SO(initial_toplevel);
+  }
+  initial_toplevel = scheme_clone_toplevel(env->toplevel, NULL);
 }
 
 void scheme_install_initial_module_set(Scheme_Env *env)
 {
   int i;
 
+  /* Copy over module declarations and instances: */
   for (i = 0; i < num_initial_modules; i++) {
     scheme_add_to_table(env->module_registry, 
-			(char *)initial_modules[i << 1],
-			(char *)initial_modules[(i << 1) + 1],
+			(char *)initial_modules[i * 3],
+			(void *)initial_modules[(i * 3) + 1],
 			0);
+    scheme_add_to_table(MODCHAIN_TABLE(env->modchain),
+			(char *)initial_modules[i * 3],
+			(void *)initial_modules[(i * 3) + 2],
+			0);
+  }
+
+  /* Copy renamings: */
+  if (!env->rename) {
+    Scheme_Object *rn;
+    rn = scheme_make_module_rename(0, 0);
+    env->rename = rn;
+  }
+  scheme_append_module_rename(initial_renames, env->rename);
+
+  /* Copy toplevel: */
+  {
+    Scheme_Hash_Table *tl;
+    tl = scheme_clone_toplevel(initial_toplevel, env);
+    env->toplevel = tl;
   }
 }
 
@@ -460,6 +523,128 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
     return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)name);
   } else
     return scheme_void;
+}
+
+static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp)
+{
+  Scheme_Object *form, *rn, *brn;
+  Scheme_Env *env;
+
+  env = scheme_get_env(scheme_config);
+  if (for_exp) {
+    scheme_prepare_exp_env(env);
+    env = env->exp_env;
+  }
+
+  form = scheme_datum_to_syntax(scheme_make_pair(require_stx,
+						 scheme_make_pair(argv[0], scheme_null)),
+				scheme_false, scheme_false, 1, 0);
+  
+  rn = scheme_make_module_rename(for_exp, 1);
+
+  (void)parse_requires(form, form, scheme_false, env, rn, 
+		       NULL, NULL, 1, NULL, 1);
+
+  brn = env->rename;
+  if (!brn) {
+    brn = scheme_make_module_rename(for_exp, 1);
+    env->rename = brn;
+  }
+
+  scheme_append_module_rename(rn, brn);
+
+  return scheme_void;
+}
+
+static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[])
+{
+  return do_namespace_require(argc, argv, 0);
+}
+
+static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[])
+{
+  return do_namespace_require(argc, argv, 1);
+}
+
+static Scheme_Object *namespace_transfer_module(int argc, Scheme_Object *argv[])
+{
+  Scheme_Env *env, *to_env, *menv, *menv2;
+  Scheme_Object *todo, *name;
+  Scheme_Module *m2;
+
+  if (!SCHEME_NAMESPACEP(argv[0]))
+    scheme_wrong_type("namespace-transfer-module", "namespace", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(argv[1]))
+    scheme_wrong_type("namespace-transfer-module", "symbol", 1, argc, argv);
+
+  env = scheme_get_env(scheme_config);
+  to_env = (Scheme_Env *)argv[0];
+
+  todo = scheme_make_pair(argv[1], scheme_null);
+  /* Check whether todo, or anything it needs, is already declared incompatibly: */
+  while (!SCHEME_NULLP(todo)) {
+    name = SCHEME_CAR(todo);
+    name = scheme_module_resolve(name);
+
+    todo = SCHEME_CDR(todo);
+
+    if (!SAME_OBJ(name, kernel_symbol)) {
+      menv = scheme_module_access(name, env);
+      
+      if (!menv) {
+	scheme_arg_mismatch("namespace-transfer-module",
+			    "unknown module (in the current namespace): ",
+			    name);
+      }
+
+      menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_env->modchain), (char *)name);
+      if (menv2) {
+	if (!SAME_OBJ(menv, menv2))
+	  m2 = menv2->module;
+	else
+	  m2 = NULL;
+      } else {
+	m2 = (Scheme_Module *)scheme_lookup_in_table(to_env->module_registry, (char *)name);
+      }
+      
+      if (m2)
+	scheme_arg_mismatch("namespace-transfer-module",
+			    "a different module with the same name is already "
+			    "in the destination namespace, for name: ",
+			    name);
+      
+      if (!menv2) {
+	/* Push requires onto the check list: */
+	todo = scheme_append(menv->module->requires, todo);
+	todo = scheme_append(menv->module->et_requires, todo);
+      }
+    }
+  }
+
+  /* Go again, this time tranferring modules: */
+  todo = scheme_make_pair(argv[1], scheme_null);
+   while (!SCHEME_NULLP(todo)) {
+    name = SCHEME_CAR(todo);
+    name = scheme_module_resolve(name);
+
+    todo = SCHEME_CDR(todo);
+
+    if (!SAME_OBJ(name, kernel_symbol)) {
+      menv = scheme_module_access(name, env);
+      
+      menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_env->modchain), (char *)name);
+      if (!menv2) {
+	scheme_add_to_table(MODCHAIN_TABLE(to_env->modchain), (char *)name, menv, 0);
+	scheme_add_to_table(to_env->module_registry, (char *)name, menv->module, 0);
+
+	/* Push requires onto the check list: */
+	todo = scheme_append(menv->module->requires, todo);
+	todo = scheme_append(menv->module->et_requires, todo);
+      }
+    }
+  }
+
+  return scheme_void;
 }
 
 /**********************************************************************/
@@ -1848,7 +2033,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Skip for now. */
 	} else if ((v = scheme_lookup_in_table(required, (const char *)name))) {
 	  /* Required */
-	  if (SCHEME_TRUEP(SCHEME_VEC_ELS(v)[0])) {
+	  if (SCHEME_TRUEP(SCHEME_VEC_ELS(v)[3])) {
 	    /* If this is a kernel re-provide, don't provide after all. */
 	    if (reprovide_kernel
 		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
@@ -1885,7 +2070,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  count++;
 	} else if ((v = scheme_lookup_in_table(required, (const char *)name))) {
 	  /* Required */
-	  if (SCHEME_FALSEP(SCHEME_VEC_ELS(v)[0])) {
+	  if (SCHEME_FALSEP(SCHEME_VEC_ELS(v)[3])) {
 	    /* If this is a kernel re-provide, don't provide after all. */
 	    if (reprovide_kernel
 		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
@@ -1990,12 +2175,12 @@ module_begin_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme
 /**********************************************************************/
 
 Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll, 
-			     Scheme_Object *base_modidx,
-			     Scheme_Env *env,
-			     Scheme_Object *rn,
-			     Check_Func ck, void *data,
-			     int start, Scheme_Object *redef_modname,
-			     int unpack_kern)
+			      Scheme_Object *base_modidx,
+			      Scheme_Env *env,
+			      Scheme_Object *rn,
+			      Check_Func ck, void *data,
+			      int start, Scheme_Object *redef_modname,
+			      int unpack_kern) 
 {
   Scheme_Module *m;
   int j, var_count, is_kern;
@@ -2190,11 +2375,22 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	if (prefix)
 	  iname = scheme_symbol_append(prefix, iname);
 	
-	ck(iname, idx, modidx, exsns[j], (j < var_count), data, i);
+	if (ck)
+	  ck(iname, idx, modidx, exsns[j], (j < var_count), data, i);
 	
-	if (!is_kern)
-	  scheme_extend_module_rename(rn, modidx, iname, exsns[j]);
-	
+	if (!is_kern) {
+	  if (scheme_starting_up && start && (j < var_count) && !env->module && !env->phase) {
+	    /* Kindof a hack: during start-up, we remap import of variables to
+	       value copy. */
+	    Scheme_Env *menv;
+	    Scheme_Object *val;
+	    menv = scheme_module_access(modidx, env);
+	    val = scheme_lookup_in_table(menv->toplevel, (char *)exsns[j]);
+	    scheme_add_global_symbol(iname, val, env);
+	  } else
+	    scheme_extend_module_rename(rn, modidx, iname, exsns[j]);
+	}
+
 	iname = NULL;
 	
 	if (ename) {
@@ -2316,7 +2512,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   (void)parse_requires(form, form, scheme_false, genv, rn, 
-		      check_dup_require, ht, 1, 
+		      check_dup_require, ht, 0, 
 		      NULL, 0);
 
   if (rec) {

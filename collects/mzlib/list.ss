@@ -1,8 +1,8 @@
 
 (module list mzscheme
-  (import "spidey.ss")
+  (require "spidey.ss")
 
-  (export set-first!
+  (provide set-first!
 	  first
 	  second
 	  third

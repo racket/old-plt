@@ -71,9 +71,9 @@
 ;; print-line parameter 8/18/97
 
 (module pretty mzscheme
-   (import)
+   (require)
 
-   (export pretty-print
+   (provide pretty-print
 	   pretty-display
 	   pretty-print-columns
 	   pretty-print-depth

@@ -178,18 +178,6 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
   return exit_val;
 }
 
-static void initial_requires(Scheme_Env *env)
-{
-  if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_eval_string("(begin (require mzscheme) (require-for-syntax mzscheme))", 
-		       env);
-    scheme_eval_string("(current-module-name-resolver standard-module-name-resolver)",
-		       env);
-
-    scheme_copy_from_original_env(env); /* makes new (mutable) vars for `cons', etc. */
-  }
-}
-
 #ifndef NO_FILE_SYSTEM_UTILS
 static void init_collection_paths(Scheme_Env *global_env)
 {		
@@ -591,8 +579,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
   scheme_setup_forced_exit();
 
   global_env = mk_basic_env();
-
-  initial_requires(global_env);
 
   sch_argv = scheme_make_vector(argc, scheme_null);
   for (i = 0; i < argc; i++) {

@@ -10,16 +10,16 @@
 ;;  to macro uses (where the macros are defined in mzc.h).
 
 (module vmphase mzscheme 
-  (import (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	  (lib "list.ss")
 	  (lib "etc.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
-  (import "../sig.ss")
+  (require "sig.ss")
+  (require "../sig.ss")
 
-  (export vmphase@)
+  (provide vmphase@)
   (define vmphase@
     (unit/sig
 	compiler:vmphase^
@@ -55,7 +55,7 @@
 	    ref)))
 
       (define (check-primitive-as-macro prim argc prim-k normal-k)
-	(if (and prim (procedure-arity-includes? (global-defined-value prim) argc))
+	(if (and prim (procedure-arity-includes? (dynamic-require 'mzscheme prim) argc))
 	    (let* ([argc=? (lambda (x) (= x argc))]
 		   [special-bool (case prim
 				   [(eq?) "MZC_EQP"]
@@ -120,7 +120,7 @@
 	;;  there's no harm in calling them directly when
 	;;  they're in a tail position. We avoid he overhead of
 	;;  a tail call this way.
-	(and prim (simple-return-primitive? (global-defined-value prim))))
+	(and prim (simple-return-primitive? (dynamic-require 'mzscheme prim))))
 
       ;; vm-phase takes 2 arguments:
       ;; 1) an s-expression to be transformed
@@ -798,7 +798,7 @@
 				      [name (zodiac:varref-var fun)])
 				 (and (zodiac:top-level-varref? fun)
 				      (varref:has-attribute? fun varref:primitive)
-				      (let ([v (global-defined-value name)])
+				      (let ([v (dynamic-require 'mzscheme name)])
 					(or (primitive? v) 
 					    (primitive-closure? v)))
 				      (zodiac:varref-var (zodiac:app-fun ast))))]

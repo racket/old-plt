@@ -2,7 +2,7 @@
 ;; Object system, same as MzScheme version 103 and earlier
 
 (module class mzscheme
-  (import-for-syntax mzscheme)
+  (require-for-syntax mzscheme)
 
   (define-struct obj (class slots))
   (define-struct class (name
@@ -945,11 +945,7 @@
 	       (list interface-expr ...)
 	       '(var ...)))))])))
 
-  (export-indirect compose-class
-		   compose-interface
-		   undefined needs-init)
-
-  (export class class* class*/names
+  (provide class class* class*/names
 	  class-asi class*-asi
 	  interface
 	  make-object object? is-a? subclass? class? interface?

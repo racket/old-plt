@@ -9,21 +9,21 @@
 ;;  real MrSpidey) or loadr.ss (link in trivial MrSpidey stubs).
 
 (module compiler-unit mzscheme 
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "sig.ss")
-  (import (lib "file-sig.ss" "dynext")
+  (require "sig.ss")
+  (require (lib "file-sig.ss" "dynext")
 	  (lib "link-sig.ss" "dynext")
 	  (lib "compile-sig.ss" "dynext")
 
 	  (lib "make-sig.ss" "make")
 	  (lib "collection-sig.ss" "make"))
 
-  (import (lib "list.ss"))
-  (import (lib "compile.ss")) ; gets compile-file
-  (import (lib "get-info.ss" "setup"))
+  (require (lib "list.ss"))
+  (require (lib "compile.ss")) ; gets compile-file
+  (require (lib "get-info.ss" "setup"))
 
-  (export compiler@)
+  (provide compiler@)
 
   ;; ;;;;;;;; ----- The main compiler unit ------ ;;;;;;;;;;
   (define compiler@
@@ -35,12 +35,12 @@
 
       
       (define (make-extension-compiler mode prefix)
-	(let ([u (dynamic-import `(lib 
-				   ,(if (or (use-mrspidey) 
-					    (use-mrspidey-for-units))
-					"spidey-unit.ss"
-					"nospidey-unit.ss")
-				   "compiler")
+	(let ([u (dynamic-require `(lib 
+				    ,(if (or (use-mrspidey) 
+					     (use-mrspidey-for-units))
+					 "spidey-unit.ss"
+					 "nospidey-unit.ss")
+				    "compiler")
 				 'compiler-linked@)]
 	      [init (unit/sig ()
 		      (import compiler:inner^)
@@ -100,7 +100,7 @@
 	(make-unprefixed-compiler 'compile-c-extension-part))
 
       (define (link/glue-extension-parts link? source-files destination-directory)
-	(let ([u (dynamic-import '(lib "ld-unit.ss" "compiler") 'ld@)]
+	(let ([u (dynamic-require '(lib "ld-unit.ss" "compiler") 'ld@)]
 	      [init (unit/sig ()
 		      (import compiler:linker^)
 		      (if link?
@@ -152,8 +152,8 @@
 	     source-files file-bases))))
 
       (define (compile-collection cp zos?)
-	(let ([make (dynamic-import '(lib "make-unit.ss" "make") 'make@)]
-	      [coll (dynamic-import '(lib "collection-unit.ss" "make") 'make:collection@)]
+	(let ([make (dynamic-require '(lib "make-unit.ss" "make") 'make@)]
+	      [coll (dynamic-require '(lib "collection-unit.ss" "make") 'make:collection@)]
 	      [init (unit/sig ()
 		      (import make:collection^)
 		      make-collection)])

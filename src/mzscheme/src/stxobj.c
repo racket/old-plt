@@ -233,6 +233,13 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
   return (Scheme_Object *)stx;
 }
 
+Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
+{
+  ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
+
+  return stx;
+}
+
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
 				Scheme_Object *old,
 				Scheme_Object *origin)
@@ -392,12 +399,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   return (Scheme_Object *)nstx;
 }
 
-Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
-{
-  ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
-
-  return stx;
-}
+/******************** marks ********************/
 
 static Scheme_Object *mark_id = scheme_make_integer(0);
 
@@ -446,6 +448,8 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   return (Scheme_Object *)stx;
 }
 
+/******************** lexical renames ********************/
+
 Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
 {
   Scheme_Object *v;
@@ -481,6 +485,8 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
 			scheme_make_integer(pos), 0);
   }
 }
+
+/******************** module renames ********************/
 
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
 {
@@ -520,17 +526,6 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
 		      scheme_make_pair(modname, exname), 0);
 }
 
-void scheme_remove_module_rename(Scheme_Object *mrn,
-				 Scheme_Object *localname)
-{
-  Scheme_Bucket *b;
-
-  b = scheme_bucket_or_null_from_table(((Module_Renames *)mrn)->ht, 
-				       (const char *)localname, 0);
-  if (b)
-    b->val = NULL;
-}
-
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
 {
   Scheme_Hash_Table *ht, *hts;
@@ -553,6 +548,19 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
     }
   }
 }
+
+void scheme_remove_module_rename(Scheme_Object *mrn,
+				 Scheme_Object *localname)
+{
+  Scheme_Bucket *b;
+
+  b = scheme_bucket_or_null_from_table(((Module_Renames *)mrn)->ht, 
+				       (const char *)localname, 0);
+  if (b)
+    b->val = NULL;
+}
+
+/******************** wrap manipulations ********************/
 
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
 {
@@ -1762,6 +1770,11 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* current exp-env rename */
       Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV);
       scheme_prepare_exp_env(env);
+      if (!env->exp_env->rename) {
+	Scheme_Object *rn;
+	rn = scheme_make_module_rename(1, 1);
+	env->exp_env->rename = rn;
+      }
       stack = scheme_make_pair(env->exp_env->rename, stack);
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */

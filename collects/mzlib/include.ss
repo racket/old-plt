@@ -100,7 +100,7 @@
 		 stx
 		 (quote-syntax here)))))))))
 
-  (export include))
+  (provide include))
 
 		 
 			   

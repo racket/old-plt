@@ -1,6 +1,6 @@
 
 (module string mzscheme
-  (export string-lowercase!
+  (provide string-lowercase!
 	  string-uppercase!
 	  eval-string
 	  read-from-string

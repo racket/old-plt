@@ -30,7 +30,7 @@
 					  (+ name "-" f)
 					  (+ "set-" name "-" f "!")))
 				       fields)))))])
-	     (syntax (export . names))))])))
+	     (syntax (provide . names))))])))
 
   (define-syntax define-struct/export
     (lambda (stx)
@@ -52,6 +52,6 @@
 	    (define-struct (name expr) (field ...))
 	    (export-struct name (field ...))))])))
 
-  (export export-struct
+  (provide export-struct
 	  define-struct/export))
 

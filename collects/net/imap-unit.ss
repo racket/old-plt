@@ -1,10 +1,10 @@
 
 (module imap-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "imap-sig.ss")
+  (require "imap-sig.ss")
   
-  (export net:imap@)
+  (provide net:imap@)
   (define net:imap@
     (unit/sig net:imap^
       (import)

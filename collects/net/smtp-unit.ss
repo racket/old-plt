@@ -1,10 +1,10 @@
 
 (module smtp-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "smtp-sig.ss")
+  (require "smtp-sig.ss")
 
-  (export net:smtp@)
+  (provide net:smtp@)
   (define net:smtp@
     (unit/sig net:smtp^
       (import)

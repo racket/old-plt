@@ -1,10 +1,10 @@
 
 (module get-info mzscheme
 
-  (import (lib "file.ss"))
-  (import (lib "match.ss"))
+  (require (lib "file.ss"))
+  (require (lib "match.ss"))
 
-  (export get-info)
+  (provide get-info)
 
   (define (get-info coll-path)
     (let* ([dir (apply collection-path coll-path)]
@@ -24,7 +24,7 @@
 			   'get-info
 			   "info file does not contain a module of the right shape: \"~a\""
 			   file)]))))
-	    (dynamic-import `(lib "info.ss" ,@coll-path) '#%info-lookup))
+	    (dynamic-require `(lib "info.ss" ,@coll-path) '#%info-lookup))
 	  #f))))
 
 

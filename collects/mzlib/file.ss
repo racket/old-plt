@@ -1,5 +1,5 @@
 (module file mzscheme
-  (export find-relative-path
+  (provide find-relative-path
 	  explode-path
 	  normalize-path
 	  build-absolute-path
@@ -17,7 +17,7 @@
 	  with-output-to-file*
 	  call-with-output-file*)
 
-  (import "list.ss")
+  (require "list.ss")
 
   (define build-relative-path
     (lambda (p . args)

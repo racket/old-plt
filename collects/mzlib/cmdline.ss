@@ -496,6 +496,6 @@
 		 [else
 		  (done args r-acc)])))))]))
 
-  (export command-line parse-command-line))
+  (provide command-line parse-command-line))
 
 

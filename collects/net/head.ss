@@ -1,11 +1,11 @@
 
 (module head mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "head-sig.ss")
-  (import "head-unit.ss")
+  (require "head-sig.ss")
+  (require "head-unit.ss")
 
   (define-values/invoke-unit/sig net:head^
     net:head@)
 
-  (export-signature-elements net:head^))
+  (provide-signature-elements net:head^))

@@ -19,8 +19,8 @@ Rough BNF
 
 (module classd mzscheme
 
-  (import "class.ss")
-  (import-for-syntax (lib "kerncase.ss" "syntax"))
+  (require "class.ss")
+  (require-for-syntax (lib "kerncase.ss" "syntax"))
 
   (define-syntax class/d*/names
     (lambda (stx)
@@ -253,6 +253,6 @@ Rough BNF
 				 defn-or-expr
 				 ...)))])))
 
-      (export class/d class/d* class/d*/names))
+      (provide class/d class/d* class/d*/names))
 
     

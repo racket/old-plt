@@ -1,11 +1,11 @@
 
 (module link-unit mzscheme
-  (import (lib "unitsig.ss"))
-  (import (lib "include.ss"))
+  (require (lib "unitsig.ss"))
+  (require (lib "include.ss"))
 
-  (import "link-sig.ss")
+  (require "link-sig.ss")
 
-  (export dynext:link@)
+  (provide dynext:link@)
 
   (define dynext:link@
     (unit/sig dynext:link^

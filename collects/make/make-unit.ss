@@ -1,10 +1,10 @@
 
 (module make-unit mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
   
-  (import "make-sig.ss")
+  (require "make-sig.ss")
 
-  (export make@)
+  (provide make@)
 
   (define make@
     (unit/sig make^

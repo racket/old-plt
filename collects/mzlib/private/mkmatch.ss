@@ -2,7 +2,7 @@
 ;; Utilities for match
 
 (module mkmatch mzscheme
-  (export genmatch genletrec gendefine pattern-var? match:syntax-err re:..k :ucall)
+  (provide genmatch genletrec gendefine pattern-var? match:syntax-err re:..k :ucall)
 
  (define re:..k (regexp "[.][.][0-9]+"))
 

@@ -3,14 +3,14 @@
 ;; (c) 1997-2001 PLT
 
 (module vm2c mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
-  (import "../sig.ss")
+  (require "sig.ss")
+  (require "../sig.ss")
 
-  (export vm2c@)
+  (provide vm2c@)
   (define vm2c@
     (unit/sig
 	compiler:vm2c^

@@ -18,6 +18,6 @@
 	    sstx
 	    set!-stx)])))))
 
-  (export make-id-mapper))
+  (provide make-id-mapper))
 
     

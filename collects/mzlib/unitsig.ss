@@ -1,12 +1,12 @@
 
 (module unitsig mzscheme
-  (import "exstruct.ss")
-  (import "unit.ss")
-  (import "private/sigmatch.ss")
+  (require "exstruct.ss")
+  (require "unit.ss")
+  (require "private/sigmatch.ss")
 
-  (import-for-syntax "private/sigutil.ss")
-  (import-for-syntax "private/sigmatch.ss")
-  (import-for-syntax (lib "kerncase.ss" "syntax"))
+  (require-for-syntax "private/sigutil.ss")
+  (require-for-syntax "private/sigmatch.ss")
+  (require-for-syntax (lib "kerncase.ss" "syntax"))
 
   (define-struct/export unit/sig (unit imports exports))
 
@@ -284,29 +284,27 @@
 	  [(_ signame unit)
 	   (syntax (do-define-values/invoke-unit/sig #t signame unit #f () orig))]))))
 
-  (define-syntax export-signature-elements
+  (define-syntax provide-signature-elements
     (lambda (stx)
       (with-syntax ([orig stx])
 	(syntax-case stx ()
 	  [(_ signame)
-	   (let ([sig (get-sig 'export-signature-elements stx #f (syntax signame))])
+	   (let ([sig (get-sig 'provide-signature-elements stx #f (syntax signame))])
 	     (let ([flattened (flatten-signature #f sig)])
 	       (with-syntax ([flattened (map (lambda (x) (datum->syntax x #f (syntax signame)))
 					     flattened)])
 		 (syntax
-		  (export . flattened)))))]))))
+		  (provide . flattened)))))]))))
   
-  (export-indirect verify-linkage-signature-match)
-
-  (export define-signature
-	  let-signature
-          unit/sig
-          compound-unit/sig
-	  invoke-unit/sig
-	  unit->unit/sig
-	  signature->symbols
-	  
-	  define-values/invoke-unit/sig
-	  global-define-values/invoke-unit/sig
-	  export-signature-elements))
+  (provide define-signature
+	   let-signature
+	   unit/sig
+	   compound-unit/sig
+	   invoke-unit/sig
+	   unit->unit/sig
+	   signature->symbols
+	   
+	   define-values/invoke-unit/sig
+	   global-define-values/invoke-unit/sig
+	   provide-signature-elements))
 

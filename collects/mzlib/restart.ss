@@ -1,8 +1,8 @@
 
 (module restart mzscheme
-  (import "cmdline.ss")
+  (require "cmdline.ss")
 
-  (export restart-mzscheme)
+  (provide restart-mzscheme)
 
   (define (restart-mzscheme init-argv adjust-flag-table argv init-namespace)
     (let* ([result #t]

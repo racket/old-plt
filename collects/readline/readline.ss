@@ -1,6 +1,6 @@
 
 (module readline mzscheme
-  (import "mzrl.ss") ;; should load .so form
+  (require "mzrl.ss") ;; should load .so form
   
-  (export readline add-history))
+  (provide readline add-history))
 

@@ -1860,3 +1860,11 @@
 "(rename syntax-rules-module-begin #%module-begin)"
 "(rename #%module-begin #%plain-module-begin)))"
 );
+  EVAL_ONE_STR(
+"(begin"
+"(require mzscheme)"
+"(require-for-syntax mzscheme))"
+);
+  EVAL_ONE_STR(
+"(current-module-name-resolver standard-module-name-resolver)"
+);

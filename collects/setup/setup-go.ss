@@ -9,8 +9,8 @@
   (for-each (lambda (i)
 	      (when (regexp-match "^-.*c" i)
 		(use-compiled-file-kinds 'none)))
-	    (vector->list (global-defined-value 'argv)))
+	    (vector->list (namespace-variable-binding 'argv)))
 
   ;; This has to be dynamic, so we get a chance to turn off
   ;; compiled file loading.
-  (dynamic-import '(lib "setup.ss" "setup") #f))
+  (dynamic-require '(lib "setup.ss" "setup") #f))

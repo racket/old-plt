@@ -1,18 +1,18 @@
 
 (module base mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "../sig.ss")
-  (import "sig.ss")
+  (require "../sig.ss")
+  (require "sig.ss")
 
-  (import (lib "zodiac-sig.ss" "syntax")
+  (require (lib "zodiac-sig.ss" "syntax")
 	  (lib "zodiac-unit.ss" "syntax"))
 
-  (import (lib "file-sig.ss" "dynext")
+  (require (lib "file-sig.ss" "dynext")
 	  (lib "link-sig.ss" "dynext")
 	  (lib "compile-sig.ss" "dynext"))
 
-  (import "zlayer.ss"
+  (require "zlayer.ss"
 	  "library.ss"
 	  "cstructs.ss"
 	  "prephase.ss"
@@ -35,7 +35,7 @@
   ;; The core Scheme->C compiler linkage, including everything
   ;;  that's common to MrSpidey and non-MrSpidey compilation.
 
-  (export base@)
+  (provide base@)
 
   (define base@
     (compound-unit/sig

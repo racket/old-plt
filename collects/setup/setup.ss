@@ -1,11 +1,11 @@
 
 (module setup mzscheme
-  (import (lib "cmdline.ss"))
-  (import (lib "unitsig.ss"))
+  (require (lib "cmdline.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import "option-sig.ss")
-  (import "setup-unit.ss")
-  (import "option-unit.ss")
+  (require "option-sig.ss")
+  (require "setup-unit.ss")
+  (require "option-unit.ss")
 
   (define-values/invoke-unit/sig setup-option^
     setup:option@)
@@ -13,7 +13,7 @@
   (define-values (x-specific-collections x-archives)
     (command-line
      "setup-plt"
-     (global-defined-value 'argv)
+     (namespace-variable-binding 'argv)
      (once-each
       [("-c" "--clean") "Delete existing compiled files"
 			(clean #t)]
@@ -53,15 +53,15 @@
   (specific-collections x-specific-collections)
   (archives x-archives)
 
-  (import (lib "launcher-sig.ss" "launcher"))
-  (import (lib "launcher-unit.ss" "launcher"))
+  (require (lib "launcher-sig.ss" "launcher")
+	   (lib "launcher-unit.ss" "launcher")
 
-  (import (lib "dynext-sig.ss" "dynext"))
-  (import (lib "dynext-unit.ss" "dynext"))
+	   (lib "dynext-sig.ss" "dynext")
+	   (lib "dynext-unit.ss" "dynext"))
 
-  (import (lib "sig.ss" "compiler"))
-  (import (lib "option-unit.ss" "compiler"))
-  (import (lib "compiler-unit.ss" "compiler"))
+  (require (lib "sig.ss" "compiler")
+	   (lib "option-unit.ss" "compiler")
+	   (lib "compiler-unit.ss" "compiler"))
 
   (invoke-unit/sig
    (compound-unit/sig

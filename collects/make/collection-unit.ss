@@ -1,16 +1,16 @@
 
 (module collection-unit mzscheme
-  (import (lib "unitsig.ss"))
-  (import (lib "list.ss")
+  (require (lib "unitsig.ss"))
+  (require (lib "list.ss")
 	  (lib "file.ss"))
 
-  (import "collection-sig.ss")
-  (import "make-sig.ss")
+  (require "collection-sig.ss")
+  (require "make-sig.ss")
 
-  (import (lib "sig.ss" "compiler")
+  (require (lib "sig.ss" "compiler")
 	  (lib "file-sig.ss" "dynext"))
 
-  (export make:collection@)
+  (provide make:collection@)
 
   (define make:collection@
     (unit/sig

@@ -1,7 +1,7 @@
 
 (module spidey mzscheme
 
-  (export define-constructor
+  (provide define-constructor
 	  define-type
 	  :
 	  mrspidey:control

@@ -630,7 +630,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 
     name = SCHEME_STX_CAR(var);
 
-    if (rec[drec].resolve_module_ids && !env->genv->module) {
+    if (rec[drec].resolve_module_ids || !env->genv->module) {
       bucket = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name),
 						     globals);
     } else {

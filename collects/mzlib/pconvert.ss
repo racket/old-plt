@@ -1,11 +1,11 @@
 (module pconvert mzscheme
 
-  (import (prefix s: "string.ss")
+  (require (prefix s: "string.ss")
 	  (prefix f: "list.ss"))
-  (import "class.ss")
-  (import "unit.ss")
+  (require "class.ss")
+  (require "unit.ss")
 
-  (export show-sharing
+  (provide show-sharing
 	  constructor-style-printing
 	  quasi-read-style-printing
 	  abbreviate-cons-as-list
@@ -275,7 +275,7 @@
 				  (if answer
 				      (if (eq? (with-handlers ([not-break-exn?
 								(lambda (x) #f)])
-						 (global-defined-value answer))
+						 (namespace-variable-binding answer))
 					       expr)
 					  answer
 					  (build-unnamed))

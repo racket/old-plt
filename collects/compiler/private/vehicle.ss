@@ -20,14 +20,14 @@
 ;;; ------------------------------------------------------------
 
 (module vehicle mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (import (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax"))
 
-  (import "sig.ss")
-  (import "../sig.ss")
+  (require "sig.ss")
+  (require "../sig.ss")
 
-  (export vehicle@)
+  (provide vehicle@)
   (define vehicle@
     (unit/sig
 	compiler:vehicle^

@@ -1,7 +1,7 @@
 
 (module awk mzscheme
 
-  (export awk match:start match:end match:substring regexp-exec)
+  (provide awk match:start match:end match:substring regexp-exec)
 
   (define-syntax awk
     (lambda (stx)

@@ -1,8 +1,8 @@
 
 (module file-sig mzscheme
-  (import (lib "unitsig.ss"))
+  (require (lib "unitsig.ss"))
 
-  (export dynext:file^)
+  (provide dynext:file^)
   
   (define-signature dynext:file^
     (append-zo-suffix

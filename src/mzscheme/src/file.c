@@ -1700,6 +1700,7 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
 #endif
 #ifdef MAC_FILE_SYSTEM
   FCBPBRec rec;
+  OSErr err;
 
   rec.ioNamePtr = NULL;
   rec.ioFCBIndx = 0;

@@ -271,6 +271,10 @@ void wxTabChoice::Refresh(void)
 START_XFORM_SKIP;
 #endif
 
+#ifndef OS_X
+# define IsControlEnabled(x) 1
+#endif
+
 static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart)
 {
   Rect itemRect;

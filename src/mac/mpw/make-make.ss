@@ -330,6 +330,7 @@
 	  "wx_util.cc"
 	  "wx_area.cc"
 	  "wx_tabc.cc"
+	  "wx_gbox.cc"
 	  "wx_win.cc"
 	  "wx_buttn.cc"
 	  "wx_item.cc"

@@ -120,6 +120,10 @@ extern "C" {
   typedef void (*CONSOLE_PRINTF_PTR)(char *str, ...);
   typedef void (*CONSOLE_OUTPUT_PTR)(char *str, long len);
   typedef void (*EXIT_PTR)(int);
+  typedef void (*DW_PRE_PTR)(void *);
+  typedef Scheme_Object *(*DW_RUN_PTR)(void *);
+  typedef void (*DW_POST_PTR)(void *);
+  typedef void (*ON_SUSPEND_PTR)(void);
 }
 # define CAST_SCP (Scheme_Closed_Prim *)
 # define CAST_GCP (GC_F_PTR)
@@ -137,6 +141,10 @@ extern "C" {
 # define CAST_PRINTF (CONSOLE_PRINTF_PTR)
 # define CAST_OUTPUT (CONSOLE_OUTPUT_PTR)
 # define CAST_EXIT (EXIT_PTR)
+# define CAST_DW_PRE (DW_PRE_PTR)
+# define CAST_DW_RUN (DW_RUN_PTR)
+# define CAST_DW_POST (DW_POST_PTR)
+# define CAST_SUSPEND (ON_SUSPEND_PTR)
 #else
 # define CAST_SCP /* empty */
 # define CAST_GCP /* empty */
@@ -154,6 +162,10 @@ extern "C" {
 # define CAST_PRINTF /* empty */
 # define CAST_OUTPUT /* empty */
 # define CAST_EXIT /* empty */
+# define CAST_DW_PRE /* empty */
+# define CAST_DW_RUN /* empty */
+# define CAST_DW_POST /* empty */
+# define CAST_SUSPEND /* empty */
 #endif
 
 /* Set by mrmain.cxx: */
@@ -1487,7 +1499,7 @@ void wxDoEvents()
     do {
       scheme_current_thread->block_descriptor = -1;
       scheme_current_thread->blocker = NULL;
-      scheme_current_thread->block_check = try_dispatch;
+      scheme_current_thread->block_check = CAST_BLKCHK try_dispatch;
       scheme_current_thread->block_needs_wakeup = CAST_WU wakeup_on_dispatch;
 
       scheme_thread_block(0);
@@ -1837,7 +1849,7 @@ void MrEdQueuePaint(wxWindow *wx_window)
 	Scheme_Closed_Primitive_Proc *prim;
 	prim = (Scheme_Closed_Primitive_Proc *)cb->callback;
 	if ((prim->data == wx_window)
-	    && (prim->prim_val == call_on_paint)) {
+	    && (prim->prim_val == CAST_SCP call_on_paint)) {
 	  /* on-paint already queued */
 	  return;
 	}
@@ -1846,7 +1858,7 @@ void MrEdQueuePaint(wxWindow *wx_window)
     cb = cb->next;
   }
 
-  p = scheme_make_closed_prim(call_on_paint, wx_window);
+  p = scheme_make_closed_prim(CAST_SCP call_on_paint, wx_window);
 
   cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
   cb->context = c;
@@ -2926,7 +2938,7 @@ wxFrame *MrEdApp::OnInit(void)
 		      NULL,
 		      NULL, 0);
   scheme_add_waitable(mred_nested_wait_type,
-		      check_for_nested_event,
+		      CAST_BLKCHK check_for_nested_event,
 		      NULL,
 		      NULL, 0);
 
@@ -3250,7 +3262,10 @@ int wxHiEventTrampoline(int (*f)(void *), void *data)
   scheme_init_jmpup_buf(&het->progress_cont->buf);
 
   scheme_start_atomic();
-  scheme_dynamic_wind(pre_het, act_het, post_het, NULL, het);
+  scheme_dynamic_wind(CAST_DW_PRE pre_het, 
+		      CAST_DW_RUN act_het, 
+		      CAST_DW_POST post_het, 
+		      NULL, het);
 
   if (het->timer_on) {
     het->timer_on = 0;
@@ -3308,7 +3323,7 @@ static void het_run_new(HiEventTramp * volatile het)
 
   if (!scheme_setjmp(het->progress_base)) {
     scheme_start_atomic();
-    scheme_on_atomic_timeout = suspend_het_progress;
+    scheme_on_atomic_timeout = CAST_SUSPEND suspend_het_progress;
     wxYield(); /* due to het param, work will be restricted */
   }
 
@@ -3354,7 +3369,7 @@ int mred_het_run_some()
 	het->in_progress = 0;
 	het->progress_is_resumed = 1;
 	scheme_start_atomic();
-	scheme_on_atomic_timeout = suspend_het_progress;
+	scheme_on_atomic_timeout = CAST_SUSPEND suspend_het_progress;
 	if (!scheme_setjmp(het->progress_base)) {
 #ifdef MZ_PRECISE_GC
 	  het->fixup_var_stack_chain = &__gc_var_stack__;

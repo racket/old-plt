@@ -1782,7 +1782,7 @@ Scheme_Object *scheme_make_regexp(Scheme_Object *str, int * volatile result_is_e
   *result_is_err_string = 0;
 
   /* we rely on single-threaded, non-blocking regexp compilation: */
-  memcpy(&save, &scheme_error_buf, sizeof(mz_jmp_buf));
+  memcpy((void *)&save, (void *)&scheme_error_buf, sizeof(mz_jmp_buf));
   failure_msg_for_read = "yes";
   if (!scheme_setjmp(scheme_error_buf)) {
     result = make_regexp(1, &str);
@@ -1792,7 +1792,7 @@ Scheme_Object *scheme_make_regexp(Scheme_Object *str, int * volatile result_is_e
   }
 
   failure_msg_for_read = NULL;
-  memcpy(&scheme_error_buf, &save, sizeof(mz_jmp_buf));
+  memcpy((void *)&scheme_error_buf, (void *)&save, sizeof(mz_jmp_buf));
   return result;
 }
 

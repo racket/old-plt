@@ -223,8 +223,10 @@ static Scheme_Object *udp_receive_enable_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_read_waitable(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_write_waitable(int argc, Scheme_Object *argv[]);
 
+#ifdef UDP_IS_SUPPORTED
 static int udp_waitable_check_ready(Scheme_Object *uw);
 static void udp_waitable_needs_wakeup(Scheme_Object *_uw, void *fds);
+#endif
 
 static void register_tcp_listener_wait();
 
@@ -981,6 +983,14 @@ static int tcp_addr(const char *address, struct hostInfo *info)
   if (info->cname[0] == 0)
     return -42;
   
+  return 0;
+}
+
+int scheme_get_host_address(const char *address, int id, void *_result)
+{
+  if (tcp_addr(address, (struct hostInfo *)_result)) {
+    return 1;
+  }
   return 0;
 }
 
@@ -2546,7 +2556,9 @@ static void register_tcp_listener_wait()
 {
 #ifdef USE_TCP
   scheme_add_waitable(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL, 0);
+# ifdef UDP_IS_SUPPORTED
   scheme_add_waitable(scheme_udp_waitable_type, udp_waitable_check_ready, udp_waitable_needs_wakeup, NULL, 0);
+# endif
 #endif
 }
 
@@ -2689,6 +2701,8 @@ static Scheme_Object *tcp_port_p(int argc, Scheme_Object *argv[])
 
 /* Based on a design and implemenation by Eduardo Cavazos. */
 
+#ifdef UDP_IS_SUPPORTED
+
 static int udp_close_it(Scheme_Object *_udp)
 {
   Scheme_UDP *udp = (Scheme_UDP *)_udp;
@@ -2705,8 +2719,11 @@ static int udp_close_it(Scheme_Object *_udp)
   return 1;
 }
 
+#endif
+
 static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
 {
+#ifdef UDP_IS_SUPPORTED
   Scheme_UDP *udp;
   tcp_t s;
 
@@ -2759,6 +2776,11 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
   }
 
   return (Scheme_Object *)udp;
+#else
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "udp-open-socket: not supported on this platform");
+  return NULL;
+#endif
 }
 
 static Scheme_Object *
@@ -2767,11 +2789,13 @@ udp_close(int argc, Scheme_Object *argv[])
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type("udp-close", "udp-socket", 0, argc, argv);
 
+#ifdef UDP_IS_SUPPORTED
   if (udp_close_it(argv[0])) {
     scheme_raise_exn(MZEXN_I_O_UDP,
 		     "udp-close: udp-socket was already closed");
     return NULL;
   }
+#endif
 
   return scheme_void;
 }
@@ -2788,7 +2812,11 @@ udp_bound_p(int argc, Scheme_Object *argv[])
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type("udp-bound?", "udp-socket", 0, argc, argv);
 
+#ifdef UDP_IS_SUPPORTED
   return (((Scheme_UDP *)argv[0])->bound ? scheme_true : scheme_false);
+#else
+  return scheme_void;
+#endif
 }
 
 static Scheme_Object *
@@ -2797,11 +2825,16 @@ udp_connected_p(int argc, Scheme_Object *argv[])
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type("udp-connected?", "udp-socket", 0, argc, argv);
 
+#ifdef UDP_IS_SUPPORTED
   return (((Scheme_UDP *)argv[0])->connected ? scheme_true : scheme_false);
+#else
+  return scheme_void;
+#endif
 }
 
 static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Object *argv[], int do_bind)
 {
+#ifdef UDP_IS_SUPPORTED
   Scheme_UDP *udp;
   char *address = "";
   unsigned short origid, id;
@@ -2809,9 +2842,12 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
   int errid;
 
   udp = (Scheme_UDP *)argv[0];
+#endif
 
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+
+#ifdef UDP_IS_SUPPORTED
   if (!SCHEME_FALSEP(argv[1]) && !SCHEME_STRINGP(argv[1]))
     scheme_wrong_type(name, (do_bind ? "string or #f" : "string"), 1, argc, argv);
   if ((do_bind || !SCHEME_FALSEP(argv[2])) && !CHECK_PORT_ID(argv[2]))
@@ -2908,6 +2944,9 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
 		     address);
     return NULL;
   }
+#else
+  return scheme_void;
+#endif
 }
 
 static Scheme_Object *udp_bind(int argc, Scheme_Object *argv[])
@@ -2919,6 +2958,8 @@ static Scheme_Object *udp_connect(int argc, Scheme_Object *argv[])
 {
   return udp_bind_or_connect("udp-connect!", argc, argv, 0);
 }
+
+#ifdef UDP_IS_SUPPORTED
 
 static int udp_check_send(Scheme_Object *_udp)
 {
@@ -2962,9 +3003,12 @@ static void udp_send_needs_wakeup(Scheme_Object *_udp, void *fds)
   MZ_FD_SET(s, (fd_set *)fds2);
 }
 
+#endif
+
 static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *argv[],
 				  int with_addr, int can_block)
 {
+#ifdef UDP_IS_SUPPORTED
   Scheme_UDP *udp;
   char *address = "";
   long start, end;
@@ -2973,9 +3017,12 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
   GC_CAN_IGNORE tcp_address udp_dest_addr;
 
   udp = (Scheme_UDP *)argv[0];
+#endif
 
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+
+#ifdef UDP_IS_SUPPORTED
   if (with_addr) {
     if (!SCHEME_STRINGP(argv[1]))
       scheme_wrong_type(name, "string", 1, argc, argv);
@@ -3073,6 +3120,9 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
 		     address);
     return NULL;
   }
+#else
+  return scheme_void;
+#endif
 }
 
 static Scheme_Object *udp_send_to(int argc, Scheme_Object *argv[])
@@ -3104,6 +3154,8 @@ static Scheme_Object *udp_send_enable_break(int argc, Scheme_Object *argv[])
 {
   return scheme_call_enable_break(udp_send, argc, argv);
 }
+
+#ifdef UDP_IS_SUPPORTED
 
 static int udp_check_recv(Scheme_Object *_udp)
 {
@@ -3148,8 +3200,11 @@ static void udp_recv_needs_wakeup(Scheme_Object *_udp, void *fds)
   MZ_FD_SET(s, (fd_set *)fds2);
 }
 
+#endif
+
 static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[], int can_block)
 {
+#ifdef UDP_IS_SUPPORTED
   Scheme_UDP *udp;
   long start, end, x;
   int errid = 0;
@@ -3157,9 +3212,11 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
   GC_CAN_IGNORE tcp_address udp_src_addr;
 
   udp = (Scheme_UDP *)argv[0];
+#endif
 
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+#ifdef UDP_IS_SUPPORTED
   if (!SCHEME_STRINGP(argv[1]) || !SCHEME_MUTABLEP(argv[1]))
       scheme_wrong_type(name, "mutable-string", 1, argc, argv);
   
@@ -3238,6 +3295,9 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 		     errid);
     return NULL;
   }
+#else
+  return scheme_void;
+#endif
 }
 
 static Scheme_Object *udp_receive(int argc, Scheme_Object *argv[])
@@ -3257,17 +3317,23 @@ static Scheme_Object *udp_receive_enable_break(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *make_udp_waitable(const char *name, int argc, Scheme_Object **argv, int for_read)
 {
+#ifdef UDP_IS_SUPPORTED
   Scheme_UDP_Waitable *uw;
+#endif
 
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type(name, "udp-socket", 0, argc, argv);
 
+#ifdef UDP_IS_SUPPORTED
   uw = MALLOC_ONE_TAGGED(Scheme_UDP_Waitable);
   uw->type = scheme_udp_waitable_type;
   uw->udp = (Scheme_UDP *)argv[0];
   uw->for_read = for_read;
 
   return (Scheme_Object *)uw;
+#else
+  return scheme_void;
+#endif
 }
 
 static Scheme_Object *udp_read_waitable(int argc, Scheme_Object *argv[])
@@ -3280,6 +3346,7 @@ static Scheme_Object *udp_write_waitable(int argc, Scheme_Object *argv[])
   return make_udp_waitable("udp->send-waitable", argc, argv, 0);
 }
 
+#ifdef UDP_IS_SUPPORTED
 static int udp_waitable_check_ready(Scheme_Object *_uw)
 {
   Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)_uw;
@@ -3299,6 +3366,7 @@ static void udp_waitable_needs_wakeup(Scheme_Object *_uw, void *fds)
   else
     udp_send_needs_wakeup((Scheme_Object *)uw->udp, fds);
 }
+#endif
 
 /*========================================================================*/
 /*                       precise GC traversers                            */

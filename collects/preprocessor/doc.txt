@@ -592,18 +592,21 @@ Input and "output":
   performed, other parens are ignored, so if the input stream has
   "{[(}", the return value will be "[(".  It is possible for both tokens
   to be the same, which will have no nesting possible.  If no
-  open-pattern is found, the first non-whitespace character is used.
-  For example:
+  open-pattern is found, the first non-whitespace character is used, and
+  if that is also not found before the end of the input, an `eof' value
+  is returned.  For example:
 
     |@(paren-pairs (cons (list "|" "|") (paren-pairs)))
     |@defcommand{verb}{X}{<tt>X</tt>}
     |@verb abc
     |@verb |FOO|
+    |@verb
 
   ==>
 
     |<tt>a</tt>bc
     |<tt>FOO</tt>
+    |verb: expecting an argument for `X'
 
 > (get-arg*)
 

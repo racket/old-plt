@@ -218,14 +218,17 @@
    #f
    (lambda ()
      (cond [(regexp-match/fail-without-reading #rx"[^ \t\r\n]" (stdin)) => car]
-           [else (error 'get-arg "got no argument")]))))
+           [else eof]))))
 
 (provide get-arg*)
 (define (get-arg*)
-  (let ([buf (open-output-string)])
-    (parameterize ([stdout buf] [stdin (make-composite-input (get-arg))])
-      (run) (flush-output buf))
-    (get-output-string buf)))
+  (let ([arg (get-arg)])
+    (if (eof-object? arg)
+      arg
+      (let ([buf (open-output-string)])
+        (parameterize ([stdout buf] [stdin (make-composite-input arg)])
+          (run) (flush-output buf))
+        (get-output-string buf)))))
 
 ;;=============================================================================
 ;; User functionality
@@ -261,14 +264,25 @@
 
 (provide defcommand)
 (define (defcommand)
-  (let ([name (string->symbol (get-arg))]
-        [args (read-from-string-all (get-arg))]
-        [body (get-arg)])
-    (unless (and (list? args) (andmap symbol? args))
-      (error 'defcommand "bad arguments for ~s: ~e" name args))
-    (eval `(define (,name)
-             (let ,(map (lambda (a) `[,a (,get-arg)]) args)
-               ,(string->substlist args body))))))
+  (let ([name (get-arg)] [args (get-arg)] [body (get-arg)])
+    (cond
+     [(eof-object? name) (error 'defcommand "no name")]
+     [(eof-object? args) (error 'defcommand "no args for `~a'" name)]
+     [(eof-object? body) (error 'defcommand "no body for `~a'" name)]
+     [else
+      (let ([name (string->symbol name)]
+            [args (read-from-string-all args)]
+            [body body])
+        (define (get-arg! a)
+          (let ([x (get-arg)])
+            (if (eof-object? x)
+              (error name "expecting an argument for `~s'" a)
+              x)))
+        (unless (and (list? args) (andmap symbol? args))
+          (error 'defcommand "bad arguments for ~s: ~e" name args))
+        (eval `(define (,name)
+                 (let ,(map (lambda (a) `[,a (,get-arg! ',a)]) args)
+                   ,(string->substlist args body)))))])))
 
 ;;=============================================================================
 ;; Invocation
@@ -286,7 +300,12 @@
 
 (provide include)
 (define (include . files)
-  (define inputs (if (null? files) (list (get-arg)) files))
+  (define inputs (if (null? files)
+                   (let ([arg (get-arg)])
+                     (if (eof-object? arg)
+                       (error 'include "expecting a file argument")
+                       (list (get-arg))))
+                   files))
   (define curdir (cd))
   (define (cd+file f)
     (let*-values ([(dir name dir?)

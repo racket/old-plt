@@ -1,3 +1,5 @@
+;; fix pen to size 1 in double and single brackets.
+
 (unit/sig ()
   (import mred^
 	  framework^
@@ -208,13 +210,20 @@
 		[horizontal-lines
 		 (lambda (x)
 		   (send dc draw-line x y (+ x 5) y)
-		   (send dc draw-line x (+ y height -1) (+ x 5) (+ y height -1)))])
+		   (send dc draw-line x (+ y height -1) (+ x 5) (+ y height -1)))]
+		[old-pen (send dc get-pen)])
+
+	    (when (is-a? dc post-script-dc%)
+	      (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
+
 	    (horizontal-lines x)
 	    (horizontal-lines (+ x width -6))
 	    (vertical-line x)
 	    (vertical-line (+ x width -1))
 	    (vertical-line (+ x 3))
-	    (vertical-line (+ x width -4)))
+	    (vertical-line (+ x width -4))
+
+	    (send dc set-pen old-pen))
 	  (super-draw dc x y left top right bottom dx dy draw-caret))])
       (inherit set-snipclass)
       (sequence
@@ -242,11 +251,17 @@
 		[horizontal-lines
 		 (lambda (x)
 		   (send dc draw-line x y (+ x 3) y)
-		   (send dc draw-line x (+ y height -1) (+ x 3) (+ y height -1)))])
+		   (send dc draw-line x (+ y height -1) (+ x 3) (+ y height -1)))]
+		[old-pen (send dc get-pen)])
+
+	    (when (is-a? dc post-script-dc%)
+	      (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
+
 	    (horizontal-lines (+ x 1))
 	    (horizontal-lines (+ x width -5))
 	    (vertical-line (+ x 1))
-	    (vertical-line (+ x width -2)))
+	    (vertical-line (+ x width -2))
+	    (send dc set-pen old-pen))
 	  (super-draw dc x y left top right bottom dx dy draw-caret))])
       (inherit set-snipclass)
       (sequence
@@ -441,19 +456,26 @@
 	   [get-w/h/d/s/l/r
 	    (lambda (dc)
 	      (let-values ([(width height descent space) (send dc get-text-extent "a")])
-		(values (+ margin (* 2 width) margin) height descent space 0 0)))])
+		(values (+ margin (* 3 width) margin) height descent space 0 0)))])
       (drawing "robby:ellipses"
 	       get-w/h/d/s/l/r
 	       (lambda (dc x y)
 		 (let*-values ([(w h d s _1 _2) (get-w/h/d/s/l/r dc)]
 			       [(yp) (+ y s (floor (+ 1/2 (/ (- h s d) 2))))]
 			       [(l) (+ x margin 1)]
+			       [(old-pen) (send dc get-pen)]
 			       [(r) (+ x w -1 (- margin) (- margin))])
 					;(send dc draw-rectangle x y w h)
 					;(send dc draw-rectangle x (+ y s) w (- h d s))
+
+		   (when (is-a? dc post-script-dc%)
+		     (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
+
 		   (send dc draw-point l yp)
 		   (send dc draw-point (+ (floor (/ (+ l r) 2))) yp)
-		   (send dc draw-point r yp))))))
+		   (send dc draw-point r yp)
+
+		   (send dc set-pen old-pen))))))
 
   (define-values (arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)
     (let* ([arrow/letter-space 1]
@@ -488,13 +510,19 @@
 		       [x2 (- x1 4)]
 		       [y2 (- y1 3)]
 		       [x3 x2]
-		       [y3 (+ y1 3)])
+		       [y3 (+ y1 3)]
+		       [old-pen (send dc get-pen)])
+
+		  (when (is-a? dc post-script-dc%)
+		    (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
 
 		  (send dc draw-line x2 y1 x y1)
 		  
 		  (send dc draw-line x1 y1 x2 y2)
 		  (send dc draw-line x2 y2 x3 y3)
-		  (send dc draw-line x3 y3 x1 y1))))]
+		  (send dc draw-line x3 y3 x1 y1)
+
+		  (send dc set-pen old-pen))))]
 
 	   [draw-text
 	    (lambda (dc x y text descender?)

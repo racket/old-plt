@@ -18,8 +18,6 @@
 ;; ----------------------------------------------------------------------
 
 (begin-elaboration-time
- (require-library "sparams.ss" "backward"))
-(begin-elaboration-time
  (require-library "zsigs.ss" "zodiac"))
 (begin-elaboration-time
  (require-library "sigs.ss" "zodiac"))

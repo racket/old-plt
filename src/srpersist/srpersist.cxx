@@ -244,10 +244,12 @@ int sizeofCDataType(SQLSMALLINT type) {
   switch (type) {
   case SQL_C_CHAR :
     return sizeof(unsigned char);
+  case SQL_C_SHORT :
   case SQL_C_SSHORT :
     return sizeof(short int);
   case SQL_C_USHORT :
     return sizeof(unsigned short int);
+  case SQL_C_LONG :
   case SQL_C_SLONG :
     return sizeof(long int);
   case SQL_C_ULONG :

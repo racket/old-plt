@@ -316,7 +316,6 @@ ScanTransparentColor(XpmColor *color, unsigned int cpp, XpmAttributes *attribute
     unsigned int b;
 
     /* first get a character string */
-    a = 0;
     if (!(s = color->string = (char *) XpmMalloc(cpp + 1)))
 	return (XpmNoMemory);
     *s++ = printable[0];

@@ -103,19 +103,31 @@
 			  (unless (member over-var defined-vars)
 			    (raise-syntax-error 'class/d (format "overriden var ~a not defined" over-var))))
 			overriden-vars)
-	      
-	      `(class*/names ,local-names ,super ,interfaces ,init-args
+	      (let ([clausess
+		     (map (lambda (expanded-def/exp type)
+			    (case type
+			      [(#%define-values)
+			       (let* ([vars (cadr expanded-def/exp)]
+				      [gens (map gensym vars)])
+				 (cons
+				  `(private ,@gens)
+				  (cons
+				   `(sequence (set!-values ,gens ,@(cddr expanded-def/exp)))
+				   (map (lambda (var gen)
+					  (let ([clause-type
+						 (cond
+						  [(member var public-vars) 'public]
+						  [(member var overriden-vars) 'override]
+						  [else 'private])])
+					    `(,clause-type [,var ,gen])))
+					vars
+					gens))))]
+			      [else (list
+				     `(sequence ,expanded-def/exp))]))
+			  expanded-def/exps types)])
+		
+		`(class*/names ,local-names ,super ,interfaces ,init-args
+			       (rename ,@renamed-vars)
+			       (inherit ,@inherited-vars)
 
-			     (sequence
-			       ,@(map (lambda (expanded-def/exp type)
-					(case type
-					  [(#%define-values)
-					   `(set!-values . ,(cdr expanded-def/exp))]
-					  [else expanded-def/exp]))
-				      expanded-def/exps types))
-			     
-			     (rename ,@renamed-vars)
-			     (inherit ,@inherited-vars)
-			     (private ,@(map (lambda (pv) `(,pv ,pv)) private-vars))
-			     (public ,@(map (lambda (pv) `(,pv ,pv)) public-vars))
-			     (override ,@(map (lambda (ov) `(,ov ,ov)) overriden-vars))))))))
+			       ,@(apply append clausess))))))))

@@ -21,7 +21,8 @@
       (inherit get-admin set-flags get-flags set-count set-snipclass get-style)
       (rename [super-get-extent get-extent])
       (private 
-	[size #f]
+	[size-calculated? #f]
+	[size 10]
 	[width-fraction 1/2]
 	[right-points #f]
 	[down-points #f]
@@ -33,6 +34,7 @@
 		  [d (send s get-text-descent dc)]
 		  [a (send s get-text-space dc)])
 	     (set! size (- h d a))
+	     (set! size-calculated? #t)
 	     (set! arrow-size (+ size 2))
 	     (let* ([voffset (floor (/ d 2))]
 		    [s (floor (- h d a))]
@@ -56,18 +58,18 @@
       (override
 	[get-extent (lambda (dc x y w h descent space lspace rspace)
 		      (super-get-extent dc x y w h descent space lspace rspace)
-		      (unless size (set-sizes dc))
+		      (unless size-calculated? (set-sizes dc))
 		      (when w (set-box! w (get-width)))
 		      (when h (set-box! h (get-height)))
 		      (when descent (set-box! descent 2))
 		      (when space (set-box! space 0)))]
 	[partial-offset (lambda (dc x y len)
-			  (unless size (set-sizes dc))
+			  (unless size-calculated? (set-sizes dc))
 			  (if (zero? len)
 			      0 
 			      (get-width)))]
 	[draw (lambda (dc x y left top right bottom dx dy draw-caret)
-		(unless size (set-sizes dc))
+		(unless size-calculated? (set-sizes dc))
 		(let ([b (send dc get-brush)])
 		  (send dc set-brush (if clicked? blue red))
 		  (let ([points (if on? down-points right-points)])
@@ -78,7 +80,7 @@
 			  (+ x (send (cadr points) get-x))
 			  (+ y (send (cadr points) get-y))))
 		  (send dc set-brush b)))]
-	[size-cache-invalid (lambda () (set! size #f))]
+	[size-cache-invalid (lambda () (set! size-calculated? #f))]
 	[on-event
 	 (lambda (dc x y mediax mediay event)
 	   (let ([in-range?
@@ -166,6 +168,18 @@
       (override
 	[get-editor (lambda () (send snip get-title-buffer))])
       (public
+	[open
+	 (lambda ()
+	   (send snip open))]
+	[close
+	 (lambda ()
+	   (send snip close))]
+	[toggle-open/closed
+	 (lambda ()
+	   (send snip toggle-open/closed))]
+	[is-open?
+	 (lambda ()
+	   (send snip is-open?))]
 	[new-item 
 	 (lambda x
 	   (begin0
@@ -385,6 +399,7 @@
 				 (send main-buffer delete 2 5)))]
 	[open (lambda () (handle-open #t))]
 	[close (lambda () (handle-close #t))]
+	[is-open? (lambda () open?)]
 	[toggle-open/closed
 	 (lambda ()
 	   (if open?

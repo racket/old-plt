@@ -26,6 +26,8 @@ Rough BNF
 (define-macro class/d* class/d*)
 (define-macro class/d*/names class/d*/names)
 
+#|
+
 ;; Tests
 
 (define (synerr x)
@@ -141,3 +143,5 @@ Rough BNF
 			      (define (x) 1)
 			      (super-init)))
        x))
+
+|#

@@ -11,3 +11,5 @@
 (require-relative-library "defstru.ss")
 (require-relative-library "compatm.ss")
 (require-relative-library "shared.ss")
+
+(require-relative-library "classd.ss")

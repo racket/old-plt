@@ -2,7 +2,7 @@
 _Hierarchical List Control_
 
 hierlists.ss defines hierlist^
-hierlistr.ss returns a unit/sig, importes mred^ and exports hierlist^
+hierlistr.ss returns a unit/sig, imports mred^ and mzlib:function^ and exports hierlist^
 hierlist.ss invoke-opens hierlistr.ss
 
 _hierlist_ defines three classes:
@@ -109,6 +109,16 @@ _hierlist_ defines three classes:
 
 >  get-items :: (send a-list-item get-items) - returns a list of the
      items in the compound item
+
+> open :: (send a-list-item open) - displays the children of this list.
+
+> close :: (send a-list-item close) - hides the children of this list.
+
+> toggle-open/closed :: (send a-list-item toggle-open/closed) - 
+     toggles the visible status of the children of this list
+
+> is-open? :: (send a-list-item is-open?) - 
+     returns a boolean indicating if the children of this list are visible.
 
 
 --------------------------------------------------

@@ -218,7 +218,6 @@
 (syntax-test '(set! x . 1))
 (syntax-test '(set! x 1 . 2))
 
-(set!-values () (values))
 (set!-values (x) 9)
 (test 9 'set!-values x)
 (test (void) 'set!-values (set!-values () (values)))

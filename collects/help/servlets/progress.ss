@@ -1,6 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
+         (lib "string-constant.ss" "string-constants")
 	 (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
@@ -14,12 +15,13 @@
    (lambda (show)
      (show "<HTML>")
      (show (xexpr->string
-	    `(HEAD ,hd-css (TITLE "PLT manual download progress"))))
+	    `(HEAD ,hd-css 
+		   (TITLE ,(string-constant refresh-progress)))))
      (show "<BODY>")
      (show (xexpr->string 
 	    `(H3 ,(color-with 
 		   "blue" 
-		   "Installation log"))))
+	           (string-constant refresh-installation-log)))))
      (show "<P></P>")
      (show "<PRE>")
      (show nl)

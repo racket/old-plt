@@ -5,6 +5,7 @@
 	   (lib "xml.ss" "xml")
 	   (lib "url.ss" "net")
  	   (lib "finddoc.ss" "help" "private")
+	   (lib "string-constant.ss" "string-constants")
  	   (lib "path.ss" "help" "private"))
 	
   (provide get-pref/default
@@ -30,7 +31,7 @@
 
   (define home-page 
     `(A ((HREF "/servlets/home.ss") (TARGET "_top"))
-	"Help Desk home"))
+	,(string-constant hd-home)))
 
   (define (get-pref/default pref default)
     (get-preference pref  (lambda () default)))

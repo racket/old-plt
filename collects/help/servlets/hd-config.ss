@@ -3,6 +3,7 @@
          (lib "servlet-helpers.ss" "web-server")
 	 (lib "file.ss")
 	 (lib "etc.ss")
+	 (lib "string-constant.ss" "string-constants")
 	 (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
@@ -86,7 +87,7 @@
 	  " document.getElementById(\"search_height\").value="
 	  search-height-default)
          "}")
-	(TITLE "PLT Help Desk configuration")
+	(TITLE ,(string-constant hd-configuration))
 	,hd-css)
       (BODY 
        (H1  "PLT Help Desk configuration")
@@ -100,34 +101,35 @@
 		     (CELLPADDING "4")
 		     (CELLSPACING "2")
 		     (COLS "2"))
-	       (TR (TH ((ALIGN "center")
+		    (TR (TH ((ALIGN "center")
 			     (COLSPAN "2")) 
 			    (FONT ((FACE "serif")
 				   (SIZE "+2"))
-				  "Search frame options")))
+				  ,(string-constant hd-search-frame-options))))
 		    (TR
 		     (TD ((ALIGN "right"))
-			 (B "Height:")) 
+			 (B ,(string-constant hd-height) ":")) 
 		     (TD (INPUT ((TYPE "text")
 				 (NAME "search-height")
 				 (ID "search_height")
 				 (VALUE ,search-height)
 				 (SIZE "5")))
 			 'nbsp
-			 (FONT ((SIZE "-1")) "pixels")))
-		    (TR (TD ((ALIGN "right")) (B "Background color:"))
+			 (FONT ((SIZE "-1")) ,(string-constant hd-pixels))))
+		    (TR (TD ((ALIGN "right")) (B ,(string-constant 
+						   hd-bg-color) ":"))
 			(TD (SELECT ((NAME "search-bg")
 	                             (ID "search_bg_select")
 				     (onChange "updateBgColor(this.value)"))
 				    ,@(map (make-option search-bg-color)
 					   color-choices))))
-		    (TR (TD ((ALIGN "right")) (B "Text color:"))
+		    (TR (TD ((ALIGN "right")) (B ,(string-constant hd-text-color) ":"))
 			(TD (SELECT ((NAME "search-fg")
 				     (ID "search_text_select")
 				     (onChange "updateTextColor(this.value)"))
 				    ,@(map (make-option search-text-color)
 					   color-choices))))
-		    (TR (TD ((ALIGN "right")) (B "Link color:"))
+		    (TR (TD ((ALIGN "right")) (B ,(string-constant hd-link-color) ":"))
 			(TD (SELECT ((NAME "search-link")
 				     (ID "search_link_select")
 				     (onChange "updateLinkColor(this.value)"))
@@ -142,11 +144,13 @@
 		     (TR (TD 
 			  (FONT ((COLOR ,search-text-color)
 				 (ID "sample_text"))
-				   "Search frame text appears in this color")))
+				   ,(string-constant
+				     hd-text-sample))))
 		     (TR (TD (FONT ((COLOR ,search-link-color)
 				    (ID "sample_link")
 				    (STYLE "text-decoration:underline"))
-				   "Search frame links appear in this color")))))
+				   ,(string-constant
+				     hd-link-sample))))))
 	     (P)
 	     (CENTER
 	      (TABLE ((BGCOLOR "white")
@@ -154,30 +158,25 @@
 		      (CELLPADDING "4")
 		      (WIDTH "50%"))
 		      (TR (TD 
-			   "The selections you make will be shown here "
-			   "if you have Javascript enabled and "
-			   "a recent, standards-compliant browser."))))
+	                   ,(string-constant hd-javascript-note)))))
 	     (P)
 	     (TABLE ((ALIGN "center"))
 		    (TR 
 		     (TD (INPUT ((TYPE "submit")
-				 (VALUE "Save changes"))))
+				 (VALUE ,(string-constant hd-save-changes)))))
 		     (TD 'nbsp 'nbsp 'nbsp 'nbsp)
 		     (TD (INPUT ((TYPE "reset")
-				 (VALUE "Reset")
+				 (VALUE ,(string-constant hd-reset))
 				 (onClick "resetValues()"))))
 		     (TD 'nbsp 'nbsp 'nbsp 'nbsp)
 		     (TD (INPUT ((TYPE "button")
-				 (VALUE "Defaults")
+				 (VALUE ,(string-constant hd-defaults))
 				 (onClick "defaultValues()"))))))
 	     (P)
 	     (CENTER 
 	      ,home-page)))))
   
   config-page)
-
-
-
 
 
 

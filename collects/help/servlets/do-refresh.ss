@@ -2,6 +2,7 @@
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
 	 (lib "help-desk-mz.ss" "help")
+	 (lib "string-constant.ss" "string-constants")
 	 (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
@@ -17,21 +18,25 @@
   (make-html-response/incremental
    (lambda (show)
      (let* ([make-action
-	     (lambda (action name)
+	     (lambda (action format-string)
 	       (lambda (doc)
 		 (let ([doc-name (car doc)]
 		       [doc-label (cdr doc)])
-		   (show name " " doc-label "<BR>")
+		   (show (format format-string doc-label) "<BR>")
 		   (action tmp-directory doc-name))))]
-	    [downloader (make-action download-known-doc "Downloading")]
-	    [deleter (make-action delete-known-doc "Deleting")]
-	    [installer (make-action run-setup-plt "Installing")]
+	    [downloader (make-action download-known-doc 
+				     (string-constant refresh-downloading))]
+	    [deleter (make-action delete-known-doc 
+				  (string-constant refresh-deleting))]
+	    [installer (make-action run-setup-plt 
+				    (string-constant refresh-installing))]
 	    [looper (lambda (f)
 		      (for-each f known-docs))])
        (doc-collections-changed)
        (show "<HTML>")
        (show (xexpr->string 
-	`(HEAD ,hd-css (TITLE "PLT manual download progress"))))
+	`(HEAD ,hd-css (TITLE 
+			,(string-constant refresh-progress)))))
        (show "<BODY><PRE>")
        (let-values ([(iport oport) (make-pipe)])
          (set-progress-input-port! iport)		   
@@ -41,7 +46,8 @@
 		   (list downloader deleter installer))
 	 (close-output-port oport))
        (delete-directory/r tmp-directory)
-       (show (xexpr->string `(B "Done refreshing CVS manuals")))
+       (show (xexpr->string `(B ,(string-constant 
+				  refresh-done))))
        (show "</PRE></BODY></HTML>")
        (semaphore-post refresh-semaphore)))))
 

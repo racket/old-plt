@@ -60,7 +60,7 @@
      [else #f]))
 
   (define (do-file file)
-    (define path (bytes->path file))
+    (define (path) (bytes->path file))
     (when (binary-file? file)
       (let ([dfile (bytes-downcase file)])
         (cond [(regexp-match-positions renaming dfile) =>
@@ -71,12 +71,12 @@
                    (when verbose?
                      (printf "Renaming: ~a/~a -> ~a\n"
                              (current-directory) file new))
-                   (rename-file-or-directory path (bytes->path new))
+                   (rename-file-or-directory (path) (bytes->path new))
                    (set! file new)))]
               [(regexp-match-positions xxxs dfile)
                (fprintf (current-error-port) "Warning: ~a/~a was not renamed!\n"
                         (current-directory) file)]))
-      (let-values ([(i o)    (open-input-output-file path 'update)]
+      (let-values ([(i o)    (open-input-output-file (path) 'update)]
                    [(print?) verbose?])
         (for-each (lambda (subst)
                     (file-position i 0)

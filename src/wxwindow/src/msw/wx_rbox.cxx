@@ -213,7 +213,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
     long groupStyle = 0;
     if (i == 0 && _style==0)
       groupStyle = WS_GROUP;
-    long newId = NewId();
+    long newId = i;
     radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
 					 groupStyle | RADIO_FLAGS, 0, 0, 0, 0,
 					 the_handle, (HMENU)newId, wxhInstance, NULL);
@@ -341,7 +341,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
     long groupStyle = 0;
     if (i == 0 && _style==0)
       groupStyle = WS_GROUP;
-    long newId = NewId();
+    long newId = i;
 #if FAFA_LIB && !CTL3D
     radioWidth[i]  = Choices[i]->GetWidth()  + FB_MARGIN ;
     radioHeight[i] = Choices[i]->GetHeight() + FB_MARGIN ;

@@ -88,12 +88,17 @@ static Scheme_Object *orig_evaluator;
 
 #ifndef MACINTOSH_EVENTS
 extern Scheme_Process *scheme_main_process;
+
+#ifdef MZ_REAL_THREADS
+extern int scheme_dont_send_break_signal;
+#endif
  
 static void user_break_hit(int ignore)
 {
   Scheme_Process *p = scheme_main_process;
 
-  scheme_break_thread(p);
+  if (!p->external_break)
+    scheme_break_thread(p);
 
 # ifdef SIGSET_NEEDS_REINSTALL
   MZ_SIGSET(SIGINT, user_break_hit);

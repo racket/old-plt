@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.4 1998/07/04 02:57:33 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.5 1998/08/11 14:25:05 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1149,9 +1149,9 @@ Bool wxBitmap::Create(int w, int h, int d)
   else
   {
     HDC dc = GetDC(NULL);
-	 ms_bitmap = ::CreateCompatibleBitmap(dc, w, h);
-	 ReleaseDC(NULL, dc);
-	 depth = wxDisplayDepth();
+    ms_bitmap = ::CreateCompatibleBitmap(dc, w, h);
+    ReleaseDC(NULL, dc);
+    depth = wxDisplayDepth();
   }
   if (ms_bitmap)
 	 ok = TRUE;
@@ -1199,43 +1199,43 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 
   else if (flags & wxBITMAP_TYPE_XBM)
   {
-	  char *c;
-	  int w, h;
+    char *c;
+    int w, h;
 
-	  c = wxLoadXBM(bitmap_file, &w, &h);
-	  if (c) {
-		HDC glob_dc = GetDC(NULL);
-	    ms_bitmap = CreateCompatibleBitmap(glob_dc, w, h);
-		ReleaseDC(NULL, glob_dc);
-		if (ms_bitmap) {
-			HDC dc = ::CreateCompatibleDC(NULL);
+    c = wxLoadXBM(bitmap_file, &w, &h);
+    if (c) {
+      HDC glob_dc = GetDC(NULL);
+      ms_bitmap = CreateBitmap(w, h, 1, 1, NULL);
+      ReleaseDC(NULL, glob_dc);
+      if (ms_bitmap) {
+	HDC dc = ::CreateCompatibleDC(NULL);
 			
-			if (dc)
-			{
-				HGDIOBJ orig = ::SelectObject(dc, ms_bitmap);
-				char *p;
-				COLORREF white = RGB(255, 255, 255);
-				COLORREF black = RGB(0, 0, 0);
-				int i, j;
+	if (dc)
+	  {
+	    HGDIOBJ orig = ::SelectObject(dc, ms_bitmap);
+	    char *p;
+	    COLORREF white = RGB(255, 255, 255);
+	    COLORREF black = RGB(0, 0, 0);
+	    int i, j;
 				
-				for (i = 0, p = c; i < h; i++)
-				  for (j = 0; j < w; j++, p++)
-					::SetPixel(dc, j, i, *p ? black : white);
+	    for (i = 0, p = c; i < h; i++)
+	      for (j = 0; j < w; j++, p++)
+		::SetPixel(dc, j, i, *p ? black : white);
 
-				::SelectObject(dc, orig);
-				DeleteDC(dc);
+	    ::SelectObject(dc, orig);
+	    DeleteDC(dc);
 
-				ok = TRUE;
-				width = w;
-				height = h;
-				depth = 1;
-			} else {
-				DeleteObject(ms_bitmap);
-				ms_bitmap = NULL;
-			}
-
-		}
+	    ok = TRUE;
+	    width = w;
+	    height = h;
+	    depth = 1;
+	  } else {
+	    DeleteObject(ms_bitmap);
+	    ms_bitmap = NULL;
 	  }
+
+      }
+    }
   }
 #if USE_XPM_IN_MSW
   else if (flags & wxBITMAP_TYPE_XPM)

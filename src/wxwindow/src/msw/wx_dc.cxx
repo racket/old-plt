@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.6 1998/08/09 20:55:21 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.7 1998/08/11 14:25:04 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1779,7 +1779,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 
   if (!bitmap)
   {
-	 // Selecting nothing means, select old bitmap
+    // Selecting nothing means, select old bitmap
     // out of the device context (e.g. so it can be deleted)
     if (old_bitmap)
     {
@@ -1794,11 +1794,8 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     }
 
     if (old_palette) {
-
       SelectPalette(cdc, old_palette, TRUE);
-
       old_palette = NULL;
-
     }
     return;
   }
@@ -1814,11 +1811,8 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 
 
   if (selected_bitmap) {
-
-	  selected_bitmap->selectedInto = NULL;
-
-	  selected_bitmap->selectedIntoDC = 0;
-
+    selected_bitmap->selectedInto = NULL;
+    selected_bitmap->selectedIntoDC = 0;
   }
   
   selected_bitmap = bitmap;
@@ -1838,45 +1832,26 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
    bitmap->selectedIntoDC = 0;
 
    if (old_bitmap) {
-
-	   ::SelectObject(cdc, old_bitmap);
-
-	   old_bitmap = NULL;
-
+     ::SelectObject(cdc, old_bitmap);
+     old_bitmap = NULL;
    }
 
    bitmap = NULL;
-
-  }
-  else if (!old_bitmap)
+  } else if (!old_bitmap)
     old_bitmap = bm;
 
-
-
   wxColourMap *cm = (bitmap ? bitmap->GetColourMap() : NULL);
-
   if (cm && cm->ms_palette) {
-
     HPALETTE p;
-
     p = SelectPalette(cdc, cm->ms_palette, TRUE);
-
     if (p) {
-
       RealizePalette(cdc);
-
       old_palette = p;
-
     }
-
   } else if (old_palette) {
-
     SelectPalette(cdc, old_palette, TRUE);
-
     RealizePalette(cdc);
-
     old_palette = NULL;
-
   }
 }
 

@@ -163,7 +163,7 @@
 #define USE_WATCH_FOUND_FUNC SGC_STD_DEBUGGING
 /* Calls GC_found_watch when the watch-for ptr is found. */
 
-#define PAD_BOUNDARY_BYTES (1 && SGC_STD_DEBUGGING)
+#define PAD_BOUNDARY_BYTES (0 && SGC_STD_DEBUGGING)
 /* Put a known padding pattern around every allocated
    block to test for array overflow/underflow.
    Pad-testing is performed at the beginning of every GC.
@@ -2344,7 +2344,7 @@ void *do_malloc(SET_NO_BACKINFO
   if (c & (PTR_SIZE - 1))
     c += (PTR_SIZE - (c & (PTR_SIZE - 1)));
 #if !PAD_BOUNDARY_BYTES
-  if (!(ORIGSIZE & (DOUBLE_SIZE - 1))) /* Even more alignment for doubles: */
+  if (!(size & (DOUBLE_SIZE - 1))) /* Even more alignment for doubles: */
 #else
     /* Assume alignment */
 #endif

@@ -85,7 +85,9 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, char *label,
   windows_id = (int)NewId();
 
   HWND wx_button =
-    wxwmCreateWindowEx(0, "wxBUTTON", label, BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,
+    wxwmCreateWindowEx(0, "wxBUTTON", label, 
+		       BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD
+		       | ((style & 1) ? WS_BORDER : 0),
 		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 		       wxhInstance, NULL);
 

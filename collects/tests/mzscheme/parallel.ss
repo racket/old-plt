@@ -3,6 +3,9 @@
 ;;  thread creates a directory sub<n> to run in, so that filesystem
 ;;  tests don't collide.
 
+(unless (defined? 'parallel-load)
+   (global-defined-value 'parallel-load "quiet.ss"))
+
 ; Runs n versions of test in parallel threads and namespaces, 
 ; waiting until all are done
 (define (parallel n test)
@@ -21,8 +24,9 @@
 				     [parameterization-branch-handler
 				      (lambda () (make-parameterization p))])
 				    (let ([dirname (format "sub~s" n)])
-				      (unless (directory-exists? dirname)
-					      (make-directory dirname))
+				      (when (directory-exists? dirname)
+					(delete-directory* dirname))
+				      (make-directory dirname)
 				      (current-directory dirname)
 				      (dynamic-wind
 				       void
@@ -34,7 +38,7 @@
 					 (printf "~nThread ~s:" n)
 					 (eval '(report-errs))
 					 (current-directory (build-path 'up))
-					 (delete-directory dirname)
+					 (delete-directory* dirname)
 					 (semaphore-post done)))))))))
 		(loop (sub1 n)))))
     (let loop ([n n])
@@ -47,4 +51,13 @@
 	      (semaphore-wait done)
 	      (loop (sub1 n))))))
 
-(parallel 3 (path->complete-path "quiet.ss" (current-load-relative-directory)))
+(define (delete-directory* dir)
+  (for-each (lambda (f)
+	      (let ([f (build-path dir f)])
+		(if (or (link-exists? f) (file-exists? f))
+		    (delete-file f)
+		    (delete-directory* f))))
+	    (directory-list dir))
+  (delete-directory dir))
+
+(parallel 3 (path->complete-path parallel-load (current-load-relative-directory)))

@@ -15,7 +15,6 @@
 @SYM "xpm" : wxBITMAP_TYPE_XPM
 @SYM "jpeg" : wxBITMAP_TYPE_JPEG
 @SYM "png" : wxBITMAP_TYPE_PNG
-@SYM "pict" : wxBITMAP_TYPE_PICT
 @ENDSYMBOLS
 
 static Bool IsColor(wxBitmap *bm)
@@ -40,7 +39,7 @@ static Bool IsColor(wxBitmap *bm)
 @ m "is-color?" : bool IsColor();
 
 @ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0,wxColour^=NULL);  : : //USEALLFUEL[r]
-@ "save-file" : bool SaveFile(wpathname,SYM[saveBitmapType]);  : : //USEALLFUEL[1]
+@ "save-file" : bool SaveFile(wpathname,SYM[saveBitmapType],rint[0|100]=75);  : : //USEALLFUEL[1]
 
 @ "get-loaded-mask" : wxBitmap! GetMask()
 @ "set-loaded-mask" : void SetMask(wxBitmap!)

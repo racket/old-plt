@@ -66,7 +66,7 @@ public:
         { cmap = (new_cmap ? new_cmap : wxAPP_COLOURMAP); }
     // load and save bitmap
     Bool LoadFile(char *name, long flags = wxBITMAP_DEFAULT, wxColour *bg = NULL);
-    Bool SaveFile(char *name, int type, wxColourMap *cmap = NULL);
+    Bool SaveFile(char *name, int type, int quality = 75, wxColourMap *cmap = NULL);
     // X representation
     virtual Bool  Ok(void) { return (Xbitmap != NULL); }
     virtual void* GetHandle(void); // return type Pixmap*

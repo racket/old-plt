@@ -476,7 +476,7 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
 } 
 
 // save bitmaps
-Bool wxBitmap::SaveFile(char *fname, int type, wxColourMap *WXUNUSED(cmap))
+Bool wxBitmap::SaveFile(char *fname, int type, int quality, wxColourMap *WXUNUSED(cmap))
 {
   if (Xbitmap) {
     if (selectedTo)
@@ -500,7 +500,7 @@ Bool wxBitmap::SaveFile(char *fname, int type, wxColourMap *WXUNUSED(cmap))
 	      == XpmSuccess);
       break; // write failed
     case wxBITMAP_TYPE_JPEG:
-      return write_JPEG_file(fname, this, 75);
+      return write_JPEG_file(fname, this, quality);
       break; // write failed
     case wxBITMAP_TYPE_PNG:
       return wx_write_png(fname, this);

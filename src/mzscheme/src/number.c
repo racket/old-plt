@@ -460,6 +460,12 @@ int scheme_get_unsigned_int_val(Scheme_Object *o, unsigned long *v)
     return 0;
 }
 
+int scheme_nonneg_exact_p(Scheme_Object *n)
+{
+  return ((SCHEME_INTP(n) && (SCHEME_INT_VAL(n) >= 0))
+	  || (SCHEME_BIGNUMP(n) && SCHEME_BIGPOS(n)));
+}
+
 double scheme_real_to_double(Scheme_Object *r)
 {
   if (SCHEME_INTP(r))

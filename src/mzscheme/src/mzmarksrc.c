@@ -223,7 +223,9 @@ closed_prim_proc {
  size:
   ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc)));
+   : ((c->mina == -2)
+      ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
+      : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc))));
 }
 
 linked_closure {

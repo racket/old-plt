@@ -2706,6 +2706,9 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   
   name = ((Scheme_Input_Port *)inport)->name;
 
+  if (inport == scheme_orig_stdin_port)
+    scheme_flush_orig_outputs();
+
   return scheme_read_syntax(inport, scheme_make_string(name));
 }
 

@@ -2202,15 +2202,64 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
 
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
+  Scheme_Object *src = scheme_false;
+
   if (!SCHEME_FALSEP(argv[0]) && !SCHEME_STXP(argv[0]))
     scheme_wrong_type("datum->syntax-object", "syntax or #f", 0, argc, argv);
-  if (argc > 2)
-    if (!SCHEME_FALSEP(argv[2]) && !SCHEME_STXP(argv[2]))
-      scheme_wrong_type("datum->syntax-object", "syntax or #f", 2, argc, argv);
-    
-  return scheme_datum_to_syntax(argv[1], 
-				(argc > 2) ? argv[2] : scheme_false, 
-				argv[0], 1, 0);
+  if (argc > 2) {
+    int ll;
+
+    src = argv[2];
+
+    ll = scheme_proper_list_length(src);
+
+    if (!SCHEME_FALSEP(src) 
+	&& !SCHEME_STXP(src)
+	&& !((ll == 3) 
+	     && scheme_nonneg_exact_p(SCHEME_CADR(src))
+	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(src))))
+	&& !((ll == 2)
+	     && scheme_nonneg_exact_p(SCHEME_CADR(src))))
+      scheme_wrong_type("datum->syntax-object", "syntax, source location list, or #f", 2, argc, argv);
+
+    if (ll == 3) {
+      /* line/column format */
+      Scheme_Object *line, *col;
+      line = SCHEME_CADR(src);
+      col = SCHEME_CADR(SCHEME_CDR(src));
+      src = SCHEME_CAR(src);
+
+      /* FIXME: what to do with too-large positions? */
+      if (SCHEME_BIGNUMP(line))
+	line = scheme_make_integer(0);
+      /* FIXME: what to do with too-large positions? */
+      if (SCHEME_BIGNUMP(col))
+	col = scheme_make_integer(0);
+
+      src = scheme_make_stx(scheme_false,
+			    SCHEME_INT_VAL(line),
+			    SCHEME_INT_VAL(col),
+			    src,
+			    NULL);
+    } else if (ll == 2) {
+      /* position format */
+      Scheme_Object *pos;
+      pos = SCHEME_CADR(src);
+      src = SCHEME_CAR(src);
+
+      /* FIXME: what to do with too-large positions? */
+      if (SCHEME_BIGNUMP(pos))
+	pos = scheme_make_integer(0);
+
+      src = scheme_make_stx(scheme_false,
+			    -1,
+			    SCHEME_INT_VAL(pos),
+			    src,
+			    NULL);
+    }
+  }
+  
+  return scheme_datum_to_syntax(argv[1], src, argv[0], 1, 0);
 }
 
 

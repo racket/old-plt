@@ -522,7 +522,9 @@ int closed_prim_proc_SIZE(void *p) {
   return
   ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc)));
+   : ((c->mina == -2)
+      ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
+      : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc))));
 }
 
 int closed_prim_proc_MARK(void *p) {
@@ -534,7 +536,9 @@ int closed_prim_proc_MARK(void *p) {
   return
   ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc)));
+   : ((c->mina == -2)
+      ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
+      : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc))));
 }
 
 int closed_prim_proc_FIXUP(void *p) {
@@ -546,7 +550,9 @@ int closed_prim_proc_FIXUP(void *p) {
   return
   ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
-   : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc)));
+   : ((c->mina == -2)
+      ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
+      : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc))));
 }
 
 
@@ -1517,14 +1523,14 @@ int stx_off_val_SIZE(void *p) {
 
 int stx_off_val_MARK(void *p) {
   Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)p;
-  gcMARK(stx->src);
+  gcMARK(o->src);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
 }
 
 int stx_off_val_FIXUP(void *p) {
   Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)p;
-  gcFIXUP(stx->src);
+  gcFIXUP(o->src);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
 }

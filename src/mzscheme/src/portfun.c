@@ -424,6 +424,11 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "file-position", 
 						      1, 2), 
 			     env);
+  scheme_add_global_constant("file-stream-buffer-mode", 
+			     scheme_make_prim_w_arity(scheme_file_buffer, 
+						      "file-stream-buffer-mode", 
+						      1, 2), 
+			     env);
   
   scheme_add_global_constant("make-pipe", 
 			     scheme_make_prim_w_arity2(sch_pipe, 
@@ -1407,18 +1412,15 @@ static int check_offset_list(Scheme_Object *l)
 
   if (SCHEME_PAIRP(l)) {
     a = SCHEME_CAR(l);
-    if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
-	|| (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+    if (scheme_nonneg_exact_p(a)) {
       l = SCHEME_CDR(l);
       if (SCHEME_PAIRP(l)) {
 	a = SCHEME_CAR(l);
-	if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
-	    || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+	if (scheme_nonneg_exact_p(a)) {
 	  l = SCHEME_CDR(l);
 	  if (SCHEME_PAIRP(l)) {
 	    a = SCHEME_CAR(l);
-	    if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
-		|| (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+	    if (scheme_nonneg_exact_p(a)) {
 	      l = SCHEME_CDR(l);
 	      if (SCHEME_NULLP(l))
 		return 1;

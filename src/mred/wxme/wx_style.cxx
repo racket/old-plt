@@ -541,7 +541,7 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
     target = this;
 
   if (join_shiftStyle) {
-    if (styleList)
+    if (styleList) {
       if (!PTREQ(join_shiftStyle, styleList->BasicStyle())) {
 	join_shiftStyle->Update(base, target, FALSE, topLevel);
       } else {
@@ -559,6 +559,7 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 	    styleList->StyleWasChanged(NULL);
 	}
       }
+    }
     return;
   }
 

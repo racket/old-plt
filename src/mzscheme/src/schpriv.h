@@ -1106,6 +1106,8 @@ Scheme_Object *scheme_negative_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_positive_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_make_polar(int argc, Scheme_Object *argv[]);
 
+int scheme_nonneg_exact_p(Scheme_Object *n);
+
 Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);
 
 #ifdef TIME_TYPE_IS_UNSIGNED
@@ -1769,6 +1771,7 @@ Scheme_Object *scheme_file_stream_port_p(int, Scheme_Object *[]);
 Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_file_buffer(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_write_string_avail(int argc, Scheme_Object *argv[]);
 
 int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int nonblock);

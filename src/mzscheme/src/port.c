@@ -250,6 +250,7 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested);
 OS_SEMAPHORE_TYPE scheme_break_semaphore;
 # define USING_TESTED_OUTPUT_FILE
 static void flush_tested(Scheme_Output_Port *port);
+static void tested_output_setvbuf(Scheme_Output_Port *port, int mode);
 #else
 # define make_tested_file_input_port(fp, name, t) scheme_make_named_file_input_port(fp, name)
 # define make_tested_file_output_port(fp, t) scheme_make_file_output_port(fp)
@@ -269,6 +270,8 @@ static void force_close_input_port(Scheme_Object *port);
 static Scheme_Object *text_symbol, *binary_symbol;
 static Scheme_Object *append_symbol, *error_symbol, *update_symbol;
 static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol;
+
+static Scheme_Object *none_symbol, *line_symbol, *block_symbol;
 
 #define fail_err_symbol scheme_false
 
@@ -319,6 +322,14 @@ scheme_init_port (Scheme_Env *env)
   truncate_symbol = scheme_intern_symbol("truncate");
   truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
   update_symbol = scheme_intern_symbol("update");
+
+  REGISTER_SO(none_symbol);
+  REGISTER_SO(line_symbol);
+  REGISTER_SO(block_symbol);
+
+  none_symbol = scheme_intern_symbol("none");
+  line_symbol = scheme_intern_symbol("line");
+  block_symbol = scheme_intern_symbol("block");
 
   REGISTER_SO(scheme_orig_stdout_port);
   REGISTER_SO(scheme_orig_stderr_port);
@@ -1789,34 +1800,29 @@ void scheme_flush_orig_outputs(void)
 {
   /* Flush original output ports: */
   Scheme_Output_Port *op;
+  int diderr = 0;
   
   op = (Scheme_Output_Port *)scheme_orig_stdout_port;
+
+  while (1) {
+    if (SAME_OBJ(op->sub_type, file_output_port_type))
+      fflush(((Scheme_Output_File *)op->port_data)->f);
 #ifdef USE_FD_PORTS
-  if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op, NULL, 0, 0, 0);
-  else
+    else if (SAME_OBJ(op->sub_type, fd_output_port_type))
+      flush_fd(op, NULL, 0, 0, 0);
 #endif
 #ifdef USING_TESTED_OUTPUT_FILE
-    if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
+    else if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
       flush_tested(op);
-    else
 #endif
-      if (SAME_OBJ(op->sub_type, file_output_port_type))
-	fflush(((Scheme_Output_File *)op->port_data)->f);
-  
-  op = (Scheme_Output_Port *)scheme_orig_stderr_port;
-#ifdef USE_FD_PORTS
-  if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op, NULL, 0, 0, 0);
-  else
-#endif
-#ifdef USING_TESTED_OUTPUT_FILE
-    if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
-      flush_tested(op);
-    else
-#endif
-      if (SAME_OBJ(op->sub_type, file_output_port_type))
-	fflush(((Scheme_Output_File *)op->port_data)->f);
+    
+    if (diderr)
+      break;
+    else {
+      op = (Scheme_Output_Port *)scheme_orig_stderr_port;
+      diderr = 1;
+    }
+  }
 }
 
 void scheme_flush_output(Scheme_Object *o)
@@ -1855,6 +1861,10 @@ scheme_file_stream_port_p (int argc, Scheme_Object *argv[])
     else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
       return scheme_true;
 #endif
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+    if (SAME_OBJ(op->sub_type, tested_file_input_port_type))
+      return scheme_true;
+#endif
   } else if (SCHEME_OUTPORTP(p)) {
     Scheme_Output_Port *op = (Scheme_Output_Port *)p;
 
@@ -1863,7 +1873,11 @@ scheme_file_stream_port_p (int argc, Scheme_Object *argv[])
 #ifdef USE_FD_PORTS
     else if (SAME_OBJ(op->sub_type, fd_output_port_type))
       return scheme_true;
-#endif    
+#endif
+#ifdef USING_TESTED_OUTPUT_FILE
+    if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
+      return scheme_true;
+#endif
   } else {
     scheme_wrong_type("file-stream-port?", "port", 0, argc, argv);
   }
@@ -2438,6 +2452,99 @@ scheme_file_position(int argc, Scheme_Object *argv[])
     }
 
     return scheme_make_integer(p);
+  }
+}
+
+Scheme_Object *
+scheme_file_buffer(int argc, Scheme_Object *argv[])
+{
+  Scheme_Output_Port *op;
+
+  if (!SCHEME_OUTPORTP(argv[0])
+      || SCHEME_FALSEP(scheme_file_stream_port_p(1, argv)))
+    scheme_wrong_type("file-stream-buffer-mode", "file-stream-output-port", 0, argc, argv);
+
+  op = (Scheme_Output_Port *)argv[0];
+
+  if (argc == 1) {
+#ifdef USE_FD_PORTS
+    if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
+      Scheme_FD *fd = (Scheme_FD *)op->port_data;
+      switch (fd->flush) {
+      case MZ_FLUSH_NEVER:
+	return block_symbol;
+      case MZ_FLUSH_BY_LINE:
+	return line_symbol;
+      case MZ_FLUSH_ALWAYS:
+	return none_symbol;
+      }
+    }
+#endif
+
+    scheme_raise_exn(MZEXN_I_O_PORT,
+		     argv[0],
+		     "file-stream-buffer-mode: cannot determine the current buffer mode");
+    return NULL;
+  } else {
+    Scheme_Object *s = argv[1];
+
+    if (!SAME_OBJ(s, block_symbol)
+	&& !SAME_OBJ(s, line_symbol)
+	&& !SAME_OBJ(s, none_symbol))
+      scheme_wrong_type("file-stream-buffer-mode", "'none, 'line, or 'block", 1, argc, argv);
+
+    if (SAME_OBJ(op->sub_type, file_output_port_type)) {
+      FILE *f = ((Scheme_Output_File *)op->port_data)->f;
+      int bad;
+
+      if (SAME_OBJ(s, block_symbol))
+	bad = setvbuf(f, NULL, _IOFBF, 0);
+      else if (SAME_OBJ(s, line_symbol))
+	bad = setvbuf(f, NULL, _IOLBF, 0);
+      else
+	bad = setvbuf(f, NULL, _IONBF, 0);
+
+      if (bad) {
+	scheme_raise_exn(MZEXN_I_O_PORT,
+			 argv[0],
+			 "file-stream-buffer-mode: error changing buffering (%e)",
+			 errno);
+	return NULL;
+      }
+    }
+#ifdef USING_TESTED_OUTPUT_FILE
+    if (SAME_OBJ(op->sub_type, tested_file_output_port_type)) {
+      int mode;
+
+      if (SAME_OBJ(s, block_symbol))
+	mode = _IOFBF;
+      else if (SAME_OBJ(s, line_symbol))
+	mode = _IOLBF;
+      else
+	mode = _IONBF;
+      tested_output_setvbuf(op, mode);
+    }
+#endif
+
+#ifdef USE_FD_PORTS
+    if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
+      Scheme_FD *fd = (Scheme_FD *)op->port_data;
+      if (SAME_OBJ(s, block_symbol))
+	fd->flush = MZ_FLUSH_NEVER;
+      else if (SAME_OBJ(s, line_symbol)) {
+	int go;
+	go = (fd->flush == MZ_FLUSH_NEVER);
+	fd->flush = MZ_FLUSH_BY_LINE;
+	if (go)
+	  flush_fd(op, NULL, 0, 0, 0);
+      } else {
+	fd->flush = MZ_FLUSH_ALWAYS;
+	flush_fd(op, NULL, 0, 0, 0);
+      }
+    } 
+#endif
+
+    return scheme_void;
   }
 }
 
@@ -3873,6 +3980,14 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
   return (Scheme_Object *)op;  
 }
 
+static void tested_output_setvbuf(Scheme_Output_Port *port, int mode)
+{
+  scheme_raise_exn(MZEXN_I_O_PORT,
+		   (Scheme_Object *)port,
+		   "file-stream-buffer-mode: error changing buffering"
+		   " (not currently supported on for the port type)");
+}
+
 static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
 {
   if (SCHEME_OUTPORTP(o)) {
@@ -4204,7 +4319,8 @@ make_fd_output_port(int fd, int regfile)
   
   fop->regfile = regfile;
 
-  fop->flush = MZ_FLUSH_BY_LINE;
+  /* No buffering for stderr: */
+  fop->flush = ((fd == 2) ? MZ_FLUSH_ALWAYS : MZ_FLUSH_BY_LINE);
 
   return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						  fop,
@@ -4728,6 +4844,10 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
       if (SAME_OBJ(op->sub_type, file_output_port_type))
 	from_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+# ifdef USING_TESTED_OUTPUT_FILE
+      else if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
+	from_subprocess[1] = MSC_IZE(fileno)(((Tested_Output_File *)op->port_data)->fp);
+# endif
 # ifdef USE_FD_PORTS
       else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	from_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
@@ -4746,6 +4866,10 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
       if (SAME_OBJ(ip->sub_type, file_input_port_type))
 	to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
+# if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+      else if (SAME_OBJ(op->sub_type, tested_file_input_port_type))
+	to_subprocess[0] = MSC_IZE(fileno)(((Tested_Input_File p)ip->port_data)->fp;
+# endif
 # ifdef USE_FD_PORTS
       else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
 	to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
@@ -4764,6 +4888,10 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
       if (SAME_OBJ(op->sub_type, file_output_port_type))
 	err_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+# ifdef USING_TESTED_OUTPUT_FILE
+      else if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
+	err_subprocess[1] = MSC_IZE(fileno)(((Tested_Output_File *)op->port_data)->fp);
+# endif
 # ifdef USE_FD_PORTS
       else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	err_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;

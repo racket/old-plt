@@ -1245,11 +1245,14 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 
       win->dc->X->expose_reg = myregion;
       win->dc->SetCanvasClipping();
-    }
+    } else
+      myregion = NULL;
+
     // call refresh method
     win->X->expose_region = einfo->region;
     win->X->expose_event  = einfo->event;
     win->OnPaint();
+
     if (win->dc) {
       // reset clipping region
       win->dc->X->expose_reg = NULL;

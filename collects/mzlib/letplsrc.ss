@@ -243,11 +243,12 @@
 	      (match x
 		[`(values ,x ...) x]
 		[else `(,x)]))]
+
 	   [single-binding
-	    (lambda (sym binding E body)
+	    (lambda (binding E body)
 	      (let* ([patterns (get-patterns binding)]
 		     [gensyms (map (lambda (x) (gensym "pattern")) patterns)])
-		`(,sym ([,gensyms ,E])
+		`(let-values ([,gensyms ,E])
 		  ,(let loop ([patterns patterns]
 			      [gensyms gensyms])
 		     (cond
@@ -255,17 +256,27 @@
 		       [else `(rmatch ,(car gensyms)
 				      ([,(car patterns)
 					,(loop (cdr patterns) (cdr gensyms))]))])))))]
-           [multiple-bindings
-            (lambda (sym binding E body)
-              `(,sym ,(map list (map expand-pattern binding) E)
+	   [multiple-bindings
+            (lambda (binding E body)
+              `(let-values ,(map list (map expand-pattern binding) E)
                      ,body))]
+           [recursive-single-binding
+	    (lambda (binding E body)
+	      `(letrec-values ([,(expand-pattern binding) ,E])
+			      ,body))]
+           [recursive-multiple-bindings
+            (lambda (binding E body)
+              `(letrec-values ,(map (lambda (x y) `(,x ,y))
+				    (map expand-pattern binding)
+				    E)
+			      ,body))]
 	   [translate-binding
 	    (lambda (binding body)
 	      (match binding
-		[`(val ,B ,E) (single-binding 'let-values B E body)]
-		[`(vals (,B ,E) ...) (multiple-bindings 'let-values B E body)]
-		[`(rec ,B ,E) (single-binding 'letrec-values B E body)]
-		[`(recs (,B ,E) ...) (multiple-bindings 'letrec-values B E body)]
+		[`(val ,B ,E) (single-binding B E body)]
+		[`(vals (,B ,E) ...) (multiple-bindings B E body)]
+		[`(rec ,B ,E) (recursive-single-binding B E body)]
+		[`(recs (,B ,E) ...) (recursive-multiple-bindings B E body)]
 		[`(_ ,E ...) `(begin ,@E ,body)]
 		[x (syn-error "invalid binding" x)]))])
       (unless (and (list? bindings)
@@ -278,6 +289,7 @@
 	(cond
 	 [(null? l) `(begin ,@bodies)]
 	 [else (translate-binding (car l) (loop (cdr l)))])))))
+
 
 (define (test)
 
@@ -295,6 +307,18 @@
 	(unless (equal? result test-result)
 	  (error name "failed with pattern: ~s and value ~s, got: ~s" pattern value test-result)))))
   
+  (define (test-equal ans expr)
+    (unless (equal? ans
+		    (with-handlers ([(lambda (x) #T)
+				     (lambda (x)
+				       (printf "~a"
+					       (if (exn? x)
+						   (exn-message x)
+						   x))
+				       'DIFFERENT-FROM-IT-ALL)])
+		      (eval expr)))
+      (error 'test-equal "~s didn't evaluate to ~s" expr ans)))
+				       
   (define 3-at-x (test-at-x 3 '3-at-x))
   (define 33s-at-x (test-at-x (list 3 3 3) '33s-at-x))
 
@@ -309,7 +333,9 @@
 				       #f)])
 		      (eval `(let+ ,bindings
 				   (cons x y)))))
-      (error 'plus-xy "failed with bindings: ~s" bindings)))
+      (error 'plus-val-xy "failed with bindings: ~s" bindings)))
+
+  (printf "starting test suite~n")
 
   (plus-val-xy '([val x 1] [val y 3]))
   (plus-val-xy '([val (values x y) (values 1 3)]))
@@ -331,9 +357,15 @@
   (3-at-x '(vector 'x "abc" #\f `(3) `(,x)) '(vector 'x "abc" #\f (list 3) (list 3)))
 
   (33s-at-x '(... (box x)) '(list (box 3) (box 3) (box 3)))
+
+  (test-equal 3 '(let ([x 3]) (let+ ([vals [x 1] [y x]]) y)))
+  (test-equal 3 '(let ([x 3]) (let+ ([val x 3] [vals [x 1] [y x]]) y)))
+
+  (test-equal 3 '(let+ ([rec (values x) (lambda (y) (if y 3 (x #t)))]) (x #f)))
+  (test-equal 3 '(let+ ([recs [x (lambda (y) (if y 3 (x #t)))]]) (x #f)))
+  (test-equal 3 '(let+ ([recs [(values x) (lambda (y) (if y 3 (x #t)))]]) (x #f)))
+  (printf "all tests passed~n")
+
   )
 
-  
-;(test)
-
-;(expand-defmacro '(let+ ([val (values x y) 3]) 11))
+(test)

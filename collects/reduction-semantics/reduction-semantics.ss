@@ -145,7 +145,7 @@
            (cons
             (car dups)
             (filter (lambda (x) (not (module-identifier=? x (car dups))))
-                    (cdr dups)))]))))
+                    (loop (cdr dups))))]))))
 
   (define-syntax (language stx)
     (syntax-case stx ()

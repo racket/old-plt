@@ -52,7 +52,7 @@
  (bug-report-field-reproduce2 "veroorzaken")
  (bug-report-field-environment "Omgeving")
  (bug-report-field-tools "Tools") ; <**> -- Where is this used?
- (bug-report-field-docs-installed "Geïnstalleerde documentatie") ; if allowed, add \n
+ (bug-report-field-docs-installed "GeÃ¯nstalleerde documentatie") ; if allowed, add \n
  (bug-report-field-language "Programmeertaal")
  (bug-report-field-teachpacks "Lespakketten")
  (bug-report-field-collections "Collecties")
@@ -157,7 +157,7 @@
  (nothing-found-for "Geen treffers voor ~a")
  (and "en")
  (error-finding-docs "Kan documentatie niet vinden.\n\n~a")
- (manual-installed-date "(geïnstalleerd op ~a)") ; -- assuming ~a is a date.
+ (manual-installed-date "(geÃ¯nstalleerd op ~a)") ; -- assuming ~a is a date.
 
  ;; refreshing manuals
  (refreshing-manuals "Handleidingen opnieuw ophalen")
@@ -191,7 +191,7 @@
  (save-downloaded-file "Opgehaald bestand opslaan als")  ;; label for get-file dialog
  (downloading "Ophalen") ;; dialog title
  (downloading-file... "Bestand aan het ophalen...")
- (package-was-installed "Het pakket is geïnstalleerd.")
+ (package-was-installed "Het pakket is geÃ¯nstalleerd.")
  (download-was-saved "Het opgehaalde bestand is opgeslagen.")
  (getting-page "Getting Page") ;; dialog title
 
@@ -344,7 +344,7 @@
  (put-file "Put file")
  (full-pathname "Volledige padnaam")
  (show-dot-files "Toon ook bestanden en mappen waarvan de naam met een punt begint.")
- (up-directory-button-label "Één map omhoog")
+ (up-directory-button-label "Ã‰Ã©n map omhoog")
  (add-button-label "Toevoegen") ;;; for multi-file selection
  (add-all-button-label "Alles toevoegen") ;;; for multi-file selection
  (remove-button-label "Verwijderen") ;;; for multi-file selection
@@ -353,7 +353,7 @@
  (select-file "Kies bestand")
  (dir-dne "Map bestaat niet.")
  (file-dne "Bestand bestaat niet.")
- (empty-filename "Bestandsnaam moet minstens één letter bevatten.")
+ (empty-filename "Bestandsnaam moet minstens Ã©Ã©n letter bevatten.")
  (that-is-dir-name "Dat is de naam van een map.")
  
  ;;; raw menu names -- these must match the 
@@ -420,7 +420,7 @@
  (cut-menu-item "K&nippen")
 
  (copy-info "Kopieer de selectie naar het klembord")
- (copy-menu-item "&Kopiëren")
+ (copy-menu-item "&KopiÃ«ren")
 
  (paste-info "Kopieer de inhoud van het klembord naar de plaats van de cursor")
  (paste-menu-item "&Plakken")
@@ -560,8 +560,8 @@
  (execute-menu-item-help-string "Voer het programma in het definitievenster uit")
  (break-menu-item-label "Onderbreken")
  (break-menu-item-help-string "Onderbreek de huidige berekening")
- (kill-menu-item-label "Beëindigen")
- (kill-menu-item-help-string "Beëindig de huidige berekening")
+ (kill-menu-item-label "BeÃ«indigen")
+ (kill-menu-item-help-string "BeÃ«indig de huidige berekening")
  (clear-error-highlight-menu-item-label "Verwijder foutkleur")
  (clear-error-highlight-item-help-string "Verwijdert de roze kleur die de fout aangeeft")
  (reindent-menu-item-label "He&rindenteer")
@@ -609,7 +609,7 @@
  (whole-part "Gehelen")
  (numerator "Teller")
  (denominator "Noemer")
- (invalid-number "Onjuist getal: moet exact, reëel, en niet geheel zijn.")
+ (invalid-number "Onjuist getal: moet exact, reÃ«el, en niet geheel zijn.")
  (insert-fraction-menu-item-label "Breuk...")
 
  ;; number snip popup menu
@@ -626,7 +626,7 @@
  (teachpack-error-invoke "Lespakket ~a veroorzaakte bij aanroep een fout.")
  (add-teachpack-menu-item-label "Lespakket toevoegen...")
  (clear-all-teachpacks-menu-item-label "Alle lespakketten verwijderen")
- (teachpack-not-only-one-import "Lespakket unit/sig in ~a moet precies één 'import' hebben.") ; <**> -- ??
+ (teachpack-not-only-one-import "Lespakket unit/sig in ~a moet precies Ã©Ã©n 'import' hebben.") ; <**> -- ??
  (drscheme-teachpack-message-title "DrScheme-lespakket")
  (already-added-teachpack "Lespakket ~a al aanwezig")
  
@@ -737,10 +737,10 @@
  (version "versie")
  
  ;;; kill evaluation dialog
- (kill-evaluation? "Wilt u de berekeing beëindigen?")
+ (kill-evaluation? "Wilt u de berekeing beÃ«indigen?")
  (just-break "Enkel onderbreken")
- (kill "Beëindigen")
- (kill? "Beëindigen?")
+ (kill "BeÃ«indigen")
+ (kill? "BeÃ«indigen?")
 
  ;;; version checker
  (vc-update-check "Versie bijwerken")
@@ -761,7 +761,7 @@
  (vc-latest-binary-information-format "Jongste vrijgegeven versie: ~a (stap ~a)")
  (vc-update-dialog-title "Status PLT-versie")
  (vc-need-update-string "Sommige PLT-programmatuur is verouderd")
- (vc-no-update-string "Alle geïnstalleerde PLT-programmatuur is bij")
+ (vc-no-update-string "Alle geÃ¯nstalleerde PLT-programmatuur is bij")
 
  ;; special menu
  (special-menu "Invoegen")

@@ -2,12 +2,12 @@
 
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language
-  "¿Es español tu idioma materno?")
+  "Â¿Es espaÃ±ol tu idioma materno?")
 
- (interact-with-drscheme-in-language "Interactúa con DrScheme en Español")
+ (interact-with-drscheme-in-language "InteractÃºa con DrScheme en EspaÃ±ol")
 
  (are-you-sure-you-want-to-switch-languages
-  "Esto cambiará el idioma de la interfaz, lo que requiere que reinicies DrScheme. ¿Estas seguro(a)?")
+  "Esto cambiarÃ¡ el idioma de la interfaz, lo que requiere que reinicies DrScheme. Â¿Estas seguro(a)?")
  
 
  (accept-and-quit "Aceptar y salir")
@@ -18,99 +18,99 @@
  (drscheme "DrScheme")
  (ok "OK")
  (cancel "Cancelar")
- (untitled "Sin título")
- (untitled-n "Sin título ~a")
+ (untitled "Sin tÃ­tulo")
+ (untitled-n "Sin tÃ­tulo ~a")
  (warning "Advertencia")
  (error "Error")
  (close "Cerrar") ;; as in, close an open window
  (stop "Detener")
  (&stop "&Detener")
- (are-you-sure-delete? "¿Seguro(a) quieres borrar ~a?") ;; ~a is a filename or directory name
+ (are-you-sure-delete? "Â¿Seguro(a) quieres borrar ~a?") ;; ~a is a filename or directory name
  (ignore "Ignorar")
  (revert "Revertir")
 
  ;; label for a generic check box, often supported on dialogs
  ;; that ask a binary choice of the user. If checked, the
  ;; dialog isn't going to be shown again.
- (dont-ask-again "No volver a preguntar (usar la selección actual siempre)")
+ (dont-ask-again "No volver a preguntar (usar la selecciÃ³n actual siempre)")
  
  ;; important urls
  (web-materials "Sitios de Web Relacionados")
  (tool-web-sites "Sitios de Web de Herramientas")   ;; menu item title
  (drscheme-homepage "DrScheme")
  (plt-homepage "PLT")
- (how-to-use-scheme "Cómo Usar Scheme")
+ (how-to-use-scheme "CÃ³mo Usar Scheme")
  (teachscheme!-homepage "TeachScheme!")
  
  ;;; bug report form
- (cancel-bug-report? "¿Cancelar el reporte de problemas?")
+ (cancel-bug-report? "Â¿Cancelar el reporte de problemas?")
  (are-you-sure-cancel-bug-report?
-  "¿Estas seguro que quieres cancelar el envío de éste reporte de problemas?")
+  "Â¿Estas seguro que quieres cancelar el envÃ­o de Ã©ste reporte de problemas?")
  (bug-report-form "Forma para reportar problemas")
  (bug-report-field-name "Nombre")
- (bug-report-field-email "Correo Electrónico")
+ (bug-report-field-email "Correo ElectrÃ³nico")
  (bug-report-field-summary "Resumen")
  (bug-report-field-severity "Gravedad")
  (bug-report-field-class "Clase")
  (bug-report-field-priority "Propiedad")
- (bug-report-field-description "Descripción")
+ (bug-report-field-description "DescripciÃ³n")
  (bug-report-field-reproduce1 "Pasos para")
  (bug-report-field-reproduce2 "Reproducir")
  (bug-report-field-environment "Ambiente")
  (bug-report-field-tools "Herramientas")
  (bug-report-field-docs-installed "Documentos instalados")
  (bug-report-field-language "Lenguaje")
- (bug-report-field-teachpacks "Paquetes de enseñanza")
+ (bug-report-field-teachpacks "Paquetes de enseÃ±anza")
  (bug-report-field-collections "Colecciones")
  (bug-report-field-human-language "Idioma")
- (bug-report-field-version "Versión")
- (bug-report-synthesized-information "Información sintetizada")  ;; dialog title
- (bug-report-show-synthesized-info "Muestra información resumida")
+ (bug-report-field-version "VersiÃ³n")
+ (bug-report-synthesized-information "InformaciÃ³n sintetizada")  ;; dialog title
+ (bug-report-show-synthesized-info "Muestra informaciÃ³n resumida")
  (bug-report-submit "Enviar")
  (sending-bug-report "Enviando reporte de problemas")
  (error-sending-bug-report "Error al enviar el reporte de problemas")
- (error-sending-bug-report-expln "Un error ocurrió mientras enviaba éste reporte de problemas.  Si tu conexión a Internet está funcionando bien, por favor visita:\n\n    http://bugs.plt-scheme.org/\n\ny envía el reporte de problemas por medio de la forma de web en esea página de WEB. Sentimos mucho las molestias que esto te ocasiona.\n\nEl mensaje de error es:\n~a")
+ (error-sending-bug-report-expln "Un error ocurriÃ³ mientras enviaba Ã©ste reporte de problemas.  Si tu conexiÃ³n a Internet estÃ¡ funcionando bien, por favor visita:\n\n    http://bugs.plt-scheme.org/\n\ny envÃ­a el reporte de problemas por medio de la forma de web en esea pÃ¡gina de WEB. Sentimos mucho las molestias que esto te ocasiona.\n\nEl mensaje de error es:\n~a")
  (bug-report-sent "Reporte de problemas enviado")
- (bug-report-sent-detail "Gracias por el reporte. Recibirás una confirmación por correo electrónico en los siguientes 30 minutos. Si dicho mensaje no llega, envía un mensaje a scheme@plt-scheme.org.")
+ (bug-report-sent-detail "Gracias por el reporte. RecibirÃ¡s una confirmaciÃ³n por correo electrÃ³nico en los siguientes 30 minutos. Si dicho mensaje no llega, envÃ­a un mensaje a scheme@plt-scheme.org.")
  (illegal-bug-report "Reporte de problemas ilegal")
  (pls-fill-in-field "Por favor requisita el campo \"~a\"")
- (malformed-email-address "Dirección de correo electrónico inválida")
- (pls-fill-in-either-description-or-reproduce "Por favor requisita el campo de Descripción o el de Pasos para Reproducir.")
+ (malformed-email-address "DirecciÃ³n de correo electrÃ³nico invÃ¡lida")
+ (pls-fill-in-either-description-or-reproduce "Por favor requisita el campo de DescripciÃ³n o el de Pasos para Reproducir.")
 
  ;;; check syntax
- (check-syntax "Revisa la sintáxis")
- (cs-italic "Itálica")
+ (check-syntax "Revisa la sintÃ¡xis")
+ (cs-italic "ItÃ¡lica")
  (cs-bold "Negrita")
  (cs-underline "Subrayado")
  (cs-change-color "Cambiar color")
  (cs-tack/untack-arrow "Anclar/Liberar flecha")
  (cs-jump-to-next-bound-occurrence "Saltar a la Siguiente Ocurrencia Ligada")
  (cs-jump-to-binding "Saltar a Ocurrencia Ligada")
- (cs-jump-to-definition "Saltar a la Definición")
+ (cs-jump-to-definition "Saltar a la DefiniciÃ³n")
  (cs-error-message "Mensaje de error")
  (cs-open-file "Abrir ~a")
  (cs-rename-var "Renombrar ~a")
  (cs-rename-id "Renombrar identificador")
  (cs-rename-var-to "Renombrar ~a a:")
  (cs-name-duplication-error "El nuevo nombre que has seleccionado, ~s, colisiona con otro nombre en este ambiente.")
- (cs-status-init "Checar sintaxis: Iniciando el ambiente para el código de usuario")
- (cs-status-coloring-program "Checar sintaxis: coloreando la expresión")
- (cs-status-eval-compile-time "Checar sintaxis: tiempo de evaluación y compilación")
- (cs-status-expanding-expression "Checar sintaxis: expandiendo la expresión")
+ (cs-status-init "Checar sintaxis: Iniciando el ambiente para el cÃ³digo de usuario")
+ (cs-status-coloring-program "Checar sintaxis: coloreando la expresiÃ³n")
+ (cs-status-eval-compile-time "Checar sintaxis: tiempo de evaluaciÃ³n y compilaciÃ³n")
+ (cs-status-expanding-expression "Checar sintaxis: expandiendo la expresiÃ³n")
  (cs-mouse-over-variable-import "variable ~s importada de ~s")
  (cs-mouse-over-syntax-import "syntaxis ~s importada de ~s")
 
- (cs-lexical-variable "variable léxica")
- (cs-lexical-syntax "sintaxis léxica")
+ (cs-lexical-variable "variable lÃ©xica")
+ (cs-lexical-syntax "sintaxis lÃ©xica")
  (cs-imported-variable "variable importada")
  (cs-imported-syntax "sintaxis importada")
  
  
  ;;; info bar at botttom of drscheme frame
  (collect-button-label "Recolectar")
- (read-only "Sólo lectura")
+ (read-only "SÃ³lo lectura")
  (read/write "Lectura/Escritura")
- (auto-extend-selection "Selección Auto-Extendida")
+ (auto-extend-selection "SelecciÃ³n Auto-Extendida")
  (overwrite "Sobreescribir")
  (running "ejecutando")
  (not-running "suspendido") 
@@ -119,21 +119,21 @@
  (welcome-to-something "Bienvenido a ~a")
  
  ; this appears in the drscheme about box.
- (welcome-to-drscheme-version/language "Bienvenido a DrScheme, versión ~a, ~a")
+ (welcome-to-drscheme-version/language "Bienvenido a DrScheme, versiÃ³n ~a, ~a")
 
  ; these appear on subsequent lines in the `Help|Welcome to DrScheme' dialog.
  (welcome-to-drscheme "Bienvenido a DrScheme")
- (version/language "versión ~a, ~a")
+ (version/language "versiÃ³n ~a, ~a")
 
- (goto-line "Ir a la línea")
+ (goto-line "Ir a la lÃ­nea")
  (goto-line-invalid-number
-  "~a no es un número de línea válido. Debe ser un entero entre 1 y ~a")
- (goto-position "Ir a la posición")
+  "~a no es un nÃºmero de lÃ­nea vÃ¡lido. Debe ser un entero entre 1 y ~a")
+ (goto-position "Ir a la posiciÃ³n")
  (no-full-name-since-not-saved
-  "El archivo no tienen un nombre completo porque no ha sido salvado aún.")
+  "El archivo no tienen un nombre completo porque no ha sido salvado aÃºn.")
  (cannot-open-because-dne "~a no puede ser abierto, porque no existe.")
  (interactions-out-of-sync
-  "ADVERTENCIA: La ventana de interacción está fuera de sincronía con la ventana de definición.  Presione el botón Ejecutar.")
+  "ADVERTENCIA: La ventana de interacciÃ³n estÃ¡ fuera de sincronÃ­a con la ventana de definiciÃ³n.  Presione el botÃ³n Ejecutar.")
  (file-is-not-saved "El archivo \"~a\" no ha sido salvado.")
  (save "Salvar")
  (please-choose-either "Por favor seleccione una de \"~a\" o \"~a\"")
@@ -141,24 +141,24 @@
  (clear-anyway "Limpiar")
 
  ;; menu item title
- (log-definitions-and-interactions "Guardar bitácora de Definiciones e Interacciones...")
- (stop-logging "Terminar bitácora")
- (please-choose-a-log-directory "Por favor seleccione un directorio para almacenar bitácora")
- (logging-to "Guardando bitácora en: ")
- (erase-log-directory-contents "¿Borrar el contenido del directorio de bitácoras: ~a?")
- (error-erasing-log-directory "Error al borrar el contenido del directorio de bitácoras.\n\n~a\n")
+ (log-definitions-and-interactions "Guardar bitÃ¡cora de Definiciones e Interacciones...")
+ (stop-logging "Terminar bitÃ¡cora")
+ (please-choose-a-log-directory "Por favor seleccione un directorio para almacenar bitÃ¡cora")
+ (logging-to "Guardando bitÃ¡cora en: ")
+ (erase-log-directory-contents "Â¿Borrar el contenido del directorio de bitÃ¡coras: ~a?")
+ (error-erasing-log-directory "Error al borrar el contenido del directorio de bitÃ¡coras.\n\n~a\n")
 
   ;; modes
  (mode-submenu-label "Modos")
  (scheme-mode "Modo Scheme")
  (text-mode "Modo Texto")
 
- (scheme-mode-color-symbol "Símbolo")
+ (scheme-mode-color-symbol "SÃ­mbolo")
  (scheme-mode-color-keyword "Llave")
  (scheme-mode-color-comment "Comentario")
  (scheme-mode-color-string "Cadena")
  (scheme-mode-color-constant "Constante")
- (scheme-mode-color-parenthesis "Paréntesis")
+ (scheme-mode-color-parenthesis "ParÃ©ntesis")
  (scheme-mode-color-error "Error")
  (scheme-mode-color-other "Otro")
  
@@ -167,44 +167,44 @@
  (open-url... "Abre URL...")
  (open-url "Abre URL")
  (browse... "Navega...")
- (bad-url "URL Inválido")
- (bad-url:this "URL Inválido: ~a")
+ (bad-url "URL InvÃ¡lido")
+ (bad-url:this "URL InvÃ¡lido: ~a")
  
  ;; Help Desk
  (help "Ayuda")
- (help-desk "Módulo de Ayuda")
+ (help-desk "MÃ³dulo de Ayuda")
  (plt:hd:search-results "Buscar resultados")
  (plt:hd:search "Buscar")
  (plt:hd:search-for "Busca")
- (plt:hd:lucky "¡Afortunado!")
+ (plt:hd:lucky "Â¡Afortunado!")
  (plt:hd:feeling-lucky "Me siento afortunado")
  (plt:hd:stop "Detener")    
  (plt:hd:options "Opciones")
  (plt:hd:configure "Configurar")
- (plt:hd:home "Hogar del Módulo de Ayuda")
+ (plt:hd:home "Hogar del MÃ³dulo de Ayuda")
  (plt:hd:show-manuals "Mostrar manuales")
  (plt:hd:send-bug-report "Enviar reporte de problemas")
  (plt:hd:query-bug-reports "Buscar en los reporetes de problemas")
  ; next 3 are popup menu choices at bottom of help desk window
  (plt:hd:search-for-keyword "por Palabra clave")
- (plt:hd:search-for-keyword-or-index "por palabra clave o entrada en el índice")
- (plt:hd:search-for-keyword-or-index-or-text "por palabra clave, entrada en el índice o texto")
- (plt:hd:exact-match "patrón exacto") ;; exact match??
+ (plt:hd:search-for-keyword-or-index "por palabra clave o entrada en el Ã­ndice")
+ (plt:hd:search-for-keyword-or-index-or-text "por palabra clave, entrada en el Ã­ndice o texto")
+ (plt:hd:exact-match "patrÃ³n exacto") ;; exact match??
  (plt:hd:containing-match "subcadena") ;; containing match ??
- (plt:hd:regexp-match "expresión regular") ;; match regexp
- (plt:hd:find-docs-for "Encuentra documentación sobre:")
- (plt:hd:nothing-found-for-search-key "No se encontró nada con \"~a\".")
+ (plt:hd:regexp-match "expresiÃ³n regular") ;; match regexp
+ (plt:hd:find-docs-for "Encuentra documentaciÃ³n sobre:")
+ (plt:hd:nothing-found-for-search-key "No se encontrÃ³ nada con \"~a\".")
  (plt:hd:searching "Buscando...")
- (plt:hd:search-stopped "(Búsqueda detenida.)")
- (plt:hd:search-stopped-too-many-matches "(Búsqueda detenida - demasiados patrones casan.)")
+ (plt:hd:search-stopped "(BÃºsqueda detenida.)")
+ (plt:hd:search-stopped-too-many-matches "(BÃºsqueda detenida - demasiados patrones casan.)")
  (plt:hd:nothing-found-for "Nada casa con ~a")
- (plt:hd:error-finding-docs "No pude encontrar la documentación.\n\n~a")
+ (plt:hd:error-finding-docs "No pude encontrar la documentaciÃ³n.\n\n~a")
  (plt:hd:and "y")
  (plt:hd:refresh "refrescar")
  (plt:hd:refresh-all-manuals "refrescar todos los manuales")
  (plt:hd:manual-installed-date "(~a instalado)")
  ;; Help Desk configuration
- (plt:hd:configuration "Configuración del Módulo de Ayuda PLT")
+ (plt:hd:configuration "ConfiguraciÃ³n del MÃ³dulo de Ayuda PLT")
  (plt:hd:no-frames "Sin ventanas (frames)")
  (plt:hd:use-frames "Usar ventanas (frames)")
  (plt:hd:use-html-frames "Usar ventanas de HTML")
@@ -214,56 +214,56 @@
  (plt:hd:pixels "pixeles")
  (plt:hd:text-color "Color del texto")
  (plt:hd:link-color "Color de ligas")
- (plt:hd:text-sample "El texto en las búsquedas aparece en este color")
+ (plt:hd:text-sample "El texto en las bÃºsquedas aparece en este color")
  (plt:hd:link-sample "Las ligas son mostradas en este color")
  (plt:hd:save-changes "Salvar cambios")
  (plt:hd:reset "Reajuste")
- (plt:hd:defaults "Valores por omisión")
+ (plt:hd:defaults "Valores por omisiÃ³n")
  (plt:hd:javascript-note
-  "La selección que hagas aparecerá aquí si haz habilitado javascript y tienes un navegador estándar reciente.")
+  "La selecciÃ³n que hagas aparecerÃ¡ aquÃ­ si haz habilitado javascript y tienes un navegador estÃ¡ndar reciente.")
  ;; refreshing manuals
  (plt:hd:refresh-downloading "Bajando ~a")
  (plt:hd:refresh-installing "Instalando ~a")
  (plt:hd:refresh-progress "Progreso de la descarga del manual del PLT")
  (plt:hd:refresh-done "Refresco de los manuales via CVS terminado")
- (plt:hd:refresh-installation-log "Bitácora de instalación")
+ (plt:hd:refresh-installation-log "BitÃ¡cora de instalaciÃ³n")
  (plt:hd:refresh-stopped "Refresco de manuales del PLT detenido")
- (plt:hd:refresh-clearing-indicies "Eliminando índices guardados")
- (plt:hd:refresh-deleting... "Borrando la versión vieja de ~a...")
+ (plt:hd:refresh-clearing-indicies "Eliminando Ã­ndices guardados")
+ (plt:hd:refresh-deleting... "Borrando la versiÃ³n vieja de ~a...")
  (plt:hd:refresh-downloading... "Bajando ~a...")
- (plt:hd:refresh-installing... "Instalando nueva versión de ~a...")
+ (plt:hd:refresh-installing... "Instalando nueva versiÃ³n de ~a...")
  (plt:hd:refresh-clearing-indicies "Eliminando indices almacenados")
  (plt:hd:refreshing-manuals "Bajando (nuevamente) los Manuales")
  (plt:hd:refreshing-manuals-finished "Terminado.")
- (plt:hd:about-help-desk "Acerca del Módulo de Ayuda")
+ (plt:hd:about-help-desk "Acerca del MÃ³dulo de Ayuda")
  (plt:hd:help-desk-about-string
-  "El Módulo de Ayuda es una fuente complete de información acerca del software del grupo PLT, incluyendo DrScheme, MzScheme y MrEd.\n\nVersión ~a\nCopyright (c) 1995-2003 PLT")
+  "El MÃ³dulo de Ayuda es una fuente complete de informaciÃ³n acerca del software del grupo PLT, incluyendo DrScheme, MzScheme y MrEd.\n\nVersiÃ³n ~a\nCopyright (c) 1995-2003 PLT")
  (plt:hd:help-on-help "Ayuda para la ayuda")
- (plt:hd:help-on-help-details "Para ayuda sobre el uso del Módulo de Ayuda, sigue la liga `Cómo usar el Módulo de Ayuda' desde el página principal del Módulo de Ayuda.  (Para llegar a la página principal si no estás ahí ya, presiona el botón marcado `Hogar' en la parte superior de la ventana del Módulo de Ayuda.")
+ (plt:hd:help-on-help-details "Para ayuda sobre el uso del MÃ³dulo de Ayuda, sigue la liga `CÃ³mo usar el MÃ³dulo de Ayuda' desde el pÃ¡gina principal del MÃ³dulo de Ayuda.  (Para llegar a la pÃ¡gina principal si no estÃ¡s ahÃ­ ya, presiona el botÃ³n marcado `Hogar' en la parte superior de la ventana del MÃ³dulo de Ayuda.")
  (plt:hd:ask-about-separate-browser
-  "Ha seleccionado una liga que apunta a contenido en el Web.  ¿Le gustaría visitarlo en el navegador del Módulo de Ayuda o le gustaría usar un navegador separado para ver dicho contenido?")
- (plt:hd:homebrew-browser "Navegador del Módulo de Ayuda") ;; choice for the above string (in a button)
+  "Ha seleccionado una liga que apunta a contenido en el Web.  Â¿Le gustarÃ­a visitarlo en el navegador del MÃ³dulo de Ayuda o le gustarÃ­a usar un navegador separado para ver dicho contenido?")
+ (plt:hd:homebrew-browser "Navegador del MÃ³dulo de Ayuda") ;; choice for the above string (in a button)
  (plt:hd:separate-browser "Navegador separado") ;; other choice for the above string (also in a button)
  (plt:hd:external-link-in-help "URLs externos en Ayuda")
- (plt:hd:use-homebrew-browser "Usar el Navegador del Módulo de Ayuda para URL externos")
- (plt:hd:new-help-desk "Nuevo Módulo de Ayuda")
+ (plt:hd:use-homebrew-browser "Usar el Navegador del MÃ³dulo de Ayuda para URL externos")
+ (plt:hd:new-help-desk "Nuevo MÃ³dulo de Ayuda")
  (plt:hd:teaching-manuals "Manuales para estudiantes")
  (plt:hd:professional-manuals "Manuales para profesionales")
  (plt:hd:all-manuals "Todos los manuales")
 
  ;; in the Help Desk language dialog, title on the right.
- (plt:hd:manual-search-ordering "Orden de búsqueda en manuales")
+ (plt:hd:manual-search-ordering "Orden de bÃºsqueda en manuales")
  
  (reload "Volver a cargar") ;; Reload
 
 
  ;; help desk http proxy
  (http-proxy "Proxy de HTTP")
- (proxy-direct-connection "Coneción Directa")
+ (proxy-direct-connection "ConeciÃ³n Directa")
  (proxy-use-proxy "Utilizar proxy:")
  (proxy-host "Host")
  (proxy-port "Port")
- (proxy-bad-host "El Host Proxy está mal especificado")
+ (proxy-bad-host "El Host Proxy estÃ¡ mal especificado")
 
     ;;browser
  (rewind-in-browser-history "Revertir")
@@ -271,17 +271,17 @@
  (home "Hogar")
  (browser "Navegador")
  (external-browser-choice-title "Navegador externo") ; title for radio-button set
- (browser-command-line-label "Línea de comandos:") ; label for radio button that is followed by text boxes
+ (browser-command-line-label "LÃ­nea de comandos:") ; label for radio button that is followed by text boxes
  (choose-browser "Escoge un navegador")
- (no-browser "Preguntar más tarde")
+ (no-browser "Preguntar mÃ¡s tarde")
  (use-internal-browser-for-help "Leer ayuda con el navegador interno de PLT") ; radio-button label
  (use-external-browser-for-help "Leer ayuda con un navegador externo") ; radio-button label
- (browser-cmdline-expl-line-1 "(línea de comando formada concatenando pre-text, URL,") ; explanatory text for dialog, line 1
+ (browser-cmdline-expl-line-1 "(lÃ­nea de comando formada concatenando pre-text, URL,") ; explanatory text for dialog, line 1
  (browser-cmdline-expl-line-2 "y post-text, sin espacios extra entre ellos.)") ; ... line 2. (Anyone need more lines?)
  (cannot-display-url "No puedeo desplegar el URL ~s: ~a")
- (install? "¿Instalar?")  ;; if a .plt file is found (title of dialog)
+ (install? "Â¿Instalar?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "Ha seleccionado un paquete instalable.")
- (do-you-want-to-install-it? "¿Desea intalarlo?")
+ (do-you-want-to-install-it? "Â¿Desea intalarlo?")
  (paren-file-size "(El archivo mide ~a bytes)")
  (download-and-install "Descargar && Instalar")
  (download "Descargar")
@@ -289,9 +289,9 @@
  (save-downloaded-file/size "Salvar el archivo descargado (~a bytes) como")
  (downloading "Descargar")
  (downloading-file... "Descargando archivo...")
- (package-was-installed "El paquete fué instalado.")
+ (package-was-installed "El paquete fuÃ© instalado.")
  (download-was-saved "Se ha salvado el archivo descargado.")
- (getting-page "Obteniendo Página")
+ (getting-page "Obteniendo PÃ¡gina")
 
  (install-plt-file-menu-item... "Instalar archivo .plt ...")
  (install-plt-file-dialog-title "Instalar archivo .plt")
@@ -301,25 +301,25 @@
  (install-plt-url "URL:")
  
  ;; install plt file when opened in drscheme strings
- (install-plt-file "¿Deseas instalar ~a, o quieres abrirlo para edición?")
+ (install-plt-file "Â¿Deseas instalar ~a, o quieres abrirlo para ediciÃ³n?")
  (install-plt-file/yes "Instalar")
  (install-plt-file/no "Editar")
  
  (plt-installer-progress-window-title "Progreso del instalador")
- (plt-installer-abort-installation "Abortar instalación") ;; button label
+ (plt-installer-abort-installation "Abortar instalaciÃ³n") ;; button label
  (plt-installer-aborted "Abortado.") ;; msg that appears in the installation window when installation is aborted
 
  ;;; about box
  (about-drscheme-frame-title "Acerca de DrScheme")
- (take-a-tour "¡Haz un recorrido!")
- (release-notes "Notas sobre ésta versión")
- (parenthetical-last-version "(versión anterior ~a)")
+ (take-a-tour "Â¡Haz un recorrido!")
+ (release-notes "Notas sobre Ã©sta versiÃ³n")
+ (parenthetical-last-version "(versiÃ³n anterior ~a)")
  (parenthetical-last-language "(lenguaje anterior ~a)")
- (parenthetical-last-version/language "(versión anterior ~a, lenguaje ~a)")
+ (parenthetical-last-version/language "(versiÃ³n anterior ~a, lenguaje ~a)")
  
  ;;; save file in particular format prompting.
- (save-as-plain-text "¿Salvar este archivo como texto plano?")
- (save-in-drs-format "¿Salvar este archivo en el formato, no texto, particular de DrScheme?")
+ (save-as-plain-text "Â¿Salvar este archivo como texto plano?")
+ (save-in-drs-format "Â¿Salvar este archivo en el formato, no texto, particular de DrScheme?")
  (yes "Si")
  (no "No")
  
@@ -334,33 +334,33 @@
  (warnings-prefs-panel-label "Advertencias")
  (editor-prefs-panel-label "Editando")
  (general-prefs-panel-label "General") 
- (highlight-parens "Resaltar entre parejas de paréntesis")
- (fixup-parens "Corrige paréntesis")
- (flash-paren-match "Señala el paréntesis que casa")
+ (highlight-parens "Resaltar entre parejas de parÃ©ntesis")
+ (fixup-parens "Corrige parÃ©ntesis")
+ (flash-paren-match "SeÃ±ala el parÃ©ntesis que casa")
  (auto-save-files "Auto-salva archivos")
  (backup-files "Archivos de respaldo")
  (map-delete-to-backspace "Cambia suprimir por backspace")
  (verify-exit "Confirmar salida")
  (ask-before-changing-format "Preguntar antes de cambiar el formato de salida")
  (wrap-words-in-editor-buffers "Ajustar al border palabras en el editor")
- (show-status-line "Mostrar línea de estado")
- (count-columns-from-one "Cuenta números de columna a partir de uno") 
- (display-line-numbers "Muestra números de línea en el contenedor; sin desplazamiento de caracteres")
- (enable-keybindings-in-menus "Habilita enlaces de teclas en los menús")
- (automatically-to-ps "Imprime automáticamente a un archivo en postscript")
+ (show-status-line "Mostrar lÃ­nea de estado")
+ (count-columns-from-one "Cuenta nÃºmeros de columna a partir de uno") 
+ (display-line-numbers "Muestra nÃºmeros de lÃ­nea en el contenedor; sin desplazamiento de caracteres")
+ (enable-keybindings-in-menus "Habilita enlaces de teclas en los menÃºs")
+ (automatically-to-ps "Imprime automÃ¡ticamente a un archivo en postscript")
  (use-mdi "Utiliza Ventanas MDI") ;;; ms windows only -- use that window in a window thingy
- (separate-dialog-for-searching "Use el diálogo adecuado para buscar")
+ (separate-dialog-for-searching "Use el diÃ¡logo adecuado para buscar")
  (reuse-existing-frames "Reutilizar marcos existentes cuando se abre un nuevo archivo")
- (default-fonts "Fuentes por omisión")
- (paren-match-color "Color de resaltado de paréntesis") ; in prefs dialog
- (choose-color "Selección de Color") ; in prefs dialog
+ (default-fonts "Fuentes por omisiÃ³n")
+ (paren-match-color "Color de resaltado de parÃ©ntesis") ; in prefs dialog
+ (choose-color "SelecciÃ³n de Color") ; in prefs dialog
  (online-coloring-active "Colorea sintaxis interactivamente")
  
   ; title of the color choosing dialog
- (choose-paren-highlight-color "Selecciona un color para resaltar paréntesis")
+ (choose-paren-highlight-color "Selecciona un color para resaltar parÃ©ntesis")
 
  ; should have entire alphabet
- (font-example-string "abcdefghijklmnñopqrstuvxyz¡!¿?«».")  ;; FIXME: shoulde this have special characters?
+ (font-example-string "abcdefghijklmnÃ±opqrstuvxyzÂ¡!Â¿?Â«Â».")  ;; FIXME: shoulde this have special characters?
 
  (change-font-button-label "Cambiar")
  (fonts "Fuentes")
@@ -368,39 +368,39 @@
 					; filled with type of font, eg modern, swiss, etc.
  (choose-a-new-font "Por favor selecciona una nueva fuente \"~a\"")
 
- (font-size-slider-label "Tamaño")
+ (font-size-slider-label "TamaÃ±o")
  (restart-to-see-font-changes "Re-inicia para ver los cambios de las fuentes")
 
  (font-prefs-panel-title "Fuente")
  (font-name "Nombre de fuente")
- (font-size "Tamaño de fuente")
+ (font-size "TamaÃ±o de fuente")
  (set-font "Ver Fuente...")
  (font-smoothing-label  "Suavisar Fuente")
  (font-smoothing-none "Nada")
  (font-smoothing-some "Algo")
  (font-smoothing-all "Todo")
- (font-smoothing-default "Utiliza el valor por omisión del sistema")
+ (font-smoothing-default "Utiliza el valor por omisiÃ³n del sistema")
  (select-font-name "Selecciona un nombre de Fuente")
  (example-text "Texto de ejemplo:")
- (only-warn-once "Sólo advierte una vez cuando las ejecución e interacciones no están sincronizadas")
+ (only-warn-once "SÃ³lo advierte una vez cuando las ejecuciÃ³n e interacciones no estÃ¡n sincronizadas")
  
  ; warning message when lockfile is around
  (waiting-for-pref-lock "Esperando el archivo candado de las preferencias...")
  (pref-lock-not-gone
-  "El archivo candado de las preferencias:\n\n   ~a\n\nevita que éstas sean salvadas. Asegúrate que ningún otro software de PLT esté corriendo y borra este archivo.")
- (still-locked-exit-anyway? "Las preferencias no fueron salvadas exitosamente. ¿Salir de cualquier forma?")
+  "El archivo candado de las preferencias:\n\n   ~a\n\nevita que Ã©stas sean salvadas. AsegÃºrate que ningÃºn otro software de PLT estÃ© corriendo y borra este archivo.")
+ (still-locked-exit-anyway? "Las preferencias no fueron salvadas exitosamente. Â¿Salir de cualquier forma?")
 
  ;;; indenting preferences panel
- (indenting-prefs-panel-label "Sangrar")  ;; To indent is "Sangrado de márgenes"
+ (indenting-prefs-panel-label "Sangrar")  ;; To indent is "Sangrado de mÃ¡rgenes"
 
  ; filled with define, lambda, or begin
  (enter-new-keyword "Teclea una nueva palabra clave parecida a ~a:")
  (x-keyword "Palabra clave ~a")
  (x-like-keywords "Palabra clave parecida a ~a")
 
- (expected-a-symbol "esperaba un símbolo, encontré: ~a")
- (already-used-keyword "la palabra clave \"~a\" ya tenía un sangrado especial asignado")
- (add-keyword "Añade")
+ (expected-a-symbol "esperaba un sÃ­mbolo, encontrÃ©: ~a")
+ (already-used-keyword "la palabra clave \"~a\" ya tenÃ­a un sangrado especial asignado")
+ (add-keyword "AÃ±ade")
  (remove-keyword "Borra")
  
  ;;; find/replace
@@ -409,38 +409,38 @@
  (replace "Reemplazar")
  (dock "Atracar")
  (undock "Des-atracar")
- (use-separate-dialog-for-searching "Use el diálogo adecuado para buscar")
+ (use-separate-dialog-for-searching "Use el diÃ¡logo adecuado para buscar")
  (replace&find-again "Reemplazar && Vuelve a buscar") ;;; need double & to get a single &
  (replace-to-end "Reemplazar hasta el final")
  (forward "Hacia adelante")
- (backward "Hacia atrás")
+ (backward "Hacia atrÃ¡s")
  (hide "Esconder")
 
  ;; multi-file-search
  (mfs-multi-file-search-menu-item "Buscar en archivos...")
- (mfs-string-match/graphics "Búsqueda de Cadenas (maneja archivos con gráficas)")
- (mfs-regexp-match/no-graphics "Expresión Regular (sólo archivos de texto plano)")
+ (mfs-string-match/graphics "BÃºsqueda de Cadenas (maneja archivos con grÃ¡ficas)")
+ (mfs-regexp-match/no-graphics "ExpresiÃ³n Regular (sÃ³lo archivos de texto plano)")
  (mfs-searching... "Buscando...")
- (mfs-configure-search "Configuración de Búsqueda")
+ (mfs-configure-search "ConfiguraciÃ³n de BÃºsqueda")
  (mfs-files-section "Archivos")
  (mfs-search-section "Buscar")
  (mfs-dir "Dir")
  (mfs-recur-over-subdirectories "Recurrir sobre subdirectorios")
  (mfs-regexp-filename-filter "Filtro de nombres de archivo con expresiones regulares")
  (mfs-search-string "Buscar cadena")
- (mfs-drscheme-multi-file-search "DrScheme - Búsqueda Multi Archivo")
+ (mfs-drscheme-multi-file-search "DrScheme - BÃºsqueda Multi Archivo")
  (mfs-not-a-dir "\"~a\" no es un directorio")
  (mfs-open-file "Abrir Archivo")
- (mfs-stop-search "Detener Búsqueda")
- (mfs-case-sensitive-label "Sensible al Tamaño")
- (mfs-no-matches-found "Nada casó con la búsqueda.")
- (mfs-search-interrupted "Búsqueda abortada.")
+ (mfs-stop-search "Detener BÃºsqueda")
+ (mfs-case-sensitive-label "Sensible al TamaÃ±o")
+ (mfs-no-matches-found "Nada casÃ³ con la bÃºsqueda.")
+ (mfs-search-interrupted "BÃºsqueda abortada.")
  
  ;;;reverting a file
  (error-reverting "DrScheme - Error al Revertir")
  (could-not-read "no pude leer \"~a\"")
- (are-you-sure-revert "¿Estas seguro que deseas revertir este archivo? Este cambio no puede deshacerse.")
- (are-you-sure-revert-title "¿Revertir?")
+ (are-you-sure-revert "Â¿Estas seguro que deseas revertir este archivo? Este cambio no puede deshacerse.")
+ (are-you-sure-revert-title "Â¿Revertir?")
 
  ;; saving a file
  ;; ~a is filled with the filename
@@ -453,15 +453,15 @@
  ;;; finder dialog
  (must-specify-a-filename "Debes especificar un nombre de archivo")
  (file-does-not-exist "El archivo \"~a\" no existe.")
- (ask-because-file-exists "El archivo \"~a\" ya existía. ¿Deseas reemplazarlo?")
+ (ask-because-file-exists "El archivo \"~a\" ya existÃ­a. Â¿Deseas reemplazarlo?")
  (dne-or-cycle "El archivo \"~a\" contiene un directorio inexistente o un ciclo.")
  (get-file "Obtener archivo")
  (put-file "Poner archivo")
  (full-pathname "Ruta completa")
  (show-dot-files "Muestra archivos y directorio que comiencen con un punto.")
  (up-directory-button-label "Arriba")
- (add-button-label "Añadir") ;;; for multi-file selection
- (add-all-button-label "Añadir todos") ;;; for multi-file selection
+ (add-button-label "AÃ±adir") ;;; for multi-file selection
+ (add-all-button-label "AÃ±adir todos") ;;; for multi-file selection
  (remove-button-label "Eliminar") ;;; for multi-file selection
  (file-wrong-form "Ese archivo no tiene el formato correcto.")
  (select-files "Selecciona archivos")
@@ -476,7 +476,7 @@
  ;;; if they don't, DrScheme's menus will appear
  ;;; in the wrong order.
  (file-menu "Archivo")
- (edit-menu "Edición")
+ (edit-menu "EdiciÃ³n")
  (help-menu "Ayuda")
  (windows-menu "Ventana")
 
@@ -499,7 +499,7 @@
  
  (open-info "Abre un nuevo archivo del disco")
  (open-menu-item "&Abrir...")
- (open-here-menu-item "&Abrir aquí...")
+ (open-here-menu-item "&Abrir aquÃ­...")
  (open-recent-info "Una lista de archivos abiertos recientemente")
  (open-recent-menu-item "Abrir reciente")
 
@@ -512,7 +512,7 @@
  (save-as-info "Te pide un nombre para salvar este archivo a disco")
  (save-as-menu-item "Guardar &como ...")
 
- (print-info "Envía este archivo a una impresora")
+ (print-info "EnvÃ­a este archivo a una impresora")
  (print-menu-item "&Imprimir...")
 
  (close-info "Cierra este archivo")
@@ -522,21 +522,21 @@
  (quit-menu-item-windows "&Salir")
  (quit-menu-item-others "&Salir") ;; FIXME: salir is exit, so quit is ???
  
- (edit-menu-label "&Edición")
+ (edit-menu-label "&EdiciÃ³n")
  
- (undo-info "Deshace la acción más reciente")
+ (undo-info "Deshace la acciÃ³n mÃ¡s reciente")
  (undo-menu-item "&Deshacer")
 
- (redo-info "Deshace el más reciente deshacer")
+ (redo-info "Deshace el mÃ¡s reciente deshacer")
  (redo-menu-item "&Rehacer")
 
- (cut-info "Mueve los elementos seleccionados al porta-papeles para pegarlos más tarde")
+ (cut-info "Mueve los elementos seleccionados al porta-papeles para pegarlos mÃ¡s tarde")
  (cut-menu-item "Cor&tar")
 
- (copy-info "Copia los elementos seleccionados al porta-papeles para pegarlos más tarde")
+ (copy-info "Copia los elementos seleccionados al porta-papeles para pegarlos mÃ¡s tarde")
  (copy-menu-item "&Copiar")
 
- (paste-info "Pega los elementos copiados o cortados más recientemente en lugar de los objetos seleccionados")
+ (paste-info "Pega los elementos copiados o cortados mÃ¡s recientemente en lugar de los objetos seleccionados")
  (paste-menu-item "&Pegar")
 
  (clear-info "Borra los elementos seleccionados sin afectar el porta-papeles o el pegado")
@@ -578,23 +578,23 @@
  (bring-frame-to-front... "Traer ventana al frente...")
  (next-window "Ventana siguiente")
  (previous-window "Ventana anterior")
- (most-recent-window "Ventana más reciente")
+ (most-recent-window "Ventana mÃ¡s reciente")
  
  (view-menu-label "&Muestra")
  (show-overview "Mostrar Panorama")
  (hide-overview "Esconder Panorama")
- (show-module-browser "Mostrar Navegador de Módulos")
- (hide-module-browser "Esconder Navegador de Módulos")
+ (show-module-browser "Mostrar Navegador de MÃ³dulos")
+ (hide-module-browser "Esconder Navegador de MÃ³dulos")
 
  (help-menu-label "&Ayuda")
- (about-info "Créditos y detalles de esta apliación")
+ (about-info "CrÃ©ditos y detalles de esta apliaciÃ³n")
  (about-menu-item "Acerca ...")
  (help-menu-check-for-updates "Buscando Actualizaciones...")
 
   ;;; help-desk-specific menus
  ;; open here's new menu item
  (create-new-window-or-clear-current
-  "¿Deseas una nueva ventana o limpiar la ventana actual?")
+  "Â¿Deseas una nueva ventana o limpiar la ventana actual?")
  (clear-current "Limpiar actual")
  (new-window "Nueva ventana")
 
@@ -604,12 +604,12 @@
  (quit "Abandonar") ;; FIXME: Quit
  ;;; in are-you-sure-format, either exit or quit is filled in (from above)
  ;;; based on the platform drscheme is running on.
- (are-you-sure-exit "¿Estas seguro(a) que deseas salir?")
- (are-you-sure-quit "¿Estas seguro(a) que deseas abandonar?") ;; FIXME: Quit
+ (are-you-sure-exit "Â¿Estas seguro(a) que deseas salir?")
+ (are-you-sure-quit "Â¿Estas seguro(a) que deseas abandonar?") ;; FIXME: Quit
  
  ;;; autosaving
  (error-autosaving "Error al auto-salvar \"~a\".")
- (autosaving-turned-off "Auto-salvar está desactivado hasta\n que el archivo sea salvado.")
+ (autosaving-turned-off "Auto-salvar estÃ¡ desactivado hasta\n que el archivo sea salvado.")
  (recover-autosave-files-frame-title "Recuperar archivos auto-salvados")
  (autosave-details "Detalles")
  (autosave-recover "Recuperar")
@@ -629,9 +629,9 @@
 
  (autosave-show-autosave "Auto-salvar archivo") ;; title of a window showing the autosave file
 
- (autosave-explanation "DrScheme encontró archivos auto-salvados que pueden contener tu trabajo no salvado.")
+ (autosave-explanation "DrScheme encontrÃ³ archivos auto-salvados que pueden contener tu trabajo no salvado.")
 
- (autosave-recovered! "¡Recuperado!") ;; status of an autosave file
+ (autosave-recovered! "Â¡Recuperado!") ;; status of an autosave file
  (autosave-deleted "Borrado")       ;; status of an autosave file
 
  (autosave-error-deleting "Error al borrar ~a\n\n~a") ;; first is a filename, second is an error message from mz.
@@ -644,7 +644,7 @@
  
  ;;; file modified warning
  (file-has-been-modified
-  "El archivo ha sido modificado desde la última vez que fue salvado. ¿Sobreescribo las modificaciones?")
+  "El archivo ha sido modificado desde la Ãºltima vez que fue salvado. Â¿Sobreescribo las modificaciones?")
  (overwrite-file-button-label "Sobreescribir")
  
  (definitions-modified 
@@ -652,7 +652,7 @@
  (drscheme-internal-error "Error interno de DrScheme")
  
  ;;; tools
- (invalid-tool-spec "La especificación de la herramienta, especificada en el archivo info.ss de la colección ~a, es inválida.  Esperaba una cadena o una lista no vacía de cadenas y recibí: ~e")
+ (invalid-tool-spec "La especificaciÃ³n de la herramienta, especificada en el archivo info.ss de la colecciÃ³n ~a, es invÃ¡lida.  Esperaba una cadena o una lista no vacÃ­a de cadenas y recibÃ­: ~e")
  (error-loading-tool-title "DrScheme - Error al cargar la herramienta ~s; ~s")
  (error-invoking-tool-title "Error al invocar la herramienta ~s;~s")
  (tool-tool-names-same-length
@@ -660,7 +660,7 @@
  (tool-tool-icons-same-length
   "esperaba que `tool-icons' y  `tools', en el archivo info.ss de ~s, fueran listas de la misma longitud, pero obtuve ~e y ~e")
  (tool-tool-urls-same-length
-  "esperaba que `tool-urls' y `tools' fueran listas del mismo tamaño en info.ss de ~s, pero obtuve ~e y ~e")
+  "esperaba que `tool-urls' y `tools' fueran listas del mismo tamaÃ±o en info.ss de ~s, pero obtuve ~e y ~e")
  (error-getting-info-tool "error al cargar el archivo info.ss de ~s")
  (tool-error-phase1 "Error en la fase 1 de la herramienta ~s; ~s")
  (tool-error-phase2 "Error en la fase 2 de la herramienta ~s; ~s")
@@ -668,9 +668,9 @@
  ;;; define popup menu
  (end-of-buffer-define "<< fin de contenedor (buffer) >>") ;; FIXME: buffer --> almacenador intermediario ?
  (sort-by-name "Ordena por nombre")
- (sort-by-position "Ordena por posición en el archivo")
+ (sort-by-position "Ordena por posiciÃ³n en el archivo")
  (no-definitions-found "<< no se encontraron definiciones >>")
- (jump-to-defn "Saltar a la definición de ~a")
+ (jump-to-defn "Saltar a la definiciÃ³n de ~a")
 
  (recent-items-sort-by-age "Ordena por Edad")
  (recent-items-sort-by-name "Ordena por Nombre")
@@ -709,9 +709,9 @@
  (execute-menu-item-label "Ejecutar")
  (execute-menu-item-help-string "Reinicia el programa en la ventana de definiciones")
  (break-menu-item-label "Interrumpir")
- (break-menu-item-help-string "Interrumpe la evaluación actual")
+ (break-menu-item-help-string "Interrumpe la evaluaciÃ³n actual")
  (kill-menu-item-label "Terminar")
- (kill-menu-item-help-string "Terminar la evaluación actual")
+ (kill-menu-item-help-string "Terminar la evaluaciÃ³n actual")
  (clear-error-highlight-menu-item-label "Eliminar resaltado de error")
  (clear-error-highlight-item-help-string "Elimina el resaltado rosa de errores")
  (reindent-menu-item-label "&Re-sangrar")
@@ -732,12 +732,12 @@
  (save-a-mred-stand-alone-executable "Salvar un ejecutable autocontenido de MrEd")
  (save-a-mzscheme-stand-alone-executable "Salvar un ejecutable autocontenido de MzScheme")
 
- (definitions-not-saved "La ventana de definiciones no ha sido salvada. El ejecutable usará la última versión salvada de la ventana de definiciones. ¿Desea continuar?")
+ (definitions-not-saved "La ventana de definiciones no ha sido salvada. El ejecutable usarÃ¡ la Ãºltima versiÃ³n salvada de la ventana de definiciones. Â¿Desea continuar?")
  (inline-saved-program-in-executable?
-  "¿Deseas que ponga \"en línea\" (auto-contenido) el programa salvado en el ejecutable? Si sí, puedes copiar el ejecutable ~a a otra computadora, pero el ejecutable será muy grande.  Si no, no podrás copiar el ejecutable a otra computadora pero será más pequeño.  Adicionalmente, si escojes no, el ejecutable siempre cargará la última versión del programa.")
- (use-mred-binary? "¿Utilizar el binario mred para este ejecutable?\n\nSi sí, tu programa puede usar la biblioteca  (lib \"mred.ss\" \"mred\").  Si no, DrScheme usará mzscheme como binario para este ejecutable y no podrás usar la biblioteca mencionada.\n\nSi no está seguro(a) escoga Sí") 
+  "Â¿Deseas que ponga \"en lÃ­nea\" (auto-contenido) el programa salvado en el ejecutable? Si sÃ­, puedes copiar el ejecutable ~a a otra computadora, pero el ejecutable serÃ¡ muy grande.  Si no, no podrÃ¡s copiar el ejecutable a otra computadora pero serÃ¡ mÃ¡s pequeÃ±o.  Adicionalmente, si escojes no, el ejecutable siempre cargarÃ¡ la Ãºltima versiÃ³n del programa.")
+ (use-mred-binary? "Â¿Utilizar el binario mred para este ejecutable?\n\nSi sÃ­, tu programa puede usar la biblioteca  (lib \"mred.ss\" \"mred\").  Si no, DrScheme usarÃ¡ mzscheme como binario para este ejecutable y no podrÃ¡s usar la biblioteca mencionada.\n\nSi no estÃ¡ seguro(a) escoga SÃ­") 
  (inline-saved-program-in-executable/windows/path
-  "ADVERTENCIA: El ejecutable generado requiere tres DLLs: libmred.dll, libmzsch.dll, y libmzgc.dll, que están localizadas en\n\n~a\n\nEl ejecutable encuentra las DLLs ya sea en el directorio de ejecutables o a través de la variable de ambiente PATH.\n\nCuando instalaste DrScheme, el instalador ajustó la variable PATH para que incluyera el directorio donde las DLLs fueron instaladas.  Toma en cuenta los cambios de usuario y configuración desde la instalación.\n\nSi mueves el ejecutable a otra máquina, también debes copiar las DLLs a la otra máquina --- ya sea al mismo direcotorio que el ejecutable o a un directorio en el PATH de la otra máquina.")
+  "ADVERTENCIA: El ejecutable generado requiere tres DLLs: libmred.dll, libmzsch.dll, y libmzgc.dll, que estÃ¡n localizadas en\n\n~a\n\nEl ejecutable encuentra las DLLs ya sea en el directorio de ejecutables o a travÃ©s de la variable de ambiente PATH.\n\nCuando instalaste DrScheme, el instalador ajustÃ³ la variable PATH para que incluyera el directorio donde las DLLs fueron instaladas.  Toma en cuenta los cambios de usuario y configuraciÃ³n desde la instalaciÃ³n.\n\nSi mueves el ejecutable a otra mÃ¡quina, tambiÃ©n debes copiar las DLLs a la otra mÃ¡quina --- ya sea al mismo direcotorio que el ejecutable o a un directorio en el PATH de la otra mÃ¡quina.")
  (launcher "Lanzador")
  (stand-alone "Auto-contenido")
  (executable-type "Tipo")
@@ -746,11 +746,11 @@
  (create "Crear")
  (please-choose-an-executable-filename "Por favor selecciona un nombre de archivo para salvar el ejecutable.")
  (windows-executables-must-end-with-exe
-  "El nombre de archivo \n\n  ~a\n\nes ilegal.  En Windows, los ejecutables deben tener terminación .exe.")
+  "El nombre de archivo \n\n  ~a\n\nes ilegal.  En Windows, los ejecutables deben tener terminaciÃ³n .exe.")
  (macosx-executables-must-end-with-app
-  "El nombre de archivo\n\n  ~a\n\nes ilegal.  En MacOS X, los ejecutables deben tener terminación .app.")
+  "El nombre de archivo\n\n  ~a\n\nes ilegal.  En MacOS X, los ejecutables deben tener terminaciÃ³n .app.")
  (warning-directory-will-be-replaced
-  "ADVERTENCIA: el directorio:\n\n  ~a\n\nserá reemplazado.  ¿Continuar?")
+  "ADVERTENCIA: el directorio:\n\n  ~a\n\nserÃ¡ reemplazado.  Â¿Continuar?")
  
  (create-servlet "Crear Servlet...")
  
@@ -764,98 +764,98 @@
  (break-button-label "Interrumpir")
  
  ;;; search help desk popup menu
- (search-help-desk-for "Busca en el Módulo de Ayuda \"~a\"")
- (exact-lucky-search-help-desk-for "Búsqueda precisa y con suerte en el Módulo de Ayuda \"~a\"") ;; FIXME:  Exact lucky search in Help Desk for
+ (search-help-desk-for "Busca en el MÃ³dulo de Ayuda \"~a\"")
+ (exact-lucky-search-help-desk-for "BÃºsqueda precisa y con suerte en el MÃ³dulo de Ayuda \"~a\"") ;; FIXME:  Exact lucky search in Help Desk for
  
  ;; collapse and expand popup menus
- (collapse-sexp "Colapsar expresión-s")
- (expand-sexp "Expandir expresión-s")
+ (collapse-sexp "Colapsar expresiÃ³n-s")
+ (expand-sexp "Expandir expresiÃ³n-s")
 
  ;;; fraction dialog
- (enter-fraction "Introducir Fracción")
+ (enter-fraction "Introducir FracciÃ³n")
  (whole-part "Parte entera")
  (numerator "Numerador")
  (denominator "Denominador")
- (invalid-number "Número inválido: debe ser un número real exacto, no entero.")
- (insert-fraction-menu-item-label "Insertar Fracción...")
+ (invalid-number "NÃºmero invÃ¡lido: debe ser un nÃºmero real exacto, no entero.")
+ (insert-fraction-menu-item-label "Insertar FracciÃ³n...")
  
  ;; number snip popup menu
- (show-decimal-expansion "Ver expansión decimal")
- (show-fraction-view "Ver como fracción")
- (show-mixed-fraction-view "Ver como una fracción mixta")   
- (show-improper-fraction-view "Ver como fracción impropia")
- (show-more-decimal-places "Muestra más posiciones decimales")
+ (show-decimal-expansion "Ver expansiÃ³n decimal")
+ (show-fraction-view "Ver como fracciÃ³n")
+ (show-mixed-fraction-view "Ver como una fracciÃ³n mixta")   
+ (show-improper-fraction-view "Ver como fracciÃ³n impropia")
+ (show-more-decimal-places "Muestra mÃ¡s posiciones decimales")
  
  ;;; TeachPack messages
- (select-a-teachpack "Selecciona un Paquete de Enseñanza")
- (clear-teachpack "Limpia el Paquete de Enseñanza ~a")
- (teachpack-error-label "DrScheme - Paquete de Enseñanza error")
- (teachpack-dne/cant-read "El archivo del Paquete de Enseñanza ~a no existe o no puede ser leído.")
- (teachpack-didnt-load "El archivo del Paquete de Enseñanza ~a no se cargó apropiadamente.")
- (teachpack-error-invoke "El archivo del Paquete de Enseñanza ~a lanzó un error durante su invocación.")
- (add-teachpack-menu-item-label "Añadir un Paquete de Enseñanza...")
- (clear-all-teachpacks-menu-item-label "Limpia Todos los Paquetes de Enseñanza")
- (drscheme-teachpack-message-title "DrScheme Paquete de Enseñanza")
- (already-added-teachpack "El paquete de enseñanza ~a ya estaba cargado")
+ (select-a-teachpack "Selecciona un Paquete de EnseÃ±anza")
+ (clear-teachpack "Limpia el Paquete de EnseÃ±anza ~a")
+ (teachpack-error-label "DrScheme - Paquete de EnseÃ±anza error")
+ (teachpack-dne/cant-read "El archivo del Paquete de EnseÃ±anza ~a no existe o no puede ser leÃ­do.")
+ (teachpack-didnt-load "El archivo del Paquete de EnseÃ±anza ~a no se cargÃ³ apropiadamente.")
+ (teachpack-error-invoke "El archivo del Paquete de EnseÃ±anza ~a lanzÃ³ un error durante su invocaciÃ³n.")
+ (add-teachpack-menu-item-label "AÃ±adir un Paquete de EnseÃ±anza...")
+ (clear-all-teachpacks-menu-item-label "Limpia Todos los Paquetes de EnseÃ±anza")
+ (drscheme-teachpack-message-title "DrScheme Paquete de EnseÃ±anza")
+ (already-added-teachpack "El paquete de enseÃ±anza ~a ya estaba cargado")
  
  ;;; Language dialog
  (introduction-to-language-dialog
-  "Por favor selecciona un lenguaje.  La mayoría de los estudiantes de cursos introductorios deberían usar el lenguaje por omisión.")
+  "Por favor selecciona un lenguaje.  La mayorÃ­a de los estudiantes de cursos introductorios deberÃ­an usar el lenguaje por omisiÃ³n.")
  (language-dialog-title "Configurar Lenguaje")
- (case-sensitive-label "Sensible a mayúsculas") ;; FIXME: Case sensitive
+ (case-sensitive-label "Sensible a mayÃºsculas") ;; FIXME: Case sensitive
  (output-style-label "Estilo de salida")
  (constructor-printing-style "Constructor")
  (quasiquote-printing-style "Quasiquote")
  (print-printing-style "current-print")
  (write-printing-style "write")
  (sharing-printing-label "Show sharing in values")
- (use-pretty-printer-label "Insertar caracteres de nueva línea en valores impresos")
- (input-syntax "Sintáxis de Entrada")
- (dynamic-properties "Propiedades dinámicas")
- (output-syntax "Sintáxis de Salida")
+ (use-pretty-printer-label "Insertar caracteres de nueva lÃ­nea en valores impresos")
+ (input-syntax "SintÃ¡xis de Entrada")
+ (dynamic-properties "Propiedades dinÃ¡micas")
+ (output-syntax "SintÃ¡xis de Salida")
  (no-debugging-or-profiling "No depurando o delineando")
  (debugging "Depurando")
  (debugging-and-profiling "Depurando y delineando")
- (test-coverage "Paquete de prueba de cobertura sintáctica") ;; FIXME: Syntactic test suite coverage
- (whole/fractional-exact-numbers-label "Imprimir números como fracciones")
+ (test-coverage "Paquete de prueba de cobertura sintÃ¡ctica") ;; FIXME: Syntactic test suite coverage
+ (whole/fractional-exact-numbers-label "Imprimir nÃºmeros como fracciones")
  (booleans-as-true/false-label "Imprimir valores booleanos usando true y false")
  (show-details-button-label "Mostrar Detalles")
  (hide-details-button-label "Esconder Detalles")
  (choose-language-menu-item-label "Escoger Lenguaje...")
- (revert-to-language-defaults "Revertir a los Valores por Omisión del Lenguaje")
- (language-docs-button-label "Documentación de Lenguajes")
+ (revert-to-language-defaults "Revertir a los Valores por OmisiÃ³n del Lenguaje")
+ (language-docs-button-label "DocumentaciÃ³n de Lenguajes")
  (fraction-style "Estilo de Fracciones")
  (use-mixed-fractions "Fracciones mixtas")
  (use-repeating-decimals "Decimales repetidos")
- (decimal-notation-for-rationals "Usar notación decimal para racionales")
+ (decimal-notation-for-rationals "Usar notaciÃ³n decimal para racionales")
  (please-select-a-language "Por favor selecciona un lenguaje")
  
  ;;; languages
  (beginning-student "Estudiante Principiante")
  (beginning-one-line-summary "define, cond, structs, constantes, y primitivas") 
  (beginning-student/abbrev "Estudiante Principiante con Abreviaturas de Listas")
- (beginning/abbrev-one-line-summary "Principiante con estilo de impresión de listas en el REPL") 
+ (beginning/abbrev-one-line-summary "Principiante con estilo de impresiÃ³n de listas en el REPL") 
  (intermediate-student "Estudiante Intermedio")
- (intermediate-one-line-summary "Estudiante Principiante más alcance léxico")
+ (intermediate-one-line-summary "Estudiante Principiante mÃ¡s alcance lÃ©xico")
  (intermediate-student/lambda "Estudiante Intermedio con lambda")
- (intermediate/lambda-one-line-summary "Estudiante Intermedio más funciones de alto-nivel")
+ (intermediate/lambda-one-line-summary "Estudiante Intermedio mÃ¡s funciones de alto-nivel")
  (advanced-student "Estudiante Avanzado")
- (advanced-one-line-summary "Estudiante Intermedio más lambda y mutación") 
+ (advanced-one-line-summary "Estudiante Intermedio mÃ¡s lambda y mutaciÃ³n") 
  (full-language "Completo")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "Similar a R5RS")
  (expander "Expander")
  (expander-one-line-summary "Expande, en lugar de evaluar, expresiones")
  (professional-languages "Languajes Profesionales")
- (teaching-languages "Languajes de Enseñanza")
+ (teaching-languages "Languajes de EnseÃ±anza")
  (experimental-languages "Languajes Experimentales") 
  (pretty-big-scheme "Muy Grande (incluye MrEd y Avanzado)")
- (pretty-big-scheme-one-line-summary "Añade syntaxis y funciones de los lenguajes HtDP")
- (r5rs-lang-name "R5RS estándar")
+ (pretty-big-scheme-one-line-summary "AÃ±ade syntaxis y funciones de los lenguajes HtDP")
+ (r5rs-lang-name "R5RS estÃ¡ndar")
  (r5rs-one-line-summary "R5RS, sin ornamentos")
  (unknown-debug-frame "[desconocido]")
  
- (module-language-one-line-summary "Ejecutar crea un REPL en el contexto del módulo, incluyendo el lenguaje declarado para el módulo")
+ (module-language-one-line-summary "Ejecutar crea un REPL en el contexto del mÃ³dulo, incluyendo el lenguaje declarado para el mÃ³dulo")
 
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")
@@ -863,9 +863,9 @@
  (current-interactions "interacciones")
  (current-definitions "definiciones")
  (mzscheme-w/debug "Texto (MzScheme, incluye R5RS)")
- (mzscheme-one-line-summary "Implementación de Scheme del PLT") 
- (mred-w/debug "Gráfico (MrEd, incluye MzScheme)")
- (mred-one-line-summary "Añade soporte para IGU a MzScheme")
+ (mzscheme-one-line-summary "ImplementaciÃ³n de Scheme del PLT") 
+ (mred-w/debug "GrÃ¡fico (MrEd, incluye MzScheme)")
+ (mred-one-line-summary "AÃ±ade soporte para IGU a MzScheme")
 
  ;; profiling
  (profiling-low-color "Tenue")
@@ -876,49 +876,49 @@
  (profiling-example-text "(define (whee) (whee))")
  (profiling-color-config "Delineando Rango de Color")
  (profiling-scale "Delineando Escala de Color")
- (profiling-sqrt "Raíz cuadrada")
+ (profiling-sqrt "RaÃ­z cuadrada")
  (profiling-linear "Lineal")
  (profiling-square "Cuadrado")
- (profiling-number "Número de llamadas")
+ (profiling-number "NÃºmero de llamadas")
  (profiling-time "Tiempo acumulado")
  (profiling-clear "Limpiar delineado")
  (profiling-update "Actualiza Delineado")
  (profiling-col-percent-time "% Tiempo")
- (profiling-col-function "Función")
+ (profiling-col-function "FunciÃ³n")
  (profiling-col-name "Nombre")
  (profiling-col-time-in-msec "Msec")
  (profiling-col-calls "Llamadas")
  (profiling-show-profile "Muestra Delineado")
  (profiling-hide-profile "Esconder Profile")
  (profiling-unknown-src "<< desconocido >>")
- (profiling-no-information-available "No hay información de delineado disponible. Por favor, asegúrate que la opción de delineado está activada para el lenguaje y de haber ejecutado su programa.")
- (profiling-clear? "Cambiar la ventana de definiciones invalida la información de delineado. ¿Continuar?")
+ (profiling-no-information-available "No hay informaciÃ³n de delineado disponible. Por favor, asegÃºrate que la opciÃ³n de delineado estÃ¡ activada para el lenguaje y de haber ejecutado su programa.")
+ (profiling-clear? "Cambiar la ventana de definiciones invalida la informaciÃ³n de delineado. Â¿Continuar?")
  
  ;; test coverage
- (test-coverage-clear? "El cambiar la ventana de definiciones invalida la información de pruebas de cobertura. ¿Continuar?")
- (test-coverage-clear-and-do-not-ask-again "Sí y no me preguntes más")
- (test-coverage-ask? "¿Preguntar acerca de las pruebas de  cobertura?")
+ (test-coverage-clear? "El cambiar la ventana de definiciones invalida la informaciÃ³n de pruebas de cobertura. Â¿Continuar?")
+ (test-coverage-clear-and-do-not-ask-again "SÃ­ y no me preguntes mÃ¡s")
+ (test-coverage-ask? "Â¿Preguntar acerca de las pruebas de  cobertura?")
 
  ;;; repl stuff
- (evaluation-terminated "Evaluación Terminada")
+ (evaluation-terminated "EvaluaciÃ³n Terminada")
  (evaluation-terminated-explanation
-  "El hilo de control de la evaluación ya no se está ejecutando, por lo que no se puede efectuar ninguna evaluación hasta la siguiente ejecución.")
- (last-stack-frame "Mostrar el último marco (frame) en el stack")
- (last-stack-frames "Mostrar los últimos ~a marcos (frames)")
+  "El hilo de control de la evaluaciÃ³n ya no se estÃ¡ ejecutando, por lo que no se puede efectuar ninguna evaluaciÃ³n hasta la siguiente ejecuciÃ³n.")
+ (last-stack-frame "Mostrar el Ãºltimo marco (frame) en el stack")
+ (last-stack-frames "Mostrar los Ãºltimos ~a marcos (frames)")
  (next-stack-frames "Mostrar los siguientes ~a marcos (frames) en el stack")
  
  ;;; welcoming message in repl
  (language "Lenguaje")
  (custom "custom")
- (teachpack "Paquete de Enseñanza")
+ (teachpack "Paquete de EnseÃ±anza")
  (welcome-to "Bienvenido a")
- (version "versión")
+ (version "versiÃ³n")
  
  ;;; kill evaluation dialog
- (kill-evaluation? "¿Quieres terminar la evaluación?")
- (just-break "Interrupción Simple")
+ (kill-evaluation? "Â¿Quieres terminar la evaluaciÃ³n?")
+ (just-break "InterrupciÃ³n Simple")
  (kill "Terminar")
- (kill? "¿Terminar?")
+ (kill? "Â¿Terminar?")
  
  ;; version checker
  ;; vc-check-prompt is gone, I'm leaving this comment to make it easier to generate
@@ -926,26 +926,26 @@
  ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
  ;; it will not make the dialog too wide.
  ; vc-wizard-check-note goes here
- (vc-wizard-check-button "¡Buscar ahora!") 
- (vc-update-check "Revisar Actualización")
+ (vc-wizard-check-button "Â¡Buscar ahora!") 
+ (vc-update-check "Revisar ActualizaciÃ³n")
  (vc-please-wait "Por favor espere")
- (vc-connecting-version-server "Conectando al servidor de versión PLT")
- (vc-network-timeout "La conexión de red ha expirado")
- (vc-cannot-connect "No puedo conectarme al servidor de versión PLT")
+ (vc-connecting-version-server "Conectando al servidor de versiÃ³n PLT")
+ (vc-network-timeout "La conexiÃ³n de red ha expirado")
+ (vc-cannot-connect "No puedo conectarme al servidor de versiÃ³n PLT")
  (vc-network-failure "Falla de Red")
- (vc-old-binaries "Los binarios instalados para DrScheme (o MzScheme) no están actualizados")
- (vc-binary-information-format "Versión binaria instalada: ~a (iteración ~a)")
+ (vc-old-binaries "Los binarios instalados para DrScheme (o MzScheme) no estÃ¡n actualizados")
+ (vc-binary-information-format "VersiÃ³n binaria instalada: ~a (iteraciÃ³n ~a)")
  (vc-details-format "~a~nDetalles:~n~a")
  (vc-details-text "Detalles:~n")
  (vc-error-format "Error: ~a")
- (vc-current-format "~a v.~a (iteración ~a) está actualizada")
- (vc-update-format "~a v.~a (iteración ~a) requiere ser actualizado a v.~a (iteración ~a)")
+ (vc-current-format "~a v.~a (iteraciÃ³n ~a) estÃ¡ actualizada")
+ (vc-update-format "~a v.~a (iteraciÃ³n ~a) requiere ser actualizado a v.~a (iteraciÃ³n ~a)")
  (vc-binary-name "Binario")
- (vc-updates-available "Las actualizaciones están disponibles en")
- (vc-latest-binary-information-format "Última versión liberada: ~a (iteración ~a)")
- (vc-update-dialog-title "PLT estatus de actualización")
- (vc-need-update-string "Uno o más de los paquetes de software PLT necesitan ser actualizados")
- (vc-no-update-string "Todo el software PLT instalado está al día")
+ (vc-updates-available "Las actualizaciones estÃ¡n disponibles en")
+ (vc-latest-binary-information-format "Ãšltima versiÃ³n liberada: ~a (iteraciÃ³n ~a)")
+ (vc-update-dialog-title "PLT estatus de actualizaciÃ³n")
+ (vc-need-update-string "Uno o mÃ¡s de los paquetes de software PLT necesitan ser actualizados")
+ (vc-no-update-string "Todo el software PLT instalado estÃ¡ al dÃ­a")
 
  ;; special menu
  (special-menu "Especial")
@@ -955,30 +955,30 @@
  (large-semicolon-letters "Letas Dos Puntos Grandes")
  (text-to-insert "Texto a insertar")
 
- (module-browser-filename-format "Nombre de archivo completo: ~a (~a líneas)")
- (module-browser-root-filename "Raíz del archivo: ~a")
- (module-browser-font-size-gauge-label "Tamaño de fuente")
- (module-browser-progress-label "Módulo de resumen de progreso")
- (module-browser-adding-file "Añadiendo archivo: ~a...")
- (module-browser-laying-out-graph-label "Depositando gráfica")
+ (module-browser-filename-format "Nombre de archivo completo: ~a (~a lÃ­neas)")
+ (module-browser-root-filename "RaÃ­z del archivo: ~a")
+ (module-browser-font-size-gauge-label "TamaÃ±o de fuente")
+ (module-browser-progress-label "MÃ³dulo de resumen de progreso")
+ (module-browser-adding-file "AÃ±adiendo archivo: ~a...")
+ (module-browser-laying-out-graph-label "Depositando grÃ¡fica")
  (module-browser-open-file-format "Abriendo ~a")
- (module-browser "Navegador de Módulos")
- (module-browser... "Navegador de Módulos...")
+ (module-browser "Navegador de MÃ³dulos")
+ (module-browser... "Navegador de MÃ³dulos...")
  (module-browser-error-expanding "Error al expandir el programa:\n\n~a")
  (module-browser-show-lib-paths "Muestra archivos cargados por rutas (lib ..)")
- (module-browser-progress "Navegador de Módulos: ~a") ;; prefix in the status line
- (module-browser-compiling-defns "Navegador de Módulos: compilando las definiciones")
+ (module-browser-progress "Navegador de MÃ³dulos: ~a") ;; prefix in the status line
+ (module-browser-compiling-defns "Navegador de MÃ³dulos: compilando las definiciones")
  (module-browser-show-lib-paths/short "Seguir los requires de bibliotecas (lib)") ;; check box label in show module browser pane in drscheme window.
  (module-browser-refresh "Refrescar") ;; button label in show module browser pane in drscheme window.
  (module-browser-only-in-plt-and-module-langs
-  "El navegador de módulos está disponible para programas en los lenguajes PLT y en el lenguaje con módulos (y únicamente para programas que incluyan módulos).")
+  "El navegador de mÃ³dulos estÃ¡ disponible para programas en los lenguajes PLT y en el lenguaje con mÃ³dulos (y Ãºnicamente para programas que incluyan mÃ³dulos).")
  
  ;; Birthdays section
- (happy-birthday-matthias "¡Feliz cumpleaños Matthias!")
- (happy-birthday-matthew "¡Feliz cumpleaños Matthew!")
+ (happy-birthday-matthias "Â¡Feliz cumpleaÃ±os Matthias!")
+ (happy-birthday-matthew "Â¡Feliz cumpleaÃ±os Matthew!")
 
- (mrflow-using-default-language-title "Lenguaje por omisión usado")
- (mrflow-using-default-language "El lenguaje usado actualmente no tiene un tipo tabla definido para sus primitivas.  Usaré R5RS Scheme en su lugar.")
+ (mrflow-using-default-language-title "Lenguaje por omisiÃ³n usado")
+ (mrflow-using-default-language "El lenguaje usado actualmente no tiene un tipo tabla definido para sus primitivas.  UsarÃ© R5RS Scheme en su lugar.")
  (mrflow-button-title "Analizar")
  (mrflow-coloring-error "Estilo no definido para el color: ~a")
  (mrflow-coloring-error-title "Color desconocido")
@@ -988,12 +988,12 @@
  (mrflow-popup-menu-hide-type "Esconder Tipo")
  (mrflow-popup-menu-show-errors "Mostrar Errores")
  (mrflow-popup-menu-show-type "Mostrar Tipo")
-;(mrflow-read-exception "Leer excepción: ~a")
-;(mrflow-read-exception-title "Leer Excepción")
-;(mrflow-syntax-exception "Excepción de sintaxis: ~a")
-;(mrflow-syntax-exception-title "Excepción de Sintaxis")
-;(mrflow-unknown-exception-title "Excepción Desconocida")
-;(mrflow-unknown-exception "Excepción Desconocida: ~a")
+;(mrflow-read-exception "Leer excepciÃ³n: ~a")
+;(mrflow-read-exception-title "Leer ExcepciÃ³n")
+;(mrflow-syntax-exception "ExcepciÃ³n de sintaxis: ~a")
+;(mrflow-syntax-exception-title "ExcepciÃ³n de Sintaxis")
+;(mrflow-unknown-exception-title "ExcepciÃ³n Desconocida")
+;(mrflow-unknown-exception "ExcepciÃ³n Desconocida: ~a")
  
  (snips-and-arrows-popup-menu-tack-all-arrows "Ligar todas las Flechas")
  (snips-and-arrows-popup-menu-untack-all-arrows "Desligar todas las Flechas")
@@ -1003,55 +1003,55 @@
 
  (xml-tool-menu "XML")
  (xml-tool-insert-scheme-box "Insertar Caja de Scheme")
- (xml-tool-insert-scheme-splice-box "Insertar Caja de Unión de Scheme")
+ (xml-tool-insert-scheme-splice-box "Insertar Caja de UniÃ³n de Scheme")
  (xml-tool-insert-xml-box "Insertar Caja de XML")
  (xml-tool-xml-box "Caja de XML")
  (xml-tool-scheme-box "Caja de Scheme")
- (xml-tool-scheme-splice-box "Caja de Unión de Scheme")
+ (xml-tool-scheme-splice-box "Caja de UniÃ³n de Scheme")
  (xml-tool-switch-to-scheme "Cambiar a caja de  Scheme")
- (xml-tool-switch-to-scheme-splice "Cambiar a caja de unión de Scheme")
- (xml-tool-eliminate-whitespace-in-empty-tags "Eliminar blancos en etiquetas vacías")
+ (xml-tool-switch-to-scheme-splice "Cambiar a caja de uniÃ³n de Scheme")
+ (xml-tool-eliminate-whitespace-in-empty-tags "Eliminar blancos en etiquetas vacÃ­as")
  (xml-tool-leave-whitespace-alone "Dejar blancos por la paz")
 
  (show-recent-items-window-label "Archivos abiertos recientemente")
  (show-recent-items-window-menu-item "Muestra Archivos Abiertos recientemente en otra ventana")
- (number-of-open-recent-items "Número de elementos recientes")
+ (number-of-open-recent-items "NÃºmero de elementos recientes")
  (switch-anyway "Cambia de archivo de cualquier forma")
 
  (stepper-program-has-changed "ADVERTENCIA: El programa ha cambiado.")
  (stepper-program-window-closed "ADVERTENCIA: La ventana del programa ha desaparecido.")
 
  (wizard-next "Siguiente")
- (wizard-back "Atrás")
+ (wizard-back "AtrÃ¡s")
  (wizard-finish "Finalizar")
  
  ;; warnings about closing a drscheme frame when the program
  ;; might still be doing something interesting
- (program-is-still-running "El programa en la ventana de definiciones sigue corriendo.  ¿Cerrar de cualquier forma?")
- (program-has-open-windows "El programa en la ventana de definiciones abrió otras ventanas.  ¿Cerrar esta ventana de cualquier forma?")
+ (program-is-still-running "El programa en la ventana de definiciones sigue corriendo.  Â¿Cerrar de cualquier forma?")
+ (program-has-open-windows "El programa en la ventana de definiciones abriÃ³ otras ventanas.  Â¿Cerrar esta ventana de cualquier forma?")
 
  ;; ml-command-line-arguments is for the command line arguments
  ;; label in the module language details in the language dialog.
- (ml-command-line-arguments "Argumentos en la línea de comandos como un vector de cadenas, en leer sintaxis")
+ (ml-command-line-arguments "Argumentos en la lÃ­nea de comandos como un vector de cadenas, en leer sintaxis")
  
  ;; ml-cp names are all for the module language collection path
  ;; configuration. See the details portion of the language dialog
  ;; for the module language (at the bottom).
- (ml-cp-default-collection-path "<<rutas de colección por omisión>>")
+ (ml-cp-default-collection-path "<<rutas de colecciÃ³n por omisiÃ³n>>")
 
  ;; in std get-directory 
  (ml-cp-choose-a-collection-path "Por favor selecciona una ruta de colecciones")
 
  ;; err msg when adding default twice
- (ml-cp-default-already-present "La ruta de colecciones por omisión ya está presente")
+ (ml-cp-default-already-present "La ruta de colecciones por omisiÃ³n ya estÃ¡ presente")
  
  ;; title of this section of the dialog (possibly the word
  ;; `Collection' should not be translated)
  (ml-cp-collection-paths "Rutas de colecciones")
 
  ;; button labels
- (ml-cp-add "Añadir")
- (ml-cp-add-default "Añadir por omisión")
+ (ml-cp-add "AÃ±adir")
+ (ml-cp-add-default "AÃ±adir por omisiÃ³n")
  (ml-cp-remove "Eliminar")
  (ml-cp-raise "Elevar")
  (ml-cp-lower "Bajar")
@@ -1065,11 +1065,11 @@
  (profj-java-mode-color-comment "comentario")
  (profj-java-mode-color-error "error")
  (profj-java-mode-color-identifier "identificador")
- (profj-java-mode-color-default "por omisión")
+ (profj-java-mode-color-default "por omisiÃ³n")
  
  ;; The Test Suite Tool
  ;; Errors
- (test-case-empty-error "Caso de prueba vacío")
+ (test-case-empty-error "Caso de prueba vacÃ­o")
  (test-case-too-many-expressions-error "Demasiadas expresiones en el caso de prueba.")
  (test-case-not-at-top-level "Caja para caso de prueba no en nivel superior")
  ;; Dr. Scheme window menu items

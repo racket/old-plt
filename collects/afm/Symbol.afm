@@ -1,4 +1,5 @@
 StartFontMetrics 2.0
+Comment Matthew added a "mugreek" mapping (Nov 2004)
 Comment Copyright (c) 1985, 1987, 1989, 1990 Adobe Systems Incorporated.  All rights reserved.
 Comment Creation Date: Wed Jan 17 21:48:26 1990
 Comment UniqueID 27004
@@ -94,6 +95,7 @@ C 106 ; WX 603 ; N phi1 ; B 36 -224 587 499 ;
 C 107 ; WX 549 ; N kappa ; B 33 0 558 501 ;
 C 108 ; WX 549 ; N lambda ; B 24 -17 548 739 ;
 C 109 ; WX 576 ; N mu ; B 33 -223 567 500 ;
+C 109 ; WX 576 ; N mugreek ; B 33 -223 567 500 ;
 C 110 ; WX 521 ; N nu ; B -9 -16 475 507 ;
 C 111 ; WX 549 ; N omicron ; B 35 -19 501 499 ;
 C 112 ; WX 549 ; N pi ; B 10 -19 530 487 ;

@@ -111,7 +111,7 @@ wxImage::wxImage(void)
 wxImage::~wxImage(void)
 {
   if (gifpic)
-    delete gifpic;
+    DELETE_OBJ gifpic;
 }
 
 Bool wxImage::Load(char *file)

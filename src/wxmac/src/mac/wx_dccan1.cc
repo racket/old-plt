@@ -355,9 +355,9 @@ void wxCanvasDC::SetBrush(wxBrush *brush)
 //-----------------------------------------------------------------------------
 void wxCanvasDC::InstallColor(wxColour *c, int fg)
 {
-  RGBColor pixel;
-  pixel = c->pixel;
   if (Colour) {
+    RGBColor pixel;
+    pixel = c->pixel;
     if (fg)
       RGBForeColor(&pixel);
     else

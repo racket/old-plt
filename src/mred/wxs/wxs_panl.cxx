@@ -5,6 +5,9 @@
 #if defined(_MSC_VER)
 # include "wx.h"
 #endif
+#if defined(OS_X) && defined(MZ_PRECISE_GC)
+# include "common.h"
+#endif
 
 #include "wx_panel.h"
 #include "wx_dialg.h"

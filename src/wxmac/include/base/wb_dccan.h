@@ -20,8 +20,8 @@ typedef       void    *wxbCanvasDC ;
 class wxbCanvasDC: public wxDC
 {
  public:
-  inline wxbCanvasDC(void) { }
-  inline wxbCanvasDC(wxCanvas *the_canvas) { }
+  wxbCanvasDC(void);
+  wxbCanvasDC(wxCanvas *the_canvas);
 
   inline ~wxbCanvasDC(void) { }
 };

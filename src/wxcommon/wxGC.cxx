@@ -203,7 +203,7 @@ int GC_is_wx_object(void *v)
 
 #ifdef MZ_PRECISE_GC
 
-# define ZERO_OUT_DISPATCH 0
+# define ZERO_OUT_DISPATCH 1
 
 typedef struct {
   short tag;

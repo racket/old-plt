@@ -65,12 +65,12 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
-#define RECORD_MARK_SRC 0
+#define RECORD_MARK_SRC 1
 
 #if TIME
 # include <sys/time.h>
@@ -97,7 +97,8 @@ static int current_mark_type;
 #define MTYPE_STACK     7
 #define MTYPE_FINALIZER 8
 #define MTYPE_WEAKLINK  9
-#define MTYPE_IMMOBILE  10
+#define MTYPE_WEAKLINKX 10
+#define MTYPE_IMMOBILE  11
 #endif
 
 /********************* Client hooks *********************/
@@ -867,8 +868,8 @@ static int mark_weak_array(void *p)
     data = a->data;
     for (i = a->count; i--; ) {
       if (data[i] 
-	  && (*(short *)(data[i]) != 41)
-	  && (*(short *)(data[i]) != 50))
+	  && (*(short *)(data[i]) != 43)
+	  && (*(short *)(data[i]) != 52))
 	CRASH();
     }
   }
@@ -1591,6 +1592,9 @@ void GC_mark(const void *p)
 	      page->flags = (flags | MFLAG_BLACK);
 	      OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | MFLAG_BLACK); /* black can mean on stack */
 # if RECORD_MARK_SRC
+#  if CHECKS
+	      if ((long)mark_src & 0x1) CRASH();
+#  endif
 	      mark_src_stack[mark_stack_pos] = mark_src;
 	      mark_src_type[mark_stack_pos] = mark_type;
 # endif
@@ -2130,7 +2134,7 @@ static void propagate_all_mpages()
 
       case MTYPE_XTAGGED:
 #if RECORD_MARK_SRC
-	mark_src = p + 1;
+	mark_src = (void **)p + 1;
 	mark_type = MTYPE_XTAGGED;
 #endif
 	GC_mark_xtagged((void **)p + 1);
@@ -2143,7 +2147,7 @@ static void propagate_all_mpages()
 	  size = ((long *)p)[0];
 	  
 #if RECORD_MARK_SRC
-	  mark_src = p + 1;
+	  mark_src = (void **)p + 1;
 	  mark_type = MTYPE_ARRAY;
 #endif
 
@@ -3629,6 +3633,10 @@ static void gcollect(int full)
 	  if (f->eager_level == 3) {
 	    if (!is_marked(f->p)) {
 	      /* Not yet marked. Mark it and enqueue it. */
+#if RECORD_MARK_SRC
+	      mark_src = f;
+	      mark_type = MTYPE_FINALIZER;
+#endif
 	      gcMARK(f->p);
 
 	      if (prev)
@@ -3658,6 +3666,10 @@ static void gcollect(int full)
 	    int markit;
 	    markit = is_marked(wp);
 	    if (markit) {
+#if RECORD_MARK_SRC
+	      mark_src = wp;
+	      mark_type = MTYPE_WEAKLINKX;
+#endif
 	      gcMARK(wl->saved);
 	    }
 	    *(void **)(BYTEPTR(wp) + wl->offset) = wl->saved;
@@ -3753,6 +3765,10 @@ static void gcollect(int full)
 	/* Mark items added to run queue: */
 	f = queue;
 	while (f) {
+#if RECORD_MARK_SRC
+	  mark_src = f;
+	  mark_type = MTYPE_FINALIZER;
+#endif
 	  gcMARK(f->p);
 	  f = f->next;
 	}

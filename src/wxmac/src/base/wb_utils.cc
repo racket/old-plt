@@ -39,6 +39,19 @@ copystring (const char *s)
   return news;
 }
 
+#ifdef MZ_PRECISE_GC
+char *copystring_to_aligned(const char *s, int d)
+{
+  size_t len;
+  char *news;
+
+  len = strlen(s + d);
+  news = new WXGC_ATOMIC char[len + 1];
+  memcpy(news, s + d, len + 1);
+  return news;
+}
+#endif
+
 // Id generation
 static long wxCurrentId = 100;
 

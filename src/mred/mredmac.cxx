@@ -1279,8 +1279,10 @@ wxWindow *wxLocationToWindow(int x, int y)
 	&& (bounds.bottom >= y)) {
       /* Found it */
       wxFrame *frame;
+      void *refcon;
 
-      frame = (wxFrame *)GetWRefCon(f);  
+      refcon = (void *)GetWRefCon(f);
+      frame = (wxFrame *)GET_SAFEREF(refcon);
 
       if (frame) {
 	/* Mac: some frames really represent dialogs. Any modal frame is

@@ -191,6 +191,7 @@ wxColour *wxColour::CopyFrom(const char *col)
     red = the_colour->Red ();
     green = the_colour->Green ();
     blue = the_colour->Blue ();
+    pixel = the_colour->pixel;
     isInit = TRUE;
   } else {
     red = 0;

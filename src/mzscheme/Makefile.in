@@ -5,6 +5,9 @@
 srcdir = @srcdir@
 prefix = @prefix@
 
+# for version.mak:
+mainsrcdir = @srcdir@/..
+
 CC = @CC@
 CPP = @CPP@
 PERL = @PERL@

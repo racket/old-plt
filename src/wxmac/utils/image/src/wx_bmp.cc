@@ -892,7 +892,7 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		bm->SetDepth(picinfo.type==PIC8 ? 8 : 24);
 		bm->SetOk(TRUE);
   		XpmFree (picinfo.pic);
-		delete xbmImage;
+		DELETE_OBJ xbmImage;
 		return TRUE;
 	}
 	else {

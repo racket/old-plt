@@ -21,7 +21,7 @@ typedef       void    *wxbMemoryDC ;
 class wxbMemoryDC: public wxCanvasDC
 {
  public:
-  inline wxbMemoryDC(void) { }
+  wxbMemoryDC(void);
 
   inline ~wxbMemoryDC(void) { }
   virtual void SelectObject(wxBitmap *bitmap) = 0;

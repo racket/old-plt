@@ -161,9 +161,7 @@ BOOL wxGIF::ReadHeader(FILE *fp)
 
   if (dscgif.pflds & 0x80) {
     long tp = 0;
-    char *ss;
-    ss = new char[3*TabCol.sogct];
-    rgbTable = (unsigned char *)ss;
+    rgbTable = new uchar[3*TabCol.sogct];
     fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
     for (i = 0; i < TabCol.sogct; i++) {
       TabCol.paleta[i].r = rgbTable[tp++];
@@ -726,6 +724,8 @@ void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
 
   width = gif->GetWidth();
   height = gif->GetHeight();
+
+  ::SetRect(&bounds, 0, 0, width, height);
 
   GetGWorld(&saveport, &savegw);
   err = NewGWorld(&newGWorld, 32, &bounds, NULL, NULL, 0);

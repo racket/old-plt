@@ -2,6 +2,9 @@
 srcdir = @srcdir@
 prefix = @prefix@
 
+# for version.mak:
+mainsrcdir = @srcdir@/..
+
 WXDIR = $(srcdir)/../wxxt
 
 PLTSRCDIR = $(srcdir)/..
@@ -100,16 +103,19 @@ MRFW = PLT_MrEd.framework/Versions/$(FWVERSION)/PLT_MrEd
 MRFWRES = PLT_MrEd.framework/Versions/$(FWVERSION)/Resources/PLT_MrEd.rsrc
 
 $(MRFW) : $(MZSCHEME) $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
-	$(MREDLINKER) $(MREDLDFLAGS) -dynamiclib -o $(MRFW) -F../mzscheme -F@FRAMEWORK_INSTALL_DIR@ -framework PLT_MzScheme $(@WXLIBS@) $(GUILIBS_@WXVARIANT@)
+	$(MREDLINKER) $(MREDLDFLAGS) -dynamiclib -o $(MRFW) -F../mzscheme -framework PLT_MzScheme $(@WXLIBS@) $(GUILIBS_@WXVARIANT@)
 
 MrEd.app/Contents/MacOS/MrEd: $(MRFWRES) $(MRFW) mrmain.o 
-	$(MREDLINKER) -o MrEd.app/Contents/MacOS/MrEd mrmain.o -F. -F../mzscheme -F@FRAMEWORK_INSTALL_DIR@ -framework PLT_MrEd -framework Carbon -framework PLT_MzScheme
+	$(MREDLINKER) -o MrEd.app/Contents/MacOS/MrEd mrmain.o -F. -F../mzscheme -framework PLT_MrEd -framework Carbon -framework PLT_MzScheme
 
 $(MRFWRES): $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
 	rm -rf PLT_MrEd.framework/Resources PLT_MrEd.framework/PLT_MrEd
-	$(srcdir)/../mac/osx_appl.ss $(srcdir)/..
+	env BUILDBASE=.. $(srcdir)/../mac/osx_appl.ss $(srcdir)/..
 	ln -s Versions/$(FWVERSION)/PLT_MrEd PLT_MrEd.framework/PLT_MrEd
 	ln -s Versions/$(FWVERSION)/Resources PLT_MrEd.framework/Resources
+
+$(MRFWMMMRES): $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
+	env BUILDING_3M=yes $(srcdir)/../mac/osx_appl.ss $(srcdir)/..
 
 ee-app: mred mrmain_ee.o
 	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mrmain_ee.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi

@@ -620,7 +620,7 @@ wxbListBox::wxbListBox (wxPanel * panel, wxFunction func,
   selections = 0;
   multiple = Multiple;
   window_parent = panel;
-  no_items = 0;
+  no_items = N;
   labelPosition = panel->label_position;
   buttonFont = panel->buttonFont;
   labelFont = panel->labelFont;
@@ -674,7 +674,7 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
   windowStyle = style;
   selected = -1;
   window_parent = panel;
-  no_items = 0;
+  no_items = N;
   labelPosition = panel->label_position;
   buttonFont = panel->buttonFont;
   labelFont = panel->labelFont;
@@ -828,5 +828,16 @@ wxbGauge::wxbGauge (wxPanel * panel, char *label,
 }
 
 wxbGauge::~wxbGauge (void)
+{
+}
+
+
+wbMenuItem::wbMenuItem()
+{ 
+  itemId = 0; itemName = NULL; topMenu = NULL; subMenu = NULL;
+  menuBar = NULL; helpString = NULL;
+}
+
+wbMenuItem::~wbMenuItem()
 {
 }

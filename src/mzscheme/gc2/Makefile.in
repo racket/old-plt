@@ -1,6 +1,9 @@
 
 srcdir = @srcdir@
 
+# for version.mak:
+mainsrcdir = @srcdir@/../..
+
 CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
@@ -50,7 +53,6 @@ OBJS =  salloc.o \
 	thread.o \
 	type.o \
 	vector.o \
-	main.o \
 	gc2.o
 
 XSRCS = $(XSRCDIR)/salloc.c \
@@ -100,7 +102,7 @@ xsrcs: $(XSRCS)
 xsrc:
 	mkdir xsrc
 
-xobjects: $(OBJS)
+xobjects: $(OBJS) main.o
 
 XFORMDEP = $(srcdir)/gc2.h $(srcdir)/xform.ss $(srcdir)/ctok.ss
 
@@ -262,8 +264,27 @@ main.o: $(XSRCDIR)/main.c
 gc2.o: $(srcdir)/gc2.c $(srcdir)/copy.c $(srcdir)/compact.c $(srcdir)/newgc.c $(srcdir)/gc2.h
 	$(CC) $(CFLAGS) -c $(srcdir)/gc2.c -o gc2.o
 
-../mzscheme3m: $(OBJS) ../src/gmp.o
-	$(CC) -o ../mzscheme3m $(OBJS) ../src/gmp.o $(LIBS)
+
+../mzscheme3m@NOT_OSX@: main.o $(OBJS) ../src/gmp.o
+	$(CC) -o ../mzscheme3m main.o $(OBJS) ../src/gmp.o $(LIBS)
+
+
+@INCLUDEDEP@ @srcdir@/../../mac/version.mak
+
+MZFWMMM = PLT_MzScheme.framework/Versions/$(FWVERSION)_3m/PLT_MzScheme
+
+$(MZFWMMM): $(OBJS) ../src/gmp.o
+	if [ ! -d PLT_MzScheme.framework ] ; then mkdir PLT_MzScheme.framework ; fi
+	if [ ! -d PLT_MzScheme.framework/Versions ] ; then mkdir PLT_MzScheme.framework/Versions ; fi
+	if [ ! -d PLT_MzScheme.framework/Versions/$(FWVERSION)_3m ] ; then mkdir PLT_MzScheme.framework/Versions/$(FWVERSION)_3m ; fi
+	$(CC) -o $(MZFWMMM) -dynamiclib -all_load $(OBJS) ../src/gmp.o $(LIBS)
+	rm -f PLT_MzScheme.framework/PLT_MzScheme
+	ln -s Versions/$(FWVERSION)_3m/PLT_MzScheme PLT_MzScheme.framework/PLT_MzScheme	
+
+../mzscheme3m@OSX@: $(MZFWMMM) main.o
+	$(CC) -o ../mzscheme3m main.o -F. -framework PLT_MzScheme
+	if [ ! -d ../PLT_MzScheme.framework/Versions/$(FWVERSION)_3m ] ; then mkdir ../PLT_MzScheme.framework/Versions/$(FWVERSION)_3m ; fi
+	cp PLT_MzScheme.framework/Versions/$(FWVERSION)_3m/PLT_MzScheme ../PLT_MzScheme.framework/Versions/$(FWVERSION)_3m/PLT_MzScheme
 
 clean:
 	/bin/rm -f lex.yy.c ../mzscheme3m *.o $(XSRCDIR)/*

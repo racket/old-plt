@@ -30,10 +30,8 @@ class wbMenuItem: public wxObject
   char *helpString;
   wxMenu *subMenu;
   wxMenu *topMenu;
-  inline wbMenuItem(void)
-  { itemId = 0; itemName = NULL; topMenu = NULL; subMenu = NULL;
-    menuBar = NULL; helpString = NULL; }
-  inline ~wbMenuItem(void) { if (itemName) delete[] itemName; if (helpString) delete[] helpString; }
+  wbMenuItem(void);
+  ~wbMenuItem(void);
 };
 
 #endif // IN_CPROTO

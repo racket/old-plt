@@ -176,3 +176,16 @@ void wxbDC::TryColour(wxColour *src, wxColour *dest)
 {
   dest->CopyFrom(src);
 }
+
+wxbCanvasDC::wxbCanvasDC(void)
+{
+}
+
+wxbCanvasDC::wxbCanvasDC(wxCanvas *the_canvas)
+{
+}
+
+wxbMemoryDC::wxbMemoryDC(void)
+{
+}
+

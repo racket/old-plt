@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Resources.cc,v 1.2 1996/01/11 20:08:55 markus Exp $
+ * $Id: Resources.cc,v 1.1.1.1 1997/12/22 17:28:55 mflatt Exp $
  *
  * Purpose: read/write .Xdefaults
  *
@@ -74,28 +74,29 @@ static char *GetResourcePath(char *buf, char *name, Bool create = FALSE)
     return buf;
 }
 
-// Read $HOME for what it says is home, if not
-// read $USER or $LOGNAME for user name else determine
-// the Real User, then determine the Real home dir.
 static char *GetIniFile(char *dest, const char *filename)
 {
     char *home = NULL;
-    if (filename && wxIsAbsolutePath((char*)filename)) {
-	strcpy(dest, filename);
+    if (filename) {
+      strcpy(dest, filename);
     } else if ((home = wxGetUserHome(NULL)) != NULL) {
-	strcpy(dest, home);
-	if (dest[strlen(dest) - 1] != '/')
-	    strcat(dest, "/");
-	if (filename == NULL) {
-	    if ((filename = getenv("XENVIRONMENT")) == NULL)
-		filename = ".Xdefaults";
-	} else if (*filename != '.')
-	    strcat(dest, ".");
-	strcat(dest, filename);
+      strcpy(dest, home);
+      if (dest[strlen(dest) - 1] != '/')
+	strcat(dest, "/");
+      strcat(dest, ".mred.resources");
     } else {
-	dest[0] = '\0';    
+      dest[0] = '\0';    
     }
     return dest;
+}
+
+static XrmDatabase wxXrmGetFileDatabase(const char *s)
+{
+  /* because directory names crash XrmGetFileDatabase */
+  if (!wxDirExists(s))
+    return XrmGetFileDatabase(s);
+  else
+    return NULL;
 }
 
 static void wxXMergeDatabases(void)
@@ -112,7 +113,7 @@ static void wxXMergeDatabases(void)
     (void)strcat(name, classname ? classname : "wxWindows");
 
     // Get application defaults file, if any 
-    if ((applicationDB = XrmGetFileDatabase(name)))
+    if ((applicationDB = wxXrmGetFileDatabase(name)))
       (void)XrmMergeDatabases(applicationDB, &wxResourceDatabase);
 
     // Merge server defaults, created by xrdb, loaded as a property of the root
@@ -122,8 +123,19 @@ static void wxXMergeDatabases(void)
     if (XResourceManagerString(wxAPP_DISPLAY) != NULL) {
 	serverDB = XrmGetStringDatabase(XResourceManagerString(wxAPP_DISPLAY));
     } else {
-	(void)GetIniFile(filename, NULL);
-	serverDB = XrmGetFileDatabase(filename);
+      // Get X defaults file, if any 
+      char *home = wxGetUserHome(NULL), *dest;
+      if (home) {
+	dest = new char[strlen(home) + 20];
+	
+	strcpy(dest, home);
+	if (dest[strlen(dest) - 1] != '/')
+	  strcat(dest, "/");
+	strcat(dest, ".Xdefaults");
+	
+	serverDB = wxXrmGetFileDatabase(dest);
+      } else
+	serverDB = NULL;
     }
     if (serverDB)
       XrmMergeDatabases(serverDB, &wxResourceDatabase);
@@ -132,16 +144,16 @@ static void wxXMergeDatabases(void)
     // and merge into existing database
 
     if ((environment = getenv("XENVIRONMENT")) == NULL) {
-	size_t len;
-	environment = GetIniFile(filename, NULL);
-	len = strlen(environment);
+      size_t len;
+      environment = GetIniFile(filename, NULL);
+      len = strlen(environment);
 #if !defined(SVR4) || defined(__sgi)
-	(void)gethostname(environment + len, 1024 - len);
+      (void)gethostname(environment + len, 1024 - len);
 #else
-	(void)sysinfo(SI_HOSTNAME, environment + len, 1024 - len);
+      (void)sysinfo(SI_HOSTNAME, environment + len, 1024 - len);
 #endif
     }
-    if ((homeDB = XrmGetFileDatabase(environment)))
+    if ((homeDB = wxXrmGetFileDatabase(environment)))
       XrmMergeDatabases(homeDB, &wxResourceDatabase);
 
 
@@ -155,7 +167,7 @@ static void wxXMergeDatabases(void)
 	strcat(dest, "/");
       strcat(dest, ".mred.resources");
       
-      if ((userDB = XrmGetFileDatabase(dest)))
+      if ((userDB = wxXrmGetFileDatabase(dest)))
 	(void)XrmMergeDatabases(userDB, &wxResourceDatabase);
     }
 }
@@ -198,10 +210,10 @@ Bool wxWriteResource(const char *section, const char *entry, char *value,
     XrmDatabase database;
     wxNode *node = wxResourceCache.Find(buffer);
     if (node)
-	database = (XrmDatabase)node->Data();
+      database = (XrmDatabase)node->Data();
     else {
-	database = XrmGetFileDatabase(buffer);
-	node = wxResourceCache.Append(buffer, (wxObject *)database);
+      database = wxXrmGetFileDatabase(buffer);
+      node = wxResourceCache.Append(buffer, (wxObject *)database);
     }
     char resName[300];
     strcpy(resName, section ? section : "wxWindows");
@@ -256,21 +268,19 @@ Bool wxGetResource(const char *section, const char *entry, char **value,
 
     XrmDatabase database;
     if (file) {
-	char buffer[500];
-	// Is this right? Trying to get it to look in the user's
-	// home directory instead of current directory -- JACS
-	(void)GetIniFile(buffer, file);
-
-	wxNode *node = wxResourceCache.Find(buffer);
-	if (node)
-	    database = (XrmDatabase)node->Data();
-	else {
-	    database = XrmGetFileDatabase(buffer);
-	    wxResourceCache.Append(buffer, (wxObject *)database);
-	}
+      char buffer[500];
+      (void)GetIniFile(buffer, file);
+      
+      wxNode *node = wxResourceCache.Find(buffer);
+      if (node)
+	database = (XrmDatabase)node->Data();
+      else {
+	database = wxXrmGetFileDatabase(buffer);
+	wxResourceCache.Append(buffer, (wxObject *)database);
+      }
     } else
-	database = wxResourceDatabase;
-
+      database = wxResourceDatabase;
+    
     XrmValue xvalue;
     char *str_type[20];
     char buf[150];
@@ -279,17 +289,12 @@ Bool wxGetResource(const char *section, const char *entry, char **value,
     strcat(buf, entry);
 
     Bool success = XrmGetResource(database, buf, "*", str_type, &xvalue);
-    // Try different combinations of upper/lower case, just in case...
-    if (!success) {
-	buf[0] = (isupper(buf[0]) ? tolower(buf[0]) : toupper(buf[0]));
-	success = XrmGetResource(database, buf, "*", str_type,	&xvalue);
-    }
     if (success) {
-	if (*value)
-	    delete[] *value;
-	*value = new char[xvalue.size + 1];
-	strncpy(*value, xvalue.addr, (int)xvalue.size);
-	return TRUE;
+      if (*value)
+	delete[] *value;
+      *value = new char[xvalue.size + 1];
+      strncpy(*value, xvalue.addr, (int)xvalue.size);
+      return TRUE;
     }
     return FALSE;
 }

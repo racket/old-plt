@@ -587,6 +587,7 @@
  (keybindings-sort-by-name "Trier par nom")
  (keybindings-sort-by-key "Trier par raccourci")
  
+ ;; menu items in the "special" menu
  (insert-text-box-item "Insérer une boite texte")
  (insert-pb-box-item "Insérer une boite à dessin")
  (insert-image-item "Insérer une image...")

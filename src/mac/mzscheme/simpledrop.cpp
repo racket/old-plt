@@ -309,6 +309,7 @@ static pascal OSErr CmdLineMessage(const AppleEvent *evt, AppleEvent *b, long c)
 
 static pascal OSErr SetUpQuitMessage(const AppleEvent *a, AppleEvent *b, long c)
 {
+  Drop_Quit();
   return 0;
 }
 

@@ -81,7 +81,7 @@ enum {
   scheme_weak_box_type,
   scheme_struct_type_type,
   scheme_module_index_type,
-  scheme_id_macro_type,
+  scheme_set_macro_type,
   scheme_listener_type,
   scheme_namespace_type, 
   scheme_config_type,
@@ -112,8 +112,7 @@ enum {
   scheme_indent_type,
   scheme_udp_type,
   scheme_udp_waitable_type,
-
-  scheme_reserved_5_type,
+  scheme_id_macro_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,

@@ -1243,17 +1243,18 @@ scheme_apply_macro(Scheme_Object *name,
    rator = scheme_add_remove_mark(rator, scheme_new_mark());
 
    if (for_set) {
-     Scheme_Object *tail;
+     Scheme_Object *tail, *setkw;
 
      tail = SCHEME_STX_CDR(code);
-     code = scheme_make_immutable_pair(SCHEME_STX_CAR(code),
-				       scheme_make_immutable_pair(rator, 
-								  SCHEME_STX_CDR(tail)));
+     setkw = SCHEME_STX_CAR(code);
+     tail = SCHEME_STX_CDR(tail);
+     code = scheme_make_immutable_pair(setkw, scheme_make_immutable_pair(rator, tail));
      code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
    } else if (SCHEME_SYMBOLP(SCHEME_STX_VAL(code)))
      code = rator;
    else {
-     code = scheme_make_immutable_pair(rator, SCHEME_STX_CDR(code));
+     code = SCHEME_STX_CDR(code);
+     code = scheme_make_immutable_pair(rator, code);
      code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
    }
    

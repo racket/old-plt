@@ -1,5 +1,10 @@
 
 Version 203.3
+Added make-rename-transformer and rename-transformer?
+Changed syntax-local-value to cooperate specially with
+ rename transformers
+
+Version 203.2
 Added UDP operations
 Added literal hashtable syntax #hash..., added support
  for immutable hash tables, and added print-hash-table

@@ -2026,7 +2026,7 @@
 	   (syntax/loc stx
 	       (letrec-syntaxes+values ([(tmp ...) expr] ...) ()
 		 (letrec-syntaxes+values ([(id ...) (values
-						     (syntax-local-value (quote-syntax tmp) void)
+						     (make-rename-transformer (quote-syntax tmp))
 						     ...)] ...)
 					 ()
 		   body1 body ...))))])))

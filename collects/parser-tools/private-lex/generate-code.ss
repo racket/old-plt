@@ -7,7 +7,7 @@
 	   "sexp-to-re.ss"
 	   (lib "list.ss"))
   
-  (provide generate-table)
+  (provide generate-table compile-table)
   
   ;; generate-table : syntax-object -> lexer-table
   ;; Creates the lexer's tables from a list of sexp-regex, action pairs.
@@ -133,11 +133,80 @@
                     finals
                     no-look))))
   
+  (require (lib "cffi.ss" "compiler"))
+
+  (define (compile-table table)
+    (with-syntax ((code (build-code table)))
+      (syntax (c-lambda (scheme-object scheme-object) ;; lex-buf get-next-char
+			scheme-object 
+			code))))
+			
   
+  (define (build-code table)
+    (let ((trans (table-trans table))
+	  (eof (table-eof table))
+	  (start-state (table-start table))
+	  (actions (table-actions table))
+	  (no-look (table-no-lookahead table)))
+      (string-append
+       (format "Scheme_Object* char_in;~n")
+       (format "Scheme_Object* res[2];~n")
+       (format "int longest_match_length, longest_match_action, length;~n")
+       (format "longest_match_action = ~a;~n" start-state)
+       (format "longest_match_length = length = 1;~n")
+       (format "goto scheme_lexer_~a;~n" start-state)
+       (let loop ((current-state 0))
+	 (cond
+	  ((< current-state (vector-length eof))
+	   (string-append
+	    (format "scheme_lexer_~a:~n" current-state)
+	    (format "  char_in = scheme_apply(___arg2, 1, &___arg1);~n")
+	    (format "  switch ((char_in == scheme_eof) ? SCHEME_CHAR_VAL(SCHEME_STRING_VAL(char_in)[0]) : 256)~n  {~n")
+	    (let loop ((current-char 0))
+	      (cond
+	       ((< current-char 257)
+		(let ((next-state 
+		       (cond
+			((< current-char 256) (vector-ref trans (+ current-char (* 256 current-state))))
+			(else (vector-ref eof current-state)))))
+		  (string-append
+                   (cond
+                     ((not next-state) "")
+                     ((vector-ref no-look next-state)
+                      (let ((act (vector-ref actions next-state)))
+                        (if act
+                            (string-append
+                             (format "  case ~a:~n" current-char)
+                             (format "    longest_match_length = length;~n")
+                             (format "    longest_match_action = ~a;~n" next-state)
+                             (format "    goto scheme_lexer_end;~n"))
+                            (string-append
+                             (format "  case ~a:~n" current-char)
+                             (format "    goto scheme_lexer_end;~n")))))
+                     (else
+                      (let ((act (vector-ref actions next-state)))
+                        (if act
+                            (string-append
+                             (format "  case ~a:~n" current-char)
+                             (format "    longest_match_length = length;~n")
+                             (format "    length = length + 1;~n")
+                             (format "    longest_match_action = ~a;~n" next-state)
+                             (format "    goto scheme_lexer_~a;~n" next-state))
+                            (string-append
+                             (format "  case ~a:~n" current-char)
+                             (format "    length = length + 1;~n")
+                             (format "    goto scheme_lexer_~a;~n" next-state))))))
+		   (loop (add1 current-char)))))
+	       (else (format ""))))
+	    (format "  default:~n")
+	    (format "    goto scheme_lexer_end;~n")
+	    (format "  }~n")
+	    (loop (add1 current-state))))
+	  (else "")))
+       (format "scheme_lexer_end:~n")
+       (format "  res[1] = scheme_make_integer(longest_match_length);~n")
+       (format "  res[2] = scheme_make_integer(longest_match_action);~n")
+       (format "  ___result = scheme_values(2, res);~n")
+       )))
+
   )
-
-
-
-
-
-

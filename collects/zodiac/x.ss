@@ -17,41 +17,20 @@
 
     ; ----------------------------------------------------------------------
 
-    (define vocabulary-identifier
-      (string->uninterned-symbol "vocabulary-identification-symbol"))
+    (define-struct vocabulary-record (name this rest))
 
-    (define get-vocabulary-name
-      (lambda (v)
-	(hash-table-get v vocabulary-identifier
-	  (lambda ()
-	    (internal-error 'get-vocabulary-name
-	      "Malformed vocabulary ~s: has no name (even anonymous)" v)))))
+    (define get-vocabulary-name vocabulary-record-name)
 
-    (define make-vocabulary
-      (opt-lambda ((name 'anonymous))
+    (define create-vocabulary
+      (opt-lambda (name (root #f))
 	(let ((h (make-hash-table)))
-	  (hash-table-put! h vocabulary-identifier name)
-	  h)))
-
-    (define copy-vocabulary
-      (opt-lambda (vocab (name 'anonymous))
-	(let ((new-vocab (make-vocabulary name)))
-	  (hash-table-for-each vocab
-	    (lambda (key value)
-	      (hash-table-put! new-vocab key value)))
-	  new-vocab)))
-
-    (define merge-vocabulary
-      (lambda (vocab delta)
-	(hash-table-for-each delta
-	  (lambda (key value)
-	    (hash-table-put! vocab key value)))
-	vocab))
+	  (make-vocabulary-record name h root))))
 
     (define add-micro/macro-form
       (lambda (constructor)
 	(lambda (name vocab rewriter)
-	  (hash-table-put! vocab name
+	  (hash-table-put! (vocabulary-record-this vocab)
+	    name
 	    (constructor rewriter)))))
 
     (define add-micro-form
@@ -72,7 +51,8 @@
     (define add-list/sym/lit-micro
       (lambda (kwd)
 	(lambda (vocab rewriter)
-	  (hash-table-put! vocab kwd
+	  (hash-table-put! (vocabulary-record-this vocab)
+	    kwd
 	    (make-micro-resolution rewriter)))))
 
     (define add-list-micro (add-list/sym/lit-micro list-micro-kwd))
@@ -83,7 +63,8 @@
     (define get-list/sym/lit-micro
       (lambda (kwd)
 	(lambda (vocab)
-	  (hash-table-get vocab kwd
+	  (hash-table-get (vocabulary-record-this vocab)
+	    kwd
 	    (lambda () #f)))))
 
     (define get-list-micro (get-list/sym/lit-micro list-micro-kwd))
@@ -95,10 +76,10 @@
 
     (define expand-expr
       (lambda (expr env attributes vocab)
-	(printf "Expanding~n") (pretty-print (sexp->raw expr))
+;	(printf "Expanding~n") (pretty-print (sexp->raw expr))
 ;	(printf "Expanding~n") (pretty-print expr)
 ;	(printf "Expanding~n") (display expr)
-	(printf "Expanding in ~s~n" (get-vocabulary-name vocab))
+;	(printf "Expanding in ~s~n" (get-vocabulary-name vocab))
 ;	(printf "in vocabulary~n") (print-env vocab)
 ;	(printf "in~n") (print-env env) (newline)
 	(cond
@@ -249,8 +230,14 @@
     (define resolve-in-global
       (let ((top-level-resolution (make-top-level-resolution)))	; name-eq?
 	(lambda (name vocab)
-	  (hash-table-get vocab name
-	    (lambda () top-level-resolution)))))
+	  (let loop ((vocab vocab))
+	    (hash-table-get (vocabulary-record-this vocab)
+	      name
+	      (lambda ()
+		(let ((v (vocabulary-record-rest vocab)))
+		  (if v
+		    (loop v)
+		    top-level-resolution))))))))
 
     (define print-env
       (lambda (env)

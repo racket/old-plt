@@ -169,7 +169,7 @@
 
 ; --------------------------------------------------------------------
 
-(define sig-vocab (make-vocabulary 'sig-vocab))
+(define sig-vocab (create-vocabulary 'sig-vocab))
 
 (add-sym-micro sig-vocab
   (lambda (expr env attributes vocab)
@@ -186,7 +186,7 @@
 
 ; --------------------------------------------------------------------
 
-(define sig-element-vocab (make-vocabulary 'sig-element-vocab))
+(define sig-element-vocab (create-vocabulary 'sig-element-vocab))
 
 (add-sym-micro sig-element-vocab
   (lambda (expr env attributes vocab)
@@ -241,7 +241,7 @@
 	  (static-error expr "Malformed struct clause"))))))
 
 (define signature-struct-omission-checker-vocab
-  (make-vocabulary 'signature-struct-omission-checker-vocab))
+  (create-vocabulary 'signature-struct-omission-checker-vocab))
 
 (add-sym-micro signature-struct-omission-checker-vocab
   (lambda (expr env attributes vocab)
@@ -301,7 +301,7 @@
 ; --------------------------------------------------------------------
 
 (define u/s-prim-imports-vocab
-  (make-vocabulary 'u/s-prim-imports-vocab))
+  (create-vocabulary 'u/s-prim-imports-vocab))
 
 (add-sym-micro u/s-prim-imports-vocab
   (lambda (expr env attributes vocab)
@@ -370,7 +370,7 @@
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 (define u/s-sign-imports-vocab
-  (make-vocabulary 'u/s-sign-imports-vocab))
+  (create-vocabulary 'u/s-sign-imports-vocab))
 
 (add-sym-micro u/s-sign-imports-vocab
   (lambda (expr env attributes vocab)
@@ -429,7 +429,7 @@
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 (define u/s-sign-exports-vocab
-  (make-vocabulary 'u/s-sign-exports-vocab))
+  (create-vocabulary 'u/s-sign-exports-vocab))
 
 (add-sym-micro u/s-sign-exports-vocab
   (lambda (expr env attributes vocab)
@@ -479,7 +479,7 @@
 	(else
 	  (static-error expr "Malformed define-signature"))))))
 
-(define u/s-expand-includes-vocab (make-vocabulary 'u/s-expand-includes-vocab))
+(define u/s-expand-includes-vocab (create-vocabulary 'u/s-expand-includes-vocab))
 
 (add-list-micro u/s-expand-includes-vocab
   (lambda (expr env attributes vocab)
@@ -612,7 +612,7 @@
 ; --------------------------------------------------------------------
 
 (define cu/s-imports-record-tag-sigs-vocab
-  (make-vocabulary 'cu/s-imports-record-tag-sigs-vocab))
+  (create-vocabulary 'cu/s-imports-record-tag-sigs-vocab))
 
 (add-list-micro cu/s-imports-record-tag-sigs-vocab
   (let* ((kwd '(:))
@@ -635,7 +635,7 @@
 	  (static-error expr "Malformed compound-unit/sig import clause"))))))
 
 (define cu/s-sign-imports-vocab
-  (make-vocabulary 'cu/s-sign-imports-vocab))
+  (create-vocabulary 'cu/s-sign-imports-vocab))
 
 (add-list-micro cu/s-sign-imports-vocab
   (let* ((kwd '(:))
@@ -656,7 +656,7 @@
 	  (static-error expr "Malformed compound-unit/sig import clause"))))))
 
 (define cu/s-link-imports-vocab
-  (make-vocabulary 'cu/s-link-imports-vocab))
+  (create-vocabulary 'cu/s-link-imports-vocab))
 
 (add-list-micro cu/s-link-imports-vocab
   (let* ((kwd '(:))
@@ -680,7 +680,7 @@
 ; --------------------------------------------------------------------
 
 (define cu/s-link-record-tag-sigs-vocab
-  (make-vocabulary 'cu/s-link-record-tag-sigs-vocab))
+  (create-vocabulary 'cu/s-link-record-tag-sigs-vocab))
 
 (add-list-micro cu/s-link-record-tag-sigs-vocab
   (let* ((kwd '(:))
@@ -703,7 +703,7 @@
 	  (static-error expr "Malformed compound-unit/sig link clause"))))))
 
 (define cu/s-link-exports-vocab
-  (make-vocabulary 'cu/s-link-exports-vocab))
+  (create-vocabulary 'cu/s-link-exports-vocab))
 
 (add-list-micro cu/s-link-exports-vocab
   (let* ((kwd '(:))
@@ -723,7 +723,7 @@
 	  (static-error expr "Malformed compound-unit/sig link clause"))))))
 
 (define cu/s-link-tags-vocab
-  (make-vocabulary 'cu/s-link-tags-vocab))
+  (create-vocabulary 'cu/s-link-tags-vocab))
 
 (add-list-micro cu/s-link-tags-vocab
   (let* ((kwd '(:))
@@ -740,7 +740,7 @@
 	  (static-error expr "Malformed compound-unit/sig link clause"))))))
 
 (define cu/s-link-exprs-vocab
-  (make-vocabulary 'cu/s-link-exprs-vocab))
+  (create-vocabulary 'cu/s-link-exprs-vocab))
 
 (add-list-micro cu/s-link-exprs-vocab
   (let* ((kwd '(:))
@@ -757,7 +757,7 @@
 	  (static-error expr "Malformed compound-unit/sig link clause"))))))
 
 (define cu/s-link-linking-sigs-vocab
-  (make-vocabulary 'cu/s-link-linking-sigs-vocab))
+  (create-vocabulary 'cu/s-link-linking-sigs-vocab))
 
 (add-list-micro cu/s-link-linking-sigs-vocab
   (let* ((kwd '(:))
@@ -787,7 +787,7 @@
       (static-error tag "Self import of tag ~s" (z:read-object tag)))))
 
 (define cu/s-link-prim-unit-names-vocab
-  (make-vocabulary 'cu/s-link-prim-unit-names-vocab))
+  (create-vocabulary 'cu/s-link-prim-unit-names-vocab))
 
 (add-list-micro cu/s-link-prim-unit-names-vocab
   (let* ((kwd '(:))
@@ -811,7 +811,7 @@
 ; --------------------------------------------------------------------
 
 (define cu/s-unit-path-extract-final-sig-vocab
-  (make-vocabulary 'cu/s-unit-path-extract-final-sig-vocab))
+  (create-vocabulary 'cu/s-unit-path-extract-final-sig-vocab))
 
 (add-sym-micro cu/s-unit-path-extract-final-sig-vocab
   (lambda (expr env attributes vocab)
@@ -892,7 +892,7 @@
 	  (static-error expr "Malformed unit path element"))))))
 
 (define cu/s-unit-path-linkage-vocab
-  (make-vocabulary 'cu/s-unit-path-linkage-vocab))
+  (create-vocabulary 'cu/s-unit-path-linkage-vocab))
 
 (add-sym-micro cu/s-unit-path-linkage-vocab
   (lambda (expr env attributes vocab)
@@ -981,7 +981,7 @@
 	  (static-error expr "Malformed unit path element"))))))
 
 (define cu/s-unit-path-prim-links-vocab
-  (make-vocabulary 'cu/s-unit-path-prim-links-vocab))
+  (create-vocabulary 'cu/s-unit-path-prim-links-vocab))
 
 (add-sym-micro cu/s-unit-path-prim-links-vocab
   (lambda (expr env attributes vocab)
@@ -1093,7 +1093,7 @@
 	  (static-error expr "Malformed unit path element"))))))
 
 (define cu/s-unit-path-tag+build-prefix-vocab
-  (make-vocabulary 'cu/s-unit-path-tag+build-prefix-vocab))
+  (create-vocabulary 'cu/s-unit-path-tag+build-prefix-vocab))
 
 ; Returns a pair of values:
 ; - Prefix tag of unit-path as Scheme symbol
@@ -1153,7 +1153,7 @@
 	  (static-error expr "Malformed unit path element"))))))
 
 (define cu/s-unit-path-tag-vocab
-  (make-vocabulary 'cu/s-unit-path-tag-vocab))
+  (create-vocabulary 'cu/s-unit-path-tag-vocab))
 
 ; Returns prefix tag of unit-path as Scheme symbol
 
@@ -1250,7 +1250,7 @@
 	    (loop (cdr elements))))))))
 
 (define cu/s-prim-export-vocab
-  (make-vocabulary 'cu/s-prim-export-vocab))
+  (create-vocabulary 'cu/s-prim-export-vocab))
 
 ; Returns a fully-formed export element of the form
 ;   (tag (internal-name external-name))
@@ -1378,7 +1378,7 @@
 	  (static-error expr "Malformed unit export"))))))
 
 (define cu/s-export-sign-vocab
-  (make-vocabulary 'cu/s-export-sign-vocab))
+  (create-vocabulary 'cu/s-export-sign-vocab))
 
 (add-micro-form 'var cu/s-export-sign-vocab
   (let* ((kwd '(var))
@@ -1563,7 +1563,7 @@
 ; --------------------------------------------------------------------
 
 (define iu/s-linkage-vocab
-  (make-vocabulary 'iu/s-linkage-vocab))
+  (create-vocabulary 'iu/s-linkage-vocab))
 
 (add-sym-micro iu/s-linkage-vocab
   (lambda (expr env attributes vocab)
@@ -1591,7 +1591,7 @@
 	      (expand-expr expr env attributes sig-vocab))))))))
 
 (define iu/s-imports-vocab
-  (make-vocabulary 'iu/s-imports-vocab))
+  (create-vocabulary 'iu/s-imports-vocab))
 
 (add-sym-micro iu/s-imports-vocab
   (lambda (expr env attributes vocab)

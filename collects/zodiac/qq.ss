@@ -1,6 +1,6 @@
 (define qq-base-level 0)
 
-(define qq-vocab (make-vocabulary 'qq-vocab))
+(define qq-vocab (create-vocabulary 'qq-vocab))
 
 (add-micro-form 'quasiquote scheme-vocabulary
   (let* ((kwd '(quasiquote))

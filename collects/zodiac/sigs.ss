@@ -29,7 +29,7 @@
     resolve resolve-in-env
     macro-resolution? micro-resolution? top-level-resolution?
     introduce-identifier introduce-fresh-identifier introduce-bound-id
-    make-vocabulary copy-vocabulary merge-vocabulary))
+    create-vocabulary))
 
 (define-signature zodiac:scheme-core^
   (name-eq? marks-equal?

@@ -230,6 +230,10 @@ wxFrame::~wxFrame(void)
 // Paint callback when showing
 //=============================================================================
 
+#define wxNO_UPDATE 0
+#define wxDO_UPDATE 1
+#define wxDID_UPDATE 2
+
 static int DoPaint(void *_f)
 {
   wxFrame *f = (wxFrame *)_f;
@@ -252,9 +256,9 @@ static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef,
      allow thread swaps (which would copy a part of the stack that
      the system owns). See the use of wxHETShowWindow below. */
 
-  if (f->cCanUpdateOnCallback) {
+  if (f->cCanUpdateOnCallback == wxDO_UPDATE) {
     int c = 0;
-    f->cCanUpdateOnCallback = 0;
+    f->cCanUpdateOnCallback = wxDID_UPDATE;
     /* wxHETYield doesn't actually wxYield(). It calls our DoPaint
        proc. This might run some Scheme code and then time out
        for a thread swap. We give the thread up to 10 times its
@@ -264,6 +268,12 @@ static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef,
       if (c == 10)
 	break;
     }
+  } else if (f->cCanUpdateOnCallback == wxNO_UPDATE) {
+    wxMacDC *dc;
+    Rect bounds;
+    dc = f->MacDC();
+    ::GetPortBounds(dc->macGrafPort(), &bounds);
+    ::InvalWindowRect(GetWindowFromPort(dc->macGrafPort()), &bounds);
   }
 
   return noErr;
@@ -874,12 +884,13 @@ void wxFrame::Show(Bool show)
 	   a special trampoline mode; see update_if_in_handler
 	   above. */
 	SetCurrentDC();
-	cCanUpdateOnCallback = TRUE;
+	cCanUpdateOnCallback = wxDO_UPDATE;
 	wxHETShowSheetWindow(theMacWindow, pwin);
-	if (cCanUpdateOnCallback) {
-	  cCanUpdateOnCallback = FALSE;
+	if (cCanUpdateOnCallback == wxDO_UPDATE) {
+	  cCanUpdateOnCallback = wxNO_UPDATE;
 	  Refresh();
-	}
+	} else
+	  cCanUpdateOnCallback = wxNO_UPDATE;
       } else {
 	ShowSheetWindow(theMacWindow, pwin);
 	Refresh();
@@ -896,10 +907,11 @@ void wxFrame::Show(Bool show)
 	SetCurrentDC();
 	cCanUpdateOnCallback = TRUE;
 	wxHETShowWindow(theMacWindow);
-	if (cCanUpdateOnCallback) {
-	  cCanUpdateOnCallback = FALSE;
+	if (cCanUpdateOnCallback == wxDO_UPDATE) {
+	  cCanUpdateOnCallback = wxNO_UPDATE;
 	  Refresh();
-	}
+	} else
+	  cCanUpdateOnCallback = wxNO_UPDATE;
       } else {
 	ShowWindow(theMacWindow);
 	Refresh();

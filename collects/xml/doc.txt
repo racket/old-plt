@@ -82,6 +82,7 @@ What this Library Doesn't Provide
 =================================
 
        Document Type Declaration (DTD) processing
+       Reading documents with internal DTDs will raise an error
        Writing or displaying document headers
        Validation
        Proper reading of white space

@@ -316,10 +316,10 @@
     (set! v #f)
     (err/rt-test (object-wait-multiple 0
 				      (make-nack-guard-waitable (lambda (nack)
-							    (/ 1 0)))
+								  (/ 1 0)))
 				      (make-nack-guard-waitable (lambda (nack) 
-							    (set! v nack)
-							    (make-semaphore))))
+								  (set! v nack)
+								  (make-semaphore))))
 		 exn:application:divide-by-zero?)
     (test #t not v)
     (set! v null)

@@ -20,6 +20,8 @@
 # define DONT_LOAD_INIT_FILE
 #endif
 
+#pragma optimize("", off)
+
 /* wx_xt: */
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP
@@ -394,7 +396,7 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
   ok = SendMessageTimeout(wnd, wm_is_mred,
 			  0, 0, 
 			  SMTO_BLOCK |
-			  SMTO_ABORT_IF_HUNG,
+			  SMTO_ABORTIFHUNG,
 			  200,
 			  &result);
 
@@ -437,7 +439,7 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
   cd.cbData = len;
   cd.lpData = v;
 
-  SendMessage(wnd, WM_COPYDATA, (WPARAM)0, (LPARAM)&cd);
+  SendMessage(wnd, WM_COPYDATA, (WPARAM)wnd, (LPARAM)&cd);
 
   free(v);
 
@@ -456,6 +458,7 @@ char *wchar_to_char(wchar_t *wa, int len)
   scheme_utf8_encode((unsigned int *)wa, 0, len, 
 		     (unsigned char *)a, 0,
 		     1 /* UTF-16 */);
+  a[l] = 0;
 
   return a;
 }
@@ -521,7 +524,7 @@ static int parse_command_line(char ***_command, char *buf)
 
 char *CreateUniqueName()
 {
-  char *desktop[MAX_PATH], *session[12], *together;
+  char desktop[MAX_PATH], session[32], *together;
   int dlen, slen;
 
   {
@@ -531,7 +534,7 @@ char *CreateUniqueName()
 
     hDesk = GetThreadDesktop(GetCurrentThreadId());
     
-    if (GetUserObjectInformation( hDesk, UOI_NAME, desktop, cchDesk, &cchDesk))
+    if (!GetUserObjectInformation( hDesk, UOI_NAME, desktop, cchDesk, &cchDesk))
       desktop[0] = 0;
     else
       desktop[MAX_PATH - 1]  = 0;
@@ -566,7 +569,7 @@ char *CreateUniqueName()
 
   dlen = strlen(desktop);
   slen =  strlen(session);
-  together = malloc(slen + dlen + 1);
+  together = (char *)malloc(slen + dlen + 1);
   memcpy(together, desktop, dlen);
   memcpy(together + dlen, session, slen);
   together[dlen + slen] = 0;
@@ -592,30 +595,39 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
   /* argv[0] should be the name of the executable, but Windows doesn't
      specify really where this name comes from, so we get it from
      GetModuleFileName, just in case */
-  name_len = 1024;
-  while (1) {
-    wchar_t *my_name;
-    int name_len;
-    my_name = (wchar_t *)malloc(sizeof(wchar_t) * name_len);
-    l = GetModuleFileNameW(NULL, my_name, name_len);
-    if (!l) {
-      free(my_name);
-      my_name = NULL;
-      break;
-    } if (l < name_len) {
-      a = wchar_to_char(my_name, l);
-      argv[0] = a;
-      CharLowerBuffW(my_name, l);
-      normalized_path = wchar_to_char(my_name, l);
-      free(my_name);
-      break;
-    } else {
-      free(my_name);
-      name_len = name_len * 2;
+  {
+    int name_len = 1024;
+    while (1) {
+      wchar_t *my_name;
+      my_name = (wchar_t *)malloc(sizeof(wchar_t) * name_len);
+      l = GetModuleFileNameW(NULL, my_name, name_len);
+      if (!l) {
+		  name_len = GetLastError();
+	free(my_name);
+	my_name = NULL;
+	break;
+      } else if (l < name_len) {
+	a = wchar_to_char(my_name, l);
+	argv[0] = a;
+	CharLowerBuffW(my_name, l);
+	normalized_path = wchar_to_char(my_name, l);
+	free(my_name);
+	break;
+      } else {
+	free(my_name);
+	name_len = name_len * 2;
+      }
     }
   }
-  if (!normalized_path)
-    normalized_path = argv[0];
+  if (!normalized_path) {
+    normalized_path = "???";
+  } else {
+    for (j = 0; normalized_path[j]; j++) {
+      if (normalized_path[j] == '\\') {	
+	normalized_path[j] = '/';
+      }
+    }
+  }
 
   /* Check for an existing instance: */
   {
@@ -628,7 +640,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
     b = CreateUniqueName();
     l = strlen(b);
     a = (char *)malloc(j + l + 50);
-    memcpy(a, argv[0], j);
+    memcpy(a, normalized_path, j);
     memcpy(a + j, b, l);
     memcpy(a + j + l, "MrEd-" MRED_GUID, strlen(MRED_GUID) + 6);
     mutex = CreateMutex(NULL, FALSE, a);
@@ -640,16 +652,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
     wm_is_mred = RegisterWindowMessage(a);
     free(a);
     
-    if (my_name && alreadyrunning) {
+    if (alreadyrunning) {
       /* If another instance has been started, try to find it. */
-      other_name = (wchar_t *)malloc(sizeof(wchar_t) * (name_len + 2));
-      if (EnumWindows((WNDENUMPROC)CheckWindow, (LPARAM)argv)) {
+      if (!EnumWindows((WNDENUMPROC)CheckWindow, (LPARAM)argv)) {
 	return 0;
       }
-      free(other_name);
     }
-
-    free(my_name);
   }
 
   return wxWinMain(wm_is_mred, hInstance, hPrevInstance, argc, argv, nCmdShow, main);

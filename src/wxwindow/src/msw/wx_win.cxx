@@ -1227,9 +1227,7 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     {
       if (message == WM_IS_MRED) {
 	retval = 79;
-      }
-
-      if (dialog)
+      } else if (dialog)
 	retval = 0;
       else
 	retval = wnd->DefWindowProc(message, wParam, lParam);

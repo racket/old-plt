@@ -293,18 +293,19 @@ void wxCopyData(LPARAM lParam)
       DWORD w;
       int cnt, i, pos;
       char **argv, *s;
-      memcpy(&w, (char *)cd->cbData + len + 4, sizeof(DWORD));
+      memcpy(&w, (char *)cd->lpData + len + 4, sizeof(DWORD));
       cnt = w;
       pos = len + 4 + sizeof(DWORD);
       argv = new char*[cnt];
       for (i = 0; i < cnt; i++) {
 	if (pos + sizeof(DWORD) <= cd->cbData) {
-	  memcpy(&w, (char *)cd->cbData + pos, sizeof(DWORD));
+	  memcpy(&w, (char *)cd->lpData + pos, sizeof(DWORD));
 	  pos += sizeof(DWORD);
 	  if (w >= 0 && (pos + w <= cd->cbData)) {
 	    s = new WXGC_ATOMIC char[w + 1];
-	    memcpy(s, (char *)cd->cbData + pos, w);
+	    memcpy(s, (char *)cd->lpData + pos, w);
 	    s[w] = NULL;
+	    argv[i] = s;
 	    pos += w;
 	  } else {
 	    cnt = i;

@@ -2,8 +2,13 @@ _professorj_
 
 This is preliminary documentation for a preliminary version of ProfessorJ.
 
-To use the interactions window for statements and variable declarations, you
-must use Alt+Enter instead of Enter
+The interactions window accepts variable declaration, statements and
+expressions legal for the level. To use the interactions window for
+statements and variable declarations, you must use Alt+Enter instead
+of Enter after the ;
+
+The definitions window expects class and interface definitions only
+(i.e. what would be given to javac).
 
 Below is a list of known bugs. If you encounter a bug that is not listed here,
 please send e-mail directly to me at kathyg@cs.utah.edu 
@@ -22,7 +27,7 @@ breaking or continuing to a label: Does not work as expected, will compile.
  - Full language level only
 
 native methods: No support at the moment. Unknown if native methods will 
- compile, they do pass the type-checker
+ compile, they should pass the type-checker
  - Full language level only
 
 class and object initialization statements are more permissive than required
@@ -51,243 +56,150 @@ Editor indents as if the program were written in Scheme
 
 Language level information
 
-
-Changed: as of Apr 15, 2003
-drj is now ProfessorJ (dir profj)
-Much of type checking is completed.
-Language levels have changed.
-A new documentation file will be coming to outline new known-bugs, and
-the updated language levels.
-
-Changed: As of Feb 20, 2003
-Statements now work in the interactions window
-
-local variables now (should) work in the interactions window
-
-The teaching languages no longer allow assignment to be an expression
-
-Some type checking is completed. 
-  These items should be checked with good error messages:
-     Class inheritance and method headers, as well as some field naming
-     All expressions 
-        Static method calls, and field use
-	assignment to a final
-	Pre/Post increment/decrement to a final
-
-General Information:
-
-The interactions window can evaluate the statements and expressions
-legal for the level, and except for beginner can have variable
-declarations. The definitions window should only have classes,
-interfaces, package declarations and import statements.
-
-Known Bugs for all of ProfessorJ:
-
-Parse errors are all of the form "parse error near" and do not offer
-further information
-
-Many type errors provide no information about the error, and will
-instead produce a generic error message indicating which module (and
-therefore phase of type-checking) the error was found in. Some phases
-have better error messages.
-
-Some incorrectly typed Java programs are accepted erroneously (the
-type checker is currently being written).
-
-All classes which will be instantiated (i.e. if you plan to type new
-X()), need a constructor. One is not necessarily created by
-default.
-
-Recursive functions are very slow.
-
-Using variable declarations in the interactions window causes errors.
-
-Fully qualified names will not be understood in interactions (anything
-that would require an implicit import).
-
-The switch statement does not type-check correctly (hopefully won't reject)
-AND isn't implemented correctly and should not be used yet.
-
 _full java_
 
-For Language definition see Java Language Spec Version 2
+For Language definition see Java Language Spec Version 2, although
+currently a mix of 1.0 and 1.1 syntax is supported. The most notable
+exclusion of 1.1 is inner classes. 
 
-Known Bugs
-
-Full Java is mostly 1.0, with a few exceptions. This means no inner
-classes yet
-
-Most libraries aren't implemented (or presently compilable due to
-native method needs). Most notably System and the libraries needed to
-use System.out.println(..) There is a hack in place that the last
-value used in main will be printed (i.e. the value of the last
-expression or void if a statement was the last item in main)
-
-Labeling statements, and then attempting to continue or break to a
-label is incorrectly implemented.
-
-Synchronized statements are incorrectly implemented.
+The libraries currently in place are:
+Object, String, Throwable, and Exceptions (all from java.lang) 
 
 _advanced java_
 
-Language Specification 
- - package - Allowed
- - imports - Allowed
- - classes - Allowed with restrictions
-   + final modifier not allowed
- - interfaces - Allowed
- - constructors - Allowed
- - fields - Allowed with restrictions
-   + final modifier not allowed
- - static initializers - not allowed
- - class initializers - allowed
- - inner classes - not allowed
- - methods - Allowed with restricitons on modifiers
-   + native, strictfp not allowed
- - statements
-   + if, return, blocks - no restriction
-   + while, do, for - Allowed
-   + break, continue - Allowed within a loop, not to a label
-   + assignment, method call - no restriction
-   + pre and post increment/decrement expressions
-   + throw,try,switch,label,synchronized - not allowed
- - expressions - no restrictions
- - General restrictions
-   + Functions requiring reflection may not be used
-   + Functions using threads cannot be used
+Language Constructs Supported  | Restrictions
+package                        | 
+imports                        | Some imports not allowed. List to come
+classes                        | Cannot be final
+interfaces                     |
+arrays                         |
+fields                         | Cannot be final
+constructors                   |
+methods                        |
+instance initializers          |
+Excluded: class initializers, inner classes & interfaces
 
-Known Bugs
+Statements Supported    | Restrictions
+if                      |
+return                  |
+block                   |
+assignment              |
+method call             |
+variable declaration    |
+while                   |
+for                     |
+do                      |
+break                   | inside a loop
+continue                | inside a loop
+unary operation ++ & -- |
+Excluded: throw, try, switch, label, synchronized
 
-Some language constraints are not enforced
+Expressions Supported | Restrictions
+Literals              |
+this                  |
+Binary operations     |
+Unary operations      |
+Variable reference    |
+Field access          |
+Array access          |
+method call           |
+class allocation      |
+array allocation      | cannot be anonymous
+cast                  |
+instanceof            |
+? conditional         |
+Excluded: qualified name access, assignment
+
+Additional restrictions: Methods and fields that implement reflection
+cannot be used, methods that work with Threads cannot be used
 
 _intermediate java_
 
-Language Specification
- - package - No package specifications allowed
- - imports - 
-   + Declared imports are not allowed
-   + Environment will provide means of controlled imports
- - classes - Allowed with restrictions
-   + All classes implicitly public
-   + Final modifier not allowed
-   + Can extend classes, implement interfaces
-   + Classes can be abstract
- - interfaces - Allowed with restrictions
-   + Can extend interfaces
-   + May not have static members
- - constructors - Allowed
- - fields - Allowed with restrictions
-   + No modifiers allowed
-   + Implicitly private
-   + Initialization allowed
-   + Multiple fields can be declared per line
- - static initializers - not allowed
- - class initializers - not allowed
- - inner classes - not allowed
- - methods - Allowed with restrictions
-   + No modifiers allowed
-   + All methods implicitly public
-   + Not required to return a value
-   + Parameters have no modifiers
- - statements
-   + if - Allowed with required else branch
-   + return - no restriction
-   + blocks - no restriction
-   + throw,while,do,for,try,switch,break,continue,
-     label,synchronized - not allowed
-   + assignment - Allowed with restrictions detailed below
-   + method call - Allowed
- - expressions
-   + literal - Allowed
-   + binary operations - Allowed with restrictions
-     * Can only be performed on primitive types
-   + variable reference - Allowed
-   + qualified names - Allowed
-   + field access - Allowed
-   + method call - Allowed with restrictions
-     * Method must return a value
-   + class allocation - Allowed
-   + casts - Allowed
-   + unary expression - Allowed with restrictions
-     * ++ and -- expressions are not allowed
-   + assignment - Allowed with restrictions
-     * +=, *=, /=, etc Not allowed: Only = allowed
-   + array creation, array access, pre and post expressions, 
-     instance-of, conditional exressions - not allowed
- - General restrictions
-   + Functions cannot be overloaded
-   + Functions can be overridden
-   + Functions which implement reflection cannot be used
-   + Functions using threads cannot be used
+Language Constructs Supported  | Restrictions
+imports                        | Some imports not allowed. List to come
+classes                        | Implicitly public
+                               | Cannot be final
+			       | Cannot have static members
+interfaces                     | Implicitly public
+			       | Cannot have static members
+fields                         | Implicitly private
+			       | Cannot be final
+constructors                   | Implicitly public
+			       | Cannot be overloaded
+methods                        | Implicitly public
+			       | Cannot be overloaded
+Excluded: package, class and instance initializers, inner classes &
+interfaces, field and method modifiers, arrays
 
-Known Bugs
+Statements Supported    | Restrictions
+if                      | Must have else
+return                  |
+block                   |
+assignment              | Cannot be +=,-=, etc
+method call             |
+variable declaration    |
+Excluded: throw, while, do for, try, switch, break, continue, label,
+synchronized, ++ and --
 
-Same as for advanced
+Expressions Supported | Restrictions
+Literals              |
+this                  |
+Binary operations     | + may not be used as string append
+Unary operations      | ++,-- not allowed
+Variable reference    |
+Field access          |
+method call           |
+class allocation      |
+cast                  |
+Excluded: qualified name access, array access, array allocation, array
+instantiation, ? conditional, instanceof, assignment
+
+Additional restrictions: Methods and fields that implement reflection
+cannot be used, methods that work with Threads cannot be used
 
 _beginner java_
 
-Language Specification
- - package - No package specifications allowed
- - imports
-   + Declared imports are not allowed 
-   + Environment will provide means of controlled imports (does not yet)
- - classes - Allowed with restrictions
-   + No modifiers allowed
-   + All classes implicitly public
-   + Can extend existing classes, cannot implement interfaces
-   + No abstract classes allowed
- - interfaces - Not allowed
- - constructors - Required for classes with fields; Not allowed otherwise
-   + Arguments optional
-   + Requires assignment to each field
-     Only location assignment allowed
-   + No other statements allowed
- - fields - Allowed with restrictions
-   + No modifiers allowed
-   + Implicitly private, final
-   + Initialization not allowed
-   + One field declaration allowed per line
- - static initializers - Not allowed
- - class initializers - Not allowed
- - inner classes - Not allowed
- - methods - Allowed with restrictions
-   + No modifiers allowed
-   + All methods implicitly public
-   + Must return a value, cannot return Void
-   + Parameters have no modifiers
-   + Local variable declarations not allowed
- - statements
-   + if - Allowed with required else branch
-   + return - no restriction
-   + throw, while, do, for, try, switch, block, break, 
-     continue, label, synchronized - not allowed
-   + method call - Allowed
-   + assignment - Allowed with restrictions detailed below
- - expressions
-   + literal - Allowed
-   + binary operations - Allowed with restriction
-     * Can only be performed on primitive types
-   + variable reference - Allowed
-   + qualified names - Allowed
-   + method call - Allowed
-   + class allocation - Allowed 
-   + unary expression - Allowed with restriction
-     * ++ and -- expressions are not allowed
-   + assignment - Allowed with restriction
-     * Allowed only in constructors
-     * Right hand side must be a non-assignment expression
-     * +=, *=, /=, etx Not allowed: Only = allwoed
-   + field-accesses, array creation, array access, post expressions, 
-     cast, instance-of, conditional exressions - not allowed
- - General restrictions
-   + Functions cannot be overloaded
-   + Functions can be overridden
-   + Functions which implement reflection cannot be used
-   + Functions using threads cannot be used
+Language Constructs Supported  | Restrictions
+imports                        | Some imports not allowed. List to come
+classes                        | Implicitly public
+                               | Cannot be final
+			       | Cannot have static members
+fields                         | Implicitly private
+			       | Implicitly final
+                               | Must be set in constructor
+constructors                   | Implicitly public
+			       | Cannot be overloaded
+			       | May contain only assignments
+			       | Required
+methods                        | Implicitly public
+			       | Cannot be overloaded
+			       | Cannot return void
+Excluded: package, interfaces, class and instance initializers, inner
+classes & interfaces, field and method modifiers, arrays
 
-Known bugs
+Statements Supported    | Restrictions
+if                      | Must have else
+return                  | Must have expression
+assignment              | Cannot be +=,-=, etc
+			| Must be in constructor
+Excluded: block of statements, variable declaration, throw, while, do
+for, try, switch, break, continue, label, synchronized, ++ and --
 
-Same as Advanced
+Expressions Supported | Restrictions
+Literals              |
+this                  |
+Binary operations     | + may not be used as string append
+Unary operations      | ++,-- not allowed
+Variable reference    |
+Field access          |
+method call           |
+class allocation      |
+Excluded: cast, qualified name access, array access, array allocation, array
+instantiation, ? conditional, instanceof, assignment
+
+Additional restrictions: Methods and fields that implement reflection
+cannot be used, methods that work with Threads cannot be used
+
 
 
 

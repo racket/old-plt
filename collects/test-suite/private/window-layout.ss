@@ -84,7 +84,7 @@
             (instantiate button% ()
               (label
                ((drscheme:unit:make-bitmap
-                 "New" *empty-icon*)
+                 "New Test" *empty-icon*)
                 (get-area-container)))
               (parent button-panel)
               (callback (lambda (b e) (new))))]

@@ -39,7 +39,7 @@
   
  ;type->ext-name: type -> (U symbol string)
   (define (type->ext-name t)
-    (string->sybmol
+    (string->symbol
      (cond 
        ((ref-type? t) (ref-type-class/iface t))
        ((array-type? t) 

@@ -316,6 +316,7 @@
 	     (apply collection-path h)
 	     f)))))))
 
+
 (define debug? #t)
 
 (define drscheme-custodian #f)
@@ -358,13 +359,16 @@
 		    [(is-a? f area-container<%>) (ormap loop (send f get-children))]
 		    [else (error 'drscheme.ss "couldn't find editor")]))]
 		[text (send canvas get-editor)]
-		[port (open-output-string)]
-		[event (make-object key-event%)])
-	   (write start-drscheme-expression port)
-	   (send text insert (get-output-string port))
-	   (send event set-key-code #\return)
-	   (send text on-char event))))
+		[send-sexp
+		 (lambda (sexp)
+		   (let ([port (open-output-string)]
+			 [event (make-object key-event%)])
+		     (write sexp port)
+		     (send text insert (get-output-string port))
+		     (send event set-key-code #\return)
+		     (send text on-char event)
+		     (sleep 1/2)))])
+	   (send-sexp start-drscheme-expression))))
 
       (graphical-read-eval-print-loop))
     (eval start-drscheme-expression))
-

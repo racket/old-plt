@@ -844,10 +844,7 @@
             (make-object menu-item%
               "&Open Folders List"
               file-menu
-              (lambda x
-                (if (ROOT-MAILBOX-FOR-LIST)
-                    (open-folders-window)
-                    (error "You must first set the Folder List Root preference"))))
+              (lambda (x1 x2) (open-folders-window)))
             (make-object separator-menu-item% file-menu)
             (make-object menu-item% "&New Message" file-menu
               (lambda (i e) (start-new-mailer #f "" "" "" "" "" null))

@@ -951,10 +951,12 @@ PROCEDURES -----------------------------------------------------------
      'draft        '|\Draft|           |
      'recent       '|\Recent|          /
 
-     'noinferiors  '|\Noinferiors|     \
-     'noselect     '|\Noselect|         > mailbox flags
-     'marked       '|\Marked|          |
-     'unmarked     '|\Unmarked|        /
+     'noinferiors   '|\Noinferiors|    \
+     'noselect      '|\Noselect|       | 
+     'marked        '|\Marked|         > mailbox flags
+     'unmarked      '|\Unmarked|       |
+     'hasnochildren '|\HasNoChildren|  |
+     'haschildren   '|\HasChildren|    /
 
   `imap-flag->symbol' and `symbol->imap-flag' act like the identity
   function when any other symbol/flag is provided.

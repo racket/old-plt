@@ -31,7 +31,6 @@ class wxButton: public wxbButton
 
  public:
 	wxBitmap* buttonBitmap;
-	ControlHandle cMacControl; // mac control for push button
 
 //=============================================================================
 // Public constructors
@@ -95,7 +94,6 @@ public:
 //=============================================================================
 // Window coordinate system transformation methods
 //=============================================================================
-	virtual void SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO); // mac platform only
 	virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
 	void SetDefault(Bool flag = TRUE); // WCH wx_mac: original had void as argument
 	virtual void OnSetDefault(Bool flag = TRUE); // WCH wx_mac: addition to original
@@ -105,15 +103,12 @@ public:
 
 	void ChangeColour(void);
 
-	virtual void Enable(Bool enable);
 	virtual void Paint(void);
 	virtual void DoShow(Bool show);
 
-	virtual void ShowAsActive(Bool flag); // mac platform only
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
  	virtual void Highlight(Bool flag); // mac platform only, supercedes ShowAsActive
 
-	virtual void ChangeToGray(Bool gray);
 };
 
 #endif // IN_CPROTO

@@ -68,6 +68,7 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 	
 	font = buttonFont; // WCH: mac platform only
 
+#ifndef OS_X
 	float fLabelWidth = 100.0;
 	float fLabelHeight = 20.0;
 	if (label)
@@ -80,25 +81,33 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 	if (width < 0) cWindowWidth = (int)fLabelWidth;
 	if (height < 0) cWindowHeight = (int)fLabelHeight;
 
-#if 0
+	labelString = label;
+#else
+        // First, create the control with a bogus rectangle;
 	SetCurrentMacDC();
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	int clientWidth = ClientArea()->Width();
-	int clientHeight = ClientArea()->Height();
-	Rect boundsRect = {0, 0, clientHeight, clientWidth};
+	Rect boundsRect = {0, 0, 0, 0};
         OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-	wxMacString theMacLabel = label;
-	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
-	const short offValue = 0;
-	const short minValue = 0;
-	const short maxValue = 1;
-	short refCon = 0;
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
-			drawNow, offValue, minValue, maxValue, radioButProc + useWFont, refCon);
-	CheckMemOK(cMacControl);
-#else
-	labelString = label;
-	cMacControl = NULL;
+	CFStringRef theMacLabel = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+        OSErr err;
+        
+        err = CreateRadioButtonControl(GetWindowFromPort(theMacGrafPort),&boundsRect,theMacLabel,
+                                        0,FALSE,&cMacControl);
+                                        
+        
+        // Now, ignore the font data and let the control find the "best" size 
+        ::SetRect(&boundsRect,0,0,0,0);
+        SInt16 baselineOffset; // ignored
+        err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
+        cWindowWidth = boundsRect.right - boundsRect.left;
+        cWindowHeight = boundsRect.bottom - boundsRect.top;
+        ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
+
+        // Embed the control, if possible
+        if (parentPanel->cEmbeddingControl && cMacControl) {
+            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+        }
+        
 #endif
 }
 
@@ -221,15 +230,6 @@ Bool wxRadioButton::GetValue(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxRadioButton::ChangeToGray(Bool gray)
-{
-	SetCurrentDC();
-	if (cMacControl)
-		::HiliteControl(cMacControl, gray ?  kInactiveControl : kActiveControl);
-    wxWindow::ChangeToGray(gray);
-}
-
-//-----------------------------------------------------------------------------
 void wxRadioButton::Paint(void)
 {
 	if (cHidden) return;
@@ -300,18 +300,6 @@ void wxRadioButton::DoShow(Bool show)
 }
 
 //-----------------------------------------------------------------------------
-void wxRadioButton::ShowAsActive(Bool flag) // mac platform only
-{
-#if 0
-	if (cEnable)
-	{
-		SetCurrentDC();
-		::HiliteControl(cMacControl, flag ? inCheckBox : 0);
-	}
-#endif
-}
-
-//-----------------------------------------------------------------------------
 void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
 {
 	if (cEnable)
@@ -351,10 +339,10 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
 	if (!cMacControl) return;
 
 	SetCurrentDC();
-
+#ifndef OS_X
 	Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
 	if (hideToPreventFlicker) ::HideControl(cMacControl);
-
+#endif
 	if (dW || dH)
 	{
 		int clientWidth, clientHeight;
@@ -368,9 +356,9 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
 		SetCurrentDC(); // put new origin at (SetOriginX,SetOriginY)
 		::MoveControl(cMacControl, SetOriginX, SetOriginY);
 	}
-
+#ifndef OS_X
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
-
+#endif
 	if (!cHidden && (dW || dH || dX || dY))
 	{
 		int clientWidth, clientHeight;

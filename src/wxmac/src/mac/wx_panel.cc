@@ -69,6 +69,10 @@ wxPanel::wxPanel // Constructor (given parentPanel)
 		wxbPanel (windowName, parentPanel, x, y, width, height, style)
 {
 	CreateWxPanel(x, y, width, height);
+        
+        if (cEmbeddingControl && (parentPanel->cEmbeddingControl)) {
+            ::EmbedControl(cEmbeddingControl,parentPanel->cEmbeddingControl);
+        }
 }
 
 //=============================================================================

@@ -188,10 +188,18 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	cBorderArea = new wxArea(this);
 	new wxButtonBorder(cBorderArea);
 
-	cMacControl = NULL;
-	
 	SetCurrentMacDC();
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+#if 0
+        // bevel buttons for bitmap buttons can wait until other things are done. ugh.
+        Rect bounds;
+        ::SetRect(&bounds,0,0,0,0)
+        cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort),&bounds,"\p",TRUE,
+                                    kControlContentIconSuiteRes...
+#endif
+	cMacControl = NULL;
+
+
 	Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
 	bounds.bottom += 2 * IB_MARGIN_Y;
 	bounds.right += 2 * IB_MARGIN_X;
@@ -360,21 +368,6 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 }
 
 //-----------------------------------------------------------------------------
-void wxButton::Enable(Bool enable)
-{
-	if ((enable != cEnable) && cActive && cMacControl) {
-		SetCurrentDC();
-		if (enable) {
-			::ActivateControl(cMacControl);
-		}
-		else {
-			::DeactivateControl(cMacControl);
-		}
-	}
-	wxWindow::Enable(enable);
-}
-
-//-----------------------------------------------------------------------------
 static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Bool isgray, 
                               int cColour)
 {
@@ -491,20 +484,6 @@ void wxButton::DoShow(Bool show)
 }
 
 //-----------------------------------------------------------------------------
-void wxButton::ShowAsActive(Bool flag) // mac platform only
-{
-	if ((! buttonBitmap) && cEnable && cMacControl) {
-		SetCurrentDC();
-		if (flag) {
-			ActivateControl(cMacControl);
-		}
-		else {
-			DeactivateControl(cMacControl);
-		}
-	}
-}
-
-//-----------------------------------------------------------------------------
 void wxButton::Highlight(Bool flag) // mac platform only
 {
 	if (buttonBitmap) {
@@ -554,20 +533,6 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 	  		ProcessCommand(commandEvent);
 		}
 	}
-}
-
-//-----------------------------------------------------------------------------
-void wxButton::ChangeToGray(Bool gray)
-{
-  /* graying is now handled by the ShowAsActive routine. 
-     as far as I can tell, this code was never called anyway. */  
-  /*
-  SetCurrentDC();
-  if (cMacControl)
-    ::HiliteControl(cMacControl, gray ? kInactiveControl : kActiveControl);
-  */
-    
-  wxWindow::ChangeToGray(gray);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -26,7 +26,6 @@ public:
   int s_max;
   int page_size;
   wxLabelArea*	cTitle;
-  ControlHandle	cMacControl;
   Rect		valueRect;
   wxFont*	valueFont;
   int		valuebase;

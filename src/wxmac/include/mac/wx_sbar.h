@@ -17,6 +17,10 @@
 typedef       void* wxScrollBar ;
 #else
 
+
+// why isn't wxScrollBar like other controls in inheriting directly from 
+// wxbScrollBar and indirectly from wxItem? -- JBC, 2001-10
+
 class wxScrollBar: public wxWindow
 {
  public:

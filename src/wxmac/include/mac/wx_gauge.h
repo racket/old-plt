@@ -20,7 +20,6 @@ class wxGauge: public wxbGauge
 {
  private:
   wxLabelArea*	cTitle;
-  ControlHandle	cMacControl;
   Rect		valueRect;
   int    range;
   int    value;

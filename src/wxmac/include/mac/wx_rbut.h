@@ -24,7 +24,6 @@ class wxRadioButton: public wxItem
  public:
 	wxBitmap* buttonBitmap ;
     int bitmapState;
-	ControlHandle cMacControl; // mac control for radioButton
 	char *labelString;
 
 //=============================================================================
@@ -95,11 +94,9 @@ public:
 	void ChangeColour(void) ;
 
 	virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
-	virtual void ChangeToGray(Bool enable);
 	virtual void Paint(void);
 	virtual void DoShow(Bool show);
 
-	virtual void ShowAsActive(Bool flag);
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
 
 	virtual void Highlight(Bool flag);

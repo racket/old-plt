@@ -302,19 +302,6 @@ void wxCheckBox::ChangeColour(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxCheckBox::ChangeToGray(Bool gray)
-{
-	/* Now handled in ShowAsActive.  doesn't get called right anyway,
-	   and uses the old-style HiliteControl call */
-	/*   
-	SetCurrentDC();
-	if (cMacControl)
-	  ::HiliteControl(cMacControl, gray ? kInactiveControl : kActiveControl);
-	*/
-    wxWindow::ChangeToGray(gray);
-}
-
-//-----------------------------------------------------------------------------
 void wxCheckBox::Paint(void)
 {
 	if (cHidden) return;
@@ -394,35 +381,6 @@ void wxCheckBox::DoShow(Bool show)
 	}
 		
 	wxWindow::DoShow(show);
-}
-
-//-----------------------------------------------------------------------------
-void wxCheckBox::Enable(Bool enable)
-{
-	if ((enable != cEnable) && cActive && cMacControl) {
-		SetCurrentDC();
-		if (enable) {
-			::ActivateControl(cMacControl);
-		}
-		else {
-			::DeactivateControl(cMacControl);
-		}
-	}
-	wxWindow::Enable(enable);
-}
-
-//-----------------------------------------------------------------------------
-void wxCheckBox::ShowAsActive(Bool flag) // mac platform only
-{
-	if (cEnable && cMacControl) {
-		SetCurrentDC();
-		if (flag) {
-			::ActivateControl(cMacControl);
-		}
-		else {
-			::DeactivateControl(cMacControl);
-		}
-	}
 }
 
 //-----------------------------------------------------------------------------

@@ -34,7 +34,6 @@ class wxChoice: public wxbChoice
 	int			valuebase;			// ""
 	wxFont*		valueFont;
 	short		PopUpID;			// Mac Menu Mgr ID - never reused I hope
-        ControlHandle	cMacControl;
         
  public:
 
@@ -74,17 +73,15 @@ class wxChoice: public wxbChoice
   
   int Number(void);
   
-  // Mac only methods
-	void OnClientAreaDSize(int dW, int dH, int dX, int dY);
+  void OnClientAreaDSize(int dW, int dH, int dX, int dY);
 
-	virtual void ChangeToGray(Bool gray);
-	virtual void Paint(void);
-	virtual void DoShow(Bool show);
+  virtual void Paint(void);
+  virtual void DoShow(Bool show);
 
-	virtual void ShowAsActive(Bool flag); // mac platform only
-	virtual void OnEvent(wxMouseEvent *event); // mac platform only
-	void DrawChoice(Bool flag);
-	void ReCalcRect(void);
+  virtual void OnEvent(wxMouseEvent *event);
+
+  void DrawChoice(Bool flag);
+  void ReCalcRect(void);
 };
 
 #endif // IN_CPROTO

@@ -238,8 +238,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	SetSelection(0);
 
         // Embed the control, if possible
-        if (parentPanel->cEmbeddingControl && cMacControl) {
-            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+        if (panel->cEmbeddingControl && cMacControl) {
+            ::EmbedControl(cMacControl,panel->cEmbeddingControl);
         }
 	//DrawChoice(TRUE);
 
@@ -473,29 +473,10 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 #endif                 
 }
 
-void wxChoice::ChangeToGray(Bool gray)
-{
-  wxWindow::ChangeToGray(gray);
-}
-
 //-----------------------------------------------------------------------------
 void wxChoice::DoShow(Bool show)
 {
 	wxWindow::DoShow(show);
-}
-
-//-----------------------------------------------------------------------------
-void wxChoice::ShowAsActive(Bool flag) // mac platform only
-{
-	if (cEnable && cMacControl) {
-		SetCurrentDC();
-		if (flag) {
-			::ActivateControl(cMacControl);
-		}
-		else {
-			::DeactivateControl(cMacControl);
-		}
-	}
 }
 
 //-----------------------------------------------------------------------------

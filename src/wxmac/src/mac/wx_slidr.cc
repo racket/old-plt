@@ -35,7 +35,11 @@ static const char sccsid[] = "%W% %G%";
 */
 
 #define KDEFAULTW  60	// number pixels wide for a default scroll control
-#define KSCROLLH   16	// height of a mac scrollbar control
+#ifdef OS_X
+# define KSCROLLH   15
+#else
+# define KSCROLLH   16	// height of a mac scrollbar control
+#endif
 #define VSP			3	// space between scrollbar and value
 #define HSP			3	
 // Because I never get this right and t,l,b,r makes sense to me - CJC
@@ -143,7 +147,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
         
         OffsetRect(&boundsRect,SetOriginX,SetOriginY);
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
-			TRUE, value, min_value, max_value, scrollBarProc, (long)this);
+			TRUE, value, min_value, max_value, kControlSliderProc, (long)this);
 	CheckMemOK(cMacControl);
 	
 	if (label) {
@@ -167,6 +171,12 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
+                
+        // Embed the control, if possible
+        if (panel->cEmbeddingControl && cMacControl) {
+            ::EmbedControl(cMacControl,panel->cEmbeddingControl);
+        }
+                
 	
 	return TRUE;
 }
@@ -255,6 +265,7 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	{	// Changing the position
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put newViewRect at (0, 0)
+                ::MoveControl(cMacControl,SetOriginX + valueRect.left,SetOriginY + valueRect.top);
 	}
 }
 
@@ -377,8 +388,5 @@ void wxSlider::ChangeToGray(Bool gray)
 {
   if (cTitle)
 	((wxLabelArea *)cTitle)->GetMessage()->InternalGray(gray);
-  SetCurrentDC();
-  if (cMacControl)
-  	::HiliteControl(cMacControl, gray ? kInactiveControl : kActiveControl);
-  wxWindow::ChangeToGray(gray);
+  wxItem::ChangeToGray(gray);
 }

@@ -186,21 +186,6 @@ int wxScrollBar::GetMaxValue(void)
 	return ::GetControlMaximum(cMacControl);
 }
 
-//-----------------------------------------------------------------------------
-void wxScrollBar::Enable(Bool enable)
-{
-	if (cEnable != enable)
-	{
-		SetCurrentDC();
-		if (enable) {
-			::ActivateControl(cMacControl);
-		}
-		else {
-			::DeactivateControl(cMacControl);
-		}
-		cEnable = enable;
-	}
-}
 
 //-----------------------------------------------------------------------------
 void wxScrollBar::Paint(void)
@@ -242,18 +227,30 @@ void wxScrollBar::DoShow(Bool show)
 }
 
 //-----------------------------------------------------------------------------
-void wxScrollBar::ShowAsActive(Bool flag) // mac platform only
+void wxScrollBar::Enable(Bool enable)
 {
-	if (cHidden) return;
-
-	if (cEnable)
-	{
+	if ((enable != cEnable) && cActive && cMacControl) {
 		SetCurrentDC();
-		if (flag) {
+		if (enable) {
 			::ActivateControl(cMacControl);
 		}
 		else {
 			::DeactivateControl(cMacControl);
+		}
+	}
+	wxWindow::Enable(enable);
+}
+
+//-----------------------------------------------------------------------------
+void wxScrollBar::ShowAsActive(Bool flag)
+{
+	if (cEnable && cMacControl) {
+		SetCurrentDC();
+		if (flag) {
+			ActivateControl(cMacControl);
+		}
+		else {
+			DeactivateControl(cMacControl);
 		}
 	}
 }

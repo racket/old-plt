@@ -32,6 +32,7 @@ wxArea::wxArea
 	parentWindow->Areas()->Insert(this);
 
 	WXGC_IGNORE(this, cParentWindow);
+        
 }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -1,6 +1,6 @@
 /*
- * File:	wx_slidr.cc
- * Purpose:	Panel item slider implementation (Macintosh version)
+ * File:	wx_gauge.cc
+ * Purpose:	Panel item gauge implementation (Macintosh version)
  * Author:	Cecil Coupe
  * Created:	1995
  * Updated:	
@@ -25,7 +25,7 @@ static const char sccsid[] = "%W% %G%";
 // Slider
 /* 
 	For wxMac a wxSlider contains
-	1. A scroll control (horizontal)
+	1. A gauge control (horizontal)
 	2. A wxLabelArea for the Label/Title
 	3. a Rect for displaying the current value
 
@@ -91,6 +91,19 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 		
 		valueRect.right = cWindowWidth - ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		valueRect.bottom = KGAUGEH;
+#ifdef OS_X // for horizontal scroll bars, use the native control
+                OSErr err;
+                Rect bounds = valueRect;
+                
+                OffsetRect(&bounds,SetOriginX,SetOriginY);
+                err = CreateProgressBarControl(GetWindowFromPort(cMacDC->macGrafPort()),&bounds,
+                                                0,0,range,FALSE,&cMacControl);
+
+                // Embed the control, if possible
+                if (panel->cEmbeddingControl && cMacControl) {
+                    ::EmbedControl(cMacControl,panel->cEmbeddingControl);
+                }
+#endif
 	}
 	
 	if (label) {
@@ -113,12 +126,6 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
                 
-/*      // UNCOMMENT this when this becomes a native control.
-        // Embed the control, if possible
-        if (parentPanel->cEmbeddingControl && cMacControl) {
-            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
-        }
-*/                
 }
 
 // ------------ Destructor ----------------------------------------
@@ -134,59 +141,64 @@ void wxGauge::Paint(void)
 	if (cHidden) return;
 
 	SetCurrentDC();
+        
+        if (cMacControl) {
+            Draw1Control(cMacControl);
+        } else {
 
-        Rect s = valueRect;
-        OffsetRect(&s,SetOriginX,SetOriginY);
-	FrameRect(&s);
+            Rect s = valueRect;
+            OffsetRect(&s,SetOriginX,SetOriginY);
+            FrameRect(&s);
 
-	Rect r, w;
-	r = valueRect;
-	InsetRect(&r, 1, 1);
-	w = r;
-	long d;
-	if (windowStyle & wxVERTICAL) 
-		d = (valueRect.bottom - valueRect.top);
-	else
-		d = (valueRect.right - valueRect.left);
-	if (value < range)
-		d = (d * value) / range;
-	if (windowStyle & wxVERTICAL) {
-		r.top = r.bottom - d;
-		w.bottom = r.top;
-	} else {
-		r.right = r.left + d;
-		w.left = r.right;
-	}
+            Rect r, w;
+            r = valueRect;
+            InsetRect(&r, 1, 1);
+            w = r;
+            long d;
+            if (windowStyle & wxVERTICAL) 
+                    d = (valueRect.bottom - valueRect.top);
+            else
+                    d = (valueRect.right - valueRect.left);
+            if (value < range)
+                    d = (d * value) / range;
+            if (windowStyle & wxVERTICAL) {
+                    r.top = r.bottom - d;
+                    w.bottom = r.top;
+            } else {
+                    r.right = r.left + d;
+                    w.left = r.right;
+            }
 
-	RGBColor save;
-	GetForeColor(&save);
+            RGBColor save;
+            GetForeColor(&save);
 
-	if (value) {
-		if (cColour) {
-			RGBColor c;
-			c.red = 66 << 8;
-			c.green = 66 << 8;
-			c.blue = 66 << 8;
-			RGBForeColor(&c);
-		}
-                OffsetRect(&r,SetOriginX,SetOriginY);
-		PaintRect(&r);
-	}
+            if (value) {
+                    if (cColour) {
+                            RGBColor c;
+                            c.red = 66 << 8;
+                            c.green = 66 << 8;
+                            c.blue = 66 << 8;
+                            RGBForeColor(&c);
+                    }
+                    OffsetRect(&r,SetOriginX,SetOriginY);
+                    PaintRect(&r);
+            }
 	
-	if (value < range) {
-		if (cColour) {
-			RGBColor c;
-			c.red = 204 << 8;
-			c.green = 204 << 8;
-			c.blue = 0xFFFF;
-			RGBForeColor(&c);
-		} else
-			ForeColor(whiteColor);
-                OffsetRect(&w,SetOriginX,SetOriginY);
-		PaintRect(&w);
-	}
+            if (value < range) {
+                    if (cColour) {
+                            RGBColor c;
+                            c.red = 204 << 8;
+                            c.green = 204 << 8;
+                            c.blue = 0xFFFF;
+                            RGBForeColor(&c);
+                    } else
+                            ForeColor(whiteColor);
+                    OffsetRect(&w,SetOriginX,SetOriginY);
+                    PaintRect(&w);
+            }
 
-	RGBForeColor(&save);
+            RGBForeColor(&save);
+        }
 
 	wxWindow::Paint();
 }
@@ -198,6 +210,13 @@ void wxGauge::DoShow(Bool show)
 
 	cTitle->DoShow(show);
 
+        if (cMacControl) {
+            if (show) {
+                ShowControl(cMacControl);
+            } else {
+                HideControl(cMacControl);
+            }
+        }
 	wxWindow::DoShow(show);
 }
 
@@ -224,12 +243,18 @@ void wxGauge::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 			valueRect.bottom = valueRect.top + vhgt;
 			valueRect.right = clientWidth;
 		}
+                if (cMacControl) {
+                    SizeControl(cMacControl,valueRect.right - valueRect.left, valueRect.bottom - valueRect.top);
+                }
 	}
 
 	if (dX || dY)
 	{	// Changing the position
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put newViewRect at (0, 0)
+                if (cMacControl) {
+                    MoveControl(cMacControl,SetOriginX + valueRect.left,SetOriginY + valueRect.top);
+                }
 	}
 }
 
@@ -243,6 +268,9 @@ void wxGauge::SetValue(int v)
 		value = range;
 	else if (value < 0)
 		value = 0;
+        if (cMacControl) {
+            SetControlValue(cMacControl,value);
+        }
 	Paint();
 }
 
@@ -253,6 +281,10 @@ void wxGauge::SetRange(int v)
 		range = 1;
 	if (value > range)
 		value = range;
+        if (cMacControl) {
+            SetControlMaximum(cMacControl,range);
+            SetControlValue(cMacControl,value);
+        }
 	Paint();
 }
 
@@ -271,5 +303,5 @@ void wxGauge::ChangeToGray(Bool gray)
 {
   if (cTitle)
 	((wxLabelArea *)cTitle)->GetMessage()->InternalGray(gray);
-  wxWindow::ChangeToGray(gray);
+  wxItem::ChangeToGray(gray);
 }

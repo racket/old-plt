@@ -69,6 +69,7 @@ wxItem::wxItem (wxArea* parentArea, int x, int y, int width, int height,
 	: wxbItem (windowName, parentArea, x, y, width, height, style)
 {
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
+        cMacControl = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -78,6 +79,7 @@ wxItem::wxItem (wxWindow* parentWindow, int x, int y, int width, int height,
 	: wxbItem (windowName, parentWindow, x, y, width, height, style)
 {
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
+        cMacControl = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -86,6 +88,7 @@ wxItem::wxItem (char* windowName)
 	: wxbItem (windowName)
 {
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
+        cMacControl = NULL;
 }
 
 //=============================================================================
@@ -122,6 +125,51 @@ void wxItem::SetButtonColour(wxColour*col)
 void wxItem::ChangeColour(void)
 {
 }
+
+//-----------------------------------------------------------------------------
+void wxItem::Enable(Bool enable)
+{
+	if ((enable != cEnable) && cActive && cMacControl) {
+		SetCurrentDC();
+		if (enable) {
+			::ActivateControl(cMacControl);
+		}
+		else {
+			::DeactivateControl(cMacControl);
+		}
+	}
+	wxWindow::Enable(enable);
+}
+
+//-----------------------------------------------------------------------------
+void wxItem::ShowAsActive(Bool flag)
+{
+	if (cEnable && cMacControl) {
+		SetCurrentDC();
+		if (flag) {
+			ActivateControl(cMacControl);
+		}
+		else {
+			DeactivateControl(cMacControl);
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+void wxItem::ChangeToGray(Bool gray)
+{
+  if (cMacControl) {
+    SetCurrentDC();
+    if (gray) {
+        DeactivateControl(cMacControl);
+    } else {
+        ActivateControl(cMacControl);
+    }
+  }
+    
+  wxWindow::ChangeToGray(gray);
+}
+
 
 //-----------------------------------------------------------------------------
 void wxItem::OnChar(wxKeyEvent *event)

@@ -49,6 +49,21 @@ class wxScroll;
 class wxScreen;
 
 
+/* A note, for want of a better location, on activation/enablement/showasgraying:
+   On the mac, for a control to be "clickable," three things must hold.  
+   1) the control must be "active," indicated by cActive,
+   2) the control must be "enabled," indicated by cEnable, and
+   3) all of the control's enclosing windows must be enabled.
+   The observant reader will note that the last of these is not really a local
+   property, and thus is not stored locally.  However, it does confuse the 
+   code a little bit.  The long and short of it is this: en/disable and de/activate
+   methods must check the other's state --- i.e., don't make the control
+   clickable when you get an activate message unless cEnable is set --- but
+   ShowAsGray, which is called by an enclosing panel, is self-managing.  That
+   is, ShowAsGray won't be called unless the enclosing window has already
+   checked the active and enabled properties.  Ugh.
+*/
+
 class wxWindow: public wxbWindow
 {
 //=============================================================================

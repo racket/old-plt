@@ -295,7 +295,12 @@ char* wxRadioBox::GetString(int N) // WCH: duplicates GetLabel; so delete this
 //-----------------------------------------------------------------------------
 void wxRadioBox::Enable(Bool enable)
 {
-	wxWindow::Enable(enable);
+	int numberItems = cRadioButtons.Number();
+        for (int i = numberItems;i;i--) {
+		wxNode* node = cRadioButtons.Nth(i);
+		wxRadioButton* radioButton = (wxRadioButton*)node->Data();
+		radioButton->Enable(enable);
+	}
 }
 
 //-----------------------------------------------------------------------------

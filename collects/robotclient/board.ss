@@ -208,7 +208,10 @@
         ((= (car l) (car r)) (loop (cdr l) r))
         (else
          (loop (cdr l) (cons (car l) r))))))
-          
+
+
+  ;; alive and all are sorted lists of integers (least to greatest)
+  ;; return all integers in all that are not in alive
   (define (find-dead alive all)
     (cond
       ((null? alive) all)
@@ -222,7 +225,7 @@
              (find-dead alive (cdr all))))))
   
   
-  (define (read-response! set-score packages in gui?)
+  (define (read-response! add-score packages in gui?)
     (let* ((responses (read-response in))
            (flat-responses (apply append responses))
            (alive-robots (remove-dups (map (lambda (x) 
@@ -277,63 +280,63 @@
            (set-spot (board) x y (set-robot-empty (get-spot (board) x y)))
            (hash-table-remove! (robot-table) id)))
        dead-robots)
-      (begin0
-        (map
-         (lambda (r)
-           (let* ((old-robot (hash-table-get (robot-table) (response-id r)))
-                  (new-robot
-                   (make-robot
-                    (robot-id old-robot)
-                    (robot-x old-robot)
-                    (robot-y old-robot))))
-             (case (response-name r)
-               ((nothing) (void))
-               ((P)
-                (cond
-                  ((= (response-id r) (player-id))
-                   (packages-held
-                    (cons
-                     (hash-table-get package-table (response-arg r))
-                     (packages-held))))))
-               ((D)
-                (cond
-                  ((= (response-id r) (player-id))
-                   (let ((drop (response-arg r)))
-                     (for-each (lambda (p)
-                                 (cond
-                                   ((and (= (package-id p) drop)
-                                         (= (get-player-x) (package-x p))
-                                         (= (get-player-y) (package-y p)))
-                                    (set-score (package-weight p)))))
-                               (packages-held))
-                     (packages-held
-                      (filter (lambda (p)
-                                (not (= drop (package-id p))))
-                              (packages-held)))))))
-               ((N) (set-robot-y! new-robot (add1 (robot-y new-robot))))
-               ((S) (set-robot-y! new-robot (sub1 (robot-y new-robot))))
-               ((E) (set-robot-x! new-robot (add1 (robot-x new-robot))))
-               ((W) (set-robot-x! new-robot (sub1 (robot-x new-robot))))
-               ((X)
-                (set-robot-x! new-robot (car (response-arg r)))
-                (set-robot-y! new-robot (cdr (response-arg r)))))
-             (set-spot (board)
-                       (robot-x old-robot)
-                       (robot-y old-robot)
-                       (set-robot-empty (get-spot (board)
-                                                  (robot-x old-robot)
-                                                  (robot-y old-robot))))
-             (set-spot (board)
-                       (robot-x new-robot)
-                       (robot-y new-robot)
-                       (set-robot (get-spot (board)
-                                            (robot-x new-robot)
-                                            (robot-y new-robot))))
-             (hash-table-put! (robot-table) (robot-id new-robot) new-robot)
-             old-robot))
-         flat-responses)
-        (robot-indexes alive-robots))))
 
+      (map
+       (lambda (r)
+	 (let* ((old-robot (hash-table-get (robot-table) (response-id r)))
+		(new-robot
+		 (make-robot
+		  (robot-id old-robot)
+		  (robot-x old-robot)
+		  (robot-y old-robot))))
+	   (case (response-name r)
+	     ((nothing) (void))
+	     ((P)
+	      (cond
+	       ((= (response-id r) (player-id))
+		(packages-held
+		 (cons
+		  (hash-table-get package-table (response-arg r))
+		  (packages-held))))))
+	     ((D)
+	      (cond
+	       ((= (response-id r) (player-id))
+		(let ((drop (response-arg r)))
+		  (for-each (lambda (p)
+			      (cond
+			       ((and (= (package-id p) drop)
+				     (= (get-player-x) (package-x p))
+				     (= (get-player-y) (package-y p)))
+				(add-score (package-weight p)))))
+			    (packages-held))
+		  (packages-held
+		   (filter (lambda (p)
+			     (not (= drop (package-id p))))
+			   (packages-held)))))))
+	     ((N) (set-robot-y! new-robot (add1 (robot-y new-robot))))
+	     ((S) (set-robot-y! new-robot (sub1 (robot-y new-robot))))
+	     ((E) (set-robot-x! new-robot (add1 (robot-x new-robot))))
+	     ((W) (set-robot-x! new-robot (sub1 (robot-x new-robot))))
+	     ((X)
+	      (set-robot-x! new-robot (car (response-arg r)))
+	      (set-robot-y! new-robot (cdr (response-arg r)))))
+	   (set-spot (board)
+		     (robot-x old-robot)
+		     (robot-y old-robot)
+		     (set-robot-empty (get-spot (board)
+						(robot-x old-robot)
+						(robot-y old-robot))))
+	   (set-spot (board)
+		     (robot-x new-robot)
+		     (robot-y new-robot)
+		     (set-robot (get-spot (board)
+					  (robot-x new-robot)
+					  (robot-y new-robot))))
+	   (hash-table-put! (robot-table) (robot-id new-robot) new-robot)))
+       flat-responses)
+      (robot-indexes alive-robots)
+      (map (lambda (id) (hash-table-get (robot-table) id)) (robot-indexes))))
+  
   (define (read-good-char in)
     (let ((c (read-char in)))
       (case c

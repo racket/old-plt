@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.221 2000/07/10 23:42:02 mflatt Exp $
+; $Id: scm-main.ss,v 1.222 2000/07/26 20:29:04 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -485,6 +485,7 @@
 					    (ensure-shadowable var env vocab #t))
 					  vars)))
 		      (val (pat:pexpand 'val p-env kwd)))
+		(distinct-valid-syntactic-id/s? vars)
 		(for-each (lambda (var)
 			    (let ((r (resolve var env vocab)))
 			      (when (or (micro-resolution? r)
@@ -771,6 +772,7 @@
 		(let* ((vars (pat:pexpand '(vars ...) p-env kwd))
 		       (val (pat:pexpand 'val p-env kwd)))
 		  (map valid-syntactic-id? vars)
+		  (distinct-valid-syntactic-id/s? vars)
 		  (let ((new-names (map generate-name vars)))
 		    (expand-expr
 		      (structurize-syntax
@@ -900,6 +902,7 @@
 		 internal-ok?
 		 (lambda (expr env attributes vocab vars val)
 		   (for-each ensure-not-keyword vars)
+		   (distinct-valid-syntactic-id/s? vars)
 		   (let* ((id-exprs (parameterize ([allow-global-rebind-syntax
 						    rebind-syntax?])
 				      (map (lambda (v)

@@ -1,9 +1,17 @@
-(module erepl.ss mzscheme
+(module erepl mzscheme
   (require (lib "mred.ss" "mred")
-	   (lib "class.ss")
-	   (lib "class100.ss"))
+           (lib "class100.ss")
+           (lib "class.ss"))
+
   (provide execute-read-eval-print-loop)
 
+  (define grey-style-delta 
+    (send (make-object style-delta%) set-delta-foreground "grey"))
+  (define bold-blue-style-delta 
+    (send (make-object style-delta% 'change-bold) set-delta-foreground "blue"))
+  (define italic-red-style-delta 
+    (send (make-object style-delta% 'change-italic) set-delta-foreground "red"))
+  
   (define (execute-read-eval-print-loop)
   ;; The REPL buffer class
   (define esq:text%
@@ -81,7 +89,7 @@
 				 [on-drop-file (lambda (f) (evaluate (format "(load ~s)" f)))])
 			       (sequence 
 				 (apply super-init args) (accept-drop-files #t)))
-			     "MrEd REPL" #f 500 400))
+			     "MrEd eREPL" #f 500 400))
   (define repl-buffer (make-object esq:text%))
   
   (define execute-panel (make-object horizontal-panel% frame))

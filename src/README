@@ -323,7 +323,7 @@ MzScheme and MrEd can be compiled to an experimental form that uses a
 mmemory-moving garbage collector with precise tracking of pointers (as
 opposed to "conservation garbage collection"). The experimental forms
 are called MzScheme3m and MrEd3m, repsectively, where the "3m" stands
-for "moving memory manager". MrEd3m is not yet available under Windows.
+for "moving memory manager".
 
 * Building for Unix and Mac OS X
 

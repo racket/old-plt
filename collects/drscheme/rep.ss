@@ -244,371 +244,13 @@
 	       reset-pretty-print-width
 	       scroll-to-position
 	       get-top-level-window)
+
+
       (rename
        [super-initialize-console initialize-console]
        [super-reset-console reset-console])
 
       
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;                                            ;;;
-      ;;;             Zodiac Interface               ;;;
-      ;;;                                            ;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
-      (public
-	[report-located-error
-	 (lambda (message di)
-	   (if (and (zodiac:zodiac? di)
-		    (basis:setting-use-zodiac? user-setting))
-	       (let* ([start (zodiac:zodiac-start di)]
-		      [finish (zodiac:zodiac-finish di)])
-		 (report-error start finish 'dynamic message))
-	       (report-unlocated-error message)))]
-	[report-unlocated-error
-	 (lambda (message)
-	   (let* ([frame (get-top-level-window)]
-		  [interactions-edit (ivar frame interactions-edit)])
-	     (send frame ensure-interactions-shown)
-	     (let ([locked? (send interactions-edit locked?)])
-	       (send interactions-edit begin-edit-sequence)
-	       (send interactions-edit lock #f)
-	       (send interactions-edit this-err-write (string-append message (string #\newline)))
-	       (send interactions-edit lock locked?)
-	       (send interactions-edit end-edit-sequence))))]
-	[report-error
-	 (lambda (start-location end-location type input-string)
-	   (let* ([start (zodiac:location-offset start-location)]
-		  [finish (add1 (zodiac:location-offset end-location))]
-		  [file (zodiac:location-file start-location)]
-		  [message
-		   (if (is-a? file mred:text%)
-		       input-string
-		       (string-append (basis:format-source-loc start-location end-location)
-				      input-string))])
-	     (report-unlocated-error message)
-	     (when (is-a? file mred:text%)
-	       (send file begin-edit-sequence)
-	       (send file set-position start finish)
-	       (if (is-a? file edit%)
-		   (send file scroll-to-position start
-			 #f (sub1 (send file last-position)) 'end)
-		   (send file scroll-to-position start #f finish))
-	       (send file end-edit-sequence)
-	       (send (send file get-canvas) focus))))]
-	[on-set-media void])
-
-      (public
-	[process-edit
-	 (lambda (edit fn start end annotate?)
-	   (if (basis:setting-use-zodiac? user-setting)
-	       (process-edit/zodiac edit fn start end annotate?)
-	       (process-edit/no-zodiac edit fn start end)))]
-	[process-file
-	 (lambda (filename fn annotate?)
-	   (if (basis:setting-use-zodiac? user-setting)
-	       (basis:process-file/zodiac filename fn annotate?)
-	       (basis:process-file/no-zodiac filename fn)))]
-	[process-sexp
-	 (lambda (sexp z fn annotate?)
-	   (if (basis:setting-use-zodiac? user-setting)
-	       (basis:process-sexp/zodiac sexp z fn annotate?)
-	       (basis:process-sexp/no-zodiac sexp fn)))])
-
-      
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;                                            ;;;
-      ;;;                Evaluation                  ;;;
-      ;;;                                            ;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
-      (override
-	[get-prompt (lambda () "> ")])
-      (public
-	[user-setting (fw:preferences:get 'drscheme:settings)]
-	[user-custodian (make-custodian)]
-	[user-eventspace #f]
-	[user-thread #f])
-      (private
-	[in-evaluation? #f]
-	[in-evaluation-semaphore (make-semaphore 1)]
-	[should-collect-garbage? #f]
-	[ask-about-kill? #f])
-      (public
-	[insert-warning
-	 (lambda ()
-	   (begin-edit-sequence)
-	   (insert #\newline (last-position) (last-position))
-	   (let ([start (last-position)])
-	     (insert "WARNING: Interactions window is out of sync with the definitions window. Click Execute."
-		     start start)
-	     (let ([end (last-position)])
-	       (change-style WARNING-STYLE-DELTA start end)))
-	   (end-edit-sequence))])
-      (override
-	[do-eval
-	 (let ([count 0])
-	   (lambda (start end)
-	     (set! count (add1 count))
-	     (when (<= 5 count)
-	       (collect-garbage)
-	       (set! count 0))
-	     (let* ([frame (get-top-level-window)]
-		    [definitions-edit (ivar frame definitions-edit)]
-		    [already-warned? (ivar definitions-edit already-warned?)]
-		    [needs-execution? (ivar definitions-edit needs-execution?)])
-	       (when (if (fw:preferences:get 'drscheme:execute-warning-once)
-			 (and (not already-warned?)
-			      needs-execution?)
-			 needs-execution?)
-		 (send definitions-edit already-warned)
-		 (insert-warning)))
-	     (do-many-buffer-evals this start end)))])
-      (public
-	[cleanup-evaluation
-	 (lambda ()
-	   (system
-	    (lambda ()
-	      (mred:end-busy-cursor)
-	      (cleanup-transparent-io)
-	      (send (get-top-level-window) enable-evaluation)
-	      (begin-edit-sequence)	     
-	      (set-caret-owner #f 'display)
-
-	      (if (thread-running? user-thread)
-		  (let ([c-locked? (locked?)])
-		    (lock #f)
-		    (insert-prompt)
-		    (lock c-locked?)
-		    (end-edit-sequence))
-		  (begin (lock #t)
-			 (end-edit-sequence)
-			 (unless shutting-down?
-			   (mred:message-box
-			    "Warning"
-			    (format "The evaluation thread is no longer running, ~
-			 so no evaluation can take place until ~
-			 the next execution."))))))))])
-      (public
-	[do-many-buffer-evals
-	 (lambda (edit start end)
-	   (unless in-evaluation?
-	     (send (get-top-level-window) disable-evaluation)
-	     (reset-break-state)
-	     (cleanup-transparent-io)
-	     (reset-pretty-print-width)
-	     (ready-non-prompt)
-	     (mred:begin-busy-cursor)
-	     (when should-collect-garbage?
-	       (set! should-collect-garbage? #f)
-	       (collect-garbage))
-	     (run-in-evaluation-thread
-	      (lambda ()
-		(protect-user-evaluation
-		 cleanup-evaluation
-		 (lambda ()
-		   (process-edit edit
-				 (lambda (expr recur)
-				   (cond
-				     [(basis:process-finish? expr)
-				      (void)]
-				     [else
-				      (let ([answers (call-with-values
-						      (lambda ()
-							(mzlib:thread:dynamic-enable-break
-							 (lambda ()
-							   (if (basis:setting-use-zodiac? (basis:current-setting))
-							       (basis:syntax-checking-primitive-eval expr)
-							       (basis:primitive-eval expr)))))
-						      (lambda x x))])
-					(display-results answers)
-					(recur))]))
-				 start
-				 end
-				 #t)))))))])
-      (private
-	[shutdown-user-custodian
-	 (lambda ()
-	   (let* ([frame (get-top-level-window)]
-		  [interactions-edit (ivar frame interactions-edit)])
-	     (set! in-evaluation? #f)
-	     (send (get-top-level-window) not-running)
-
-	     ;; this thread is created to run the actual shutdown, in
-	     ;; case the custodian is going to shutdown the current
-	     ;; thread!  The semaphore is there for when the case when
-	     ;; current thread is not shutdown.
-	     (let ([sema (make-semaphore 0)])
-	       (parameterize ([current-custodian drscheme:init:system-custodian])
-		 (thread (lambda ()
-			   (custodian-shutdown-all user-custodian)
-			   (semaphore-post sema)))
-		 (semaphore-wait sema)))))])
-      (public
-	[reset-break-state (lambda () (set! ask-about-kill? #f))]
-	[breakable-thread #f]
-	[break (lambda ()
-		 (cond
-		  [(or ;(not in-evaluation?)
-		       (not breakable-thread))
-		   (mred:bell)]
-		  [ask-about-kill? 
-		   (if (fw:gui-utils:get-choice
-			"Do you want to kill the evaluation?"
-			"Just Break"
-			"Kill"
-			"Kill?")
-		       (break-thread breakable-thread)
-		       (begin 
-			 (shutdown-user-custodian)))]
-		  [else 
-		   (break-thread breakable-thread)
-		   (set! ask-about-kill? #t)]))])
-      (public
-	[error-escape-k void])
-
-      (private
-	[eval-thread-thunks null]
-	[eval-thread-state-sema (make-semaphore 1)]
-	[eval-thread-queue-sema (make-semaphore 0)]
-	
-	[evaluation-sucessful 'not-yet-evaluation-sucessful]
-	[cleanup-sucessful 'not-yet-cleanup-sucessful]
-	[cleanup-semaphore 'not-yet-cleanup-semaphore]
-	[thread-grace 'not-yet-thread-grace]
-	[thread-kill 'not-yet-thread-kill]
-	
-	[protect-user-evaluation
-	 (lambda (cleanup thunk)
-	   (semaphore-wait in-evaluation-semaphore)
-	   (set! in-evaluation? #t)
-	   (semaphore-post in-evaluation-semaphore)
-
-	   (fluid-let ([breakable-thread user-thread]
-		       [evaluation-sucessful  (make-semaphore 0)]
-		       [cleanup-semaphore (make-semaphore 1)]
-		       [cleanup-sucessful (make-semaphore 0)]
-		       [thread-grace
-			(system
-			 (lambda ()
-			   (thread
-			    (lambda ()
-			      (semaphore-wait evaluation-sucessful)
-
-			      (semaphore-wait cleanup-semaphore)
-
-			      (parameterize ([current-custodian drscheme:init:system-custodian])
-				(kill-thread thread-kill))
-
-			      (cleanup)
-			      (semaphore-post cleanup-sucessful)))))]
-		       [thread-kill
-			(system
-			 (lambda ()
-			   (thread 
-			    (lambda ()
-			      (thread-wait user-thread)
-
-			      (semaphore-wait cleanup-semaphore)
-
-			      (parameterize ([current-custodian drscheme:init:system-custodian])
-				(kill-thread thread-grace))
-
-			      (cleanup)
-			      (semaphore-post cleanup-sucessful)))))])
-
-	     (let/ec k
-	       (fluid-let ([error-escape-k 
-			    (lambda ()
-			      (semaphore-post evaluation-sucessful)
-			      (k (void)))])
-		 (thunk)))
-
-	     (semaphore-post evaluation-sucessful)
-	     (semaphore-wait cleanup-sucessful)
-
-
-	     (semaphore-wait in-evaluation-semaphore)
-	     (set! in-evaluation? #f)
-	     (semaphore-post in-evaluation-semaphore)))])
-      (public
-	[evaluation-thread #f]
-	[run-in-evaluation-thread 
-	 (lambda (thunk)
-	   (semaphore-wait eval-thread-state-sema)
-	   (set! eval-thread-thunks (append eval-thread-thunks (list thunk)))
-	   (semaphore-post eval-thread-state-sema)
-	   (semaphore-post eval-thread-queue-sema))]
-	[init-evaluation-thread
-	 (lambda ()
-	   (set! user-custodian (make-custodian))
-	   (set! user-eventspace (parameterize ([current-custodian user-custodian])
-				   (mred:make-eventspace)))
-	   (parameterize ([mred:current-eventspace user-eventspace]
-			  [current-custodian user-custodian])
-	     (mred:queue-callback
-	      (lambda ()
-		(mzlib:thread:dynamic-disable-break
-		 (lambda ()
-
-		   (set! user-thread (current-thread))
-
-		   (initialize-parameters)
-
-		   (let ([drscheme-error-escape-handler
-			  (lambda ()
-			    (error-escape-k))])
-		     (error-escape-handler drscheme-error-escape-handler)
-		     (basis:bottom-escape-handler drscheme-error-escape-handler))
-
-		   (send (get-top-level-window) not-running)
-		   (set! evaluation-thread (current-thread))
-		   (let loop ()
-		     (unless (semaphore-try-wait? eval-thread-queue-sema)
-		       (mred:yield eval-thread-queue-sema))
-		     (semaphore-wait eval-thread-state-sema)
-		     (let ([thunk (car eval-thread-thunks)])
-		       (set! eval-thread-thunks (cdr eval-thread-thunks))
-		       (semaphore-post eval-thread-state-sema)
-		       (dynamic-wind
-			(lambda ()
-			  (semaphore-wait running-semaphore)
-			  (set! evaluation-running #t)
-			  (semaphore-post running-semaphore)
-			  (update-running))
-			(lambda ()
-			  (thunk))
-			(lambda ()
-			  (semaphore-wait running-semaphore)
-			  (set! evaluation-running #f)
-			  (semaphore-post running-semaphore)
-			  (update-running))))
-		     (loop))))))))])
-      (public
-	[shutting-down? #f]
-	[shutdown 
-	 (lambda ()
-	   (set! shutting-down? #t)
-	   (shutdown-user-custodian))])
-      
-	(private
-	  [running-semaphore (make-semaphore 1)]
-	  [running-on? #f]
-	  [running-events 0]
-	  [evaluation-running #f]
-	  [update-running
-	   (lambda ()
-	     (semaphore-wait running-semaphore)
-	     (if (or (> running-events 0)
-		     evaluation-running)
-		 (unless running-on?
-		   (set! running-on? #t)
-		   (send (get-top-level-window) running))
-		 (when running-on?
-		   (set! running-on? #f)
-		   (send (get-top-level-window) not-running)))
-	     (semaphore-post running-semaphore))])
-
-
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;					     ;;;
 	;;;                  I/O                     ;;;
@@ -852,6 +494,373 @@
 	    anss))])
 
       
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                            ;;;
+      ;;;             Zodiac Interface               ;;;
+      ;;;                                            ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      (public
+	[report-located-error
+	 (lambda (message di)
+	   (if (and (zodiac:zodiac? di)
+		    (basis:setting-use-zodiac? user-setting))
+	       (let* ([start (zodiac:zodiac-start di)]
+		      [finish (zodiac:zodiac-finish di)])
+		 (report-error start finish 'dynamic message))
+	       (report-unlocated-error message)))]
+	[report-unlocated-error
+	 (lambda (message)
+	   (let* ([frame (get-top-level-window)]
+		  [interactions-edit (ivar frame interactions-edit)])
+	     (send frame ensure-interactions-shown)
+	     (let ([locked? (send interactions-edit locked?)])
+	       (send interactions-edit begin-edit-sequence)
+	       (send interactions-edit lock #f)
+	       (send interactions-edit this-err-write (string-append message (string #\newline)))
+	       (send interactions-edit lock locked?)
+	       (send interactions-edit end-edit-sequence))))]
+	[report-error
+	 (lambda (start-location end-location type input-string)
+	   (let* ([start (zodiac:location-offset start-location)]
+		  [finish (add1 (zodiac:location-offset end-location))]
+		  [file (zodiac:location-file start-location)]
+		  [message
+		   (if (is-a? file mred:text%)
+		       input-string
+		       (string-append (basis:format-source-loc start-location end-location)
+				      input-string))])
+	     (report-unlocated-error message)
+	     (when (is-a? file mred:text%)
+	       (send file begin-edit-sequence)
+	       (send file set-position start finish)
+	       (if (is-a? file edit%)
+		   (send file scroll-to-position start
+			 #f (sub1 (send file last-position)) 'end)
+		   (send file scroll-to-position start #f finish))
+	       (send file end-edit-sequence)
+	       (send (send file get-canvas) focus))))]
+	[on-set-media void])
+
+      (public
+	[process-edit
+	 (lambda (edit fn start end annotate?)
+	   (if (basis:setting-use-zodiac? user-setting)
+	       (process-edit/zodiac edit fn start end annotate?)
+	       (process-edit/no-zodiac edit fn start end)))]
+	[process-file
+	 (lambda (filename fn annotate?)
+	   (if (basis:setting-use-zodiac? user-setting)
+	       (basis:process-file/zodiac filename fn annotate?)
+	       (basis:process-file/no-zodiac filename fn)))]
+	[process-sexp
+	 (lambda (sexp z fn annotate?)
+	   (if (basis:setting-use-zodiac? user-setting)
+	       (basis:process-sexp/zodiac sexp z fn annotate?)
+	       (basis:process-sexp/no-zodiac sexp fn)))])
+
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                            ;;;
+      ;;;                Evaluation                  ;;;
+      ;;;                                            ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      (override
+	[get-prompt (lambda () "> ")])
+      (public
+	[user-setting (fw:preferences:get 'drscheme:settings)]
+	[user-custodian (make-custodian)]
+	[user-eventspace #f]
+	[user-thread #f])
+      (private
+	[in-evaluation? #f]
+	[in-evaluation-semaphore (make-semaphore 1)]
+	[should-collect-garbage? #f]
+	[ask-about-kill? #f])
+      (public
+	[insert-warning
+	 (lambda ()
+	   (begin-edit-sequence)
+	   (insert #\newline (last-position) (last-position))
+	   (let ([start (last-position)])
+	     (insert
+	      "WARNING: Interactions window is out of sync with the definitions window. Click Execute."
+	      start start)
+	     (let ([end (last-position)])
+	       (change-style WARNING-STYLE-DELTA start end)))
+	   (end-edit-sequence))])
+      (override
+	[do-eval
+	 (let ([count 0])
+	   (lambda (start end)
+	     (set! count (add1 count))
+	     (when (<= 5 count)
+	       (collect-garbage)
+	       (set! count 0))
+	     (let* ([frame (get-top-level-window)]
+		    [definitions-edit (ivar frame definitions-edit)]
+		    [already-warned? (ivar definitions-edit already-warned?)]
+		    [needs-execution? (ivar definitions-edit needs-execution?)])
+	       (when (if (fw:preferences:get 'drscheme:execute-warning-once)
+			 (and (not already-warned?)
+			      needs-execution?)
+			 needs-execution?)
+		 (send definitions-edit already-warned)
+		 (insert-warning)))
+	     (do-many-buffer-evals this start end)))])
+      (public
+	[cleanup-evaluation
+	 (lambda ()
+	   (system
+	    (lambda ()
+	      (mred:end-busy-cursor)
+	      (cleanup-transparent-io)
+	      (send (get-top-level-window) enable-evaluation)
+	      (begin-edit-sequence)	     
+	      (set-caret-owner #f 'display)
+
+	      (if (thread-running? user-thread)
+		  (let ([c-locked? (locked?)])
+		    (lock #f)
+		    (insert-prompt)
+		    (lock c-locked?)
+		    (end-edit-sequence))
+		  (begin (lock #t)
+			 (end-edit-sequence)
+			 (unless shutting-down?
+			   (mred:message-box
+			    "Warning"
+			    (format "The evaluation thread is no longer running, ~
+			 so no evaluation can take place until ~
+			 the next execution."))))))))])
+      (public
+	[do-many-buffer-evals
+	 (lambda (edit start end)
+	   (unless in-evaluation?
+	     (send (get-top-level-window) disable-evaluation)
+	     (reset-break-state)
+	     (cleanup-transparent-io)
+	     (reset-pretty-print-width)
+	     (ready-non-prompt)
+	     (mred:begin-busy-cursor)
+	     (when should-collect-garbage?
+	       (set! should-collect-garbage? #f)
+	       (collect-garbage))
+	     (run-in-evaluation-thread
+	      (lambda ()
+		(with-running-flag
+		 (lambda ()
+		   (protect-user-evaluation
+		    cleanup-evaluation
+		    (lambda ()
+		      (process-edit edit
+				    (lambda (expr recur)
+				      (cond
+				       [(basis:process-finish? expr)
+					(void)]
+				       [else
+					(let ([answers (call-with-values
+							(lambda ()
+							  (mzlib:thread:dynamic-enable-break
+							   (lambda ()
+							     (if (basis:setting-use-zodiac? (basis:current-setting))
+								 (basis:syntax-checking-primitive-eval expr)
+								 (basis:primitive-eval expr)))))
+							(lambda x x))])
+					  (display-results answers)
+					  (recur))]))
+				    start
+				    end
+				    #t)))))))))])
+      (private
+	[shutdown-user-custodian
+	 (lambda ()
+	   (let* ([frame (get-top-level-window)]
+		  [interactions-edit (ivar frame interactions-edit)])
+	     (set! in-evaluation? #f)
+	     (send (get-top-level-window) not-running)
+
+	     ;; this thread is created to run the actual shutdown, in
+	     ;; case the custodian is going to shutdown the current
+	     ;; thread!  The semaphore is there for when the case when
+	     ;; current thread is not shutdown.
+	     (let ([sema (make-semaphore 0)])
+	       (parameterize ([current-custodian drscheme:init:system-custodian])
+		 (thread (lambda ()
+			   (custodian-shutdown-all user-custodian)
+			   (semaphore-post sema)))
+		 (semaphore-wait sema)))))])
+      (public
+	[reset-break-state (lambda () (set! ask-about-kill? #f))]
+	[breakable-thread #f]
+	[break (lambda ()
+		 (cond
+		  [(or ;(not in-evaluation?)
+		       (not breakable-thread))
+		   (mred:bell)]
+		  [ask-about-kill? 
+		   (if (fw:gui-utils:get-choice
+			"Do you want to kill the evaluation?"
+			"Just Break"
+			"Kill"
+			"Kill?")
+		       (break-thread breakable-thread)
+		       (begin 
+			 (shutdown-user-custodian)))]
+		  [else 
+		   (break-thread breakable-thread)
+		   (set! ask-about-kill? #t)]))])
+      (public
+	[error-escape-k void])
+
+      (private
+	[eval-thread-thunks null]
+	[eval-thread-state-sema (make-semaphore 1)]
+	[eval-thread-queue-sema (make-semaphore 0)]
+	
+	[evaluation-sucessful 'not-yet-evaluation-sucessful]
+	[cleanup-sucessful 'not-yet-cleanup-sucessful]
+	[cleanup-semaphore 'not-yet-cleanup-semaphore]
+	[thread-grace 'not-yet-thread-grace]
+	[thread-kill 'not-yet-thread-kill]
+	
+	[protect-user-evaluation
+	 (lambda (cleanup thunk)
+	   (semaphore-wait in-evaluation-semaphore)
+	   (set! in-evaluation? #t)
+	   (semaphore-post in-evaluation-semaphore)
+
+	   (fluid-let ([breakable-thread user-thread]
+		       [evaluation-sucessful  (make-semaphore 0)]
+		       [cleanup-semaphore (make-semaphore 1)]
+		       [cleanup-sucessful (make-semaphore 0)]
+		       [thread-grace
+			(system
+			 (lambda ()
+			   (thread
+			    (lambda ()
+			      (semaphore-wait evaluation-sucessful)
+
+			      (semaphore-wait cleanup-semaphore)
+
+			      (parameterize ([current-custodian drscheme:init:system-custodian])
+				(kill-thread thread-kill))
+
+			      (cleanup)
+			      (semaphore-post cleanup-sucessful)))))]
+		       [thread-kill
+			(system
+			 (lambda ()
+			   (thread 
+			    (lambda ()
+			      (thread-wait user-thread)
+
+			      (semaphore-wait cleanup-semaphore)
+
+			      (parameterize ([current-custodian drscheme:init:system-custodian])
+				(kill-thread thread-grace))
+
+			      (cleanup)
+			      (semaphore-post cleanup-sucessful)))))])
+
+	     (let/ec k
+	       (fluid-let ([error-escape-k 
+			    (lambda ()
+			      (semaphore-post evaluation-sucessful)
+			      (k (void)))])
+		 (thunk)))
+
+	     (semaphore-post evaluation-sucessful)
+	     (semaphore-wait cleanup-sucessful)
+
+
+	     (semaphore-wait in-evaluation-semaphore)
+	     (set! in-evaluation? #f)
+	     (semaphore-post in-evaluation-semaphore)))])
+      (public
+	[evaluation-thread #f]
+	[run-in-evaluation-thread 
+	 (lambda (thunk)
+	   (semaphore-wait eval-thread-state-sema)
+	   (set! eval-thread-thunks (append eval-thread-thunks (list thunk)))
+	   (semaphore-post eval-thread-state-sema)
+	   (semaphore-post eval-thread-queue-sema))]
+	[with-running-flag
+	 (lambda (thunk)
+	   (dynamic-wind
+	    (lambda ()
+	      (semaphore-wait running-semaphore)
+	      (set! evaluation-running #t)
+	      (semaphore-post running-semaphore)
+	      (update-running))
+	    (lambda ()
+	      (thunk))
+	    (lambda ()
+	      (semaphore-wait running-semaphore)
+	      (set! evaluation-running #f)
+	      (semaphore-post running-semaphore)
+	      (update-running))))]
+	[init-evaluation-thread
+	 (lambda ()
+	   (set! user-custodian (make-custodian))
+	   (set! user-eventspace (parameterize ([current-custodian user-custodian])
+				   (mred:make-eventspace)))
+	   (parameterize ([mred:current-eventspace user-eventspace]
+			  [current-custodian user-custodian])
+	     (mred:queue-callback
+	      (lambda ()
+		(mzlib:thread:dynamic-disable-break
+		 (lambda ()
+
+		   (set! user-thread (current-thread))
+
+		   (initialize-parameters)
+
+		   (let ([drscheme-error-escape-handler
+			  (lambda ()
+			    (error-escape-k))])
+		     (error-escape-handler drscheme-error-escape-handler)
+		     (basis:bottom-escape-handler drscheme-error-escape-handler))
+
+
+		   (send (get-top-level-window) not-running)
+		   (set! evaluation-thread (current-thread))
+		   (let loop ()
+		     (unless (semaphore-try-wait? eval-thread-queue-sema)
+		       (mred:yield eval-thread-queue-sema))
+		     (semaphore-wait eval-thread-state-sema)
+		     (let ([thunk (car eval-thread-thunks)])
+		       (set! eval-thread-thunks (cdr eval-thread-thunks))
+		       (semaphore-post eval-thread-state-sema)
+		       (thunk))
+		     (loop))))))))])
+      (public
+	[shutting-down? #f]
+	[shutdown 
+	 (lambda ()
+	   (set! shutting-down? #t)
+	   (shutdown-user-custodian))])
+      
+	(private
+	  [running-semaphore (make-semaphore 1)]
+	  [running-on? #f]
+	  [running-events 0]
+	  [evaluation-running #f]
+	  [update-running
+	   (lambda ()
+	     (semaphore-wait running-semaphore)
+	     (if (or (> running-events 0)
+		     evaluation-running)
+		 (unless running-on?
+		   (set! running-on? #t)
+		   (send (get-top-level-window) running))
+		 (when running-on?
+		   (set! running-on? #f)
+		   (send (get-top-level-window) not-running)))
+	     (semaphore-post running-semaphore))])
+
+
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;					     ;;;
 	;;;                Execution                 ;;;

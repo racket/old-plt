@@ -971,6 +971,14 @@ char *objscheme_unbundle_string(Scheme_Object *obj, const char *where)
   return SCHEME_STR_VAL(obj);
 }
 
+char *objscheme_unbundle_mutable_string(Scheme_Object *obj, const char *where)
+{
+  if (!SCHEME_MUTABLE_STRINGP(obj)) {
+    scheme_wrong_type(where, "mutable string", -1, 0, &obj);
+  }
+  return SCHEME_STR_VAL(obj);
+}
+
 char *objscheme_unbundle_pathname_guards(Scheme_Object *obj, const char *where, int guards)
 {
   (void)objscheme_istype_pathname(obj, where);

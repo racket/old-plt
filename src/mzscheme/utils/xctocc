@@ -2135,7 +2135,8 @@ sub PrintBundleVar
     } elsif (($paramtype eq 'string') || ($paramtype eq 'cstring')
 	     || ($paramtype eq 'custring') || ($paramtype eq 'ustring')
 	     || ($paramtype eq 'ncustring') || ($paramtype eq 'nustring')
-	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring')) {
+	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring') 
+	     || ($paramtype eq 'wstring')) {
 	print "$wvs(objscheme_bundle_string((char *)$var))";
     } elsif (($paramtype eq 'pathname') 
 	     || ($paramtype eq 'cpathname')
@@ -2210,7 +2211,8 @@ sub ParamIsPointer
     } elsif (($paramtype eq 'string') || ($paramtype eq 'cstring')
 	     || ($paramtype eq 'custring') || ($paramtype eq 'ustring')
 	     || ($paramtype eq 'ncustring') || ($paramtype eq 'nustring')
-	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring')) {
+	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring')
+	     || ($paramtype eq 'wstring')) {
 	return 1;
     } elsif (($paramtype eq 'pathname') 
 	     || ($paramtype eq 'cpathname')
@@ -2324,6 +2326,8 @@ sub PrintUnbundleVar
     } elsif ($paramtype eq 'string' || $paramtype eq 'cstring'
 	     || $paramtype eq 'ustring' || $paramtype eq 'custring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_string(${var}, $stop))";
+    } elsif ($paramtype eq 'wstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mutable_string(${var}, $stop))";
     } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring'
 	     || $paramtype eq 'nustring' || $paramtype eq 'ncustring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_string($var, $stop))";
@@ -2678,7 +2682,8 @@ sub PrintTypecheck
     } elsif (($paramtype eq 'Double')) {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_float($var, $stop))";
     } elsif ($paramtype eq 'string' || $paramtype eq 'cstring'
-	     || $paramtype eq 'ustring' || $paramtype eq 'custring') {
+	     || $paramtype eq 'ustring' || $paramtype eq 'custring'
+	     || $paramtype eq 'wstring') {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_string($var, $stop))";
     } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring'
 	     || $paramtype eq 'nustring' || $paramtype eq 'ncustring') {

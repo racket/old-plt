@@ -786,7 +786,10 @@ typedef struct User_Input_Port {
   Scheme_Object *close_proc;
   Scheme_Object *peeked;
   Scheme_Object *closed_sema;
+  Scheme_Object *reuse_str;
 } User_Input_Port;
+
+#define MAX_USER_INPUT_REUSE_SIZE 1024
 
 static long 
 user_get_or_peek_string(Scheme_Input_Port *port, 
@@ -796,7 +799,6 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 			Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *fun, *val, *a[3];
-  char *vb;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
  try_again:
@@ -821,10 +823,20 @@ user_get_or_peek_string(Scheme_Input_Port *port,
   else
     fun = uip->read_proc;
 
-  vb = scheme_malloc_atomic(size + 1);
-  a[0] = scheme_make_sized_string(vb, size, 0);
+  if (uip->reuse_str && (size == SCHEME_STRLEN_VAL(uip->reuse_str))) {
+    a[0] = uip->reuse_str;
+    uip->reuse_str = NULL;
+  } else {
+    char *vb;
+    vb = scheme_malloc_atomic(size + 1);
+    a[0] = scheme_make_sized_string(vb, size, 0);
+  }
   a[1] = peek_skip;
   val = scheme_apply(fun, peek ? 2 : 1, a);
+
+  if (size <= MAX_USER_INPUT_REUSE_SIZE) {
+    uip->reuse_str = a[0];
+  }
 
   if (SCHEME_EOFP(val))
     return EOF;

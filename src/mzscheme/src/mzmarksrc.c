@@ -1064,6 +1064,7 @@ mark_user_input {
   gcMARK(uip->close_proc);
   gcMARK(uip->peeked);
   gcMARK(uip->closed_sema);
+  gcMARK(uip->reuse_str);
  size:
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
 }

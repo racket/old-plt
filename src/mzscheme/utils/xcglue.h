@@ -117,6 +117,7 @@ double objscheme_unbundle_nonnegative_float(Scheme_Object *, const char *);
 double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *, const char *symname, const char *);
 int objscheme_unbundle_bool(Scheme_Object *, const char *);
 char *objscheme_unbundle_string(Scheme_Object *, const char *);
+char *objscheme_unbundle_mutable_string(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_string(Scheme_Object *, const char *);
 char *objscheme_unbundle_pathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_pathname(Scheme_Object *, const char *);
@@ -160,6 +161,7 @@ typedef char *xc_string;
 typedef const unsigned char *custring, *ncustring; 
 typedef const char *cstring, *ncstring; 
 typedef char *nstring;
+typedef char *wstring;
 typedef unsigned char *ustring, *nustring;
 
 typedef char *pathname;

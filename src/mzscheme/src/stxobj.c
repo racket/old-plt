@@ -54,6 +54,8 @@ static Scheme_Object *source_symbol; /* uninterned! */
 static Scheme_Object *origin_symbol;
 static Scheme_Object *lexical_symbol;
 
+static Scheme_Object *mark_id = scheme_make_integer(0);
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -78,7 +80,7 @@ static Module_Renames *krn;
 
    - A wrap-elem <num> is a mark
    - A wrap-elem (vector <sym> <ht> <stx> ... <sym-or-#f> ...) is a lexical rename
-                          env (sym  var       var-resolved
+                         env  (sym   var      var-resolved
                               ->pos)           #f => not yet computed
                               or #f
    - A wrap-elem <rename-table> is a module rename set
@@ -89,16 +91,13 @@ static Module_Renames *krn;
          result of an expansion so that top-level marks do not
          break re-expansions
 
-   For object with sub-syntax:
-
-    The wraps field is
-     (cons <local wraps> <lazy markswraps>), and
-    #f means (cons null null).
-
-    The reason we keep local wraps, even for parens,
-    is that the wraps for a list might have to be used
-    as wraps for #%app, etc.
+  The lazy_prefix field of a syntax object keeps track of how many of the
+  first wraps need to be propagated to sub-syntax.
 */
+
+/*========================================================================*/
+/*                           initialization                               */
+/*========================================================================*/
 
 void scheme_init_stx(Scheme_Env *env)
 {
@@ -120,13 +119,7 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("syntax->datum", 
 			     scheme_make_folding_prim(syntax_to_datum,
 						      "syntax->datum",
-						      1, 
-#if STX_DEBUG
-						      2,
-#else
-						      1, 
-#endif
-						      1),
+						      1, 1 + STX_DEBUG, 1),
 			     env);
   scheme_add_global_constant("datum->syntax", 
 			     scheme_make_folding_prim(datum_to_syntax,
@@ -212,7 +205,13 @@ void scheme_init_stx(Scheme_Env *env)
   source_symbol = scheme_make_symbol("source");
   origin_symbol = scheme_intern_symbol("origin");
   lexical_symbol = scheme_intern_symbol("lexical");
+
+  REGISTER_SO(mark_id);
 }
+
+/*========================================================================*/
+/*                       stx creation and maintenance                     */
+/*========================================================================*/
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
 			       long line, long col, 
@@ -234,6 +233,7 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 }
 
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
+/* Sets the "is graph" flag */
 {
   ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
 
@@ -243,6 +243,7 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
 				Scheme_Object *old,
 				Scheme_Object *origin)
+/* Maintain properties for an expanded expression */
 {
   Scheme_Stx *nstx = (Scheme_Stx *)naya;
   Scheme_Stx *ostx = (Scheme_Stx *)old;
@@ -401,8 +402,6 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
 /******************** marks ********************/
 
-static Scheme_Object *mark_id = scheme_make_integer(0);
-
 Scheme_Object *scheme_new_mark()
 {
   mark_id = scheme_add1(1, &mark_id);
@@ -411,11 +410,6 @@ Scheme_Object *scheme_new_mark()
 
 Scheme_Object *add_remove_mark(Scheme_Object *wraps, Scheme_Object *m, long *lp)
 {
-#if CHECK_STX
-  if (!SCHEME_NUMBERP(m))
-    scheme_signal_error("internal error: mark is not a number");
-#endif
-
   if (SCHEME_PAIRP(wraps) &&
       SAME_OBJ(m, SCHEME_CAR(wraps))
       && *lp) {
@@ -432,11 +426,6 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *wraps;
   long lp;
-
-#if CHECK_STX
-  if (!SCHEME_STXP(o))
-    scheme_signal_error("internal error: not syntax");
-#endif
 
   lp = stx->lazy_prefix;
   wraps = add_remove_mark(stx->wraps, m, &lp);
@@ -568,15 +557,6 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   Scheme_Object *wraps;
   long lp;
 
-#if CHECK_STX
-  if (!SCHEME_STXP(o))
-    scheme_signal_error("internal error: not syntax");
-  if (!SCHEME_STXP(name))
-    scheme_signal_error("internal error: name not syntax");
-  if (!SCHEME_SYMBOLP(newname))
-    scheme_signal_error("internal error: new name not symbol");
-#endif
-
   wraps = scheme_make_pair(rename, stx->wraps);
   lp = stx->lazy_prefix + 1;
 
@@ -594,6 +574,8 @@ Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o)
 
 Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 				      Scheme_Object *old_midx, Scheme_Object *new_midx)
+/* Shifts the phase on a syntax object in a module. A 0 shift might be used
+   just to re-direct relative module paths. */
 {
   Scheme_Object *vec;
   
@@ -656,7 +638,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 }
 
 Scheme_Object *scheme_stx_content(Scheme_Object *o)
-/* Propagates wraps while getting a syntax's content. */
+/* Propagates wraps while getting a syntax object's content. */
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
 
@@ -714,6 +696,10 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 
   return stx->val;
 }
+
+/*========================================================================*/
+/*                           stx comparison                               */
+/*========================================================================*/
 
 static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
 /* Compares the marks in two wraps lists */
@@ -1107,6 +1093,10 @@ int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 {
   return scheme_stx_env_bound_eq(a, b, NULL, phase);
 }
+
+/*========================================================================*/
+/*                           stx and lists                                */
+/*========================================================================*/
 
 int scheme_stx_list_length(Scheme_Object *list)
 {

@@ -61,7 +61,8 @@
                     [(syntax? object)
                      (eval object)
                      (continue)]
-                    [else (error 'eval-file "Error")]))))))
+                    [else (error 'eval-file "Error")]))
+                #t))))
           
           ;; break (-> void?)
           ;; break the test execution. if called more than once in an execution... kill the test.
@@ -97,7 +98,8 @@
                           (set! first-expr? false)
                           (continue))
                         (error 'iter "Too many expressions in a test box"))]
-                   [else (error 'eval-text "Error")])))))
+                   [else (error 'eval-text "Error")])))
+             #f))
           
           ;; eval-syntax (syntax? (any? . -> . void?) . -> . void?)
           ;; evaluate the syntax in the users eventspace

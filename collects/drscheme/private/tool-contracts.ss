@@ -41,10 +41,6 @@
  "  is \\rawscm{\\#t}"
  "\\item "
  "  \\MzLink{mz:p:error-print-width}{\\rawscm{error-print-width}} is set to 250."
- "\\item The \\MzLink{mz:p:current-load}{current-load} parameter"
- "  is set to a procedure that calls the language's"
- "  \\rawscm{front-end} method, instead of just using"
- "  \\rawscm{read}. "
  "\\item"
  "@flink current-ps-setup"
  "is set to a newly created"
@@ -102,6 +98,10 @@
 "just processes the expanded program, be sure to pass"
 "\\scheme{#t}."
 ""
+"This function calls"
+"@ilink drscheme:language:language expand-program/complete-program"
+"to expand the program."
+""
 "The first argument to \\var{iter} is the expanded program"
 "(represented as syntax) or eof."
 "The \\var{iter} argument is called for each expression in the"
@@ -134,6 +134,7 @@
     (-> any)
     . -> .
     any)
+   boolean?
    . -> .
    void?))
  (language-settings eval-compile-time-part? init kill-termination)
@@ -144,7 +145,14 @@
  "can be used multiple times."
  "Use this function if you want to initialize the user's"
  "thread (and namespace, etc) once but have program text"
- "that comes from multiple sources.")
+ "that comes from multiple sources."
+ ""
+ "The extra boolean argument to the result function"
+ "determines if"
+ "@ilink drscheme:language:language front-end/complete-program"
+ "or"
+ "@ilink drscheme:language:language front-end/interaction"
+ "is called.")
 
 (drscheme:eval:build-user-eventspace/custodian
  ((drscheme:language-configuration:language-settings?

@@ -25,7 +25,7 @@
       (define (read-program lang-prefs definitions-text)
         (let* ([language (drscheme:language-configuration:language-settings-language lang-prefs)]
                [settings (drscheme:language-configuration:language-settings-settings lang-prefs)]
-               [front-end (send language front-end
+               [front-end (send language front-end/complete-program
                                 (drscheme:language:make-text/pos
                                  definitions-text
                                  0 ; (drscheme:language:get-post-hash-bang-start definitions-text)

@@ -16,16 +16,9 @@ import "ocidl.idl";
 	]
 	interface ISink : IDispatch
 	{
-	
 		[id(0xFFFFFD00), helpstring("method set_extension_table")] HRESULT set_extension_table(int);
-	        [id(0xFFFFFCFF), helpstring("method register_handler")] HRESULT register_handler(DISPID,int,int);
-	        [id(0xFFFFFCFE), helpstring("method set_make_cy")] HRESULT set_make_cy(int);
-	        [id(0xFFFFFCFD), helpstring("method set_make_date")] HRESULT set_make_date(int);
-	        [id(0xFFFFFCFC), helpstring("method set_make_bool")] HRESULT set_make_bool(int);
-	        [id(0xFFFFFCFB), helpstring("method set_make_scode")] HRESULT set_make_scode(int);
-	        [id(0xFFFFFCFA), helpstring("method set_make_idispatch")] HRESULT set_make_idispatch(int);
-	        [id(0xFFFFFCF9), helpstring("method set_make_iunknown")] HRESULT set_make_iunknown(int);
-
+		[id(0xFFFFFCFF), helpstring("method set_myssink_table")] HRESULT set_myssink_table(int);
+	        [id(0xFFFFFCFE), helpstring("method register_handler")] HRESULT register_handler(DISPID,int,int);
     }
 [
 	uuid(DA064DC0-0881-11D3-B5CA-0060089002FE),

@@ -2,8 +2,8 @@
 
 #include "stdafx.h"
 #include <stdio.h>
-#include "Myssink.h"
-#include "Sink.h"
+#include "myssink.h"
+#include "sink.h"
 #include "comtypes.h"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -55,39 +55,9 @@ STDMETHODIMP CSink::set_extension_table(int p)
   return S_OK;
 }
 
-STDMETHODIMP CSink::set_make_cy(int p)
+STDMETHODIMP CSink::set_myssink_table(int p)
 {
-  make_cy = (Scheme_Object *(*)(CY *))p;
-  return S_OK;
-}
-
-STDMETHODIMP CSink::set_make_date(int p)
-{
-  make_date = (Scheme_Object *(*)(DATE *))p;
-  return S_OK;
-}
-
-STDMETHODIMP CSink::set_make_bool(int p)
-{
-  make_bool = (Scheme_Object *(*)(unsigned))p;
-  return S_OK;
-}
-
-STDMETHODIMP CSink::set_make_scode(int p)
-{
-  make_scode = (Scheme_Object *(*)(SCODE))p;
-  return S_OK;
-}
-
-STDMETHODIMP CSink::set_make_idispatch(int p)
-{
-  make_idispatch = (Scheme_Object *(*)(IDispatch *))p;
-  return S_OK;
-}
-
-STDMETHODIMP CSink::set_make_iunknown(int p)
-{
-  make_iunknown = (Scheme_Object *(*)(IUnknown *))p;
+  myssink_table = (MYSSINK_TABLE *)p;
   return S_OK;
 }
 
@@ -253,6 +223,159 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
   return NULL;
 }
 
+void CSink::handlerUpdateError(char *s) {
+  scheme_signal_error("Handler updated box with value other than "
+		      "expected type: %s",s);
+}
+
+void CSink::unmarshallSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
+  Scheme_Object *val;
+
+  if (pVariantArg->vt & VT_BYREF) {
+    val = SCHEME_BOX_VAL(obj);
+  }
+
+  switch (pVariantArg->vt) {
+
+  case VT_UI1 | VT_BYREF :
+
+    if (SCHEME_CHARP(val) == FALSE) {
+      handlerUpdateError("character");
+    } 
+
+    *(pVariantArg->pbVal) = SCHEME_CHAR_VAL(val);
+    break;
+
+  case VT_I2 | VT_BYREF :
+
+    if (isShortInt(val) == FALSE) {
+      handlerUpdateError("exact integer");
+    } 
+
+    *(pVariantArg->piVal) = (short)SCHEME_INT_VAL(val);
+    break;
+
+  case VT_I4 | VT_BYREF :
+  
+    long lVal;
+
+    if (SCHEME_EXACT_INTEGERP(val) == FALSE) {
+      handlerUpdateError("exact integer");
+    }
+
+    if (scheme_get_int_val(val,&lVal) == 0) {
+      scheme_signal_error("Handler updated box with too large an exact integer");
+    } 
+
+    *(pVariantArg->plVal) = lVal;
+    break;
+
+  case VT_R4 | VT_BYREF :
+
+#ifdef MZ_USE_SINGLE_FLOATS
+    if (SCHEME_FLTP(val) == FALSE) {
+      handlerUpdateError("float");
+    } 
+
+    *(pVariantArg->pfltVal) = SCHEME_FLT_VAL(val);
+#else
+    if (SCHEME_DBLP(val) == FALSE) {
+      handlerUpdateError("double");
+    } 
+
+    *(pVariantArg->pfltVal) = (float)SCHEME_DBL_VAL(val);
+#endif
+    break;
+
+  case VT_R8 | VT_BYREF :
+
+    if (SCHEME_DBLP(val) == FALSE) {
+      handlerUpdateError("double");
+    } 
+
+    *(pVariantArg->pdblVal) = SCHEME_DBL_VAL(val);
+
+  case VT_BSTR :
+
+    // string passed to Scheme can be updated in-place
+
+    BSTR bstr;
+    
+    bstr = schemeStringToBSTR(obj);
+    wcscpy(pVariantArg->bstrVal,bstr);
+    SysFreeString(bstr);
+    break;
+
+  case VT_BSTR | VT_BYREF :
+
+    BSTR bstr2;
+    
+    if (SCHEME_STRINGP(val) == FALSE) {
+      handlerUpdateError("string");
+    }
+
+    bstr2 = schemeStringToBSTR(val);
+    wcscpy(*(pVariantArg->pbstrVal),bstr2);
+    SysFreeString(bstr2);
+    break;
+
+  case VT_CY | VT_BYREF :
+
+    if (cy_pred(val) == FALSE) {
+      handlerUpdateError("com-cy");
+    }
+
+    *(pVariantArg->pcyVal) = cy_val(val);
+    break;
+
+  case VT_DATE | VT_BYREF :
+
+    if (date_pred(val) == FALSE) {
+      handlerUpdateError("com-date");
+    }
+
+    *(pVariantArg->pdate) = date_val(val);
+    break;
+
+  case VT_BOOL | VT_BYREF :
+
+    *(pVariantArg->pboolVal) = (val == scheme_false) ? 0 : -1;
+    break;
+
+  case VT_ERROR | VT_BYREF :
+    
+    if (scode_pred(val) == FALSE) {
+      handlerUpdateError("com-scode");
+    }
+
+    *(pVariantArg->pscode) = scode_val(val);
+    break;
+
+  case VT_DISPATCH | VT_BYREF :
+
+    if (comobj_pred(val) == FALSE) {
+      handlerUpdateError("com-obj");
+    }
+
+    *(pVariantArg->ppdispVal) = comobj_val(val);
+    break;
+
+  case VT_UNKNOWN | VT_BYREF:
+
+    if (iunknown_pred(val) == FALSE) {
+      handlerUpdateError("com-iunknown");
+    }
+
+    *(pVariantArg->ppunkVal) = iunknown_val(val);
+    break;
+
+  default :
+
+    ; // no update needed
+
+  } 
+}
+
 // override default implementation of IDispatch::Invoke
 
 HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
@@ -326,12 +449,6 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
     i++;
   }
 
-  if (actualParams == 0) { 
-    scheme_apply(handler,0,NULL);
-    memcpy(&scheme_error_buf, &jmpSave, sizeof(mz_jmp_buf));
-    return S_OK;
-  }
-
   for (i = 0; i < actualParams; i++) {
     pCurrArg = &pDispParams->rgvarg[numParams - 1 - i];
     argv[i] = variantToSchemeObject(pCurrArg);
@@ -341,6 +458,12 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
 
   // updating of boxes needs to be reflected in BYREF parameters 
 
+  for (i = 0; i < actualParams; i++) {
+    pCurrArg = &pDispParams->rgvarg[numParams - 1 - i];
+    unmarshallSchemeObject(argv[i],pCurrArg);
+  }
+
   memcpy(&scheme_error_buf, &jmpSave, sizeof(mz_jmp_buf));
   return S_OK;
 }
+

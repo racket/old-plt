@@ -179,6 +179,18 @@ Scheme_Object *mx_make_scode(SCODE);
 Scheme_Object *mx_make_idispatch(IDispatch *);
 Scheme_Object *mx_make_iunknown(IUnknown *);
 
+BOOL mx_cy_pred(Scheme_Object *);
+BOOL mx_date_pred(Scheme_Object *);
+BOOL mx_scode_pred(Scheme_Object *);
+BOOL mx_comobj_pred(Scheme_Object *);
+BOOL mx_iunknown_pred(Scheme_Object *);
+
+CY mx_cy_val(Scheme_Object *);
+DATE mx_date_val(Scheme_Object *);
+SCODE mx_scode_val(Scheme_Object *);
+IDispatch *mx_comobj_val(Scheme_Object *);
+IUnknown *mx_iunknown_val(Scheme_Object *);
+
 MX_PRIM_DECL(mx_com_invoke);
 MX_PRIM_DECL(mx_com_set_property);
 MX_PRIM_DECL(mx_com_get_property);

@@ -13,7 +13,7 @@ HTMLHELP=C:\Program Files\HTML Help Workshop
 SHELL32=F:\SBN
 
 CPP=cl.exe
-CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /I"./myssink" /I"$(SHELL32)\Include" \
+CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /I"./mysc" /I"./myssink" /I"$(SHELL32)\Include" \
 	/I"$(HTMLHELP)\include" /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c 
 
 .cxx.obj::
@@ -26,7 +26,8 @@ LINK32_LIBS= \
 	kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 	advapi32.lib $(SHELL32)\LIB\shell32.lib ole32.lib oleaut32.lib \
 	uuid.lib odbc32.lib \
-        odbccp32.lib mapi32.lib "$(HTMLHELP)\lib/htmlhelp.lib" 
+        odbccp32.lib mapi32.lib "$(HTMLHELP)\lib/htmlhelp.lib" \
+	mysc\mysc.lib 
 
 LINK32_OBJS= \
         mysterx.obj comtypes.obj htmlevent.obj htmlutil.obj

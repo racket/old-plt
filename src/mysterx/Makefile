@@ -15,6 +15,8 @@
 all : 
 	cd myspage
         nmake /f myspage.mak
+	cd ../mysc
+        nmake /f mysc.mak
 	cd ../myssink
         nmake /f myssink.mak
 	cd ..

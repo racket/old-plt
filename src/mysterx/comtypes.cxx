@@ -105,3 +105,43 @@ Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
   return (Scheme_Object *)retval;
 
 }
+
+BOOL mx_cy_pred(Scheme_Object *obj) {
+  return MX_CYP(obj);
+}
+
+BOOL mx_date_pred(Scheme_Object *obj) {
+  return MX_DATEP(obj);
+}
+
+BOOL mx_scode_pred(Scheme_Object *obj) {
+  return MX_SCODEP(obj);
+}
+
+BOOL mx_comobj_pred(Scheme_Object *obj) {
+  return MX_COM_OBJP(obj);
+}
+
+BOOL mx_iunknown_pred(Scheme_Object *obj) {
+  return MX_IUNKNOWNP(obj);
+}
+
+CY mx_cy_val(Scheme_Object *obj) {
+  return MX_CY_VAL(obj);
+}
+
+DATE mx_date_val(Scheme_Object *obj) {
+  return MX_DATE_VAL(obj);
+}
+
+SCODE mx_scode_val(Scheme_Object *obj) {
+  return MX_SCODE_VAL(obj);
+}
+
+IDispatch *mx_comobj_val(Scheme_Object *obj) {
+  return MX_COM_OBJ_VAL(obj);
+}
+
+IUnknown *mx_iunknown_val(Scheme_Object *obj) {
+  return MX_IUNKNOWN_VAL(obj);
+}

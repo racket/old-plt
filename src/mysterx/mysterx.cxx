@@ -20,6 +20,9 @@
 
 #include "escheme.h"
 
+#include "bstr.h"
+#include "sinktbl.h"
+
 // ATL support
 
 #include <atlbase.h>
@@ -47,6 +50,8 @@ static HANDLE eventSinkMutex;
 static Scheme_Unit *mx_unit;  /* the unit returned by the extension */
 
 static MX_TYPE_TBL_ENTRY *typeTable[TYPE_TBL_SIZE];
+
+static MYSSINK_TABLE myssink_table;
 
 static char *objectAttributes[] = { "InprocServer", "InprocServer32",
 				    "LocalServer", "LocalServer32", NULL };
@@ -614,6 +619,8 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
 
   pISink->set_extension_table((int)scheme_extension_table); // COM won't take a function ptr
 
+  pISink->set_myssink_table((int)&myssink_table);
+
   hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
 
   if (hr != S_OK) {
@@ -643,33 +650,8 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
   BSTR unicodeName;
   int i;
 
-  typedef enum { Click, DblClick, KeyDown, KeyPress, KeyUp, 
-		 MouseDown, MouseMove, MouseUp, Error, ReadyStateChange,
-		 Custom 
-  } EVENTTYPE;
-
-  typedef struct {
-    char *name;
-    EVENTTYPE eventType;
-  } EVENTNAMETABLE;
-
-  EVENTTYPE eventType;
-
-  EVENTNAMETABLE eventNameTable[] = {
-    { "Click", Click },
-    { "DblClick", DblClick },
-    { "KeyDown", KeyDown },
-    { "KeyPressed", KeyPress },
-    { "KeyUp", KeyUp },
-    { "MouseDown", MouseDown },
-    { "MouseMove", MouseMove },
-    { "MouseUp", MouseUp },
-    { "Error", Error },
-    { "ReadyStateChange", ReadyStateChange },
-  };
-
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-register-event-handlerhelp","mx-object",0,argc,argv);
+    scheme_wrong_type("com-register-event-handler","mx-object",0,argc,argv);
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
@@ -698,164 +680,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
 
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
 
-  eventType = Custom;
-
-  for (i = 0; i < sizeray(eventNameTable); i++) {
-    if (strcmp(eventName,eventNameTable[i].name) == 0) {
-      eventType = eventNameTable[i].eventType;
-      break;
-    }
-  }
-
   foundEvent = FALSE;
-
-  if (eventType != Custom) {
-
-    for (i = 0; foundEvent == FALSE && i < numFuncDescs; i++) {
-
-      hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
-		
-      if (hr != S_OK) {
-	scheme_signal_error("Error getting event method type description");
-      }
-
-      switch(eventType) {
-
-	// rely only on dispId's here, not name of event
-
-      case Click :
-
-	if (pFuncDesc->memid == 0xFFFFFDA8) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  0,2,argc,argv);
-
-	  pISink->set_click_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-      case DblClick :
-
-	if (pFuncDesc->memid == 0xFFFFFDA7) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  0,2,argc,argv);
-
-	  pISink->set_dblclick_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-      case KeyDown :
-
-	if (pFuncDesc->memid == 0xFFFFFDA6) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  2,2,argc,argv);
-
-
-	  pISink->set_keydown_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-	break;
-
-      case KeyPress :
-
-	if (pFuncDesc->memid == 0xFFFFFDA5) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  1,2,argc,argv);
-
-	  pISink->set_keypress_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-      case KeyUp :
-
-	if (pFuncDesc->memid == 0xFFFFFDA4) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  2,2,argc,argv);
-
-	  pISink->set_keyup_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-      case MouseDown :
-
-	if (pFuncDesc->memid == 0xFFFFFDA3) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  4,2,argc,argv);
-
-	  pISink->set_mousedown_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-	break;
-
-      case MouseMove :
-
-	if (pFuncDesc->memid == 0xFFFFFDA2) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  4,2,argc,argv);
-
-	  pISink->set_mousemove_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-      case MouseUp :
-
-	if (pFuncDesc->memid == 0xFFFFFDA1) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  4,2,argc,argv);
-
-	  pISink->set_mouseup_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-	break;
-
-      case Error :
-
-	if (pFuncDesc->memid == 0xFFFFFDA0) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  0,2,argc,argv);
-
-	  pISink->set_error_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-	break;
-
-      case ReadyStateChange :
-
-	if (pFuncDesc->memid == 0xFFFFFD9F) {
-
-	  scheme_check_proc_arity("com-register-event-handler",
-				  1,2,argc,argv);
-
-	  pISink->set_readystatechange_proc((int)argv[2]);
-	  foundEvent = TRUE;
-	}
-
-	break;
-
-      }
-
-      pITypeInfo->ReleaseFuncDesc(pFuncDesc);
-
-    }
-
-    if (foundEvent) {
-      return scheme_void;
-    }
-  }
-
-  // must be a custom event, even if it has name of stock event
 
   unicodeName = schemeStringToBSTR(argv[1]);
 
@@ -866,22 +691,32 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
     if (hr != S_OK) {
       scheme_signal_error("Error getting event method type description");
     }
-      
-    // here we rely on name of event
 
-    pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&bstrCount);
+    // rely on name of event
+
+    hr = pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&bstrCount);
+
+    if (hr != S_OK) {
+      scheme_signal_error("Error getting event method name");
+    }
 
     if (wcscmp(unicodeName,bstr) == 0) {
-      //    pISink->set_custom_proc(memId);      
+      pISink->register_handler(pFuncDesc->memid,(int)argv[2],(int)pFuncDesc);
       foundEvent = TRUE;
     }
 
     SysFreeString(bstr);
 
-    pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+    if (foundEvent == FALSE) {
+      pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+    }
   }
-
+  
   SysFreeString(unicodeName);
+
+  if (foundEvent == FALSE) {
+    scheme_signal_error("Can't find event %s in type description",eventName);
+  }
 
   return scheme_void;
 }
@@ -1805,36 +1640,6 @@ VARIANT_BOOL schemeValToBool(Scheme_Object *val) {
   return SCHEME_FALSEP(val) ? 0 : 0xFFFF;
 }
 
-BSTR stringToBSTR(char *s,size_t len) {
-  HRESULT hr;
-  BSTR bstr;
-  WCHAR *unicodeString;
-
-  unicodeString = (WCHAR *)scheme_malloc((len + 1) * sizeof(WCHAR));
-  scheme_dont_gc_ptr(unicodeString);
-
-  hr = MultiByteToWideChar(CP_ACP,(DWORD)0,s,len + 1,
-			   unicodeString,len + 1);
-
-  scheme_gc_ptr_ok(unicodeString);
-
-  if (hr == 0) {
-    scheme_signal_error("Error translating string parameter to Unicode");
-  }
-
-  bstr = SysAllocString(unicodeString);
-
-  if (bstr == NULL) {
-    scheme_signal_error("Error allocating string parameter");
-  }
-
-  return bstr;
-}
-
-BSTR schemeStringToBSTR(Scheme_Object *o) {
-  return stringToBSTR(SCHEME_STR_VAL(o),SCHEME_STRLEN_VAL(o));
-}
-
 VARTYPE schemeValueToVarType(Scheme_Object *obj) {
 
   // test for global constants
@@ -1867,39 +1672,6 @@ VARTYPE schemeValueToVarType(Scheme_Object *obj) {
   scheme_signal_error("Unable to coerce value to VARIANT");
 
   return 0; // keep compiler happy
-}
-
-Scheme_Object *BSTRToSchemeString(BSTR bstr) {
-  char *buff;
-  unsigned int len;
-
-  len = SysStringLen(bstr);
-
-  buff = (char *)scheme_malloc(len + 1);
-
-  WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len + 1,
-		      buff,len,
-		      NULL,NULL);
- 
-  return scheme_make_string(buff);
-}
-
-void updateSchemeStringFromBSTR(Scheme_Object *val,BSTR bstr) {
-  int len;
-
-  len = SysStringLen(bstr);
-
-  if (len > SCHEME_STRLEN_VAL(val)) {
-    scheme_signal_error("String updated with longer string");
-  }
-
-  WideCharToMultiByte(CP_ACP,(DWORD)0,
-		      bstr,len + 1,
-		      SCHEME_STR_VAL(val),SCHEME_STRLEN_VAL(val),
-		      NULL,NULL);
-
-  SCHEME_STRLEN_VAL(val) = len;
-
 }
 
 void *allocParamMemory(size_t n) {
@@ -2624,7 +2396,6 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
   return variantToSchemeObject(&methodResult);
 
-  return scheme_void;
 }
 
 BOOL _stdcall drawContinue(DWORD data) {
@@ -3393,6 +3164,27 @@ Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
+void initMysSinkTable(void) {
+  myssink_table.pmake_cy = mx_make_cy;
+  myssink_table.pmake_date = mx_make_date;
+  myssink_table.pmake_bool = mx_make_bool;
+  myssink_table.pmake_scode = mx_make_scode;
+  myssink_table.pmake_idispatch = mx_make_idispatch;
+  myssink_table.pmake_iunknown = mx_make_iunknown;
+
+  myssink_table.pcy_pred = mx_cy_pred;
+  myssink_table.pdate_pred = mx_date_pred;
+  myssink_table.pscode_pred = mx_scode_pred;
+  myssink_table.pcomobj_pred = mx_comobj_pred;
+  myssink_table.piunknown_pred = mx_iunknown_pred;
+
+  myssink_table.pcy_val = mx_cy_val;
+  myssink_table.pdate_val = mx_date_val;
+  myssink_table.pscode_val = mx_scode_val;
+  myssink_table.pcomobj_val = mx_comobj_val;
+  myssink_table.piunknown_val = mx_iunknown_val;
+}
+
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
   int i;
@@ -3436,6 +3228,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   }
 
   initEventNames();
+
+  initMysSinkTable();
 
   puts("MysterX extension for MzScheme, "
        "Copyright (c) 1999 Rice PLT (Paul Steckler)");

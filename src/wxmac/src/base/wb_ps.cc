@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_ps.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.1.1.1 1997/12/22 17:28:47 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -84,6 +84,9 @@
 # define ASCALEREL(a) ((a) * ascale)
 
 # define PIE pie
+
+#define RESET_FONT 0x1
+#define RESET_COLOR 0x2
 
 static double pie = 0.0;
 
@@ -266,6 +269,13 @@ Bool wxPostScriptDC::Create(char *file, Bool interactive, wxWindow *parent)
   current_text_foreground = *wxBLACK;
 
   mapping_mode = MM_TEXT;
+#else
+  current_pen = wxBLACK_PEN;
+  current_pen->Lock(1);
+  current_brush = wxWHITE_BRUSH;
+  current_brush->Lock(1);
+  current_background_brush = wxWHITE_BRUSH;
+  current_background_brush->Lock(1);
 #endif
 
   title = NULL;
@@ -402,20 +412,21 @@ void wxPostScriptDC::SetClippingRegion (float cx, float cy, float cw, float ch)
   if (!pstream)
     return;
 
-  if (!clipping)
-    *pstream << "gsave\n";
+  *pstream << "gsave\n";
   *pstream << "newpath\n";
   *pstream << XSCALE(cx) << " " << YSCALE (cy) << " moveto\n";
   *pstream << XSCALE(cx + cw) << " " << YSCALE (cy) << " lineto\n";
   *pstream << XSCALE(cx + cw) << " " << YSCALE (cy + ch) << " lineto\n";
   *pstream << XSCALE(cx) << " " << YSCALE (cy + ch) << " lineto\n";
-  *pstream << "closepath clip newpath\n";
+  *pstream << "closepath clip\n";
 
   /* MATTHEW: [8] */
   clipx = cx;
   clipy = cy;
   clipw = cw;
   cliph = ch;
+
+  clipping = TRUE;
 }
 
 /* MATTHEW: [8] */
@@ -431,11 +442,13 @@ void wxPostScriptDC::DestroyClippingRegion (void)
 {
   if (!pstream)
     return;
-  if (clipping)
-    {
-      clipping = FALSE;
-      *pstream << "grestore\n";
-    }
+  if (clipping) {
+    clipping = FALSE;
+    *pstream << "grestore\n";
+
+    /* Stupid grestore: now we have to be ready to reset anything that changed. */
+    resetFont = RESET_FONT | RESET_COLOR;
+  }
 
   /* MATTHEW: [8] */
   clipx = 0;
@@ -889,10 +902,10 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
 {
   if (!pstream)
     return;
-  if ((current_font == the_font) && !resetFont)
+  if ((current_font == the_font) && !(resetFont & RESET_FONT))
     return;
 
-  resetFont = FALSE;
+  resetFont -= (resetFont & RESET_FONT);
 
   current_font = the_font;
   /* MATTHEW: [2] Use wxTheFontDirectory */
@@ -1033,7 +1046,8 @@ void wxPostScriptDC::SetPen (wxPen * pen)
 	}
     }
 
-  if (!(red == currentRed && green == currentGreen && blue == currentBlue))
+  if (!(red == currentRed && green == currentGreen && blue == currentBlue)
+      || (resetFont & RESET_COLOR))
   {
     float redPS = (float) (((int) red) / 255.0);
     float bluePS = (float) (((int) blue) / 255.0);
@@ -1044,6 +1058,7 @@ void wxPostScriptDC::SetPen (wxPen * pen)
     currentRed = red;
     currentBlue = blue;
     currentGreen = green;
+    resetFont -= (resetFont & RESET_COLOR);
   }
 }
 
@@ -1082,7 +1097,8 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     }
   }
 
-  if (!(red == currentRed && green == currentGreen && blue == currentBlue)) {
+  if (!(red == currentRed && green == currentGreen && blue == currentBlue)
+      || (resetFont & RESET_COLOR)) {
     float redPS = (float) (((int) red) / 255.0);
     float bluePS = (float) (((int) blue) / 255.0);
     float greenPS = (float) (((int) green) / 255.0);
@@ -1090,6 +1106,7 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     currentRed = red;
     currentBlue = blue;
     currentGreen = green;
+    resetFont -= (resetFont & RESET_COLOR);
   }
 }
 
@@ -1118,7 +1135,8 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
 	      blue = (unsigned char) 0;
 	    }
 	}
-      if (!(red == currentRed && green == currentGreen && blue == currentBlue))
+      if (!(red == currentRed && green == currentGreen && blue == currentBlue)
+	  || (resetFont & RESET_COLOR))
       {
         float redPS = (float) (((int) red) / 255.0);
         float bluePS = (float) (((int) blue) / 255.0);
@@ -1128,6 +1146,7 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
         currentRed = red;
         currentBlue = blue;
         currentGreen = green;
+	resetFont -= (resetFont & RESET_COLOR);
       }
     }
 
@@ -1276,7 +1295,7 @@ Bool wxPostScriptDC::StartDoc (char *message)
   if (wxPostScriptHeaderSpline)
     *pstream << wxPostScriptHeaderSpline;
 
-  SetBrush(wxBLACK_BRUSH);
+  SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
 
   page_number = 1;
@@ -1394,7 +1413,7 @@ void wxPostScriptDC::StartPage (void)
   }
   *pstream << "2 setlinecap\n";
 
-  resetFont = TRUE;
+  resetFont = RESET_FONT | RESET_COLOR;
 
   if (clipping)
     SetClippingRegion(clipx, clipy, clipw, cliph);
@@ -1636,7 +1655,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   static int lastStyle= INT_MIN;
   static int lastWeight= INT_MIN;
   static int lastDescender = INT_MIN;
-  static far int lastWidths[256]; // widths of the characters
+  static int lastWidths[256]; // widths of the characters
 
   // get actual parameters
   const int Family = fontToUse->GetFamily();

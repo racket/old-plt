@@ -4,7 +4,6 @@
    (lib "class.ss")
    (lib "mred.ss" "mred")
    (lib "etc.ss")
-   (lib "framework.ss" "framework")
    (lib "aligned-pasteboard.ss" "mrlib")
    (lib "unitsig.ss")
    (lib "tool.ss" "drscheme")
@@ -48,7 +47,7 @@
           
           ;; set-actual (string? . -> . void?)
           ;; set the text in the actual field to the string given
-          (define/private (set-actual string)
+          (define (set-actual string)
             (send* actual
               (lock false)
               (erase)
@@ -75,26 +74,26 @@
                          (f (syntax equal?))))])
               (send expander expand-text call
                     (lambda (call-syntax) ; =drscheme-eventspace=
-                      (send expander eval-syntax call-syntax
-                            (lambda (call-value) ; =drscheme-eventspace=
-                              (send expander user-format call-value
-                                    (lambda (call-string) ; =drscheme-eventspace=
-                                      (set-actual call-string)
-                                      (send expander expand-text expected
-                                            (lambda (expected-syntax) ; =drscheme-eventspace=
-                                              (call-with-test
-                                               (lambda (test-syntax) ; =drscheme-eventspace=
-                                                 (send expander eval-syntax
-                                                       (with-syntax ([call call-syntax]
-                                                                     [expected expected-syntax]
-                                                                     [test test-syntax])
-                                                         (syntax (#%app test call expected)))
-                                                       (lambda (test-value) ; =drscheme-eventspace=
-                                                         (set-icon test-value)
-                                                         (let ([next-case (next)])
-                                                           (if next-case
-                                                               (send next-case execute expander continue)
-                                                               (continue)))))))))))))))))
+                      (send expander expand-text expected
+                            (lambda (expected-syntax) ; =drscheme-eventspace=
+                              (call-with-test
+                               (lambda (test-syntax) ; =drscheme-eventspace=
+                                 (send expander eval-syntax
+                                       (with-syntax ([call call-syntax]
+                                                     [expected expected-syntax]
+                                                     [test test-syntax]
+                                                     [set-actual set-actual])
+                                         (syntax
+                                          (let ([call-value call])
+                                            (set-actual (format "~v" call-value))
+                                            (#%app test call-value expected))))
+                                       (lambda (test-value) ; =drscheme-eventspace=
+                                         (set-icon test-value)
+                                         (let ([next-case (next)])
+                                           (if next-case
+                                               (send next-case execute expander continue)
+                                               (continue)))))))))))))
+
           ;; show-test (boolean? . -> . void?)
           ;; show/hide the test in the display
           (define/public (show-test show?)

@@ -105,17 +105,6 @@
                  (queue-to-drscheme
                   (lambda () ; =drscheme-eventspace=
                     (next value)))))))
-          
-          ;; user-format (any? (string? . -> . void?) . -> . void?)
-          ;; formats a value to a string using the users language printing style
-          ;; status: this is wrong. i need to queue a callback here
-          (define/public (user-format value next) ; =drscheme-eventspace=
-            (queue-to-user
-             (lambda () ; =user-eventspace=
-               (let ([s (format "~v" value)])
-                 (queue-to-drscheme
-                  (lambda () ; =drscheme-eventspace=
-                    (next s)))))))
 
           ;; filename->text/pos (string? ((is-a?/c text%) . -> . void?) . -> . void?)
           ;; a text/pos containing the text from the given file

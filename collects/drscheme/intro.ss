@@ -44,7 +44,11 @@
                
                (make-object button% "Take a Tour!" vp
                             (lambda x 
-                              (bell)))
+                              (help-desk:open-url
+                               (string-append
+                                "file:"
+                                (build-path (collection-path "doc" "help" "tour")
+                                            "index.html")))))
                
                (make-object button% "Release Notes" vp
                             (lambda x 

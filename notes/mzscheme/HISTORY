@@ -5,6 +5,8 @@ Changed vector-set-performance-stats! to accept an optional
  thread argument for thread-specific stats
 Mac OS Classic: file-size result no longer includes
  the resource-fork size
+Changed "scheme-<dialect>" script handling to add the script
+ path as an argument, which matches SRFI-22
 
 Version 204.2
 Added a super-new local form to (lib "class.ss")

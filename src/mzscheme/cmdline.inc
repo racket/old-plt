@@ -1008,9 +1008,10 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "If the executable name has the form scheme-<dialect>, then the command\n"
 	 " line is effectively prefixed with:\n"
 	 "    -qAerC '(require (lib \"init.ss\" \"script-lang\" \"<dialect>\"))'\n"
-	 " In addition, the first command-line argument is duplicated, so that is\n"
-	 " the name of a file and also the first argument to that file; the file\n"
-	 " should define `main', which is called with the arguments in a list.\n"
+	 " In addition, the first command-line argument is duplicated, so that it\n"
+	 " serves as both the name of a file and the first argument to that file;\n"
+	 " the file should define `main', which is called with the arguments in a\n"
+	 " list (starting with the loaded file name).\n"
 	 "For general information about " PROGRAM ", see:\n"
 	 "  http://www.plt-scheme.org/software/" PROGRAM_LC "/\n"
 	 );

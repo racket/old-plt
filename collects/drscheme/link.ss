@@ -34,21 +34,16 @@
 	     ((reference-unit/sig "rep.ss")
 	      mred mzlib print-convert aries zodiac
 	      interface snip language app basis edit)]
-	[frame : drscheme:frame^
-	       ((reference-unit/sig "frame.ss")
-		mred mzlib basis
-		setup unit compound-unit zodiac)]
-	[unit : drscheme:unit^
-	  ((reference-unit/sig "unit.ss")
-	   mred mzlib setup compound-unit frame edit rep
-	   language)]
-	[compound-unit : drscheme:compound-unit^
-	  ((reference-unit/sig "cunit.ss")
-	   mred mzlib unit frame)]
-	[tool : drscheme:tool^ 
+	[export : drscheme:export^ ((reference-unit/sig "export.ss")
+				    mred mzlib
+				    basis edit language rep setup
+				    zodiac)]
+	[tool : () 
 	      ((reference-unit/sig "tool.ss")
 	       mred mzlib print-convert zodiac (language : plt:parameters^)
-	       frame unit compound-unit)]
+	       export)]
 	[app : drscheme:app^ ((reference-unit/sig "app.ss")
-			      unit frame mred mzlib)])
+			      (export drscheme:unit) 
+			      (export drscheme:frame)
+			      mred mzlib)])
   (export (open app)))

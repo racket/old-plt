@@ -4,6 +4,7 @@
   (define transparent (make-object wx:brush% "WHITE" wx:const-transparent))
   (define transparent-pen (make-object wx:pen% "WHITE" 1 wx:const-transparent))
   (define gray (make-object wx:brush% "GREY" wx:const-solid))
+  (define blue (make-object wx:brush% "BLUE" wx:const-solid))
   (define black (make-object wx:brush% "BLACK" wx:const-solid))
   (define arrow-cursor (make-object wx:cursor% wx:const-cursor-arrow))
 
@@ -39,12 +40,19 @@
 		     (list (make-object wx:point% 0 (+ voffset offset))
 			   (make-object wx:point% sz (+ voffset offset))
 			   (make-object wx:point% (quotient sz 2) (+ width offset voffset)))))))])
+      (private
+	[get-width (lambda () (+ 2 size))]
+	[get-height (lambda () size)]
+	[clicked? #f]
+	[update
+	 (lambda ()
+	   (send (get-admin) needs-update this 0 0 (get-width) (get-height)))])
       (public
 	[get-extent (lambda (dc x y w h descent space lspace rspace)
 		      (super-get-extent dc x y w h descent space lspace rspace)
 		      (unless size (set-sizes dc))
-		      (unless (null? w) (set-box! w (+ 2 size)))
-		      (unless (null? h) (set-box! h size))
+		      (unless (null? w) (set-box! w (get-width)))
+		      (unless (null? h) (set-box! h (get-height)))
 		      (unless (null? descent) (set-box! descent 0))
 		      (unless (null? space) (set-box! space 0)))]
 	[partial-offset (lambda (dc x y len)
@@ -53,7 +61,7 @@
 	[draw (lambda (dc x y left top right bottom dx dy draw-caret)
 		(unless size (set-sizes dc))
 		(let ([b (send dc get-brush)])
-		  (send dc set-brush gray)
+		  (send dc set-brush (if clicked? blue gray))
 		  (let ([points (if on? down-points right-points)])
 		    (send dc draw-polygon points x y)
 		    (send dc draw-line 
@@ -63,10 +71,32 @@
 			  (+ y (send (cadr points) get-y))))
 		  (send dc set-brush b)))]
 	[size-cache-invalid (lambda () (set! size #f))]
-	[on-event (lambda (dc x y mediax mediay event)
-		    (when (send event button-down?)
-		      (on (not on?))
-		      (click-callback this)))]
+	[on-event
+	 (lambda (dc x y mediax mediay event)
+	   (let ([in-range?
+		  (and (<= 0 (- (send event get-x) x) (get-width))
+		       (<= 0 (- (send event get-y) y) (get-height)))])
+	     (cond
+	      [(send event button-down?)
+	       (when in-range?
+		 (unless clicked?
+		   (set! clicked? #t)
+		   (update)))]
+	      [(send event button-up?)
+	       (when clicked?
+		 (set! clicked? #f)
+		 (update))
+	       (when in-range?
+		 (on (not on?))
+		 (click-callback this))]
+	      [(send event dragging?)
+	       (unless (or (and clicked? in-range?)
+			   (and (not clicked?) (not in-range?)))
+		 (set! clicked? (not clicked?))
+		 (update))]
+	      [else (when clicked?
+		      (set! clicked? #f)
+		      (update))])))]
 	[on (case-lambda 
 	     [(v) (set! on? v) (send (get-admin) needs-update this 0 0 (add1 size) (add1 size))]
 	     [() on?])]

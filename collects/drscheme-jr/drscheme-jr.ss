@@ -135,13 +135,29 @@
 ;;;                 Setting the Flags                      ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (settings-path p)
+  (if p
+      (let-values ([(base name dir?) (split-path (path->complete-path p))])
+         base)
+      'same))
+
 (define (get-argv-file)
   (case (system-type)
     [(unix) "~/.drscheme-jr.settings"]
-    [(macos) (build-path (find-executable-path program "DrScheme Jr")
+    [(macos) (build-path (settings-path 
+			  (find-executable-path program "DrScheme Jr"))
 			 "DrScheme Jr Settings")]
-    [(windows) (build-path (find-executable-path program "DrScheme Jr.exe")
-			   "DrScheme Jr Settings.txt")]))
+    [(windows) 
+     (let* ([d (getenv "HOMEDRIVE")]
+	    [p (getenv "HOMEPATH")]
+	    [home (and d p
+		       (with-handlers ([void (lambda (x) #f)])
+			 (build-path d p)))])
+       (if (and home (directory-exists? home))
+	   (build-path home "DrScheme Jr Settings.txt")
+	   (build-path (settings-path 
+			(find-executable-path program "DrScheme Jr.exe"))			    
+		       "DrScheme Jr Settings.txt")))]))
 
 (with-handlers ([void void])
   (with-input-from-file (get-argv-file)

@@ -204,6 +204,8 @@ static Scheme_Config *make_initial_config(void);
 static int do_kill_thread(Scheme_Process *p);
 static int check_distinct_params(Scheme_Object *l);
 
+static void remove_process(Scheme_Process *r);
+
 static Scheme_Config *initial_config;
 
 static Scheme_Object **config_map;
@@ -978,7 +980,12 @@ void scheme_close_managed(Scheme_Manager *m)
 #ifndef NO_SCHEME_THREADS
   if ((p = do_close_managed(m))) {
     /* Kill self */
+# ifdef MZ_REAL_THREADS
+    remove_process(scheme_current_process);
+    SCHEME_EXIT_THREAD();
+# else
     scheme_kill_thread(p);
+# endif
   }
 #endif
 }
@@ -1175,7 +1182,6 @@ static void do_start_child(Scheme_Process *child, Scheme_Process *rtp,
   sc_rtp = rtp;
   sc_eval = child_eval;
 
-  start_child(sc_child, sc_rtp, sc_eval);
   {
     ThreadStartData *th = scheme_malloc(sizeof(ThreadStartData));
     
@@ -1970,6 +1976,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 
 void scheme_weak_suspend_thread(Scheme_Process *r)
 {
+#ifndef MZ_REAL_THREADS
   Scheme_Process *swap_to = r->next;
 
   if (r == scheme_first_process) {
@@ -1995,16 +2002,19 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
     if (r->running < 1)
       scheme_process_block(0);
   }
+#endif
 }
 
 void scheme_weak_resume_thread(Scheme_Process *r)
 {
+#ifndef MZ_REAL_THREADS
   if (r->running == 2) {
     r->running = 1;
     r->next = scheme_first_process;
     scheme_first_process = r;
     r->ran_some = 1;
   }
+#endif
 }
 
 Scheme_Object *scheme_branch_config(void)
@@ -2127,6 +2137,7 @@ void scheme_kill_thread(Scheme_Process *p)
   if (do_kill_thread(p)) {
 #ifdef MZ_REAL_THREADS
     /* Kill self: */
+    remove_process(scheme_current_process);
     SCHEME_EXIT_THREAD();
 #endif
   }

@@ -20,7 +20,9 @@
 
 #include "scheme.h"
 
-#define RUNSTACK_IS_GLOBAL
+#ifndef MZ_REAL_THREADS
+# define RUNSTACK_IS_GLOBAL
+#endif
 
 #ifdef RUNSTACK_IS_GLOBAL
 extern Scheme_Object **scheme_current_runstack;

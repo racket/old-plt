@@ -207,10 +207,12 @@ static void post_breakable_wait(void *data)
 }
 
 #if SEMAPHORE_WAITING_IS_COLLECTABLE
+# ifndef MZ_REAL_THREADS
 static int out_of_line(Scheme_Object *w)
 {
   return !((Scheme_Sema_Waiter *)w)->in_line;
 }
+# endif
 #endif
 
 int scheme_wait_sema(Scheme_Object *o, int just_try)
@@ -261,7 +263,8 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	if (sema->last)
 	  sema->last->next = w;
 	else
-	  sema->first = sema->last = w;
+	  sema->first = w;
+	sema->last = w;
 	w->next = NULL;
 
 	if (!scheme_current_process->next) {
@@ -285,9 +288,11 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	  
 	  scheme_process_block(0);
 	} else {
-	  /* The semaphore picked us to go */
-	  --sema->value;
-	  break;
+	  if (sema->value) {
+	    /* The semaphore picked us to go, but someone stole the post! */
+	    --sema->value;
+	    break;
+	  }
 	}
       }
 # else

@@ -11,8 +11,8 @@ How may we help you?
 
 <LI> <A MZSCHEME="(require-library |manuals.ss| |help|)">View installed manuals</A>
 
-<LI> <!-- MZSCHEME="(format |<A HREF=\|~a\|>Read MzScheme release notes</A>| (build-path (collection-path |mzlib|) 'up 'up |notes| |mzscheme| |HISTORY|))" -->
-<LI> <!-- MZSCHEME="(format |<A HREF=\|~a\|>Read MrEd release notes</A>| (build-path (collection-path |mzlib|) 'up 'up |notes| |mred| |MrEd_100.txt|))" -->
+<LI> <!-- MZSCHEME="(format |<A HREF=\|file:~a\|>Read MzScheme release notes</A>| (build-path (collection-path |mzlib|) 'up 'up |notes| |mzscheme| |HISTORY|))" -->
+<LI> <!-- MZSCHEME="(format |<A HREF=\|file:~a\|>Read MrEd release notes</A>| (build-path (collection-path |mzlib|) 'up 'up |notes| |mred| |MrEd_100.txt|))" -->
 
 <LI> <A MZSCHEME="(parameterize ([current-custodian (make-custodian)][current-eventspace (make-eventspace)]) (queue-callback (lambda () (exit-handler void) (require-library |games.ss| |games|))))">Play a game</A>
 

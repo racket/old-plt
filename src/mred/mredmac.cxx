@@ -740,7 +740,7 @@ void MrEdDispatchEvent(EventRecord *e)
     GetWindowBounds(w,kWindowContentRgn,&windowBounds);
     OffsetRgn(copied,-1 * windowBounds.left,-1 * windowBounds.top);
     SetOrigin(0,0);
-    InvalWindowRgn(w,copied); 
+    InvalWindowRgn(w,copied);  // SET-ORIGIN FLAGGED
 #else
  	if (!((WindowRecord *)w)->updateRgn)
  	  ((WindowRecord *)w)->updateRgn = rgn;
@@ -797,7 +797,7 @@ void MrEdMacSleep(float secs)
     Point pt;
     GetMouse(&pt);
     LocalToGlobal(&pt);
-    ::SetRectRgn(rgn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1);
+    ::SetRectRgn(rgn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); // SET-ORIGIN FLAGGED
   }
 #else
   RgnHandle rgn = NULL;

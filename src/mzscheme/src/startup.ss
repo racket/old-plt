@@ -148,7 +148,9 @@
 	   ((normal)
 	    (lambda (x old)
 	      (if (eq? x old)
-		  (if (stx-null? x) x (list (quote quote) x))
+		  (if (stx-null? x) 
+		      (quote-syntax ())
+		      (list (quote-syntax quote) x))
 		  x))))
 	(datum->syntax-object
 	 (quote-syntax here)
@@ -174,7 +176,7 @@
 					    #f)
 					x
 					(list
-					 (quote cons)
+					 (quote-syntax cons)
 					 (normal first old-first)
 					 (normal second old-second)))))))))))
 		    (if (stx-pair? x)
@@ -189,7 +191,7 @@
 					(((g35) (not (stx-pair? rest))))
 				      (if g35 g35 (not (stx-null? (stx-cdr rest)))))
 				    (raise-syntax-error
-				     (quote unquote)
+				     'unquote
 				     "takes exactly one expression"
 				     in-form))
 				(if (zero? level)
@@ -203,7 +205,7 @@
 					  (stx-list? x)
 					  #f)
 				      (raise-syntax-error
-				       (quote unquote-splicing)
+				       'unquote-splicing
 				       "invalid context within quasiquote"
 				       in-form)
 				      (if (if (stx-pair? first)
@@ -220,7 +222,7 @@
 						      g34
 						      (not (stx-null? (stx-cdr rest)))))
 						(raise-syntax-error
-						 (quote unquote-splicing)
+						 'unquote-splicing
 						 "takes exactly one expression"
 						 in-form))
 					    (let-values
@@ -232,7 +234,7 @@
 						      (((l) (normal l old-l)))
 						    (let-values
 							()
-						      (list (quote append) uqsd l)))
+						      (list (quote-syntax append) uqsd l)))
 						  (let-values
 						      (((restx) (qq-list rest (sub1 level))))
 						    (let-values
@@ -242,12 +244,10 @@
 							      #f)
 							  x
 							  (list
-							   (quote cons)
+							   (quote-syntax cons)
 							   (list
-							    (quote cons)
-							    (list
-							     (quote quote)
-							     (quote unquote-splicing))
+							    (quote-syntax cons)
+							    (quote-syntax (quote unquote-splicing))
 							    (normal restx rest))
 							   (normal l old-l))))))))
 					  (qq-list x level))))))
@@ -262,7 +262,7 @@
 				    ()
 				  (if (eq? l l2)
 				      x
-				      (list (quote list->vector) l2)))))
+				      (list (quote-syntax list->vector) l2)))))
 			    (if (if (syntax? x) (box? (syntax-e x)) #f)
 				(let-values
 				    (((v) (unbox (syntax-e x))))
@@ -272,7 +272,7 @@
 					()
 				      (if (eq? v qv)
 					  x
-					  (list (quote box) qv)))))
+					  (list (quote-syntax box) qv)))))
 				x)))))))
 	    (qq form 0))
 	  form)
@@ -348,7 +348,7 @@
 		(raise-syntax-error 'cond msg in-form at))])
 	 (let loop ([tests form])
 	   (if (stx-null? tests)
-	       '(void)
+	       (quote-syntax (void))
 	       (if (not (stx-pair? tests))
 		   (serror
 		    "bad syntax (body must contain a list of pairs)"
@@ -372,22 +372,22 @@
 						   #t 
 						   test)]
 					 [gen (gensym)])
-				     `(let ([,gen ,test])
-					(if ,gen
+				     `(,(quote-syntax let) ([,gen ,test])
+					(,(quote-syntax if) ,gen
 					    (,(stx-car (stx-cdr value)) ,gen)
 					    ,(loop rest))))
 				   (serror
 				    "bad syntax (bad clause form with =>)"
 				    line))
 			       (if else?
-				   (cons 'begin value)
+				   (cons (quote-syntax begin) value)
 				   (if (stx-null? value)
 				       (let ([gen (gensym)])
-					 `(let ([,gen ,test])
-					    (if ,gen ,gen ,(loop rest))))
+					 `(,(quote-syntax let) ([,gen ,test])
+					    (,(quote-syntax if) ,gen ,gen ,(loop rest))))
 				       (list
-					'if test
-					(cons 'begin value)
+					(quote-syntax if) test
+					(cons (quote-syntax begin) value)
 					(loop rest))))))))))))
        in-form)))
 

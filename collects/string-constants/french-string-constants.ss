@@ -528,7 +528,7 @@
  (beginning-student "Etudiant niveau débutant")
  (beginning-student/abbrev "Etudiant niveau débutant avec abréviations pour les listes")
  (intermediate-student "Etudiant niveau intermédiaire")
- (intermediate-student/lambda "Etudiant niveau intermédiaire, plus Lambda")
+ (intermediate-student/lambda "Etudiant niveau intermédiaire, plus lambda")
  (advanced-student "Etudiant niveau avancé")
  (full-language "Complet") ;; also in the HtDP languages section
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...

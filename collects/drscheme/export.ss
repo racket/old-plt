@@ -9,6 +9,7 @@
 			   [init : drscheme:init^]
 			   [interface : drscheme:interface^]
 			   [face : drscheme:face^]
+			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
   (link [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
@@ -25,7 +26,7 @@
 		(mzlib function))]
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
-	      framework mred mzlib print-convert zodiac
+	      mred mzlib framework print-convert zodiac
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
@@ -34,12 +35,12 @@
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
 	   mred mzlib framework app compound-unit* frame edit rep
-	   language get/extend face)]
+	   language get/extend face graph)]
 	[compound-unit* : drscheme:compound-unit^
 	  ((require-relative-library "cunit.ss")
-	   mred mzlib unit frame face)]
+	   mred mzlib framework graph unit frame face)]
 	[signature : drscheme:signature^ ((require-relative-library "sig.ss")
-					  mred)]
+					  mred framework)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^
 		    ((require-relative-library "params.ss") 

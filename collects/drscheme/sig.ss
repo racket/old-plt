@@ -1,7 +1,9 @@
 (unit/sig drscheme:signature^
-  (import [mred : mred^])
+  (import [mred : mred^]
+	  [fw : framework^])
+
   (define frame%
-    (class mred:empty-frame% (filename)
+    (class fw:frame:basic% (filename)
       (inherit panel)
       (private
 	[signatures-names null]
@@ -9,8 +11,8 @@
 	 (lambda (name)
 	   (let* ([vp (make-object mred:horizontal-panel% panel)]
 		  [hp (make-object mred:horizontal-panel% vp)]
-		  [body (make-object mred:media-canvas% vp)]
-		  [edit (make-object mred:media-edit%)]
+		  [body (make-object mred:editor-canvas% vp)]
+		  [edit (make-object mred:text%)]
 		  [button-callback
 		   (let ([shown? #f])
 		     (lambda (button)
@@ -26,6 +28,6 @@
 		       (set! shown? (not shown?))))])
 	     (make-object mred:message% name)
 	     (button-callback
-	      (make-object mred:button% hp "" (lambda (b e) (button-callback b))))
-	     (send body set-media edit)))])
+	      (make-object mred:button% "" hp (lambda (b e) (button-callback b))))
+	     (send body set-editor edit)))])
       (sequence (super-init)))))

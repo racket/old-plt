@@ -6,13 +6,6 @@
 	  [mzlib : mzlib:core^])
 
 
-     (lambda (x)
-       (if (subclass? x wx:media-edit%)
-	   x
-	   (error 'current-definitions-edit% 
-		  "expected a subclass of wx:edit%, got: ~a"
-		  x)))
-
   (define make-extender
     (lambda (base%)
       (let ([extensions (lambda (x) x)]
@@ -32,7 +25,7 @@
 	   (when built-yet?
 	     (error 'extender "cannot build a new extension of ~a after initialization"
 		    base%))
-	   (set! extensions (mzlib:function@:compose 
+	   (set! extensions (mzlib:function:compose 
 			     (verify extension)
 			     extensions)))
 	 (lambda ()

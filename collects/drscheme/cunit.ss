@@ -1,17 +1,17 @@
 (unit/sig drscheme:compound-unit^
   (import [mred : mred^]
 	  [mzlib : mzlib:core^]
+	  [fw : framework^]
+	  [drscheme:graph : drscheme:graph^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:frame : drscheme:frame^]
 	  [drscheme:face : drscheme:face^])
   
-  (define BLACK-PEN (send wx:the-pen-list find-or-create-pen
-			  "BLACK" 0 wx:const-solid))
-  (define WHITE-BRUSH (send wx:the-brush-list find-or-create-brush
-			    "WHITE" wx:const-solid))
+  (define BLACK-PEN (send mred:the-pen-list find-or-create-pen "BLACK" 0 'solid))
+  (define WHITE-BRUSH (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
   
   (define project-pasteboard%
-    (class mred:graph-pasteboard% (unit . args)
+    (class drscheme:graph:graph-pasteboard% (unit . args)
       (inherit find-first-snip get-snip-location get-frame get-canvas
 	       find-next-selected-snip get-dc find-snip
 	       invalidate-bitmap-cache begin-write-header-footer-to-file
@@ -60,8 +60,7 @@
   
   (define super-frame% 
     (drscheme:frame:make-frame%
-     (mred:make-info-frame%
-      mred:simple-menu-frame%)))
+     fw:frame:pasteboard-info%))
   
   (define frame%
     (class* super-frame% (drscheme:face:compound-unit-frameI) (unit)
@@ -83,7 +82,7 @@
 	   (super-update-shown)
 	   (send panel change-children
 		 (lambda (l)
-		   (let ([removed (mzlib:function@:remq eval-panel l)])
+		   (let ([removed (mzlib:function:remq eval-panel l)])
 		     (if (send show-menu checked? evaluation-order-id)
 			 (cons eval-panel removed)
 			 removed)))))]
@@ -130,7 +129,7 @@
       
       (public
 	[get-panel% (lambda () mred:horizontal-panel%)]
-	[get-canvas% (lambda () mred:media-canvas%)]
+	[get-canvas% (lambda () mred:editor-canvas%)]
 	[get-edit% (lambda () project-pasteboard%)]
 	[get-edit (lambda () (send unit get-buffer))])
       
@@ -148,7 +147,7 @@
 	(show #t))))
   
   (define snip%
-    (class* mred:node-snip% (drscheme:face:compound-unit-snipI) (unit)
+    (class* drscheme:graph:node-snip% (drscheme:face:compound-unit-snipI) (unit)
       (inherit width height set-width set-height invalidate-to)
       (rename [super-draw draw])
       (public
@@ -242,7 +241,7 @@
   (define (make-compound-unit filename . collections)
     (apply make-object compound-unit% filename collections))
 
-  (mred:insert-format-handler "Compound Units"
-			      (list "cut")
-			      (opt-lambda (name)
-				(make-object frame% name #f))))
+  (fw:handler:insert-format-handler "Compound Units"
+				    (list "cut")
+				    (opt-lambda (name)
+				      (make-object frame% name #f))))

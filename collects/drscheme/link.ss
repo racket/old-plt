@@ -21,10 +21,11 @@
 		   (mzlib file))]
 	[edit : drscheme:edit^ ((require-relative-library "edit.ss") framework aries zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
+	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]
 	[export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib framework print-convert app
 				     edit language snip
-				     init interface face
+				     init interface face graph
 				     aries zodiac)]
 	[language : drscheme:language^
 		  ((require-relative-library "language.ss") mred 

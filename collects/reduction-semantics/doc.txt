@@ -165,6 +165,18 @@ This function accepts a reduction, a language, the name of a
 non-terminal in the language and returns the compatible
 closure of the reduction for the specified non-terminal.
 
+> context-closure : (red?
+                     compiled-lang?
+                     any
+                     . -> .
+                     red?)
+
+This function accepts a reduction, a language, a pattern
+representing a context (ie, that can be used as the first
+argument to `in-hole'; often just a non-terminal) in the
+language and returns the closure of the reduction
+in that context.
+
 > replace : (any? hole-binding? any? . -> . any)
 
 The first argument to this function is an sexpression to

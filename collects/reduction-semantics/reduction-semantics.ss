@@ -19,7 +19,12 @@
                         compiled-lang?
                         symbol?
                         . -> .
-                        (lambda (x) (red? x)))))
+                        (lambda (x) (red? x))))
+   (context-closure ((lambda (x) (red? x))
+                     compiled-lang?
+                     any?
+                     . -> .
+                     (lambda (x) (red? x)))))
   
   ;; type red = (make-red compiled-pat ((listof (cons sym tst)) -> any)
   (define-struct red (contractum reduct))
@@ -30,10 +35,13 @@
       (make-red (compile-pattern/cross lang contractum allow-cross?) reduct)))
   
   (define (compatible-closure red lang nt)
-    (let ([new-name (gensym 'compatible-closure-context)])
+    (context-closure red lang `(cross ,nt)))
+  
+  (define (context-closure red lang pattern)
+    (let ([new-name (gensym 'context-closure)])
       (make-red (compile-pattern/cross
                  lang
-                 `(in-hole (name ,new-name (cross ,nt))
+                 `(in-hole (name ,new-name ,pattern)
                            ,(red-contractum red))
                  #t)
                 (lambda (bindings)

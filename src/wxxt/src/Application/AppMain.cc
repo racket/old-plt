@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
+ * $Id: AppMain.cc,v 1.2 1998/01/30 15:20:32 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -235,7 +235,7 @@ int wxEntry(int argc, char *argv[])
     }
 
     for (int i = ate + 1; i < argc; i++)
-      argv[i] = argv[i + ate];
+      argv[i - ate] = argv[i];
     argc -= ate;
 
     XtGetApplicationResources(wxAPP_TOPLEVEL, 

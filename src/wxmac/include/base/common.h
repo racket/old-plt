@@ -279,6 +279,7 @@ enum {
   wxVERTICAL_HATCH,
 #define IS_HATCH(s)	((s)>=wxBDIAGONAL_HATCH && (s)<=wxVERTICAL_HATCH)
   wxOPAQUE_STIPPLE,
+  wxPANEL_PATTERN,
 
   wxJOIN_BEVEL =     120,
   wxJOIN_MITER,

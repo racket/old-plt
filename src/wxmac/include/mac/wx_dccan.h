@@ -28,6 +28,7 @@ class wxCanvasDC: public wxbCanvasDC
   // for drawing calls to work
 
   int dc_set_depth;
+  int paint_brush_with_erase; // used for wxPANEL_PATTERN brushes
 
   int pixmapWidth;
   int pixmapHeight;

@@ -541,12 +541,14 @@ void wxFrame::NowFront(Bool flag) // mac platform only
       else {
 	if (!close_menu_bar) {
 	  close_menu_bar = new wxMenuBar;
+#ifndef OS_X
 	  /* When a frame doesn't have a menubar, doMacInMenuBar
 	     assumes that any menulelection is the close item. */
 	  wxMenu *file = new wxMenu();
 	  file->Append(1, "Close\tCmd+W");
 	  wxREGGLOB(close_menu_bar);
 	  close_menu_bar->Append(file, "File");
+#endif
 	}
 	close_menu_bar->Install();
       }

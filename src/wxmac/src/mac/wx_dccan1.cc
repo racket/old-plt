@@ -499,23 +499,31 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
   case kBrushTool:
     {
       int theBrushStyle = current_brush->GetStyle();
-      int log = theBrushStyle == wxXOR ? patXor : patCopy;
-      if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
-	PenPat(GetBlackPattern());
-      else if (theBrushStyle == wxTRANSPARENT)
-	PenPat(GetWhitePattern());
-      else if (IS_HATCH(theBrushStyle)) {
-	macGetHatchPattern(theBrushStyle, &cMacPattern);
-	PenPat(&cMacPattern);
-	log = patOr;
+      if (theBrushStyle == wxPANEL_PATTERN) {
+	int depth;
+	depth = wxDisplayDepth();
+	SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);
+	paint_brush_with_erase = 1;
       } else {
-	PenPat(GetBlackPattern());
-      }
+	int log = theBrushStyle == wxXOR ? patXor : patCopy;
+	if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
+	  PenPat(GetBlackPattern());
+	else if (theBrushStyle == wxTRANSPARENT)
+	  PenPat(GetWhitePattern());
+	else if (IS_HATCH(theBrushStyle)) {
+	  macGetHatchPattern(theBrushStyle, &cMacPattern);
+	  PenPat(&cMacPattern);
+	  log = patOr;
+	} else {
+	  PenPat(GetBlackPattern());
+	}
 	
-      InstallColor(current_background_color, FALSE);
-      BackPat(GetWhitePattern());
-      InstallColor(current_brush->GetColour(), TRUE);
-      PenMode(log);
+	InstallColor(current_background_color, FALSE);
+	BackPat(GetWhitePattern());
+	InstallColor(current_brush->GetColour(), TRUE);
+	PenMode(log);
+	paint_brush_with_erase = 0;
+      }
     }
     break;
   case kPenTool:

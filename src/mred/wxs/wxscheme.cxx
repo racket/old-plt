@@ -1393,7 +1393,9 @@ static Scheme_Object *ApplicationPrefProc(int n, Scheme_Object *p[])
 
 static Scheme_Object *DefaultAppAboutProc(int, Scheme_Object **)
 {
+#ifdef wx_mac
   wxTheApp->DoDefaultAboutItem();
+#endif
   return scheme_void;
 }
 

@@ -23,6 +23,8 @@ MenuHandle wxHelpMenu;
 
 void wxSetUpAppleMenu(wxMenuBar *mbar);
 
+extern int wxCan_Do_Pref();
+
 #define USE_HELP_MENU_HACK 0
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -670,24 +672,37 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
       mbar->wxHelpHackMenu->CreateCopy(NULL, FALSE, wxHelpMenu);
   }
 #endif        
+
+ {
+   MenuRef mnu;
+   MenuItemIndex idx;
+   if (!GetIndMenuItemWithCommandID (NULL, 'quit', 1, &mnu, &idx)) {
+     SetMenuItemCommandKey(mnu, idx, FALSE, 'Q');
+   }
+
+   if (wxCan_Do_Pref())
+     EnableMenuCommand(NULL, 'pref');
+   else
+     DisableMenuCommand(NULL, 'pref');
+ }
 }
 
 void wxMenuBar::Install(void)
 {
   ::ClearMenuBar();
   wxSetUpAppleMenu(this);
-  for (int i = 0; i < n; i ++)
-    {
-      wxMenu* menu = menus[i];
-      if (menu != wxHelpHackMenu) {
-	::InsertMenu(menu->MacMenu(), 0);
-	menu->wxMacInsertSubmenu();
-	if (!menu->IsEnable() || (menu_bar_frame && !menu_bar_frame->CanAcceptEvent()))
-	  ::DisableMenuItem(menu->MacMenu(), 0);
-	else
-	  ::EnableMenuItem(menu->MacMenu(), 0);
-      }
+  for (int i = 0; i < n; i ++) {
+    wxMenu* menu = menus[i];
+    if (menu != wxHelpHackMenu) {
+      ::InsertMenu(menu->MacMenu(), 0);
+      menu->wxMacInsertSubmenu();
+      if (!menu->IsEnable() || (menu_bar_frame && !menu_bar_frame->CanAcceptEvent()))
+	::DisableMenuItem(menu->MacMenu(), 0);
+      else
+	::EnableMenuItem(menu->MacMenu(), 0);
     }
+  }
+
   wxInvalMenuBar();
   last_installed_bar = this;
 }

@@ -44,6 +44,10 @@ extern void wxDoEvents();
 extern void wxDoNextEvent();
 extern int wxEventReady();
 
+extern void Drop_Quit();
+extern void wxDo_Pref();
+extern void wxDo_About();
+
 extern CGrafPtr gMacFontGrafPort;
 
 extern int wxNumHelpItems;
@@ -495,8 +499,7 @@ void wxApp::doMacKeyUpDown(Bool down)
     if (!theMacWxFrame || theMacWxFrame->CanAcceptEvent())
       if (cCurrentEvent.modifiers & cmdKey) { // is menu command key equivalent ?
 	if (cCurrentEvent.what == keyDown) { // ignore autoKey
-	  char key = cCurrentEvent.message & charCodeMask;
-	  long menuResult = MenuKey(key);
+	  long menuResult = MenuEvent(&cCurrentEvent);
 	  if (menuResult) {
 	    if (doMacInMenuBar(menuResult, TRUE))
 	      return;
@@ -515,7 +518,7 @@ void wxApp::doMacKeyUpDown(Bool down)
   static Handle ScriptH = NULL;
   static short region_code = 1;
 
-  if (!ScriptH) { // tom: don't guess the regioncode!!!!
+  if (!ScriptH) {
     struct ItlbRecord * r;
     ScriptH = GetResource('itlb',0);
     if (ScriptH) {
@@ -787,29 +790,49 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 
   if (macMenuId == 0) 					// no menu item selected;
     return FALSE;
-  if (macMenuId == 128) {
-    if (macMenuItemNum != 1) {			// if not the "About" entry (or the separator)
-#ifndef WX_CARBON
-      // these (apparently) don't happen under OS X                
-      Str255		daName;
-      GetMenuItemText(GetMenuHandle(128), macMenuItemNum, daName);
-      (void) OpenDeskAcc(daName);
+
+  // Check for the standard menu items:
+  {
+    MenuRef mnu;
+    MenuItemIndex idx;
+    
+    if (macMenuId == 128) {
+      // Must be "About..."
+      wxDo_About();
       HiliteMenu(0); // unhilite the hilited menu
-#endif                        
       return TRUE;
+    }
+
+    if (!GetIndMenuItemWithCommandID(NULL, 'quit', 1, &mnu, &idx)) {
+      if ((macMenuId == GetMenuID(mnu)) && (macMenuItemNum == idx)) {
+	Drop_Quit();
+	HiliteMenu(0); // unhilite the hilited menu
+	return TRUE;
+      }
+    }
+    
+    if (!GetIndMenuItemWithCommandID(NULL, 'pref', 1, &mnu, &idx)) {
+      if ((macMenuId == GetMenuID(mnu)) && (macMenuItemNum == idx)) {
+	wxDo_Pref();
+	HiliteMenu(0); // unhilite the hilited menu
+	return TRUE;
+      }
+    }
+    
+    if (!GetIndMenuItemWithCommandID(NULL, 'hide', 1, &mnu, &idx)) {
+      if ((macMenuId == GetMenuID(mnu)) && (macMenuItemNum == idx)) {
+	/* Hide application */
+	
+	HiliteMenu(0); // unhilite the hilited menu
+	return TRUE;
+      }
     }
   }
 
   WindowPtr theMacWindow = ::FrontWindow();
   if (!theMacWindow) {
-    if (macMenuId == 128) {
-      // Must be "About..."
-      DoDefaultAboutItem();
-      HiliteMenu(0); // unhilite the hilited menu
-    } else {
-      // Must be quit
-      exit(0);
-    }
+    // Must be quit
+    exit(0);
     return TRUE;
   }
   
@@ -818,33 +841,27 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 
   wxMenuBar* theWxMenuBar = theMacWxFrame->wx_menu_bar;
   if (!theWxMenuBar) {
-    /* Must be the About or Close item. */
-    if (macMenuId == 128) {
-      DoDefaultAboutItem();
-      HiliteMenu(0); // unhilite the hilited menu
-    } else {
-      if (theMacWxFrame->IsModal()) {
-	/* this is really a dialog */
-	wxChildNode *node2;
-	wxChildList *cl;
-	cl = theMacWxFrame->GetChildren();
-	node2 = cl->First();
-	if (node2) {
-	  wxDialogBox *d;
-	  d = (wxDialogBox *)node2->Data();
-	  if (d) {
-	    if (d->OnClose())
-	      d->Show(FALSE);
-	  }
+    /* Must be the Close item. See wx_frame.cxx. */
+    if (theMacWxFrame->IsModal()) {
+      /* this is really a dialog */
+      wxChildNode *node2;
+      wxChildList *cl;
+      cl = theMacWxFrame->GetChildren();
+      node2 = cl->First();
+      if (node2) {
+	wxDialogBox *d;
+	d = (wxDialogBox *)node2->Data();
+	if (d) {
+	  if (d->OnClose())
+	    d->Show(FALSE);
 	}
-      } else {
-	if (theMacWxFrame->OnClose())
-	  theMacWxFrame->Show(FALSE);
       }
-      HiliteMenu(0); // unhilite the hilited menu
+    } else {
+      if (theMacWxFrame->OnClose())
+	theMacWxFrame->Show(FALSE);
     }
+    HiliteMenu(0); // unhilite the hilited menu
     return TRUE;
-    // wxFatalError("No wxMenuBar for wxFrame.");
   }
   
   if (externOnly) {
@@ -860,15 +877,17 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
       macMenuItemNum -= wxNumHelpItems;
     } else
       return TRUE;
-  } else if (macMenuId == 128 && macMenuItemNum == 1) {
-    // This will Help/About selection
-    if ((theWxMenu = theWxMenuBar->wxHelpHackMenu)
-	&& theWxMenuBar->iHelpMenuHackNum) {
-      macMenuItemNum = theWxMenuBar->iHelpMenuHackNum;
-    } else {
-      DoDefaultAboutItem();
-      HiliteMenu(0); // unhilite the hilited menu
-      return TRUE;
+  } else if (macMenuId == 128) {
+    if (macMenuItemNum == 1) {
+      // This will Help/About selection
+      if ((theWxMenu = theWxMenuBar->wxHelpHackMenu)
+	  && theWxMenuBar->iHelpMenuHackNum) {
+	macMenuItemNum = theWxMenuBar->iHelpMenuHackNum;
+      } else {
+	wxDo_About();
+	HiliteMenu(0); // unhilite the hilited menu
+	return TRUE;
+      }
     }
   } else {
     theWxMenu = theWxMenuBar->wxMacFindMenu(macMenuId);

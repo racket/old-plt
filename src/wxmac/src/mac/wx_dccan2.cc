@@ -255,7 +255,10 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
     if (!rgn) {
       wxMacSetCurrentTool(kBrushTool);
-      PaintArc(&rect, alpha1, alpha2);
+      if (paint_brush_with_erase)
+	EraseArc(&rect, alpha1, alpha2);
+      else
+	PaintArc(&rect, alpha1, alpha2);
     }
   }
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
@@ -324,7 +327,10 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
     {
       if (!rgn) {
 	if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
-	PaintPoly(thePolygon);
+	if (paint_brush_with_erase)
+	  ErasePoly(thePolygon);
+	else
+	  PaintPoly(thePolygon);
       }
     }
 
@@ -437,7 +443,10 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
     if (!rgn) {
       wxMacSetCurrentTool(kBrushTool);
-      PaintRect(&theRect);
+      if (paint_brush_with_erase)
+	EraseRect(&theRect);
+      else
+	PaintRect(&theRect);
     }
   }
 
@@ -488,7 +497,10 @@ void wxCanvasDC::DrawRoundedRectangle
     {
       if (!rgn) {
 	wxMacSetCurrentTool(kBrushTool);
-	PaintRoundRect(&theRect, phys_rwidth, phys_rheight);
+	if (paint_brush_with_erase)
+	  EraseRoundRect(&theRect, phys_rwidth, phys_rheight);
+	else
+	  PaintRoundRect(&theRect, phys_rwidth, phys_rheight);
       }
     }
 
@@ -526,7 +538,10 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
     if (!rgn) {
       wxMacSetCurrentTool(kBrushTool);
-      PaintOval(&theRect);
+      if (paint_brush_with_erase)
+	EraseOval(&theRect);
+      else
+	PaintOval(&theRect);
     }
   }
 

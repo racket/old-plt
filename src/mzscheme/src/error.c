@@ -1994,7 +1994,7 @@ def_exn_handler(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-static Scheme_Object *scheme_special_comment_width(Scheme_Object *o)
+Scheme_Object *scheme_special_comment_width(Scheme_Object *o)
 {
   if (SAME_TYPE(SCHEME_TYPE(o), scheme_structure_type)
       && scheme_is_struct_instance(exn_table[MZEXN_SPECIAL_COMMENT].type, o))

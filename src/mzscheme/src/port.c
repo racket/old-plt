@@ -1547,7 +1547,7 @@ typedef struct {
   Scheme_Object *exn_handler;
 } Read_Special_DW;
 
-static Scheme_Object *read_special_exn_handler(Scheme_Object *e, int argc, Scheme_Object **argv)
+static Scheme_Object *read_special_exn_handler(void *e, int argc, Scheme_Object **argv)
 {
   Read_Special_DW *rs = (Read_Special_DW *)e;
 
@@ -1570,6 +1570,7 @@ static void pre_read_special(void *e)
 {
   Read_Special_DW *rs = (Read_Special_DW *)e;
   Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *my_handler;
 
   /* In case there's a recursive call to `read', save the "quick" param vals
      and restore them afterward */
@@ -1586,10 +1587,10 @@ static void pre_read_special(void *e)
 
   rs->exn_handler = scheme_get_param(p->config, MZCONFIG_EXN_HANDLER);
   
-  my_handler = scheme_make_close_prim_w_arity(read_special_exn_handler,
-					      rs,
-					      "read-special-exception-handler",
-					      1, 1);
+  my_handler = scheme_make_closed_prim_w_arity(read_special_exn_handler,
+					       rs,
+					       "read-special-exception-handler",
+					       1, 1);
 
   scheme_set_param(p->config, MZCONFIG_EXN_HANDLER, my_handler);
 
@@ -1638,14 +1639,12 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 				  Scheme_Object *src, long line, long col, long pos,
 				  Scheme_Object **exn)
 {
-  Scheme_Object *r, *val, *pd, *f, *a[4];
+  Scheme_Object *r, *val, *pd, *a[4];
   Scheme_Input_Port *ip;
   long pos_delta;
   Read_Special_DW *rs;
   GC_CAN_IGNORE const char *who;
   
-  Scheme_Thread *p = scheme_current_thread;
-
   SCHEME_USE_FUEL(1);
 
   ip = (Scheme_Input_Port *)port;
@@ -1694,7 +1693,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
   r = scheme_dynamic_wind(pre_read_special,
 			  do_read_special,
 			  post_read_special,
-			  NULL,
+			  handle_call_ec,
 			  rs);
 
   if (rs->exn) {

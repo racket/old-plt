@@ -1772,7 +1772,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
 extern int scheme_exiting_result;
 
-static Scheme_Object *scheme_special_comment_width(Scheme_Object *o);
+Scheme_Object *scheme_special_comment_width(Scheme_Object *o);
 
 /*========================================================================*/
 /*                         filesystem utilities                           */

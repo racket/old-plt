@@ -468,3 +468,8 @@ bool all;
     if (GC_push_last_roots != 0) (*GC_push_last_roots)();
 }
 
+/* MATTHEW */
+void GC_flush_mark_stack()
+{
+  while (!GC_mark_stack_empty()) GC_mark_from_mark_stack();
+}

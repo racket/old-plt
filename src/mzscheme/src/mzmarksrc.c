@@ -812,6 +812,14 @@ buf_holder {
   gcBYTES_TO_WORDS(sizeof(Scheme_Jumpup_Buf_Holder));
 }
 
+mark_inspector {
+ mark:
+  Scheme_Inspector *i = (Scheme_Inspector *)p;
+  gcMARK(i->superior);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
 END type;
 
 /**********************************************************************/
@@ -1501,14 +1509,6 @@ mark_struct_proc_info {
 
  size:
   gcBYTES_TO_WORDS(sizeof(Struct_Proc_Info));
-}
-
-mark_inspector {
- mark:
-  Scheme_Inspector *i = (Scheme_Inspector *)p;
-  gcMARK(i->superior);
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
 }
 
 mark_struct_property {

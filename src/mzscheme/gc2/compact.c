@@ -65,7 +65,8 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
+#define CHECK_STACK_PTRS 0
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
@@ -3313,9 +3314,42 @@ void GC_fixup_variable_stack(void **var_stack,
 }
 
 #if CHECKS
-void check_variable_stack()
+# ifdef CHECK_STACK_PTRS
+static void check_ptr(void **a)
+{
+  void *p = *a;
+  MPage *page;
+
+  if (!mpage_maps) return;
+
+  page = find_page(p);
+  if (page) {
+    if (page->type == MTYPE_TAGGED) {
+      Type_Tag tag;
+
+      tag = *(Type_Tag *)p;
+      if ((tag < 0) || (tag >= _num_tags_) 
+	  || (!size_table[tag] 
+	      && (tag != weak_box_tag)
+	      && (tag != gc_weak_array_tag)
+	      && (tag != gc_on_free_list_tag))) {
+	printf("bad tag: %d at %lx, references from %lx\n", tag, (long)p, (long)a);
+	fflush(NULL);
+	CRASH(7);
+      }
+
+    }
+  }
+}
+# endif
+
+static void check_variable_stack()
 {
   void **limit, **var_stack;
+# ifdef CHECK_STACK_PTRS
+  long size, count;
+  void ***p, **a;
+# endif
 
   limit = (void **)(GC_get_thread_stack_base
 		    ? GC_get_thread_stack_base()
@@ -3323,12 +3357,38 @@ void check_variable_stack()
 
   var_stack = GC_variable_stack;
 
-  while (var_stack) {
-    if (var_stack == limit)
+  while (var_stack) {    if (var_stack == limit)
       return;
 
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
       CRASH(33);
+
+# ifdef CHECK_STACK_PTRS
+    size = *(long *)(var_stack + 1);
+
+    oo_var_stack = o_var_stack;
+    o_var_stack = var_stack;
+
+    p = (void ***)(var_stack + 2);
+    
+    while (size--) {
+      a = *p;
+      if (!a) {
+	/* Array */
+	count = ((long *)p)[2];
+	a = ((void ***)p)[1];
+	p += 2;
+	size -= 2;
+	while (count--) {
+	  check_ptr(a);
+	  a++;
+	}
+      } else {
+	check_ptr(a);
+      }
+      p++;
+    }
+#endif
 
     var_stack = *var_stack;
   }

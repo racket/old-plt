@@ -2109,6 +2109,29 @@ int buf_holder_FIXUP(void *p) {
 #define buf_holder_IS_CONST_SIZE 1
 
 
+int mark_inspector_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
+int mark_inspector_MARK(void *p) {
+  Scheme_Inspector *i = (Scheme_Inspector *)p;
+  gcMARK(i->superior);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
+int mark_inspector_FIXUP(void *p) {
+  Scheme_Inspector *i = (Scheme_Inspector *)p;
+  gcFIXUP(i->superior);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
+#define mark_inspector_IS_ATOMIC 0
+#define mark_inspector_IS_CONST_SIZE 1
+
+
 #endif  /* TYPE */
 
 /**********************************************************************/
@@ -3757,29 +3780,6 @@ int mark_struct_proc_info_FIXUP(void *p) {
 
 #define mark_struct_proc_info_IS_ATOMIC 0
 #define mark_struct_proc_info_IS_CONST_SIZE 1
-
-
-int mark_inspector_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
-}
-
-int mark_inspector_MARK(void *p) {
-  Scheme_Inspector *i = (Scheme_Inspector *)p;
-  gcMARK(i->superior);
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
-}
-
-int mark_inspector_FIXUP(void *p) {
-  Scheme_Inspector *i = (Scheme_Inspector *)p;
-  gcFIXUP(i->superior);
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
-}
-
-#define mark_inspector_IS_ATOMIC 0
-#define mark_inspector_IS_CONST_SIZE 1
 
 
 int mark_struct_property_SIZE(void *p) {

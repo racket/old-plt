@@ -2836,6 +2836,15 @@ static Scheme_Env *setup_basic_env()
   }
 #endif
 
+  scheme_add_waitable(mred_eventspace_type,
+		      (Scheme_Ready_Fun)check_eventspace_inactive,
+		      NULL,
+		      NULL, 0);
+  scheme_add_waitable(mred_nested_wait_type,
+		      CAST_BLKCHK check_for_nested_event,
+		      NULL,
+		      NULL, 0);
+
   wxsScheme_setup(global_env);
 
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
@@ -2937,15 +2946,6 @@ wxFrame *MrEdApp::OnInit(void)
 			 fixup_eventspace_hop_val,
 			 1, 0);
 #endif
-
-  scheme_add_waitable(mred_eventspace_type,
-		      (Scheme_Ready_Fun)check_eventspace_inactive,
-		      NULL,
-		      NULL, 0);
-  scheme_add_waitable(mred_nested_wait_type,
-		      CAST_BLKCHK check_for_nested_event,
-		      NULL,
-		      NULL, 0);
 
 #ifdef MZ_PRECISE_GC
   mmc = (MrEdContext *)GC_malloc_one_tagged(sizeof(MrEdContext));

@@ -476,6 +476,8 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_nack_waitable_type, twoptr_obj);
 
+  GC_REG_TRAV(scheme_inspector_type, mark_inspector);
+
   GC_REG_TRAV(scheme_rt_buf_holder, buf_holder);
 }
 

@@ -2312,8 +2312,6 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
   GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 
-  GC_REG_TRAV(scheme_inspector_type, mark_inspector);
-
   GC_REG_TRAV(scheme_wrapped_waitable_type, mark_wrapped_waitable);
   GC_REG_TRAV(scheme_nack_guard_waitable_type, mark_nack_guard_waitable);
   GC_REG_TRAV(scheme_poll_waitable_type, mark_nack_guard_waitable);

@@ -2905,7 +2905,7 @@ static Scheme_Object *
 cont_marks(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_CONTP(argv[0]) && !SCHEME_ECONTP(argv[0]))
-    scheme_wrong_type("continuation-marks", "continuation", 1, argc, argv);
+    scheme_wrong_type("continuation-marks", "continuation", 0, argc, argv);
 
   if (SCHEME_ECONTP(argv[0])) {
     if (!scheme_escape_continuation_ok(argv[0])) {

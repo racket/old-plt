@@ -159,7 +159,7 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
   info.msg = msg;
   info.remove = remove;
 
-  if (!EnumWindows((WNDENUMPROC)CheckWindow, (LPARAM)&info)) {
+  if (!EnumThreadWindows(GetCurrentThreadId(), (WNDENUMPROC)CheckWindow, (LPARAM)&info)) {
     if (c_return)
       *c_return = info.c_return;
     result = 1;
@@ -201,12 +201,30 @@ void MrEdDispatchEvent(MSG *msg)
     LeaveEvent *e = (LeaveEvent *)msg->lParam;
     wxDoLeaveEvent(e->wnd, e->x, e->y, e->flags);
   } else if (!wxTheApp->ProcessMessage(msg)) {
+#if wxLOG_EVENTS
+    if (!log)
+      log = fopen("evtlog", "w");
+    fprintf(log, "{SEND %lx (%lx) %lx\n", 
+	    msg->hwnd, GetContext(msg->hwnd), 
+	    msg->message);
+    fflush(log);
+#endif
+
     TranslateMessage(msg);
 
     can_trampoline_win = msg->hwnd;
     last_msg_time = msg->time;
 
     DispatchMessage(msg);
+
+#if wxLOG_EVENTS
+    if (!log)
+      log = fopen("evtlog", "w");
+    fprintf(log, " SENT %lx (%lx) %lx %lx %lx}\n", 
+	    msg->hwnd, GetContext(msg->hwnd), msg->message, 
+	    need_trampoline_win, need_trampoline_message);
+    fflush(log);
+#endif
 
     can_trampoline_win = 0;
 

@@ -2441,15 +2441,14 @@ static wxGL *current_gl_context = NULL;
 static int gl_registered;
 static XVisualInfo *vi, *sb_vi;
 
-wxGL::wxGL()
-: wxObject(WXGC_NO_CLEANUP)
+Visual *wxGetGLWindowVisual()
 {
   if (!gl_registered) {
     Visual *vis;      
     GC_CAN_IGNORE XVisualInfo *visi, tmpl, *suggested_vi, *suggested_sb_vi;
     int n, i;
-    GC_CAN_IGNORE int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
-    GC_CAN_IGNORE int gl_sb_attribs[] = { GLX_RGBA, None };
+    GC_CAN_IGNORE int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, GLX_DEPTH_SIZE, 1, None };
+    GC_CAN_IGNORE int gl_sb_attribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 1, None };
 
     wxREGGLOB(current_gl_context); 
     gl_registered = 1;
@@ -2492,6 +2491,7 @@ wxGL::wxGL()
 	  if (want_db) {
 	    if (suggested_vi) {
 	      if (visi[i].visualid == suggested_vi->visualid) {
+		printf("got suggested vi\n");
 		vi = suggested_vi;
 		break;
 	      }
@@ -2499,6 +2499,7 @@ wxGL::wxGL()
 	  } else {
 	    if (suggested_sb_vi) {
 	      if (visi[i].visualid == suggested_sb_vi->visualid) {
+		printf("got suggested sb_vi\n");
 		sb_vi = suggested_sb_vi;
 		break;
 	      }
@@ -2527,6 +2528,7 @@ wxGL::wxGL()
 		    if ((v <= min_aux_match) && (v2 <= min_sten_match)) {
 		      min_aux_match = v;
 		      min_sten_match = v2;
+		      printf("got suggested %d\n", want_db);
 		      if (want_db)
 			vi = visi + i;
 		      else
@@ -2541,6 +2543,18 @@ wxGL::wxGL()
       }
     }
   }  
+
+  if (vi)
+    return vi->visual;
+  else
+    return NULL;
+}
+
+wxGL::wxGL()
+: wxObject(WXGC_NO_CLEANUP)
+{
+  /* Init visual info: */
+  wxGetGLWindowVisual();
 }
 
 wxGL::~wxGL()

@@ -11,6 +11,7 @@
 #include <X11/keysym.h>
 #include "wxAllocColor.h"
 #include "wxAllocColor.c"
+#include "wxgl.h"
 #include <./xwCommonP.h>
 #define focus_detail(detail) (detail ==NotifyAncestor ?"NotifyAncestor":detail ==NotifyVirtual ?"NotifyVirtual":detail ==NotifyInferior ?"NotifyInferior":detail ==NotifyNonlinear ?"NotifyNonlinear":detail ==NotifyNonlinearVirtual ?"NotifyNonlinearVirtual":detail ==NotifyPointer ?"NotifyPointer":detail ==NotifyPointerRoot ?"NotifyPointerRoot":detail ==NotifyDetailNone ?"NotifyDetailNone":"???")
 
@@ -659,7 +660,11 @@ static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attrib
 static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
 #endif
 {
-  compositeClassRec.core_class.realize(self, mask, attributes);
+  if (wx_common_use_visual) {
+    XtCreateWindow(self, InputOutput, wx_common_use_visual, *mask, attributes);
+  } else {
+    compositeClassRec.core_class.realize(self, mask, attributes);
+  }
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes

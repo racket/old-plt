@@ -35,6 +35,12 @@
 #define  Uses_CanvasWidget
 #include "widgets.h"
 
+#include "wxgl.h"
+#ifdef USE_GL
+extern Visual *wxGetGLWindowVisual();
+Visual *wx_common_use_visual;
+#endif
+
 //-----------------------------------------------------------------------------
 // create and destroy canvas
 //-----------------------------------------------------------------------------
@@ -88,6 +94,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 NULL);
     X->scroll = wgt;
     // create canvas
+#ifdef USE_GL
+    wx_common_use_visual = wxGetGLWindowVisual();
+#endif
     wgt = XtVaCreateManagedWidget
       ("canvas", xfwfCanvasWidgetClass, X->scroll,
        XtNbackingStore, (style & wxBACKINGSTORE) ? Always : NotUseful,
@@ -97,6 +106,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
        XtNframeWidth, 0,
        XtNtraversalOn, FALSE,
        NULL);
+#ifdef USE_GL
+    wx_common_use_visual = NULL;
+#endif
     X->handle = wgt;
     // In case this window or the parent is hidden; we
     // need windows to create DCs

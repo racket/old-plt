@@ -1,5 +1,5 @@
 #ifdef USE_GL
-#include <GL/glx.h>
-extern int wx_gl_create_window;
-extern XVisualInfo* wx_temp_visual_info;
+extern Visual* wx_common_use_visual;
+#else
+# define wx_common_use_visual ((Visual *)0)
 #endif

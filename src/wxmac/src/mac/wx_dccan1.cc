@@ -750,8 +750,8 @@ static AGLContext dummy;
 void wxInitGL()
 {
 #ifdef OS_X
-  GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 16, AGL_NONE };
-  GC_CAN_IGNORE GLint sb_attrib[] = { AGL_RGBA, AGL_OFFSCREEN, AGL_PIXEL_SIZE, 32, AGL_NONE };
+  GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 1, AGL_NONE };
+  GC_CAN_IGNORE GLint sb_attrib[] = { AGL_RGBA, AGL_OFFSCREEN, AGL_PIXEL_SIZE, 32, AGL_DEPTH_SIZE, 1, AGL_NONE };
   
   fmt = aglChoosePixelFormat(NULL, 0, attrib);
   sb_fmt = aglChoosePixelFormat(NULL, 0, sb_attrib);

@@ -93,7 +93,7 @@ void wxInitNewToplevel(void)
   Widget tl;
 
   tl = XtAppCreateShell(wxAPP_NAME, wxAPP_CLASS,
-		       applicationShellWidgetClass,
+		        applicationShellWidgetClass,
 			wxAPP_DISPLAY, NULL, 0);
   wxPutAppToplevel(tl);
 }

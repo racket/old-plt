@@ -259,7 +259,11 @@ is positive.
 @METHODS
 @proc realize
 {
-  #realize($, mask, attributes);
+  if (wx_common_use_visual) {
+    XtCreateWindow($, InputOutput, wx_common_use_visual, *mask, attributes);
+  } else {
+    #realize($, mask, attributes);
+  }
 }
 
 @ The type converter |cvtStringToAlignment| is installed in the
@@ -1202,4 +1206,4 @@ highlight border with.
 @incl <X11/keysym.h>
 @incl "wxAllocColor.h"
 @incl "wxAllocColor.c"
-
+@incl "wxgl.h"

@@ -2203,6 +2203,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     use_env = env;
 
   first = last = NULL;
+  vs = vars;
   while (SCHEME_STX_PAIRP(vars)) {
     Scheme_Object *rhs, *rhs_name;
 
@@ -2230,12 +2231,11 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
       rhs_name = name;
     }
 
-    if (partial)
-      v = rhs;
-    else
-      v = scheme_expand_expr(rhs, use_env, depth, rhs_name);
+    if (!partial)
+      rhs = scheme_expand_expr(rhs, use_env, depth, rhs_name);
 
-    v = icons(icons(name, icons(v, scheme_null)), scheme_null);
+    v = scheme_datum_to_syntax(icons(name, icons(rhs, scheme_null)), v, v, 0, 1);
+    v = icons(v, scheme_null);
 
     if (!first)
       first = v;
@@ -2252,6 +2252,8 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   
   if (!first)
     first = scheme_null;
+
+  first = scheme_datum_to_syntax(first, vs, vs, 0, 1);
 
   body = scheme_datum_to_syntax(body, form, form, 0, 0);
   if (!partial) {

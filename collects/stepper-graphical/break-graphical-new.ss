@@ -72,7 +72,7 @@
 
   ; ----------------------------------------------------------------
   
-  (define (add-to-popup pm val)
+  (define (add-to-popup pm val . options)
     (cond [(procedure? val)
            (make-object m:menu-item% "(closure)" pm void)]
           [(struct? val)
@@ -86,7 +86,10 @@
           [else
            (let ([sp (open-output-string)])
              (write (pc:print-convert val) sp)
-             (make-object m:menu-item% (get-output-string sp) pm void))]))
+             (if (memq 'highlighted options)
+                 (let ([item (make-object m:checkable-menu-item% (get-output-string sp) pm void)])
+                   (send item check #t))
+                 (make-object m:menu-item% (get-output-string sp) pm void)))]))
 
   (define debugger%
     (class object% (drscheme-frame)
@@ -95,6 +98,7 @@
                [needs-update #t]
                [stored-mark-list #f]
                [text-region-table null] ; candidate for hash-table-ization, if speed is needed
+               [clear-highlight-thunk #f]
 
                [context-lbox-selection
                 (lambda ()
@@ -122,7 +126,7 @@
                 (lambda (list-box event)
                   (let* ([selection (context-lbox-selection)]
                          [mark (send list-box get-data selection)]
-                         [source (mark-source mark)]
+                         [source (marks:mark-source mark)]
                          [source-file (z:location-file (z:zodiac-start source))]
                          [source-start (z:location-offset (z:zodiac-start source))]
                          [source-finish (z:location-offset (z:zodiac-finish source))])
@@ -130,35 +134,39 @@
                       (clear-highlight-thunk))
                     (if (eq? source-file (ivar drscheme-frame definitions-text))
                         (set! clear-highlight-thunk 
-                              (send defns-text highlight-range source-start source-end debug-highlight-color))
+                              (send defns-text highlight-range source-start source-finish debug-highlight-color))
                         (m:message-box "source text is not in this buffer" '(ok)))
                     (clear-var-highlights)
-                    (highlight-vars mark)
-                  )]
-               
-               
-                
+                    (highlight-vars mark)))]
+
                [show-var-values
                 (lambda (binding x y)
-                  (let-values ([(mark) (send context-lbox get-data (context-lbox-selection))]
-                               [(before after)
-                                (let loop ([remaining stored-mark-list])
-                                  (cond [(null? remaining)
-                                         (error 'show-var-values "mark does not occur in stored list")]
-                                        [(eq? (car remaining) mark)
-                                         (values null (cdr remaining))]
-                                        [else
-                                         (let-values ([(a b) (loop (cdr remaining))])
-                                           (values (cons (car remaining) a) 
-                  (let* ([
-                         
-                         [vals (if (z:top-level-varref? binding)
-                                   (list (global-defined-value (z:varref-var binding)))
-                                   (map marks:mark-binding-value (marks:lookup-binding-list stored-mark-list binding)))]
-                         [pm (make-object m:popup-menu%)])
-                    (for-each (lambda (val)
-                                (add-to-popup pm val))
-                              vals)
+                  (let ([pm (make-object m:popup-menu%)])
+                    (if (z:top-level-varref? binding) ; this will only include truly-top-level vars
+                        (add-to-popup pm (global-defined-value (z:varref-var binding)) 'highlighted) ; hack to fix namespace?
+                        (let*-values ([(mark) (send context-lbox get-data (context-lbox-selection))]
+                                      [(rev-before after)
+                                       (let loop ([remaining stored-mark-list] [building null])
+                                         (cond [(null? remaining)
+                                                (error 'show-var-values "mark does not occur in stored list")]
+                                               [(eq? (car remaining) mark)
+                                                (values (cons (car remaining) building) (cdr remaining))]
+                                               [else
+                                                (loop (cdr remaining) (cons (car remaining) building))]))])
+                          (let* ([extract-vals
+                                  (lambda (mark-list)
+                                    (map marks:mark-binding-value (marks:lookup-binding-list mark-list binding)))]
+                                 [rev-before-vals
+                                  (extract-vals rev-before)]
+                                 [after-vals
+                                  (extract-vals after)])
+                            (for-each (lambda (val)
+                                        (add-to-popup pm val))
+                                      (reverse (cdr rev-before-vals)))
+                            (add-to-popup pm (car rev-before-vals) 'highlighted)
+                            (for-each (lambda (val)
+                                        (add-to-popup pm val))
+                                      after-vals))))
                     (send frame popup-menu pm (inexact->exact x) (inexact->exact y))))]
                
                [clear-var-highlights
@@ -169,7 +177,7 @@
                   (set! text-region-table null))]
                
                [zodiac-abbr
-                (lambda (zodiac)
+                (lambda (src)
                   (ccond ; we need a z:parsed iterator...
                         [(z:varref? src)
                          "<varref>"]
@@ -330,7 +338,7 @@
                      (begin
                        (clear-var-highlights)
                        (when clear-highlight-thunk
-                         (clear-highlight-thunk)))
+                         (clear-highlight-thunk))))
                  (send context-lbox clear)
                  (for-each 
                   (lambda (mark)
@@ -385,8 +393,8 @@
    (lambda (super%)
      (class super% args
        (sequence (apply super-init args))
-       (rename [super-can-close? can-close]
-               [super-on-close? on-close])
+       (rename [super-can-close? can-close?]
+               [super-on-close on-close])
        (private [debugger #f])
        (public
          [get-debugger

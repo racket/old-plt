@@ -299,55 +299,58 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
     scheme_wrong_type(name, "character", 0, argc, argv);
 }
 
-#ifdef DONT_USE_LOCALE
-# define mzCAN_LOCALE 0
-# define mz_strcoll strcmp
-#else
-# define mzCAN_LOCALE 1
-# define mz_strcoll strcoll
-#endif
-#define samecase(x) x
+#define charSTD_UPCASE(t, l, nl) nl;
+#define charNO_UPCASE(t, l, nl) /* empty */
+#define charSTD_LOCCOMP(t, prev, c, comp, rv) /* empty */
 
-#define GEN_CHAR_COMP(func_name, scheme_name, comp, _toupper, use_locale) \
+#ifdef DONT_USE_LOCALE
+# define charLOC_UPCASE(t, l, nl) nl;
+# define charLOCCOMP(t, prev, c, comp, rv) /* empty */
+#else
+# define charLOC_UPCASE(t, l, nl) if (t) { l; } else { nl; }
+# define charLOC_LOCCOMP(t, prev, c, comp, rv) \
+     if (t) { \
+        char a[2], b[2]; a[1] = 0; b[1] = 0; a[0] = (char)prev; b[0] = (char)c; \
+        if (!(strcoll(a, b) comp 0)) rv = scheme_false; \
+     } else
+#endif
+
+#define GEN_CHAR_COMP(func_name, scheme_name, comp, UPCASE, LOCCOMP) \
  static Scheme_Object *func_name(int argc, Scheme_Object *argv[])     \
  { int c, prev, i; Scheme_Object *rv = scheme_true; \
-   int loc = scheme_locale_on && use_locale; \
    if (!SCHEME_CHARP(argv[0]))      \
      scheme_wrong_type(#scheme_name, "character", 0, argc, argv);     \
    prev = ((unsigned char)SCHEME_CHAR_VAL(argv[0]));     \
-   prev = _toupper(prev);      \
+   UPCASE(scheme_locale_on, prev = _toupper(prev), prev = mz_portable_toupper(prev)) \
    for (i = 1; i < argc; i++) {     \
      if (!SCHEME_CHARP(argv[i]))      \
        scheme_wrong_type(#scheme_name, "character", i, argc, argv);     \
      c = ((unsigned char)SCHEME_CHAR_VAL(argv[i]));     \
-     c = _toupper(c); \
-     if (mzCAN_LOCALE && loc) { \
-        char a[2], b[2]; a[1] = 0; b[1] = 0; a[0] = (char)prev; b[0] = (char)c; \
-        if (!(mz_strcoll(a, b) comp 0)) rv = scheme_false; \
-     } else if (!(prev comp c)) rv = scheme_false;   \
+     UPCASE(scheme_locale_on, c = _toupper(c), c = mz_portable_toupper(c)) \
+     LOCCOMP(scheme_locale_on, prev, c, comp, rv) \
+     if (!(prev comp c)) rv = scheme_false;   \
      prev = c;     \
    }     \
    return rv;     \
  }
 
-GEN_CHAR_COMP(char_eq, char=?, ==, samecase, 0)
-GEN_CHAR_COMP(char_lt, char<?, <, samecase, 0)
-GEN_CHAR_COMP(char_gt, char>?, >, samecase, 0)
-GEN_CHAR_COMP(char_lt_eq, char<=?, <=, samecase, 0)
-GEN_CHAR_COMP(char_gt_eq, char>=?, >=, samecase, 0)
+GEN_CHAR_COMP(char_eq, char=?, ==, charNO_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_lt, char<?, <, charNO_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_gt, char>?, >, charNO_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_lt_eq, char<=?, <=, charNO_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_gt_eq, char>=?, >=, charNO_UPCASE, charSTD_LOCCOMP)
 
-GEN_CHAR_COMP(char_eq_ci, char-ci=?, ==, mz_portable_toupper, 0)
-GEN_CHAR_COMP(char_lt_ci, char-ci<?, <, mz_portable_toupper, 0)
-GEN_CHAR_COMP(char_gt_ci, char-ci>?, >, mz_portable_toupper, 0)
-GEN_CHAR_COMP(char_lt_eq_ci, char-ci<=?, <=, mz_portable_toupper, 0)
-GEN_CHAR_COMP(char_gt_eq_ci, char-ci>=?, >=, mz_portable_toupper, 0)
+GEN_CHAR_COMP(char_eq_ci, char-ci=?, ==, charSTD_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_lt_ci, char-ci<?, <, charSTD_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_gt_ci, char-ci>?, >, charSTD_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_lt_eq_ci, char-ci<=?, <=, charSTD_UPCASE, charSTD_LOCCOMP)
+GEN_CHAR_COMP(char_gt_eq_ci, char-ci>=?, >=, charSTD_UPCASE, charSTD_LOCCOMP)
 
-GEN_CHAR_COMP(char_eq_locale, char=?, ==, samecase, 1)
-GEN_CHAR_COMP(char_lt_locale, char<?, <, samecase, 1)
-GEN_CHAR_COMP(char_gt_locale, char>?, >, samecase, 1)
-GEN_CHAR_COMP(char_eq_locale_ci, char-ci=?, ==, toupper, 1)
-GEN_CHAR_COMP(char_lt_locale_ci, char-ci<?, <, toupper, 1)
-GEN_CHAR_COMP(char_gt_locale_ci, char-ci>?, >, toupper, 1)
+GEN_CHAR_COMP(char_lt_locale, char<?, <, charNO_UPCASE, charLOC_LOCCOMP)
+GEN_CHAR_COMP(char_gt_locale, char>?, >, charNO_UPCASE, charLOC_LOCCOMP)
+GEN_CHAR_COMP(char_eq_locale_ci, char-ci=?, ==, charLOC_UPCASE, charLOC_LOCCOMP)
+GEN_CHAR_COMP(char_lt_locale_ci, char-ci<?, <, charLOC_UPCASE, charLOC_LOCCOMP)
+GEN_CHAR_COMP(char_gt_locale_ci, char-ci>?, >, charLOC_UPCASE, charLOC_LOCCOMP)
 
 static Scheme_Object *
 char_alphabetic (int argc, Scheme_Object *argv[])

@@ -368,15 +368,11 @@
 
 (SECTION 6 6)
 
-(define locale-was-enabled? (current-locale))
 ;; Let Matthew perform some basic sanity checks for locale-sensitive
 ;; comparisons:
 (define known-locale? (and (regexp-match "mflatt" (find-system-path 'home-dir))
 			   (regexp-match "linux" (system-library-subpath))))
 
-
-;; The following tests always work in portable mode!
-(current-locale #f)
 
 (define (char-tests)
   (test #t eqv? '#\  #\Space)
@@ -578,8 +574,8 @@
 	(test #f char-ci=? big-O: o:)))))
 
 (when known-locale?
-  (locale-comps char<? char=? char>?
-		char-ci<? char-ci=? char-ci>?))
+  (locale-comps char-locale<? char=? char-locale>?
+		char-locale-ci<? char-locale-ci=? char-locale-ci>?))
       
 
 (define (ascii-range start end)
@@ -799,9 +795,6 @@
 (define ax2 (string #\a #\nul #\370 #\x))
 (define ay (string #\a #\nul #\371 #\x))
 
-;; The following tests always work in portable mode!
-(current-locale #f)
-
 (define (string-tests)
   (test #t string=? "" "")
   (test #f string<? "" "")
@@ -963,8 +956,8 @@
       (let ([mk (lambda (?)
 		  (lambda (x y)
 		    (? (format (car templates) x) (format (car templates) y))))])
-	(locale-comps (mk string<?) (mk string=?) (mk string>?)
-		      (mk string-ci<?) (mk string-ci=?) (mk string-ci>?))
+	(locale-comps (mk string-locale<?) (mk string=?) (mk string-locale>?)
+		      (mk string-locale-ci<?) (mk string-locale-ci=?) (mk string-locale-ci>?))
 	(loop (cdr templates))))))
 
 (map (lambda (pred)
@@ -981,9 +974,12 @@
 	   string-ci>? 
 	   string-ci<? 
 	   string-ci>=? 
-	   string-ci<=?))
-
-(current-locale locale-was-enabled?)
+	   string-ci<=?
+	   string-locale>? 
+	   string-locale<? 
+	   string-locale-ci=? 
+	   string-locale-ci>? 
+	   string-locale-ci<?))
 
 (define r (regexp "(-[0-9]*)+"))
 (test '("-12--345" "-345") regexp-match r "a-12--345b")

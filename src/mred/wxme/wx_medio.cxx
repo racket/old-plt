@@ -162,7 +162,7 @@ long wxMediaStreamInFileBase::Read(char *data, long len)
   if (len <= 0)
     return 0;
 
-  return scheme_get_string("read in editor-stream-in%", f, data, 0, len, 0, 0, NULL);
+  return scheme_get_byte_string("read in editor-stream-in%", f, data, 0, len, 0, 0, NULL);
 }
 
 /****************************************************************/
@@ -217,7 +217,7 @@ void wxMediaStreamOutFileBase::Write(char *data, long len, int delta)
   if (len <= 0)
     return;
 
-  scheme_put_string("write in editor-stream-out%", f, data, delta, len, 0);
+  scheme_put_byte_string("write in editor-stream-out%", f, data, delta, len, 0);
 }
 
 /****************************************************************/

@@ -1445,10 +1445,10 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
 {
   Scheme_Object *o = argv[which];
 
-  if (!SCHEME_STRINGP(o) || (SCHEME_STRTAG_VAL(o) != 4))
-    scheme_wrong_type(name, "MacOS type/creator 4-character string", which, argc, argv);
+  if (!SCHEME_BYTE_STRINGP(o) || (SCHEME_BYTE_STRTAG_VAL(o) != 4))
+    scheme_wrong_type(name, "MacOS type/creator 4-character byte string", which, argc, argv);
   
-  return *(long *)SCHEME_STR_VAL(o);
+  return *(long *)SCHEME_BYTE_STR_VAL(o);
 }
 
 static int has_null(const char *s, long l)
@@ -1547,10 +1547,16 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
     data = (char *)&x_i;
     size = sizeof(long);
     break;
-  case scheme_string_type:
+  case scheme_byte_string_type:
     type = typeChar;
-    data = SCHEME_STR_VAL(v);
-    size = SCHEME_STRTAG_VAL(v);
+    data = SCHEME_BYTE_STR_VAL(v);
+    size = SCHEME_BYTE_STRTAG_VAL(v);
+    break;
+  case scheme_char_string_type:
+    type = typeChar;
+    v = scheme_char_string_to_byte_string(v);
+    data = SCHEME_BYTE_STR_VAL(v);
+    size = SCHEME_BYTE_STRTAG_VAL(v);
     break;
   case scheme_float_type:
   case scheme_double_type:
@@ -1565,9 +1571,15 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	    || (SCHEME_VEC_ELS(v)[0] == file_symbol))) {
       if (SCHEME_VEC_ELS(v)[0] == file_symbol) {
 	if ((SCHEME_VEC_SIZE(v) == 2)
-	    && SCHEME_STRINGP(SCHEME_VEC_ELS(v)[1]))  {
-	  char *s = SCHEME_STR_VAL(SCHEME_VEC_ELS(v)[1]);
-	  long l = SCHEME_STRTAG_VAL(SCHEME_VEC_ELS(v)[1]);
+	    && SCHEME_PATH_STRINGP(SCHEME_VEC_ELS(v)[1]))  {
+	  Scheme_Objetc *bs;
+	  char *s;
+	  long l;
+	  bs = SCHEME_VEC_ELS(v)[1];
+	  if (!SCHEME_BYTE_STR(bs))
+	    bs = scheme_char_string_to_byte_string(bs);
+	  s = SCHEME_STR_VAL(bs);
+	  l = SCHEME_STRTAG_VAL(bs);
 	  if (!has_null(s, l)) {
 	    if (scheme_mac_path_to_spec(s, &x_fss)) {
 	      _err = NewAliasMinimal(&x_fss, (AliasHandle *)&alias);
@@ -1633,7 +1645,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	    if (!SCHEME_PAIRP(a)
 		|| !SCHEME_PAIRP(SCHEME_CDR(a))
 		|| !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(a)))
-		|| !SCHEME_STRINGP(SCHEME_CAR(a))) {
+		|| !SCHEME_BYTE_STRINGP(SCHEME_CAR(a))) {
 	      /* Bad record form. */
 	      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 			       "%s: cannot interpret vector part as a record field: %s",
@@ -2038,7 +2050,7 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
       if (!SCHEME_PAIRP(a) 
           || !SCHEME_PAIRP(SCHEME_CDR(a))
           || !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(a)))
-          || !SCHEME_STRINGP(SCHEME_CAR(a)))
+          || !SCHEME_BYTE_STRINGP(SCHEME_CAR(a)))
         break; /* => type error */
       k = SCHEME_CAR(a);
       v = SCHEME_CADR(a);

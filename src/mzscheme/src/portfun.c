@@ -1067,8 +1067,11 @@ user_byte_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
     if (!can_peek) {
       if (c == SCHEME_SPECIAL)
 	uip->peeked = scheme_void;
-      else
-	uip->peeked = scheme_make_character(s[0]);
+      else {
+	Scheme_Object *cc;
+	cc = scheme_make_character(s[0]);
+	uip->peeked = cc;
+      }
     }
     return 1;
   } else

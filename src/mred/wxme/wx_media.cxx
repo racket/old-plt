@@ -3054,13 +3054,14 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
 {
   long n;
   const int BUF_SIZE = 1000;
-  char buffer[BUF_SIZE];
+  char sbuffer[MRED_START_STR_LEN+1];
+  wxchar buffer[BUF_SIZE];
   Bool fileerr;
 
   if (*format == wxMEDIA_FF_GUESS) {
-    n = scheme_get_string(who, f, buffer, 0, MRED_START_STR_LEN, 0, 1, NULL);
-    buffer[MRED_START_STR_LEN] = 0;
-    if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR))
+    n = scheme_get_byte_string(who, f, sbuffer, 0, MRED_START_STR_LEN, 0, 1, NULL);
+    sbuffer[MRED_START_STR_LEN] = 0;
+    if ((n != MRED_START_STR_LEN) || strcmp(sbuffer, MRED_START_STR))
       *format = wxMEDIA_FF_TEXT;
     else
       *format = wxMEDIA_FF_STD;
@@ -3071,9 +3072,9 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
   showErrors = TRUE;
 
   if (*format == wxMEDIA_FF_STD) {
-    n = scheme_get_string(who, f, buffer, 0, MRED_START_STR_LEN, 0, 1, NULL);
-    buffer[MRED_START_STR_LEN] = 0;
-    if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)){
+    n = scheme_get_byte_string(who, f, sbuffer, 0, MRED_START_STR_LEN, 0, 1, NULL);
+    sbuffer[MRED_START_STR_LEN] = 0;
+    if ((n != MRED_START_STR_LEN) || strcmp(sbuffer, MRED_START_STR)){
       if (showErrors) {
 	char ebuf[256];
 	sprintf(ebuf, "%s: not a MrEd editor<%%> file", who);
@@ -3084,7 +3085,7 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
       wxMediaStreamInFileBase *b;
       wxMediaStreamIn *mf;
 
-      scheme_get_string(who, f, buffer, 0, MRED_START_STR_LEN, 0, 0, NULL);
+      scheme_get_byte_string(who, f, sbuffer, 0, MRED_START_STR_LEN, 0, 0, NULL);
       
       b = new wxMediaStreamInFileBase(f);
       mf = new wxMediaStreamIn(b);
@@ -3113,7 +3114,7 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
     while (1) {
       buffer[0] = '\r';
 
-      n = scheme_get_string(who, f, buffer+ savecr, 0, BUF_SIZE - savecr, 0, 0, NULL);
+      n = scheme_get_char_string(who, f, buffer+ savecr, 0, BUF_SIZE - savecr, 0, NULL);
 
       if ((n == EOF) || !n)
 	break;
@@ -3134,7 +3135,7 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
 	    }
 	  }
 	}
-	Insert(n, (char *)buffer);
+	Insert(n, buffer);
       }
     }
     if (savecr)
@@ -3223,11 +3224,8 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
   if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
     wxchar *us;
-    char *s = 0;
-    long l;
     us = GetText(-1, -1, TRUE, format == wxMEDIA_FF_TEXT_FORCE_CR);
-    wxme_utf8_encode(us, wxstrlen(us), &s, &l);
-    scheme_put_string("save-file", f, s, 0, l, 0);
+    scheme_put_char_string("save-file", f, us, 0, wxstrlen(us));
     scheme_close_output_port(f);
   } else {
     wxMediaStreamOutFileBase *b;

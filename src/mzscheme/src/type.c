@@ -427,8 +427,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_double_type, double_obj);
   GC_REG_TRAV(scheme_complex_izi_type, complex_obj);
   GC_REG_TRAV(scheme_complex_type, complex_obj);
-  GC_REG_TRAV(scheme_byte_string_type, string_obj);
   GC_REG_TRAV(scheme_char_string_type, string_obj);
+  GC_REG_TRAV(scheme_byte_string_type, bstring_obj);
   GC_REG_TRAV(scheme_symbol_type, symbol_obj);
   GC_REG_TRAV(scheme_null_type, char_obj); /* small */
   GC_REG_TRAV(scheme_pair_type, cons_cell);

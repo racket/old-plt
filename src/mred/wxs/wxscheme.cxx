@@ -1130,7 +1130,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
     l = strlen(s);
 #endif
     
-    pr = scheme_make_pair(scheme_make_sized_string(s, l, 1), scheme_null);
+    pr = scheme_make_pair(scheme_make_sized_utf8_string(s, l), scheme_null);
     if (last)
       SCHEME_CDR(last) = pr;
     else
@@ -1179,12 +1179,12 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
       copy = new WXGC_ATOMIC char[len + 2];
       memcpy(copy + 1, s, len + 1);
       copy[0] = ' ';
-      first = scheme_make_pair(scheme_make_sized_string(copy, len + 1, 0), first);
+      first = scheme_make_pair(scheme_make_sized_utf8_string(copy, len + 1), first);
     }
 
-    first = scheme_make_pair(scheme_make_string(" Sans"), first);
-    first = scheme_make_pair(scheme_make_string(" Serif"), first);
-    first = scheme_make_pair(scheme_make_string(" Monospace"), first);
+    first = scheme_make_pair(scheme_make_utf8_string(" Sans"), first);
+    first = scheme_make_pair(scheme_make_utf8_string(" Serif"), first);
+    first = scheme_make_pair(scheme_make_utf8_string(" Monospace"), first);
 
     XftFontSetDestroy(fs);
   }
@@ -1302,9 +1302,9 @@ void wxCheckFinishedSounds(void)
   }      
 }      
       
-void my_signal_error(char *msg, char *filename, int err)
+void my_signal_error(char *msg, Scheme_Object *filename, int err)
 {
-  scheme_signal_error("%s: \"%s\" (errno = %d)", msg, filename, err);
+  scheme_signal_error("%s: \"%T\" (errno = %d)", msg, filename, err);
 }
 
 #endif
@@ -1314,16 +1314,15 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   Bool async, ok;
   char *f;
   
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("play-sound", "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type("play-sound", SCHEME_PATH_STRING_STR, 0, argc, argv);
   
   async = SCHEME_TRUEP(argv[1]);
   
-  f = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-			     SCHEME_STRTAG_VAL(argv[0]),
-			     "play-sound",
-			     NULL,
-			     SCHEME_GUARD_FILE_READ);
+  f = scheme_expand_string_filename(SCHEME_PATH_STRING_STR,
+				    "play-sound",
+				    NULL,
+				    SCHEME_GUARD_FILE_READ);
 
 #ifdef wx_msw  
   ok = PlaySound(f, NULL, async ? SND_ASYNC : SND_SYNC);
@@ -1342,17 +1341,17 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
     osErr = scheme_mac_path_to_spec(f,&spec);
 
     if (! osErr) 
-      scheme_signal_error("cannot find file: \"%s\"", SCHEME_STR_VAL(argv[0]));
+      scheme_signal_error("cannot find file: \"%T\"", argv[0]);
     
     // load sound as "movie"
     
     osErr = OpenMovieFile(&spec,&resRefNum,fsRdPerm);
     if (osErr != noErr)
-      my_signal_error("cannot open as movie file", SCHEME_STR_VAL(argv[0]), osErr);
+      my_signal_error("cannot open as movie file", argv[0], osErr);
     
     osErr = NewMovieFromFile(&theMovie, resRefNum, NULL, NULL, newMovieActive, NULL);
     if (osErr != noErr)
-      my_signal_error("cannot create movie from file", SCHEME_STR_VAL(argv[0]), osErr);
+      my_signal_error("cannot create movie from file", argv[0], osErr);
 
     // play the movie once thru
     StartMovie(theMovie);
@@ -1508,7 +1507,7 @@ wxSnipClass *wxGetSnipClass(const char *name)
     return NULL;
   else {
     Scheme_Object *a[1];
-    a[0] = scheme_make_string(name);
+    a[0] = scheme_make_utf8_string(name);
     return objscheme_unbundle_wxSnipClass(_scheme_apply(snip_class_getter, 1, a), NULL, 1);
   }
 }
@@ -1519,7 +1518,7 @@ wxBufferDataClass *wxGetEditorDataClass(const char *name)
     return NULL;
   else {
     Scheme_Object *a[1];
-    a[0] = scheme_make_string(name);
+    a[0] = scheme_make_utf8_string(name);
     return objscheme_unbundle_wxBufferDataClass(_scheme_apply(editor_data_class_getter, 1, a), NULL, 1);
   }
 }
@@ -1589,8 +1588,8 @@ static Scheme_Object *SpecialOptionKey(int c, Scheme_Object *SCK_ARG[])
 
 static Scheme_Object *DefaultAppFileProc(int n, Scheme_Object *p[])
 {
-  if (!SCHEME_STRINGP(p[0]))
-    scheme_wrong_type("default-application-file-handler", "string",
+  if (!SCHEME_BYTE_STRINGP(p[0]))
+    scheme_wrong_type("default-application-file-handler", "byte string",
 		      0, n, p);
 
   return scheme_void;
@@ -1672,7 +1671,7 @@ void wxsExecute(char **argv)
   a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
 
   for (i = 0; i < c; i++) {
-    aa = scheme_make_string(argv[i]);
+    aa = scheme_make_byte_string(argv[i]);
     a[i] = aa;
   }
 
@@ -1710,21 +1709,22 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
   int was_dir = 0, write_failed = 0;
   int err;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("file-creator-and-type", "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type("file-creator-and-type", SCHEME_PATH_STRING_STR, 0, argc, argv);
 
   if (argc > 1) {
-    if (!SCHEME_STRINGP(argv[1]) || (SCHEME_STRTAG_VAL(argv[1]) != 4))
-      scheme_wrong_type("file-creator-and-type", "4-character string", 1, argc, argv);
-    if (!SCHEME_STRINGP(argv[2]) || (SCHEME_STRTAG_VAL(argv[2]) != 4))
-      scheme_wrong_type("file-creator-and-type", "4-character string", 2, argc, argv);
+    if (!SCHEME_BYTE_STRINGP(argv[1]) || (SCHEME_BYTE_STRTAG_VAL(argv[1]) != 4))
+      scheme_wrong_type("file-creator-and-type", "4-character byte string", 1, argc, argv);
+    if (!SCHEME_BYTE_STRINGP(argv[2]) || (SCHEME_BYTE_STRTAG_VAL(argv[2]) != 4))
+      scheme_wrong_type("file-creator-and-type", "4-character byte string", 2, argc, argv);
   }
 
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-				    SCHEME_STRTAG_VAL(argv[0]),
-				    "file-creator-and-type",
-				    NULL,
-				    (argc > 1) ? SCHEME_GUARD_FILE_WRITE : SCHEME_GUARD_FILE_READ);
+  filename = scheme_expand_string_filename(argv[0],
+					   "file-creator-and-type",
+					   NULL,
+					   ((argc > 1) 
+					    ? SCHEME_GUARD_FILE_WRITE
+					    : SCHEME_GUARD_FILE_READ));
 
 #ifdef wx_mac
   {
@@ -1753,8 +1753,8 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
       err = FSpGetFInfo(&spec, &info);
       if (!err) {
 	if (argc > 1) {
-	  info.fdCreator = *(unsigned long *)SCHEME_STR_VAL(argv[1]);
-	  info.fdType = *(unsigned long *)SCHEME_STR_VAL(argv[2]);
+	  info.fdCreator = *(unsigned long *)SCHEME_BYTE_STR_VAL(argv[1]);
+	  info.fdType = *(unsigned long *)SCHEME_BYTE_STR_VAL(argv[2]);
 	  err = FSpSetFInfo(&spec, &info);
 
 	  if (!err)
@@ -1763,8 +1763,8 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
 	} else {
 	  Scheme_Object *a[2];
 
-	  a[0] = scheme_make_sized_string((char *)&info.fdCreator, 4, 1);
-	  a[1] = scheme_make_sized_string((char *)&info.fdType, 4, 1);
+	  a[0] = scheme_make_sized_byte_string((char *)&info.fdCreator, 4, 1);
+	  a[1] = scheme_make_sized_byte_string((char *)&info.fdType, 4, 1);
 	  return scheme_values(2, a);
 	}
       }
@@ -1778,7 +1778,7 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
     else {
       Scheme_Object *a[2];
 
-      a[0] = scheme_make_sized_string("????", 4, 0);
+      a[0] = scheme_make_sized_byte_string("????", 4, 0);
       a[1] = a[0];
       return scheme_values(2, a);
     }
@@ -2154,24 +2154,24 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     int ends_in_slash;
 
 # ifdef wx_mac
-    home = scheme_make_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL, 0));
+    home = scheme_make_byte_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL, 0));
 # else
-    home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL, 0));
+    home = scheme_make_byte_string(scheme_expand_filename("~/", 2, NULL, NULL, 0));
 # endif
     
-    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
+    ends_in_slash = (SCHEME_BYTE_STR_VAL(home))[SCHEME_BYTE_STRTAG_VAL(home) - 1] == '/';
     
     if (which == id_init_file)
-      return scheme_append_string(home,
-				  scheme_make_string("/.mredrc" + ends_in_slash));
+      return scheme_append_byte_string(home,
+				  scheme_make_byte_string("/.mredrc" + ends_in_slash));
     if (which == id_setup_file)
-      return scheme_append_string(home,
-				  scheme_make_string("/.mred.resources" + ends_in_slash));
+      return scheme_append_byte_string(home,
+				       scheme_make_byte_string("/.mred.resources" + ends_in_slash));
 
     if (which == id_x_display) {
 # if defined(wx_x)
       if (x_display_str)
-	return scheme_make_string(x_display_str);
+	return scheme_make_byte_string(x_display_str);
 # endif
       return scheme_false;
     }
@@ -2183,17 +2183,17 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     Scheme_Object *home;
     int ends_in_slash;
     
-    home = scheme_make_string_without_copying(win_find_home());
+    home = scheme_make_byte_string_without_copying(win_find_home());
     
-    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];
+    ends_in_slash = (SCHEME_BYTE_STR_VAL(home))[SCHEME_BYTE_STRTAG_VAL(home) - 1];
     ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
     
     if (which == id_init_file)
-      return scheme_append_string(home,
-				  scheme_make_string("\\mredrc.ss" + ends_in_slash));
+      return scheme_append_byte_string(home,
+				       scheme_make_byte_string("\\mredrc.ss" + ends_in_slash));
     if (which == id_setup_file)
-      return scheme_append_string(home,
-				  scheme_make_string("\\mred.ini" + ends_in_slash));  
+      return scheme_append_byte_string(home,
+				       scheme_make_byte_string("\\mred.ini" + ends_in_slash));  
     
     if (which == id_x_display)
       return scheme_false;
@@ -2221,22 +2221,22 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
   if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID) == noErr) {
     FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
-    home = scheme_make_string(scheme_mac_spec_to_path(&spec));
+    home = scheme_make_byte_string(scheme_mac_spec_to_path(&spec));
   } else if (wxmac_startup_directory) {
-    home = scheme_make_string(wxmac_startup_directory);
+    home = scheme_make_byte_string(wxmac_startup_directory);
   } else {
-    home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+    home = scheme_make_byte_string(scheme_os_getcwd(NULL, 0, NULL, 1));
   }
   
   int ends_in_colon;
-  ends_in_colon = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == ':';
+  ends_in_colon = (SCHEME_BYTE_STR_VAL(home))[SCHEME_BYTE_STRTAG_VAL(home) - 1] == ':';
 
   if (which == id_init_file)
-    return scheme_append_string(home,
-				scheme_make_string(":mredrc.ss" + ends_in_colon));
+    return scheme_append_byte_string(home,
+				     scheme_make_byte_string(":mredrc.ss" + ends_in_colon));
   if (which == id_setup_file)
-    return scheme_append_string(home,
-				scheme_make_string(":mred.fnt" + ends_in_colon));  
+    return scheme_append_byte_string(home,
+				     scheme_make_byte_string(":mred.fnt" + ends_in_colon));  
 #endif
 
   return scheme_void;
@@ -2248,11 +2248,11 @@ char *wxsFileDialog(char *message, char *default_path,
 {
   Scheme_Object *a[6], *r;
   
-  a[0] = !message ? scheme_false : scheme_make_string(message);
+  a[0] = !message ? scheme_false : scheme_make_utf8_string(message);
   a[1] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
-  a[2] = !default_path ? scheme_false : scheme_make_string(default_path);
-  a[3] = !default_filename ? scheme_false : scheme_make_string(default_filename);
-  a[4] = !default_extension ? scheme_false : scheme_make_string(default_extension);
+  a[2] = !default_path ? scheme_false : scheme_make_byte_string(default_path);
+  a[3] = !default_filename ? scheme_false : scheme_make_byte_string(default_filename);
+  a[4] = !default_extension ? scheme_false : scheme_make_byte_string(default_extension);
   a[5] = scheme_null;
 
   r = scheme_apply(is_put ? put_file : get_file, 6, a);
@@ -2260,7 +2260,7 @@ char *wxsFileDialog(char *message, char *default_path,
   if (SCHEME_FALSEP(r))
     return NULL;
   else
-    return SCHEME_STR_VAL(r);
+    return SCHEME_BYTE_STR_VAL(r);
 }
 
 /***********************************************************************/
@@ -2295,8 +2295,8 @@ int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent)
 {
   Scheme_Object *a[4], *r;
   
-  a[0] = scheme_make_string(caption);
-  a[1] = scheme_make_string(message);
+  a[0] = scheme_make_utf8_string(caption);
+  a[1] = scheme_make_utf8_string(message);
   a[2] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
   a[3] = ((style & wxYES_NO)
 	  ? scheme_intern_symbol("yes-no")
@@ -3147,18 +3147,18 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
 	    && SCHEME_PAIRP(SCHEME_CDR(argv[0]))) {
 	  ak = SCHEME_CDR(argv[0]);
 	  s = SCHEME_CAR(ak);
-	  if (SCHEME_STRINGP(s)
-	      && (SCHEME_STRTAG_VAL(s) == 15)
-	      && !strcmp(SCHEME_STR_VAL(s), "phantom-tool.ss")) {
+	  if (SCHEME_BYTE_STRINGP(s)
+	      && (SCHEME_BYTE_STRTAG_VAL(s) == 15)
+	      && !strcmp(SCHEME_BYTE_STR_VAL(s), "phantom-tool.ss")) {
 	    ak = SCHEME_CDR(ak);
 	    if (SCHEME_NULLP(ak)) {
 	      s = scheme_true;
 	    } else if (SCHEME_PAIRP(ak) 
 		       && SCHEME_NULLP(SCHEME_CDR(ak))) {
 	      s = SCHEME_CAR(ak);
-	      if (SCHEME_STRINGP(s)
-		  && (SCHEME_STRTAG_VAL(s) == 5)
-		  && !strcmp(SCHEME_STR_VAL(s), interesting_coll)) {
+	      if (SCHEME_BYTE_STRINGP(s)
+		  && (SCHEME_BYTE_STRTAG_VAL(s) == 5)
+		  && !strcmp(SCHEME_BYTE_STR_VAL(s), interesting_coll)) {
 		s = scheme_true;
 	      } else
 		s = NULL;

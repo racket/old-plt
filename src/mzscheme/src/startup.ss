@@ -2920,7 +2920,7 @@
 				  lib
 				  (let ([resolved (resolve-path exec-name)])
 				    (cond
-				     [(string=? resolved exec-name) #f]
+				     [(bytes=? resolved exec-name) #f]
 				     [(relative-path? resolved)
 				      (found-exec (build-path base resolved))]
 			             [else (found-exec resolved)]))))
@@ -3143,8 +3143,8 @@
 				   (loop (build-path path 
 						     (let ([p (cadr prefix)])
 						       (cond
-							[(string=? p ".") 'same]
-							[(string=? p "..") 'up]
+							[(bytes=? p #".") 'same]
+							[(bytes=? p #"..") 'up]
 							[else p])))
 					 (caddr prefix))
 				   (build-path path s))))
@@ -3229,7 +3229,7 @@
 				    -loading-filename)])
 			    (for-each
 			     (lambda (s)
-			       (when (string=? s filename)
+			       (when (bytes=? s filename)
 				 (error
 				  'standard-module-name-resolver
 				  "cycle in loading at ~e: ~e"

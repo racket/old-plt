@@ -812,7 +812,7 @@ Scheme_Object *objscheme_bundle_string(char *s)
     return scheme_make_utf8_string(s);
 }
 
-Scheme_Object *objscheme_bundle_byte_string(char *s)
+Scheme_Object *objscheme_bundle_bstring(char *s)
 {
   if (!s)
     return XC_SCHEME_NULL;
@@ -822,7 +822,15 @@ Scheme_Object *objscheme_bundle_byte_string(char *s)
 
 Scheme_Object *objscheme_bundle_pathname(char *s)
 {
-  return objscheme_bundle_byte_string(s);
+  return objscheme_bundle_bstring(s);
+}
+
+Scheme_Object *objscheme_bundle_mzstring(mzchar *s)
+{
+  if (!s)
+    return XC_SCHEME_NULL;
+  else
+    return scheme_make_char_string(s);
 }
 
 Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *symname)
@@ -1084,6 +1092,18 @@ mzchar *objscheme_unbundle_nullable_mzstring(Scheme_Object *obj, const char *whe
     return objscheme_unbundle_mzstring(obj, where);
   else {
     scheme_wrong_type(where, "string or "  XC_NULL_STR, -1, 0, &obj);
+    return NULL;
+  }
+}
+
+char *objscheme_unbundle_nullable_pstring(Scheme_Object *obj, const char *where)
+{
+  if (XC_SCHEME_NULLP(obj))
+    return NULL;
+  else if (!where || SCHEME_PATH_STRINGP(obj))
+    return objscheme_unbundle_pstring(obj, where);
+  else {
+    scheme_wrong_type(where, SCHEME_PATH_STRING_STR " or "  XC_NULL_STR, -1, 0, &obj);
     return NULL;
   }
 }

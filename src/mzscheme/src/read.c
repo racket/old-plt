@@ -850,7 +850,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  }
 	case 'h':
 	  {
-	    const mzchar str[] = { 'a', 's', 'h', 'e', 'q', 0 };
+	    GC_CAN_IGNORE const mzchar str[] = { 'a', 's', 'h', 'e', 'q', 0 };
 	    int scanpos = 0, failed = 0;
 
 	    do {
@@ -1042,7 +1042,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      blen = scheme_utf8_encode_all(tagbuf, ulen, NULL);
 	      lbuffer = (char *)scheme_malloc_atomic(blen + MAX_UTF8_CHAR_BYTES + 1);
 	      scheme_utf8_encode_all(tagbuf, ulen, lbuffer);
-	      blen += scheme_utf8_encode_all(&pch, 1, lbuffer + blen);
+	      blen += scheme_utf8_encode(&pch, 0, 1, 
+					 lbuffer, blen,
+					 0);
 	      lbuffer[blen] = 0;
 	      
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 

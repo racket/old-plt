@@ -2399,7 +2399,7 @@ static Scheme_Object *do_make_regexp(const char *who, int is_byte, int argc, Sch
 
   if (is_byte) {
     if (!SCHEME_BYTE_STRINGP(argv[0]))
-      scheme_wrong_type(who, "byte-string", 0, argc, argv);
+      scheme_wrong_type(who, "byte string", 0, argc, argv);
     bs = argv[0];
   } else {
     if (!SCHEME_CHAR_STRINGP(argv[0]))
@@ -2507,10 +2507,10 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_BYTE_STRINGP(argv[0])
       && !SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type(name, "regexp, byte-regexp, string, or byte-string", 0, argc, argv);
+    scheme_wrong_type(name, "regexp, byte-regexp, string, or byte string", 0, argc, argv);
   if ((peek || (!SCHEME_BYTE_STRINGP(argv[1]) && !SCHEME_CHAR_STRINGP(argv[1])))
       && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type(name, peek ? "input-port" : "string, byte-string, or input-port", 1, argc, argv);
+    scheme_wrong_type(name, peek ? "input-port" : "string, byte string, or input port", 1, argc, argv);
   
   if (SCHEME_CHAR_STRINGP(argv[1])) {
     iport = NULL;
@@ -2716,22 +2716,22 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_BYTE_STRINGP(argv[0])
       && !SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type(name, "regexp, byte-regexp, string, or byte-string", 0, argc, argv);
+    scheme_wrong_type(name, "regexp, byte-regexp, string, or byte string", 0, argc, argv);
   if (!SCHEME_BYTE_STRINGP(argv[1])
       && !SCHEME_CHAR_STRINGP(argv[1]))
-    scheme_wrong_type(name, "string or byte-string", 1, argc, argv);
+    scheme_wrong_type(name, "string or byte string", 1, argc, argv);
   if (!SCHEME_BYTE_STRINGP(argv[2])
       && !SCHEME_CHAR_STRINGP(argv[2]))
-    scheme_wrong_type(name, "string or byte-string", 2, argc, argv);
+    scheme_wrong_type(name, "string or byte string", 2, argc, argv);
 
   if (SCHEME_BYTE_STRINGP(argv[1])) {
     if (!SCHEME_BYTE_STRINGP(argv[2])) {
-      scheme_arg_mismatch(name, "cannot replace a byte-string with a string: ",
+      scheme_arg_mismatch(name, "cannot replace a byte string with a string: ",
 			  argv[2]);
     }
   } else {
     if (!SCHEME_CHAR_STRINGP(argv[2])) {
-      scheme_arg_mismatch(name, "cannot replace a string with a byte-string: ",
+      scheme_arg_mismatch(name, "cannot replace a string with a byte string: ",
 			  argv[2]);
     }
   }

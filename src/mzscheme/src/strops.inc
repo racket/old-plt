@@ -275,7 +275,7 @@ X__(string_to_list) (int argc, Scheme_Object *argv[])
 {
   int len, i;
   uXchar *chars;
-  Scheme_Object *pair = scheme_null;
+  Scheme_Object *pair = scheme_null, *v;
 
   if (!SCHEME_X_STRINGP(argv[0]))
     scheme_wrong_type(XSTRINGSTR "->list", XSTR "string", 0, argc, argv);
@@ -285,13 +285,15 @@ X__(string_to_list) (int argc, Scheme_Object *argv[])
 
   if (len < 0xFFF) {
     for (i = len ; i--; ) {
-      pair = scheme_make_pair(MAKE_CHAR(chars[i]), pair);
+      v = MAKE_CHAR(chars[i]);
+      pair = scheme_make_pair(v, pair);
     }
   } else {
     for (i = len ; i--; ) {
       if (!(i & 0xFFF))
 	SCHEME_USE_FUEL(0xFFF);
-      pair = scheme_make_pair(MAKE_CHAR(chars[i]), pair);
+      v = MAKE_CHAR(chars[i]);
+      pair = scheme_make_pair(v, pair);
     }
   }
 

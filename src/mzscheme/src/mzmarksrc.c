@@ -426,7 +426,16 @@ complex_obj {
 string_obj {
  mark:
   Scheme_Object *o = (Scheme_Object *)p;
-  gcMARK(SCHEME_STR_VAL(o));
+  gcMARK(SCHEME_CHAR_STR_VAL(o));
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+bstring_obj {
+ mark:
+  Scheme_Object *o = (Scheme_Object *)p;
+  gcMARK(SCHEME_BYTE_STR_VAL(o));
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));

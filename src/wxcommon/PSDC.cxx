@@ -145,7 +145,7 @@ class PSStream : public wxObject {
     Out(s2);
   }
   void Out(const char *s) {
-    scheme_put_string("post-script-dc%", f, s, 0, strlen(s), 0);
+    scheme_put_byte_string("post-script-dc%", f, s, 0, strlen(s), 0);
   }
   void Out(float n);
   void Out(double d) {

@@ -1152,7 +1152,7 @@ int string_obj_SIZE(void *p) {
 
 int string_obj_MARK(void *p) {
   Scheme_Object *o = (Scheme_Object *)p;
-  gcMARK(SCHEME_STR_VAL(o));
+  gcMARK(SCHEME_CHAR_STR_VAL(o));
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
@@ -1160,7 +1160,7 @@ int string_obj_MARK(void *p) {
 
 int string_obj_FIXUP(void *p) {
   Scheme_Object *o = (Scheme_Object *)p;
-  gcFIXUP(SCHEME_STR_VAL(o));
+  gcFIXUP(SCHEME_CHAR_STR_VAL(o));
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
@@ -1168,6 +1168,31 @@ int string_obj_FIXUP(void *p) {
 
 #define string_obj_IS_ATOMIC 0
 #define string_obj_IS_CONST_SIZE 1
+
+
+int bstring_obj_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int bstring_obj_MARK(void *p) {
+  Scheme_Object *o = (Scheme_Object *)p;
+  gcMARK(SCHEME_BYTE_STR_VAL(o));
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int bstring_obj_FIXUP(void *p) {
+  Scheme_Object *o = (Scheme_Object *)p;
+  gcFIXUP(SCHEME_BYTE_STR_VAL(o));
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+#define bstring_obj_IS_ATOMIC 0
+#define bstring_obj_IS_CONST_SIZE 1
 
 
 int symbol_obj_SIZE(void *p) {

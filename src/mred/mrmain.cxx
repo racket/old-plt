@@ -91,7 +91,7 @@ static char *get_init_filename(Scheme_Env *env)
   
   path = wxSchemeFindDirectory(1, &type);
 
-  return SCHEME_STR_VAL(path);
+  return SCHEME_BYTE_STR_VAL(path);
 }
 #endif
 

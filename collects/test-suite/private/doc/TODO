@@ -47,3 +47,11 @@ Philippe
 Make the save button come up when the program to test is changed.
 Make the save button not come up when a test-suite is just loaded.
 -------------------
+When execute finished naturally it is still possible to break and get
+the error panel to display. This should not happen.
+-------------------
+Hide caret in the error display text
+-------------------
+Make closing the window when the model is modfied an not saved ask
+for confermation.
+-------------------

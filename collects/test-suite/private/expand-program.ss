@@ -18,6 +18,7 @@
           
           (init-field
            language
+           teachpacks
            error-handler
            clean-up)
           
@@ -36,7 +37,10 @@
                (error-display-handler error-handler)
                (set! user-thread (current-thread))
                (set! user-custodian (current-custodian))
-               (set! user-eventspace (current-eventspace)))
+               (set! user-eventspace (current-eventspace))
+               (drscheme:teachpack:install-teachpacks
+                (drscheme:teachpack:new-teachpack-cache
+                 teachpacks)))
              (lambda () ; =a seperate eventspace=
                (queue-to-drscheme clean-up)))])
           

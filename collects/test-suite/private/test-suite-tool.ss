@@ -10,6 +10,7 @@
    "window.ss"
    "window-layout.ss"
    "window-menus.ss"
+   "window-language.ss"
    "model.ss"
    "case.ss"
    "case-layout.ss"
@@ -28,17 +29,11 @@
     (unit/sig drscheme-extentions^
       (import drscheme:tool^ window^)
       
-      ;; open-test-suite ((union string? false?) . -> . void?)
-      ;; opens a test-suite window
-      (define (open-test-suite filename)
-        (let ([window (instantiate window% ())])
-          (send window show true)
-          (when filename (send window load-file filename))))
-      
       ;; test-suite:frame-basics-mixin mixin-contract?
       ;; a new frame with an open and new file menu option for test-suites
       (define (test-suite:frame-basics-mixin super%)
         (class super%
+          (inherit get-definitions-text)
           
           ;; file-menu:between-new-and-open ((is-a?/c file-menu%) . -> . void?)
           ;; called when contructing the menu between new and open
@@ -50,7 +45,9 @@
               (parent file-menu)
               (callback
                (lambda (menu event)
-                 (open-test-suite false))))
+                 (send (instantiate window% ()
+                         (program (send (get-definitions-text) get-filename)))
+                       show true))))
             (super-file-menu:between-new-and-open file-menu))
           
           ;; file-menu:between-open-and-revert ((is-a?/c file-menu%) . -> . void?)
@@ -63,8 +60,11 @@
               (parent file-menu)
               (callback
                (lambda (menu event)
-                 (let ([file (get-file)])
-                   (when file (open-test-suite file))))))
+                 (let ([f (get-file false this)])
+                   (when f
+                     (let ([w (instantiate window% ())])
+                       (send w load-file f)
+                       (send w show true)))))))
             (super-file-menu:between-open-and-revert file-menu))
           
           (super-instantiate ())
@@ -77,16 +77,19 @@
     (compound-unit/sig
       (import (TOOL : drscheme:tool^))
       (link (PHASES          : tool-phases^ (tool-phases@))
-            (EXTENTIONS      : drscheme-extentions^ (drscheme-extentions@ TOOL WINDOW-MENUS))
+            (EXTENTIONS      : drscheme-extentions^ (drscheme-extentions@ TOOL WINDOW-LANGUAGE))
             
             (WINDOW          : window^ (window@ TOOL MODEL))
             (WINDOW-LAYOUT   : window^ (window-layout@ TOOL WINDOW))
             (WINDOW-MENUS    : window^ (window-menus@ WINDOW-LAYOUT))
+            (WINDOW-LANGUAGE : window^ (window-language@ TOOL WINDOW-MENUS))
             
             (MODEL           : model^ (model@ TOOL CASE-SNIPCLASS DEF EXPAND-PROGRAM))
+            
             (CASE            : case^ (case@))
             (CASE-LAYOUT     : case^ (case-layout@ CASE))
             (CASE-SNIPCLASS  : case^ (case-snipclass@ CASE-LAYOUT))
+            
             (DEF             : def^ (def@))
             (EXPAND-PROGRAM  : expand-program^ (expand-program@ TOOL))
             )

@@ -9,6 +9,7 @@
    (lib "private/aligned-pasteboard/snip-lib.ss" "mrlib")
    (lib "mred.ss" "mred")
    (lib "framework.ss" "framework")
+   (lib "list.ss")
    "interfaces.ss"
    "signatures.ss"
    "test-text.ss")
@@ -33,7 +34,8 @@
            [tests-showing? false]
            [program (instantiate text% ())]
            [language (preferences:get
-                      (drscheme:language-configuration:get-settings-preferences-symbol))])
+                      (drscheme:language-configuration:get-settings-preferences-symbol))]
+           [teachpacks empty])
           
           ;; get-program (-> string?)
           ;; the filename of the program to be tested by the test-suite
@@ -46,6 +48,26 @@
             (send* program
               (erase)
               (insert v)))
+          
+          ;; get-teachpacks (-> (listof string?))
+          ;; the teachpacks currently installed in the language
+          (define/public (get-teachpacks)
+            teachpacks)
+          
+          ;; clear-teachpacks (-> void?)
+          ;; set the teachpacks to empty
+          (define/public (clear-teachpacks)
+            (set! teachpacks empty))
+          
+          ;; remove-teachpack (string? . -> void?)
+          ;; remove a teackpack from the list
+          (define/public (remove-teachpack tp)
+            (set! teachpacks (remove tp teachpacks)))
+          
+          ;; add-teachpack (string? . -> . void?)
+          ;; add a teachpack
+          (define/public (add-teachpack tp)
+            (set! teachpacks (append teachpacks (list tp))))
           
           ;; insert-case (-> void?)
           ;; adds a new test case to the test-suite
@@ -80,6 +102,7 @@
             (set! expander
                   (instantiate expand-program% ()
                     (language language)
+                    (teachpacks teachpacks)
                     (error-handler (send window get-error-handler))
                     (clean-up
                      (lambda ()

@@ -79,5 +79,21 @@
       ;; show-tests (boolean? . -> . void?)
       ;; show the tests in the display
       show-tests
+          
+      ;; get-teachpacks (-> (listof string?))
+      ;; the teachpacks currently installed in the language
+      get-teachpacks
+      
+      ;; clear-teachpacks (-> void?)
+      ;; set the teachpacks to empty
+      clear-teachpacks
+      
+      ;; remove-teachpack (string? . -> void?)
+      ;; remove a teackpack from the list
+      remove-teachpack
+      
+      ;; add-teachpack (string? . -> . void?)
+      ;; add a teachpack
+      add-teachpack
       ))
   )

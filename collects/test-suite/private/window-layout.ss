@@ -9,7 +9,7 @@
    (lib "mred.ss" "mred")
    (lib "tool.ss" "drscheme")
    (lib "aligned-pasteboard.ss" "mrlib")
-   (lib "private/debug.ss" "drscheme")
+   (lib "match.ss")
    "interfaces.ss"
    "signatures.ss")
   
@@ -18,7 +18,7 @@
   (define *save-icon* (build-path (collection-path "icons") "save.bmp"))
   (define *execute-icon* (build-path (collection-path "icons") "execute.bmp"))
   (define *break-icon* (build-path (collection-path "icons") "break.bmp"))
-  (define *empty-icon* (build-path (collection-path "new-test-suite") "icons" "empty.jpeg"))
+  (define *empty-icon* (build-path (collection-path "test-suite") "private" "icons" "empty.jpeg"))
   
   (define window-layout@
     (unit/sig window^
@@ -192,15 +192,15 @@
           ;; an error handler for displaying errors to the window
           (rename [super-get-error-handler get-error-handler])
           (define/override (get-error-handler)
-            (letrec [highlight-errors
+            (letrec ([highlight-errors
                      (match-lambda
                        [() (void)]
                        [((text start stop) errors ...)
                         (let ([sd (make-object style-delta%)])
-                          (send sd set-delta-background "red")
+                          (send sd set-delta-background "lightpink")
                           (send text change-style sd start stop))
-                        (highlight error)])]
-              (make-debug-error-display-handler/text
+                        (highlight-errors errors)])])
+              (drscheme:debug:make-debug-error-display-handler/text
                (lambda () error-text)
                (lambda (text thunk) (thunk))
                highlight-errors
@@ -208,7 +208,7 @@
                  (send error-text erase)
                  (drscheme:rep:insert-error-in-text/highlight-errors
                   error-text
-                  hilight-errors
+                  highlight-errors
                   msg exn
                   false)
                  (show-error-panel)

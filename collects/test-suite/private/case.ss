@@ -16,9 +16,9 @@
    case@
    case-snipclass@)
   
-  (define *unknown* (build-path (collection-path "test-suite" "icons") "question-mark.jpeg"))
-  (define *success* (build-path (collection-path "test-suite" "icons") "check-mark.jpeg"))
-  (define *failure* (build-path (collection-path "test-suite" "icons") "cross.jpeg"))
+  (define *unknown* (build-path (collection-path "test-suite") "private" "icons" "question-mark.jpeg"))
+  (define *success* (build-path (collection-path "test-suite") "private" "icons" "check-mark.jpeg"))
+  (define *failure* (build-path (collection-path "test-suite") "private" "icons" "cross.jpeg"))
   (define *error* (build-path (collection-path "icons") "bug09.gif"))
   
   (define case@
@@ -71,23 +71,23 @@
           ;; execute the test case
           ;; status: set-actual should really be called from within the test as a 3D value but I couldn't
           ;;         get it to work. will do later.
-          (define/public (execute expander continue)
+          (define/public (execute expander continue) ; =drscheme-eventspace=
             (let ([call-with-test
-                   (lambda (f)
+                   (lambda (f) ; =drscheme-eventspace=
                      (if test-showing?
                          (send expander expand-text test f)
                          (f (syntax equal?))))])
               (send expander expand-text call
-                    (lambda (call-syntax)
+                    (lambda (call-syntax) ; =drscheme-eventspace=
                       (send expander eval-syntax call-syntax
-                            (lambda (call-value)
+                            (lambda (call-value) ; =drscheme-eventspace=
                               (send expander user-format call-value
-                                    (lambda (call-string)
+                                    (lambda (call-string) ; =drscheme-eventspace=
                                       (set-actual call-string)
                                       (send expander expand-text expected
-                                            (lambda (expected-syntax)
+                                            (lambda (expected-syntax) ; =drscheme-eventspace=
                                               (call-with-test
-                                               (lambda (test-syntax)
+                                               (lambda (test-syntax) ; =drscheme-eventspace=
                                                  (send expander eval-syntax
                                                        (with-syntax ([call call-syntax]
                                                                      [expected expected-syntax]

@@ -18,7 +18,7 @@
        (define window%
          (class* super:window% (test-suite:window<%>)
            (inherit get-menu-bar)
-           (inherit-field new delete execute break save-as save show-tests choose-language)
+           (inherit-field new delete execute break save-as save show-tests)
       
            ;; file-menu:create-save? (-> boolean?)
            ;; called to check whether the save menu should be created
@@ -41,18 +41,6 @@
              (save-as))
            
            (super-instantiate ())
-           
-           (let ([language-menu
-                  (instantiate menu% ()
-                    (label "Language")
-                    (parent (get-menu-bar)))])
-             (instantiate menu-item% ()
-               (label "Choose Language ...")
-               (parent language-menu)
-               (callback
-                (lambda (button event)
-                  (choose-language)))
-               (shortcut #\l)))
            
            (let ([test-menu (instantiate menu% ()
                               (label "Test")

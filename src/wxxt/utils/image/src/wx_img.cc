@@ -949,37 +949,28 @@ void wxImage::CreateXImage()
     case 24:
       {
       byte  *imagedata, *ip, *pp;
-      int extra = 3 - (eWIDE - 1) % 4, j;
-      imagedata = (byte *) malloc((3 * eWIDE + extra)*eHIGH);
+      imagedata = (byte *) malloc(3 * eWIDE * eHIGH);
       if (!imagedata) FatalError("couldn't malloc imagedata");
       
       theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
-			      (char *) imagedata, eWIDE, eHIGH, 32,
-			      3 * eWIDE + extra);
+			      (char *) imagedata, eWIDE, eHIGH, 8,
+			      3 * eWIDE);
       if (!theImage) {
 	return;
 	// FatalError("couldn't create theImage!");
       }
       
       if (theImage->byte_order == MSBFirst) 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata, j=eWIDE; i>0; i--,pp++) {
+	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
 	  *ip++ = (cols[*pp]>>16) & 0xff;
 	  *ip++ = (cols[*pp]>>8) & 0xff;
 	  *ip++ =  cols[*pp] & 0xff;
-	  if (!--j) {
-	    pp += extra;
-	    j = eWIDE;
-	  }
 	}
       else 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata, j=eWIDE; i>0; i--,pp++) {
+	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
 	  *ip++ =  cols[*pp] & 0xff;
 	  *ip++ = (cols[*pp]>>8) & 0xff;
 	  *ip++ = (cols[*pp]>>16) & 0xff;
-	  if (!--j) {
-	    pp += extra;
-	    j = eWIDE;
-	  }
 	}
       }      
       break;

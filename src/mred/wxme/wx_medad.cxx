@@ -670,8 +670,8 @@ void wxMediaCanvas::Redraw(float localx, float localy, float fw, float fh)
   if (!fakeYScroll)
     clipw -= SB_WIDTH;
 #endif
-  SetClippingRegion(XMARGIN, YMARGIN,
-		    clipw - 2 * XMARGIN, cliph - 2 * YMARGIN);
+  GetDC()->SetClippingRect(XMARGIN, YMARGIN,
+			   clipw - 2 * XMARGIN, cliph - 2 * YMARGIN);
 #endif
   
   GetView(&x, &y, &w, &h);

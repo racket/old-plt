@@ -89,6 +89,7 @@
 #endif
 #define scheme_apply_to_list (scheme_extension_table->scheme_apply_to_list)
 #define scheme_eval_string (scheme_extension_table->scheme_eval_string)
+#define scheme_eval_string_multi (scheme_extension_table->scheme_eval_string_multi)
 #define scheme_eval_string_all (scheme_extension_table->scheme_eval_string_all)
 #define _scheme_apply_known_closed_prim (scheme_extension_table->_scheme_apply_known_closed_prim)
 #define _scheme_apply_known_closed_prim_multi (scheme_extension_table->_scheme_apply_known_closed_prim_multi)

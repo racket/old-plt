@@ -75,6 +75,8 @@ static Scheme_Object *zero_length_string;
 
 static Scheme_Hash_Table *putenv_str_table;
 
+static char *embedding_banner;
+
 void
 scheme_init_string (Scheme_Env *env)
 {
@@ -89,6 +91,8 @@ scheme_init_string (Scheme_Env *env)
     platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH);
 
     REGISTER_SO(putenv_str_table);
+
+    REGISTER_SO(embedding_banner);
   }
 
   scheme_add_global_constant("string?", 
@@ -1087,13 +1091,13 @@ sch_fprintf(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-version (int argc, Scheme_Object *argv[])
+version(int argc, Scheme_Object *argv[])
 {
   return scheme_make_string(scheme_version());
 }
 
 static Scheme_Object *
-banner (int argc, Scheme_Object *argv[])
+banner(int argc, Scheme_Object *argv[])
 {
   return scheme_make_string(scheme_banner());
 }
@@ -1115,8 +1119,16 @@ char *scheme_version(void)
 
 char *scheme_banner(void)
 {
-  return "Welcome to MzScheme version " VERSION VERSION_SUFFIX
-    ", Copyright (c) 1995-98 PLT (Matthew Flatt)\n";
+  if (embedding_banner)
+    return embedding_banner;
+  else
+    return "Welcome to MzScheme version " VERSION VERSION_SUFFIX
+      ", Copyright (c) 1995-98 PLT (Matthew Flatt)\n";
+}
+
+void scheme_set_banner(char *s)
+{
+  embedding_banner = s;
 }
 
 int scheme_string_has_null(Scheme_Object *o)

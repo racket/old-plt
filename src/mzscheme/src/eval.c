@@ -3125,14 +3125,21 @@ Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont
     expr = scheme_read(port);
     if (SAME_OBJ(expr, scheme_eof))
       cont = 0;
+    else if (cont < 0)
+      result = scheme_eval(expr, env);
     else
       result = scheme_eval_multi(expr, env);
-  } while (cont);
+  } while (cont > 0);
 
   return result;
 }
 
 Scheme_Object *scheme_eval_string(const char *str, Scheme_Env *env)
+{
+  return scheme_eval_string_all(str, env, -1);
+}
+
+Scheme_Object *scheme_eval_string_multi(const char *str, Scheme_Env *env)
 {
   return scheme_eval_string_all(str, env, 0);
 }

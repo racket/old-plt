@@ -163,6 +163,7 @@ Scheme_Object *(*scheme_apply_multi_eb_wp)(Scheme_Object *rator, int num_rands, 
 #endif
 Scheme_Object *(*scheme_apply_to_list)(Scheme_Object *rator, Scheme_Object *argss);
 Scheme_Object *(*scheme_eval_string)(const char *str, Scheme_Env *env);
+Scheme_Object *(*scheme_eval_string_multi)(const char *str, Scheme_Env *env);
 Scheme_Object *(*scheme_eval_string_all)(const char *str, Scheme_Env *env, int all);
 Scheme_Object *(*_scheme_apply_known_closed_prim)(Scheme_Object *rator, int argc,
 					       Scheme_Object **argv);

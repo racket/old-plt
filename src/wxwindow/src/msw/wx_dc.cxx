@@ -1374,11 +1374,11 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
     r1 = r2;
 
   if (StartBrush(dc, 1)) {
-    (void)RoundRect(dc, x1, y1, x2 + 1, y2 + 1, radius, radius);
+    (void)RoundRect(dc, x1, y1, x2 + 1, y2 + 1, r1, r1);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)RoundRect(dc, x1, y1, x2, y2, radius, radius);
+    (void)RoundRect(dc, x1, y1, x2, y2, r1, r1);
     DonePen(dc);
   }
 
@@ -1548,13 +1548,13 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
 
 void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs4, int d, double angle)
 {
-  int xx1, yy1, xx, yy;
   HDC dc;
   DWORD old_background;
   double w, h;
   wchar_t *ustring;
   long len, alen;
   SIZE sizeRect;
+  double oox, ooy;
 
   dc = ThisDC();
 
@@ -1562,8 +1562,6 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
   ReleaseGraphics(dc);
   SetScaleMode(wxWINDOWS_SCALE, dc);
-
-  ShiftXY(x, y, &xx1, &yy1);
 
   if (font) {
     HFONT cfont;
@@ -1592,10 +1590,11 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
   ustring = convert_to_drawable_format(text, d, ucs4, &len);
 
-  xx = xx1;
-  yy = yy1;
   w = h = 0;
   d = 0;
+
+  oox = device_origin_x;
+  ooy = device_origin_y;
 
   while (len) {
     if (combine)
@@ -1603,16 +1602,26 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     else
       alen = 1;
 
-    (void)TextOutW(dc, xx + w, yy, ustring XFORM_OK_PLUS d, alen);
+    SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
 
-    GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+    (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
 
-    w += sizeRect.cx;
-    h += sizeRect.cy;
+    if (alen == 1) {
+      ABCFLOAT cw;
+      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
+      w += cw.abcfA + cw.abcfB + cw.abcfC;
+    } else {
+      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+
+      w += sizeRect.cx;
+      h += sizeRect.cy;
+    }
 
     len -= alen;
     d += alen;
   }
+
+  SetDeviceOrigin(oox, ooy);
 
   if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
@@ -1856,7 +1865,8 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
   HDC dc;
   SIZE sizeRect;
   TEXTMETRIC tm;
-  long len, alen, tx, ty;
+  long len, alen;
+  double tx, ty;
   wchar_t *ustring;
   int once = 1;
 
@@ -1893,10 +1903,16 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
     else
       alen = 1;
 
-    GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-
-    if (len)
-      tx += sizeRect.cx;
+    if (alen == 1) {
+      ABCFLOAT cw;
+      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
+      tx += cw.abcfA + cw.abcfB + cw.abcfC;
+      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+    } else {
+      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+      if (len)
+	tx += sizeRect.cx;
+    }
     if (sizeRect.cy > ty)
       ty = sizeRect.cy;
 
@@ -2112,10 +2128,9 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
                 wxBitmap *source, double xsrc, double ysrc, int rop,
 		wxColour *c, wxBitmap *mask)
 {
-  int xdest1, ydest1, xsrc1, ysrc1, iw, ih;
+  int xdest1, ydest1, xsrc1, ysrc1, iw, ih, diw, dih;
   HDC dc, dc_src, invented_dc, mdc = NULL;
   wxMemoryDC *sel, *msel = NULL, *invented_memdc = NULL;
-  double selxs = 1.0, selys = 1.0, mselxs = 1.0, mselys = 1.0;
   wxBitmap *invented = NULL;
   Bool success = 1, invented_col = 0, use_alpha = 0;
   DWORD op = 0;
@@ -2125,7 +2140,27 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
   if (!dc) return FALSE;
 
   ReleaseGraphics(dc);
-  SetScaleMode(wxWINDOWS_SCALE, dc);
+
+  /* Use our own scaling so that we don't lose precision
+     in terms of the starting pixel and the width. Also,
+     turning off scaling ensures that everything works if
+     `source' is selected into this DC. */
+  SetScaleMode(wxWX_SCALE, dc);
+
+  /* Compute scaling and offset before adjusting source, in case the
+     source is the dest. */
+  ShiftXY(xdest, ydest, &xdest1, &ydest1);
+  ShiftXY(xdest + width, ydest + height, &diw, &dih);
+  diw -= xdest1;
+  dih -= ydest1;
+  /* diw and dih are dest width/height */
+
+  xsrc1 = (int)floor(xsrc);
+  ysrc1 = (int)floor(ysrc);
+
+  /* Source w/h */
+  iw = (int)floor(width);
+  ih = (int)floor(height);
  
   if (!blit_dc) {
     wxREGGLOB(blit_dc);
@@ -2134,8 +2169,7 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
 
   sel = (wxMemoryDC *)source->selectedInto;
   if (sel) {
-    sel->GetUserScale(&selxs, &selys);
-    sel->SetUserScale(1, 1);
+    sel->SetScaleMode(wxWX_SCALE);
     dc_src = sel->ThisDC();
   } else {
     blit_dc->SelectObject(source);
@@ -2147,19 +2181,14 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
     return FALSE;
   }
 
-  ShiftXY(xdest, ydest, &xdest1, &ydest1);
-  xsrc1 = (int)floor(xsrc);
-  ysrc1 = (int)floor(ysrc);
-
-  iw = (int)floor(width);
-  ih = (int)floor(height);
-
-  if (mask && ((mask->GetDepth() > 1) || !is_nt())) {
-    /* No MaskBlt in 95/98/Me, so we invent a bitmap like the source,
-       but with white where the mask has white.
-
-       Also, when AlphaBlend is available, we need to create a bitmaps
-       with alphas in it. */
+  if (mask && ((mask->GetDepth() > 1) || !is_nt() || (iw != diw) || (ih != dih))) {
+    /* Either:
+        * No MaskBlt in 95/98/Me, or we need stretching that MaskBlt
+          doesn't support, so we invent a bitmap like the source, but
+          with white where the mask has white.
+	* When AlphaBlend is available, we want to create a bitmap
+          with alphas in it. 
+    */
     int mono_src;
 
     if (mask == source) {
@@ -2168,8 +2197,7 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
     } else {
       msel = (wxMemoryDC *)mask->selectedInto;
       if (msel) {
-	msel->GetUserScale(&mselxs, &mselys);
-	msel->SetUserScale(1, 1);
+	msel->SetScaleMode(wxWX_SCALE);
 	mdc = msel->ThisDC();
       } else {
 	if (!blit_mdc) {
@@ -2279,7 +2307,6 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
       /* Failed */
       if (msel) {
 	msel->DoneDC(mdc);
-	msel->SetUserScale(mselxs, mselys);
       } else {
 	blit_mdc->DoneDC(mdc);
 	blit_mdc->SelectObject(NULL);
@@ -2287,7 +2314,6 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
       DoneDC(dc);
       if (sel) {
 	sel->DoneDC(dc_src);
-	sel->SetUserScale(selxs, selys);
       } else {
 	blit_dc->DoneDC(dc_src);
 	blit_dc->SelectObject(NULL);
@@ -2305,7 +2331,7 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
     bf.AlphaFormat = AC_SRC_ALPHA;
     
     success = wxAlphaBlend(dc, 
-			   xdest1, ydest1, iw, ih,
+			   xdest1, ydest1, diw, dih,
 			   invented_dc,
 			   0, 0, iw, ih,
 			   bf);
@@ -2327,15 +2353,15 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
 			    mask->ms_bitmap, xsrc1, ysrc1,
 			    MAKEROP4(wxKEEPDEST, MERGEPAINT));
 	} else {
-	  success = BitBlt(dc, xdest1, ydest1, 
-			   iw, ih,
-			   (invented_col
-			    ? mdc 
-			    : (invented_memdc 
-			       ? invented_dc 
-			       : dc_src)), 
-			   xsrc1, ysrc1,
-			   MERGEPAINT);
+	  success = StretchBlt(dc, xdest1, ydest1, 
+			       diw, dih,
+			       (invented_col
+				? mdc 
+				: (invented_memdc 
+				   ? invented_dc 
+				   : dc_src)), 
+			       xsrc1, ysrc1, iw, ih,
+			       MERGEPAINT);
 	  if (invented_col) {
 	    /* zero src offset for second step, which uses the invented_dc */
 	    xsrc1 = ysrc1 = 0;
@@ -2362,11 +2388,11 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
 			  mask->ms_bitmap, xsrc1, ysrc1,
 			  MAKEROP4(wxKEEPDEST, op));
       } else {
-	success = BitBlt(dc, xdest1, ydest1, 
-			 iw, ih,
-			 invented_memdc ? invented_dc : dc_src,
-			 xsrc1, ysrc1, 
-			 op);
+	success = StretchBlt(dc, xdest1, ydest1, 
+			     diw, dih,
+			     invented_memdc ? invented_dc : dc_src,
+			     xsrc1, ysrc1, iw, ih,
+			     op);
       }
     }
   }
@@ -2374,7 +2400,6 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
   DoneDC(dc);
   if (sel) {
     sel->DoneDC(dc_src);
-    sel->SetUserScale(selxs, selys);
   } else {
     blit_dc->DoneDC(dc_src);
     blit_dc->SelectObject(NULL);
@@ -2382,7 +2407,6 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
   if (mdc && (mdc != dc_src)) {
     if (msel) {
       msel->DoneDC(mdc);
-      msel->SetUserScale(mselxs, mselys);
     } else {
       blit_mdc->DoneDC(mdc);
       blit_mdc->SelectObject(NULL);

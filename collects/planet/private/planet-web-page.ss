@@ -6,7 +6,13 @@
            (lib "list.ss")
            (lib "etc.ss"))
   
+  (provide build-web-page-file)
+  
   (define WEB-PAGE-FILE (make-parameter "index.html"))
+  (define DOCS-DIR (make-parameter "docs"))
+  
+  (provide WEB-PAGE-FILE DOCS-DIR)
+  
   
   (define (build-web-page-file webroot)
     (with-output-to-file (build-path webroot (WEB-PAGE-FILE))
@@ -44,12 +50,15 @@
             (h3 ,(pkg->name pkg))
             (div ((class "latestVersion"))
                  ,(if (file-exists? (build-path webroot
-                                                "docs"
+                                                (DOCS-DIR)
+                                                owner-name
                                                 (pkg->name pkg) 
                                                 (number->string latest-major-version)
                                                 (number->string latest-minor-version)
                                                 "doc.txt"))
-                      `(a ((href ,(format "docs/~a/~a/~a/doc.txt"
+                      `(a ((href ,(format "~a/~a/~a/~a/~a/doc.txt"
+                                          (docs-dir)
+                                          owner-name
                                           (pkg->name pkg)
                                           latest-major-version
                                           latest-minor-version)))

@@ -33,8 +33,8 @@
 	(public
 	  [panel% (class-asi mred:container:vertical-panel%
 		    (public
-		      [default-spacing-width 1]
-		      [default-border-width 1]))]
+		      [default-spacing-width 2]
+		      [default-border-width 2]))]
 	  [on-close (lambda () #t)])
 	(sequence 
 	  (apply super-init args))
@@ -45,6 +45,7 @@
 	  [pre-on-char
 	   (lambda (receiver event)
 	     (let ([ans '(send keymap handle-key-event this event)])
+	       '(printf "handled keyevent? ~a~n" ans)
 	       (or #f
 		   (super-pre-on-char receiver event))))]
 	  [pre-on-eventt
@@ -239,12 +240,7 @@
 			 (send file-menu append-item (if (eq? wx:platform 'macintosh)
 							 "Quit"
 							 "E&xit")
-			       file-menu:quit file-menu:quit-help-string #f
-			       (lambda (wx:platform)
-				 (case wx:platform
-				   [(windows) #f]
-				   [(macintosh) "d:q"]
-				   [else "c:x;c:c"])))))
+			       file-menu:quit file-menu:quit-help-string #f "q")))
 		 (file-menu:after-quit file-menu)
 		 
 		 

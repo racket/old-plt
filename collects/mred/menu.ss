@@ -192,6 +192,14 @@
 		  [super-delete delete])
 	  (private
 	    [menus ()]
+	    [keymap%
+	     (class-asi wx:keymap%
+	       (rename [super-map-function map-function])
+	       (public
+		 (map-function
+		  (lambda args
+		    '(printf "map-functinon: ~a~n" args)
+		    (apply super-map-function args)))))]
 	    [macintosh-keymap (make-object wx:keymap%)]
 	    [windows-keymap (make-object wx:keymap%)]
 	    [unix-keymap (make-object wx:keymap%)])

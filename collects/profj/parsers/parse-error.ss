@@ -600,6 +600,7 @@
            ((and (c-brace? tok) just-method?) (parse-error "Encountered extra }" srt end))
            ((abstract? tok) (parse-members cur (getter) 'method getter #t just-method?))
            ((prim-type? tok) (parse-members cur (getter) 'method-or-field getter #f just-method?))
+           ;Intermediate & Advanced
            ((and (or (intermediate?) (advanced?)) (void-token? tok)) (parse-members cur (getter) 'method-id getter #f just-method?))
            ((id-token? tok) (parse-members cur (getter) 'member getter #f just-method?))
            ;Advanced
@@ -651,12 +652,13 @@
                  (parse-error "Method or field has not completed, class body still requires a }" srt end))
                 ;Just ended a field
                 ((semi-colon? n-tok) (parse-members next (getter) 'start getter #f just-method?))
+                ;Intermediate and Advanced
                 ((comma? n-tok) 
                  (if (or (intermediate?) (advanced?))
                      (parse-members next (getter) 'field-list getter abstract-method? just-method?)
                      (parse-error (format "Expected an end to field ~a, fields end in ';', ',' is not allowed" (token-value tok))
                                   srt ne)))
-                ((and (or (intermediate?) (advanced?)) (teaching-assignment-operator? n-tok))
+                ((and #;(or (intermediate?) (advanced?)) (teaching-assignment-operator? n-tok))
                  (let ((assign-exp (getter)))
                    (cond
                      ((eof? (get-tok assign-exp))
@@ -689,7 +691,7 @@
                           (format "Fields must be separatley declared, method paramters must be in ()s, ~a not allowed" n-out))
                       srt ne)))
                 (else (parse-error 
-                       (format "Expected ';' to end field or method parameter list, found ~a" n-out) srt ne)))))
+                       (format "Expected ';' to end field or abstract method parameter list, found ~a" n-out) srt ne)))))
            (else 
             (if (and (advanced?) (o-bracket? tok))
                 (let* ((next (getter))
@@ -746,7 +748,11 @@
            ((COMMA) (parse-members cur (getter) 'field-list getter #f just-method?))
            ((SEMI_COLON) (parse-members cur (getter) 'start getter #f just-method?))
            ((IDENTIFIER) (parse-error (format "Fields must be separated by commas, ~a not allowed" out) srt end))
-           (else (parse-error (format "Expected a ; to end field, or more field names, found ~a" out) srt end))))                
+           (else 
+            (parse-error 
+             (if (beginner?) 
+                 (format "Expected a ';' to end the field, found ~a" out)
+                 (format "Expected a ; to end field, or more field names, found ~a" out)) srt end))))                
         ((method)
          (cond
            ((eof? tok) (parse-error "Expected method, and class body still requires a }" ps pe))

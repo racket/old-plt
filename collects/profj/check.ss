@@ -330,6 +330,9 @@
                               assigns))
                     inherited-fields))
         (for-each (lambda (field)
+                    (printf "~a~n" field)
+                    (printf "~a~n" (andmap (lambda (assign)
+                                             (field-set? field assign (car c-class) level #f)) assigns))
                     (if (memq 'static (map modifier-kind (field-modifiers field)))
                         (andmap
                          (lambda (assign)
@@ -525,7 +528,6 @@
        (apply append (map get-assigns-exp inits)))
       (else
        (apply append (map get-init-assigns (map array-init-vals inits))))))
-  
           
   (define (get-static-assigns m l) null)
   
@@ -539,7 +541,7 @@
                                  (if static? 'static 'instance))
                              (field-src field))
         (let* ((assign (car assigns))
-               (left (assignment-left assign)))
+               (left (access-name (assignment-left assign))))
           (or (cond
                 ((local-access? left) 
                  (equal? (id-string (local-access-name left))
@@ -760,7 +762,7 @@
      '=
      (case kind
        ((not-left-this)
-        "Constructor must assign the class's fields.  This expression is not a field of this class and maynot be assigned")
+        "Constructor must assign the class's fields. This expression is not a field of this class and maynot be assigned")
        ((right-this)
         "The constructor maynot assign fields with other of its fields. Other values must be used"))
      '= src))          

@@ -564,18 +564,19 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			break;
 		case kBrushTool:
 			{
+                        Pattern color;
 			int theBrushStyle = current_brush->GetStyle();
 			int log = theBrushStyle == wxXOR ? patXor : patCopy;
 			if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
-				PenPat(GetQDGlobalsBlack(NULL));
+				PenPat(GetQDGlobalsBlack(&color));
 			else if (theBrushStyle == wxTRANSPARENT)
-				PenPat(GetQDGlobalsWhite(NULL)); // WCH : does this work??
+				PenPat(GetQDGlobalsWhite(&color)); // WCH : does this work??
 			else if (IS_HATCH(theBrushStyle)) {
 				macGetHatchPattern(theBrushStyle, &cMacPattern);
 				PenPat(&cMacPattern);
 				log = patOr;
 			} else {
-				PenPat(GetQDGlobalsBlack(NULL));
+				PenPat(GetQDGlobalsBlack(&color));
 			}
 	
 			InstallColor(current_background_color, FALSE);
@@ -613,6 +614,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			    log = patXor;
 			    break;
 			}
+                        Pattern color;
 			wxBitmap *bm = current_pen->GetStipple();
 			if (bm && bm->Ok() && (bm->GetDepth() == 1)
 			    && (bm->GetWidth() == 8) && (bm->GetHeight() == 8)) {
@@ -634,22 +636,22 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			  SetGWorld(saveport, savegd);
 			  PenPat((Pattern *)p);
 			} else if (thePenStyle == wxSOLID)
-				PenPat(GetQDGlobalsBlack(NULL));
+				PenPat(GetQDGlobalsBlack(&color));
 			else if (thePenStyle == wxTRANSPARENT)
-				PenPat(GetQDGlobalsWhite(NULL));
+				PenPat(GetQDGlobalsWhite(&color));
 			else if ((thePenStyle == wxDOT)
 			         || (thePenStyle == wxSHORT_DASH)) {
-				PenPat(GetQDGlobalsLightGray(NULL));
+				PenPat(GetQDGlobalsLightGray(&color));
 				if (log == patCopy) log = patOr;
 			} else if ((thePenStyle == wxLONG_DASH)
 			         || (thePenStyle == wxDOT_DASH)) {
-				PenPat(GetQDGlobalsDarkGray(NULL));
+				PenPat(GetQDGlobalsDarkGray(&color));
 				if (log == patCopy) log = patOr;
 			} else if (IS_HATCH(thePenStyle)) {
 				macGetHatchPattern(thePenStyle, &cMacPattern);
 				PenPat(&cMacPattern);
 			} else {
-				PenPat(GetQDGlobalsBlack(NULL));
+				PenPat(GetQDGlobalsBlack(&color));
 			}
 
 			InstallColor(current_pen->GetColour(), TRUE);

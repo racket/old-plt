@@ -322,71 +322,128 @@ char *wxFileSelector(char *message, char *default_path,
     NavDialogCreationOptions dialogOptions;
     NavGetDefaultDialogCreationOptions(&dialogOptions);
     
-    if (default_filename) {
-        CFStringRef default = CFStringCreateWithCString(NULL,default_filename,kCFStringEncodingMacRoman);
-        dialogOptions->saveFileName = default;
-    }
+    if (default_filename) 
+        dialogOptions.saveFileName = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
     if (message)
-        CFStringRef messageStringRef = CFStringCreateWithCString(NULL,default_filename,kCFStringEncodingMacRoman);
-        dialogOptions->message = messageStringRef;
-    }
-    dialogOptions->modality = kWindowModalityApplicationModal;
+        dialogOptions.message = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
+    dialogOptions.modality = kWindowModalityAppModal;
     
-    OSErr err;
     NavDialogRef outDialog;
-    NavReplyRecord reply;
     
     // looks like there's no way to specify a default directory to start in...
  
     // create the dialog:
     if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN)) {
-      if (NavCreateGetFileDialog(dialogOptions,NULL,eventProc,NULL,NULL,NULL,&outDialog) != noErr) {
+      if (NavCreateGetFileDialog(&dialogOptions,NULL,eventProc,NULL,NULL,NULL,&outDialog) != noErr) {
         if (default_filename) 
-          CFRelease(dialogOptions->saveFilename);
+          CFRelease(dialogOptions.saveFileName);
         if (message)
-          CFRelease(dialogOptions->message);
+          CFRelease(dialogOptions.message);
         return NULL;
       }
     } else {
-      if (NavCreatePutFileDialog(dialogOptions,'TEXT','MrEd',eventProc,NULL,&outDialog) != noErr) {
+      if (NavCreatePutFileDialog(&dialogOptions,'TEXT','MrEd',eventProc,NULL,&outDialog) != noErr) {
         if (default_filename)
-          CFRelease(dialogOptions->saveFileName);
+          CFRelease(dialogOptions.saveFileName);
         if (message)
-          CFRelease(dialogOptions->message);
+          CFRelease(dialogOptions.message);
       }
     }
     
     // run the dialog (ApplicationModal doesn't return until user closes dialog):
     if (NavDialogRun(outDialog) != noErr) {
       if (default_filename)
-        CFRelease(dialogOptions->saveFileName);
+        CFRelease(dialogOptions.saveFileName);
       if (message)
-        CFRelease(dialogOptions->message);
+        CFRelease(dialogOptions.message);
       NavDialogDispose(outDialog);
       return NULL;
     }
     
     // dump those strings:
     if (default_filename)
-      CFRelease(dialogOptions->saveFileName);
+      CFRelease(dialogOptions.saveFileName);
     if (message)
-      CFRelease(dialogOptions->message);
+      CFRelease(dialogOptions.message);
+    DisposeNavEventUPP(eventProc);
     
     // did the user cancel?:
     NavUserAction action = NavDialogGetUserAction(outDialog);
     if ((action == kNavUserActionCancel) || (action == kNavUserActionNone)) {
-      NavDisposeDialog(outDialog);
-      return NULL;
-    }
-    
-    // get the user's reply:
-    if (NavDialogGetReply(outDialog,&reply) != noErr) {
       NavDialogDispose(outDialog);
       return NULL;
     }
     
+    // get the user's reply:
+    NavReplyRecord *reply = new NavReplyRecord;
+    if (NavDialogGetReply(outDialog,reply) != noErr) {
+      NavDialogDispose(outDialog);
+      return NULL;
+    }
+    NavDialogDispose(outDialog);
+    if (! reply->validRecord) {
+      NavDisposeReply(reply);
+      return NULL;
+    }
     
-    
+    // parse the results
+    AEKeyword   theKeyword;
+    DescType    actualType;
+    Size        actualSize;
+    char	*temp;
+
+    if (flags & wxMULTIOPEN) {
+      long count, index;
+      FSSpec fsspec;
+      char *newpath, *aggregate;
+      
+      AECountItems(&(reply->selection),&count);
+    	    
+      for (index=1; index<=count; index++) {
+        AEGetNthPtr(&(reply->selection),index,typeFSS, &theKeyword, &actualType, &fsspec,sizeof(fsspec),&actualSize);
+        temp = wxFSSpecToPath(&fsspec);
+        newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
+                                       strlen(temp) +
+                                       log_base_10(strlen(temp)) + 3];
+        sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
+        aggregate = newpath;
+      }
+	
+      NavDisposeReply(reply);
+	    
+      return aggregate;
+      
+    } else if (flags & wxOPEN) {
+      FSSpec fsspec;
+      
+      AEGetNthPtr(&(reply->selection), 1, typeFSS, &theKeyword, &actualType, &fsspec, sizeof(fsspec), &actualSize);
+      
+      NavDisposeReply(reply);
+      
+      return wxFSSpecToPath(&fsspec);
+      
+    } else { // saving file
+        int strLen = 256;
+        char *str = new char[strLen];
+        Bool longEnough = FALSE;
+        OSErr err;
+        
+        while (! longEnough) {
+          err = CFStringGetCString(reply->saveFileName,str,strLen,CFStringGetSystemEncoding());
+          if (err == kUCOutputBufferTooSmall) {
+            delete str;
+            strLen *= 2;
+            str = new char[strLen];
+          } else if (err != noErr) {
+            NavDisposeReply(reply);
+            return NULL;
+          }
+        }
+        
+        NavDisposeReply(reply);
+        
+        return str;
+    }
     
 #else    
     NavDialogOptions *dialogOptions = new NavDialogOptions;
@@ -494,6 +551,7 @@ char *wxFileSelector(char *message, char *default_path,
 	}
      } else 
        return NULL;
+#endif       
   } else {
 #endif
 #ifdef OS_X

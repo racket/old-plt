@@ -253,7 +253,8 @@ void wxListBox::Paint(void)
 	if (cHidden) return;
 
 	SetCurrentDC();
-	::ALUpdate(GetPortVisibleRegion(cMacDC->macGrafPort(),NULL), cListReference);
+        RgnHandle visibleRgn = NewRgn();
+	::ALUpdate(GetPortVisibleRegion(cMacDC->macGrafPort(),visibleRgn), cListReference);
 	
 	/* White out any empty space in the list: */
 /*	Point last, dlast;

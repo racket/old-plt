@@ -107,7 +107,7 @@ static int QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
-        RgnHandle updateRegionHandle;
+        RgnHandle updateRegionHandle = NewRgn();
         GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);
 	UnionRgn(updateRegionHandle, q->rgn, q->rgn);
 	BeginUpdate(w);
@@ -137,7 +137,7 @@ static int QueueTransferredEvent(EventRecord *e)
     q->rgn = NULL;
       
     if (e->what == updateEvt) {
-      RgnHandle updateRegion;
+      RgnHandle updateRegion = NewRgn();
 
       WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();

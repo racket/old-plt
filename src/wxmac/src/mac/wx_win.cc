@@ -758,8 +758,9 @@ void wxWindow::MacSetBackground(void) // mac platform only
 {
 	if (!cEraser)
 	{
+                Pattern color;
 		BackColor(whiteColor);
-		BackPat(GetQDGlobalsWhite(NULL));
+		BackPat(GetQDGlobalsWhite(&color));
 		return;
 	}
 
@@ -779,10 +780,11 @@ void wxWindow::MacSetBackground(void) // mac platform only
 	}
 
 	int theBrushStyle = cEraser->GetStyle();
+        Pattern color;
 	if (theBrushStyle == wxSOLID)
-		BackPat(GetQDGlobalsWhite(NULL));
+		BackPat(GetQDGlobalsWhite(&color));
 	else if (theBrushStyle == wxTRANSPARENT)
-		BackPat(GetQDGlobalsWhite(NULL)); // WCH: does this work??
+		BackPat(GetQDGlobalsWhite(&color)); // WCH: does this work??
 	else if (IS_HATCH(theBrushStyle))
 	{
 		macGetHatchPattern(theBrushStyle, &cMacPattern);
@@ -790,7 +792,7 @@ void wxWindow::MacSetBackground(void) // mac platform only
 	}
 	else
 	{
-		BackPat(GetQDGlobalsWhite(NULL)); // WCH: must use BackPixPat for stipple
+		BackPat(GetQDGlobalsWhite(&color)); // WCH: must use BackPixPat for stipple
 	}
 }
 
@@ -806,16 +808,18 @@ void wxWindow::SetForeground(void) // mac platform only
 
 	if (!cBrush)
 	{
-		PenPat(GetQDGlobalsBlack(NULL));
+                Pattern color;
+		PenPat(GetQDGlobalsBlack(&color));
 		ForeColor(blackColor);
 		return;
 	}
 
 	int theBrushStyle = cBrush->GetStyle();
+        Pattern color;
 	if (theBrushStyle == wxSOLID)
-		PenPat(GetQDGlobalsBlack(NULL));
+		PenPat(GetQDGlobalsBlack(&color));
 	else if (theBrushStyle == wxTRANSPARENT)
-		PenPat(GetQDGlobalsWhite(NULL)); // WCH: does this work??
+		PenPat(GetQDGlobalsWhite(&color)); // WCH: does this work??
 	else if (IS_HATCH(theBrushStyle))
 	{
 		macGetHatchPattern(theBrushStyle, &cMacPattern);
@@ -823,7 +827,8 @@ void wxWindow::SetForeground(void) // mac platform only
 	}
 	else
 	{
-		PenPat(GetQDGlobalsBlack(NULL)); // WCH: must use PenPixPat for stipple
+                Pattern color;
+		PenPat(GetQDGlobalsBlack(&color)); // WCH: must use PenPixPat for stipple
 	}
 
 	RGBColor pixel = cBrush->GetColour()->pixel;

@@ -2597,6 +2597,7 @@
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxcommon/jpeg /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mred/wxs /Users/clements/plt/src/mac/mzscheme /Users/clements/plt/src/mac/mred /Developer/Headers/FlatCarbon";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg /Users/clements /Users/clements/plt/src/mac/proj-builder/MrEd/build";
+				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "-include /Users/clements/plt/src/mac/mred/MrEdSetupOSX.h";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";

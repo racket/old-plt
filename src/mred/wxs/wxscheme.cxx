@@ -1485,13 +1485,18 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     break;
   }
 
-  if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &spec.vRefNum, &spec.parID))
+  SInt16 vRefNum;
+  SInt32 dirID;
+  const Str255 fileName = "\p";
+
+  if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID) == noErr) {
+    FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
 #ifdef OS_X  
     home = scheme_make_string(wxFSSpecToPath(&spec));
 #else    
-    home = scheme_make_string(scheme_build_mac_filename(&spec, 1));
+    home = scheme_make_string(scheme_build_mac_filename(&spec, 0));
 #endif    
-  else if (wxmac_startup_directory) {
+  } else if (wxmac_startup_directory) {
     home = scheme_make_string(wxmac_startup_directory);
   } else {
     home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));

@@ -70,11 +70,16 @@ int wxEntry(int argc, char* argv[])
 	wxmac_startup_directory = scheme_os_getcwd(NULL, 0, NULL, 1);
 	
 	FSSpec spec;
-	if (!FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &spec.vRefNum, &spec.parID)) {
+        SInt16 vRefNum;
+        SInt32 dirID;
+        const Str255 fileName = "\p";
+        
+	if (FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &vRefNum, &dirID) == noErr) {
+          FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
 #ifdef OS_X
           char *home = wxFSSpecToPath(&spec);
 #else          
-	  char *home = scheme_build_mac_filename(&spec, 1);
+	  char *home = scheme_build_mac_filename(&spec, 0);
 #endif          
 	  int l = strlen(home);
 	  char *s = new char[l + 15];

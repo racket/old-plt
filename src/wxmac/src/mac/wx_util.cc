@@ -69,15 +69,26 @@ char *wxFSSpecToPath(const FSSpec *spec)
 {
     FSRef fileRef;
     OSErr err;
+    Bool longEnough = FALSE;
+    int strLen = 256;
+    char *str = new char[strLen];
     
     // first, convert to an FSRef
     if (FSpMakeFSRef(spec,&fileRef) != noErr) {
       return NULL;
     }
     
-    return FSRefMakePath(
-    wxFatalError("Not Implemented Yet","");
-  // hopefully, OS X will give us a nice way to do this.
+    while (! longEnough) {
+      if (FSRefMakePath(&fileRef,(unsigned char *)str,strLen) == pathTooLongErr) {
+        delete str;
+        strLen *= 2;
+        str = new char[strLen];
+      } else {
+        longEnough = TRUE;
+      }
+    }
+    
+    return str;
 }
 
 OSErr wxPathToFSSpec(const char *path, FSSpec *spec)
@@ -102,12 +113,18 @@ char *wxGetTempFileName (const char *prefix, char *dest)
 
   if (!temp_folder) {
     FSSpec spec;
-    if (!FindFolder(kOnSystemDisk, 'temp', kCreateFolder, &spec.vRefNum, &spec.parID))
+    SInt16 vRefNum;
+    SInt32 dirID;
+    const Str255 fileName = "\p";
+    
+    if (FindFolder(kOnSystemDisk, 'temp', kCreateFolder, &vRefNum, &dirID) == noErr) {
+      FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
 #ifdef OS_X
           temp_folder = wxFSSpecToPath(&spec);
 #else          
-	  temp_folder = scheme_build_mac_filename(&spec, 1);
+	  temp_folder = scheme_build_mac_filename(&spec, 0);
 #endif          
+    }
 	else
 	  temp_folder = "";
 	temp_len = strlen(temp_folder);

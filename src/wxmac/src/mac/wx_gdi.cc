@@ -558,8 +558,10 @@ void wxSetCursor(wxCursor *cursor)
       if (cursor) {
 	  if (cursor->cMacCursor && (cursor->cMacCursor != (Cursor **)0x1)) // this can't possibly be right...
 		::SetCursor(*(cursor->cMacCursor));
-	  else
-	 	::SetCursor(GetQDGlobalsArrow(NULL));
+	  else {
+                Cursor arrow;
+	 	::SetCursor(GetQDGlobalsArrow(&arrow));
+          }
       }
       curCursor = cursor;
   }
@@ -599,9 +601,10 @@ int wxDisplayDepth(void)
 //-----------------------------------------------------------------------------
 void wxDisplaySize(int *width, int *height)
 {
-        BitMap *screenBits = GetQDGlobalsScreenBits(NULL);
-	*width = screenBits->bounds.right - screenBits->bounds.left;
-	*height = screenBits->bounds.bottom - screenBits->bounds.top - GetMBarHeight();
+        BitMap screenBits;
+        GetQDGlobalsScreenBits(&screenBits);
+	*width = screenBits.bounds.right - screenBits.bounds.left;
+	*height = screenBits.bounds.bottom - screenBits.bounds.top - GetMBarHeight();
 }
 
 //------------------ BitMaps ------------------------------------------

@@ -381,9 +381,10 @@ void wxFrame::Maximize(Bool maximize)
 		SetCurrentDC();
                 GrafPtr theMacGrafPort = cMacDC->macGrafPort();
                 WindowPtr theMacWindow = GetWindowFromPort(theMacGrafPort);
-		::EraseRect(GetPortBounds(theMacGrafPort,NULL));
+                Rect portBounds;
+		::EraseRect(GetPortBounds(theMacGrafPort,&portBounds));
 		::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
-		InvalWindowRect(theMacWindow,GetPortBounds(theMacGrafPort,NULL));
+		InvalWindowRect(theMacWindow,&portBounds);
 		cMaximized = maximize;
 
 		wxMacRecalcNewSize();
@@ -654,12 +655,12 @@ void wxFrame::wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD,
 {
     ::GetGWorld(&oldPort, &oldGD);
 
-        // I AM RIGHT HERE!!
         GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
-	savePortH = GetPortBounds(theMacGrafPort,NULL)->left;
-	savePortV = GetPortBounds(theMacGrafPort,NULL)->top;
+        Rect portBounds;
+	savePortH = GetPortBounds(theMacGrafPort,&portBounds)->left;
+	savePortV = portBounds.top;
 	::SetOrigin(0, 0);
 }
 
@@ -681,7 +682,8 @@ Rect wxFrame::wxMacGetContRect(void)
 	CGrafPtr oldPort; GDHandle oldGD;
 	int savePortH, savePortV;
 	wxMacStartDrawing(oldPort, oldGD, savePortH, savePortV);
-	Rect theContRect = *GetPortBounds(cMacDC->macGrafPort(),NULL); // client c.s.
+	Rect theContRect;
+        GetPortBounds(cMacDC->macGrafPort(),&theContRect); // client c.s.
 	Point topLeftPt = {0, 0};
 	::LocalToGlobal (&topLeftPt);
 	::OffsetRect(&theContRect, topLeftPt.h, topLeftPt.v); // screen window c.s.
@@ -707,22 +709,23 @@ Rect wxFrame::wxMacGetStrucRect(void)
 
 	if (IsWindowVisible(theMacWindow))
 	{
-                RgnHandle strucRgn;
+                RgnHandle strucRgn = NewRgn();
                 GetWindowRegion(theMacWindow,kWindowStructureRgn,strucRgn);
-		theStrucRect = *GetRegionBounds(strucRgn,NULL); // screen window c.s.
+		GetRegionBounds(strucRgn,&theStrucRect); // screen window c.s.
 	}
 	else
 	{
 		const int kOffScreenLocation = 0x4000;
 	
-		Rect theClientRect = *GetPortBounds(cMacDC->macGrafPort(),NULL); // client c.s.
+		Rect theClientRect;
+                GetPortBounds(cMacDC->macGrafPort(),&theClientRect); // client c.s.
 		Point thePosition = {theClientRect.top, theClientRect.left}; // client c.s.
 		::LocalToGlobal(&thePosition); // screen window c.s.
 		::MoveWindow(theMacWindow, thePosition.h, kOffScreenLocation, FALSE);
 		::ShowHide(theMacWindow, TRUE);
-                RgnHandle strucRgn;
+                RgnHandle strucRgn = NewRgn();
                 GetWindowRegion(theMacWindow,kWindowStructureRgn,strucRgn);
-		theStrucRect = *GetRegionBounds(strucRgn,NULL);
+                GetRegionBounds(strucRgn,&theStrucRect);
 		::ShowHide(theMacWindow, FALSE);
 		::MoveWindow(theMacWindow, thePosition.h, thePosition.v, FALSE);
 		::OffsetRect(&theStrucRect, 0, thePosition.v - kOffScreenLocation); // screen window c.s.
@@ -741,7 +744,8 @@ void wxFrame::MacUpdateWindow(void)
 	{
 		SetCurrentDC();
 		::BeginUpdate(theMacWindow);
-		if (!::EmptyRgn(GetPortVisibleRegion(GetWindowPort(theMacWindow),NULL)))
+                RgnHandle visibleRgn = NewRgn();
+		if (!::EmptyRgn(GetPortVisibleRegion(GetWindowPort(theMacWindow),visibleRgn)))
 		{
  			// Erase update region
  			// ::EraseRect(&theMacWindow->portRect);

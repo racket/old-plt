@@ -682,6 +682,7 @@ void wxListBox::SetString(int N, char *s)
     ALGetCell(&oldHandle,&cell,cListReference);
     Handle newHandle = NewHandle(sizeof(s)+1);
     strcpy(*newHandle,s);
+    c2pstr(*newHandle);
 	ALSetCell(newHandle, &cell, cListReference);
 	DisposeHandle(oldHandle);
 }
@@ -714,6 +715,7 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
 	  cDataList->Append(cell.v, (wxObject *)NULL);
 	  stringHandle = NewHandle(strlen(Items[n]) + 1);
 	  strcpy(*stringHandle,Items[n]);
+	  c2pstr(*stringHandle);
 	  ALSetCell(stringHandle, &cell, cListReference);
   }
   no_items = no_items + nItems;

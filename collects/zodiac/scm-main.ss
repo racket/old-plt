@@ -1644,6 +1644,8 @@
 		(static-error x "Malformed quasiquote"))
 	      env)))))
 
+    (include "new-qq.ss")
+
     (set! local-parse-vocab
       (merge-vocabulary (copy-vocabulary scheme-vocabulary)
 	local-parse-vocab-delta))

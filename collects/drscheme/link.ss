@@ -5,7 +5,7 @@
 	(list "Analyzer" (build-path "drscheme" "spidstub"))
 
 ;;          this is the example tool.
-;	    (list "Toy" (build-path "drscheme" "toy.ss"))
+	(list "Toy" (build-path "drscheme" "toy"))
 
 	))
 
@@ -16,14 +16,28 @@
 
     (debug:printf 'invoke "drscheme:tool@")
 
-    (define-struct tool (name file))
+    (define-struct tool (name file callback))
 
-    (define tools (map (lambda (x) (apply make-tool x))
-		       (global-defined-value 'drscheme:toplevel-tools)))
+    (define tools
+      (map (lambda (x)
+	     (let* ([name (car x)]
+		    [filename (cadr x)]
+		    [callback
+		     (letrec
+			 ([f
+			   (lambda (frame)
+			     (let ([new-callback (load/invoke-tool filename)])
+			       (set! f (if (procedure? new-callback)
+					   new-callback
+					   (lambda (frame) (wx:bell))))
+			       (f frame)))])
+		       (lambda (frame) (f frame)))])
+	       (make-tool name filename callback)))
+	   (global-defined-value 'drscheme:toplevel-tools)))
 
     (define load/invoke-tool
-      (lambda (tool)
-	(file@:load-recent (build-path plt-home-directory (tool-file tool)))
+      (lambda (filename)
+	(file@:load-recent (build-path plt-home-directory filename))
 	(invoke-unit/sig (global-defined-value 'tool@) 
 			 mred^
 			 mzlib:core^

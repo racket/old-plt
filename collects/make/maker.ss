@@ -39,9 +39,10 @@
 			     (lambda (s indent)
 			       (printf "~achecking ~a~n" indent s)
 			       (let ([line (assoc s spec)]
-				     [date (if (not (directory-exists? s))
+				     [date (if (directory-exists? s)
 					       +inf.0
-					       (file-or-directory-modify-seconds s))])
+					       (and (file-exists? s)
+						    (file-or-directory-modify-seconds s)))])
 				 (if line
 				     (let ([deps (cadr line)])
 				       (for-each (lambda (d) (make-file d (string-append " " indent))) deps)

@@ -172,7 +172,7 @@ Configuration:
   --quiet, --silent       do not print \`checking...' messages
   --version               print the version of autoconf that created configure
 Directory and file names:
-  --prefix=TARGETDIR      install to TARGETDIR (usually <something>/plt)
+  --prefix=TARGETDIR      install to TARGETDIR (usually ..../plt)
 EOF
 
 

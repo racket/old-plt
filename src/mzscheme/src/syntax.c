@@ -2449,8 +2449,8 @@ lexical_syntax_link(Scheme_Object *obj, Link_Info *info)
   phse = SCHEME_CAR(obj);
   stx = SCHEME_CDR(obj);
 
-  if (info->phase != SCHEME_INT_VAL(phse))
-    return scheme_stx_phase_shift(stx, info->phase - SCHEME_INT_VAL(phse));
+  if (info && (info->phase != SCHEME_INT_VAL(phse)))
+    return scheme_stx_phase_shift(stx, info->phase - SCHEME_INT_VAL(phse), info);
   else
     return stx;
 }
@@ -2598,6 +2598,7 @@ do_letmacro(char *where, Scheme_Object *formname,
   Scheme_Object *form, *bindings, *body, *v;
   Scheme_Object *macro;
   Scheme_Comp_Env *env;
+  Scheme_Compile_Info mrec;
 
   env = scheme_no_defines(origenv);
 
@@ -2626,7 +2627,7 @@ do_letmacro(char *where, Scheme_Object *formname,
 
     a = SCHEME_STX_CAR(a);
     scheme_check_identifier(where, a, NULL, env, forms);
-    scheme_add_local_syntax(a, env);
+    scheme_add_local_syntax(a, NULL, env);
   }
 
   scheme_prepare_exp_env(env->genv);
@@ -2640,8 +2641,14 @@ do_letmacro(char *where, Scheme_Object *formname,
 
     a = scheme_add_env_renames(a, env, origenv);
     
+    mrec.dont_mark_local_use = 0;
+    mrec.value_name = NULL;
+    a = scheme_compile_expr(a, env->genv->exp_env->init, &mrec, 0);
+    a = scheme_resolve_expr(a, scheme_resolve_info_create());
+    a = scheme_link_expr(a, NULL);
+
     scheme_on_next_top(env, NULL, scheme_false);
-    a = scheme_eval(a, env->genv->exp_env);
+    a = scheme_eval_linked_expr(a);
 
     macro = scheme_alloc_stubborn_small_object();
     macro->type = scheme_macro_type;

@@ -267,7 +267,10 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
     m = scheme_lookup_in_table(env->modules, (const char *)name);
 
     if (!m) {
-      scheme_wrong_syntax("import", NULL, name, "broken compiled code: cannot find prepared module");
+      scheme_wrong_syntax("import", NULL, name, 
+			  "broken compiled code: cannot find prepared module"
+			  " (relative to %V)",
+			  env->modname);
       return NULL;
     }
 
@@ -612,24 +615,19 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Expand each expression in form up to `begin', `define-values', `define-syntax', 
      `import', `export', and `#%app'. */
   xenv = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME, env);
-  scheme_add_local_syntax(begin_stx, xenv);
-  scheme_set_local_syntax(begin_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(define_values_stx, xenv);
-  scheme_set_local_syntax(define_values_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(define_syntax_stx, xenv);
-  scheme_set_local_syntax(define_syntax_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(import_stx, xenv);
-  scheme_set_local_syntax(import_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(import_for_expansion_stx, xenv);
-  scheme_set_local_syntax(import_for_expansion_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(export_stx, xenv);
-  scheme_set_local_syntax(export_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(set_stx, xenv);
-  scheme_set_local_syntax(set_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(app_stx, xenv);
-  scheme_set_local_syntax(app_stx, scheme_get_stop_expander(), xenv);
-  scheme_add_local_syntax(unbound_stx, xenv);
-  scheme_set_local_syntax(unbound_stx, scheme_get_stop_expander(), xenv);
+  {
+    Scheme_Object *stop;
+    stop = scheme_get_stop_expander();
+    scheme_add_local_syntax(begin_stx, stop, xenv);
+    scheme_add_local_syntax(define_values_stx, stop, xenv);
+    scheme_add_local_syntax(define_syntax_stx, stop, xenv);
+    scheme_add_local_syntax(import_stx, stop, xenv);
+    scheme_add_local_syntax(import_for_expansion_stx, stop, xenv);
+    scheme_add_local_syntax(export_stx, stop, xenv);
+    scheme_add_local_syntax(set_stx, stop, xenv);
+    scheme_add_local_syntax(app_stx, stop, xenv);
+    scheme_add_local_syntax(unbound_stx, stop, xenv);
+  }
 
   first = scheme_null;
   last = NULL;

@@ -77,7 +77,6 @@ typedef struct Constant_Binding {
   MZTAG_IF_REQUIRED
   Scheme_Object *name;
   Scheme_Object *val;
-  Scheme_Object *rename;
   short before;
   struct Constant_Binding *next;
 } Constant_Binding;
@@ -739,6 +738,7 @@ scheme_add_compilation_binding(int index, Scheme_Object *val, Scheme_Comp_Env *f
 }
 
 void scheme_add_local_syntax(Scheme_Object *name, 
+			     Scheme_Object *val,
 			     Scheme_Comp_Env *env)
 {
   Constant_Binding *b;
@@ -750,7 +750,7 @@ void scheme_add_local_syntax(Scheme_Object *name,
 
   b->next = COMPILE_DATA(env)->constants;
   b->name = name;
-  b->val = NULL;
+  b->val = val;
   b->before = env->num_bindings;
 
   COMPILE_DATA(env)->constants = b;
@@ -851,39 +851,39 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 
   while (env != upto) {
     Scheme_Object *uid;
-    Constant_Binding *c = COMPILE_DATA(env)->constants;
-    int i;
+    Constant_Binding *c;
+    int i, count;
 
     uid = env_frame_uid(env);
-
-    while (c) {
-      if (!c->rename) {
-	Scheme_Object *rnm;
-	rnm = scheme_make_rename(c->name, uid);
-	c->rename = rnm;
-      }
-
-      stx = scheme_add_rename(stx, c->rename);
-      c = c->next;
-    }
     
-    if (!env->renames) {
-      Scheme_Object **rnms;
-      rnms = MALLOC_N(Scheme_Object *, env->num_bindings);
-      env->renames = rnms;
+    count = 0;
+    for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
+      count++;
     }
-
     for (i = env->num_bindings; i--; ) {
-      if (env->values[i]) {
-	if (!env->renames[i]) {
-	  Scheme_Object *rnm;
-	  rnm = scheme_make_rename(env->values[i], uid);
-	  env->renames[i] = rnm;
-	}
-
-	stx = scheme_add_rename(stx, env->renames[i]);
-      }
+      if (env->values[i])
+	count++;
     }
+
+    if (!env->renames || (env->rename_var_count != count)) {
+      Scheme_Object *rnm;
+
+      rnm = scheme_make_rename(uid, count);
+     
+      count = 0;
+      for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
+	scheme_set_rename(rnm, count++, c->name);
+      }
+      for (i = env->num_bindings; i--; ) {
+	if (env->values[i])
+	  scheme_set_rename(rnm, count++, env->values[i]);
+      }
+ 
+      env->renames = rnm;
+      env->rename_var_count = count;
+    }
+
+  stx = scheme_add_rename(stx, env->renames);
 
     env = env->next;
   }
@@ -965,7 +965,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   int j = 0, p = 0;
   Scheme_Bucket *b;
   Scheme_Object *val, *modname, *srcsym;
-  Scheme_Env *genv;
+  Scheme_Env *genv, *home_env;
   long phase;
 
   phase = env->genv->phase;
@@ -1034,13 +1034,13 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   }
 
   srcsym = symbol;
-  modname = scheme_stx_module_name(&symbol, phase);
+  modname = scheme_stx_module_name(&symbol, phase, &home_env);
   if (modname) {
     if (SAME_OBJ(modname, env->genv->modname)) {
       modname = NULL;
       genv = env->genv;
     } else
-      genv = scheme_module_access(modname, env->genv);
+      genv = scheme_module_access(modname, home_env ? home_env : env->genv);
   } else
     genv = env->genv;
 
@@ -1049,7 +1049,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     Scheme_Hash_Table *ht;
     
     if (modname)
-      ht = scheme_module_syntax(modname, env->genv);
+      ht = scheme_module_syntax(modname, home_env ? home_env : env->genv);
     else
       ht = genv->syntax;
 

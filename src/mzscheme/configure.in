@@ -137,13 +137,15 @@ fi
 AC_CHECK_LIB(m, cos)
 AC_CHECK_LIB(dl, dlopen)
 
+PROFFLAGS=""
+
 if test "${enable_gprof}" = "yes" ; then
-  CFLAGS="$CFLAGS -pg"
+  PROFFLAGS="$PROFFLAGS -pg -DDONT_ITIMER"
   LIBS="$LIBS -pg"
 fi
 
 if test "${enable_gcov}" = "yes" ; then
-  CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+  PROFFLAGS="$PROFFLAGS -fprofile-arcs -ftest-coverage"
 fi
 
 if test "${enable_wbuild}" = "yes" ; then
@@ -332,6 +334,7 @@ LIBS="$LIBS $EXTRALIBS"
 
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
+AC_SUBST(PROFFLAGS)
 AC_SUBST(CPP)
 AC_SUBST(PERL)
 AC_SUBST(AS)

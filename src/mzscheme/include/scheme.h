@@ -60,6 +60,10 @@
 # define MZ_USE_SINGLE_FLOATS
 #endif
 
+#ifdef DONT_ITIMER
+# undef USE_ITIMER
+#endif
+
 #ifdef MZ_REAL_THREADS
 # undef USE_ITIMER
 # undef USE_WIN32_THREAD_TIMER

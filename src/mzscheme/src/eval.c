@@ -1048,7 +1048,7 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
     {
       Scheme_Bucket_With_Home *b = (Scheme_Bucket_With_Home *)expr;
 
-      if (SCHEME_FALSEP(b->home->modname))
+      if (!info || SCHEME_FALSEP(b->home->modname))
 	return (Scheme_Object *)b;
       else {
 	Scheme_Env *m;
@@ -1816,8 +1816,9 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 
   if (env->genv->phase) {
     Scheme_Object *modname, *symbol = c;
+    Scheme_Env *home;
 
-    modname = scheme_stx_module_name(&symbol, env->genv->phase);
+    modname = scheme_stx_module_name(&symbol, env->genv->phase, &home);
     if (modname) {
       if (SAME_OBJ(modname, env->genv->modname))
 	modname = NULL;
@@ -3561,8 +3562,7 @@ local_expand(int argc, Scheme_Object **argv)
       return NULL;
     }
     
-    scheme_add_local_syntax(i, env);
-    scheme_set_local_syntax(i, stop_expander, env);
+    scheme_add_local_syntax(i, stop_expander, env);
   }
   if (!SCHEME_NULLP(l)) {
     scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);

@@ -406,7 +406,8 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
-Scheme_Object *scheme_make_rename(Scheme_Object *oldname, Scheme_Object *newname);
+Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c);
+void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname);
 Scheme_Object *scheme_make_module_rename(long phase);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
@@ -418,13 +419,13 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase);
-Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
+Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase, Scheme_Env **home);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
 int scheme_stx_has_binder(Scheme_Object *a, long phase);
 
-Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift);
+Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift, Scheme_Env *home);
 
 int scheme_stx_list_length(Scheme_Object *list);
 int scheme_stx_proper_list_length(Scheme_Object *list);
@@ -1135,7 +1136,9 @@ typedef struct Scheme_Comp_Env
   Scheme_Env *genv; /* run-time environment */
   struct Scheme_Comp_Env *next;
   struct Scheme_Object **values;
-  struct Scheme_Object **renames;
+
+  struct Scheme_Object *renames;
+  int rename_var_count;
 } Scheme_Comp_Env;
 
 #define CLOS_HAS_REST 1
@@ -1247,7 +1250,7 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 
 void scheme_unsettable_variable(Scheme_Comp_Env *env, int which);
 
-void scheme_add_local_syntax(Scheme_Object *name, Scheme_Comp_Env *env);
+void scheme_add_local_syntax(Scheme_Object *name, Scheme_Object *val, Scheme_Comp_Env *env);
 void scheme_set_local_syntax(Scheme_Object *name, Scheme_Object *val,
 			     Scheme_Comp_Env *env);
 

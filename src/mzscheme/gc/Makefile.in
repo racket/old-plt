@@ -23,14 +23,15 @@ VPATH= $(srcdir)
 # compiler options; mainly used to allow importing options
 OPTIONS=@OPTIONS@
 
-CFLAGS= -I$(srcdir)/include -DNO_SIGNALS @CFLAGS@ $(OPTIONS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC -DLARGE_CONFIG
+BASEFLAGS= -I$(srcdir)/include -DNO_SIGNALS @CFLAGS@ 
+CFLAGS= $(BASEFLAGS) @PROFFLAGS@ $(OPTIONS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC -DLARGE_CONFIG
 
 # HOSTCC and HOSTCFLAGS are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.
 # Note that HOSTCFLAGS should include any -D flags that affect thread support.
 HOSTCC=$(CC)
-HOSTCFLAGS=$(CFLAGS)
+HOSTCFLAGS=$(BASEFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.

@@ -1287,7 +1287,7 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
     unsigned long root, rem;
     root = fixnum_sqrt(SCHEME_INT_VAL(n), &rem);
     if (remainder)
-      *((Scheme_Object**)remainder) = scheme_make_integer_value(rem);
+      *remainder = scheme_make_integer_value(rem);
     rem_size = (rem == 0 ? 0 : 1);
     o = scheme_make_integer(root);
   } else {
@@ -1319,19 +1319,21 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
     
     PROTECT(sqr_digs, n_size);  
     
-    
     rem_size = mpn_sqrtrem(res_digs, rem_digs, sqr_digs, n_size);
+
+    RELEASE(sqr_digs);
     
     if (remainder || rem_size == 0) {
       /* An integer result */
-      RELEASE(sqr_digs);
       FINISH_RESULT(res_digs, res_alloc);
       
-      if (remainder && rem_size == 0)
+      if (remainder && rem_size == 0) {
 	*remainder = scheme_make_integer(0);
-      else if (remainder)
-      {
-	Scheme_Object *p = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+	RELEASE(rem_digs);
+      } else if (remainder) {
+	Scheme_Object *p;
+	FINISH_RESULT(rem_digs, rem_alloc);
+	p = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
 	p->type = scheme_bignum_type;
 	rem_alloc = bigdig_length(rem_digs, rem_alloc);
 	SCHEME_BIGLEN(p) = rem_alloc;
@@ -1348,15 +1350,13 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
       SCHEME_BIGPOS(o) = 1;
       return scheme_bignum_normalize(o);
     }
+    RELEASE(res_digs);
   }
   
   if (remainder || rem_size == 0)
     return o;
   else {
     double v;
-    
-    RELEASE(res_digs);
-    RELEASE(sqr_digs);
     
     if (SCHEME_INTP(n))
       v = (double)SCHEME_INT_VAL(n);

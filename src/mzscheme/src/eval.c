@@ -1973,7 +1973,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       Scheme_Compile_Expand_Info *recx;
 
       recx = MALLOC_ONE_RT(Scheme_Compile_Expand_Info);
-      memcpy(recx, rec, sizeof(Scheme_Compile_Expand_Info));
+      memcpy(recx, rec + drec, sizeof(Scheme_Compile_Expand_Info));
 #ifdef MZTAG_REQUIRED
       recx->type = scheme_rt_compile_info;
 #endif
@@ -1986,7 +1986,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 
       var = scheme_handle_stack_overflow(compile_expand_expr_k);
 
-      memcpy(rec, recx, sizeof(Scheme_Compile_Expand_Info));
+      memcpy(rec + drec, recx, sizeof(Scheme_Compile_Expand_Info));
       return var;
     }
   }
@@ -2589,7 +2589,7 @@ compile_expand_expr_lift_to_let(Scheme_Object *form, Scheme_Comp_Env *env,
       Scheme_Compile_Expand_Info *recx;
 
       recx = MALLOC_ONE_RT(Scheme_Compile_Expand_Info);
-      memcpy(recx, rec, sizeof(Scheme_Compile_Expand_Info));
+      memcpy(recx, rec + drec, sizeof(Scheme_Compile_Expand_Info));
 #ifdef MZTAG_REQUIRED
       recx->type = scheme_rt_compile_info;
 #endif
@@ -2600,7 +2600,7 @@ compile_expand_expr_lift_to_let(Scheme_Object *form, Scheme_Comp_Env *env,
 
       form = scheme_handle_stack_overflow(compile_expand_expr_lift_to_let_k);
 
-      memcpy(rec, recx, sizeof(Scheme_Compile_Expand_Info));
+      memcpy(rec + drec, recx, sizeof(Scheme_Compile_Expand_Info));
       return form;
     }
   }

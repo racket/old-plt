@@ -1230,7 +1230,15 @@ void wxBitmap::DrawMac(int x, int y, int mode)
       BackPat(GetWhitePattern());
     }
 
-    ::CopyBits(srcbm, dstbm, &sbounds, &dbounds, patCopy, NULL);
+    if (mask 
+	&& (mask->GetWidth() == GetWidth())
+	&& (mask->GetHeight() == GetHeight())) {
+      const BitMap *maskbm;
+      maskbm = GetPortBitMapForCopyBits(mask->x_pixmap);
+      ::CopyDeepMask(srcbm, maskbm, dstbm, &sbounds, &sbounds, &dounds, srcCopy, NULL);
+    } else {
+      ::CopyBits(srcbm, dstbm, &sbounds, &dbounds, srcCopy, NULL);
+    }
 
     if (mode != patOr) {
       SetThemeDrawingState(s, TRUE);

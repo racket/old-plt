@@ -1,5 +1,3 @@
-(printf "~s~n" (signature->symbols plt:init-namespace^))
-
 (compound-unit/sig
   (import [import : plt:basis-import^]
 	  [params : plt:userspace:params^]

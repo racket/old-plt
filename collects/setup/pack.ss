@@ -151,7 +151,7 @@
   (define (std-filter path)
     (let ([path (path->string path)])
       (not (or (regexp-match #rx"CVS$" path)
-               (regexp-match #rx".svn$" path)
+               (regexp-match #rx"[.]svn$" path)
 	       (regexp-match #rx"compiled$" path)
 	       (regexp-match #rx"~$" path)
 	       (regexp-match #rx"^#.*#$" path)

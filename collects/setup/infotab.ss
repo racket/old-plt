@@ -30,13 +30,7 @@
                 "duplicate definition"
                 stx
                 dup)))
-           (with-syntax ([(name ...) names]
-                         [#%info-lookup (datum->syntax-object
-                                         (syntax mod-beg) ; target module's context
-                                         '#%info-lookup)]
-                         [#%info-domain (datum->syntax-object
-                                         (syntax mod-beg) ; target module's context
-                                         '#%info-domain)])
+           (with-syntax ([(name ...) names])
              (syntax
                (#%plain-module-begin
                 defn ...

@@ -1,7 +1,7 @@
 # myspage.mak
 
 CPP=cl.exe
-CPP_FLAGS=/I"../mzscheme/include" /I"F:/SBN/Include" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
+CPP_FLAGS=/I"F:/SBN/Include" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $<
@@ -18,11 +18,11 @@ DEF_FILE= myspage.def
 LINK32_OBJS= dhtmlpage.obj event.obj eventqueue.obj myspage.obj stdafx.obj \
 	myspage.res
 
+all : myspage.tlb myspage.dll myspage.h myspage_i.c 
+
 myspage.dll : $(DEF_FILE) $(LINK32_OBJS) 
     $(LINK32) $(LINK32_FLAGS) $(LINK32_OBJS) 
     $(REGSVR32) /s myspage.dll	
-
-all : myspage.dll myspage.tlb myspage.h myspage_i.c 
 
 clean :
 	-@erase DHTMLPage.obj

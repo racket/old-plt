@@ -29,6 +29,9 @@
 #define UNICODE_BUFFER_SIZE 256
 #define TYPE_TBL_SIZE 1019
 
+/* extends INVOKEKIND enum in OAIDL.H */
+#define INVOKE_EVENT 16
+
 typedef struct _MX_prim_ {
   Scheme_Object *(*c_fun)(int argc,Scheme_Object **);
   char *name;
@@ -39,6 +42,10 @@ typedef struct _MX_prim_ {
 typedef struct _scheme_com_obj_ { 
   Scheme_Type type;
   IDispatch *pIDispatch;
+  ITypeInfo *pEventTypeInfo;
+  IConnectionPoint *pIConnectionPoint;
+  DWORD connectionCookie;
+  ISink *pISink;
 } MX_COM_Object;
 
 typedef struct _scheme_mx_event_ { 
@@ -120,6 +127,8 @@ typedef struct _document_window_style_option {
 
 #define MX_COM_OBJP(o) (!SCHEME_INTP(o) && o->type == mx_com_object_type)
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
+#define MX_COM_OBJ_EVENTTYPEINFO(o) (((MX_COM_Object *)o)->pEventTypeInfo)
+#define MX_COM_OBJ_EVENTSINK(o) (((MX_COM_Object *)o)->pISink)
 
 #define MX_DOCUMENTP(o) (!SCHEME_INTP(o) && o->type == mx_document_type)
 #define MX_DOCUMENT_VAL(o) (((MX_Document_Object *)o)->pIHTMLDocument2)
@@ -176,12 +185,15 @@ MX_PRIM_DECL(mx_com_get_property);
 MX_PRIM_DECL(mx_com_methods);
 MX_PRIM_DECL(mx_com_get_properties);
 MX_PRIM_DECL(mx_com_set_properties);
+MX_PRIM_DECL(mx_com_events);
 MX_PRIM_DECL(mx_com_method_type);
 MX_PRIM_DECL(mx_com_get_property_type);
 MX_PRIM_DECL(mx_com_set_property_type);
+MX_PRIM_DECL(mx_com_event_type);
 MX_PRIM_DECL(mx_cocreate_instance);
 MX_PRIM_DECL(mx_com_object_eq);
 MX_PRIM_DECL(mx_com_help);
+MX_PRIM_DECL(mx_com_register_event_handler);
 MX_PRIM_DECL(mx_all_controls);
 MX_PRIM_DECL(mx_all_coclasses);
 MX_PRIM_DECL(mx_find_element);
@@ -379,7 +391,7 @@ MX_PRIM_DECL(mx_element_set_left);
 MX_PRIM_DECL(mx_element_z_index);
 MX_PRIM_DECL(mx_element_set_z_index);
 
-// events
+// HTML events
 
 MX_PRIM_DECL(mx_event_keypress_pred);
 MX_PRIM_DECL(mx_event_keydown_pred);
@@ -432,3 +444,4 @@ void marshallSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
 void initEventNames(void);
 IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *);
 CLSID getCLSIDFromString(const char *);
+ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);

@@ -4,7 +4,7 @@ all : mysterx.dll
 
 clean :
         -@erase comtypes.obj
-        -@erase event.obj
+        -@erase htmlevent.obj
         -@erase htmlutil.obj
         -@erase mysterx.obj
 	-@erase mysterx.dll
@@ -13,7 +13,7 @@ HTMLHELP=C:\Program Files\HTML Help Workshop
 SHELL32=F:\SBN
 
 CPP=cl.exe
-CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /I"$(SHELL32)\Include" \
+CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /I"./myssink" /I"$(SHELL32)\Include" \
 	/I"$(HTMLHELP)\include" /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c 
 
 .cxx.obj::
@@ -29,14 +29,14 @@ LINK32_LIBS= \
         odbccp32.lib mapi32.lib "$(HTMLHELP)\lib/htmlhelp.lib" 
 
 LINK32_OBJS= \
-        mysterx.obj comtypes.obj event.obj htmlutil.obj
+        mysterx.obj comtypes.obj htmlevent.obj htmlutil.obj
 
 mysterx.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) --ld mysterx.dll $(LINK32_OBJS) $(LINK32_LIBS)
 
 comtypes.obj : comtypes.cxx mysterx.h
 
-event.obj : event.cxx mysterx.h
+htmlevent.obj : htmlevent.cxx mysterx.h
 
 htmlutil.obj : htmlutil.cxx mysterx.h
 

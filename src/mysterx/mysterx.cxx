@@ -32,6 +32,9 @@ CComModule _Module;
 
 #include "myspage.h"
 #include "myspage_i.c"
+#include "myssink.h"
+#include "myssink_i.c"
+
 #include "mysterx.h"
 
 static HINSTANCE hInstance;
@@ -39,6 +42,7 @@ static HICON hIcon;
 static HWND documentHwnd;
 static HANDLE documentHwndMutex;
 static HANDLE createHwndSem;
+static HANDLE eventSinkMutex;
 
 static Scheme_Unit *mx_unit;  /* the unit returned by the extension */
 
@@ -58,10 +62,16 @@ static MX_PRIM mxPrims[] = {
   { mx_com_methods,"com-methods",1,1 },
   { mx_com_get_properties,"com-get-properties",1,1 },
   { mx_com_set_properties,"com-set-properties", 1, 1 },
+  { mx_com_events,"com-events",1,1 },
   { mx_com_method_type,"com-method-type",2,2 },
   { mx_com_get_property_type,"com-get-property-type",2,2 },
   { mx_com_set_property_type,"com-set-property-type",2,2 },
+  { mx_com_event_type,"com-event-type",2,2 },
   { mx_com_help,"com-help",1,2 },
+
+  // COM events
+
+  { mx_com_register_event_handler,"com-register-event-handler",3,3 },
 
   // coclasses
 
@@ -332,6 +342,8 @@ char *inv_kind_string(INVOKEKIND invKind) {
   case INVOKE_PROPERTYGET :
   case INVOKE_PROPERTYPUT :
     return "property";
+  case INVOKE_EVENT :
+    return "event";
   }
 
   return NULL;
@@ -457,7 +469,10 @@ Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
 
   com_object->type = mx_com_object_type; 
   com_object->pIDispatch = pIDispatch;
-
+  com_object->pEventTypeInfo = NULL;
+  com_object->pIConnectionPoint = NULL;
+  com_object->connectionCookie = (DWORD)0;
+ 
   mx_register_com_object((Scheme_Object *)com_object,pIDispatch);
 
   return (Scheme_Object *)com_object;
@@ -539,8 +554,341 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
+void connectComObjectToEventSink(MX_COM_Object *obj) {
   HRESULT hr;
+  IUnknown *pIUnknown;
+  IDispatch *pIDispatch;
+  ITypeInfo *pITypeInfo;
+  IConnectionPointContainer *pIConnectionPointContainer;
+  IConnectionPoint *pIConnectionPoint;
+  ISink *pISink;
+  DWORD cookie;
+  TYPEATTR *pTypeAttr;
+
+  if (obj->pIConnectionPoint) {
+    return;
+  }
+
+  WaitForSingleObject(eventSinkMutex,INFINITE);
+
+  pIDispatch = obj->pIDispatch;
+
+  hr = pIDispatch->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer); 
+
+  if (hr != S_OK || pIConnectionPointContainer == NULL) {
+    scheme_signal_error("Unable to get COM object connection point container, code = %X",hr);
+  }
+
+  pITypeInfo = eventTypeInfoFromComObject(obj);
+
+  if (pITypeInfo == NULL) {
+    scheme_signal_error("Unable to get type information for events");
+  }
+
+  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+
+  if (hr != S_OK || pTypeAttr == NULL) {
+    scheme_signal_error("Unable to get type attributes for events, code = %X",hr);
+  }
+
+  hr = pIConnectionPointContainer->FindConnectionPoint(pTypeAttr->guid,&pIConnectionPoint);
+
+  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+
+  if (hr != S_OK || pIConnectionPoint == NULL) {
+    scheme_signal_error("Unable to find COM object connection point, code = %X",hr);
+  }
+
+  hr = CoCreateInstance(CLSID_Sink,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
+			IID_IUnknown,(void **)&pIUnknown);
+
+  if (hr != S_OK || pIUnknown == NULL) {
+    scheme_signal_error("Unable to create sink object, code = %X",hr);
+  }
+
+  hr = pIUnknown->QueryInterface(IID_ISink,(void **)&pISink);
+
+  if (hr != S_OK || pISink == NULL) {
+    scheme_signal_error("Unable to find sink interface, code = %X",hr);
+  }
+
+  pISink->set_extension_table((int)scheme_extension_table); // COM won't take a function ptr
+
+  hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
+
+  if (hr != S_OK) {
+    scheme_signal_error("Unable to connect sink to connection point, code = %X",hr);
+  }
+
+  obj->pEventTypeInfo = pITypeInfo;
+  obj->pIConnectionPoint = pIConnectionPoint;
+  obj->connectionCookie = cookie;
+  obj->pISink = pISink;
+
+  ReleaseSemaphore(eventSinkMutex,1,NULL);
+}
+
+Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IDispatch *pIDispatch;
+  char *eventName;
+  ITypeInfo *pITypeInfo;
+  ISink *pISink;
+  FUNCDESC *pFuncDesc;
+  TYPEATTR *pTypeAttr;
+  BOOL foundEvent;
+  unsigned short numFuncDescs;
+  BSTR bstr;
+  UINT bstrCount;
+  BSTR unicodeName;
+  int i;
+
+  typedef enum { Click, DblClick, KeyDown, KeyPress, KeyUp, 
+		 MouseDown, MouseMove, MouseUp, Error, ReadyStateChange,
+		 Custom 
+  } EVENTTYPE;
+
+  typedef struct {
+    char *name;
+    EVENTTYPE eventType;
+  } EVENTNAMETABLE;
+
+  EVENTTYPE eventType;
+
+  EVENTNAMETABLE eventNameTable[] = {
+    { "Click", Click },
+    { "DblClick", DblClick },
+    { "KeyDown", KeyDown },
+    { "KeyPressed", KeyPress },
+    { "KeyUp", KeyUp },
+    { "MouseDown", MouseDown },
+    { "MouseMove", MouseMove },
+    { "MouseUp", MouseUp },
+    { "Error", Error },
+    { "ReadyStateChange", ReadyStateChange },
+  };
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-register-event-handlerhelp","mx-object",0,argc,argv);
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("com-register-event-handler","string",1,argc,argv);
+  }
+
+  if (SCHEME_PROCP(argv[2]) == FALSE) {
+    scheme_wrong_type("com-register-event-handler","procedure",1,argc,argv);
+  }
+
+  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+  eventName = SCHEME_STR_VAL(argv[1]);
+
+  connectComObjectToEventSink((MX_COM_Object *)argv[0]);
+
+  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
+  pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
+
+  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+
+  if (hr != S_OK || pTypeAttr == NULL) {
+    scheme_signal_error("Unable to get type attributes for events, code = %X",hr);
+  }
+
+  numFuncDescs = pTypeAttr->cFuncs;
+
+  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+
+  eventType = Custom;
+
+  for (i = 0; i < sizeray(eventNameTable); i++) {
+    if (strcmp(eventName,eventNameTable[i].name) == 0) {
+      eventType = eventNameTable[i].eventType;
+      break;
+    }
+  }
+
+  foundEvent = FALSE;
+
+  if (eventType != Custom) {
+
+    for (i = 0; foundEvent == FALSE && i < numFuncDescs; i++) {
+
+      hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
+		
+      if (hr != S_OK) {
+	scheme_signal_error("Error getting event method type description");
+      }
+
+      switch(eventType) {
+
+	// rely only on dispId's here, not name of event
+
+      case Click :
+
+	if (pFuncDesc->memid == 0xFFFFFDA8) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  0,2,argc,argv);
+
+	  pISink->set_click_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+      case DblClick :
+
+	if (pFuncDesc->memid == 0xFFFFFDA7) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  0,2,argc,argv);
+
+	  pISink->set_dblclick_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+      case KeyDown :
+
+	if (pFuncDesc->memid == 0xFFFFFDA6) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  2,2,argc,argv);
+
+
+	  pISink->set_keydown_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+	break;
+
+      case KeyPress :
+
+	if (pFuncDesc->memid == 0xFFFFFDA5) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  1,2,argc,argv);
+
+	  pISink->set_keypress_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+      case KeyUp :
+
+	if (pFuncDesc->memid == 0xFFFFFDA4) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  2,2,argc,argv);
+
+	  pISink->set_keyup_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+      case MouseDown :
+
+	if (pFuncDesc->memid == 0xFFFFFDA3) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  4,2,argc,argv);
+
+	  pISink->set_mousedown_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+	break;
+
+      case MouseMove :
+
+	if (pFuncDesc->memid == 0xFFFFFDA2) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  4,2,argc,argv);
+
+	  pISink->set_mousemove_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+      case MouseUp :
+
+	if (pFuncDesc->memid == 0xFFFFFDA1) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  4,2,argc,argv);
+
+	  pISink->set_mouseup_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+	break;
+
+      case Error :
+
+	if (pFuncDesc->memid == 0xFFFFFDA0) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  0,2,argc,argv);
+
+	  pISink->set_error_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+	break;
+
+      case ReadyStateChange :
+
+	if (pFuncDesc->memid == 0xFFFFFD9F) {
+
+	  scheme_check_proc_arity("com-register-event-handler",
+				  1,2,argc,argv);
+
+	  pISink->set_readystatechange_proc((int)argv[2]);
+	  foundEvent = TRUE;
+	}
+
+	break;
+
+      }
+
+      pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+
+    }
+
+    if (foundEvent) {
+      return scheme_void;
+    }
+  }
+
+  // must be a custom event, even if it has name of stock event
+
+  unicodeName = schemeStringToBSTR(argv[1]);
+
+  for (i = 0; foundEvent == FALSE && i < numFuncDescs; i++) {
+
+    hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
+		
+    if (hr != S_OK) {
+      scheme_signal_error("Error getting event method type description");
+    }
+      
+    // here we rely on name of event
+
+    pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&bstrCount);
+
+    if (wcscmp(unicodeName,bstr) == 0) {
+      //    pISink->set_custom_proc(memId);      
+      foundEvent = TRUE;
+    }
+
+    SysFreeString(bstr);
+
+    pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+  }
+
+  SysFreeString(unicodeName);
+
+  return scheme_void;
+}
+
+MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
+  HRESULT hr;
+  IDispatch *pIDispatch;
   TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
   VARDESC *pVarDesc;
@@ -550,17 +898,15 @@ MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) 
   BOOL foundDesc;
   ITypeInfo *pITypeInfo;
   UINT typeInfoCount;
+  BSTR bstr;
+  UINT nameCount;
   int i;
-  int count;
-
-  // we really want 
-  // WCHAR unicodeName[256];
-  // but VC++ complains 
-	
-  WCHAR *unicodeName = (WCHAR *)(alloca(UNICODE_BUFFER_SIZE * sizeof(WCHAR))); 
+  BSTR unicodeName;
 
   // need Unicode version of name to please ITypeInfo::GetIDsOfNames
   // note that we need string length + 1
+
+  pIDispatch = obj->pIDispatch;
 
   // check in hash table to see if we already have the type information
 
@@ -570,41 +916,31 @@ MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) 
     return pTypeDesc;
   }
   
-  pIDispatch->GetTypeInfoCount(&typeInfoCount);
+  if (invKind == INVOKE_EVENT) {
+    pITypeInfo = eventTypeInfoFromComObject(obj);
 
-  if (typeInfoCount == 0) {
-    scheme_signal_error("COM object does not expose type information");
-  }
-
-  hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
-
-  if (hr != S_OK) {
-    scheme_signal_error("Error getting COM type information");
-  }
-
-  count = MultiByteToWideChar(CP_ACP,(DWORD)0,name,strlen(name) + 1,
-			      unicodeName,UNICODE_BUFFER_SIZE);
-
-  if (count == 0) {
-    scheme_signal_error("Error translating function name % to Unicode",name);
-  }
-
-  // try ITypeInfo version of GetIDsOfNames
-
-  hr = pITypeInfo->GetIDsOfNames(&unicodeName,1,&memID);
-
-  if (hr != S_OK) {
-    
-    // if that doesn't work, try IDispatch version
-
-    hr = pIDispatch->GetIDsOfNames(IID_NULL,&unicodeName,1,LOCALE_SYSTEM_DEFAULT,&memID);
-    
-    if (hr != S_OK) {
-      scheme_signal_error("Error looking up function \"%s\" in type library\n",name);
+    if (pITypeInfo == NULL) {
+      scheme_signal_error("Can't find event type information");
     }
   }
 
-  // using memID of procedure, find FUNCDESC for that procedure
+  else {
+
+    pIDispatch->GetTypeInfoCount(&typeInfoCount);
+
+    if (typeInfoCount == 0) {
+      scheme_signal_error("COM object does not expose type information");
+    }
+
+    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
+
+    if (hr != S_OK) {
+      scheme_signal_error("Error getting COM type information");
+    }
+
+  }
+
+  unicodeName = stringToBSTR(name,strlen(name));
 
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
@@ -615,27 +951,39 @@ MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) 
   foundDesc = FALSE;
 
   for (i = 0; i < pTypeAttr->cFuncs; i++) {
+
     hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
 		
     if (hr != S_OK) {
       scheme_signal_error("Error getting type description");
     }
 
+    pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
+
     // see if this FUNCDESC is the one we want
 
-    if (pFuncDesc->memid == memID && pFuncDesc->invkind == invKind) {
+    if (wcscmp(bstr,unicodeName) == 0 &&
+	(invKind == INVOKE_EVENT || pFuncDesc->invkind == invKind)) {
+
       foundDesc = TRUE;
       descKind = funcDesc;			
+      SysFreeString(bstr);
+      memID = pFuncDesc->memid;
+
       break;
     }
 
     // if not, throw it back
-    
+
+    SysFreeString(bstr);
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
   
   }
 
-  if (invKind != INVOKE_FUNC) {
+  if (invKind == INVOKE_PROPERTYGET ||
+      invKind == INVOKE_PROPERTYPUT ||
+      invKind == INVOKE_PROPERTYPUTREF) {
+
     for (i = 0; i < pTypeAttr->cVars; i++) {
       hr = pITypeInfo->GetVarDesc(i,&pVarDesc);		
       if (hr != S_OK) {
@@ -644,9 +992,13 @@ MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) 
 
       // see if this VARDESC is the one we want
 
-      if (pVarDesc->memid == memID) {
+      pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&nameCount);
+
+      if (wcscmp(bstr,unicodeName)) {
 	foundDesc = TRUE;
 	descKind = varDesc;
+	memID = pVarDesc->memid;
+
 	break;
       }
 
@@ -656,6 +1008,8 @@ MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) 
   
     }
   }
+
+  SysFreeString(unicodeName);
 
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
 
@@ -767,6 +1121,140 @@ Scheme_Object *mx_com_get_properties(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_com_set_properties(int argc,Scheme_Object **argv) {
   return mx_do_get_methods(argc,argv,INVOKE_PROPERTYPUT);
+}
+
+ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
+  HRESULT hr;
+  IDispatch *pIDispatch;
+  ITypeInfo *pITypeInfo,*pEventTypeInfo;
+  IProvideClassInfo *pIProvideClassInfo;
+  TYPEATTR *pTypeAttr;
+  HREFTYPE hRefType;
+  UINT typeCount;
+  UINT eventTypeInfoNdx;
+  int typeFlags;
+  UINT i;
+
+  if (obj->pEventTypeInfo) {
+    return obj->pEventTypeInfo;
+  }
+
+  pIDispatch = obj->pIDispatch;
+
+  hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,(void **)&pIProvideClassInfo);
+
+  if (hr != S_OK || pIProvideClassInfo == NULL) {
+    scheme_signal_error("Error getting COM event type information");
+  }
+
+  hr = pIProvideClassInfo->GetClassInfo(&pITypeInfo);
+
+  if (hr != S_OK || pITypeInfo == NULL) {
+    scheme_signal_error("Error getting event type information");
+  }
+
+  // have type info for coclass
+  // event type info is one of the "implemented" interfaces
+
+  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+
+  if (hr != S_OK || pTypeAttr == NULL) {
+    scheme_signal_error("Error getting type attributes");
+  }
+
+  typeCount = pTypeAttr->cImplTypes; 
+
+  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+
+  eventTypeInfoNdx = -1;
+
+  for (i = 0; i < typeCount; i++) {
+
+    hr = pITypeInfo->GetImplTypeFlags(i,&typeFlags);
+
+    if (hr != S_OK) {
+      scheme_signal_error("Error retrieving type flags");
+    }
+
+    // look for [source, default]
+
+    if ((typeFlags & IMPLTYPEFLAG_FSOURCE) &&
+	(typeFlags & IMPLTYPEFLAG_FDEFAULT)) {
+      eventTypeInfoNdx = i;
+      break;
+    }
+  }
+
+  if (eventTypeInfoNdx == -1) {
+    return NULL;
+  }
+
+  hr = pITypeInfo->GetRefTypeOfImplType(eventTypeInfoNdx,&hRefType);
+
+  if (hr != S_OK) {
+    scheme_signal_error("Error retrieving type info handle");
+  }
+
+  hr = pITypeInfo->GetRefTypeInfo(hRefType,&pEventTypeInfo);
+
+  if (hr != S_OK || pEventTypeInfo == NULL) {
+    scheme_signal_error("Error retrieving event type info, code = %X",hr);
+  }
+
+  obj->pEventTypeInfo = pEventTypeInfo;
+
+  return pEventTypeInfo;
+}
+
+Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  ITypeInfo *pEventTypeInfo;
+  TYPEATTR *pEventTypeAttr;
+  FUNCDESC *pFuncDesc;
+  Scheme_Object *retval;
+  char buff[256];
+  UINT nameCount;
+  BSTR bstr;
+  UINT i;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-methods","mx-object",0,argc,argv);
+  }
+
+  if (MX_COM_OBJ_VAL(argv[0])== NULL) {
+    scheme_signal_error("NULL COM object");
+  }
+  
+  // query for outbound interface info
+
+  pEventTypeInfo = eventTypeInfoFromComObject((MX_COM_Object *)argv[0]);
+
+  if (pEventTypeInfo == NULL) {
+    scheme_signal_error("Can't find event type information");
+  }
+
+  hr = pEventTypeInfo->GetTypeAttr(&pEventTypeAttr);
+
+  if (hr != S_OK || pEventTypeAttr == NULL) {
+    scheme_signal_error("Error retrieving event type attributes, code = %X",hr);
+  }
+
+  retval = scheme_null;
+
+  for (i = 0; i < pEventTypeAttr->cFuncs; i++) {
+    pEventTypeInfo->GetFuncDesc(i,&pFuncDesc);		
+    pEventTypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
+    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,SysStringLen(bstr) + 1,
+			buff,sizeof(buff) - 1,
+			NULL,NULL);
+    retval = scheme_make_pair(scheme_make_string(buff),retval);
+    SysFreeString(bstr);
+  }
+
+  pEventTypeInfo->ReleaseFuncDesc(pFuncDesc);
+  pEventTypeInfo->ReleaseTypeAttr(pEventTypeAttr);
+
+  return retval;
 }
 
 VARTYPE getVarTypeFromElemDesc(ELEMDESC *pElemDesc) {
@@ -1006,7 +1494,6 @@ Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
 
 Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 				     INVOKEKIND invKind) {
-  IDispatch *pIDispatch;
   MX_TYPEDESC *pTypeDesc;
   FUNCDESC *pFuncDesc;
   VARDESC *pVarDesc;
@@ -1027,20 +1514,18 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     scheme_wrong_type("mx-method-type","string",1,argc,argv);
   }
 
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
-
-  if (pIDispatch == NULL) {
+  if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
     scheme_signal_error("NULL COM object");
   }
 
   name = SCHEME_STR_VAL(argv[1]);
 
-  pTypeDesc = getMethodType(pIDispatch,name,invKind);
+  pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
 
   if (pTypeDesc->descKind == funcDesc) {
 
     pFuncDesc = pTypeDesc->pFuncDesc;
-  
+
     paramTypes = scheme_null;
 
     numActualParams = pFuncDesc->cParams;
@@ -1066,9 +1551,15 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     }
     else {
 
-      lastParamIsRetval = 
-	(pFuncDesc->lprgelemdescParam[numActualParams-1].paramdesc.wParamFlags & PARAMFLAG_FRETVAL);
-      
+      if (numActualParams > 0 && 
+	  (invKind == INVOKE_FUNC || invKind == INVOKE_PROPERTYGET)) {
+	lastParamIsRetval = 
+	  (pFuncDesc->lprgelemdescParam[numActualParams-1].paramdesc.wParamFlags & PARAMFLAG_FRETVAL);
+      }
+      else {
+	lastParamIsRetval = FALSE;
+      }
+
       if (lastParamIsRetval) {
 	hiBound = numActualParams - 2;
       }
@@ -1107,7 +1598,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 
     // if final parameter is marked as retval, use its type, else void
 
-    if (pFuncDesc->lprgelemdescParam[numActualParams-1].paramdesc.wParamFlags & PARAMFLAG_FRETVAL) {
+    if (lastParamIsRetval) {
       returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams-1],TRUE,FALSE);
     }
     else {
@@ -1116,6 +1607,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 
     break;
 
+  case INVOKE_EVENT :
   case INVOKE_PROPERTYPUT :
 
     returnType = scheme_intern_symbol("void");
@@ -1157,6 +1649,10 @@ Scheme_Object *mx_com_get_property_type(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_com_set_property_type(int argc,Scheme_Object **argv) {
   return mx_do_get_method_type(argc,argv,INVOKE_PROPERTYPUT);
+}
+
+Scheme_Object *mx_com_event_type(int argc,Scheme_Object **argv) {
+  return mx_do_get_method_type(argc,argv,(INVOKEKIND)INVOKE_EVENT);
 }
 
 BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
@@ -2057,7 +2553,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
   // check arity, types of method arguments
   
-  pTypeDesc = getMethodType(pIDispatch,name,invKind);
+  pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
 
   numParamsPassed = buildMethodArguments(pTypeDesc,
 					 invKind,
@@ -2329,6 +2825,9 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
 
     com_object->type = mx_com_object_type; 
     com_object->pIDispatch = pObjectDispatch;
+    com_object->pEventTypeInfo = NULL;
+    com_object->pIConnectionPoint = NULL;
+    com_object->connectionCookie = (DWORD)0;
 
     mx_register_com_object((Scheme_Object *)com_object,pObjectDispatch);
 
@@ -2956,6 +3455,7 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
 
     documentHwndMutex = CreateSemaphore(NULL,1,1,NULL);
     createHwndSem = CreateSemaphore(NULL,0,1,NULL);
+    eventSinkMutex = CreateSemaphore(NULL,1,1,NULL);
 
     hIcon = (HICON)LoadImage(hInstance,
 			     MAKEINTRESOURCE(MYSTERX_ICON),

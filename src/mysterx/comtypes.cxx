@@ -17,6 +17,8 @@
 #include "escheme.h"
 
 #include "myspage.h"
+#include "myssink.h"
+
 #include "mysterx.h"
 
 Scheme_Type mx_com_object_type;     
@@ -85,6 +87,7 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
 
   retval->type = mx_com_object_type;
   retval->pIDispatch = pIDispatch;
+  retval->pEventTypeInfo = NULL;
 
   return (Scheme_Object *)retval;
 

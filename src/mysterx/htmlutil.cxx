@@ -11,7 +11,10 @@
 #include "escheme.h"
 
 #include "myspage.h"
+#include "myssink.h"
+
 #include "mysterx.h"
+
 #include "htmlutil.h"
 
 IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,char *tag,char *id) {

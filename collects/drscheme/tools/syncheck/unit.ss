@@ -617,8 +617,12 @@
 				     (lambda (delta)
 				       (when (and (source-object? zodiac-ast) z:finish z:start)
 					 (change-style delta z:start z:finish)))])
+
+			       ; No matter what this exporession is, if it's not direct from the
+			       ;  source, it might be a macro or micro expansion.
 			       (unless (source-object? zodiac-ast)
 				 (color-syntax))
+
 			       (cond
 				[(zodiac:quote-form? zodiac-ast)
 				 (color const-style)]

@@ -107,6 +107,18 @@ Example
 Correlating Source
 ------------------
 
+Quickref:
+
+    who           how     source expression?
+    ---           ---     ------------------
+    'source       ...     yes
+    'reader       ...     yes
+    'micro        expr    iff expr is src
+    'macro        expr    iff expr is src
+    'non-source   ...     no
+
+Details:
+
 Although there is not a unique mapping from elaborated expressions to
 source expressions, the mapping is unique when restricted to
 elaborated expressions that have a source-who field of 'source or
@@ -115,3 +127,8 @@ the `loop' in `(let loop () (loop))' => `(letrec ([loop (lambda ()
 (loop))]) (loop))'), all but the first instance get a 'duplcate
 source-who annotation. (The source-how field contains the original
 source record.)
+
+When an expression is dervied from a macro or micro expansion, the
+source-who field contains 'micro or 'macro. The source-how field
+contains the expression that was macro- or micro-expanded to produce
+the expression.

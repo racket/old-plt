@@ -123,12 +123,12 @@
 
   ; 
   (define item-keymap (make-object keymap%))
-  (send item-keymap add-mouse-function "select"
+  (send item-keymap add-function "mouse-select"
 	(lambda (edit event) (if (send event button-down?) (send edit select #t))))
-  (send item-keymap add-mouse-function "double-select"
+  (send item-keymap add-function "mouse-double-select"
 	(lambda (edit event) (if (send event button-down?) (send edit double-select))))
-  (send item-keymap map-function "leftbutton" "select")
-  (send item-keymap map-function "leftbuttondouble" "double-select")
+  (send item-keymap map-function "leftbutton" "mouse-select")
+  (send item-keymap map-function "leftbuttondouble" "mouse-double-select")
 
   (define hierarchical-list-item<%>
     (interface ()

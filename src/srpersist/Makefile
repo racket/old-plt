@@ -21,7 +21,7 @@ CPP_FLAGS=-g -DODBCVER=$(ODBCVER) \
 
 OBJS=srpersist.o srpbuffer.o srptypes.o
 
-ARCH=`mzscheme -vm -e '(display (system-library-subpath))'`
+ARCH=`../../bin/mzscheme -vm -e '(display (system-library-subpath))'`
  
 NATIVE_DIR=../../collects/srpersist/private/compiled/native/$(ARCH)
 

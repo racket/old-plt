@@ -112,9 +112,62 @@ wxFont::~wxFont()
   COUNT_M(font_count);
 }
 
+static int glyph_index(HDC hdc, int c)
+{
+  GCP_RESULTSW gcp;
+  wchar_t s[1], gl[1];
+  char classes[1];
+  DWORD ok;
+  
+  if ((c < 0) || (c >= 0x10000))
+    c = 1;
+
+  s[0] = c;
+  
+  gcp.lStructSize = sizeof(GCP_RESULTSW);
+  gcp.lpOutString = NULL;
+  gcp.lpDx = NULL;
+  gcp.lpCaretPos = NULL;
+  gcp.lpOrder = NULL;
+  gcp.lpClass = classes;
+  gcp.lpGlyphs = gl;
+  gcp.nGlyphs = 1;
+
+  ok = GetCharacterPlacementW(hdc, s, 1, 0, &gcp, 0);
+  
+  if (ok && gcp.lpGlyphs)
+    return gl[0];
+  else
+    return -1;
+}
+
+Bool wxFont::GlyphAvailable(int c, HDC hdc)
+{
+  int i1, i2;
+
+  /* There doesn't seem to be a way to ask directly
+     whether a glyph exists, at least not before
+     Windows 2000. But ctl-A should never have a real glyph,
+     so we can check whether c's glyph is the same as
+     Ctl-A's. */
+  i1 = glyph_index(hdc, 1);
+  i2 = glyph_index(hdc, c);
+
+  return (i1 != i2);
+}
+
 Bool wxFont::ScreenGlyphAvailable(int c)
 {
-  return TRUE;
+  HDC hdc;
+  Bool r;
+
+  hdc = ::GetDC(NULL);
+
+  r = GlyphAvailable(c, hdc);
+
+  ReleaseDC(NULL, hdc);
+
+  return r;
 }
 
 static int CALLBACK check_font_charset(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,

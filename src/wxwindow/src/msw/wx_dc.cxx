@@ -428,9 +428,20 @@ void wxDC::EndDrawing(void)
 
 Bool wxDC::GlyphAvailable(int c, wxFont *f)
 {
+  HDC dc;
+  Bool r;
+
   if (!f)
     f = font;
-  return f->ScreenGlyphAvailable(c);
+
+  dc = ThisDC();
+  if (!dc) return 0;
+
+  r = f->GlyphAvailable(c, dc);
+
+  DoneDC(dc);
+
+  return r;
 }
 
 void wxDC::FloodFill(float x, float y, wxColour *col, int style)
@@ -1017,11 +1028,23 @@ static int ucs4_strlen(const unsigned int *c)
 #define QUICK_UBUF_SIZE 1024
 static wchar_t u_buf[QUICK_UBUF_SIZE];
 
-wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, Bool combine)
+wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, Bool combine, wxDC *dc, HDC hdc, wxFont *font)
 {
   int ulen, alloc_ulen;
   wchar_t *unicode;
   int theStrlen;
+
+  if (!combine) {
+    if (!dc->combine_status) {
+      /* Check whether text renderer knows how to deal with ZWNJ, etc. */
+      if (font->GlyphAvailable(0x200C, hdc))
+	dc->combine_status = 1;
+      else
+	dc->combine_status = -1;
+    }
+    if (dc->combine_status == -1)
+      combine = 1; /* DC doesn't combine, so no need to avoid combinations */
+  }
 
   if (ucs4) {
     theStrlen = ucs4_strlen((const unsigned int *)text XFORM_OK_PLUS d);
@@ -1093,13 +1116,10 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     }
     ulen -= j;
     /* Add ZWNJ to prevent other combinations */
-    /*  I think is this redundant, because other attributes
-	(in t estyle or layout) disable combinations. But just
-	in case... */
-    for (i = ulen; i--; ) {
+	for (i = ulen; i--; ) {
       unicode[(2 * i) + 1] = 0x200C;
       unicode[(2 * i)] = unicode[i];
-    }
+	}
     ulen *= 2;
   }
   
@@ -1147,7 +1167,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
   
   SetRop(dc, wxSOLID);
 
-  ustring = convert_to_drawable_format(text, d, ucs4, &len, combine);
+  ustring = convert_to_drawable_format(text, d, ucs4, &len, combine, this, dc, font);
 
   (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), ustring, len);
 
@@ -1406,7 +1426,8 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
     return;
   }
 
-  ustring = convert_to_drawable_format(string, d, ucs4, &len, combine);
+  ustring = convert_to_drawable_format(string, d, ucs4, &len, combine, this, dc, 
+				       theFont ? theFont : font);
 
   GetTextExtentPointW(dc, ustring, len, &sizeRect);
   if (descent || topSpace)

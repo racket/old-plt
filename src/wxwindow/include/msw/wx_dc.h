@@ -33,6 +33,7 @@ class wxDC: public wxbDC
  public:
   Bool dont_delete;
   Bool screen_font;
+  int combine_status;
   int window_ext_x;
   int window_ext_y;
   float system_scale_x;

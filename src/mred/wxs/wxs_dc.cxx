@@ -21,6 +21,34 @@
 #endif
 #include "wx_rgn.h"
 
+#ifdef wx_msw
+# define USE_GL
+#endif
+#ifdef wx_mac
+# define USE_GL
+#endif
+
+#ifndef USE_GL
+class wxGL : public wxObject {
+public:
+  wxGL();
+
+  int Ok();
+
+  void Reset(long d);
+  void SwapBuffers(void);
+  void ThisContextCurrent(void);
+};
+
+wxGL::wxGL()
+: wxObject(WXGC_NO_CLEANUP)
+{
+}
+int wxGL::Ok() { return 0; }
+void wxGL::SwapBuffers(void) { }
+void wxGL::ThisContextCurrent(void) { }
+#endif
+
 
 
 
@@ -271,6 +299,15 @@ static void* MyGetOrigin(wxDC *dc)
   READY_TO_RETURN;
 
   return r;
+}
+
+inline static wxGL *_GetGL(wxDC *dc)
+{
+#ifdef USE_GL
+  return dc->GetGL();
+#else
+  return NULL;
+#endif
 }
 
 static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
@@ -624,7 +661,7 @@ static Scheme_Object *os_wxDCOk(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxDCGetGL(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDC_GetGL(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -637,7 +674,7 @@ static Scheme_Object *os_wxDCGetGL(int n,  Scheme_Object *p[])
   
 
   
-  r = WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->GetGL());
+  r = WITH_VAR_STACK(_GetGL(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
@@ -1691,7 +1728,7 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "start-page" " method", (Scheme_Method_Prim *)os_wxDCStartPage, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "start-doc" " method", (Scheme_Method_Prim *)os_wxDCStartDoc, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "ok?" " method", (Scheme_Method_Prim *)os_wxDCOk, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-gl" " method", (Scheme_Method_Prim *)os_wxDCGetGL, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-gl" " method", (Scheme_Method_Prim *)os_wxDC_GetGL, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-size" " method", (Scheme_Method_Prim *)os_wxDCMyGetSize, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-foreground" " method", (Scheme_Method_Prim *)os_wxDCdcGetTextForeground, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-background" " method", (Scheme_Method_Prim *)os_wxDCdcGetTextBackground, 0, 0));
@@ -2454,42 +2491,23 @@ class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const 
 
 
 
-#ifdef wx_msw
-# define USE_GL
-#endif
-#ifdef wx_mac
-# define USE_GL
-#endif
-
-#ifndef USE_GL
-class wxGL : public wxObject {
-public:
-  wxGL();
-
-  int Ok();
-
-  void Reset(long d);
-  void SwapBuffers(void);
-  void ThisContextCurrent(void);
-};
-
-wxGL::wxGL()
-: wxObject(WXGC_NO_CLEANUP)
-{
-}
-int wxGL::OK() { return 0; }
-void wxGL::SwapBuffers(void) { }
-void wxGL::ThisContextCurrent(void) { }
-#endif
-
-
 #ifdef USE_GL
 extern void *wxWithGLContext(wxGL *gl, void *thunk);
+extern void *wxSetGLContext(wxGL *gl);
 #endif
 
 static void *WithContext(wxGL *gl, void *thunk)
 {
+#ifdef USE_GL
   return wxWithGLContext(gl, thunk);
+#endif
+}
+
+static void *_ThisContextCurrent(wxGL *gl)
+{
+#ifdef USE_GL
+  wxSetGLContext(gl);
+#endif
 }
 
 
@@ -2545,7 +2563,7 @@ static Scheme_Object *os_wxGLWithContext(int n,  Scheme_Object *p[])
   return (Scheme_Object*)r;
 }
 
-static Scheme_Object *os_wxGLThisContextCurrent(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxGL_ThisContextCurrent(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -2557,7 +2575,7 @@ static Scheme_Object *os_wxGLThisContextCurrent(int n,  Scheme_Object *p[])
   
 
   
-  WITH_VAR_STACK(((wxGL *)((Scheme_Class_Object *)p[0])->primdata)->ThisContextCurrent());
+  WITH_VAR_STACK(_ThisContextCurrent(((wxGL *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
@@ -2617,7 +2635,7 @@ void objscheme_setup_wxGL(Scheme_Env *env)
   os_wxGL_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "gl%", "object%", NULL, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGL_class, "with-context" " method", (Scheme_Method_Prim *)os_wxGLWithContext, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGL_class, "set-as-context" " method", (Scheme_Method_Prim *)os_wxGLThisContextCurrent, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGL_class, "set-as-context" " method", (Scheme_Method_Prim *)os_wxGL_ThisContextCurrent, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGL_class, "swap-buffers" " method", (Scheme_Method_Prim *)os_wxGLSwapBuffers, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGL_class, "ok?" " method", (Scheme_Method_Prim *)os_wxGLOk, 0, 0));
 

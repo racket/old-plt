@@ -415,6 +415,14 @@ void *wxWithGLContext(wxGL *gl, void *thunk)
 			     NULL, a);
 }
 
+void *wxSetGLContext(wxGL *gl)
+{
+  Scheme_Object *glo;
+  glo = objscheme_bundle_wxGL(gl);
+  scheme_set_param(scheme_config, gl_param, glo);
+  gl->ThisContextCurrent();
+}
+
 #endif
 
 

@@ -13,6 +13,34 @@
 #endif
 #include "wx_rgn.h"
 
+#ifdef wx_msw
+# define USE_GL
+#endif
+#ifdef wx_mac
+# define USE_GL
+#endif
+
+#ifndef USE_GL
+class wxGL : public wxObject {
+public:
+  wxGL();
+
+  int Ok();
+
+  void Reset(long d);
+  void SwapBuffers(void);
+  void ThisContextCurrent(void);
+};
+
+wxGL::wxGL()
+: wxObject(WXGC_NO_CLEANUP)
+{
+}
+int wxGL::Ok() { return 0; }
+void wxGL::SwapBuffers(void) { }
+void wxGL::ThisContextCurrent(void) { }
+#endif
+
 @INCLUDE wxs.xci
 
 @HEADER
@@ -176,6 +204,15 @@ static void* MyGetOrigin(wxDC *dc)
   return r;
 }
 
+inline static wxGL *_GetGL(wxDC *dc)
+{
+#ifdef USE_GL
+  return dc->GetGL();
+#else
+  return NULL;
+#endif
+}
+
 static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
 {
   int i, j, p;
@@ -302,7 +339,7 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 @ m "get-size" : void[]/CastToSO//spAnything MyGetSize(); : : /CheckOk[METHODNAME("dc<%>","get-size")]
 
-@ q "get-gl" : wxGL^ GetGL();
+@ m "get-gl" : wxGL^ _GetGL();
 
 @ q "ok?" : bool Ok();
 
@@ -392,42 +429,23 @@ START_XFORM_SKIP;
 @END
 
 
-#ifdef wx_msw
-# define USE_GL
-#endif
-#ifdef wx_mac
-# define USE_GL
-#endif
-
-#ifndef USE_GL
-class wxGL : public wxObject {
-public:
-  wxGL();
-
-  int Ok();
-
-  void Reset(long d);
-  void SwapBuffers(void);
-  void ThisContextCurrent(void);
-};
-
-wxGL::wxGL()
-: wxObject(WXGC_NO_CLEANUP)
-{
-}
-int wxGL::OK() { return 0; }
-void wxGL::SwapBuffers(void) { }
-void wxGL::ThisContextCurrent(void) { }
-#endif
-
-
 #ifdef USE_GL
 extern void *wxWithGLContext(wxGL *gl, void *thunk);
+extern void *wxSetGLContext(wxGL *gl);
 #endif
 
 static void *WithContext(wxGL *gl, void *thunk)
 {
+#ifdef USE_GL
   return wxWithGLContext(gl, thunk);
+#endif
+}
+
+static void *_ThisContextCurrent(wxGL *gl)
+{
+#ifdef USE_GL
+  wxSetGLContext(gl);
+#endif
 }
 
 @CLASSBASE wxGL "gl" : "object"
@@ -435,7 +453,7 @@ static void *WithContext(wxGL *gl, void *thunk)
 
 @ "ok?" : bool Ok()
 @ "swap-buffers" : void SwapBuffers()
-@ "set-as-context" : void ThisContextCurrent()
+@ m "set-as-context" : void _ThisContextCurrent()
 @ m "with-context" : void[]/CastToSO//spAnything WithContext(void[]/CastToSO/CastFromSO/spAnything///push)
 
 @END

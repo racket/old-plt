@@ -35,9 +35,9 @@ PLANNED FEATURES:
        "Install local file <plt-file> as though it had been downloaded from the planet server. The installed package has path (planet (<owner> <plt-file's filename> <maj> <min>))"
        (set! actions (cons (lambda () (install-plt-file plt-file owner maj min)) actions)))
       (("-i" "--install")
-       pkg-spec
-       "Download and install the package (require (planet \"file.ss\" <pkg-spec>)) would install"
-       (set! actions (cons (lambda () (download/install pkg-spec)) actions)))
+       owner pkg maj min
+       "Download and install the package (require (planet \"file.ss\" (<owner> <pkg> <maj> <min>)) would install"
+       (set! actions (cons (lambda () (download/install owner pkg maj min)) actions)))
       (("-r" "--remove")
        owner pkg maj min
        "Remove the specified package from the local cache"
@@ -65,9 +65,10 @@ PLANNED FEATURES:
   
   (define (fail s) (raise (make-exn:fail s (current-continuation-marks))))
   
-  (define (download/install pkg-spec-str)
-    (let* ([spec (read-from-string pkg-spec-str)]
-           [full-pkg-spec (pkg-spec->full-pkg-spec spec #f)])
+  (define (download/install owner pkg majstr minstr)
+    (let* ([maj (read-from-string majstr)]
+           [min (read-from-string minstr)]
+           [full-pkg-spec (pkg-spec->full-pkg-spec (list owner pkg maj min) #f)])
       (when (get-package-from-cache full-pkg-spec)
         (fail "No package installed (cache already contains a matching package)"))
       (unless (get-package-from-server full-pkg-spec)
@@ -92,7 +93,8 @@ PLANNED FEATURES:
           (min (string->number minstr)))
       (unless (and (integer? maj) (integer? min) (> maj 0) (>= min 0))
         (fail "Invalid major/minor version"))
-      (remove-pkg owner pkg maj min)))
+      (unless (remove-pkg owner pkg maj min)
+        (fail "Could not find package"))))
         
   (define (show-installed-packages)
     (for-each 

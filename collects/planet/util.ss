@@ -56,13 +56,14 @@
   ;; to remove:
   ;;   -- delete files from cache directory
   ;;   -- remove any existing linkage for package
+  ;; returns #t if the removal worked; #f if no package existed.
   (define (remove-pkg owner name maj min)
     (let ((p (get-installed-package owner name maj min)))
-      (when p
-        (let ((path (pkg-path p)))
-          (delete-directory/files path)
-          (trim-directory (CACHE-DIR) path)
-          (remove-linkage-to! p)))))
+      (and p
+           (let ((path (pkg-path p)))
+             (delete-directory/files path)
+             (trim-directory (CACHE-DIR) path)
+             (remove-linkage-to! p)))))
     
   ;; listof X * listof X -> nonempty listof X
   ;; returns de-prefixed version of l2 if l1 is a proper prefix of l2; 

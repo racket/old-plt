@@ -146,6 +146,8 @@ an appropriate subdirectory.
            (lib "port.ss")
            (lib "list.ss")
            (lib "plt-single-installer.ss" "setup")
+           (lib "date.ss")
+           
            "config.ss"
            "private/planet-shared.ss"
            "private/linkage.ss")
@@ -272,7 +274,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
         [(#t path maj min) (install-pkg pkg path maj min)]
         [(#f str) #f])))
   
-  (require (lib "date.ss"))
+  
   (define (current-time) 
     (let ((date (seconds->date (current-seconds))))
       (parameterize ((date-display-format 'rfc2822))

@@ -4,7 +4,7 @@
 ;; Richard Cobbe
 ;; July 2004
 ;;
-;; $Id: utils.ss,v 1.3 2004/08/10 15:54:35 cobbe Exp $
+;; $Id: utils.ss,v 1.4 2004/08/17 21:11:03 cobbe Exp $
 ;;
 ;; General utilities used in the implementation of ClassicJava.
 ;;
@@ -93,6 +93,7 @@
   ;; contract that recognizes unary predicates
   (define predicate? (any? . -> . boolean?))
 
+  ;; mv-map :: (a -> b c) (Listof a) -> (Listof b) (Listof c)
   ;; map, but for functions that return 2 values.
   (define mv-map
     (lambda (f l)

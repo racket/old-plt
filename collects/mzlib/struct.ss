@@ -1,4 +1,6 @@
 
+;; by Jacob Matthews
+
 (module struct mzscheme
   (provide copy-struct)
 

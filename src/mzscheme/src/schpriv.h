@@ -624,11 +624,11 @@ typedef struct Scheme_Saved_Stack {
 
 typedef struct Scheme_Cont_Mark {
   /* Precise GC: We leave out the tag and make sure everything
-     is a pointer, then allocated with GC_malloc_allow_interior */
+     is a pointer, then allocate with GC_malloc_allow_interior */
   Scheme_Object *key;
   Scheme_Object *val;
   struct Scheme_Cont_Mark_Chain *cached_chain;
-  MZ_MARK_POS_TYPE pos; /* Odd numbers - to they look like non-pointers */
+  MZ_MARK_POS_TYPE pos; /* Odd numbers - so they look like non-pointers */
 } Scheme_Cont_Mark;
 
 typedef struct Scheme_Cont_Mark_Chain {
@@ -696,6 +696,7 @@ typedef struct Scheme_Escaping_Cont {
   long *ok;  
   Scheme_Object *f;
   int suspend_break;
+  MZ_MARK_STACK_TYPE cont_mark_stack; /* for `continuation-marks' */
 } Scheme_Escaping_Cont;
 
 #define SCHEME_CONT_HOME(obj)  (((Scheme_Escaping_Cont *)(obj))->home)

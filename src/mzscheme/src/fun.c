@@ -68,6 +68,7 @@ static Scheme_Object *andmap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *ormap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_cc (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
+static Scheme_Object *cont_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *extract_cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_func (int argc, Scheme_Object *argv[]);
@@ -206,6 +207,11 @@ scheme_init_fun (Scheme_Env *env)
 			     scheme_make_prim_w_arity(cc_marks,  
 						      "current-continuation-marks", 
 						      0, 0),
+			     env);
+  scheme_add_global_constant("continuation-marks", 
+			     scheme_make_prim_w_arity(cont_marks,  
+						      "continuation-marks", 
+						      1, 1),
 			     env);
   scheme_add_global_constant("continuation-mark-set->list", 
 			     scheme_make_prim_w_arity(extract_cc_marks,  
@@ -1760,6 +1766,7 @@ static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump
 static void pre_call_ec(void *ec)
 {
   SCHEME_CONT_HOME(ec) = scheme_current_process;
+  ((Scheme_Escaping_Cont *)ec)->cont_mark_stack = MZ_CONT_MARK_STACK;
 }
 
 static void post_call_ec(void *ec)
@@ -2018,29 +2025,44 @@ call_cc (int argc, Scheme_Object *argv[])
   }
 }
 
-Scheme_Object *scheme_current_continuation_marks(void)
+Scheme_Object *scheme_continuation_marks(Scheme_Process *p, 
+					 Scheme_Object *_cont,
+					 Scheme_Object *econt)
+     /* cont => p is not used */
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Cont *cont = (Scheme_Cont *)_cont;
   Scheme_Cont_Mark_Chain *first = NULL, *last = NULL;
   Scheme_Cont_Mark_Set *set;
   long findpos;
 
-  findpos = (long)MZ_CONT_MARK_STACK;
+  if (cont) {
+    findpos = (long)cont->ss.cont_mark_stack;
+  } else if (econt) {
+    findpos = (long)((Scheme_Escaping_Cont *)econt)->cont_mark_stack;
+  } else {
+    findpos = (long)MZ_CONT_MARK_STACK;
+  }
 
   while (findpos--) {
-    Scheme_Cont_Mark *seg;
-    long pos;
     Scheme_Cont_Mark *find;
+    long pos;
 
-    seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
-    pos = findpos & SCHEME_MARK_SEGMENT_MASK;
-    find = seg + pos;
+    if (cont) {
+      find = cont->cont_mark_stack_copied;
+      pos = findpos;
+    } else {
+      GC_CAN_IGNORE Scheme_Cont_Mark *seg;
+      
+      seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+      pos = findpos & SCHEME_MARK_SEGMENT_MASK;
+      find = seg;
+    }
 
-    if (find->cached_chain) {
+    if (find[pos].cached_chain) {
       if (last)
-	last->next = find->cached_chain;
+	last->next = find[pos].cached_chain;
       else
-	first = find->cached_chain;
+	first = find[pos].cached_chain;
 
       break;
     } else {
@@ -2049,10 +2071,10 @@ Scheme_Object *scheme_current_continuation_marks(void)
 #ifdef MZTAG_REQUIRED
       pr->type = scheme_rt_cont_mark_chain;
 #endif      
-      pr->key = find->key;
-      pr->val = find->val;
+      pr->key = find[pos].key;
+      pr->val = find[pos].val;
       pr->next = NULL;
-      find->cached_chain = pr;
+      find[pos].cached_chain = pr;
       if (last)
 	last->next = pr;
       else
@@ -2069,10 +2091,33 @@ Scheme_Object *scheme_current_continuation_marks(void)
   return (Scheme_Object *)set;
 }
 
+Scheme_Object *scheme_current_continuation_marks(void)
+{
+  return scheme_continuation_marks(scheme_current_process, NULL, NULL);
+}
+
 static Scheme_Object *
 cc_marks(int argc, Scheme_Object *argv[])
 {
   return scheme_current_continuation_marks();
+}
+
+static Scheme_Object *
+cont_marks(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_CONTP(argv[0]) && !SCHEME_ECONTP(argv[0]))
+    scheme_wrong_type("continuation-marks", "continuation", 1, argc, argv);
+
+  if (SCHEME_ECONTP(argv[0])) {
+    if (!SCHEME_CONT_HOME(argv[0])) {
+      scheme_arg_mismatch("continuation-marks", 
+			  "escape continuation no long applicable",
+			  argv[0]);
+    }
+    
+    return scheme_continuation_marks(SCHEME_CONT_HOME(argv[0]), NULL, argv[0]);
+  } else
+    return scheme_continuation_marks(NULL, argv[0], NULL);
 }
 
 static Scheme_Object *

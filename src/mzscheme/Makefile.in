@@ -221,7 +221,7 @@ install-3m-basic:
 	cd ..; cp mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
 
 install-3m@NOT_OSX@:
-	$(MAKE_ install-3m-basic
+	$(MAKE) install-3m-basic
 
 LIBIDIR=$(prefix)/lib
 BUILDINFO=$(LIBIDIR)/buildinfo

@@ -71,6 +71,16 @@
 	    (let ([allow-improper-lists zodiac:allow-improper-lists]
 		  [eq?-only-compares-symbols drscheme:language:eq?-only-compares-symbols])
 	      (load (build-path (collection-path "system") "debug.ss"))
+	      (unless (drscheme:language:use-zodiac)
+		'(require-library "corem.ss") ;; use this after new update
+		(for-each require-library
+			  '("compatm.ss"
+			    "defstru.ss"
+			    "macro.ss"
+			    "match.ss"
+			    "refer.ss"
+			    "shared.ss"
+			    "spidey.ss")))
 	      (invoke-open-unit/sig c@ #f 
 				    (drscheme:init : drscheme:init^)
 				    plt:userspace:params^)))))))

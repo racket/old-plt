@@ -36,7 +36,8 @@
     (lambda (expr)
       (drscheme:init:primitive-eval
        (with-handlers ([(lambda (x) #t)
-			(lambda (x) (error 'syntaxx-error (exn-message x)))])
+			(lambda (x) (error 'internal-syntax-error
+					   (exn-message x)))])
 	 (expand-defmacro expr)))))
 
 
@@ -316,7 +317,9 @@
 	      annotate?))]
 	  [process-file/zodiac
 	   (lambda (filename f annotate?)
-	     (let ([port (open-input-file filename)])
+	     (let ([port (with-parameterization user-param
+			   (lambda ()
+			     (open-input-file filename)))])
 	       (process/zodiac
 		(parameterize ([read-case-sensitive (get-case-sensitivity)])
 		  (zodiac:read port
@@ -525,6 +528,7 @@
 		 (end-edit-sequence))))]
 	  [do-many-buffer-evals
 	   (lambda (edit start end)
+	     (exception-reporting-rep this)
 	     (mred:debug:printf 'console-threading "do-many-buffer-evals: waiting in-evaluation")
 	     (semaphore-wait in-evaluation-semaphore)
 	     (mred:debug:printf 'console-threading "do-many-buffer-evals: passed in-evaluation")
@@ -710,7 +714,9 @@
 	   (lambda (filename)
 	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
-		 (let* ([p (open-input-file filename)]
+		 (let* ([p (with-parameterization user-param
+			     (lambda ()
+			       (open-input-file filename)))]
 			[loc (zodiac:make-location 0 0 0 filename)]
 			[chars (begin0
 				 (list (read-char p) (read-char p) (read-char p) (read-char p))

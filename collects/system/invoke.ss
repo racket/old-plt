@@ -6,13 +6,15 @@
 	(lambda ()
 	  (let-values ([(mred:change-splash-message mred:shutdown-splash mred:close-splash)
 			(mred:splash info)])
+
+
 	    (current-will-executor (make-will-executor))
 	    (current-namespace (make-namespace 'wx))
 	    (current-custodian (make-custodian))
 	    (user-break-poll-handler wx:check-for-break)
 	    (init-param)
 	    (wx:current-eventspace (wx:make-eventspace (current-parameterization)))
-	    
+
 	    (require-library "invsig.ss" "system")
 	    (require-library "invsig.ss" "system")
 	    (require-library "debug.ss" "system")

@@ -951,6 +951,13 @@
   ;; can also be determined by the prototype.
   ;;
   (-define (make-match&env/extract-vars who top p k just-vars? phase-param?)
+    ;;  The m&e function returns three values. If just-vars? is true,
+    ;;  only the first result is used, and it is the variable list.
+    ;;  Otherwise, the first result is the code assuming an input bound to `e'.
+    ;;  The second result is #t if a variable was used, so that the code
+    ;;  produces an environment rather than just a boolean.
+    ;;  The last result is #t only when id-is-rest? was #t, and it indicates
+    ;;  that the code refers to cap to get context for datum->syntax-object.
     (-define (m&e p local-top use-ellipses? last? id-is-rest?)
       (cond
        [(and use-ellipses? (ellipsis? p))
@@ -958,9 +965,9 @@
 	    ;; Simple case: ellipses at the end
 	    (let* ([p-head (stx-car p)]
 		   [nestings (get-ellipsis-nestings p-head k)])
-	      (let-values ([(match-head mh-did-var?) (m&e p-head p-head #t #f #f)])
+	      (let-values ([(match-head mh-did-var? <false>) (m&e p-head p-head #t #f #f)])
 		(if just-vars?
-		    (values (map list nestings) #f)
+		    (values (map list nestings) #f #f)
 		    (let ([nest-vars (flatten-nestings nestings (lambda (x) #t))])
 		      (values
 		       `(lambda (e)
@@ -982,7 +989,8 @@
 								empties)))
 						  (,(if last? 'stx-rotate* 'stx-rotate) l)))))))
 			      #f))
-		       mh-did-var?)))))
+		       mh-did-var?
+		       #f)))))
 	    ;; More stuff after ellipses. We need to make sure that
 	    ;;  the extra stuff doesn't include any ellipses or a dot 
 	    (let ([hd (list (stx-car p) (stx-car (stx-cdr p)))]
@@ -1002,30 +1010,36 @@
 					(loop (stx-cdr rest) (add1 cnt)))
 				      (values (add1 cnt) #f))))])
 		;; Like cons case, but with a more elaborate assembly:
-		(let*-values ([(-match-head -mh-did-var?) (if just-vars?
-							      (m&e hd hd use-ellipses? #f #f)
-							      (values 'not 'yet))]
-			      [(match-tail mt-did-var?) (m&e rest local-top use-ellipses? 
-							     last? #t)]
-			      [(match-head mh-did-var?) (if just-vars?
-							    (values -match-head -mh-did-var?)
-							    (m&e hd hd use-ellipses? 
-								 (and last? (not mt-did-var?))
-								 #f))])
+		(let*-values ([(-match-head -mh-did-var? <false>) (if just-vars?
+								      (m&e hd hd use-ellipses? #f #f)
+								      (values #f #f #f))]
+			      [(match-tail mt-did-var? cap?) (m&e rest local-top use-ellipses? 
+								  last? #t)]
+			      [(match-head mh-did-var? <false>) (if just-vars?
+								    (values -match-head -mh-did-var? #f)
+								    (m&e hd hd use-ellipses? 
+									 (and last? (not mt-did-var?))
+									 #f))])
 		  (if just-vars?
-		      (values (append match-head match-tail) #f)
+		      (values (append match-head match-tail) #f #f)
 		      (values
 		       `(lambda (e)
 			  (let*-values ([(pre-items post-items ok?) 
 					 (split-stx-list e ,tail-cnt ,prop?)])
 			    (if ok?
-				,(let ([apph (app match-head 'pre-items)]
-				       [appt (app match-tail 'post-items)])
-				   (if mh-did-var?
-				       (app-append apph appt)
-				       `(if ,apph ,appt #f)))
+				,(let ([s (let ([apph (app match-head 'pre-items)]
+						[appt (app match-tail 'post-items)])
+					    (if mh-did-var?
+						(app-append apph appt)
+						`(if ,apph ,appt #f)))])
+				   (if cap?
+				       (if id-is-rest?
+					   `(let ([cap (if (syntax? e) e cap)]) ,s)
+					   `(let ([cap e]) ,s))
+				       s))
 				#f)))
-		       (or mh-did-var? mt-did-var?)))))))]
+		       (or mh-did-var? mt-did-var?)
+		       (and cap? id-is-rest?)))))))]
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
@@ -1041,36 +1055,42 @@
 		   hd))
 	      ;; When just-vars?, do head first for good error ordering.
 	      ;; Otherwise, do tail first to find out if it has variables.
-	      (let*-values ([(-match-head -mh-did-var?) (if just-vars?
-							    (m&e hd hd use-ellipses? #f #f)
-							    (values 'not 'yet))]
-			    [(match-tail mt-did-var?) (m&e (stx-cdr p) local-top use-ellipses? 
-							   last? #t)]
-			    [(match-head mh-did-var?) (if just-vars?
-							  (values -match-head -mh-did-var?)
-							  (m&e hd hd use-ellipses? 
-							       (and last? (not mt-did-var?))
-							       #f))])
+	      (let*-values ([(-match-head -mh-did-var? <false>) (if just-vars?
+								    (m&e hd hd use-ellipses? #f #f)
+								    (values #f #f #f))]
+			    [(match-tail mt-did-var? cap?) (m&e (stx-cdr p) local-top use-ellipses? 
+								last? #t)]
+			    [(match-head mh-did-var? <false>) (if just-vars?
+								  (values -match-head -mh-did-var? #f)
+								  (m&e hd hd use-ellipses? 
+								       (and last? (not mt-did-var?))
+								       #f))])
 		(if just-vars?
-		    (values (append match-head match-tail) #f)
+		    (values (append match-head match-tail) #f #f)
 		    (values
 		     `(lambda (e)
 			(if (stx-pair? e)
-			    ,(let ([apph (app match-head '(stx-car e))]
-				   [appt (app match-tail '(stx-cdr e))])
-			       (if mh-did-var?
-				   (app-append apph appt)
-				   `(if ,apph ,appt #f)))
+			    ,(let ([s (let ([apph (app match-head '(stx-car e))]
+					    [appt (app match-tail '(stx-cdr e))])
+					(if mh-did-var?
+					    (app-append apph appt)
+					    `(if ,apph ,appt #f)))])
+			       (if cap?
+				   (if id-is-rest?
+				       `(let ([cap (if (syntax? e) e cap)]) ,s)
+				       `(let ([cap e]) ,s))
+				   s))
 			    #f))
-		     (or mh-did-var? mt-did-var?))))))]
+		     (or mh-did-var? mt-did-var?)
+		     (and cap? id-is-rest?))))))]
        [(stx-null? p)
 	(if just-vars?
-	    (values null #f)
-	    (values 'stx-null/#f #f))]
+	    (values null #f #f)
+	    (values 'stx-null/#f #f #f))]
        [(identifier? p)
 	(if (stx-memq p k)
 	    (if just-vars?
-		(values null #f)
+		(values null #f #f)
 		(values
 		 `(lambda (e)
 		    (if (identifier? e)
@@ -1081,6 +1101,7 @@
 			    null
 			    #f)
 			#f))
+		 #f
 		 #f))
 	    (if (and use-ellipses?
 		     (...? p))
@@ -1090,15 +1111,16 @@
 		 top
 		 p)
 		(if just-vars?
-		    (values (list p) #f)
+		    (values (list p) #f #f)
 		    (values
 		     (let ([wrap (if last?
 				     (lambda (x) `(lambda (e) ,x))
 				     (lambda (x) `(lambda (e) (list ,x))))])
 		       (if id-is-rest?
-			   (wrap '(datum->syntax-object #f e))
+			   (wrap '(datum->syntax-object cap e))
 			   (wrap 'e)))
-		     #t))))]
+		     #t
+		     id-is-rest?))))]
        [(stx-vector? p #f)
 	(let ([l (vector->list (syntax-e p))])
 	  ;; If no top-level ellipses, match one by one:
@@ -1116,7 +1138,7 @@
 			      ,body
 			      #f))
 		       did-var?)
-		      (let-values ([(match-elem elem-did-var?) 
+		      (let-values ([(match-elem elem-did-var? <false>>) 
 				    (let ([e (vector-ref (syntax-e p) (sub1 pos))])
 				      (m&e e e use-ellipses? (not did-var?) #f))])
 			(loop (sub1 pos)
@@ -1128,25 +1150,27 @@
 					(app-append app-elem body)
 					`(if ,app-elem ,body #f)))))))))
 	      ;; Match as a list:
-	      (let-values ([(match-content did-var?) (m&e l p use-ellipses? last? #f)])
+	      (let-values ([(match-content did-var? <false>) (m&e l p use-ellipses? last? #f)])
 		(if just-vars?
-		    (values match-content #f)
+		    (values match-content #f #f)
 		    (values
 		     `(lambda (e)
 			(if (stx-vector? e #f)
 			    ,(app match-content '(vector->list (syntax-e e)))
 			    #f))
-		     did-var?)))))]
+		     did-var?
+		     #f)))))]
        [else
 	(if just-vars?
-	    (values null #f)
+	    (values null #f #f)
 	    (values
 	     `(lambda (e)
 		(if (equal? ,(syntax-e p) (syntax-e e))
 		    null
 		    #f))
+	     #f
 	     #f))]))
-    (let-values ([(r did-var?) (m&e p p #t #t #f)])
+    (let-values ([(r did-var? <false>) (m&e p p #t #t #f)])
       (if just-vars?
 	  ;; Look for duplicate uses of variable names:
 	  (let ([ht (make-hash-table)])
@@ -1697,17 +1721,15 @@
 	    [clauses (cddddr (cdr l))])
 	(unless (stx-list? kws)
 	  (raise-syntax-error
-	   #f
+	   (syntax-e who)
 	   "expected a parenthesized sequence of literal identifiers"
-	   x
 	   kws))
 	(for-each
 	 (lambda (lit)
 	   (unless (identifier? lit)
 	     (raise-syntax-error
-	      #f
-	      "literal is not a identifier"
-	      x
+	      (syntax-e who)
+	      "literal is not an identifier"
 	      lit)))
 	 (stx->list kws))
 	(for-each
@@ -1715,9 +1737,8 @@
 	   (unless (and (stx-list? clause)
 			(<= 2 (length (stx->list clause)) 3))
 	     (raise-syntax-error
-	      #f
+	      (syntax-e who)
 	      "bad clause"
-	      x
 	      clause)))
 	 clauses)
 	(let ([patterns (map stx-car clauses)]

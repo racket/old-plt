@@ -56,7 +56,7 @@
       (define unix-compile-flags (case (string->symbol (system-library-subpath))
 				   [(parisc-hpux) '("-c" "-O2" "-Aa" "-D_HPUX_SOURCE" "+z")]
 				   [else gcc-compile-flags]))
-      (define msvc-compile-flags '("/c" "/O2"))
+      (define msvc-compile-flags '("/c" "/MT" "/O2"))
 
       (define current-extension-compiler-flags
 	(make-parameter

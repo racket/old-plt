@@ -419,13 +419,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
   ed = (ExtensionData *)scheme_lookup_in_table(loaded_extensions, (const char *)init_f);
 
   if (ed) {
-    if (!ed->reload_f) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_string(filename),
-		       "load-extension: the extension is already loaded: \"%s\"",
-		       filename);
-    } else
-      init_f = ed->reload_f;
+    init_f = ed->reload_f;
   } else {
     ed = MALLOC_ONE(ExtensionData);
     ed->handle = handle;

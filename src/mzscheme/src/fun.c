@@ -66,7 +66,6 @@ static Scheme_Object *map (int argc, Scheme_Object *argv[]);
 static Scheme_Object *for_each (int argc, Scheme_Object *argv[]);
 static Scheme_Object *andmap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *ormap (int argc, Scheme_Object *argv[]);
-static Scheme_Object *call_ec (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_cc (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
@@ -190,7 +189,7 @@ scheme_init_fun (Scheme_Env *env)
 						       0, -1),
 			     env);
 
-  o = scheme_make_prim_w_arity2(call_ec,  
+  o = scheme_make_prim_w_arity2(scheme_call_ec,  
 				"call-with-escape-continuation",
 				1, 1,
 				0, -1), 
@@ -1685,8 +1684,8 @@ static Scheme_Object *handle_call_ec(void *ec)
     return NULL;
 }
 
-static Scheme_Object *
-call_ec (int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_call_ec (int argc, Scheme_Object *argv[])
 {
   Scheme_Escaping_Cont *cont;
   Scheme_Process *p = scheme_current_process;

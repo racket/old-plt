@@ -109,7 +109,7 @@
 
 # define UNISTD_INCLUDE
 
-# define USE_TIMEZONE_VAR
+# define USE_TM_GMTOFF_FIELD
 
 # define FLAGS_ALREADY_SET
 

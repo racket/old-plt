@@ -53,5 +53,5 @@ strings are types/comments.
      
      (misc [] "low-level or MzScheme-specific error"
 	   (unsupported [] "unsupported feature")
-	   (user-break [] "asynchronous thread break")
+	   (user-break [continuation "continuation" "a continuation that resumes from the break"] "asynchronous thread break")
 	   (out-of-memory [] "out of memory")))

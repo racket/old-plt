@@ -1807,13 +1807,43 @@ int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,vo
   return result;
 }
 
-static void make_unblocked(Scheme_Process *p)
+static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
 {
+  scheme_raise_exn(MZEXN_MISC_USER_BREAK, argv[0], "user break");
+
+  return scheme_void;
+}
+
+static void signal_break(Scheme_Process *p)
+{
+  int block_descriptor;
+  Scheme_Object *blocker; /* semaphore or port */
+  int (*block_check)(Scheme_Object *blocker);
+  void (*block_needs_wakeup)(Scheme_Object *blocker, void *fds);
+  Scheme_Object *a[1];
+
+  p->external_break = 0;
+
+  block_descriptor = p->block_descriptor;
+  blocker = p->blocker;
+  block_check = p->block_check;
+  block_needs_wakeup = p->block_needs_wakeup;
+  
   p->block_descriptor = 0;
   p->blocker = NULL;
   p->block_check = NULL;
   p->block_needs_wakeup = NULL;
   p->ran_some = 1;
+  
+  a[0] = scheme_make_prim(raise_user_break);
+
+  scheme_call_ec(1, a);
+
+  /* Continue from break... */
+  p->block_descriptor = block_descriptor;
+  p->blocker = blocker;
+  p->block_check = block_check;
+  p->block_needs_wakeup = block_needs_wakeup;
 }
 
 static void exit_or_escape(Scheme_Process *p)
@@ -1882,9 +1912,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     p->external_break = 1;
 
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
-    p->external_break = 0;
-    make_unblocked(p);
-    scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
+    signal_break(p);
   }
   
  swap_or_sleep:
@@ -2025,9 +2053,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 
   /* Check for external break again after swap or sleep */
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
-    p->external_break = 0;
-    make_unblocked(p);
-    scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
+    signal_break(p);
   }
   
   if (sleep_time > 0) {

@@ -1142,4 +1142,6 @@ void scheme_suspend_remembered_threads(void);
 void scheme_resume_remembered_threads(void);
 #endif
 
+Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
+
 #endif /* __mzscheme_private__ */

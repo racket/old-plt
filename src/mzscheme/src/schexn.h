@@ -72,7 +72,7 @@ static exn_rec exn_table[] = {
   { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
-  { 2, NULL, NULL, 0 },
+  { 3, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 }
 };
 #else
@@ -113,7 +113,7 @@ static exn_rec *exn_table;
   exn_table[MZEXN_THREAD].args = 2;
   exn_table[MZEXN_MISC].args = 2;
   exn_table[MZEXN_MISC_UNSUPPORTED].args = 2;
-  exn_table[MZEXN_MISC_USER_BREAK].args = 2;
+  exn_table[MZEXN_MISC_USER_BREAK].args = 3;
   exn_table[MZEXN_MISC_OUT_OF_MEMORY].args = 2;
 #endif
 
@@ -130,6 +130,7 @@ static const char *MZEXN_SYNTAX_FIELDS[1] = { "expr" };
 static const char *MZEXN_READ_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_PORT_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_FILESYSTEM_FIELDS[1] = { "pathname" };
+static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
 
 #endif
 
@@ -163,7 +164,7 @@ static const char *MZEXN_I_O_FILESYSTEM_FIELDS[1] = { "pathname" };
   SETUP_STRUCT(MZEXN_THREAD, EXN_PARENT(MZEXN), "exn:thread", 0, NULL)
   SETUP_STRUCT(MZEXN_MISC, EXN_PARENT(MZEXN), "exn:misc", 0, NULL)
   SETUP_STRUCT(MZEXN_MISC_UNSUPPORTED, EXN_PARENT(MZEXN_MISC), "exn:misc:unsupported", 0, NULL)
-  SETUP_STRUCT(MZEXN_MISC_USER_BREAK, EXN_PARENT(MZEXN_MISC), "exn:misc:user-break", 0, NULL)
+  SETUP_STRUCT(MZEXN_MISC_USER_BREAK, EXN_PARENT(MZEXN_MISC), "exn:misc:user-break", 1, MZEXN_MISC_USER_BREAK_FIELDS)
   SETUP_STRUCT(MZEXN_MISC_OUT_OF_MEMORY, EXN_PARENT(MZEXN_MISC), "exn:misc:out-of-memory", 0, NULL)
 
 #endif

@@ -1,3 +1,16 @@
+(define (memory-counter)
+  (parameterize ([current-eventspace (make-eventspace)])
+    (let* ([frame (make-object frame% "Memory Watcher" #f 300)]
+	   [message (make-object message% "" frame)]
+	   [update
+	    (lambda ()
+	      (send message set-label (number->string (current-memory-use))))]
+	   [button (make-object button% "Update" frame
+				(lambda x (update))
+				'(border))])
+      (send message stretchable-width #t)
+      (update)
+      (send frame show #t))))
 
 (define (graphical-read-eval-print-loop)
   ;; The REPL buffer class

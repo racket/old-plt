@@ -1,10 +1,10 @@
-
 (define graphical-debug? (getenv "GRAPHICAL_DEBUG"))
 (define textual-debug? #f)
 
 (require-library "macro.ss")
 (when graphical-debug?
-  (require-library "grepl.ss" "drscheme"))
+  (require-library "grepl.ss" "drscheme")
+  (memory-counter))
 (when (or graphical-debug? textual-debug?)
   (require-library "rload.ss" "drscheme")
   (require-library "errortrace.ss" "errortrace"))

@@ -32,6 +32,24 @@ In your code, declare a variable, then assign to it:
   DIM schemeObject as MzObj
   SET schemeObject as NEW MzObj
 
+From Visual C++:
+
+ #include "mzcom.h" 
+     
+ CLSID clsid;
+ IMzObj *pIMzObj;
+
+ CoInitialize(NULL);
+ CLSIDFromProgID(L"MzCOM.MzObj.<version>",&clsid);
+ CoCreateInstance(clsid,NULL,CLSCTX_SERVER,IID_IMzObj,
+                        (void **)&pIMzObj);
+
+where <version> is the version number.  You'll need the 
+definition of IID_IMzObj (see GUID's, below).  The header 
+file mzcom.h is in plt\src\worksp\mzcom\. This C/C++ code 
+is for illustration.  Of course, your actual code should 
+check return values.  
+
 Using PLT's MysterX 
 
   http://www.cs.rice.edu/CS/PLT/packages/mysterx/
@@ -49,17 +67,42 @@ COM environments.  MzCOM is compiled as a "dual-mode"
 class, meaning its methods may be called directly or by
 using OLE Automation.
 
+GUID's
+------
+
+When compiled, the directory
+
+  plt\src\worksp\mzcom\
+
+contains the file MzCOM_i.c that contains GUID's for MzCOM.
+Those GUID's are
+
+  const IID IID_IMzObj = 
+    {0xA604CBA8,0x2AB5,0x11D4,{0xB6,0xD3,0x00,0x60,0x08,0x90,0x02,0xFE}};
+
+  const IID LIBID_MZCOMLib = 
+    {0xA604CB9C,0x2AB5,0x11D4,{0xB6,0xD3,0x00,0x60,0x08,0x90,0x02,0xFE}};
+
+  const IID DIID__IMzObjEvents = 
+    {0xA604CBA9,0x2AB5,0x11D4,{0xB6,0xD3,0x00,0x60,0x08,0x90,0x02,0xFE}};
+
+  const CLSID CLSID_MzObj = 
+    {0xA3B0AF9E,0x2AB0,0x11D4,{0xB6,0xD2,0x00,0x60,0x08,0x90,0x02,0xFE}};
+
+which represent the IMzObj interface, the MzCOM type library,
+the IMzObjEvents interface, and the MzObj class, respectively.
+
 Methods
 -------
 
-MzCOM has two methods.
+MzCOM has three methods.
 
-> About() 
+> About :: void About(void)
 
 About() takes no arguments and displays an informational 
 dialog.
 
-> Eval()
+> Eval :: BSTR Eval(BSTR input)
 
 Eval() takes and returns BSTR's (BASIC strings).  The
 returned value is the result of evaluating the input
@@ -68,6 +111,13 @@ may contain several S-expressions.  The embedded MzScheme
 updates its environment with each evaluation.  Therefore,
 it is possible to define procedures in a call to 
 Eval(), and use the procedures in subsequent calls.
+
+> Reset :: void Reset(void)
+
+Reset() resets the Scheme environment to the 
+initial environment.  Also, the custodian for the 
+primary Scheme thread is invoked, shutting 
+all its managed values.
 
 Events
 ------

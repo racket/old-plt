@@ -23,8 +23,8 @@
                               menus
                               (cons (car (cddddr menus)) menus))])
       (ormap (lambda (m)
-               (and (string=? (string-constant scheme-menu-name)
-                              (send m get-label))
+               (and (string=? (label->plain-label (string-constant scheme-menu-name))
+                              (send m get-plain-label))
                     (ormap is-create-executable-item? (send m get-items))
                     m))
              ordered-menus)))

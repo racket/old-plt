@@ -3,6 +3,67 @@
   (require (lib "mred.ss" "mred")
            (lib "class.ss"))
 
+  (define (get-new-player line)
+    (let ((strnum (substring line 23 (string-length line))))
+      (string->number strnum)))
+
+  (define (read-board lineport iport)
+    (let* ([onecolon (read lineport)]
+	   [weirdzero (read lineport)]
+	   [width (read lineport)]
+	   [height (read lineport)])
+      (let loop ((i 0) (acc '()))
+	(cond
+	 ((= i height) (list width height (apply string-append (reverse acc))))
+	 (else (let* ([new-line (read-line iport)]
+		      [new-line (format "~a~n"
+					(substring new-line 10
+						   (string-length new-line)))])
+		 (loop (add1 i) (cons new-line acc))))))))
+
+  (define (parse-intro iport)
+    (let loop ((line (read-line iport))
+	       (players '())
+	       (board #f))
+      (let* ([lineport (open-input-string line)])
+	(case (read lineport)
+	  ((a) (loop (read-line iport)
+		     (cons (get-new-player line) players)
+		     board))
+	  ((turn) (if board (values line (car board) (cadr board)
+				    (caddr board))
+		      (let ([board (read-board lineport iport)])
+			(loop (read-line iport) players board))))))))
+
+  (define (parse-input iport)
+    (let-values ([(line width height board) (parse-intro iport)])
+      (let ([gui (initialize-gui width height board)])
+	(let loop ((line line))
+	  (unless (eof-object? line)
+	    (let ([lineport (open-input-string line)])
+	      (case (read lineport)
+		((turn) (let* ((numcolon (read lineport))
+			       (nextnum (read lineport)))
+			  (case nextnum
+			    ((o) (let pos-loop ((acc '()))
+				   (let ((pnum (read lineport)))
+				     (cond
+				      ((eof-object? pnum)
+				       (update-gui gui acc)
+				       (loop (read-line iport)))
+				      (else (let* ((x (read lineport))
+						   (y (read lineport)))
+					      (pos-loop
+					       (cons (list pnum x y)
+						     acc))))))))
+			    (else (loop (read-line iport))))))
+		(else (loop (read-line ip))))))))))
+
+  (define (initialize-gui width height board)
+    (initialize gui% () (board board) (width width) (height height)))
+
+  (define (update-gui gui acc)
+    (send set-robots acc))
 
   (define gui%
     (class object%
@@ -34,4 +95,8 @@
           (display-board b)))
       (super-instantiate ())))
 
+  (parse-input (current-input-port))
+
   )
+
+(require simple-gui)

@@ -14,5 +14,5 @@
   (define blurb
     (list
       "SrPersist is an extension for using ODBC databases from Scheme."))
-  (define release-version "209")
+  (define release-version "299")
   (define release-iteration "0"))

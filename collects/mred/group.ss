@@ -177,7 +177,8 @@
 	       (lambda (f)
 		 (for-each (lambda (x) (f (frame-frame x))) frames)
 		 (set! todo-to-new-frames
-		       (mzlib:function:compose f todo-to-new-frames)))]
+		       (let ([old todo-to-new-frames])
+			 (lambda (frame) (old frame) (f frame)))))]
 
 	      [set-frame-title-prefix
 	       (lambda (t)
@@ -201,7 +202,7 @@
 	      [insert-frame
 	       (lambda (f)
 		 (set! frame-counter (add1 frame-counter))
-		 (send f set-title-prefix
+		 '(send f set-title-prefix
 		       (make-full-frame-prefix frame-counter))
 		 (set! frames 
 		       (append frames 

@@ -1326,11 +1326,7 @@ void wxMediaBuffer::Redo(void)
   }
 }
 
-#ifdef CGREC_COLLECTED
-# define delete_cgrec(x)  /* empty */
-#else
-# define delete_cgrec(x)  delete x
-#endif
+#define delete_cgrec(x)  DELETE_OBJ (x)
 
 static void wxmeClearUndos(wxChangeRecord **changes, int start, int end,
 			   int maxUndos)

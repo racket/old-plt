@@ -243,9 +243,6 @@ wxDeleteRecord::wxDeleteRecord(long startpos, long endpos, Bool cont)
 wxDeleteRecord::~wxDeleteRecord()
 {
   if (!undid) {
-#if !WXGARBAGE_COLLECTION_ON
-    deletions->DeleteAll();
-#else
     wxSnip *snip;
     int i;
     for (i = deletions->Count(); i--; ) {
@@ -254,7 +251,6 @@ wxDeleteRecord::~wxDeleteRecord()
 	snip->flags -= wxSNIP_OWNED;
       snip->SetAdmin(NULL);
     }
-#endif
     if (clickbacks)
       clickbacks->DeleteAll();
   }

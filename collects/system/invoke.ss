@@ -10,44 +10,62 @@
 	   `(begin-elaboration-time
 	     (define mred:explicit-wx? #t)
 	     (define plt:home-directory ,plt:home-directory)
-	     (define mred:plt-home-directory ,mred:plt-home-directory)
-	     (current-library-collection-paths (list ,@(current-library-collection-paths))))
+	     (define mred:plt-home-directory plt:home-directory)
+	     (current-library-collection-paths
+	      (list ,@(map (lambda (x)
+			     `(build-path plt:home-directory
+					  ,(find-relative-path (normalize-path plt:home-directory)
+							       (normalize-path x))))
+			   (current-library-collection-paths)))))
 	   port)
 
 	  (pretty-print `(reference-library "match.ss") port)
 	  (pretty-print `(begin-elaboration-time (reference-library "match.ss")) port)
 	  (pretty-print `(reference-library "macro.ss") port)
 	  (pretty-print `(begin-elaboration-time (reference-library "macro.ss")) port)
-	  (pretty-print `(reference ,(build-path mred:plt-home-directory
-						 "mred" "system" "debug.ss"))
+	  (pretty-print `(reference (begin-elaboration-time
+				     (build-path mred:plt-home-directory
+						 "mred" "system" "debug.ss")))
 			port)
 	  
 	  (pretty-print `(reference-library "cores.ss") port)
 	  (pretty-print `(reference-library "triggers.ss") port)
-	  (pretty-print `(reference ,(build-path mred:plt-home-directory
+	  (pretty-print `(reference (begin-elaboration-time
+				     (build-path mred:plt-home-directory
 						 "mred"
 						 "collects"
 						 "mred"
-						 "sig.ss"))
+						 "sig.ss")))
 			port)
 	  (when mred:app-sig-location
-	    (pretty-print `(reference ,mred:app-sig-location) port))
+	    (pretty-print `(reference (begin-elaboration-time
+				       (build-path plt:home-directory
+						   ,(find-relative-path (normalize-path plt:home-directory)
+									(normalize-path mred:app-sig-location))))
+				      port)))
 	  (pretty-print
 	   `(invoke-unit/sig
 	     (compound-unit/sig (import)
 	       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 		     [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
-		     [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
+		     [mred : mred^ ((reference-library "link.ss" "mred")
 				    core trigger application)]
 		     [application : mred:application^
-				  ((reference-unit/sig ,(cond
-							 [(complete-path? mred:app-location)
-							  mred:app-location]
-							 [(relative-path? mred:app-location)
-							  (build-path mred:system-source-directory 
-								      mred:app-location)]
-							 [else (build-path (current-drive)
-									   mred:app-location)]))
+				  ((reference-unit/sig
+				    (begin-elaboration-time
+				     (build-path
+				      plt:home-directory
+				      ,(find-relative-path
+				       (normalize-path plt:home-directory)
+				       (normalize-path
+					(cond
+					 [(complete-path? mred:app-location)
+					  mred:app-location]
+					 [(relative-path? mred:app-location)
+					  (build-path mred:system-source-directory 
+						      mred:app-location)]
+					 [else (build-path (current-drive)
+							   mred:app-location)]))))))
 				   mred core)])
 	       (export)))
 	      port))

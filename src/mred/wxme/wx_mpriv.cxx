@@ -940,6 +940,8 @@ void wxMediaEdit::SnipSplit(wxSnip *snip, long pos, wxSnip **a_ptr, wxSnip **b_p
   DeleteSnip(snip);
   orig->flags -= wxSNIP_OWNED;
 
+  revision_count++;
+
   wl = writeLocked, fl = flowLocked;
   readLocked = writeLocked = flowLocked = TRUE;
   *a_ptr = NULL;

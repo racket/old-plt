@@ -718,9 +718,9 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
 
   {
     int sl, wt;
-    const char *ex_tags[2];
-    int ex_types[2];
-    long ex_vals[2];
+    const char *ex_tags[3];
+    int ex_types[3];
+    long ex_vals[3];
     int ex_pos = 0;
     XftMatrix rot;
     int use_rot = 0;
@@ -738,6 +738,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
 
     ex_tags[0] = NULL;
     ex_tags[1] = NULL;
+    ex_tags[2] = NULL;
 
     switch (smoothing) {
     case wxSMOOTHING_OFF:
@@ -761,6 +762,12 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
       XftMatrixScale(&rot, scale_x, scale_y);
       use_rot = 1;
     }
+
+    if (name && !strcmp(name, " Monospace")) {
+      ex_vals[ex_pos] = XFT_MONO;
+      ex_types[ex_pos] = XftTypeInteger;
+      ex_tags[ex_pos++] = XFT_SPACING;
+    }
     
     if (name) {
       XftPattern *pat;
@@ -774,6 +781,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
 			    XFT_SLANT, XftTypeInteger, sl,
 			    ex_tags[0], ex_types[0], ex_vals[0],
 			    ex_tags[1], ex_types[1], ex_vals[1],
+			    ex_tags[2], ex_types[2], ex_vals[2],
 			    NULL);
 
       pat = XftFontMatch(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), pat, &res);
@@ -801,6 +809,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
 		       XFT_SLANT, XftTypeInteger, sl,
 		       ex_tags[0], ex_types[0], ex_vals[0],
 		       ex_tags[1], ex_types[1], ex_vals[1],
+		       ex_tags[2], ex_types[2], ex_vals[2],
 		       NULL);
     }
   }

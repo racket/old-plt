@@ -943,6 +943,9 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       if (dialog) retval = 0;
       break;
     }
+  case WM_GETMINMAXINFO:
+    wnd->GetMinMaxInfo((MINMAXINFO *)lParam);
+    break;
   case WM_RBUTTONDOWN:
   case WM_RBUTTONUP:
   case WM_RBUTTONDBLCLK:
@@ -1710,6 +1713,11 @@ void wxWnd::DetachWindowMenu(void)
       }
     }
   }
+}
+
+void wxWnd::GetMinMaxInfo(MINMAXINFO *mmi)
+{
+  /* Leave it alone */
 }
 
 /*

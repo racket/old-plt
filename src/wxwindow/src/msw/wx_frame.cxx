@@ -327,6 +327,12 @@ void wxFrame::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlag
 
 void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
 {
+  wxFrameWnd *wnd = (wxFrameWnd *)handle;
+
+  wnd->mmi.ptMinTrackSize.x = minw;
+  wnd->mmi.ptMinTrackSize.y = minh;
+  wnd->mmi.ptMaxTrackSize.x = maxw;
+  wnd->mmi.ptMaxTrackSize.y = maxh;
 }
 
 Bool wxFrame::Show(Bool show)
@@ -982,6 +988,19 @@ void wxFrameWnd::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 BOOL wxFrameWnd::ProcessMessage(MSG* pMsg)
 {
   return FALSE;
+}
+
+void wxFrameWnd::GetMinMaxInfo(MINMAXINFO *_mmi)
+{
+  wxWnd::GetMinMaxInfo(_mmi);
+  if (mmi.ptMinTrackSize.x > 0)
+    _mmi->ptMinTrackSize.x = mmi.ptMinTrackSize.x;
+  if (mmi.ptMinTrackSize.y > 0)
+    _mmi->ptMinTrackSize.y = mmi.ptMinTrackSize.y;
+  if (mmi.ptMaxTrackSize.x > 0)
+    _mmi->ptMaxTrackSize.x = mmi.ptMaxTrackSize.x;
+  if (mmi.ptMaxTrackSize.y > 0)
+    _mmi->ptMaxTrackSize.y = mmi.ptMaxTrackSize.y;
 }
 
 /*

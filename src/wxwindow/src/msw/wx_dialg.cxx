@@ -22,6 +22,8 @@
 class wxDialogWnd : public wxSubWnd
 {
 public:
+  MINMAXINFO mmi;
+
   wxDialogWnd(wxWnd *parent, wxWindow *wx_win,
               int x, int y, int width, int height,
               char *dialog_template);
@@ -31,6 +33,7 @@ public:
   BOOL ProcessMessage(MSG* pMsg);
   BOOL OnEraseBkgnd(HDC pDC);
   BOOL OnClose(void);
+  virtual void GetMinMaxInfo(MINMAXINFO *mmi);
 };
 
 wxDialogWnd::wxDialogWnd(wxWnd *parent, wxWindow *wx_win,
@@ -69,6 +72,19 @@ BOOL wxDialogWnd::OnClose(void)
 BOOL wxDialogWnd::OnEraseBkgnd(HDC pDC)
 {
   return FALSE;
+}
+
+void wxDialogWnd::GetMinMaxInfo(MINMAXINFO *_mmi)
+{
+  wxSubWnd::GetMinMaxInfo(_mmi);
+  if (mmi.ptMinTrackSize.x > 0)
+    _mmi->ptMinTrackSize.x = mmi.ptMinTrackSize.x;
+  if (mmi.ptMinTrackSize.y > 0)
+    _mmi->ptMinTrackSize.y = mmi.ptMinTrackSize.y;
+  if (mmi.ptMaxTrackSize.x > 0)
+    _mmi->ptMaxTrackSize.x = mmi.ptMaxTrackSize.x;
+  if (mmi.ptMaxTrackSize.y > 0)
+    _mmi->ptMaxTrackSize.y = mmi.ptMaxTrackSize.y;
 }
 
 wxDialogBox::wxDialogBox(wxWindow *Parent, char *Title, Bool Modal, 
@@ -363,4 +379,10 @@ void wxDialogBox::SystemMenu(void)
 
 void wxDialogBox::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
 {
+  wxDialogWnd *wnd = (wxDialogWnd *)handle;
+
+  wnd->mmi.ptMinTrackSize.x = minw;
+  wnd->mmi.ptMinTrackSize.y = minh;
+  wnd->mmi.ptMaxTrackSize.x = maxw;
+  wnd->mmi.ptMaxTrackSize.y = maxh;
 }

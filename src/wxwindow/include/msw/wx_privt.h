@@ -115,6 +115,8 @@ public:
     virtual BOOL NCPaint(WPARAM wParam, LPARAM lParam, LONG *result);
     virtual void OnWinThemeChange();
 
+    virtual void GetMinMaxInfo(MINMAXINFO *mmi);
+
     // Detach "Window" menu from menu bar so it doesn't get deleted
     void DetachWindowMenu(void);
 };
@@ -167,6 +169,7 @@ public:
     HICON icon;
     HICON bigIcon;
     HICON defaultIcon;
+    MINMAXINFO mmi;
 
     wxFrameWnd(void);
     wxFrameWnd(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
@@ -183,6 +186,7 @@ public:
     void OnMenuSelect(WORD item, WORD flags, HMENU sysmenu);
     void OnMenuClick(WPARAM mnu);
     BOOL ProcessMessage(MSG *msg);
+    virtual void GetMinMaxInfo(MINMAXINFO *mmi);
 };
 
 class wxStatusWnd : public wxWnd

@@ -1573,7 +1573,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_syntax_compiler_type:
     break;
   case scheme_macro_type:
-  case scheme_id_macro_type:
+  case scheme_set_macro_type:
     s = sizeof(Scheme_Small_Object);
 #if FORCE_KNOWN_SUBPARTS
     e = COUNT(SCHEME_PTR_VAL(root));

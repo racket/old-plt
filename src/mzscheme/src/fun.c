@@ -1230,29 +1230,62 @@ _scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 Scheme_Object *
 scheme_apply_macro(Scheme_Object *name, 
 		   Scheme_Object *rator, Scheme_Object *code,
-		   Scheme_Comp_Env *env, Scheme_Object *boundname)
+		   Scheme_Comp_Env *env, Scheme_Object *boundname,
+		   int for_set)
 {
-  Scheme_Object *mark, *orig_code = code, *rands_vec[1];
+  Scheme_Object *orig_code = code;
 
-  mark = scheme_new_mark();
-  code = scheme_add_remove_mark(code, mark);
+ if (SAME_TYPE(SCHEME_TYPE(rator), scheme_id_macro_type)) {
+   rator = SCHEME_PTR_VAL(rator);
+   /* rator is now an identifier */
 
-  scheme_on_next_top(env, mark, boundname);
+   /* and it's introduced by this expression: */
+   rator = scheme_add_remove_mark(rator, scheme_new_mark());
 
-  rands_vec[0] = code;
-  code = scheme_apply(rator, 1, rands_vec);
+   if (for_set) {
+     Scheme_Object *tail;
 
-  if (!SCHEME_STXP(code)) {
-    scheme_raise_exn(MZEXN_MISC,
-		     "%S: return value from syntax expander was not syntax",
-		     SCHEME_STX_SYM(name));
-  }
+     tail = SCHEME_STX_CDR(code);
+     code = scheme_make_immutable_pair(SCHEME_STX_CAR(code),
+				       scheme_make_immutable_pair(rator, 
+								  SCHEME_STX_CDR(tail)));
+     code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
+   } else if (SCHEME_SYMBOLP(SCHEME_STX_VAL(code)))
+     code = rator;
+   else {
+     code = scheme_make_immutable_pair(rator, SCHEME_STX_CDR(code));
+     code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
+   }
+   
+   code = scheme_stx_track(code, orig_code, name);
+   
+   return code;
+ } else {
+   Scheme_Object *mark, *rands_vec[1];
 
-  code = scheme_add_remove_mark(code, mark);
+   if (SAME_TYPE(SCHEME_TYPE(rator), scheme_set_macro_type))
+     rator = SCHEME_PTR_VAL(rator);
 
-  code = scheme_stx_track(code, orig_code, name);
-
-  return code;
+   mark = scheme_new_mark();
+   code = scheme_add_remove_mark(code, mark);
+   
+   scheme_on_next_top(env, mark, boundname);
+   
+   rands_vec[0] = code;
+   code = scheme_apply(rator, 1, rands_vec);
+   
+   if (!SCHEME_STXP(code)) {
+     scheme_raise_exn(MZEXN_MISC,
+		      "%S: return value from syntax expander was not syntax",
+		      SCHEME_STX_SYM(name));
+   }
+   
+   code = scheme_add_remove_mark(code, mark);
+   
+   code = scheme_stx_track(code, orig_code, name);
+   
+   return code;
+ }
 }
 
 /*========================================================================*/

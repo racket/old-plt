@@ -676,6 +676,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_bucket_table_type, hash_general);
   PROC(scheme_weak_box_type, hash_general);
   PROC(scheme_struct_type_type, hash_general);
+  PROC(scheme_set_macro_type, hash_general);
   PROC(scheme_id_macro_type, hash_general);
   PROC(scheme_listener_type, hash_general);
   PROC(scheme_namespace_type, hash_general);

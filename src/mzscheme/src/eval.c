@@ -1657,8 +1657,10 @@ compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
 
   xformer = (Scheme_Object *)SCHEME_PTR_VAL(macro);
 
-  if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_id_macro_type)) {
-    xformer = SCHEME_PTR_VAL(xformer);
+  if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_set_macro_type)) {
+    /* scheme_apply_macro unwraps it */
+  } else if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_id_macro_type)) {
+    /* scheme_apply_macro handles it */
   } else if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
     scheme_wrong_syntax(NULL, NULL, form, "illegal use of syntax");
     return NULL;
@@ -1669,7 +1671,7 @@ compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
   if (!boundname)
     boundname = scheme_false;
 
-  return scheme_apply_macro(name, xformer, form, env, boundname);
+  return scheme_apply_macro(name, xformer, form, env, boundname, 0);
 
   /* caller expects rec[drec] to be used to compile the result... */
 }

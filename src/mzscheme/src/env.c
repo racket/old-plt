@@ -71,6 +71,8 @@ static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_rename_transformer(int argc, Scheme_Object *argv[]);
+static Scheme_Object *rename_transformer_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_toplevel(Scheme_Object *obj);
 static Scheme_Object *read_toplevel(Scheme_Object *obj);
@@ -434,6 +436,18 @@ static void make_init_env(void)
   scheme_add_global_constant("set!-transformer?", 
 			     scheme_make_prim_w_arity(set_transformer_p,
 						      "set!-transformer?",
+						      1, 1),
+			     env);
+
+  scheme_add_global_constant("make-rename-transformer", 
+			     scheme_make_prim_w_arity(make_rename_transformer,
+						      "make-rename-transformer",
+						      1, 1),
+			     env);
+
+  scheme_add_global_constant("rename-transformer?", 
+			     scheme_make_prim_w_arity(rename_transformer_p,
+						      "rename-transformer?",
 						      1, 1),
 			     env);
 
@@ -1574,7 +1588,9 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 
      scheme_macro_type (id was bound to syntax),
 
-     scheme_macro_id_type (id was bound to a set!-transformer),
+     scheme_macro_set_type (id was bound to a set!-transformer),
+
+     scheme_macro_id_type (id was bound to a rename-transformer),
 
      scheme_local_type (id was lexical),
 
@@ -2402,6 +2418,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v, *sym;
   Scheme_Comp_Env *env;
+  int renamed = 0;
 
   env = scheme_current_thread->current_local_env;
   if (!env)
@@ -2419,26 +2436,35 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   if (scheme_current_thread->current_local_mark)
     sym = scheme_add_remove_mark(sym, scheme_current_thread->current_local_mark);
 
-  v = scheme_lookup_binding(sym, env,
-			    (SCHEME_NULL_FOR_UNBOUND
-			     + SCHEME_RESOLVE_MODIDS
-			     + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			     + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
-  
-  /* Deref globals */
-  if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
-    v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
-
-  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type)) {
-    if (argc > 1)
-      return _scheme_tail_apply(argv[1], 0, NULL);
-    else
-      scheme_arg_mismatch("syntax-local-value",
-			  "not defined as syntax: ",
-			  argv[0]);
+  while (1) {
+    v = scheme_lookup_binding(sym, env,
+			      (SCHEME_NULL_FOR_UNBOUND
+			       + SCHEME_RESOLVE_MODIDS
+			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			       + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
+    
+    /* Deref globals */
+    if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
+      v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
+    
+    if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type)) {
+      if (argc > 1)
+	return _scheme_tail_apply(argv[1], 0, NULL);
+      else
+	scheme_arg_mismatch("syntax-local-value",
+			    (renamed 
+			     ? "not defined as syntax (after renaming): "
+			     : "not defined as syntax: "),
+			    argv[0]);
+    }
+    
+    v = SCHEME_PTR_VAL(v);
+    if (SAME_TYPE(SCHEME_TYPE(v), scheme_id_macro_type)) {
+      sym = SCHEME_PTR_VAL(v);
+      renamed = 1;
+    } else
+      return v;
   }
-  
-  return SCHEME_PTR_VAL(v);
 }
 
 static Scheme_Object *
@@ -2503,7 +2529,7 @@ make_set_transformer(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-set!-transformer", 1, 0, argc, argv);
 
   v = scheme_alloc_small_object();
-  v->type = scheme_id_macro_type;
+  v->type = scheme_set_macro_type;
   SCHEME_PTR_VAL(v) = argv[0];
 
   return v;
@@ -2511,6 +2537,29 @@ make_set_transformer(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *
 set_transformer_p(int argc, Scheme_Object *argv[])
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_set_macro_type))
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *
+make_rename_transformer(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+
+  if (!SCHEME_STXP(argv[0]) || !SCHEME_SYMBOLP(SCHEME_STX_VAL(argv[0])))
+    scheme_wrong_type("make-rename-transformer", "syntax identifier", 0, argc, argv);
+
+  v = scheme_alloc_small_object();
+  v->type = scheme_id_macro_type;
+  SCHEME_PTR_VAL(v) = argv[0];
+
+  return v;
+}
+
+static Scheme_Object *
+rename_transformer_p(int argc, Scheme_Object *argv[])
 {
   return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_id_macro_type))
 	  ? scheme_true

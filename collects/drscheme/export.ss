@@ -9,6 +9,7 @@
 			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
 			   [interface : drscheme:interface^]
+			   [face : drscheme:face^]
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
   (link [rep : drscheme:rep^
@@ -18,19 +19,25 @@
 	[frame : drscheme:frame^
 	       ((reference-unit/sig "frame.ss")
 		mred mzlib basis
-		setup unit parameters
+		setup unit
 		compound-unit app zodiac)]
 	[unit : drscheme:unit^
 	  ((reference-unit/sig "unit.ss")
 	   mred mzlib app setup compound-unit frame edit rep
-	   language parameters)]
+	   language get/extend face)]
 	[compound-unit : drscheme:compound-unit^
 	  ((reference-unit/sig "cunit.ss")
-	   mred mzlib unit frame)]
-	[parameters : drscheme:parameters^
-		    ((reference-unit/sig "params.ss") mred unit frame rep)])
+	   mred mzlib unit frame face)]
+	[signature : drscheme:signature^ ((reference-unit/sig "sig.ss")
+					  mred)]
+	[program : drscheme:program^ ((reference-unit/sig "prog.ss"))]
+	[get/extend : drscheme:get/extend^
+		    ((reference-unit/sig "params.ss") 
+		     mred unit frame rep mzlib)])
   (export (unit frame)
 	  (unit unit)
 	  (unit compound-unit)
-	  (unit parameters)
+	  (unit signature)
+	  (unit program)
+	  (unit get/extend)
 	  (unit rep)))

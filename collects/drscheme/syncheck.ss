@@ -731,26 +731,82 @@
                 (set! docs-panel-visible? #t)
                 (update-docs-visibility))))
           
-          (public syncheck:button-callback)
-          (define (syncheck:button-callback)
-            (let* ([definitions (get-definitions-text)]
-                   [locked? (send definitions is-locked?)]
-		   [error-termination
-		    (lambda (sexp)
+          ;; syncheck:button-callback : -> void
+          ;; this is the only function that has any code running on the user's thread
+          (define/public (syncheck:button-callback)
+            (let* ([definitions-text (get-definitions-text)]
+                   [drs-eventspace (current-eventspace)]
+                   [users-namespace #f]
+                   [users-custodian #f]
+                   [error-termination
+		    (lambda (msg exn)
 		      (syncheck:clear-highlighting)
-		      (report-error (car sexp) (cdr sexp)))])
-              (send definitions begin-edit-sequence #f)
-              (send definitions lock #f)
-              (clear-annotations)
-              (send definitions syncheck:init-arrows)
-              (color-range definitions
-                           0
-                           (send (get-definitions-text) last-position)
-                           base-style-str)
-              (check-syntax (get-definitions-text) error-termination)
-              (send definitions lock locked?)
-              (send definitions end-edit-sequence)))
+		      (report-error msg exn)
+		      (custodian-shutdown-all users-custodian))]
+                   [init-proc
+                    (lambda () ; =user=
+                      (set-directory definitions-text)
+                      (set! users-custodian (current-custodian))
+                      (set! users-namespace (current-namespace)))])
+              (let-values ([(expanded-expression expansion-completed) (make-traversal)])
+                (with-lock/edit-sequence
+                 (lambda ()
+                   (clear-annotations)
+                   (send definitions-text syncheck:init-arrows)
+                   (color-range definitions-text
+                                0
+                                (send definitions-text last-position)
+                                base-style-str)
+                   (drscheme:eval:expand-program
+                    (drscheme:language:make-text/pos definitions-text
+                                                     0
+                                                     (send definitions-text last-position))
+                    (send definitions-text get-next-settings)
+                    init-proc
+                    error-termination
+                    (lambda (sexp loop) ; =user=
+                      (cond
+                        [(eof-object? sexp)
+                         (parameterize ([current-eventspace drs-eventspace])
+                           (queue-callback
+                            (lambda () ; =drs=
+                              (with-lock/edit-sequence
+                               (lambda ()
+                                 (expansion-completed users-namespace)))
+                              (custodian-shutdown-all users-custodian))))]
+                        [else
+                         (parameterize ([current-eventspace drs-eventspace])
+                           (queue-callback
+                            (lambda () ; =drs=
+                              (with-lock/edit-sequence
+                               (lambda ()
+                                 (expanded-expression users-namespace sexp))))))
+                         (loop)]))))))))
 
+          ;; set-directory : text -> void
+          ;; sets the current-directory and current-load-relative-directory
+          ;; based on the file saved in the definitions-text
+          (define (set-directory definitions-text)
+            (let* ([tmp-b (box #f)]
+                   [fn (send definitions-text get-filename tmp-b)])
+              (unless (unbox tmp-b)
+                (when fn
+                  (let-values ([(base name dir?) (split-path fn)])
+                    (current-directory base)
+                    (current-load-relative-directory base))))))
+          
+          ;; with-lock/edit-sequence : (-> void) -> void
+          ;; sets and restores some state of the definitions text
+          ;; so that edits to the definitions text work out.
+          (define/private (with-lock/edit-sequence thnk)
+            (let* ([definitions-text (get-definitions-text)]
+                   [locked? (send definitions-text is-locked?)])
+              (send definitions-text begin-edit-sequence)
+              (send definitions-text lock #f)
+              (thnk)
+              (send definitions-text end-edit-sequence)
+              (send definitions-text lock locked?)))
+          
           (super-instantiate ())
           
           (field
@@ -771,7 +827,6 @@
       (define report-error-style (make-object style-delta% 'change-style 'slant))
       (send report-error-style set-delta-foreground "red")
       
-
                                           
                                           
   ;;;;                 ;                  
@@ -800,80 +855,60 @@
                                                                       
                                                                       
                                                                       
-      ;; check-syntax : text (syntax -> void) -> void
-      ;; checks the syntax of `definitions-text'
-      (define (check-syntax definitions-text error-termination)
-	(let ([tl-binders null]
-	      [tl-varrefs null]
-	      [tl-requires null]
-	      [tl-require-for-syntaxes null]
-	      [tl-tops null]
-	      [tl-referenced-macros null]
-	      [tl-bound-in-sources null]
-	      [users-namespace #f]
-	      [users-custodian #f]
-	      [err-termination? #f])
-          (drscheme:eval:expand-program
-           (drscheme:language:make-text/pos definitions-text
-                                            0
-                                            (send definitions-text last-position))
-           (send definitions-text get-next-settings)
-           (lambda (err? sexp run-in-expansion-thread loop)
-             (unless users-namespace
-               (let* ([tmp-b (box #f)]
-                      [fn (send definitions-text get-filename tmp-b)])
-                 (unless (unbox tmp-b)
-                   (when fn
-                     (let-values ([(base name dir?) (split-path fn)])
-                       (current-directory base)
-                       (current-load-relative-directory base)))))
-               (set! users-custodian (run-in-expansion-thread current-custodian))
-               (set! users-namespace (run-in-expansion-thread current-namespace)))
-             (cond
-               [err?
-                (set! err-termination? #t)
-                (error-termination sexp)]
-               [(eof-object? sexp)
-                (custodian-shutdown-all users-custodian)]
-               [else
-                (let-values ([(new-binders
-                               new-varrefs
-                               new-tops
-                               new-requires
-                               new-require-for-syntaxes
-                               new-referenced-macros
-                               new-bound-in-sources
-                               has-module?)
-                              (annotate-basic sexp run-in-expansion-thread)])
-                  
-                  (if has-module?
-                      (annotate-complete users-namespace
-                                         new-binders
-                                         new-varrefs
-                                         new-tops
-                                         new-requires
-                                         new-require-for-syntaxes
-                                         new-referenced-macros
-                                         new-bound-in-sources)
-                      (begin
-                        (set! tl-binders (append new-binders tl-binders))
-                        (set! tl-varrefs (append new-varrefs tl-varrefs))
-                        (set! tl-requires (append new-requires tl-requires))
-                        (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
-                        (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
-                        (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
-                        (set! tl-tops (append new-tops tl-tops)))))
-                (loop)])))
-          (unless err-termination? 
-            (annotate-complete users-namespace
-                               tl-binders
-                               tl-varrefs
-                               tl-tops
-                               tl-requires
-                               tl-require-for-syntaxes
-                               tl-referenced-macros
-                               tl-bound-in-sources))))
 
+      ;; make-traversal : -> (values (namespace syntax -> void) (namespace -> void))
+      ;; returns a pair of functions that close over some state that
+      ;; represents the top-level of a single program. The first value
+      ;; is called once for each top-level expression and the second
+      ;; value is called once, after all expansion is complete.
+      (define (make-traversal)
+        (let* ([tl-binders null]
+               [tl-varrefs null]
+               [tl-requires null]
+               [tl-require-for-syntaxes null]
+               [tl-tops null]
+               [tl-referenced-macros null]
+               [tl-bound-in-sources null]
+               [expanded-expression
+                (lambda (users-namespace sexp)
+                  (let-values ([(new-binders
+                                 new-varrefs
+                                 new-tops
+                                 new-requires
+                                 new-require-for-syntaxes
+                                 new-referenced-macros
+                                 new-bound-in-sources
+                                 has-module?)
+                                (annotate-basic sexp)])
+                    (if has-module?
+                        (annotate-complete users-namespace
+                                           new-binders
+                                           new-varrefs
+                                           new-tops
+                                           new-requires
+                                           new-require-for-syntaxes
+                                           new-referenced-macros
+                                           new-bound-in-sources)
+                        (begin
+                          (set! tl-binders (append new-binders tl-binders))
+                          (set! tl-varrefs (append new-varrefs tl-varrefs))
+                          (set! tl-requires (append new-requires tl-requires))
+                          (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
+                          (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
+                          (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
+                          (set! tl-tops (append new-tops tl-tops))))))]
+               [expansion-completed
+                (lambda (users-namespace)
+                  (annotate-complete users-namespace
+                                     tl-binders
+                                     tl-varrefs
+                                     tl-tops
+                                     tl-requires
+                                     tl-require-for-syntaxes
+                                     tl-referenced-macros
+                                     tl-bound-in-sources))])
+          (values expanded-expression expansion-completed)))
+      
       
       ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
@@ -1142,7 +1177,7 @@
 
       ;; the booleans in the lists indicate if the variables or macro references
       ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
-      (define (annotate-basic sexp run-in-expansion-thread)
+      (define (annotate-basic sexp)
         (let ([binders null]
               [varrefs null]
               [tops null]
@@ -1256,7 +1291,7 @@
                 [(module m-name lang (#%plain-module-begin bodies ...))
                  (begin
                    (set! has-module? #t)
-                   ((annotate-require-open run-in-expansion-thread) (syntax lang))
+                   (annotate-require-open (syntax lang))
                    (set! requires (cons (syntax lang) requires))
                    (annotate-raw-keyword sexp)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
@@ -1265,12 +1300,12 @@
                 [(require require-specs ...)
                  (let ([new-specs (map trim-require-prefix
                                        (syntax->list (syntax (require-specs ...))))])
-                   (for-each (annotate-require-open run-in-expansion-thread) new-specs)
+                   (for-each annotate-require-open new-specs)
                    (set! requires (append new-specs requires))
                    (annotate-raw-keyword sexp))]
                 [(require-for-syntax require-specs ...)
                  (let ([new-specs (map trim-require-prefix (syntax->list (syntax (require-specs ...))))])
-                   (for-each (annotate-require-open run-in-expansion-thread) new-specs)
+                   (for-each annotate-require-open new-specs)
                    (set! require-for-syntaxes (append new-specs require-for-syntaxes))
                    (annotate-raw-keyword sexp))]
                 
@@ -1336,31 +1371,29 @@
                          acc))]
             [else acc])))
 
-      ;; annotate-require-open : ((-> void) -> stx -> void)
-      (define (annotate-require-open run-in-expansion-thread)
-        (lambda (require-spec)
-          (when (syntax-original? require-spec)
-            (let ([source (syntax-source require-spec)])
-              (when (and (is-a? source syncheck-text<%>)
-			 (syntax-position require-spec)
-			 (syntax-span require-spec))
-                (let* ([start (- (syntax-position require-spec) 1)]
-                       [end (+ start (syntax-span require-spec))]
-                       [datum (syntax-object->datum require-spec)]
-                       [sym 
-                        (and (not (symbol? datum))
-                             (run-in-expansion-thread
-                              (lambda ()
-                                ((current-module-name-resolver)
-                                 (syntax-object->datum require-spec)
-                                 #f 
-                                 #f))))]
-                       [file (and (symbol? sym)
-                                  (module-name-sym->filename sym))])
-                  (when file
-                    (send source syncheck:add-menu start end 
-                          #f
-                          (make-require-open-menu file)))))))))
+      ;; annotate-require-open : (stx -> void)
+      ;; relies on current-module-name-resolver
+      (define (annotate-require-open require-spec)
+        (when (syntax-original? require-spec)
+          (let ([source (syntax-source require-spec)])
+            (when (and (is-a? source syncheck-text<%>)
+                       (syntax-position require-spec)
+                       (syntax-span require-spec))
+              (let* ([start (- (syntax-position require-spec) 1)]
+                     [end (+ start (syntax-span require-spec))]
+                     [datum (syntax-object->datum require-spec)]
+                     [sym 
+                      (and (not (symbol? datum))
+                           ((current-module-name-resolver)
+                            (syntax-object->datum require-spec)
+                            #f 
+                            #f))]
+                     [file (and (symbol? sym)
+                                (module-name-sym->filename sym))])
+                (when file
+                  (send source syncheck:add-menu start end 
+                        #f
+                        (make-require-open-menu file))))))))
       
       ;; make-require-open-menu : string[filename] -> menu -> void
       (define (make-require-open-menu file)

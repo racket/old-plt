@@ -12,20 +12,20 @@
 (drscheme:eval:expand-program
  ((union port? drscheme:language:text/pos?)
   drscheme:language-configuration:language-settings?
-  (boolean?
-   (union eof-object? syntax? (cons/p string? any?))
-   ((-> any?) . -> . any?)
+  (-> void?)
+  (string? any? . -> . void?)
+  ((union eof-object? syntax? (cons/p string? any?))
    (-> void?)
    . -> .
    void?)
   . -> .
   void?)
- (input language-settings iter)
+ (input language-settings init iter)
 
-"Use this method to expand the contents of the definitions"
+"Use this function to expand the contents of the definitions"
 "window for use with external program processing tools."
 ""
-"This method creates a custodian and an eventspace (on the"
+"This function creates a custodian and an eventspace (on the"
 "new custodian) to expand the user's program. It does not"
 "kill this custodian, but it can safely be shutdown (with"
 "\\MzLink{mz:custodians}{custodian-shutdown-all}) after the"
@@ -83,29 +83,31 @@
 ""
 "The \\var{input} argument specifies the source of the program."
 ""
+"The \\var{init} argument is called after the user's parameters"
+"are all set, but before the program is run. The"
+"\\MzLink{mz:p:current-directory}{current-directory} and"
+"\\MzLink{mz:p:current-load-relative-directory}{current-load-relative-directory}"
+"parameters are not set, so if there are appropriate directories,"
+"the \\var{init} method is a good place to set them."
+""
+"The \\var{error} argument is called when an error occurs."
+"If it is called, the \\var{iter} argument is not called"
+"again. The user's"
+"\\MzLink{mz:p:error-display-handler}{\\rawscm{error-display-handler}}"
+"is set to call the \\var{error} argument."
+""
 "The \\var{iter} argument is called for each expression in the"
 "expanded program and once more with eof, unless an error is"
-"raised during expansion.  Once an error is raised, it is"
-"called with the error and never again. Additionally,"
+"raised during expansion. Additionally,"
 "\\rawscm{eval-compile-time-part-of-top-level} is called after"
 "the program is expanded, but before \\var{iter} is called."
 ""
-"The first argument to \\var{iter} is a boolean indicating if"
-"an exception was raised. If the first argument is"
-"\\rawscm{\\#f}, the second argument is the expanded program"
-"(syntax) or eof. If the first argument is \\rawscm{\\#t}, the"
-"second argument is the \\rawscm{cons} pair of information"
-"indicating a syntax error has occurred.  The cons pair"
-"contains the arguments that were passed to the"
-"\\MzLink{mz:p:error-display-handler}{\\rawscm{error-display-handler}}."
-"The third argument to \\var{iter} accepts a thunk and calls"
-"that thunk on the main thread of the user's eventspace (and"
-"it returns the result of calling that thunk). Use it to"
-"extract information about the user's parameter settings or"
-"namespace. The last argument to \\var{iter} is a thunk that"
+"The first argument to \\var{iter} is the expanded program"
+"(represented as syntax) or eof."
+"The second argument to \\var{iter} is a thunk that"
 "continues expanding the rest of the contents of the"
 "definitions window. If the first argument to \\var{iter} was"
-"\\rawscm{\\#t} this argument is just the primitive"
+"eof, this argument is just the primitive"
 "\\rawscm{void}.")
 
 

@@ -2,6 +2,11 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.13:
+
+ * Changed the error display handler to take a `raise'd value (usually
+   an exception record) as a second argument.
+
 Version 199.11:
 
  * Changed string constants to support all ANSI C escapes, such as \n,
@@ -127,6 +132,8 @@ Changed string constants to support ANSI C escapes (e.g., \n)
 Fixed leaks (file descriptors, etc.) that could happen with
  thread kills
 Fixed memory bug in the run-time support for mzc-compiled code
+Changed the error display handler to take a raised value (usually
+   an exception record) as a second argument
 Added port-count-lines!, which enables line-couting for a port
 Added read-dot-as-symbol parameter
 Fixed quotient, remainder, and modulo when the first argument

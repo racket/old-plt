@@ -293,6 +293,18 @@ _boundmap.ss_: mapping bound identifiers
 				   void?)
   - Like `hash-table-put! for bound-identifier mappings.
 
+> bound-identifier-mapping-for-each : (bound-identifier-mapping?
+				       (identifier? any? . -> . any)
+				       . -> .
+				       void?)
+  - Like `hash-table-for-each'
+
+> bound-identifier-mapping-map : (bound-identifier-mapping?
+				  (identifier? any? . -> . any)
+				  . -> .
+				  (listof any?))
+  - Like `hash-table-map'
+
 ======================================================================
 _zodiac.ss_, _zodiac-unit.ss_, and _zodiac-sig.ss_: compatibility
   layer for software that used to use Zodiac
@@ -318,3 +330,15 @@ used for reporting syntax errors. The `build-path-stx' is usually
 #'build-path; it provides an identifier to compare to parts of
 `path-spec-stx' to recognize the `build-path' keyword.
 
+======================================================================
+_context.ss_: support for _local-expand_
+======================================================================
+
+> (build-expand-context v) - returns an immutable list suitable for
+  use as a context argument to `local-expand' for an
+  internal-definition context. The `v' argument represents the
+  immediate context for expansion. The context list builds on
+  `(syntax-local-context)' if it is a list.
+
+> (generate-expand-context) - calls `build-expand-context' with a
+  generated symbol.

@@ -216,7 +216,7 @@
       (import [mred@ : mred^]
 	      [core@ : mzlib:core^])
       (define console (make-object mred@:console-frame%))
-      (define eval-string (ivar (ivar console edit) do-eval)))))
+      (define eval-string (ivar (ivar console edit) eval-str)))))
 
 (define mred:non-unit-make-application@
   (lambda ()

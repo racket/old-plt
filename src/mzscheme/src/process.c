@@ -1621,7 +1621,7 @@ static int is_stack_too_shallow(void)
 static Scheme_Object *thread_k(void)
 {
   Scheme_Process *p = scheme_current_process;
-  Scheme_Object *thunk;
+  Scheme_Object *thunk, *result;
   Scheme_Config *config;
   Scheme_Manager *mgr;
 #ifndef MZ_PRECISE_GC
@@ -1636,19 +1636,18 @@ static Scheme_Object *thread_k(void)
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
   
-
+  result = make_subprocess(thunk,
 #ifdef MZ_PRECISE_GC
-  /* Stupid call to ensure that xform.ss puts __gc_var_stack__ here. */
-  scheme_make_char('M');
-#endif
-
-  return make_subprocess(thunk,
-#ifdef MZ_PRECISE_GC
-			 (void *)&__gc_var_stack__,
+			   (void *)&__gc_var_stack__,
 #else
-			 (void *)&dummy, 
+			   (void *)&dummy, 
 #endif
-			 config, mgr);
+			   config, mgr);
+
+  /* Don't get rid of `result'; it keeps the
+     Precise GC xformer from "optimizing" away
+     the __gc_var_stack__ frame. */
+  return result;
 }
 # endif
 #endif

@@ -23,14 +23,15 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_area.h"
 #include "wxBorderArea.h"
 #include "wxRectBorder.h"
-#include <Lists.h>
+// #include <Lists.h> /* trying the A List instead */
 #include "wxTimeScale.h"
 
 #define MEANING_CHARACTER	'0'
 /* 
    A wxWindows (Macintosh version) wxListBox has these (sub)components:
 	1.  a Title
-	2.  a Mac List Manager "control"
+	old 2.  a Mac List Manager "control"  ; NOT ANYMORE:
+	2.  an "A List" control
 	3.  Optional Scrollbars (vertical only)
 	4.  BorderBox drawn round the list control but not the title or scrollbar
 
@@ -72,6 +73,7 @@ static const char sccsid[] = "%W% %G%";
 
 #define DefItemWidth 50
 #define KSBWidth	15	// number of pixels of a vertical scroll bars' width
+#define VIEW_RECT_OFFSET 3
 
 // Constructor
 
@@ -97,6 +99,22 @@ wxListBox::wxListBox(
   Create(parentPanel, func, Title, Multiple, x, y, width, height, N, Choices,
          style, windowName);
 }
+
+Boolean cellWasClicked = false;
+
+Boolean MyClickInCell(ALCellPtr const theCell, Point mouseLoc, EventModifiers modifiers, short numberClicks, ALReference hAL);
+
+Boolean MyClickInCell(ALCellPtr const theCell, Point mouseLoc, EventModifiers modifiers, short numberClicks, ALReference hAL)
+{
+	cellWasClicked = true;
+
+	return true;
+}
+
+static ALClickCellUPP MyClickInCellUPP = NewALClickCellProc(MyClickInCell);
+
+#define CallALClickCellProc(cell, mouseLoc, modifiers, numberClicks, hAL, userRoutine) \
+	CallUniversalProc((userRoutine), uppALClickCellProcInfo, (cell), (mouseLoc), (modifiers), (numberClicks), (hAL))
 
 Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        char *Title, Bool Multiple,
@@ -135,34 +153,53 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	GetTextExtent("X", &tWidth, &tHeight, &tDescent, NULL, font);
 	
 	if (width < 0) {
-	  cWindowWidth = (labelPosition == wxVERTICAL ? 0 : lblWidth) + DefItemWidth + KSBWidth;
+	  cWindowWidth = (labelPosition == wxVERTICAL ? 0 : lblWidth) + DefItemWidth + KSBWidth + 2 * VIEW_RECT_OFFSET ;
 	}
 	if (height < 0) {
-	  cWindowHeight = (labelPosition == wxVERTICAL ? lblHeight : 0) + 3 * tHeight;
+	  cWindowHeight = (labelPosition == wxVERTICAL ? lblHeight : 0) + 3 * tHeight + 2 * VIEW_RECT_OFFSET ;
 	}
 	
-	int boxHeight = cWindowHeight;
-	int boxWidth = cWindowWidth;
+	int boxHeight = cWindowHeight ;
+	int boxWidth = cWindowWidth ;
+	
 	// mflatt: wxNEEDED_SB = 0; if it's on, this code doesn't notice:
 	// int vscrollwanted = (style & (wxNEEDED_SB | wxALWAYS_SB)) || 
 	//	(Multiple & (wxNEEDED_SB | wxALWAYS_SB));
-	// Since the choice is either NEEDED or ALWAYS, presumably we always want it on:
+	// Since the choice is either NEEDED or ALWAYS, presumably we always want it on: 
 	int vscrollwanted = TRUE;
-	Rect dataRect = {0, 0, 0 ,1 }; 			
+	LongRect dataRect = {0, 0, 0 ,1 };
 	// start with no rows or columns, thats what the '1' {means in B, R}
 	int	cellwid = boxWidth - (vscrollwanted ? KSBWidth : 0);
 	Point cellsize = {(int)tHeight, cellwid};
-	Rect viewRect = {0, 0, boxHeight, cellwid };
+	Rect viewRect = {VIEW_RECT_OFFSET, VIEW_RECT_OFFSET, boxHeight - VIEW_RECT_OFFSET, cellwid - VIEW_RECT_OFFSET};
 	cHaveVScroll = vscrollwanted;			// needed by OnClientAreaDSize or Paint
 
-	cListHandle = ::LNew(&viewRect, &dataRect, cellsize, 0, (WindowPtr)theMacGrafPort,
-		TRUE, FALSE, FALSE, vscrollwanted ? TRUE : FALSE);
-	CheckMemOK(cListHandle);
+	OSErr result;
 	
-	(**cListHandle).indent.v = tHeight - tDescent;
+	unsigned long flags = alDoVertScroll
+						| alDoDynamicScroll
+						| alDoDrawFocus
+						| alDoDrawRect
+						| alDoDrawOffscreen
+						| alDoRowsOnly;
+			
+	if (!(multiple & (wxMULTIPLE | wxEXTENDED))) {
+		flags = flags | alDoSelOnlyOne;
+	}
+					
+	result = ::ALNew((GrafPort *)theMacGrafPort, &viewRect, &dataRect, cellsize,
+				flags, &cListReference);
+	
+	if (result != noErr) {
+		wxOutOfMemory();
+	}
+	
+	ALSetInfo(alClickCellHook,&MyClickInCellUPP,cListReference);
+			
+//	(**cListHandle).indent.v = tHeight - tDescent;
 
 	// by default the Mac allows fancy selections
-	if (multiple & (wxMULTIPLE | wxEXTENDED)) {
+/*	if (multiple & (wxMULTIPLE | wxEXTENDED)) {
 #if 0
 		(**cListHandle).selFlags = lExtendDrag | lNoDisjoint | lNoExtend | lNoRect 
 			| lUseSense;
@@ -171,7 +208,19 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	else {
 		(**cListHandle).selFlags |= lOnlyOne;		// ell not one
 	}
-	cThinBorderArea = new wxBorderArea(this);		// Fits around the Mac listbox 'control'.
+*/
+//	cThinBorderArea = new wxBorderArea(this);		// Fits around the Mac listbox 'control'.
+
+	//SetMargin(12,Direction::wxAll,cWindowWidth+6,cWindowHeight+6,
+	//			cWindowX-3,cWindowY-3);	
+
+/*	cBorderArea = new wxBorderArea(this, 0, Direction::wxAll, 1); // mflatt: for showing keyboard focus
+	wxMargin margin(12);
+	cBorderArea->SetMargin(margin, Direction::wxAll,
+						cWindowWidth + 6, cWindowHeight + 6,
+						cWindowX - 3, cWindowY - 3);
+	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);
+*/
 	if (Title)
 	{
 		cListTitle = new wxLabelArea(this, Title, labelFont,
@@ -179,13 +228,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	}
 	else
 		cListTitle = NULL;
-
-	cBorderArea = new wxBorderArea(this, 0, Direction::wxAll, 1); // mflatt: for showing keyboard focus
-	wxMargin margin(3);
-	cBorderArea->SetMargin(margin, Direction::wxAll,
-						cWindowWidth + 6, cWindowHeight + 6,
-						cWindowX - 3, cWindowY - 3);
-	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);
+	
 						
 	if (N)
 		this->Set(N, Choices);
@@ -204,7 +247,7 @@ wxListBox::~wxListBox(void)
   //	delete cListTitle;
   if (cDataList)
 	delete cDataList;
-  ::LDispose(cListHandle);
+  ::ALDispose(cListReference);
 }
 
 //------------ Event Handling --------------------------------------
@@ -214,10 +257,10 @@ void wxListBox::Paint(void)
 
 	SetCurrentDC();
 	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
-	::LUpdate(theMacWindow->visRgn, cListHandle);
+	::ALUpdate(theMacWindow->visRgn, cListReference);
 	
 	/* White out any empty space in the list: */
-	Point last, dlast;
+/*	Point last, dlast;
 	Rect lastR, allR;
 	last.v = (**cListHandle).visible.bottom - 1;
 	last.h = (**cListHandle).visible.right - 1;
@@ -238,23 +281,31 @@ void wxListBox::Paint(void)
 		allR.left = lastR.right;
 		::EraseRect(&allR);
 	}
-	
+*/	
 	wxWindow::Paint();
 }
 
 void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
 	SetCurrentDC();
+	Rect viewRect;
+	
+	viewRect.top = VIEW_RECT_OFFSET;
+	viewRect.bottom = ClientArea()->Height() - VIEW_RECT_OFFSET;
+	viewRect.left = VIEW_RECT_OFFSET;
+	viewRect.right = ClientArea()->Width() - VIEW_RECT_OFFSET;
+	
+	int clientWidth = ClientArea()->Width() - VIEW_RECT_OFFSET;
+	/*if (cHaveVScroll)*/ clientWidth -= KSBWidth;
 
-	int clientWidth = ClientArea()->Width();
-	int clientHeight= ClientArea()->Height();
-	if (cHaveVScroll) clientWidth -= KSBWidth;
 	if (dW || dH)
 	{	// Changing the size
-		::LSize(clientWidth, clientHeight, cListHandle);
-		Point size = { (**cListHandle).cellSize.v, clientWidth };
-		::LCellSize(size, cListHandle);
-		
+		ALSetViewRect(&viewRect, cListReference);
+		Rect cellRect;
+		LongPt cell = {0,0};
+		ALGetCellRect(&cellRect,&cell,cListReference);
+		Point size = {cellRect.bottom - cellRect.top, clientWidth };
+		ALSetCellSize(size, cListReference);
 	}
 
 	if (dX || dY)
@@ -265,8 +316,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	
 	if (!cHidden && (dW || dH || dX || dY))
 	{
-		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalRect(&clientRect);
+		::InvalRect(&viewRect);
 	}
 	
 	wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
@@ -281,7 +331,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   always works, though.
 
 */
-
+/*
 static ListHandle trackList;
 
 static pascal void TrackActionProc(ControlHandle theControl, short part)
@@ -317,7 +367,9 @@ static void ManualScroll(ListHandle list, ControlHandle scroll, Point startPt, i
 	  ::TrackControl(scroll, startPt, TrackActionProcUPP);
 	}
 }
-		
+
+*/		
+
 void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 {
 	SetCurrentDC();
@@ -339,29 +391,50 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		if (event->controlDown)
 		  modifiers += controlKey;
 
-		if ((**cListHandle).vScroll) {
+/*		if ((**cListHandle).vScroll) {
 		  int thePart = ::TestControl((**cListHandle).vScroll, startPt);
 		  if (thePart) {
 		    ManualScroll(cListHandle, (**cListHandle).vScroll, startPt, thePart);
 		    return;
 		  }
 		}
-
+*/
 		/* Click past the last cell => ignore it */
-		if (PtInRect(startPt, &(**cListHandle).rView)) {
+/*		if (PtInRect(startPt, &(**cListHandle).rView)) {
 		  Cell lastCell = { no_items - 1, 0 };
 		  Rect r;
 		  LRect(&r, lastCell, cListHandle);
 		  if (startPt.v >= r.bottom)
 		    return;
 		}
-
-		::LClick(startPt, modifiers, cListHandle);
-		if (PtInRect(startPt, &(**cListHandle).rView) == FALSE)
-			return;							// ie in the scroll bars
-		Cell cell = LLastClick(cListHandle);
-
+*/
 		if (event->ButtonDown()) {
+
+			Bool doubleclick;
+
+			doubleclick = ::ALClick(startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
+		
+			if (!cellWasClicked) { // ie, click was in scroll bars
+				return;
+			}
+		
+			cellWasClicked = false;			
+		
+//		if (PtInRect(startPt, &(**cListHandle).rView) == FALSE)
+//			return;							// ie in the scroll bars
+
+//		ALCell cell;
+		
+//		ALLastClick(&cell,cListReference);
+
+			if (doubleclick) {
+				wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
+				ProcessCommand(commandEvent);
+				return;
+			}
+		}
+					
+/*		if (event->ButtonDown()) {
 		  if ((cell.h == cLastClickCell.h)
 			  && (cell.v == cLastClickCell.v)
 			  && (event->timeStamp - cLastClickTime < SCALE_TIMESTAMP(GetDblTime()))) {
@@ -374,7 +447,7 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		  cLastClickCell.h = cell.h;
 		  cLastClickCell.v = cell.v;
 		}
-		
+*/		
 		{
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
 			ProcessCommand(commandEvent);
@@ -406,16 +479,16 @@ void wxListBox::OnChar(wxKeyEvent *event)
 	}
 
 	if (move) {
-		Cell now, next, save;
+		ALCell now, next, save;
 		now.h = now.v = 0;
-		if (LGetSelect(TRUE, &now, cListHandle)) {
-			if (!((**cListHandle).selFlags & lOnlyOne) && (move > 0)) {
+		if (ALGetSelect(TRUE, &now, cListReference)) {
+			if (!(ALFeatureFlag(alFSelOnlyOne,alBitTest,cListReference)) && (move > 0)) {
 				// moving forward for multiple selections: find last selected
-				Cell next;
+				ALCell next;
 
 				next.h = now.h;
 				next.v = now.v + 1;
-				while (LGetSelect(TRUE, &next, cListHandle)) {
+				while (ALGetSelect(TRUE, &next, cListReference)) {
 					now.v = next.v;
 					next.v++;
 				}
@@ -434,21 +507,33 @@ void wxListBox::OnChar(wxKeyEvent *event)
 		} else
 			save.h = save.v = -1;
 
-		if ((!event->shiftDown && !event->metaDown) || ((**cListHandle).selFlags & lOnlyOne)) {
+		if ((!event->shiftDown && !event->metaDown) || 
+		    (ALFeatureFlag(alFSelOnlyOne,alBitTest,cListReference))) {
 			int i;
-			Cell next;
+			LongPt next;
 			next.h = now.h;
 			for (i = 0; i < no_items; i++)
 				if (i != save.v) {
 					next.v = i;
-					LSetSelect(FALSE, next, cListHandle);
+					ALSetSelect(FALSE, &next, cListReference);
 				}
 		}
 
-		LSetSelect(TRUE, next, cListHandle);
+		ALSetSelect(TRUE, &next, cListReference);
 	  	
 		// Make sure newly selected is visible: 
-		Rect rect;
+		if (! ALIsVisible(&next,cListReference)) {
+			Point midpoint;
+			Rect viewRect;
+			
+			ALGetViewRect(&viewRect,cListReference);
+			midpoint.h = VIEW_RECT_OFFSET;
+			midpoint.v = (viewRect.top + viewRect.bottom)/2;			
+			ALAutoScroll(midpoint,&next,cListReference);
+		}
+
+
+	/*	Rect rect;
 		LRect(&rect, next, cListHandle);
 		if (rect.top < 0) {
 			int amt = rect.top / (**cListHandle).cellSize.v;
@@ -462,11 +547,9 @@ void wxListBox::OnChar(wxKeyEvent *event)
 				amt++;
 			LScroll(0, amt, cListHandle);
 		}
-
-		{
-		    wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-			ProcessCommand(commandEvent);
-	  	}
+	*/
+		wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
+		ProcessCommand(commandEvent);
 	}
 }
 
@@ -489,7 +572,7 @@ void wxListBox::Delete(int N)
      node = node->Next();
    }
   SetCurrentDC();
-  LDelRow(1, N, cListHandle);
+  ALDelRow(1, N, cListReference);
   no_items --;
   cKeycnt--;
 }
@@ -497,17 +580,22 @@ void wxListBox::Delete(int N)
 // Append an item to the list box
 void wxListBox::Append(char *Item, char *Client_data)
 {
+  Handle stringHandle = NewHandle(strlen(Item)+1);
+  
   SetCurrentDC();
-  LSetDrawingMode(FALSE, cListHandle);
-  Cell cell = {no_items, 0};		// Point = {v, h} so Cell = {row, col}
-  LAddRow(1,no_items, cListHandle);
-  LSetCell(Item, strlen(Item) ,cell, cListHandle);
+  //LSetDrawingMode(FALSE, cListHandle);
+  LongPt cell = {no_items, 0};		// Point = {v, h} so Cell = {row, col}
+  ALAddRow(1,no_items, cListReference);
+  strcpy(*stringHandle,Item);
+  c2pstr(*stringHandle);
+  ALSetCell((void *)stringHandle, &cell, cListReference);
   // LDraw(cell, cListHandle); // mflatt: can't get this to work; co-ordinate problems?
-  LSetDrawingMode(TRUE, cListHandle);
+  // LSetDrawingMode(TRUE, cListHandle);
   cDataList->Append(no_items, (wxObject *)Client_data);
   no_items ++;
   if (Client_data) cKeycnt++;
-  Paint();
+  
+  // Paint();  // ALSetCell claims to redraw needed cell automatically 
 }
 
 void wxListBox::Append(char *Item)
@@ -520,25 +608,43 @@ void wxListBox::Set(int n, char *choices[])
   if (no_items > 0) {
 	this->Clear();
   }
-  LSetDrawingMode(FALSE, cListHandle);
-  Cell cell = {0, 0};		// Point = {v, h} so Cell = {row, col}
+  // LSetDrawingMode(FALSE, cListHandle);
+  ALAddRow(n,0,cListReference); // add all the rows up front.
+  LongPt cell = {0, 0};		// Point = {v, h} so Cell = {row, col}
   for (cell.v = 0; cell.v < n; cell.v++) {
+  	  Handle stringHandle = NewHandle(strlen(choices[cell.v])+1);
+  	  strcpy(*stringHandle,choices[cell.v]);
+	  c2pstr(*stringHandle);  	  
 	  cDataList->Append(cell.v, (wxObject *)NULL);
-	  LAddRow(1,cell.v, cListHandle);
-	  LSetCell(choices[cell.v], strlen(choices[cell.v]) ,cell, cListHandle);
+	  ALSetCell(stringHandle ,&cell, cListReference);
   }
   no_items = cell.v;
-  LSetDrawingMode(TRUE, cListHandle);
-  Paint();
+  // LSetDrawingMode(TRUE, cListHandle);
+  // Paint();
 }
+
+Boolean MyStringCompare(Handle, ConstStr255Param);
+
+Boolean MyStringCompare(Handle cellData, ConstStr255Param searchData) {
+	return EqualString((unsigned char *)*cellData,searchData,(unsigned char)TRUE,(unsigned char)TRUE);
+}
+
+ALSearchUPP strcmpUPP = NewALSearchProc(MyStringCompare);
 
 int wxListBox::FindString(char *s)
 {
-	Cell cell = {0, 0};
-	if (::LSearch(s, strlen(s), NULL, &cell, cListHandle) )
-		return cell.v;
-	else
-		return -1;
+	LongPt cell = {0, 0};
+	StringPtr pstr = (StringPtr)NewPtr(strlen(s) + 1);
+	int result;
+	
+	strcpy((char *)pstr,s);
+	c2pstr((char *)pstr);
+	
+	result = (ALSearch(pstr, strcmpUPP, &cell, cListReference) ? cell.v : -1);
+
+	DisposePtr((Ptr)pstr);	
+	
+	return result;
 }
 
 void wxListBox::Clear(void)
@@ -547,7 +653,7 @@ void wxListBox::Clear(void)
     return ;
   cDataList->Clear ();
   SetCurrentDC();
-  ::LDelRow(0, 0, cListHandle);
+  ALDelRow(ALGetNumberRows(cListReference), 0, cListReference);
   no_items = 0;
   cKeycnt = 0;
 }
@@ -558,22 +664,29 @@ char *wxListBox::GetString(int N)
 	if ((N < 0) || (N >= no_items))
 		return NULL;
 
-	Cell cell = {N, 0};
-	short	len = 255;				// FIXME - really should be size of wxBuffer
-	LGetCell(wxBuffer, &len,  cell, cListHandle);
-	if (len <= 0 )
-	  return NULL;
+	LongPt cell = {N, 0};
+	Handle stringHandle;
+	OSErr result;
 	
-	wxBuffer[len] = '\0';
+	result = ALGetCell(&stringHandle, &cell, cListReference);
+	if (result != noErr)
+		return NULL;
+
+	strcpy(wxBuffer,*stringHandle);
+	p2cstr((StringPtr)wxBuffer);	
 	return wxBuffer;
 }
 
 void wxListBox::SetString(int N, char *s)
 {
-	Cell cell = {N, 0};
-	int	len = strlen(s);
+	LongPt cell = {N, 0};
     SetCurrentDC();
-	LSetCell(s, len,  cell, cListHandle);
+    Handle oldHandle; 
+    ALGetCell(&oldHandle,&cell,cListReference);
+    Handle newHandle = NewHandle(sizeof(s)+1);
+    strcpy(*newHandle,s);
+	ALSetCell(newHandle, &cell, cListReference);
+	DisposeHandle(oldHandle);
 }
 
 char *wxListBox::GetClientData(int N)
@@ -595,17 +708,20 @@ void wxListBox::SetClientData(int N, char *s)
 // Undocumented !
 void wxListBox::InsertItems(int nItems, char **Items, int pos) 
 {
-  LSetDrawingMode(FALSE, cListHandle);
-  Cell cell = {pos, 0};		// Point = {v, h} so Cell = {row, col}
+  //LSetDrawingMode(FALSE, cListHandle);
+  LongPt cell = {pos, 0};		// Point = {v, h} so Cell = {row, col}
   int n;
+  Handle stringHandle;
+  ALAddRow(nItems,cell.v,cListReference);
   for (n = 0;  n < nItems; cell.v++, n++) {
 	  cDataList->Append(cell.v, (wxObject *)NULL);
-	  LAddRow(1,cell.v, cListHandle);
-	  LSetCell(Items[n], strlen(Items[n]) ,cell, cListHandle);
+	  stringHandle = NewHandle(strlen(Items[n]) + 1);
+	  strcpy(*stringHandle,Items[n]);
+	  ALSetCell(stringHandle, &cell, cListReference);
   }
   no_items = no_items + nItems;
-  LSetDrawingMode(TRUE, cListHandle);
-  Paint();
+  // LSetDrawingMode(TRUE, cListHandle);
+  // Paint();
 }
 
 // ------ Manage Selections ----------------------
@@ -613,12 +729,17 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
 void wxListBox::SetFirstItem(int N)
 {
    SetCurrentDC();
-	
-   Rect rect;
+   
+   // Rect rect;
    Point Nc;
    Nc.v = N;
    Nc.h = 0;
-   LRect(&rect, Nc, cListHandle);
+   LongPt desired = {N,0}; // cell = {row, col}
+   Point dest = {0,0};
+   
+   ALAutoScroll(dest,&desired,cListReference);
+
+/*   LRect(&rect, Nc, cListHandle);
    if (rect.top != 0) {
       int amt = rect.top / (**cListHandle).cellSize.v;
       if (rect.top % (**cListHandle).cellSize.v) {
@@ -629,6 +750,7 @@ void wxListBox::SetFirstItem(int N)
       }
       LScroll(0, amt, cListHandle);
    }
+*/
 }
 
 void wxListBox::SetFirstItem(char *s) 
@@ -641,9 +763,17 @@ void wxListBox::SetFirstItem(char *s)
 
 int wxListBox::GetFirstItem()
 {
-   Cell c = { 0, 0 };
-   Rect rect;
-   Point size = (**cListHandle).cellSize;
+   Rect view;
+   LongPt c;
+   
+   ALGetViewRect(&view,cListReference);
+   Point p = {view.top,view.left};
+   
+   ALGetCellAndEdge(p,&c,cListReference);
+   
+   return c.v;
+   
+/*   Point size = (**cListHandle).cellSize;
    int item, d;
    
    LRect(&rect, c, cListHandle);
@@ -652,11 +782,28 @@ int wxListBox::GetFirstItem()
    if (d % size.v)
      item++;
 
-   return item;
+   return item;*/
 }
 
 int wxListBox::NumberOfVisibleItems()
 {
+   Rect view;
+   Point query;
+   LongPt result;
+   long top_row;
+   
+   ALGetViewRect(&view,cListReference);
+   query.v = view.top;
+   query.h = view.left;
+   ALGetCellAndEdge(query,&result,cListReference);
+   top_row = result.v;
+   query.v = view.bottom;
+   query.h = view.right;
+   ALGetCellAndEdge(query,&result,cListReference);
+   
+   return result.v - top_row + 1;
+      
+/*   
    Rect view = (**cListHandle).rView;
    Point size = (**cListHandle).cellSize;
    int r;
@@ -666,6 +813,7 @@ int wxListBox::NumberOfVisibleItems()
      r  = 1;
      
    return r;
+*/
 }
 
 void wxListBox::SetSelection(int N, Bool select, Bool just_one)
@@ -673,20 +821,22 @@ void wxListBox::SetSelection(int N, Bool select, Bool just_one)
   if (N < 0 || (N >= no_items))
     return;
 
-   if (select && (just_one || ((**cListHandle).selFlags & lOnlyOne))) {
+   Boolean onlyOne = ALFeatureFlag(alFSelOnlyOne,alBitTest,cListReference);
+   
+   if (select && (just_one || onlyOne)) {
      int s = GetSelection();
      if (s == N)
        return;
      if (s >= 0) {
-	   Cell cell = {s, 0};
+	   LongPt cell = {s, 0};
 	   SetCurrentDC();
-	   LSetSelect(FALSE, cell, cListHandle);
+	   ALSetSelect(FALSE, &cell, cListReference);
 	 }
    }
    
-	Cell cell = {N, 0};
+	LongPt cell = {N, 0};
 	SetCurrentDC();
-	LSetSelect(select, cell, cListHandle);
+	ALSetSelect(select, &cell, cListReference);
 }
 
 void wxListBox::SetOneSelection(int N)
@@ -696,15 +846,15 @@ void wxListBox::SetOneSelection(int N)
 
 Bool wxListBox::Selected(int N)
 {
-	Cell cell = {N, 0};
-	return LGetSelect(FALSE, &cell, cListHandle);
+	LongPt cell = {N, 0};
+	return ALGetSelect(FALSE, &cell, cListReference);
 }
 
 void wxListBox::Deselect(int N)
 {
-	Cell cell = {N, 0};
+	LongPt cell = {N, 0};
     SetCurrentDC();
-	LSetSelect(FALSE, cell, cListHandle);
+	ALSetSelect(FALSE, &cell, cListReference);
 }
 
 // Return number of selections and an array of selected integers
@@ -712,12 +862,9 @@ void wxListBox::Deselect(int N)
 // by destructor if necessary.
 int wxListBox::GetSelections(int **list_selections)
 {
-	Cell cell = {0, 0};
-	int n = 0;
-	while (LGetSelect(TRUE, &cell, cListHandle)) {
-		cell.v++;
-		n++;
-	}
+	LongPt cell = {0, 0};
+	long n = ALGetNumberSelected(cListReference);
+	
 	if (n <= 0)
 		return 0;
 	cell.h = 0; cell.v = 0;
@@ -725,7 +872,7 @@ int wxListBox::GetSelections(int **list_selections)
 	    delete[] selections;
 	selections = new int[n];
 	n = 0;
-	while (LGetSelect(TRUE, &cell, cListHandle)) {
+	while (ALGetSelect(TRUE, &cell, cListReference)) {
 		selections[n++] = cell.v++;
 	}
 	*list_selections = selections;
@@ -736,9 +883,9 @@ int wxListBox::GetSelections(int **list_selections)
 int wxListBox::GetSelection(void)
 {
 	int r;
-	Cell cell = {0, 0};
+	LongPt cell = {0, 0};
 
-	r = LGetSelect(TRUE, &cell, cListHandle);
+	r = ALGetSelect(TRUE, &cell, cListReference);
 	if (r == FALSE)
 		return -1;
 	else
@@ -771,21 +918,25 @@ void wxListBox::SetLabel(char *label)
 void wxListBox::OnSetFocus()
 {
 	SetCurrentDC();
-	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxBLACK_BRUSH);
+	ALSetFocus(kControlListBoxPart,cListReference);
+	
+/*	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxBLACK_BRUSH);
 	if (!cHidden)
 		((wxBorderArea *)cBorderArea)->cBorder->Paint();
-
+*/
 	wxWindow::OnSetFocus();
 }
 
 //-----------------------------------------------------------------------------
 void wxListBox::OnKillFocus()
 {
-	SetCurrentDC();
-	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);
+	SetCurrentDC();  // are all of these necessary?
+	ALSetFocus(kControlFocusNoPart,cListReference);
+	
+/*	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);
 	if (!cHidden)
 		((wxBorderArea *)cBorderArea)->cBorder->Paint();
-
+*/
 	wxWindow::OnKillFocus();
 }
 
@@ -795,7 +946,7 @@ void wxListBox::ShowAsActive(Bool flag) // mac platform only
 	if (cHidden || IsGray()) return;
 	
 	SetCurrentDC();
-	::LActivate(flag, cListHandle);
+	ALActivate(flag, cListReference);
 }
 
 void wxListBox::DoShow(Bool on)
@@ -803,8 +954,8 @@ void wxListBox::DoShow(Bool on)
 	if (!CanShow(on))
 		return;
 		
-	((wxBorderArea *)cBorderArea)->cBorder->DoShow(on);
-	((wxBorderArea *)cThinBorderArea)->cBorder->DoShow(on);
+	//((wxBorderArea *)cBorderArea)->cBorder->DoShow(on);
+	//((wxBorderArea *)cThinBorderArea)->cBorder->DoShow(on);
 	
 	wxWindow::DoShow(on);
 }
@@ -814,8 +965,8 @@ void wxListBox::ChangeToGray(Bool gray)
 	if (cHidden) return;
 	
 	SetCurrentDC();
-	::LActivate(!gray, cListHandle);
-	((wxBorderArea *)cThinBorderArea)->cBorder->InternalGray(gray);
+	ALActivate(!gray, cListReference);
+	// ((wxBorderArea *)cThinBorderArea)->cBorder->InternalGray(gray);
 	if (cListTitle)
 		((wxLabelArea *)cListTitle)->GetMessage()->InternalGray(gray);
 	wxWindow::ChangeToGray(gray);

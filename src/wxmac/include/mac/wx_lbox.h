@@ -14,7 +14,13 @@
 
 #include "wb_lbox.h"
 #include "wxLabelArea.h"
-#include <Lists.h>
+/* #include <Lists.h> */
+/* begin A List includes */
+#include "TheAList.h"
+#include "AListOptimizations.h"
+#include "LongCoords.h"
+/* end A List includes */
+
 
 #ifdef IN_CPROTO
 typedef       void    *wxListBox ;
@@ -30,14 +36,14 @@ class wxListBox: public wxbListBox
 {
  public:
 	wxLabelArea*	cListTitle;
-	ListHandle		cListHandle;
+	ALReference		cListReference;
 	int				cHaveVScroll;
 	int				cKeycnt;		// next key (number)
 	wxList*			cDataList;		// List of ClientData(s) per ListBox Entry
-	unsigned long   cLastClickTime;  // mflatt: for double-clicking
-	Cell			cLastClickCell;  // mflatt: for double-clicking
+//	unsigned long   cLastClickTime;  // mflatt: for double-clicking
+//	Cell			cLastClickCell;  // mflatt: for double-clicking
 	wxArea*			cBorderArea; 	// mflatt: for showing keyboard focus
-	wxArea*         cThinBorderArea; // mflatt: box around list
+//	wxArea*         cThinBorderArea; // mflatt: box around list
 	
   wxListBox(
   		wxPanel *panel, 

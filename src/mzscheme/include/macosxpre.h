@@ -3,9 +3,10 @@
 #ifndef CARBON_PRECOMP
 #define CARBON_PRECOMP
 
-// prevent Carbon.h's "char_p" from colliding with char.c's char_p:
-#define char_p ADFKJSDLKJSDLKJSDLKFJSDLKj
+// prevent Carbon.h's "char_p" from colliding with char.c's char_p
+// (by omitting Open Transport altogether)
+#define __OT__
+
 #include <Carbon/Carbon.h>
-#undef char_p
 
 #endif // CARBON_PRECOMP

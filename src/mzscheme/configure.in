@@ -309,8 +309,9 @@ case $OS in
       # don't use X Libraries: 
       LIBS="-framework Carbon"
     else
-      CFLAGS="$CFLAGS -DXONX"
-      LIBS="-framework Carbon $LIBS"
+      # NB: This assumes that dlcompat is installed.
+      CFLAGS="$CFLAGS -DXONX -I/sw/include/"
+      LIBS="-framework Carbon -L/sw/lib/ $LIBS -ldl"
     fi
     ;;
   *)

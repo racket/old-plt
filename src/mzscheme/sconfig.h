@@ -582,7 +582,11 @@
 
 # if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
 
+#ifdef XONX 
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosxonx"
+#else
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosx"
+#endif
 
 # include "uconfig.h"
 
@@ -599,10 +603,9 @@
 # define USE_MAP_ANON
 
 /* haven't implemented dylib support */
-# undef UNIX_DYNAMIC_LOAD
-/*# ifdef FREEBSD_VERSION_2x
+# ifdef XONX
 #  define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
-# endif*/
+# endif
 
 # define USE_IEEE_FP_PREDS
 # define POW_HANDLES_INF_CORRECTLY

@@ -251,7 +251,10 @@
 		(when (> (string-length s) len)
 		      (when (file-exists? dest)
 			    (delete-file dest))
-		      (error 'make-windows-launcher es)))]
+		      (error 
+		       (format	
+			"~a: exceeds limit of ~a characters"
+			es len))))]
 	     [content (begin
 			(file-position p 0)
 			(read-string (file-size dest) p))])

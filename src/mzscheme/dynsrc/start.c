@@ -28,6 +28,7 @@
 # define WAITTILDONE 1
 #endif
 
+#define MAXCOMMANDLEN 1024
 #define MAX_ARGS 100
 
 #if defined(_MSC_VER)
@@ -37,9 +38,29 @@
 # define DUPLICATE_INPUT
 #endif
 
-static char *input = "<Command Line: Replace This ************"
-                     "******************************************"
-  		     "*****************************************>";
+/* Win command lines limited to 1024 chars, so 1024 chars for
+   command tail is ample */
+
+static char *input = 
+  "<Command Line: Replace This ************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "****************************************************************"
+  "***************************************************************>";
+
+/* Win long filenames limited to 255 chars, so 254 chars for
+   directory is ample */
 
 static char *exedir = "<Executable Directory: Replace This ********"
                       "********************************************"
@@ -190,8 +211,9 @@ int main(int argc_in, char **argv_in)
 #endif
 {
   char *p;
-  char go[1024];
+  char go[MAXCOMMANDLEN * 2];
   char *args[MAX_ARGS + 1];
+  char *command_line; 
   int count, i;
   struct MSC_IZE(stat) st;
   STARTUPINFO si;
@@ -216,7 +238,7 @@ int main(int argc_in, char **argv_in)
   strcat(go, GOSUBDIR GOEXE);
 
   if (_stat(go, &st)) {
-    char errbuff[1024];
+    char errbuff[MAXCOMMANDLEN * 2];
 #ifdef MRSTART
     sprintf(errbuff,"Can't find %s",go);
     MessageBox(NULL,errbuff,"Error",MB_OK);
@@ -263,8 +285,24 @@ int main(int argc_in, char **argv_in)
     ((char *)&si)[i] = 0;
   si.cb = sizeof(si);
   
+  command_line = make_command_line(count, args);
+
+  if (strlen(command_line) > MAXCOMMANDLEN) {
+    char errbuff[MAXCOMMANDLEN * 2];
+#ifdef MRSTART
+    sprintf(errbuff,"Command line exceeds %d characters: %s",
+	    MAXCOMMANDLEN,go);
+    MessageBox(NULL,errbuff,"Error",MB_OK);
+#else
+    sprintf(errbuff,"Command line exceeds %d characters: %s\n",
+	    MAXCOMMANDLEN,go);
+    WriteStr(out,errbuff);
+#endif
+    exit(-1);
+  } 
+
   if (!CreateProcess(go,
-		     make_command_line(count, args),
+		     command_line,
 		     NULL, NULL, TRUE,
 		     0, NULL, NULL, &si, &pi)) {
     

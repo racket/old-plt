@@ -744,13 +744,15 @@
   (recent-items-sort-by-age "Trier par age")
   (recent-items-sort-by-name "Trier par nom")
   
-  ;;; show menu
+  ;;; view menu
   (hide-definitions-menu-item-label "Cacher les &définitions")
   (show-definitions-menu-item-label "Montrer les &définitions")
   (definitions-menu-item-help-string "Cacher/montrer la fenêtre de définition")
   (show-interactions-menu-item-label "Montrer les &interactions")
   (hide-interactions-menu-item-label "Cacher les &interactions")
   (interactions-menu-item-help-string "Montrer/cacher la fenêtre d'interaction")
+  (show-toolbar "Montrer la barre d'ou&tils")
+  (hide-toolbar "Cacher la barre d'ou&tils")
   
   ;;; file menu
   (save-definitions-as "Sauvegarder les définitions...")

@@ -1318,7 +1318,6 @@ void wxImageSnip::Draw(wxDC *dc, float x, float y,
   else {
     msk = bm->GetMask();
     if (msk && (!msk->Ok() 
-		|| (msk->GetDepth() != 1)
 		|| (msk->GetWidth() != w)
 		|| (msk->GetHeight() != h)))
       msk = NULL;

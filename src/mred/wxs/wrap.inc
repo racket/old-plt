@@ -5085,7 +5085,7 @@
 "(unless(memq"
 " wx"
 "(ivar"
-"(send wx get-parent)"
+"(send wx area-parent)"
 " children))"
 "(raise-mismatch-error"
 "(who->name"

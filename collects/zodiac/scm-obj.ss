@@ -2,6 +2,7 @@
   (unit/sig zodiac:scheme-objects^
     (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
       zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
+      zodiac:scheme-main^
       zodiac:expander^ zodiac:interface^)
 
     (define-struct (class*-form struct:parsed)
@@ -649,6 +650,29 @@
 	    (static-error expr "Malformed make-generic")))))
 
     ; ----------------------------------------------------------------------
+
+    (when (language>=? 'side-effecting)
+      (add-micro-form 'set! scheme-vocabulary
+        (let* ((kwd '(set!))
+                (in-pattern '(set! var val))
+                (m&e (pat:make-match&env in-pattern kwd)))
+          (lambda (expr env attributes vocab)
+            (let ((p-env (pat:match-against m&e expr env)))
+              (if p-env
+                (let* ((var-p (pat:pexpand 'var p-env kwd))
+                        (_ (valid-syntactic-id? var-p))
+                        (id-expr (expand-expr var-p env attributes vocab))
+                        (expr-expr (expand-expr
+                                     (pat:pexpand 'val p-env kwd)
+                                     env attributes vocab)))
+		  (when (or (inherit-varref? id-expr)
+			  (rename-varref? id-expr))
+		    (static-error var-p
+		      "Cannot mutate inherit's and rename's"))
+                  (create-set!-form id-expr expr-expr expr))
+                (static-error expr "Malformed set!")))))))
+
+    ; --------------------------------------------------------------------
 
     (extend-parsed->raw class*-form?
       (lambda (expr p->r)

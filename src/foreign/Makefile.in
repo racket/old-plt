@@ -3,7 +3,8 @@
 srcdir = @srcdir@
 CC = @CC@
 CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ \
-         -I$(srcdir)/../mzscheme/include -Igcc/libffi/include
+         -I$(srcdir)/../mzscheme/include -I$(srcdir)/../mzscheme/src \
+         -Igcc/libffi/include
 AR = @AR@
 ARFLAGS = @ARFLAGS@
 

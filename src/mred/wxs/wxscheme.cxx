@@ -1123,15 +1123,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     home = scheme_make_string_without_copying(s);
   }
 
-  if (which == id_tmp_dir)
-    return home;
-
-  if (which == id_pref_dir)
-    return home;
-
-  if (which == id_init_dir)
-    return home;
-
   int ends_in_slash;
   ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];
   ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));

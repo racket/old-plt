@@ -4,6 +4,7 @@
    color-frame
    round-frame
    color-round-frame
+   color-dash-frame
 
    arrow
    arrowhead

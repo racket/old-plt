@@ -27,6 +27,8 @@
 	       (send dc set-brush b)))
 	   (pict-width p) (pict-height p) 0 0))))
 
+  ;; FIXME: abstract common part of color-frame, etc.
+
   (define color-frame
     (case-lambda
      [(p color w)
@@ -48,6 +50,17 @@
 	     (linewidth w p2)
 	     p2)))]
      [(p radius color) (color-round-frame p radius color #f)]))  
+
+  (define color-dash-frame
+    (case-lambda
+     [(p seg-length color w)
+      (cc-superimpose
+       p
+       (let ([p2 (colorize (dash-frame (ghost (launder p)) seg-length) color)])
+	 (if w
+	     (linewidth w p2)
+	     p2)))]
+     [(p seg-length color) (color-dash-frame p seg-length color #f)]))  
 
   ;; Returns three values: pict dx dy
   (define (generic-arrow stem? solid? size angle)

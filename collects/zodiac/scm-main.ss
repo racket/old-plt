@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.116 1997/08/13 15:23:17 shriram Exp $
+; $Id: scm-main.ss,v 1.117 1997/08/13 15:57:38 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1207,6 +1207,14 @@
 		(make-cond-clause expr question answer #f #f #f))))
 	  (else (static-error expr "clause not in question-answer format"))))))
 
+  ; We need this at the core and structured levels since we are
+  ; disallowing procedure applications whose procedure position is not
+  ; a symbol (here, the inner expression of ((debug-info-handler))
+  ; violates that requirement).
+
+  (define debug-info-handler-expression
+    '(#%apply (#%debug-info-handler) (#%list)))
+
   (add-primitivized-micro-form 'cond scheme-vocabulary
     (let* ((kwd '())
 	    (in-pattern '(_ bodies ...))
@@ -1234,7 +1242,7 @@
 				   ,(if had-no-clauses?
 				      "cond must contain at least one clause"
 				      "no matching else clause")
-				   (#%apply (#%debug-info-handler) (#%list)))))
+				   ,debug-info-handler-expression)))
 			    (let ((first (car exps))
 				   (rest (cdr exps)))
 			      (cond
@@ -1271,9 +1279,9 @@
 	    (kwd-2 '())
 	    (in-pattern-2 '(_ val))
 	    (out-pattern-2-signal-error
-	      '(#%raise (#%make-exn:else
+	      `(#%raise (#%make-exn:else
 			  "no matching else clause"
-			  ((debug-info-handler)))))
+			  ,debug-info-handler-expression)))
 	    (out-pattern-2-no-error
 	      '(begin val (#%void)))
 	    (in-pattern-3 (if (language<=? 'structured)

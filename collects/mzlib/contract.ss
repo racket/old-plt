@@ -664,7 +664,7 @@ add struct contracts for immutable structs?
 		 (format "broke ~a's contract:" datum)
 		 "failed contract"))])
       (raise
-       (make-exn
+       (make-exn:fail
         (string->immutable-string
          (string-append (format "~a~a: ~a ~a ~a: "
                                 blame-src

@@ -944,6 +944,16 @@ inline static void repair_thread_list(void)
     }
   }
 }
+
+inline static int thread_get_owner(void *p)
+{
+  struct thread *work; 
+
+  for(work = threads; work; work = work->next)
+    if(work->thread == p)
+      return work->owner;
+  GCERR("Bad thread value for thread_get_owner!\n");
+}
 #endif
 
 #ifdef NEWGC_BTC_ACCOUNT
@@ -1196,10 +1206,17 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
   struct objhead *info = (struct objhead *)((char*)ptr - WORD_SIZE);
   
   switch(page->page_type) {
-    case PAGE_TAGGED: if((*(unsigned short*)ptr != scheme_thread_type) &&
-                         (*(unsigned short*)ptr != scheme_custodian_type))
-                        mark_table[*(unsigned short*)ptr](ptr); 
-                      break;
+    case PAGE_TAGGED: 
+      if(*(unsigned short*)ptr == scheme_thread_type) {
+	if(thread_get_owner(ptr) == current_mark_owner)
+	  mark_table[scheme_thread_type](ptr);
+      } else if(*(unsigned short*)ptr == scheme_custodian_type) {
+	if(custodian_to_owner_set(ptr) == current_mark_owner)
+	  mark_table[scheme_custodian_type](ptr);
+      } else {
+	mark_table[*(unsigned short*)ptr](ptr);
+      }
+      break;
     case PAGE_ATOMIC: break;
     case PAGE_ARRAY: { 
       void **temp = ptr, **end = temp + info->size;

@@ -479,16 +479,82 @@
 "to be used as the button's label.")
 
 
-(drscheme:unit:add-mode
+;                                            
+;                                            
+;                                            
+;                           ;                
+;                           ;                
+;                           ;                
+;   ; ;;  ;;     ;;;     ;; ;    ;;;    ;;;  
+;   ;;  ;;  ;   ;   ;   ;  ;;   ;   ;  ;     
+;   ;   ;   ;  ;     ; ;    ;  ;    ;  ;;    
+;   ;   ;   ;  ;     ; ;    ;  ;;;;;;   ;;   
+;   ;   ;   ;  ;     ; ;    ;  ;          ;  
+;   ;   ;   ;   ;   ;   ;  ;;   ;         ;  
+;   ;   ;   ;    ;;;     ;; ;    ;;;;  ;;;   
+;                                            
+;                                            
+;                                            
+
+  
+(drscheme:modes:add-mode
  (string?
   (union false? (is-a?/c mode:surrogate-text<%>))
   any?
+  (string? . -> . boolean?)
   . -> .
-  void?)
- (name surrogate repl-submit?)
- "Adds a mode to DrScheme.")
+  mode?)
+ (name surrogate repl-submit matches-filename)
+ "Adds a mode to DrScheme. Returns a mode value"
+ "that identifies the mode."
+ ""
+ "See also"
+ "@flink drscheme:modes:get-modes %"
+ ".")
                      
-                     
+(drscheme:modes:get-modes
+ (-> (listof modes?))
+ "Returns all of the modes currently added to DrScheme."
+ ""
+ "See also"
+ "@flink drscheme:modes:add-mode %"
+ ".")
+  
+(drscheme:modes:mode-name
+ (mode? . -> . string?)
+ (mode)
+ "Extracts the name of the mode."
+ ""
+ "See also"
+ "@flink drscheme:modes:add-mode %"
+ ".")
+  
+(drscheme:modes:mode-surrogate
+ (mode? . -> . (union false? (is-a?/c mode:surrogate-text<%>)))
+ (mode)
+ "Extracts the surrogate of the mode."
+ ""
+ "See also"
+ "@flink drscheme:modes:add-mode %"
+ ".")
+
+(drscheme:modes:mode-repl-submit
+ (mode? . -> . any)
+ (mode)
+ "Extracts the repl submission predicate of the mode."
+ ""
+ "See also"
+ "@flink drscheme:modes:add-mode %"
+ ".")
+  
+(drscheme:modes:mode-matches-filename
+ (mode? . -> . (string? . -> . boolean?))
+ (mode)
+ "Extracts the filename matching predicate of the mode."
+ ""
+ "See also"
+ "@flink drscheme:modes:add-mode %"
+ ".")
                      
                      
  ; ;;;   ;;;  ; ;;;  

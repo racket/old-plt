@@ -248,8 +248,9 @@ void wxResetCanvasBackgrounds()
     
     GetGWorld(&savep, &savegd);  
 
-    while (reset_chain)
+    while (reset_chain) {
       reset_chain->ResetBackground();
+    }
     
     SetGWorld(savep, savegd);
   }

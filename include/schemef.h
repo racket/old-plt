@@ -483,14 +483,9 @@ MZ_EXTERN char *scheme_getdrive(void);
 MZ_EXTERN Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **base, int *isdir);
 MZ_EXTERN Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv);
 
-#ifdef USE_MAC_FILE_TOOLBOX
-MZ_EXTERN char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
-MZ_EXTERN int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
-#endif
-
-#ifdef USE_MAC_CARBON_FILE_TOOLBOX
-MZ_EXTERN char *scheme_carbon_spec_to_path(const FSSpec *spec);
-MZ_EXTERN int *scheme_carbon_path_to_spec(const char *filename, FSSpec *spec);
+#ifdef MACINTOSH_EVENTS
+MZ_EXTERN char *scheme_mac_spec_to_path(FSSpec *spec);
+MZ_EXTERN int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
 #endif
 
 MZ_EXTERN void *scheme_alloc_fdset_array(int count, int permanent);

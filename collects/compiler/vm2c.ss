@@ -16,6 +16,8 @@
 	 compiler:vmstructs^
 	 compiler:driver^)
 
+(define local-vars-at-top? #f)
+
 (define vm->c:indent-by 4)
 (define vm->c:indent-spaces
   (make-string vm->c:indent-by #\space))
@@ -475,6 +477,13 @@
 		 vm->c:indent-spaces)
 	(fprintf port "~aScheme_Object ** tail_buf;~n"
 		 vm->c:indent-spaces)))
+
+    (when local-vars-at-top?
+      (for-each
+       (lambda (L)
+	 (let ([locals (code-local-vars (get-annotation L))])
+	   (vm->c:emit-local-variable-declarations! locals vm->c:indent-spaces port)))
+       (vehicle-lambdas vehicle)))
     
     ; emit jump to function...
     (when (> (vehicle-total-labels vehicle) 1)
@@ -803,7 +812,8 @@
       ; The local entry label
       (fprintf port "LOC~a~a:~n" label lsuffix)
       (pre-decl)
-      (vm->c:emit-local-variable-declarations! (code-local-vars case-code) indent port)
+      (unless local-vars-at-top?
+	(vm->c:emit-local-variable-declarations! (code-local-vars case-code) indent port))
 
       (when (compiler:option:unpack-environments)
 	(vm->c:emit-local-variable-declarations! used-free-set indent port)
@@ -811,7 +821,8 @@
     
       (let ([r (closure-code-rep code)])
 	(when r
-	  (fprintf port "~aconst ~a * env;~n" indent (vm->c:convert-type-definition r))))
+	  ; (fprintf port "~aconst ~a * env;~n" indent (vm->c:convert-type-definition r))
+	  (fprintf port "#~adefine env ((const ~a *)void_param)~n" indent (vm->c:convert-type-definition r))))
       
       ; Registers into local vars
       (let* ([args (zodiac:arglist-vars (list-ref (zodiac:case-lambda-form-args L) which))])
@@ -836,11 +847,13 @@
       ; after the args have been done
       ; equate the local registers with the global argument registers
       ; starting with the env
+#|
       (let ([r (closure-code-rep code)])
 	(when r
 	  (fprintf port "~aenv = (~a *)void_param;~n"
 		   indent
 		   (vm->c:convert-type-definition r))))
+|#
 
       ; now pull environment variables into registers
       (set! undefines
@@ -865,6 +878,7 @@
 
 (define vm->c:emit-case-epilogue
   (lambda (code which undefines indent port)
+    (fprintf port "#~aundef env~n" indent)
     (vm->c:emit-undefines undefines indent port)))
 
 (define vm->c:emit-function-epilogue
@@ -891,7 +905,9 @@
       ; Only unpack import & import-anchors if they are used
 
       (vm->c:emit-local-variable-declarations! 
-       (set-union (set-minus (code-local-vars code) import-set) used-imports)
+       (if local-vars-at-top?
+	   used-imports
+	   (set-union (set-minus (code-local-vars code) import-set) used-imports))
        indent port)
     
       (when (compiler:option:unpack-environments)
@@ -971,7 +987,8 @@
 	   [any-defaults? (ormap pair? args)]
 	   [undefines null])
 
-      (vm->c:emit-local-variable-declarations! (code-local-vars code) indent port)
+      (unless local-vars-at-top?
+	(vm->c:emit-local-variable-declarations! (code-local-vars code) indent port))
     
       (when (compiler:option:unpack-environments)
 	 (vm->c:emit-local-variable-declarations! (code-free-vars code) indent port)
@@ -1473,7 +1490,8 @@
 	 
 	 ;; (continue) -> continue;
 	 [(vm:continue? ast)
-	  (emit-expr "_scheme_check_for_break_wp(1, pr);~n")
+	  (unless (compiler:option:disable-interrupts)
+	    (emit-expr "_scheme_check_for_break_wp(1, pr);~n"))
 	  (emit-expr "continue")]
 	 
 	 ;; use NULL instead of tail_buf if no args
@@ -1493,8 +1511,9 @@
 	    (process (vm:tail-call-closure ast) indent-level #f #t)
 	    (emit ");~n"))
 	  ;; be nice to threads & user breaks:
-	  (emit-indentation)
-	  (emit "_scheme_check_for_break_wp(1, pr);~n")
+	  (unless (compiler:option:disable-interrupts)
+	    (emit-indentation)
+	    (emit "_scheme_check_for_break_wp(1, pr);~n"))
 	  (emit-indentation)
 	  ; unless its to a variable arity function! ARGH
 	  (let* ([label (vm:tail-call-label ast)]
@@ -1554,8 +1573,14 @@
 			"direct_apply_primitive")]
 		   [(vm:apply-known? ast) 
 		    (if (vm:apply-multi? ast)
-			"apply_known_closed_prim_multi"
-			"apply_known_closed_prim")]
+			(if (compiler:option:disable-interrupts)
+			    "direct_apply_closed_primitive_multi_fv"
+			    "apply_known_closed_prim_multi")
+			(if (compiler:option:disable-interrupts)
+			    (if (compiler:option:unsafe)
+				"direct_apply_closed_primitive_multi_fv"
+				"direct_apply_closed_primitive_fv")
+			    "apply_known_closed_prim"))]
 		   [(vm:apply-multi? ast) "apply_multi"]
 		   [else "apply"])))
 	  (process (vm:apply-closure ast) indent-level #f #t)

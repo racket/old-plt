@@ -93,6 +93,7 @@
 			     [(#%sub1) "MZC_SUB1"]
 			     [(#%+) (and (argc=? 2) "MZC_PLUS2")]
 			     [(#%-) (and (argc=? 2) "MZC_MINUS2")]
+			     [(#%*) (and (argc=? 2) (compiler:option:fixnum-arithmetic) "MZC_TIMES2")]
 			     [(#%min) (and (argc=? 2) "MZC_MIN2")]
 			     [(#%max) (and (argc=? 2) "MZC_MAX2")]
 			     [else #f])])

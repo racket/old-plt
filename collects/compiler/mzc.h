@@ -141,6 +141,25 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #define MZC_LIST2(p, av, bv) scheme_make_pair(av, scheme_make_pair(bv, scheme_null))
 #define MZC_APPEND(p, av, bv) scheme_append(av, bv)
 
+#if MZC_UNSAFE
+/* Unsafe versions */
+#define MZC_CAR(p, av) SCHEME_CAR(av)
+#define MZC_CDR(p, av) SCHEME_CDR(av)
+#define MZC_CADR(p, av) SCHEME_CAR(SCHEME_CDR(av))
+#define MZC_CDDR(p, av) SCHEME_CDR(SCHEME_CDR(av))
+#define MZC_CDAR(p, av) SCHEME_CDR(SCHEME_CAR(av))
+#define MZC_CAAR(p, av) SCHEME_CAR(SCHEME_CAR(av))
+#define MZC_CADDR(p, av) SCHEME_CADR(SCHEME_CDR(av))
+#define MZC_SET_CAR(p, av, bv) (SCHEME_CAR(av)=bv, scheme_void)
+#define MZC_SET_CDR(p, av, bv) (SCHEME_CDR(av)=bv, scheme_void)
+
+# define MZC_VECTOR_REF(p, v, i) SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)]
+# define MZC_VECTOR_SET(p, v, i, x) (SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] = x, scheme_void)
+
+#define MZC_CHAR_TO_INTEGER(p, v) scheme_make_integer((unsigned char)SCHEME_CHAR_VAL(v))
+/* End unsafe versions */
+#else
+/* Safe versions */
 #define MZC_CAR(p, av) (SCHEME_PAIRP(av) ? SCHEME_CAR(av) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
 #define MZC_CDR(p, av) (SCHEME_PAIRP(av) ? SCHEME_CDR(av) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
 #define MZC_CADR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CDR(av))) ? SCHEME_CAR(SCHEME_CDR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
@@ -151,20 +170,22 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #define MZC_SET_CAR(p, av, bv) (SCHEME_PAIRP(av) ? (SCHEME_CAR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
 #define MZC_SET_CDR(p, av, bv) (SCHEME_PAIRP(av) ? (SCHEME_CDR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
 
-#define MZC_VECTOR_REF(p, v, i) ((SCHEME_INTP(i) && SCHEME_VECTORP(v) && (SCHEME_INT_VAL(i) >= 0) \
-                                  && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
-                                 ? SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] \
-				  : (arg[0] = v, arg[1] = i, _scheme_direct_apply_primitive_multi(p, 2, arg))))
-#define MZC_VECTOR_SET(p, v, i, x) ((SCHEME_INTP(i) && SCHEME_VECTORP(v) && (SCHEME_INT_VAL(i) >= 0) \
-                                    && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
-                                    ? (SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] = x, scheme_void) \
-				    : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
-
 #define MZC_CHAR_TO_INTEGER(p, v) (SCHEME_CHARP(v) ? scheme_make_integer((unsigned char)SCHEME_CHAR_VAL(v)) \
                                    : (arg[0] = v, _scheme_direct_apply_primitive_multi(p, 1, arg)))
 
-#define _MZC_DBLP(obj) SAME_TYPE(_SCHEME_TYPE(obj), scheme_double_type)
+# define MZC_VECTOR_REF(p, v, i) ((SCHEME_INTP(i) && SCHEME_VECTORP(v) && (SCHEME_INT_VAL(i) >= 0) \
+                                  && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
+                                 ? SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] \
+				  : (arg[0] = v, arg[1] = i, _scheme_direct_apply_primitive_multi(p, 2, arg))))
+# define MZC_VECTOR_SET(p, v, i, x) ((SCHEME_INTP(i) && SCHEME_VECTORP(v) && (SCHEME_INT_VAL(i) >= 0) \
+                                    && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
+                                    ? (SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] = x, scheme_void) \
+				    : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
+/* End safe versions */
+#endif
 
+#define _MZC_DBLP(obj) SAME_TYPE(_SCHEME_TYPE(obj), scheme_double_type)
+     
 #define MZC_ZEROP(zp, av) (SCHEME_INTP(av) \
                                 ? (av == scheme_make_integer(0)) \
                                 : (_MZC_DBLP(av) \
@@ -184,6 +205,27 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #define MZC_GTEP(cp, av, bv) MZC_ARITH_COMPARE(cp, av, bv, >=)
 #define MZC_EQLP(cp, av, bv) MZC_ARITH_COMPARE(cp, av, bv, ==)
 
+#if MZC_FIXNUM
+/* Numerically incorrect */
+#define MZC_ADD1(p, av) (SCHEME_INTP(av) \
+                         ? scheme_make_integer(SCHEME_INT_VAL(av)+1) \
+                         : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
+#define MZC_SUB1(p, av) (SCHEME_INTP(av) \
+                         ? scheme_make_integer(SCHEME_INT_VAL(av)-1) \
+                         : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
+
+#define MZC_ARITH_OP(cp, av, bv, op, revop) \
+                      ((SCHEME_INTP(av) && SCHEME_INTP(bv)) \
+                        ? scheme_make_integer(SCHEME_INT_VAL(av) op SCHEME_INT_VAL(bv)) \
+                        : ((SCHEME_DBLP(av) && SCHEME_DBLP(bv)) \
+                           ? scheme_make_double(SCHEME_DBL_VAL(av) op SCHEME_DBL_VAL(bv)) \
+                           : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(cp, 2, arg))))
+
+#define MZC_TIMES2(cp, av, bv) MZC_ARITH_OP(cp, av, bv, *, /)
+
+/* End numerically incorrect */
+#else
+/* Numerically correct */
 #define MZC_ADD1(p, av) ((SCHEME_INTP(av) && (SCHEME_INT_VAL(av) < 0x3FFFFFFF)) \
                          ? scheme_make_integer(SCHEME_INT_VAL(av)+1) \
                          : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
@@ -200,6 +242,8 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
                         : ((SCHEME_DBLP(av) && SCHEME_DBLP(bv)) \
                            ? scheme_make_double(SCHEME_DBL_VAL(av) op SCHEME_DBL_VAL(bv)) \
                            : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(cp, 2, arg))))
+/* End numerically correct */
+#endif
 
 #define MZC_PLUS2(cp, av, bv) MZC_ARITH_OP(cp, av, bv, +, -)
 #define MZC_MINUS2(cp, av, bv) MZC_ARITH_OP(cp, av, bv, -, +)
@@ -211,6 +255,16 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 
 #define MZC_MAX2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, >)
 #define MZC_MIN2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, <)
+
+static inline Scheme_Object *mzc_force_value(Scheme_Object *v)
+{
+  return _scheme_force_value(v);
+}
+
+#define _scheme_direct_apply_closed_primitive_multi_fv(prim, argc, argv) \
+    mzc_force_value(_scheme_direct_apply_closed_primitive_multi(prim, argc, argv))
+#define _scheme_direct_apply_closed_primitive_fv(prim, argc, argv) \
+    scheme_check_one_value(_scheme_direct_apply_closed_primitive_multi_fv(prim, argc, argv))
 
 #if 0
 static Scheme_Object *DEBUG_CHECK(Scheme_Object *v)
@@ -225,4 +279,3 @@ static Scheme_Object *DEBUG_CHECK(Scheme_Object *v)
   return v;
 }
 #endif
-

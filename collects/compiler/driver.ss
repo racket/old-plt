@@ -1007,6 +1007,9 @@
 			  
 			  ;value
 			  (lambda ()
+			    (when (compiler:option:unsafe) (fprintf c-port "#define MZC_UNSAFE 1~n"))
+			    (when (compiler:option:disable-interrupts) (fprintf c-port "#define MZC_DISABLE_INTERRUPTS 1~n"))
+			    (when (compiler:option:fixnum-arithmetic) (fprintf c-port "#define MZC_FIXNUM 1~n"))
 			    (fprintf c-port "#include \"~ascheme.h\"~n"
 				     (if (compiler:option:compile-for-embedded)
 					 ""

@@ -20,6 +20,10 @@
  
  (define max-inline-size (make-parameter 50))
 
+ (define unsafe (make-parameter #f))
+ (define disable-interrupts (make-parameter #f))
+ (define fixnum-arithmetic (make-parameter #f))
+
  (define verbose (make-parameter #f))
  (define debug (make-parameter #f))
  (define test (make-parameter #f))

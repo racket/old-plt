@@ -39,6 +39,7 @@
   
   (define (send-command command out)
     (display (command-bid command) out)
+    (player-money (- (player-money) (command-bid command)))
     (case (command-command command)
       ((n) (display " Move N" out))
       ((s) (display " Move S" out))

@@ -233,14 +233,6 @@
 		  (error 'stretchable-in-y
 			 "Expected a boolean; received ~s" val)))]
 	      
-	      ; set-label: replace the superclass's method with a call to
-	      ; error.
-	      [set-label
-	       (lambda (args)
-		 (error
-		  'set-label
-		  "This operation is not supported on objects of this type"))]
-	      
 	      ; get-info: passes necessary info up to parent.
 	      ; input: none
 	      ; returns: child-info struct containing the info about this

@@ -202,11 +202,17 @@
          ;; dropped pkg already known...
          (loop (cdr dropped) l)]
         [else
-         (loop (cdr dropped) (cons (mk-pack (caar dropped)
-                                            (cadar dropped)
-                                            (caddar dropped)
-                                            old-l)
-                                   l))])))
+         (let ([p (mk-pack (caar dropped)
+                           (cadar dropped)
+                           (caddar dropped)
+                           old-l)])
+           (loop (cdr dropped)
+                 ;; If the dest is known and that's where it was dropped,
+                 ;; then ignore the package
+                 (if (and (equal? (pkg-x p) (pkg-dest-x p))
+                          (equal? (pkg-y p) (pkg-dest-y p)))
+                     l
+                     (cons p l))))])))
   
   (define (try-one server port)
     (let-values ([(session board me robots packages) (connect server port)])

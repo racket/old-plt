@@ -12,8 +12,8 @@
   (define server-port 4004)
 
   (define num-players 2)
-  (define board-file "~/tmp/map")  ; maps available at the contest web site
-  (define pack-file "~/tmp/packs") ; pkg configuartions available there, too
+  (define board-file "~/tmp/map3")  ; maps available at the contest web site
+  (define pack-file "~/tmp/packs3") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
   (define start-money 1000)
@@ -63,12 +63,79 @@
                              (loop (add1 id))))))
   
   (define activity null)
+  
+  (define-struct state (robots packages actions))
+  
+  (define past-states null)
 
   (define f (make-object (class frame% 
                            (define/override (on-close) (exit))
                            (super-instantiate ("Robot")))))
   (define drawn (instantiate board-panel% (f board-width board-height board)))
   (send drawn install-robots&packages robots packages)
+
+  (define bottom (instantiate horizontal-panel% (f) [alignment '(center top)]))
+
+  (define replay-panel (instantiate horizontal-panel% (bottom) [alignment '(center top)]))
+  (define replay-left (instantiate vertical-panel% (replay-panel) [alignment '(right top)]))
+  (define replay-right (instantiate vertical-panel% (replay-panel) [stretchable-width #f]))
+  (define backward-button (make-object button% "<<" replay-left (lambda (b e)
+                                                                  (set! state-index (sub1 state-index))
+                                                                  (refresh-state #f))))
+  (define replay-slider #f)
+  (define (set-slider! v)
+    (when replay-slider
+      (send replay-slider show #t)
+      (send (send replay-slider get-parent) delete-child replay-slider))
+    (set! replay-slider
+          (make-object slider% #f 0 v replay-left 
+            (lambda (s e)
+              (set! state-index (send s get-value))
+              (refresh-state #f))
+            v)))
+  (set-slider! 10)
+  (define forward-button (make-object button% ">>" replay-right (lambda (b e)
+                                                                  (if (< state-index (length past-states))
+                                                                      (begin
+                                                                        (set! state-index (add1 state-index))
+                                                                        (refresh-state #t))
+                                                                      (begin
+                                                                        (set! running? #t)
+                                                                        (set! current-internal-state #f)
+                                                                        (send replay-panel enable #f)
+                                                                        (send pause enable #t)
+                                                                        (let ([sema resume-sema])
+                                                                          (set! resume-sema #f)
+                                                                          (semaphore-post sema)))))))
+  
+  (define pause (make-object button% "Pause" bottom (lambda (b e)
+                                                      (set! running? #f)
+                                                      (send pause enable #f))))
+  (send replay-panel enable #f)
+  
+  (define running? #t)
+  (define resume-sema #f)
+
+  (define state-index 0)
+
+  (define current-internal-state #f)
+  
+  (define (setup-replay-panel)
+    (set! state-index (length past-states))
+    (set! current-internal-state (send drawn get-internal-state))
+    (set-slider! state-index)
+    (send backward-button enable #t)
+    (send replay-panel enable #t))
+  
+  (define (refresh-state forward?)
+    (send backward-button enable (> state-index 1))
+    (send replay-slider set-value state-index)
+    (let ([s (if (= state-index (length past-states))
+                 current-internal-state
+                 (list-ref past-states (- (length past-states) state-index 1)))])
+      (when forward?
+        (send drawn apply-queued-actions))
+      (send drawn set-internal-state s)))
   
   (send f show #t)
   
@@ -136,7 +203,9 @@
                                  (client-handler input output client-sema server-sema id))))
                      (cons client-sema (server-loop (add1 id))))
                    null))])
-        (server client-semas server-sema))))
+        (thread 
+         (lambda ()
+           (server client-semas server-sema))))))
   
   (define (randomize l)
     (let loop ([l l])
@@ -162,8 +231,10 @@
                                 (loop (add1 i)))
                                ;; otherwise, bot is apparently dead:
                                (loop (add1 i))))))])
-      (send drawn queue-robot-actions (quicksort (randomize commands) (lambda (a b)
-                                                                        (< (cadr a) (cadr b)))))
+      (let ([actions (quicksort (randomize commands) (lambda (a b)
+                                                       (< (cadr a) (cadr b))))])
+        (send drawn queue-robot-actions actions)
+        (set! past-states (cons (send drawn get-internal-state) past-states)))
       (send drawn apply-queued-actions)
       (set! activity (send drawn get-most-recent-activity))
       (set!-values (robots packages) (send drawn get-robots&packages))
@@ -177,9 +248,19 @@
   
   (define (server client-semas server-sema)
     (semaphore-Pn server-sema num-players)
-    (when (update-state!?)
-      (map semaphore-post client-semas)
-      (server client-semas server-sema)))
+    (let ([continue? #f]
+          [sema (make-semaphore)])
+      (queue-callback (lambda ()
+                        (set! continue? (update-state!?))
+                        (if running?
+                            (semaphore-post sema)
+                            (begin
+                              (setup-replay-panel)
+                              (set! resume-sema sema)))))
+      (semaphore-wait sema)
+      (when continue?
+        (map semaphore-post client-semas)
+        (server client-semas server-sema))))
     
   (define (client-handler input output client-sema server-sema id)
     (when (regexp-match "^Player" input)

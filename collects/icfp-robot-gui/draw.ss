@@ -621,10 +621,10 @@
           (let-values ([(robot-list pack-list) (apply values (get-status-lists))])
             (for-each (lambda (i r) (send i user-data r))
                       (send robot-list get-items)
-                      (list-ref state 3))
+                      new-robots)
             (for-each (lambda (i r) (send i user-data r))
                       (send pack-list get-items)
-                      (list-ref state 4)))
+                      new-packages))
           (update)))
       
       (define/public (get-dead-robot-scores)

@@ -1,44 +1,44 @@
 (module weights mzscheme
 
   (require (lib "list.ss"))
-
-(define wall-threat-value (make-parameter 0))
-(define water-threat-value (make-parameter 0))
-(define blank-threat-value (make-parameter 0))
-(define wall-danger-value (make-parameter 0))
-(define water-danger-value (make-parameter 0))
-(define blank-danger-value (make-parameter 0))
-(define wall-escape-value (make-parameter 0))
-(define water-escape-value (make-parameter 0))
-(define blank-escape-value (make-parameter 0))
-(define wall-push-value (make-parameter 0))
-(define water-push-value (make-parameter 0))
-(define blank-push-value (make-parameter 0))
-(define blank-value (make-parameter 0))
-(define wall-value (make-parameter 0))
-(define water-value (make-parameter 0))
-(define home-value (make-parameter 0))
-(define next-water-value (make-parameter 0))
-(define one-home-value (make-parameter 0))
-(define two-home-value (make-parameter 0))
-(define three-home-value (make-parameter 0))
-(define destination-value (make-parameter 0))
-(define one-destination-value (make-parameter 0))
-(define two-destination-value (make-parameter 0))
-(define three-destination-value (make-parameter 0))
-(define dvw-value (make-parameter 0))
-(define pickup-value (make-parameter 0))
-(define dropoff-value (make-parameter 0))
-(define wall-escape-bid (make-parameter 0))
-(define water-escape-bid (make-parameter 0))
-(define blank-escape-bid (make-parameter 0))
-(define wall-push-bid (make-parameter 0))
-(define water-push-bid (make-parameter 0))
-(define blank-push-bid (make-parameter 0))
-	
 	(require "board.ss")
 	(provide calc-weight
 		 update-robots)
+(define wall-threat-value (make-parameter 1))
+(define water-threat-value (make-parameter 1))
+(define blank-threat-value (make-parameter 1))
+(define wall-danger-value (make-parameter 1))
+(define water-danger-value (make-parameter 1))
+(define blank-danger-value (make-parameter 1))
+(define wall-escape-value (make-parameter 1))
+(define water-escape-value (make-parameter 1))
+(define blank-escape-value (make-parameter 1))
+(define wall-push-value (make-parameter 1))
+(define water-push-value (make-parameter 1))
+(define blank-push-value (make-parameter 1))
+(define blank-value (make-parameter 1))
+(define wall-value (make-parameter 1))
+(define water-value (make-parameter 1))
+(define home-value (make-parameter 1))
+(define next-water-value (make-parameter 1))
+(define one-home-value (make-parameter 1))
+(define two-home-value (make-parameter 1))
+(define three-home-value (make-parameter 1))
+(define destination-value (make-parameter 1))
+(define one-destination-value (make-parameter 1))
+(define two-destination-value (make-parameter 1))
+(define three-destination-value (make-parameter 1))
+(define dvw-value (make-parameter 1))
+(define pickup-value (make-parameter 1))
+(define dropoff-value (make-parameter 1))
+(define wall-escape-bid (make-parameter 1))
+(define water-escape-bid (make-parameter 1))
+(define blank-escape-bid (make-parameter 1))
+(define wall-push-bid (make-parameter 1))
+(define water-push-bid (make-parameter 1))
+(define blank-push-bid (make-parameter 1))
+	
+
   (define myboard #f)
   (define-struct search-player (x y id money capacity packages))
   
@@ -87,21 +87,21 @@
 						(home-value)))))
 				(* (next-water-value) (next-to-water? myboard x y))
 				(* (destination-value) (destination? myboard x y))
-				(* (one-destination-value) (one-away-destination? myboard x y))
-				(* (two-destination-value) (two-away-destination? myboard x y))
-				(* (three-destination-value) (three-away-destination? myboard x y))
+				(* (one-destination-value) (one-away-destination? myboard x y (search-player-packages p)))
+				(* (two-destination-value) (two-away-destination? myboard x y (search-player-packages p)))
+				(* (three-destination-value) (three-away-destination? myboard x y (search-player-packages p)))
 				(* (one-home-value) (one-away-base? myboard x y))
 				(* (two-home-value) (two-away-base? myboard x y))
 				(* (three-home-value) (three-away-base? myboard x y)))])
 			       (begin
 				 (set-weight new-weight (get-spot myboard x y))
-				 (set-valid 1 (get-spot myboard x y))
+				 (set-valid (get-spot myboard x y))
 				 new-weight)))]
-		 [bid (if (could-player-move? myboard x y)
+		 [bid (if (could-player-move? myboard x y p)
 			  (figure-bid myboard x y p)
 			  1)])
 		(list weight bid null null))]
-	   [(symbol=? mtype 'd)
+	   [(eq? mtype 'd)
 	    (let* ([ptod (get-packages-for x y (search-player-packages))]
 		   [weight (+ (if (could-player-move? myboard x y p)
 				 (+ (* (wall-danger-value) (wall-danger? myboard x y))
@@ -113,14 +113,14 @@
 				 0)
 			     (* (dropoff-value) (if (null? ptod)
 						    0
-						    (eval `(+ ,@(map packages-weight ptod))))))]
+						    (eval `(+ ,@(map package-weight ptod))))))]
 		   [bid (if (or (= (wall-danger? myboard x y) 1) (= (water-danger? myboard x y) 1) (= (blank-danger? myboard x y) 1))
-			    bid-max
+			    (water-escape-bid)
 			    1)])
 	      (list weight bid ptod null))]
-	   [(symbol=? mtype 'p)
+	   [(eq? mtype 'p)
 	    (let* ([ptop (most-of (wleft p) (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1) (pack-val p2)))))]
-		   [weight (* (should-pick-up)
+		   [weight (* (pickup-value)
 			      (if (null? ptop)
 				  0
 				  (eval `(* ,@(map pack-val ptop)))))])
@@ -131,29 +131,29 @@
 	(define-syntax wleft
 	  (syntax-rules ()
 			((_ p)
-			 (eval `(- (search-player-capacity p) (+ ,@(map packages-weight (search-player-packages p))))))))
+			 (eval `(- (search-player-capacity p) (+ ,@(map package-weight (search-player-packages p))))))))
 	;; 
 	(define-syntax figure-bid
 	  (syntax-rules ()
 			((_ board x y p)
 			 (cond
-			  [(water-escape? board x y) (water-escape-bid)]
-			  [(water-push? board x y) (water-push-bid)]
-			  [(empty-escape? board x y) (empty-escape-bid)]
-			  [(wall-escape? board x y) (wall-escape-bid)]
-			  [(empty-push? board x y) (empty-bush-bid)]
-			  [(wall-push? board x y) (wall-push-bid)]))))
+			  [(water-escape? board x y p) (water-escape-bid)]
+			  [(water-push? board x y p) (water-push-bid)]
+			  [(blank-escape? board x y p) (blank-escape-bid)]
+			  [(wall-escape? board x y p) (wall-escape-bid)]
+			  [(blank-push? board x y p) (blank-push-bid)]
+			  [(wall-push? board x y p) (wall-push-bid)]))))
 	
 	(define (most-of player-left lop)
 	  (if (null? lop)
 	      null
 	      (if (<= player-left 0)
 		  null
-		  (if (< (packages-weight (car lop)) player-left)
-		      (cons (car lop) (most-of (- player-left (packages-weight (car lop))) (cdr lop)))))))
+		  (if (< (package-weight (car lop)) player-left)
+		      (cons (car lop) (most-of (- player-left (package-weight (car lop))) (cdr lop)))))))
 	
-	   (define (pack-val package)
-	     (* (dvw-value) (+ (abs (- x (packages-x package))) (abs (- y (packages-y package))))))
+	   (define (pack-val package x y)
+	     (* (dvw-value) (+ (abs (- x (package-x package))) (abs (- y (package-y package))))))
 	   
 	(define-syntax get-packages-for 
 	  (syntax-rules ()
@@ -170,44 +170,44 @@
 
 	(define-syntax one-away-destination?
 	  (syntax-rules ()
-			((_ board x y)
-			 (if (or (not (null? (get-packages-for (+ x 1) y)))
-				 (not (null? (get-packages-for (- x 1) y)))
-				 (not (null? (get-packages-for x (+ y 1))))
-				 (not (null? (get-packages-for x (- y 1)))))
+			((_ board x y plist)
+			 (if (or (not (null? (get-packages-for (+ x 1) y plist)))
+				 (not (null? (get-packages-for (- x 1) y plist)))
+				 (not (null? (get-packages-for x (+ y 1) plist)))
+				 (not (null? (get-packages-for x (- y 1) plist))))
 			     1
 			     0))))
 
 	(define-syntax two-away-destination?
 	  (syntax-rules ()
-			((_ board x y)
-			 (if (or (not (null? (get-packages-for (+ x 2) y)))
-				 (not (null? (get-packages-for (- x 2) y)))
-				 (not (null? (get-packages-for x (+ y 2))))
-				 (not (null? (get-packages-for x (- y 2))))
-				 (not (null? (get-packages-for (+ x 1) (+ y 1))))
-				 (not (null? (get-packages-for (+ x 1) (- y 1))))
-				 (not (null? (get-packages-for (- x 1) (- y 1))))
-				 (not (null? (get-packages-for (- x 1) (+ y 1)))))
+			((_ board x y plist)
+			 (if (or (not (null? (get-packages-for (+ x 2) y plist)))
+				 (not (null? (get-packages-for (- x 2) y plist)))
+				 (not (null? (get-packages-for x (+ y 2) plist)))
+				 (not (null? (get-packages-for x (- y 2) plist)))
+				 (not (null? (get-packages-for (+ x 1) (+ y 1) plist)))
+				 (not (null? (get-packages-for (+ x 1) (- y 1) plist)))
+				 (not (null? (get-packages-for (- x 1) (- y 1) plist)))
+				 (not (null? (get-packages-for (- x 1) (+ y 1) plist))))
 			     1
 			     0))))
 
 
 	(define-syntax three-away-destination?
 	  (syntax-rules ()
-			((_ board x y)
-			 (if (or (not (null? (get-packages-for (+ x 3) y)))
-				 (not (null? (get-packages-for (- x 3) y)))
-				 (not (null? (get-packages-for x (+ y 3))))
-				 (not (null? (get-packages-for x (- y 3))))
-				 (not (null? (get-packages-for (+ x 2) (+ y 1))))
-				 (not (null? (get-packages-for (+ x 2) (- y 1))))
-				 (not (null? (get-packages-for (- x 2) (+ y 1))))
-				 (not (null? (get-packages-for (- x 2) (- y 1))))
-				 (not (null? (get-packages-for (+ x 1) (+ y 2))))
-				 (not (null? (get-packages-for (- x 1) (+ y 2))))
-				 (not (null? (get-packages-for (+ x 1) (- y 2))))
-				 (not (null? (get-packages-for (- x 1) (- y 2)))))
+			((_ board x y plist)
+			 (if (or (not (null? (get-packages-for (+ x 3) y plist)))
+				 (not (null? (get-packages-for (- x 3) y plist)))
+				 (not (null? (get-packages-for x (+ y 3) plist)))
+				 (not (null? (get-packages-for x (- y 3) plist)))
+				 (not (null? (get-packages-for (+ x 2) (+ y 1) plist)))
+				 (not (null? (get-packages-for (+ x 2) (- y 1) plist)))
+				 (not (null? (get-packages-for (- x 2) (+ y 1) plist)))
+				 (not (null? (get-packages-for (- x 2) (- y 1) plist)))
+				 (not (null? (get-packages-for (+ x 1) (+ y 2) plist)))
+				 (not (null? (get-packages-for (- x 1) (+ y 2) plist)))
+				 (not (null? (get-packages-for (+ x 1) (- y 2) plist)))
+				 (not (null? (get-packages-for (- x 1) (- y 2) plist))))
 			     1
 			     0))))
 

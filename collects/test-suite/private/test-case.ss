@@ -11,7 +11,7 @@
               (let ([to-test-values (call-with-values (lambda () to-test-stx) list)]
                     [exp-values (call-with-values (lambda () exp-stx) list)])
                 (record (and (= (length to-test-values) (length exp-values))
-                             (andmap equal? to-test-values exp-values)))
+                             (andmap test to-test-values exp-values)))
                 (set-actuals to-test-values)
                 (values)))]
          [else (raise-syntax-error #f

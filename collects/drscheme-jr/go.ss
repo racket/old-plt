@@ -1,5 +1,5 @@
-
-(printf "Loading DrScheme Jr...~n")
+(printf "DrScheme Jr loading. Please wait...~n")
+(flush-output (current-output-port))
 (load-relative "drscheme-jr.ss")
 (go)
 (read-eval-print-loop)

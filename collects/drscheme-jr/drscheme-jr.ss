@@ -1,3 +1,5 @@
+;; Bugs: --save's help string (and file location?) is bad under NT
+
 (reference-library "macro.ss")
 (reference-library "cmdline.ss")
 
@@ -33,15 +35,22 @@
 ;;;              Flag and Language Definitions             ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (make-not-parameter val)
+  (case-lambda
+   [() val]
+   [(x) (set! val x)]))
+
 (define syntax-level 'advanced)
 (define use-print-convert (make-parameter #f))
 (define signal-undef (make-parameter #f))
-(define allow-.-lists (make-parameter #f))
-(define eq?-only-on-syms (make-parameter #f))
+(define allow-.-lists (make-not-parameter #f))
+(define eq?-only-on-syms (make-not-parameter #f))
 (define cond-is-boolean (make-parameter #f))
 (define inexact-needs-#i (make-parameter #f))
 (define print-with-list (make-parameter #f))
-(define print-with-sharing (make-parameter #f))
+
+; why not use print-graph ?
+;(define print-with-sharing (make-parameter #f)) 
 
 ;; Flag definitions
 
@@ -55,7 +64,7 @@
 	 "set! on undefined variables")
    (list "--auto-else"
 	 compile-allow-cond-fallthrough
-	 "auto `else' clause in `cond' and `case'")
+	 "auto \"else\" clause in \"cond\" and \"case\" that returns (void)")
    (list "--signal-undef"
 	 signal-undef
 	 "error if using #<undefined> variable")
@@ -73,13 +82,13 @@
 	 "#i required for inexact numbers")
    (list "--print-convert"
 	 use-print-convert
-	 "`read'able printing")
+	 "Use output style that matches input style")
    (list "--print-list"
 	 print-with-list
-	 "`list' in `read'able printing")
+	 "abbreviate multiple \"cons\"es with \"list\" [only applies when --print-convert is used]")
    (list "--print-sharing"
-	 print-with-sharing
-	 "sharing in `read'able printing")))
+	 print-graph
+	 "show sharing in values")))
 
 ;; Mapping from language to flag settings
 
@@ -100,16 +109,16 @@
   (eq?-only-on-syms #t)
   (inexact-needs-#i #f)
   (print-with-list #t)
-  (print-with-sharing #t)
+  (print-graph #t)
   (case syntax-level
     [(core)
      (cond-is-boolean #t)
      (inexact-needs-#i #t)
-     (print-with-sharing #f)]
+     (print-graph #f)]
     [(structured)
      (cond-is-boolean #t)
      (inexact-needs-#i #t)
-     (print-with-sharing #f)]
+     (print-graph #f)]
     [(side-effecting)
      (void)]
     [(advanced)
@@ -147,7 +156,7 @@
 		 [value (cdr entry)])
 	     (let ([a (assoc tag flags)])
 	       (when a
-		  ((cadr a) value)))))
+		 ((cadr a) value)))))
 	 s)))))
 
 (define (bad-arguments s . args)
@@ -210,7 +219,7 @@
   (cond
    [(string=? v "on") #t]
    [(string=? v "off") #f]
-   [else (bad-arguments "expected `on' or `off', given: ~a" v)]))
+   [else (bad-arguments "expected \"on\" or \"off\", given: ~a" v)]))
 
 (define (make-on/off s)
   (list (format "Enable/disable ~a" s)
@@ -274,8 +283,7 @@
 ;;;                     DrScheme Jr                        ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(reference-library "mzlib.ss")
-(reference-library "pretty.ss")
+;; dont' require mzlib or pretty-print here!!!!!!!
 
 (reference-library "zsigs.ss" "zodiac")
 (reference-library "sigs.ss" "zodiac")
@@ -291,24 +299,23 @@
 
 (define aries@ (reference-library-unit/sig "ariesr.ss" "cogen"))
 
-(define params@ [require-library "paramr.ss" "userspce"])
+(define params@
+  (let ([eq?-only-on-syms eq?-only-on-syms]
+	[allow-.-lists allow-.-lists])
+    (unit/sig plt:userspace:params^
+      (import)
+      (define allow-improper-lists allow-.-lists)
+      (define eq?-only-compares-symbols eq?-only-on-syms))))
 (define parameters@
   (let ([syntax-level syntax-level])
     (unit/sig plt:parameters^
       (import)
-      (define case-sensitive? (read-case-sensitive))
-      (define unmatched-cond/case-is-error?
-	(compile-allow-cond-fallthrough))
-      (define allow-set!-on-undefined?
-	(compile-allow-set!-undefined))
-      (define check-syntax-level syntax-level)
-      (define allow-improper-lists? (eq? 'advanced check-syntax-level)))))
+      (define check-syntax-level syntax-level))))
 
 (define z@
   (compound-unit/sig (import)
     (link [params : plt:parameters^ (parameters@)]
-	  [mzlib-core : mzlib:core^
-		      (mzlib:core@)]
+	  [mzlib-core : mzlib:core^ (mzlib:core@)]
 	  [zodiac:interface : zodiac:interface^
 			    ((unit/sig zodiac:interface^
 			       (import (zodiac : zodiac:system^))
@@ -357,9 +364,9 @@
 				    params
 				    (mzlib-core pretty-print@)
 				    (mzlib-core file@))]
-	  [aries : plt:aries^ (aries@
-			       zodiac zodiac:interface)])
-    (export (unit params)
+	  [aries : plt:aries^ (aries@ zodiac zodiac:interface)])
+    (export (open (mzlib-core pretty-print@))
+	    (unit params)
 	    (unit zodiac)
 	    (unit zodiac:interface)
 	    (unit aries))))
@@ -368,6 +375,7 @@
 
 (define system-parameterization (current-parameterization))
 
+;; This should switch back to the system parameterization.
 (define prompt-read
   (let ([prompt (if (use-print-convert)
 		    "|- "
@@ -417,13 +425,12 @@
 					 "~a"
 					 (exn-message exn))]))))
 
-(define drscheme-jr-print (if (use-print-convert)
-			      (compose pretty-print-handler print-convert)
-			      pretty-print-handler))
-
-(show-sharing #t)
-(constructor-style-printing #t)
-(quasi-read-style-printing #t)
+(define drscheme-jr-print
+  (if (use-print-convert)
+      (lambda (value)
+	(unless (void? value)
+	   (pretty-print-handler (print-convert value))))
+      pretty-print-handler))
 
 (define drscheme-jr-user-vocabulary
   (zodiac:create-vocabulary 'scheme-w/-user-defined-macros-vocab
@@ -520,6 +527,11 @@
 				      'hash-percent-syntax
 				      'all-syntax)))
 
+
+(constructor-style-printing #t)
+(quasi-read-style-printing #t)
+(aries:signal-not-boolean (cond-is-boolean))
+(show-sharing (print-graph))
 (with-parameterization parameterization
   (let ([u@ (unit/sig->unit
 	     (compound-unit/sig
@@ -531,14 +543,26 @@
 			     "userspcr.ss" "userspce")
 			    params)])
 	       (export [open params]
-		       (open userspace))))])
+		       (open userspace))))]
+	[graph (print-graph)]
+	[inexact-needs-#i? (inexact-needs-#i)]
+	[print-with-list? (print-with-list)])
     (lambda ()
       (current-namespace namespace)
       (eval `(#%define argv ,(list->vector user-argv)))
-      (eval `(#%define read/zodiac ,read/zodiac))
+      ;(eval `(#%define read/zodiac ,read/zodiac))
       (invoke-open-unit u@)
-      (eval `(allow-improper-lists ,(allow-.-lists)))
-      (eval `(eq?-only-compares-symbols ,(eq?-only-on-syms)))
+      ;(eval `(allow-improper-lists ,(allow-.-lists)))
+      ;(eval `(eq?-only-compares-symbols ,(eq?-only-on-syms)))
+
+      ; these should only be set in the system parameterization
+      (zodiac:allow-improper-lists (allow-.-lists))
+      (constructor-style-printing #t)
+      (show-sharing graph)
+      (pretty-print-show-inexactness inexact-needs-#i?)
+      (abbreviate-cons-as-list print-with-list?)
+      (zodiac:disallow-untagged-inexact-numbers inexact-needs-#i?)
+
       (current-prompt-read prompt-read)
       (debug-info-handler debug-info)
       (current-print drscheme-jr-print)
@@ -555,4 +579,3 @@
   
   (current-parameterization parameterization)
   (require-library-use-compiled #f))
-  

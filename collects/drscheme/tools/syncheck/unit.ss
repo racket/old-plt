@@ -519,6 +519,17 @@
 	(class super% args
 	  (inherit button-panel definitions-edit interactions-edit)
 	  (sequence (apply super-init args))
+	  (rename [super-disable-evaluation disable-evaluation]
+		  [super-enable-evaluation enable-evaluation])
+	  (public
+	    [enable-evaluation
+	     (lambda ()
+	       (send check-syntax-button enable #t)
+	       (super-enable-evaluation))]
+	    [disable-evaluation
+	     (lambda ()
+	       (send check-syntax-button enable #f)
+	       (super-disable-evaluation))])
 	  (private
 	    [button-callback
 	     (lambda ()

@@ -45,6 +45,17 @@
        (class super% args
 	 (inherit button-panel)
 	 (sequence (apply super-init args))
+	  (rename [super-disable-evaluation disable-evaluation]
+		  [super-enable-evaluation enable-evaluation])
+	  (public
+	    [enable-evaluation
+	     (lambda ()
+	       (send analyze-button enable #t)
+	       (super-enable-evaluation))]
+	    [disable-evaluation
+	     (lambda ()
+	       (send analyze-button enable #f)
+	       (super-disable-evaluation))])
 	 (public
 	   [analyze-button (make-object mred:button%
 				button-panel

@@ -10,9 +10,9 @@
 			 (define eval-string void)))]
 	  [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 			 core trigger appliction)]
-	  [rice : ricedefs^ ((reference-unit/sig "ricedefu.ss"))]
-	  [graphics : graphics^ ((reference-library-unit/sig "graphicu.ss" "graphics"))]
-	  [turtle : turtle^ ((reference-library-unit/sig "turtleu.ss" "graphics")
+	  [rice : ricedefs^ ((reference-unit/sig "ricedefr.ss"))]
+	  [graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics"))]
+	  [turtle : turtle^ ((reference-library-unit/sig "turtler.ss" "graphics")
 			     (core function@))])
     (export (open (core pretty-print@))
 	    (open (core file@))

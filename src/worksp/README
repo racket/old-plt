@@ -2,7 +2,8 @@ This directory contains makefiles and projects files for building
 MzScheme and MrEd with Microsoft Visual C++ (MSVC). MzScheme (but not
 MrEd) also compiles with Cygwin32 gcc (a free compiler from GNU and
 Cygnus Solutions); to compile with gcc, follow the Unix instructions
-in plt\src\mzscheme\README.
+in plt\src\mzscheme\README. (There is a short Windows-specific section
+in that file.)
 
 The source code for MzScheme and MrEd is split into several
 projects. To make the project named `X', either open the file
@@ -28,6 +29,10 @@ programs used by the launcher collection to make drscheme.exe
 and mzc.exe:
    mzstart - makes plt\collects\launcher\mzstart.exe
    mrstart - makes plt\collects\launcher\mrstart.exe
+You'll also want to install the libraries and object files
+for creating MzScheme extensions (or using mzc):
+   cd plt\src\mzscheme\dynsrc
+   mkmzdyn.bat (requires cl.exe and lib.exe in your path)
 Then, set up all the other executables (besides mred.exe
 and mzscheme.exe) by running
    mzscheme.exe -mvqL- setup.ss compiler

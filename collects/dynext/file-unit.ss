@@ -24,7 +24,7 @@
 	(string-append
 	 s
 	 (case (system-type)
-	   [(unix beos macos) ".o"]
+	   [(unix beos macos macosx) ".o"]
 	   [(windows) ".obj"])))
 
       (define (append-extension-suffix s)
@@ -32,6 +32,7 @@
 	 s
 	 (case (system-type)
 	   [(unix beos macos) ".so"]
+	   [(macosx) ".dylib"]
 	   [(windows) ".dll"])))
 
       (define-values (extract-base-filename/ss
@@ -56,7 +57,7 @@
 	   (mk "[cC]|[cC][cC]|[cC][xX][xX]|[cC][pP][pP]|[cC][+][+]" "C" ".c, .cc, .cxx, .cpp, or .c++")
 	   (mk "[kK][pP]" "constant pool" ".kp")
 	   (mk (case (system-type)
-		 [(unix beos macos) "[oO]"]
+		 [(unix beos macos macosx) "[oO]"]
 		 [(windows) "[oO][bB][jJ]"])
 	       "compiled object"
 	       (append-object-suffix ""))

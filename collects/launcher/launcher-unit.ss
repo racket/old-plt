@@ -4,6 +4,7 @@
 
   (require (lib "compile-sig.ss" "dynext"))
   (require (lib "link-sig.ss" "dynext"))
+  (require (lib "xml-sig.ss" "xml"))
 
   (require "launcher-sig.ss")
 
@@ -12,7 +13,8 @@
   (define launcher@
     (unit/sig launcher^
       (import [c : dynext:compile^]
-	      [l : dynext:link^])
+	      [l : dynext:link^]
+	      xml^)
 
       ;; NOTE: evil name dependencies here:
       
@@ -209,8 +211,8 @@
 				  output-x-arg-getter
 				  string-append)])
 	  (unless plthome
-	    (error 'make-unix-launcher 
-		   "unable to locate PLTHOME"))
+		  (error 'make-unix-launcher 
+			 "unable to locate PLTHOME"))
 	  (let ([p (open-output-file dest 'truncate)])
 	    (fprintf p "~a~a"
 		     header
@@ -285,6 +287,40 @@
 	      (write-magic p exedir pos-exedir len-exedir)   
 	      (write-magic p str pos-command len-command)   
 	      (close-output-port p)))))
+      
+      ;; OS X launcher code:
+     
+      (define (make-starter-info-xml executable-name arg-list)
+        (make-xml (make-prolog (make-pi #f #f 'xml "version=\"1.0\" encoding=\"UTF-8\"") #f)
+                  (xexpr->xml `(plist ((version "0.9"))
+                                      (dict (key "executable name")
+                                            (string ,executable-name)
+                                            (key "stored arguments")
+                                            (array ,(map (lambda (arg)
+                                                           `(string ,arg))
+                                                         arg-list)))))))
+
+      ; make-macosx-launcher : symbol (listof str) pathname ->  
+      (define (make-macosx-launcher kind flags dest)
+	(if (eq? kind 'mzscheme) 
+	    (make-unix-launcher kind flags dest)
+	    (begin
+	      (unless plthome
+		      (error 'make-unix-launcher 
+			     "unable to locate PLTHOME"))
+	      (install-template dest 'mred 'bad-file-name "Starter.app")
+	      (with-output-to-file (build-path dest "Contents" "Resources" "starter-info")
+		(lambda (port)
+		  (write-xml (make-starter-info-xml (build-path plthome 
+								"bin"
+								"MrEd.app"
+								"Contents"
+								"MacOS"
+								"MrEd")
+						    flags) 
+			     port))
+		'truncate))))
+        
       
       ;; lazy install-aliases code for mac added by jbc 2000-6:
       
@@ -362,7 +398,8 @@
 	(case (system-type)
 	  [(unix beos) make-unix-launcher]
 	  [(windows) make-windows-launcher]
-	  [(macos) make-macos-launcher]))
+	  [(macos) make-macos-launcher]
+	  [(macosx) make-macosx-launcher]))
       
       (define (make-mred-launcher flags dest)
 	((get-maker) 'mred flags dest))
@@ -388,6 +425,7 @@
 						(char-downcase c)))
 					  (string->list file)))]
 			   [(windows) (string-append file ".exe")]
+			   [(macosx) (string-append file ".app")]
 			   [else file]))
 
       (define (mred-program-launcher-path name)

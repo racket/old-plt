@@ -61,7 +61,7 @@
 
       (define (data-fork-size dest)
 	(if (eq? (system-type) 'macos)
-	    ;; Can't use `file-size', because that includes the data fork.
+	    ;; Can't use `file-size', because that includes the resource fork.
 	    (let ([p (open-input-file dest)]
 		  [s (make-string 4096)])
 	      (let loop ()

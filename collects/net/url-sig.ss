@@ -14,4 +14,5 @@
      call/input-url			;; url x (url -> in-port) x
 					;; (in-port -> T)
 					;; [x list (str)] -> T
-     combine-url/relative)))		;; url x str -> url
+     combine-url/relative		;; url x str -> url
+     url-exception?)))                  ;; T -> boolean

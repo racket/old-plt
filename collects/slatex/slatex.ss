@@ -42,7 +42,7 @@
 	     (with-handlers ([void void]) ;; mzscheme cannot handle result
 	       (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location)))))
 	 (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
-	[(windows unix) ;; is this also okay for beos?
+	[(windows unix macosx) ;; is this also okay for beos?
 	 (system (format "latex ~a" file))]
 	[else
 	 (error 'latex "do not know how to run latex on ~s" (system-type))])))

@@ -448,7 +448,7 @@
 
   (define (print)
     (case (system-type)
-      [(macos windows)
+      [(macos macosx windows)
        (let ([dc (make-object mred:printer-dc%)])
 	 (send dc start-doc "Turtles")
 	 (send dc start-page)

@@ -285,17 +285,18 @@
 
       (define (dns-find-nameserver)
 	(case (system-type)
-	  [(unix) (with-handlers ([void (lambda (x) #f)])
-		    (with-input-from-file "/etc/resolv.conf"
-		      (lambda ()
-			(let loop ()
-			  (let ([l (read-line)])
-			    (or (and (string? l)
-				     (let ([m (regexp-match 
-					       (format "nameserver[ ~a]+([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" #\tab)
-					       l)])
-				       (and m (cadr m))))
-				(and (not (eof-object? l))
-				     (loop))))))))]
+	  [(unix macosx) 
+	   (with-handlers ([void (lambda (x) #f)])
+	      (with-input-from-file "/etc/resolv.conf"
+		(lambda ()
+		  (let loop ()
+		    (let ([l (read-line)])
+		      (or (and (string? l)
+			       (let ([m (regexp-match 
+					 (format "nameserver[ ~a]+([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" #\tab)
+					 l)])
+				 (and m (cadr m))))
+			  (and (not (eof-object? l))
+			       (loop))))))))]
 	  [else #f])))))
 

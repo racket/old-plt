@@ -28,7 +28,7 @@
       (define current-extension-linker 
 	(make-parameter 
 	 (case (system-type) 
-	   [(unix beos) (get-unix-linker)]
+	   [(unix beos macosx) (get-unix-linker)]
 	   [(windows) (get-windows-linker)]
 	   [else #f])
 	 (lambda (v)
@@ -64,6 +64,7 @@
 			    (format "-bE:~a/ext.exp" include-dir)
 			    "-bnoentry")]
 	  [(parisc-hpux) (list "-b")]
+	  [(macosx) (list "-dylib")]
 	  [else (list "-shared")]))
 
       (define msvc-linker-flags (list "/LD"))
@@ -73,7 +74,7 @@
       (define current-extension-linker-flags
 	(make-parameter
 	 (case (system-type)
-	   [(unix beos) (get-unix-link-flags)]
+	   [(unix beos macosx) (get-unix-link-flags)]
 	   [(windows) (cond
 		       [win-gcc? win-gcc-linker-flags]
 		       [win-borland? borland-linker-flags]
@@ -121,7 +122,7 @@
       (define current-make-link-output-strings
 	(make-parameter
 	 (case (system-type)
-	   [(unix beos) (lambda (s) (list "-o" s))]
+	   [(unix beos macosx) (lambda (s) (list "-o" s))]
 	   [(windows) (cond
 		       [win-gcc? win-gcc-link-output-strings]
 		       [win-borland? borland-link-output-strings]
@@ -155,7 +156,7 @@
       (define current-standard-link-libraries
 	(make-parameter
 	 (case (system-type)
-	   [(unix beos macos) (get-unix/macos-link-libraries)]
+	   [(unix beos macos macosx) (get-unix/macos-link-libraries)]
 	   [(windows) (make-win-link-libraries win-gcc? win-borland?)])
 	 (lambda (l)
 	   (unless (and (list? l) (andmap string? l))
@@ -246,7 +247,7 @@
 	(define (bad-name name)
 	  (error 'use-standard-linker "unknown linker: ~a" name))
 	(case (system-type)
-	  [(unix beos) 
+	  [(unix beos macosx) 
 	   (case name
 	     [(cc gcc) (current-extension-linker (get-unix-linker))
 	      (current-extension-linker-flags (get-unix-link-flags))
@@ -298,6 +299,6 @@
       
       (define link-extension
 	(case (system-type)
-	  [(unix beos windows) unix/windows-link]
+	  [(unix beos windows macosx) unix/windows-link]
 	  [(macos) macos-link])))))
 

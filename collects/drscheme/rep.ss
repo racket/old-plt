@@ -769,6 +769,9 @@
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (inherit inserting-prompt)
+      (private
+        [recent-error-text #f]
+        [error-range #f])
       (public
 	[report-located-error ; =Kernel=, =Handler=
 	 (lambda (message di exn)
@@ -792,6 +795,14 @@
 	       (send interactions-text lock locked?)
 	       (send interactions-text end-edit-sequence))))]
 
+        [get-error-range
+         (lambda ()
+           (if color?
+               error-range
+               (if recent-error-text
+                   (cons (send recent-error-text get-start-position)
+                         (send recent-error-text get-end-position)))))]
+        
         [reset-highlighting void]
 	[report-error ; =Kernel=, =Handler=
 	 (lambda (start-location end-location type input-string exn)
@@ -804,15 +815,19 @@
 		       (string-append (basis:format-source-loc start-location end-location)
 				      input-string))])
 	     (report-unlocated-error message exn)
+             (set! recent-error-text #f)
 	     (when (is-a? file mred:text%)
 	       (send file begin-edit-sequence)
+               (set! recent-error-text file)
 	       (wait-for-io-to-complete)
                (reset-highlighting)
+               (set! error-range (cons start finish))
                (if color?
                    (let ([reset (send file highlight-range start finish error-color #f #f 'high)])
                      (set! reset-highlighting
                            (lambda ()
                              (unless inserting-prompt
+                               (set! error-range #f)
                                (reset)
                                (set! reset-highlighting void)))))
                    (send file set-position start finish))

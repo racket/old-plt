@@ -223,22 +223,25 @@
       (define (open-input-text text start end)
         (send text split-snip start)
         (send text split-snip end)
-        (letrec ([snip/eof (or (send text find-snip start 'after-or-none) eof)]
-                 [str (if (object? snip/eof) (send snip read) "")]
-                 [pos 0]
-                 [read-char (lambda () 
-                              (cond
-                                [(eof-object? snip/eof) eof]
-                                [(pos . < . (string-length str))
-                                 (begin0
-                                   (string-ref str pos)
-                                   (set! pos (+ pos 1)))]
-                                [else 
-                                 (set! snip (send snip next))
-                                 (set! str (send snip read))
-                                 (set! pos 0)
-                                 (read-char)]))]
-                 [char-ready? (lambda () #t)]
-                 [close (lambda () (void))]
-                 [peek-char #f])
+        (let* ([snip (send text find-snip start 'after-or-none)]
+               [str (and (object? snip) (send snip get-text 0 (send snip get-count)))]
+               [pos 0]
+               [next-snip
+                (lambda ()
+                  (set! snip (send snip next))
+                  (set! str (and (object? snip) (send snip get-text 0 (send snip get-count))))
+                  (set! pos 0))]
+               [read-char (lambda () 
+                            (when (and str
+                                       ((string-length str) . <= . pos))
+                              (next-snip))
+                            (cond
+                              [(not str) eof]
+                              [else
+                               (begin0
+                                 (string-ref str pos)
+                                 (set! pos (+ pos 1)))]))]
+               [char-ready? (lambda () #t)]
+               [close (lambda () (void))]
+               [peek-char #f])
           (make-input-port read-char char-ready? close peek-char))))))

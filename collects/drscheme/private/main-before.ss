@@ -40,7 +40,6 @@
         (preferences:set-default 'drscheme:unit-window-width frame-width number?)
         (preferences:set-default 'drscheme:unit-window-height frame-height number?))
       
-      
       (preferences:set-default 'drscheme:backtrace-window-width 400 number?)
       (preferences:set-default 'drscheme:backtrace-window-height 300 number?)
       

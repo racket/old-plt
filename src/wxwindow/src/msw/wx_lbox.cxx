@@ -47,6 +47,7 @@ BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
     {
       event.commandInt = liste[0] ;
       event.clientData = GetClientData(event.commandInt);
+	  event.extraLong = 1;
       char *s = GetString(event.commandInt);
       if (s)
         event.commandString = copystring(s);
@@ -54,6 +55,7 @@ BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
     else
     {
       event.commandInt = -1 ;
+	  event.extraLong = 0;
       event.commandString = copystring("") ;
     }
 

@@ -8,7 +8,10 @@
 
   (provide start-servlet resume-servlet)
 
-  (define make-servlet-custodian #f)
+  ;; make-servlet-custodian: -> custodian
+  (define make-servlet-custodian
+    (let ([cust (current-custodian)])
+      (lambda () (make-custodian cust))))
 
   ;; start-servlet: connection request hash-table number (number->void request -> response) -> void
   ;; start a new instance of a servlet
@@ -54,7 +57,10 @@
              [req (execution-context-request ctxt)])
         (output-response/method
          (execution-context-connection ctxt)
-         (exn-message the-exn)
+         `(html (head (title "Error"))
+                (body
+                 (p "there was an error:")
+                 (p ,(exn-message the-exn))))
          (request-method req))
         ((execution-context-suspend ctxt)))))
 

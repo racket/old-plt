@@ -125,7 +125,7 @@
       (cond
         ((pair? prog)
          (for-each (lambda (p)
-                     (check-interactions-type p level type-recs)) prog))
+                     (check-interactions-types p level type-recs)) prog))
         ((var-init? prog) 
          (check-var-init (var-init-init prog) env type-recs current-class))
         ((var-decl? prog) (void))

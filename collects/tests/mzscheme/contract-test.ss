@@ -2591,9 +2591,31 @@
       (require (lib "contract.ss"))
       (define contract-inferred-name-test-contract (-> integer? any))
       (define (contract-inferred-name-test x) #t)
-      (provide/contract (contract-inferred-name-test contract-inferred-name-test-contract))))
+      (provide/contract (contract-inferred-name-test contract-inferred-name-test-contract))
+      
+      (define (contract-inferred-name-test2 x) x)
+      (provide/contract (contract-inferred-name-test2 (-> number? number?)))
+      
+      (define (contract-inferred-name-test3 x) x)
+      (provide/contract (contract-inferred-name-test3 (->* (number?) (number?))))
+
+      (define (contract-inferred-name-test4 x) x)
+      (provide/contract (contract-inferred-name-test4 (case-> (->* (number?) (number?)))))
+
+      (define contract-inferred-name-test5 (case-lambda [(x) x] [(x y) x]))
+      (provide/contract (contract-inferred-name-test5 (case-> (-> number? number?) 
+                                                              (-> number? number? number?))))
+
+      (define contract-inferred-name-test6 (case-lambda [(x) x]
+                                                        [(x y) y]))
+      (provide/contract (contract-inferred-name-test6 (opt-> (number?) (number?) number?)))))
   (eval '(require contract-test-suite-inferred-name1))
   (eval '(test 'contract-inferred-name-test object-name contract-inferred-name-test))
+  (eval '(test 'contract-inferred-name-test2 object-name contract-inferred-name-test2))
+  (eval '(test 'contract-inferred-name-test3 object-name contract-inferred-name-test3))
+  (eval '(test 'contract-inferred-name-test4 object-name contract-inferred-name-test4))
+  (eval '(test 'contract-inferred-name-test5 object-name contract-inferred-name-test5))
+  (eval '(test 'contract-inferred-name-test6 object-name contract-inferred-name-test6))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;

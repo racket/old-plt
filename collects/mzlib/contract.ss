@@ -777,11 +777,13 @@ add struct contracts for immutable structs?
                    (with-syntax ([proj-code (build-projs outer-args inner-lambda-w/err-check)])
                      (arguments-check
                       outer-args
-                      (syntax/loc stx
-                        (make-contract
-                         (apply build-compound-type-name 'case-> name-id)
-                         (lambda (pos-blame neg-blame src-info orig-str)
-                           proj-code))))))))))]))
+                      (set-inferred-name-from
+                       stx
+                       (syntax/loc stx
+                         (make-contract
+                          (apply build-compound-type-name 'case-> name-id)
+                          (lambda (pos-blame neg-blame src-info orig-str)
+                            proj-code)))))))))))]))
     
     (define (make-opt->/proc method-proc? stx)
       (syntax-case stx (any)
@@ -840,11 +842,16 @@ add struct contracts for immutable structs?
                               (make-case->/proc
                                method-proc?
                                (syntax (case-> (-> case-doms ... single-case-result) ...)))])
-                 (syntax/loc stx
-                   (let ([res-vs ress] ...
-                         [req-vs reqs] ...
-                         [opt-vs opts] ...)
-                     expanded-case->))))))]))
+                 (set-inferred-name-from
+                  stx
+                  (syntax/loc stx
+                    (let ([res-vs ress] 
+                          ...
+                          [req-vs reqs]
+                          ...
+                          [opt-vs opts]
+                          ...)
+                      expanded-case->)))))))]))
 
     ;; exactract-argument-lists : syntax -> (listof syntax)
     (define (extract-argument-lists stx)

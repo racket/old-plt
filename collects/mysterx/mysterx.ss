@@ -594,6 +594,10 @@
 	  [from-id (lambda () (event-id event))]
 	  [to-tag (lambda () (event-to-tag event))]
 	  [to-id (lambda () (event-to-id event))]
+	  [keycode (lambda () (event-keycode event))]
+          [shiftkey (lambda () (event-shiftkey event))]
+          [ctrlkey (lambda () (event-ctrlkey event))]
+          [altkey (lambda () (event-altkey event))]
 	  [x (lambda () (event-x event))]
 	  [y (lambda () (event-y event))])
 

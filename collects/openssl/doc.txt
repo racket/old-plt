@@ -3,13 +3,23 @@ the MzScheme port system. The OpenSSL collection functions nearly
 identically to the standard TCP subsystems in PLT Scheme, with a few
 additional flags.
 
+To use this library, you will need OpenSSL installed on your
+machine. To build from source, you will need a C compiler and linker;
+see the end of this documentation for build notes.
+
+==================================================
+
+_mzssl.ss_ library
+
+The variables below are provided the by "mzssl.ss" library.
+
 > ssl-available? 
 
-A boolean value which says whether the system openssl library was successfully 
-loaded. Calling ssl-connect or ssl-connect/enable-break when this value is #f 
-(library not loaded) will raise an error.
+A boolean value which says whether the system openssl library was
+successfully loaded. Calling `ssl-connect', etc.  when this value is
+#f (library not loaded) will raise an error.
 
--- Client ----------------------------------------
+-- Client procedures ----------------------------------------
 
 > (ssl-connect hostname port-k [protocol-symbol])
 
@@ -26,7 +36,7 @@ values are as tcp-connect; an input port and an output port.
 
 Like ssl-connect, but breaking is enabled while trying to connect. 
 
--- Server ----------------------------------------
+-- Server procedures ----------------------------------------
 
 > (ssl-listen port-k [queue-k reuse? hostname-or-#f protocol-symbol])
 
@@ -64,3 +74,42 @@ Analogous to `tcp-accept'.
 > (ssl-accept/enable-break ssl-listener)
 
 Analogous to `tcp-accept/enable-break'.
+
+==================================================
+
+Build notes
+-----------
+
+The "mzssl.ss" library is actually implemented in C as "mzssl.c".
+When you run Setup PLT, setup attempts to compile and link "mzssl.c"
+to create a PLT Scheme extension.
+
+Per-platform notes:
+
+ * Windows
+
+   The setup script wants "libeay32.lib" and "ssleay32.lib", which it
+   can find automatically if they are installed as
+   plt/collects/openssl/openssl/{lib,ssl}easy32.lib. Similarly, it
+   wants header files, which it can find automatically if they are
+   installed as plt/collects/openssl/openssl/include/openssl/ssl.h,
+   etc. At run-time, "libeay32.dll" and "ssleay32.dll" must be found
+   by the system for application using the OpenSSL library (e.g., in
+   the system folder, in the same directory as the application).
+
+   If OpenSLL is built with cygwin, ".a" files are generated instead
+   of ".lib" an ".dll" files. Presumably "mzssl.c" could be made to
+   build with those libraries by modifying "mzmake.ss", but we haven't
+   tried. Similar caveats apply to other build techniques that do not
+   produce DLLs.
+
+ * Mac OS
+
+   "Just works" for Mac OS X version >= 10.2 if you have the developer
+   tools installed. Building for 10.1 requires installing OpenSSL. Mac
+   OS Classic is not supported at all.
+
+ * Unix (including Linux)
+
+   Usually "just works" if you have OpenSSL installed.  If the header
+   files or libraries are in a non-standard place, edit "mzmake.ss".

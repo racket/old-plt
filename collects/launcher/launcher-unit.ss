@@ -420,14 +420,20 @@
       (define l-home (if (memq (system-type) '(unix beos))
 			 (build-path plthome "bin")
 			 plthome))
+
+      (define l-home-macosx-mzscheme (build-path plthome "bin"))
+
+      (define (unix-sfx file)
+	(list->string
+	 (map
+	  (lambda (c)
+	    (if (char-whitespace? c)
+		#\-
+		(char-downcase c)))
+	  (string->list file))))
+
       (define (sfx file) (case (system-type) 
-			   [(unix beos) (list->string
-					 (map
-					  (lambda (c)
-					    (if (char-whitespace? c)
-						#\-
-						(char-downcase c)))
-					  (string->list file)))]
+			   [(unix beos) (unix-sfx file)]
 			   [(windows) (string-append file ".exe")]
 			   [else file]))
 
@@ -435,7 +441,9 @@
 	(build-path l-home (sfx name)))
       
       (define (mzscheme-program-launcher-path name)
-	(mred-program-launcher-path name))
+	(case (system-type)
+	  [(macosx) (build-path l-home-macosx-mzscheme (unix-sfx name))]
+	  [else (mred-program-launcher-path name)]))
 
       (define (install-mred-program-launcher file collection name)
 	(make-mred-program-launcher file collection (mred-program-launcher-path name)))

@@ -535,6 +535,7 @@
  (insert-image-item "Inserta imagen...")
  (insert-comment-box-menu-item-label "Insertar Caja de comentario")
  (insert-lambda "Inserta &Lambda")
+ (insert-delta "Inserta &Delta (define)")
  
  (wrap-text-item "Ajustar texto al borde")
 

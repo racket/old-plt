@@ -3,13 +3,13 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 589 "XWidgets/xwArrow.w"
-#include <X11/bitmaps/gray>
-#line 590 "XWidgets/xwArrow.w"
-#include <stdio.h>
 #line 591 "XWidgets/xwArrow.w"
-#include <assert.h>
+#include <X11/bitmaps/gray>
 #line 592 "XWidgets/xwArrow.w"
+#include <stdio.h>
+#line 593 "XWidgets/xwArrow.w"
+#include <assert.h>
+#line 594 "XWidgets/xwArrow.w"
 #include <wxtimeout.h>
 #include <./xwArrowP.h>
 #line 322 "XWidgets/xwArrow.w"
@@ -95,7 +95,7 @@ static void create_arrowlightgc(
 Widget
 #endif
 );
-#line 547 "XWidgets/xwArrow.w"
+#line 548 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(
 #if NeedFunctionPrototypes
 Widget
@@ -165,6 +165,7 @@ static void create_arrowlightgc(self)Widget self;
 	values.stipple = ((XfwfArrowWidget)self)->xfwfFrame.topShadowStipple;
 	values.foreground = WhitePixelOfScreen(XtScreen(self));
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen(self)) > 4
 	    && ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.lighter_color(self, ((XfwfArrowWidget)self)->xfwfArrow.foreground, &values.foreground)) {
@@ -184,16 +185,16 @@ static void create_arrowlightgc(self)Widget self;
     }
     ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc = XtGetGC(self, mask, &values);
 }
-#line 547 "XWidgets/xwArrow.w"
+#line 548 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 547 "XWidgets/xwArrow.w"
+#line 548 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(Widget self)
 #else
-#line 547 "XWidgets/xwArrow.w"
+#line 548 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(self)Widget self;
 #endif
-#line 548 "XWidgets/xwArrow.w"
+#line 549 "XWidgets/xwArrow.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -211,6 +212,7 @@ static void create_arrowdarkgc(self)Widget self;
 	values.foreground = BlackPixelOfScreen(XtScreen(self));
 	values.background = ((XfwfArrowWidget)self)->core.background_pixel;
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen(self)) > 4
 	    && ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfArrowWidget)self)->xfwfArrow.foreground, &values.foreground)) {

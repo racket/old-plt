@@ -3,7 +3,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2
 #
-# $Id: xwArrow.w,v 1.3 1998/05/05 00:07:08 mflatt Exp $
+# $Id: xwArrow.w,v 1.4 1998/05/06 21:15:19 mflatt Exp $
 
 @CLASS XfwfArrow (XfwfBoard)  @file = xwArrow
 
@@ -522,6 +522,7 @@ resource. It is the same routine as for the shadows in the XfwfFrame widget.
 	values.stipple = $topShadowStipple;
 	values.foreground = WhitePixelOfScreen(XtScreen($));
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen($)) > 4
 	    && $lighter_color($, $foreground, &values.foreground)) {
@@ -562,6 +563,7 @@ resource. It is the same routine as for the shadows in the XfwfFrame widget.
 	values.foreground = BlackPixelOfScreen(XtScreen($));
 	values.background = $background_pixel;
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen($)) > 4
 	    && $darker_color($, $foreground, &values.foreground)) {

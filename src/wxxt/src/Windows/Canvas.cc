@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.8 1999/04/08 16:12:10 mflatt Exp $
+ * $Id: Canvas.cc,v 1.9 1999/07/21 16:09:33 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -82,11 +82,10 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNhideHScrollbar, TRUE,
 	 XtNhideVScrollbar, TRUE,
 	 XtNtraversalTranslationDone, TRUE,
-	 XtNframeWidth, 0,
-	 XtNshadowWidth, ((style & wxBORDER) ? 1 : 0),
-	 XtNshadowScheme, XfwfRaised,
-	 XtNtopShadowColor, wxBLACK->GetPixel(),
-	 XtNbottomShadowColor, wxBLACK->GetPixel(),
+	 XtNframeWidth, ((style & wxBORDER) ? 1 : 0),
+	 XtNframeType, XfwfPlain,
+	 XtNshadowWidth, 0,
+	 XtNshadowScheme, XfwfBlack,
 	 XtNhighlightThickness, ((style & wxNO_CAPTION) ? 2 : 0),
 	 XtNspacing, 0,
 	 XtNbackground,  bg->GetPixel(cmap),

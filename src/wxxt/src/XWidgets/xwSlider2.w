@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwSlider2.w,v 1.2 1998/01/31 01:16:38 mflatt Exp $
+# $Id: xwSlider2.w,v 1.3 1998/11/09 17:25:09 mflatt Exp $
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
@@ -658,6 +658,7 @@ parts of the thumb's frame.
 	values.stipple = $topShadowStipple;
 	values.foreground = WhitePixelOfScreen(XtScreen($));
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen($)) > 4
 	    && $lighter_color($, $thumbColor, &values.foreground)) {
@@ -699,6 +700,7 @@ thumb's frame.
 	values.foreground = BlackPixelOfScreen(XtScreen($));
 	values.background = $thumbColor;
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen($)) > 4
 	    && $darker_color($, $thumbColor, &values.foreground)) {

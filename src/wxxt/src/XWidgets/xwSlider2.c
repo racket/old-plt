@@ -3,9 +3,9 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 724 "XWidgets/xwSlider2.w"
+#line 726 "XWidgets/xwSlider2.w"
 #include <X11/bitmaps/gray>
-#line 725 "XWidgets/xwSlider2.w"
+#line 727 "XWidgets/xwSlider2.w"
 #include <stdio.h>
 #include <./xwSlider2P.h>
 #line 480 "XWidgets/xwSlider2.w"
@@ -121,7 +121,7 @@ static void create_thumblightgc(
 Widget
 #endif
 );
-#line 684 "XWidgets/xwSlider2.w"
+#line 685 "XWidgets/xwSlider2.w"
 static void create_thumbdarkgc(
 #if NeedFunctionPrototypes
 Widget
@@ -231,6 +231,7 @@ static void create_thumblightgc(self)Widget self;
 	values.stipple = ((XfwfSlider2Widget)self)->xfwfFrame.topShadowStipple;
 	values.foreground = WhitePixelOfScreen(XtScreen(self));
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen(self)) > 4
 	    && ((XfwfSlider2WidgetClass)self->core.widget_class)->xfwfCommon_class.lighter_color(self, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor, &values.foreground)) {
@@ -250,16 +251,16 @@ static void create_thumblightgc(self)Widget self;
     }
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc = XtGetGC(self, mask, &values);
 }
-#line 684 "XWidgets/xwSlider2.w"
+#line 685 "XWidgets/xwSlider2.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 684 "XWidgets/xwSlider2.w"
+#line 685 "XWidgets/xwSlider2.w"
 static void create_thumbdarkgc(Widget self)
 #else
-#line 684 "XWidgets/xwSlider2.w"
+#line 685 "XWidgets/xwSlider2.w"
 static void create_thumbdarkgc(self)Widget self;
 #endif
-#line 685 "XWidgets/xwSlider2.w"
+#line 686 "XWidgets/xwSlider2.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -277,6 +278,7 @@ static void create_thumbdarkgc(self)Widget self;
 	values.foreground = BlackPixelOfScreen(XtScreen(self));
 	values.background = ((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor;
 	break;
+    case XfwfBlack:
     case XfwfAuto:
 	if (DefaultDepthOfScreen(XtScreen(self)) > 4
 	    && ((XfwfSlider2WidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor, &values.foreground)) {

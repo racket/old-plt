@@ -3,7 +3,7 @@
 # Contains the source for the Frame widget
 # Version 2.2.1 for FWF V4.0
 #
-# $Id: xwFrame.w,v 1.2 1997/12/27 20:24:40 mflatt Exp $
+# $Id: xwFrame.w,v 1.3 1998/01/31 01:16:35 mflatt Exp $
 
 @class XfwfFrame (XfwfCommon) @file=xwFrame
 
@@ -101,12 +101,12 @@ possible types of borders are enumerated in |Frame3dType| (see the
 introduction).
 
         @type FrameType = enum {
-            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged }
+            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged, XfwfPlain }
 
 @ The shadow scheme can be used to choose colors, pixmaps or automatic
 shadows.
 
-        @type ShadowScheme = enum {XfwfAuto, XfwfColor, XfwfStipple}
+        @type ShadowScheme = enum {XfwfAuto, XfwfColor, XfwfStipple, XfwfBlack }
 
 @ The type |Bitmap| is an alias for |Pixmap|, but it is meant to
 contain only bitmaps, i.e., pixmaps of depth one.
@@ -124,6 +124,9 @@ the rectangle |(x, y, x+w-1, y+h-1)|.
 
     if (t == 0) return;
     switch (tp) {
+    case XfwfPlain:
+	XDrawRectangle(XtDisplay($), XtWindow($), darkgc, x+1, y+1, w-1, h-1);
+	break;
     case XfwfRaised:
     case XfwfSunken:
         tlPoints[0].x = x;              tlPoints[0].y = y;
@@ -659,6 +662,7 @@ the frame type, will have to redefine the |set_shadow| action.
     case XfwfAuto: done(String, "auto");
     case XfwfColor: done(String, "color");
     case XfwfStipple: done(String, "stipple");
+    case XfwfPlain: done(String, "plain");
     default: XtError("Illegal ShadowScheme");
     }
     return FALSE;
@@ -689,6 +693,10 @@ the frame. The contents of the GC depend on the resources
         values.foreground = BlackPixelOfScreen(XtScreen($));
         values.background = $background_pixel;
         break;
+    case XfwfBlack:
+	mask = GCForeground;
+	values.foreground = BlackPixelOfScreen(XtScreen($));
+	break;
     case XfwfAuto:
         if (DefaultDepthOfScreen(XtScreen($)) > 4
             && $darker_color($, $background_pixel, &values.foreground)) {
@@ -729,6 +737,10 @@ will be used for the frame.
         values.stipple = $topShadowStipple ? $topShadowStipple : GetGray($);
         values.foreground = WhitePixelOfScreen(XtScreen($));
         break;
+    case XfwfBlack:
+	mask = GCForeground;
+	values.foreground = BlackPixelOfScreen(XtScreen($));
+	break;
     case XfwfAuto:
         if (DefaultDepthOfScreen(XtScreen($)) > 4
             && $lighter_color($, $background_pixel, &values.foreground)) {

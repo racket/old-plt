@@ -6,9 +6,9 @@
 #include <./xwCommon.h>
 _XFUNCPROTOBEGIN
 typedef enum {
-            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged } FrameType;
+            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged, XfwfPlain } FrameType;
 
-typedef enum {XfwfAuto, XfwfColor, XfwfStipple} ShadowScheme;
+typedef enum {XfwfAuto, XfwfColor, XfwfStipple, XfwfBlack } ShadowScheme;
 
 typedef Pixmap  Bitmap;
 

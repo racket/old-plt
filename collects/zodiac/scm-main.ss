@@ -1364,11 +1364,13 @@
 					   (eval
 					     (sexp->raw macro-handler)))))
 			 (cache-table (make-hash-table)))
+		    (unless (procedure? real-handler)
+		      (static-error expr "Expander is not a procedure"))
 		    (add-macro-form real-name vocab
 		      (with-parameterization zodiac-user-parameterization
 			(lambda ()
 			  (eval
-			    `(lambda (m-expr m-env)
+			    `(#%lambda (m-expr m-env)
 			       (,structurize-syntax
 				 (#%apply ,real-handler
 				   (let ((in (#%cdr (,sexp->raw m-expr

@@ -91,6 +91,7 @@
 				(cons (car objects) (loop (cdr objects)))))))
 			((z:vector? expr)
 			  (apply vector objects))))))
+;	      (printf "Created entry for ~s~n" output)
 	      (when table
 		(hash-table-put! table output expr))
 	      output))

@@ -36,7 +36,7 @@ typedef short Type_Tag;
 
 #define TIME 0
 #define SEARCH 0
-#define SAFETY 0
+#define SAFETY 1
 #define RECYCLE_HEAP 0
 #define NOISY 0
 #define MARK_STATS 0
@@ -79,8 +79,9 @@ Type_Tag weak_box_tag;
 #define gc_finalization_tag 256
 #define gc_finalization_weak_link_tag 257
 #define gc_weak_array_tag 258
+#define gc_on_free_list_tag 259
 
-#define _num_tags_ 259
+#define _num_tags_ 260
 
 Size_Proc size_table[_num_tags_];
 Mark_Proc mark_table[_num_tags_];
@@ -137,6 +138,10 @@ void **array_low = STARTING_PLACE, **array_high = STARTING_PLACE;
 void **tagged_array_low = STARTING_PLACE, **tagged_array_high = STARTING_PLACE;
 void **xtagged_low = STARTING_PLACE, **xtagged_high = STARTING_PLACE;
 
+static MPage *tagged_malloc_page, *atomic_malloc_page;
+static MPage *array_malloc_page, *tagged_array_malloc_page;
+static MPage *xtagged_malloc_page;
+
 /* MPAGE_SIZE is the size of one chunk of memory used for allocating
    small objects. It's also the granluarity of memory-mapping. */
 
@@ -158,7 +163,14 @@ void **xtagged_low = STARTING_PLACE, **xtagged_high = STARTING_PLACE;
 #define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - 2 - SQUASH_OFFSETS)
 #define OPAGE_SIZE (sizeof(OffsetTy) << LOG_OPAGE_SIZE)
 
-#define BIGBLOCK_MIN_SIZE (1 << 12)
+#define BIGBLOCK_MIN_SIZE (1 << (LOG_MPAGE_SIZE - 2))
+
+#define FREE_LIST_ARRAY_SIZE (BIGBLOCK_MIN_SIZE >> 2)
+void *tagged_free_lists[FREE_LIST_ARRAY_SIZE];
+void *atomic_free_lists[FREE_LIST_ARRAY_SIZE];
+void *array_free_lists[FREE_LIST_ARRAY_SIZE];
+void *tagged_array_free_lists[FREE_LIST_ARRAY_SIZE];
+void *xtagged_free_lists[FREE_LIST_ARRAY_SIZE];
 
 # define COLOR_MASK 0x3
 # define GRAY_BIT 0x1
@@ -440,6 +452,13 @@ void GC_free_immobile_box(void *b)
     ib->next->prev = ib->prev;
 
   free(ib);
+}
+
+/******************************************************************************/
+
+static int size_on_free_list(void *p)
+{
+  return ((OffsetTy *)p)[1];
 }
 
 /******************************************************************************/
@@ -2040,6 +2059,129 @@ static void compact_all_mpages()
 
 /**********************************************************************/
 
+
+static void freelist_tagged_mpage(void **p, MPage *page)
+{
+  OffsetTy offset;
+  OffsetArrTy *offsets;
+  void **top;
+
+  offsets = page->u.offsets;
+
+  top = p + page->alloc_boundary;
+
+  offset = 0;
+
+  while (p < top) {
+    long size;
+    OffsetArrTy v;
+
+    size = OFFSET_SIZE(offsets, offset);
+
+    v = OFFSET_COLOR_UNMASKED(offsets, offset);
+    if (!(v & COLOR_MASK)) {
+#if ALIGN_DOUBLES
+      if (size > 1) {
+#endif
+	/* HACK! This relies on both Type_Tag and OffsetTy being `short' */
+	((Type_Tag *)p)[0] = gc_on_free_list_tag;
+	((Type_Tag *)p)[1] = size;
+	p[1] = tagged_free_lists[size];
+	tagged_free_lists[size] = (void *)p;
+#if ALIGN_DOUBLES
+      }
+#endif
+    } else {
+      /* Remove color: */
+      v -= (v & (GRAY_BIT | BLACK_BIT));
+      OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
+    }
+
+    p += size;
+    offset += size;
+  }
+}
+
+static void freelist_untagged_mpage(void **p, MPage *page)
+{
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
+  void **free_lists, **top;
+
+  /* There may be more allocation here when we're done... */
+
+  if (page->type & MTYPE_TAGGED_ARRAY) { 
+    free_lists = tagged_array_free_lists;
+  } else if (page->type & MTYPE_ATOMIC) {
+    free_lists = atomic_free_lists;
+  } else if (page->type & MTYPE_XTAGGED) {
+    free_lists = xtagged_free_lists;
+  } else {
+    free_lists = array_free_lists;
+  }
+
+  offsets = page->u.offsets;
+  top = p + MPAGE_WORDS;
+
+  while (p < top) {
+    long size;
+    OffsetArrTy v;
+
+    size = *(long *)p + 1;
+    
+    if (size == UNTAGGED_EOM)
+      break;
+
+#if SAFETY
+    if (size >= BIGBLOCK_MIN_SIZE) {
+      CRASH();
+    }
+#endif
+
+    v = OFFSET_COLOR_UNMASKED(offsets, offset);
+    if (!(v & COLOR_MASK)) {
+#if ALIGN_DOUBLES
+      if (size > 1) {
+#endif
+	p[1] = free_lists[size-1];
+	free_lists[size-1] = (void *)(p + 1);
+#if ALIGN_DOUBLES
+      }
+#endif
+    } else {
+      /* Remove color: */
+      v -= (v & (GRAY_BIT | BLACK_BIT));
+      OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
+    }
+     
+    p += size;
+    offset += size;
+  }
+
+}
+
+static void freelist_all_mpages()
+{
+  MPage *page;
+
+  for (page = first; page; page = page->next) {
+    if (!(page->type & (MTYPE_BIGBLOCK | MTYPE_OLD))) {
+      if (page->type & COLOR_MASK) {
+	void *p;
+	
+	p = page->block_start;
+	
+	if (page->type & MTYPE_TAGGED)
+	  freelist_tagged_mpage((void **)p, page);
+	else
+	  freelist_untagged_mpage((void **)p, page);
+      }
+    }
+  }
+}
+
+/**********************************************************************/
+
 /* Fixup: translate an old address to a new one, and note age of
    youngest referenced page */
 
@@ -2671,6 +2813,7 @@ static void gcollect(int full)
 #if TIME
   struct rusage pre, post;
 #endif
+  int compact = 0;
 
   INITTIME();
   PRINTTIME((STDERR, "gc: start with %ld [%d]: %ld\n", 
@@ -2694,6 +2837,7 @@ static void gcollect(int full)
     GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array);
     GC_register_traversers(gc_finalization_tag, size_finalizer, mark_finalizer, fixup_finalizer);
     GC_register_traversers(gc_finalization_weak_link_tag, size_finalizer_weak_link, mark_finalizer_weak_link, fixup_finalizer_weak_link);
+    GC_register_traversers(gc_on_free_list_tag, size_on_free_list, size_on_free_list, size_on_free_list);
     GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
     GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
     GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
@@ -3017,73 +3161,133 @@ static void gcollect(int full)
 
   /******************************************************/
 
-  compact_all_mpages();
+  {
+    int i;
+    for (i = 0; i < FREE_LIST_ARRAY_SIZE; i++) {
+      tagged_free_lists[i] = NULL;
+      atomic_free_lists[i] = NULL;
+      array_free_lists[i] = NULL;
+      tagged_array_free_lists[i] = NULL;
+      xtagged_free_lists[i] = NULL;
+    }
+  }
+
+  if (compact)
+    compact_all_mpages();
+  else
+    freelist_all_mpages();
 
 #if TIME
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: compact [%ld faults]: %ld\n", 
+  PRINTTIME((STDERR, "gc: %s [%ld faults]: %ld\n", 
+	     compact ? "compact" : "freelist",
 	     post.ru_minflt - pre.ru_minflt,
 	     GETTIMEREL()));
 
   /******************************************************/
 
-  promote_all_ages();
+  if (compact) {
+    promote_all_ages();
 
-  tagged_low = tagged_compact_to + tagged_compact_to_offset;
-  tagged_high = tagged_compact_to + MPAGE_WORDS;
-  if (tagged_compact_to_offset < MPAGE_WORDS) {
-    tagged_compact_page->age = 0;
-    tagged_compact_page->refs_age = 0;
-    tagged_compact_page->type |= MTYPE_MODIFIED;
+    tagged_malloc_page = tagged_compact_page;
+    tagged_low = tagged_compact_to + tagged_compact_to_offset;
+    tagged_high = tagged_compact_to + MPAGE_WORDS;
+    if (tagged_compact_to_offset < MPAGE_WORDS) {
+      tagged_compact_page->age = 0;
+      tagged_compact_page->refs_age = 0;
+      tagged_compact_page->type |= MTYPE_MODIFIED;
+    }
+    atomic_malloc_page = atomic_compact_page;
+    atomic_low = atomic_compact_to + atomic_compact_to_offset;
+    atomic_high = atomic_compact_to + MPAGE_WORDS;
+    if (atomic_compact_to_offset < MPAGE_WORDS) {
+      atomic_compact_page->age = 0;
+    }
+    array_malloc_page = array_compact_page;
+    array_low = array_compact_to + array_compact_to_offset;
+    array_high = array_compact_to + MPAGE_WORDS;
+    if (array_compact_to_offset < MPAGE_WORDS) {
+      array_compact_page->age = 0;
+      array_compact_page->refs_age = 0;
+      array_compact_page->type |= MTYPE_MODIFIED;
+    }
+    tagged_array_malloc_page = tagged_array_compact_page;
+    tagged_array_low = tagged_array_compact_to + tagged_array_compact_to_offset;
+    tagged_array_high = tagged_array_compact_to + MPAGE_WORDS;
+    if (tagged_array_compact_to_offset < MPAGE_WORDS) {
+      tagged_array_compact_page->age = 0;
+      tagged_array_compact_page->refs_age = 0;
+      tagged_array_compact_page->type |= MTYPE_MODIFIED;
+    }
+    xtagged_malloc_page = xtagged_compact_page;
+    xtagged_low = xtagged_compact_to + xtagged_compact_to_offset;
+    xtagged_high = xtagged_compact_to + MPAGE_WORDS;
+    if (xtagged_compact_to_offset < MPAGE_WORDS) {
+      xtagged_compact_page->age = 0;
+      xtagged_compact_page->refs_age = 0;
+      xtagged_compact_page->type |= MTYPE_MODIFIED;
+    }
+    
+    reverse_propagate_new_age();
+  } else {
+    if (tagged_malloc_page) {
+      if (!(tagged_malloc_page->type & COLOR_MASK)) {
+	tagged_malloc_page= NULL;
+	tagged_low = tagged_high = STARTING_PLACE;
+      } else
+	tagged_malloc_page->type -= (tagged_malloc_page->type & MTYPE_INITED);
+    }
+    if (atomic_malloc_page) {
+      if (!(atomic_malloc_page->type & COLOR_MASK)) {
+	atomic_malloc_page= NULL;
+	atomic_low = atomic_high = STARTING_PLACE;
+      } else
+	atomic_malloc_page->type -= (atomic_malloc_page->type & MTYPE_INITED);
+    }
+    if (array_malloc_page) {
+      if (!(array_malloc_page->type & COLOR_MASK)) {
+	array_malloc_page= NULL;
+	array_low = array_high = STARTING_PLACE;
+      } else
+	array_malloc_page->type -= (array_malloc_page->type & MTYPE_INITED);
+    }
+    if (tagged_array_malloc_page) {
+      if (!(tagged_array_malloc_page->type & COLOR_MASK)) {
+	tagged_array_malloc_page= NULL;
+	tagged_array_low = tagged_array_high = STARTING_PLACE;
+      } else
+	tagged_array_malloc_page->type -= (tagged_array_malloc_page->type & MTYPE_INITED);
+    }
+    if (xtagged_malloc_page) {
+      if (!(xtagged_malloc_page->type & COLOR_MASK)) {
+	xtagged_malloc_page= NULL;
+	xtagged_low = xtagged_high = STARTING_PLACE;
+      } else
+	xtagged_malloc_page->type -= (xtagged_malloc_page->type & MTYPE_INITED);
+    }
   }
-  atomic_low = atomic_compact_to + atomic_compact_to_offset;
-  atomic_high = atomic_compact_to + MPAGE_WORDS;
-  if (atomic_compact_to_offset < MPAGE_WORDS) {
-    atomic_compact_page->age = 0;
-  }
-  array_low = array_compact_to + array_compact_to_offset;
-  array_high = array_compact_to + MPAGE_WORDS;
-  if (array_compact_to_offset < MPAGE_WORDS) {
-    array_compact_page->age = 0;
-    array_compact_page->refs_age = 0;
-    array_compact_page->type |= MTYPE_MODIFIED;
-  }
-  tagged_array_low = tagged_array_compact_to + tagged_array_compact_to_offset;
-  tagged_array_high = tagged_array_compact_to + MPAGE_WORDS;
-  if (tagged_array_compact_to_offset < MPAGE_WORDS) {
-    tagged_array_compact_page->age = 0;
-    tagged_array_compact_page->refs_age = 0;
-    tagged_array_compact_page->type |= MTYPE_MODIFIED;
-  }
-  xtagged_low = xtagged_compact_to + xtagged_compact_to_offset;
-  xtagged_high = xtagged_compact_to + MPAGE_WORDS;
-  if (xtagged_compact_to_offset < MPAGE_WORDS) {
-    xtagged_compact_page->age = 0;
-    xtagged_compact_page->refs_age = 0;
-    xtagged_compact_page->type |= MTYPE_MODIFIED;
-  }
-
-  reverse_propagate_new_age();
 
   /******************************************************/
 
-  scanned_pages = 0;
-
-  do_roots(1);
-  fixup_all_mpages();
-
+  if (compact) {
+    scanned_pages = 0;
+    
+    do_roots(1);
+    fixup_all_mpages();
+    
 #if TIME
-  getrusage(RUSAGE_SELF, &post);
+    getrusage(RUSAGE_SELF, &post);
 #endif
-
-  PRINTTIME((STDERR, "gc: fixup (%d) [%ld faults]: %ld\n", 
-	     scanned_pages,  post.ru_minflt - pre.ru_minflt,
-	     GETTIMEREL()));
+    
+    PRINTTIME((STDERR, "gc: fixup (%d) [%ld faults]: %ld\n", 
+	       scanned_pages,  post.ru_minflt - pre.ru_minflt,
+	       GETTIMEREL()));
+  }
 
   /******************************************************/
-
+  
   skipped_pages = scanned_pages = 0;
 
   free_unused_mpages();
@@ -3092,14 +3296,16 @@ static void gcollect(int full)
   
   gc_threshold = (long)(GROW_FACTOR * memory_in_use);
 
-  if (tagged_compact_to_offset < MPAGE_WORDS)
-    memset(tagged_low, 0, (tagged_high - tagged_low) << 2);
-  if (array_compact_to_offset < MPAGE_WORDS)
-    memset(array_low, 0, (array_high - array_low) << 2);
-  if (tagged_array_compact_to_offset < MPAGE_WORDS)
-    memset(tagged_array_low, 0, (tagged_array_high - tagged_array_low) << 2);
-  if (xtagged_compact_to_offset < MPAGE_WORDS)
-    memset(xtagged_low, 0, (xtagged_high - xtagged_low) << 2);
+  if (compact) {
+    if (tagged_compact_to_offset < MPAGE_WORDS)
+      memset(tagged_low, 0, (tagged_high - tagged_low) << 2);
+    if (array_compact_to_offset < MPAGE_WORDS)
+      memset(array_low, 0, (array_high - array_low) << 2);
+    if (tagged_array_compact_to_offset < MPAGE_WORDS)
+      memset(tagged_array_low, 0, (tagged_array_high - tagged_array_low) << 2);
+    if (xtagged_compact_to_offset < MPAGE_WORDS)
+      memset(xtagged_low, 0, (xtagged_high - xtagged_low) << 2);
+  }
 
 #if TIME
   getrusage(RUSAGE_SELF, &post);
@@ -3192,7 +3398,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype)
   return map + addr;
 }
 
-static void new_page(mtype_t mtype, void ***low, void ***high)
+static void new_page(mtype_t mtype, void ***low, void ***high, MPage **malloc_page)
 {
   void *p;
   MPage *map;
@@ -3223,6 +3429,8 @@ static void new_page(mtype_t mtype, void ***low, void ***high)
   else
     first = map;
   last = map;
+
+  *malloc_page = map;
 
   *low = (void **)p;
   *high = (void **)(p + MPAGE_SIZE);
@@ -3300,12 +3508,24 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
     return malloc_bigblock(size_in_words << 2, MTYPE_TAGGED);
   }
 
+  m = (void *)tagged_free_lists[size_in_words];
+  if (m) {
+    int i;
+
+    tagged_free_lists[size_in_words] = m[1];
+
+    for (i = 0; i < size_in_words; i++)
+      m[i] = NULL;
+    
+    return m;
+  }
+
 #if ALIGN_DOUBLES
   if (!(size_in_words & 0x1)) {
     /* Make sure memory is 8-aligned */
     if (((long)tagged_low & 0x4)) {
       if (tagged_low == tagged_high) {
-	new_page(MTYPE_TAGGED, &tagged_low, &tagged_high);
+	new_page(MTYPE_TAGGED, &tagged_low, &tagged_high, &tagged_malloc_page);
 	return GC_malloc_one_tagged(size_in_words << 2);
       }
       ((Type_Tag *)tagged_low)[0] = SKIP;
@@ -3324,7 +3544,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
   if (naya >= tagged_high) {
     if (tagged_low < tagged_high)
       *(Type_Tag *)tagged_low = TAGGED_EOM;
-    new_page(MTYPE_TAGGED, &tagged_low, &tagged_high);
+    new_page(MTYPE_TAGGED, &tagged_low, &tagged_high, &tagged_malloc_page);
     return GC_malloc_one_tagged(size_in_words << 2);
   }
   tagged_low = naya;
@@ -3338,7 +3558,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
   return m;
 }
 
-static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, void ***high)
+static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, void ***high, MPage **malloc_page, void **free_lists)
 {
   size_t size_in_words;
   void **m, **naya;
@@ -3356,13 +3576,26 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, v
     return malloc_bigblock(size_in_words << 2, mtype);
   }
 
+  m = (void *)free_lists[size_in_words];
+  if (m) {
+    int i;
+
+    free_lists[size_in_words] = m[0];
+
+    if (mtype != MTYPE_ATOMIC)
+      for (i = 0; i < size_in_words; i++)
+	m[i] = NULL;
+    
+    return m;
+  }
+
 #if ALIGN_DOUBLES
   if (!(size_in_words & 0x1)) {
     /* Make sure memory is 8-aligned */
     if (!((long)*low & 0x4)) {
       if (*low == *high) {
-	new_page(mtype, low, high);
-	return malloc_untagged(size_in_words << 2, mtype, low, high);
+	new_page(mtype, low, high, malloc_page);
+	return malloc_untagged(size_in_words << 2, mtype, low, high, malloc_page, free_lists);
       }
       (*low)[0] = 0;
       *low += 1;
@@ -3380,8 +3613,8 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, v
   if (naya >= *high) {
     if (*low < *high)
       *(long *)*low = UNTAGGED_EOM - 1;
-    new_page(mtype, low, high);
-    return malloc_untagged(size_in_words << 2, mtype, low, high);
+    new_page(mtype, low, high, malloc_page);
+    return malloc_untagged(size_in_words << 2, mtype, low, high, malloc_page, free_lists);
   }
   *low = naya;
 
@@ -3399,7 +3632,9 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, v
 /* Array of pointers: */
 void *GC_malloc(size_t size_in_bytes)
 {
-  return malloc_untagged(size_in_bytes, MTYPE_ARRAY, &array_low, &array_high);
+  return malloc_untagged(size_in_bytes, MTYPE_ARRAY,
+			 &array_low, &array_high, &tagged_malloc_page,
+			 array_free_lists);
 }
 
 void *GC_malloc_allow_interior(size_t size_in_bytes)
@@ -3409,18 +3644,24 @@ void *GC_malloc_allow_interior(size_t size_in_bytes)
 
 void *GC_malloc_array_tagged(size_t size_in_bytes)
 {
-  return malloc_untagged(size_in_bytes, MTYPE_TAGGED_ARRAY, &tagged_array_low, &tagged_array_high);
+  return malloc_untagged(size_in_bytes, MTYPE_TAGGED_ARRAY,
+			 &tagged_array_low, &tagged_array_high, &tagged_array_malloc_page,
+			 tagged_array_free_lists);
 }
 
 void *GC_malloc_one_xtagged(size_t size_in_bytes)
 {
-  return malloc_untagged(size_in_bytes, MTYPE_XTAGGED, &xtagged_low, &xtagged_high);
+  return malloc_untagged(size_in_bytes, MTYPE_XTAGGED,
+			 &xtagged_low, &xtagged_high, &xtagged_malloc_page,
+			 xtagged_free_lists);
 }
 
 /* Pointerless */
 void *GC_malloc_atomic(size_t size_in_bytes)
 {
-  return malloc_untagged(size_in_bytes, MTYPE_ATOMIC, &atomic_low, &atomic_high);
+  return malloc_untagged(size_in_bytes, MTYPE_ATOMIC,
+			 &atomic_low, &atomic_high, &atomic_malloc_page,
+			 atomic_free_lists);
 }
 
 /* Plain malloc: */

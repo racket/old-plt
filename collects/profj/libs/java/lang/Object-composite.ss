@@ -2,7 +2,7 @@
 (module Object-composite mzscheme
   
   (require (lib "class.ss")
-           (lib "errortrace.ss" "errortrace")
+           (lib "errortrace-lib.ss" "errortrace")
            (lib "Comparable.ss" "profj" "libs" "java" "lang")
            (lib "Serializable.ss" "profj" "libs" "java" "io"))
   (require "compile-lang-syntax.ss")    

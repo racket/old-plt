@@ -25,15 +25,15 @@
         (let ((returned-tok 
                (case (get-token-name (get-tok first-tok))
                  ((EOF) #t)
-                 ((if return O_BRACE) (parse-statement null first-tok 'start getter))
+                 ((if return O_BRACE) (parse-statement null first-tok 'start getter #t))
                  ((IDENTIFIER)
                   (let ((next (getter)))
                     (if (id-token? (get-tok next))
-                        (parse-statement first-tok next 'local getter)
+                        (parse-statement first-tok next 'local getter #t)
                         (parse-expression first-tok next 'name getter)))) 
                  (else 
                   (if (prim-type? (get-tok first-tok))
-                      (parse-statement null first-tok 'start getter)
+                      (parse-statement null first-tok 'start getter #t)
                       (parse-expression null first-tok 'start getter))))))
           (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
@@ -46,7 +46,7 @@
   (define (parse-statement-or-exp pre cur-tok getter)
     (let ((next (getter)))
       (if (id-token? (get-tok next))
-          (parse-statement cur-tok next 'local getter)
+          (parse-statement cur-tok next 'local getter #t)
           (parse-expression cur-tok next 'name getter))))
   
   ;parse-error: string position position
@@ -760,7 +760,7 @@
                (parse-error "Method in interface maynot have a body" next-start next-end))
               ((semi-colon? next-tok) (parse-iface-body next (getter) 'start getter))
               (else
-               (parse-error ("Expected a ';', found ~a" next-out) next-start next-end)))))
+               (parse-error (format "Expected a ';', found ~a" next-out) next-start next-end)))))
          ((or (prim-type? tok) (id-token? tok))
           (let* ((next (getter))
                  (next-tok (get-tok next))
@@ -854,7 +854,7 @@
                    (next-tok (get-tok next))
                    (ne (get-end next)))
               (cond
-                ((id-token? next-tok) (parse-statement next (getter) 'assign-or-call getter))
+                ((id-token? next-tok) (parse-statement next (getter) 'assign-or-call getter #t))
                 ((keyword? next-tok)
                  (parse-error (format "Expected identifier after '.', found reserved word ~a" (get-token-name next-tok))
                               start ne))
@@ -890,10 +890,11 @@
   (define (parse-method-body pre cur-tok getter)
     (case (get-token-name (get-tok cur-tok))
       ((C_BRACE EOF) cur-tok)
-      (else (parse-method-body pre (parse-statement pre cur-tok 'start getter) getter))))
+      (else (parse-method-body pre (parse-statement pre cur-tok 'start getter #t) getter))))
   
-  ;parse-statement: token token symbol (->token) -> token
-  (define (parse-statement pre cur-tok state getter)
+  ;Intermediate - addition of parameter id-ok?
+  ;parse-statement: token token symbol (->token) bool -> token
+  (define (parse-statement pre cur-tok state getter id-ok?)
     (let* ((tok (get-tok cur-tok))
            (kind (get-token-name tok))
            (out (output-format tok))
@@ -904,7 +905,7 @@
       (case state
         ((start)
          (case kind
-           ((if) (parse-statement cur-tok (getter) 'if getter))
+           ((if) (parse-statement cur-tok (getter) 'if getter id-ok?))
            ((return)
             ;Intermediate - changed behavior
             (let ((next (getter)))
@@ -912,7 +913,7 @@
                 ;Intermediate - changed error message
                 ((eof? (get-tok next)) (parse-error "Expected rest of return" start end))
                 ((semi-colon? (get-tok next)) (getter))
-                (else (parse-statement cur-tok (parse-expression null next 'start getter) 'return getter)))))
+                (else (parse-statement cur-tok (parse-expression null next 'start getter) 'return getter id-ok?)))))
            ;Intermediate (from ctor-body) (added super)
            ((this super)
             (let* ((next (getter))
@@ -928,7 +929,7 @@
                         (ae (get-end afterD)))
                    (cond
                      ;Intermediate changed next state
-                     ((id-token? afterD-tok) (parse-statement afterD (getter) 'assign-or-call getter))
+                     ((id-token? afterD-tok) (parse-statement afterD (getter) 'assign-or-call getter id-ok?))
                      ((keyword? afterD-tok)
                       (parse-error (format "Expected identifier after '.', found reserved word ~a" (get-token-name afterD-tok))
                                    ns ae))
@@ -940,21 +941,21 @@
             (let ((next (getter)))
               (if (dot? (get-tok next)) 
                   ;Intermediate - changed 
-                  (parse-statement next (parse-name (getter) getter) 'statement-or-var getter)
-                  (parse-statement cur-tok next 'statement-or-var getter))))
+                  (parse-statement next (parse-name (getter) getter) 'statement-or-var getter id-ok?)
+                  (parse-statement cur-tok next 'statement-or-var getter id-ok?))))
            ;Intermediate
-           ((new) (parse-statement cur-tok (parse-expression cur-tok (getter) 'class-alloc-start getter) 'end-exp getter))
+           ((new) (parse-statement cur-tok (parse-expression cur-tok (getter) 'class-alloc-start getter) 'end-exp getter id-ok?))
            ;Intermediate
            ((O_PAREN) 
             (parse-statement cur-tok 
                              (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter) 'c-paren getter)
-                             'end-exp getter))
-           ((O_BRACE) (parse-statement cur-tok (parse-method-body cur-tok (getter) getter) 'c-brace getter))
+                             'end-exp getter id-ok?))
+           ((O_BRACE) (parse-statement cur-tok (parse-method-body cur-tok (getter) getter) 'c-brace getter #t))
            ;Intermediate - changed wholly
            (else
             ;cha
             (cond
-              ((prim-type? tok) (parse-statement cur-tok (getter) 'local getter))
+              ((prim-type? tok) (parse-statement cur-tok (getter) 'local getter id-ok?))
               ((keyword? tok)
                (parse-error (format "Expected name, found reserved word ~a" kind) start end))
               (else (parse-error (format "Expected statement, found ~a, which cannot begin a statement" out) start end))))))
@@ -965,7 +966,7 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error (format "Expected conditional expression for if") start end)
-                  (parse-statement cur-tok (parse-expression null next 'start getter) 'if-then getter))))
+                  (parse-statement cur-tok (parse-expression null next 'start getter) 'if-then getter id-ok?))))
            (else 
             (parse-error (format "Conditional expression for if must be started with (, found ~a" out) start end))))
         ((if-then)
@@ -977,13 +978,13 @@
               (cond
                 ((eof? next-tok) (parse-error "Expected statement for then branch of if" start end))
                 ((c-paren? next-tok) (parse-error "Conditional expression already closed, extra ) found" start (get-end next)))
-                (else (parse-statement cur-tok (parse-statement null next 'start getter) 'if-else getter)))))
+                (else (parse-statement cur-tok (parse-statement null next 'start getter #f) 'if-else getter id-ok?)))))
            (else 
             (parse-error (format "Conditional expression for if must be in parens, did not find ), found ~a" out) ps end))))
         ((if-else)
          (case kind
            ((EOF) (parse-error "Expected else for if statement" ps pe))
-           ((else) (parse-statement null (getter) 'start getter))
+           ((else) (parse-statement null (getter) 'start getter #f))
            (else
             (parse-error
              (if (and (id-token? tok) (close-to-keyword? tok 'else))
@@ -999,8 +1000,8 @@
         ((statement-or-var)
          (case kind
            ((EOF) (parse-error "Expected remainder of statement" ps pe))
-           ((IDENTIFIER) (parse-statement pre cur-tok 'local getter))
-           (else (parse-statement pre cur-tok 'assign-or-call getter))))
+           ((IDENTIFIER) (parse-statement pre cur-tok 'local getter id-ok?))
+           (else (parse-statement pre cur-tok 'assign-or-call getter id-ok?))))
         ;Intermediate
         ((assign-or-call)
          (case kind
@@ -1010,8 +1011,8 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression after = for assignment" start end)
-                  (parse-statement cur-tok (parse-expression null next 'start getter) 'assign-end getter))))
-           ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter) 'exn-end getter))
+                  (parse-statement cur-tok (parse-expression null next 'start getter) 'assign-end getter id-ok?))))
+           ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter) 'exn-end getter id-ok?))
            (else (parse-error (format "Expected assignment or method call, found ~a, which is not valid for a statement" out)
                               start end))))
         ;Intermediate - from Assignment, error messages changed
@@ -1027,7 +1028,7 @@
            ((PERIOD)
             (let ((next (getter)))
               (cond
-                ((id-token? (get-tok next)) (parse-statement next (getter) 'assign-or-call getter))
+                ((id-token? (get-tok next)) (parse-statement next (getter) 'assign-or-call getter id-ok?))
                 (else 
                  (parse-error (format "Expected a name after '.', found ~a" (output-format (get-tok next)))
                               ps (get-end next))))))
@@ -1042,6 +1043,9 @@
            (else (parse-error (format "Expected a } to close open {, found ~a" out) start end))))
         ;Intermediate
         ((local)
+         (unless id-ok?
+           (parse-error "Found apparent variable declaration directly in an 'if', variable declarations must be in blocks"
+                        ps end))
          (case kind
            ((EOF) (parse-error "Variable declaration requires a name" start end))
            ((IDENTIFIER) 
@@ -1053,12 +1057,12 @@
                 ((eof? n-tok) (parse-error "Variable declaration has not completed" start end))
                 ;Just ended a local field
                 ((semi-colon? n-tok) (getter))
-                ((comma? n-tok) (parse-statement next (getter) 'local-list getter))
+                ((comma? n-tok) (parse-statement next (getter) 'local-list getter #t))
                 ((teaching-assignment-operator? n-tok)
                  (let ((assign-exp (getter)))
                    (if (eof? (get-tok assign-exp))
                        (parse-error (format "Expected an expression to bind to ~a" (token-value tok)) start end)
-                       (parse-statement next (parse-expression null assign-exp 'start getter) 'local-init-end getter))))
+                       (parse-statement next (parse-expression null assign-exp 'start getter) 'local-init-end getter #t))))
                 ((id-token? n-tok)
                  (parse-error (format "Variables must be separated by commas, ~a not allowed" n-out) start ne))
                 (else (parse-error (format "Expected ';' or more variables, found ~a" n-out) start ne)))))
@@ -1079,12 +1083,12 @@
               (cond
                 ((eof? n-tok) (parse-error "Variable is not complete" start end))
                 ((semi-colon? n-tok) (getter))
-                ((comma? n-tok) (parse-statement next (getter) 'local-list getter))
+                ((comma? n-tok) (parse-statement next (getter) 'local-list getter id-ok?))
                 ((teaching-assignment-operator? n-tok)
                  (let ((assign-exp (getter)))
                    (if (eof? (get-tok assign-exp))
                        (parse-error (format "Expected an expression to bind to ~a" (token-value tok)) start end)
-                       (parse-statement next (parse-expression null assign-exp 'start getter) 'local-init-end getter))))
+                       (parse-statement next (parse-expression null assign-exp 'start getter) 'local-init-end getter id-ok?))))
                 ((id-token? n-tok)
                  (parse-error (format "Variables must be separated by commas, ~a not allowed" n-out) start ne))
                 (else (parse-error (format "Expected ';' or more variables, found ~a" n-out) start ne)))))

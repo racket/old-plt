@@ -205,3 +205,4 @@ void wxItem::MaybeMoveControls()
     MoveControl(cMacControl,SetOriginX + padLeft, SetOriginY + padTop);
   }
 }
+

@@ -848,6 +848,9 @@ static void *platform_plain_sector(int count)
 #if GET_MEM_VIA_MMAP
 static void *platform_plain_sector(int count)
 {
+#ifdef MAP_ANON
+  return mmap(NULL, count << LOG_SECTOR_SEGMENT_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+#else
   static int fd;
 
   if (!fd) {
@@ -855,6 +858,7 @@ static void *platform_plain_sector(int count)
   }
   
   return mmap(0, count << LOG_SECTOR_SEGMENT_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+#endif
 }
 
 static void free_plain_sector(void *p, int count)

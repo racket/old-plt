@@ -242,15 +242,10 @@ int main(int argc, char *argv[])
 #endif
 
   /* Set stack base and turn off auto-finding of static variables ---
-     unless this is MacOS, where wxWindows doesn't currently register
-     its static variables, --- or Windows, where scheme_set_stack_base
+     unless this is Windows, where scheme_set_stack_base
      is called by wxWindows. */
 #ifndef wx_msw
-# ifndef MACOS_FIND_STACK_BOUNDS
-#  ifndef OS_X
   scheme_set_stack_base(stack_start, 1);
-#  endif
-# endif
 #endif
 
 #if defined(_IBMR2)

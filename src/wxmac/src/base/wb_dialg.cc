@@ -43,16 +43,12 @@ static char *
 wxDefaultFileSelector(Bool load, const char *what, char *extension, char *default_name)
 {
   char prompt[50];
-  sprintf(prompt, load ? wxSTR_LOAD_FILE : wxSTR_SAVE_FILE, what);
+  sprintf(prompt, load ? "Get File" : "Save File", what);
 
   if (*extension == '.') extension++;
   char wild[60];
   sprintf(wild, "*.%s", extension);
-#ifdef wx_mac
   return wxFileSelector (prompt, NULL, default_name, (char *)extension, wild, load ? wxOPEN : wxSAVE);
-#else
-  return wxFileSelector (prompt, NULL, default_name, (char *)extension, wild);
-#endif
 }
 
 
@@ -109,41 +105,6 @@ wxbDialogBox::~wxbDialogBox()
 
 void wxbDialogBox::Centre(int direction)
 {
-#if 0
-  int x_offset,y_offset ;
-  int display_width, display_height;
-  int  width, height, x, y;
-  wxFrame *frame ;
-  if (direction & wxCENTER_FRAME)
-  {
-    frame = (wxFrame*)GetParent() ;
-    if (frame)
-    {
-      frame->GetPosition(&x_offset,&y_offset) ;
-      frame->GetSize(&display_width,&display_height) ;
-    }
-  }
-  else
-    frame = NULL;
-
-  if (frame==NULL)
-  {
-    wxDisplaySize(&display_width, &display_height);
-    x_offset = 0 ;
-    y_offset = 0 ;
-  }
-
-
-  GetSize(&width, &height);
-  GetPosition(&x, &y);
-
-  if (direction & wxHORIZONTAL)
-    x = (int)((display_width - width)/2);
-  if (direction & wxVERTICAL)
-    y = (int)((display_height - height)/2);
-
-  SetSize(x+x_offset, y+y_offset, width, height, wxPOS_USE_MINUS_ONE);
-#endif
   ((wxDialogBox *)this)->cFrame->Centre(direction);
 }
 

@@ -313,35 +313,63 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   
-  (define (dynamic-disable-break/not-killable c f)
-    (mzlib:function:dynamic-disable-break
-     (lambda ()
-       (let* ([result #f]
-	      [t (parameterize ([current-custodian c])
-		   (thread
-		    (lambda ()
-		      (with-handlers ([exn:misc:user-break?
-				       void])
-			 (set! result (f))))))]
-	      [orig-t (current-thread)]
-	      [t2 (parameterize ([current-custodian c])
-		    (thread
-		     (lambda ()
-		       ; If the original thread is killed, break the
-		       ;  work thread.
-		       (thread-wait orig-t)
-		       (break-thread t))))]
-	      [kill-t2 (lambda ()
-			 (parameterize ([current-custodian c])
-			   (kill-thread t2)))])
-	 (with-handlers ([exn:misc:user-break?
-			  (lambda (x)
-			    (break-thread t)
-			    (kill-t2)
-			    (raise x))])
-	     (thread-wait t))
-	 (kill-t2)
-	 result))))
+  (define (dynamic-disable-break/not-killable c needs-break? f)
+    (let* ([cp (current-parameterization)]
+	   [share-except (lambda (cp l)
+			   (lambda ()
+			     (make-parameterization-with-sharing
+			      cp cp
+			      l
+			      (lambda (pm) #f))))]
+	   [mp ((share-except cp (list break-enabled
+				       current-custodian 
+				       current-exception-handler)))])
+      (with-parameterization mp
+	(lambda ()
+	  (mzlib:function:dynamic-disable-break
+	   (lambda ()
+	     (let* ([result #f]
+		    [t (parameterize ([current-custodian c]
+				      [parameterization-branch-handler
+				       (share-except
+					(current-parameterization)
+					; Share break-enabled!
+					(list current-exception-handler))])
+			  (thread
+			   (lambda ()
+			     (if needs-break?
+				 (with-handlers ([exn:misc:user-break?
+						  void])
+				    (set! result (f)))
+				 (set! result (f))))))]
+		    [orig-t (current-thread)]
+		    [t2 (if needs-break?
+			    (parameterize ([current-custodian c]
+					   [parameterization-branch-handler
+					    (share-except
+					     cp
+					     (list break-enabled current-exception-handler))])
+			       (thread
+				(lambda ()
+				  ; If the original thread is killed, break the
+				  ;  work thread.
+				  (thread-wait orig-t)
+				  (break-thread t))))
+			    #f)]
+		    [kill-t2 (lambda ()
+			       (when t2
+				 (parameterize ([current-custodian c])
+				    (kill-thread t2))))])
+	       (if needs-break?
+		   (with-handlers ([exn:misc:user-break?
+				    (lambda (x)
+				      (break-thread t)
+				      (kill-t2)
+				      (raise x))])
+		      (thread-wait t))
+		   (thread-wait t))
+	       (kill-t2)
+	       result)))))))
 
   (define make-console-edit%
     (lambda (super%)
@@ -585,11 +613,10 @@
 	  [TIME-FACTOR 10]
 	  
 	  [generic-write
+	   ; This must be called within a procedure wrapped by
+	   ; dynamic-disable-break/not-killable
 	   (let ([first-time? #t])
 	     (lambda (edit s style-func)
-	       (dynamic-disable-break/not-killable
-		my-custodian
-		(lambda ()
 		  (let ([handle-insertion
 			 (lambda ()
 			   (let ([start (send edit last-position)]
@@ -651,7 +678,7 @@
 			  (handle-insertion)
 			  (end-edit-sequence)
 			  (semaphore-post timer-sema)
-			  (set-prompt-mode #f))))))))]
+			  (set-prompt-mode #f))))))]
 	  [generic-close (lambda () '())]
 	  [flush-console-output
 	   (lambda ()
@@ -685,6 +712,7 @@
 	   (lambda (s)
 	     (dynamic-disable-break/not-killable
 	      my-custodian
+	      #f
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
 			       [current-error-port orig-stderr])
@@ -714,6 +742,7 @@
 	   (lambda (s)
 	     (dynamic-disable-break/not-killable
 	      my-custodian
+	      #f
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
 			       [current-error-port orig-stderr])
@@ -799,18 +828,19 @@
 	     (lambda ()
 	       (dynamic-disable-break/not-killable
 		my-custodian
+		#t
 		(lambda ()
 		  (single-threader g)))))]
 	  [transparent-read
 	   (let* ([g (lambda ()
 		       (init-transparent-io #t)
-		       (send transparent-edit fetch-sexp))]
-		  [f (lambda () 
-		       (dynamic-disable-break/not-killable
-			my-custodian
-			g))])
+		       (send transparent-edit fetch-sexp))])
 	     (lambda ()
-	       (single-threader f)))])
+	       (dynamic-disable-break/not-killable
+		my-custodian
+		#t
+		(lambda ()
+		  (single-threader g)))))])
 	(public
 	  [set-output-delta
 	   (lambda (delta)
@@ -927,11 +957,15 @@
 	  [eval-str mzlib:string:eval-string]
 	  [this-result-write 
 	   (lambda (s)
-	     (generic-write this
-			    s 
-			    (lambda (start end)
-			      (change-style result-delta
-					    start end))))]
+	     (dynamic-disable-break/not-killable
+	      my-custodian
+	      #f
+	      (lambda ()
+		(generic-write this
+			       s 
+			       (lambda (start end)
+				 (change-style result-delta
+					       start end))))))]
 	  [this-result (make-output-port this-result-write generic-close)]
 	  [display-result
 	   (lambda (v)

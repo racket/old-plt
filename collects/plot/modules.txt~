@@ -1,0 +1,36 @@
+MODULES:
+
+
+plot.ss
+
+Provides the basic functionality required to create plots.
+provides functions to plot and create renderers, as well 
+as the usefull math functions from math.ss
+
+
+view.ss
+
+Provides access to the view% classes, nessisary in creating your own 
+renderers or extending the views.
+
+renderer-helpers.ss
+
+Provides functions usefull in creating your own renderers.
+Not documented yet
+
+
+private modules
+
+syntax.ss 
+
+contains macros used in creating some of the functions.
+
+
+renderers.ss
+
+contains the built-in renderers. 
+
+
+math.ss
+
+contains a few useufull math functions.

@@ -1,0 +1,112 @@
+MODULE: VIEW
+
+--------
+CLASSES:
+--------
+
+plot-view% extends image-snip%:	
+	(interface 
+	       (start-plot
+	      	finish-plot  
+        	set-line-color
+        	set-line-width
+        	get
+       	 	set
+       		set-plot-environment
+       		reset-to-default))
+	
+
+
+2d-vew% extends plot-view%:
+	(interface
+	       (set-labels        
+	        plot-vector
+	        plot-vectors      
+	        plot-points
+        	plot-line
+	        plot-contours
+        	plot-shades))
+
+3d-view% extends plot-view%
+	(interface
+	       (box3d
+        	world3d
+        	plot3d))
+
+
+
+-------------------
+DESCRIPTION/METHODS
+-------------------
+
+plot-view%:
+	Provides fascilities for starting and finishing plots. The underlying c-library
+	follows and implicit sequence contract and this class will (at some point) enforce
+      	that contract.
+	
+	methods:
+
+	start-plot: 
+	starts the plot - calls plplot to open a file stream for writing
+
+        finish-plot: 
+	finishes the plot - calss plplot to close the file, clean up. also loads the created image
+
+        set-line-color: symbol -> void
+	sets the line colour
+
+        set-line-width: number -> void
+	sets the line width
+
+        get: symbol -> any
+	getter for a few of the fields
+
+        set: symbol any -> void
+	setter for a few of the fields
+
+        set-plot-environment: number number number number number number -> void
+	sets the 2d plot environment (x and y range), justification, other options
+
+        reset-to-default: 
+	resets the state of the c-code to default, called after every renderer
+
+2d-vew% extends plot-view
+	Provides an interface to drawing 2d plots. Some methods call low level functions, others are 
+      	written in scheme.
+
+	Methods:
+  
+ 	set-labels: string string string -> void
+	Sets x, y and title labels
+        
+        plot-vector: posn posn -> void
+	plots a single vector
+
+        plot-vectors: (listof (list posn posn)) -> void
+	plots a list of vectors
+
+        plot-points: (listof posn) number ->void
+	plots points using a specified charater
+
+        plot-line: (listof posn) -> void
+	plots a line given a set of points
+
+        plot-contours: (listof (lisftof number)) (listof number) (listof number) (listof number) ->void
+	plots a grid representing a 3d function using contours to distinguish levels
+	args are grid, xvalues yvalues and levels to plot
+
+        plot-shades: (listof (lisftof number)) (listof number) (listof number) (listof number) ->void
+	plots a grid representing a 3d function using shades to represent height (z)
+	args are same as contours
+
+
+3d-vew% extends plot-view
+	Provides an interface to drawing 3d plots. Just started
+
+	Methods:
+  
+        box-3d: Sets up the 3d drawing box settings, including ticks and lables
+        
+        world3d: Sets ups the 3d world - min/max coordinates / view angles 
+
+        plot3d: draws a 3d surface plot given a grid

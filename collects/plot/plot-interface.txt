@@ -1,0 +1,126 @@
+MODULE: PLOT
+
+A note on syntax : [(item value) ... ] represents a list of default options, over-ridable 
+over-ridable by passing an assosiative list.
+
+
+-----
+DATA:
+-----
+
+2d-renderer is one of :
+	(points (listof posn) [character])
+|	(line (number->number) [samples color width])
+|	(field (posn -> posn) [samples color width style])
+|	(contour (number number ->number) [samples color width levels])
+|	(shade (number number -> number) [samples levels])
+|	(mix 2d-renderer 2drenderer)
+|	(make-your-own (number number number number 2d-view-snip% -> void))
+
+
+
+plot: mumbo-jumbo 2d-renderer -> VIEW
+
+
+3d-view-snip% is a : 
+	(plot3d [x-min x-max y-min y-max z-min z-max altitude azimuth x-label y-label z-label] 3d-renderer+)
+
+3d-renderer is one of: 
+	// number number number number number number 3d-view-snip% -> void
+|	(surface (number number -> number))
+---------
+FUNCTIONS
+---------
+
+--------
+plotting 
+
+
+plot  	; [x-min x-max y-min y-max x-label y-label title] 2d-renderer -> 2d-view-snip%
+	; Returns a view% specified by the options with the renderers applied to it
+	x-min: number [-5]
+	x-max: number [5]
+	y-min: number [-5]
+	y-max: number [5]
+	x-label: string ["X axis"]
+	y-label: string ["Y axis"]
+	title: string ["a graph"]
+		
+
+plot3d	: [x-min x-max y-min y-max z-min z-max altitude azimuth x-label y-label z-label] 3d-renderer+ -> 3d-view-snip%
+	; Returns a 3d-view-snip% bounded by the options with the renderers applied to it
+	x-min: number [-5]
+	x-max: number [5]
+	y-min: number [-5]
+	y-max: number [5]
+	z-min: number [-5]
+	z-max: number [5]
+	altitude: number - specifies altitude from whitch the box is viewed, in degrees [30]
+	azimuth: number - specifies the rotation from whitch the box is viewed, in degrees [45]
+	x-label: string ["X axis"]
+	y-label: string ["Y axis"]
+	z-label: string ["Z axis"]
+
+
+
+
+renderer creators:
+------------------
+
+
+common options:
+
+samples: number - number of times a function is sampled on a graph
+color: symbol - color for lines - one of:
+	'(white black yellow green aqua pink wheat grey brown blue violet cyan turquoise mgenta salmon red)
+width: number - width (in pixels) for lines to be drawn
+
+
+2d-renderer creators:
+---------------------
+
+
+points 	: (listof posn) [character] -> 2d-renderer
+	; given a list of points, creates a renderer for them
+	character : integer - specifies the char number w/ which to plot points [9] (a Circled dot)	
+
+line	: (number->number) [(samples 150) (color red) (width 1)] -> 2d-renderer
+	; given a function of one variable, creates a renderer for it		
+		
+
+field 	: (posn -> posn) [(samples 15) (color black) (width  1) (style normalized)] -> 2d-renderer
+	; given a vector valued function (R2->R2), creates a renderer for it
+	style :
+		scaled -> vector field with scaled vectors
+		normalized -> all vectors same size, indicates direction 
+  		real -> all vectors drawn to scale	
+
+contour : (number number ->number) [(samples 50) (color black) (width 1) (levels 10)] -> 2d-renderer
+        ; given a 3D function, creates a renderer that plots it on a 2d surface using contours
+	levels : (number u (listof number)) - specifies either the number of levels or 
+		the particular levels to plot
+
+shade 	: (number number -> number) [(samples 50) (levels 10)] -> 2d-renderer
+	; given a 3D function, creates a renderer that plots it on a 2d surface using shades
+	levels: number - specifies number of levels to plot (calculated at even distances from of function to min of function)
+
+3d-renderer generators:
+-----------------------
+
+surface : (number number -> number) [(samples 50) (color black) (width 1)] -> 3d-renderer
+	; given a 3d function, creates a rendere that plots it(showing the top only) on a 3d view
+
+
+Math-tools
+----------
+
+derivative 	: (number -> number) [h .000001] -> (number -> number)		
+		; creates a function that is the derivative of the function given
+		h : number - represents the divisor to use in the definition of derivative
+
+gradient	: (number number -> number) [h .000001] -> (posn -> posn)
+		; creats a vector valued function that is the gradient of the given function
+		h : as above
+
+make-vec	: (number number -> number) (number number -> number) -> (posn -> posn)
+		; creates a vector valued function from two scalar-valued functions

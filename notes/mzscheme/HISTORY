@@ -5,6 +5,10 @@ Version 199.1:
 
  * Modules
 
+ * Fixed bug in `quotient' when first argument is 0 and the second
+   argument is inexact. Also fixed `modulo' and `remainder' to return
+   exact 0 in this case.
+
  * Added *?, +?, and ?? (non-greedy operators) to regexp,
    and fixed potential stack overflow.
 
@@ -57,13 +61,15 @@ Version 103.2:
 
 ------------------------------------------------------------------------
 
-Version 104, ???
+Version 199, ???
 Fixed `lambda' and `case-lambda' to signal an error when a keyword
  is used as an argument name
 Fixed leaks (file descriptors, etc.) that could happend with
  thread kills
 Fixed memory bug in the run-time support for mzc-compiled code
 Added `port-count-lines!', which enables line-couting for a port
+Fixed `quotient', `remainder', and `modulo' when the first argument
+ is exact 0 and the second argument is inexact
 Upgraded to gc 6.0alpha4
 
 Version 103, August 28, 2000

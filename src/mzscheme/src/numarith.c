@@ -389,33 +389,42 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
     Scheme_Object *r;
     double d, d2;
 
-    r = scheme_bin_div(n1, n2);
-    d = SCHEME_DBL_VAL(r);
-
-    if (d > 0)
-      d2 = floor(d);
-    else
-      d2 = ceil(d);
-
-    if (d2 == d)
+    r = scheme_bin_div(n1, n2); /* could be exact 0 ... */
+    if (SCHEME_DBLP(r)) {
+      d = SCHEME_DBL_VAL(r);
+      
+      if (d > 0)
+	d2 = floor(d);
+      else
+	d2 = ceil(d);
+      
+      if (d2 == d)
+	return r;
+      else
+	return scheme_make_double(d2);
+    } else
       return r;
-    else
-      return scheme_make_double(d2);
   }
 #ifdef MZ_USE_SINGLE_FLOATS
   if (SCHEME_FLTP(n1) || SCHEME_FLTP(n2)) {
-    Scheme_Object *r = scheme_bin_div(n1, n2);
-    float d = SCHEME_FLT_VAL(r), d2;
+    Scheme_Object *r;
+    float d, d2;
 
-    if (d > 0)
-      d2 = floor(d);
-    else
-      d2 = ceil(d);
-
-    if (d2 == d)
+    r = scheme_bin_div(n1, n2); /* could be exact 0 ... */
+    if (SCHEME_FLTP(r)) {
+      d = SCHEME_FLT_VAL(r);
+      
+      if (d > 0)
+	d2 = floor(d);
+      else
+	d2 = ceil(d);
+      
+      if (d2 == d)
+	return r;
+      else
+	return scheme_make_float(d2);
+    } else
       return r;
-    else
-      return scheme_make_float(d2);
   }
 #endif
 
@@ -478,6 +487,9 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
 		     name,
 		     neg ? "-" : "");
   }
+
+  if (SCHEME_INTP(n1) && !SCHEME_INT_VAL(n1))
+    return zeroi;
 
   if (SCHEME_INTP(n1) && SCHEME_INTP(n2)) {
     long a, b, na, nb, v;

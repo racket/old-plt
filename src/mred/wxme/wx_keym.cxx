@@ -291,7 +291,7 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
   wxKeycode *key, *newkey;
 
   /* Look for exact key: */
-  key = keys ? ((wxKeycode *)keys->Get(code)) : NULL;
+  key = keys ? ((wxKeycode *)keys->Get(code)) : (wxKeycode *)NULL;
   while (key) {
     if (key->code == code
 	&& (key->shiftOn == (shift > 0))

@@ -355,6 +355,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-r";
     else if (!strcmp("--script-cd", argv[0]))
       argv[0] = "-i";
+    else if (!strcmp("--require-script", argv[0]))
+      argv[0] = "-u";
     else if (!strcmp("--no-lib-path", argv[0]))
       argv[0] = "-x";
     else if (!strcmp("--version", argv[0]))
@@ -449,6 +451,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  evals_and_loads[num_enl] = se;
 	  is_load[num_enl++] = 0;
 	  break;
+	case 'u':
+	  script_mode = 1;
+	  no_more_switches = 1;
 	case 't':
 	  if (argc < 2) {
 	    PRINTF("%s: Missing file name after %s switch.\n", 
@@ -716,6 +721,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -M <coll> : Same as -e '(require (lib \"<coll>.ss\" \"<coll>\"))'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
+	 "  -u, --require-script : Like -r, but requires a module. Same as -tmv-.\n" 
 # ifndef MZSCHEME_CMD_LINE
 	 "  -Z, --nogui : Skip \"class.ss\" and \"mred.ss\" require.\n"
 # endif

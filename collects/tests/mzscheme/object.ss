@@ -27,7 +27,7 @@
     (define (try-dotted cl)
       (syntax-test  `(,cl* ,@renames () () () (,cl . x))))
     
-    (map try-dotted '(public private inherit rename
+    (map try-dotted '(public override private inherit rename
 			     inherit-from rename-from
 			     sequence)))
   
@@ -42,6 +42,7 @@
       (syntax-test  `(,cl* ,@renames () () () (,cl [x 1 3]))))
     
     (try-defn-kind 'public)
+    (try-defn-kind 'override)
     (try-defn-kind 'private))
 
   (begin
@@ -51,7 +52,8 @@
       (syntax-test  `(,cl* ,@renames () () () (,cl [(x . y) 9])))
       (syntax-test  `(,cl* ,@renames () () () (,cl [(x 1) 9])))
       (syntax-test  `(,cl* ,@renames () () () (,cl [(1 x) 9]))))
-    (try-defn-rename-kind 'public))
+    (try-defn-rename-kind 'public)
+    (try-defn-rename-kind 'override))
 
   (begin
     (define (try-ref-kind cl)
@@ -63,6 +65,8 @@
     (map try-ref-kind '(inherit rename share)))
   (error-test `(,cl* ,@renames () () () (inherit x)) exn:object:inherit?)
   (error-test `(,cl* ,@renames () () () (inherit (x y))) exn:object:inherit?)
+  (error-test `(,cl* ,@renames () () () (override [x void])) exn:object:inherit?)
+  (error-test `(,cl* ,@renames () () () (override [(x y) void])) exn:object:inherit?)
   (syntax-test  `(,cl* ,@renames () () () (inherit (x y z))))
   (syntax-test  `(,cl* ,@renames () () () (inherit (x 5))))
   (syntax-test  `(,cl* ,@renames () () () (inherit (x))))
@@ -104,6 +108,11 @@
 (test #t class? (class* () () () (public sequence)))
 (test #t class? (class* () () (x) (public [(y x) 9])))
 (test #t class? (class*/names (this super-init) () () () (public)))
+
+(define c (class null () (public x)))
+(error-test `(class c () (public x)) exn:object:inherit?)
+(error-test `(class c () (public ([y x] 5))) exn:object:inherit?)
+(error-test `(class c () (override ([x y] 5))) exn:object:inherit?)
 
 (syntax-test  `(interface))
 (syntax-test  `(interface . x))
@@ -172,7 +181,8 @@
 	   (inherit b2 (sup-set-b2 f-1-set-b2))
 	   (rename (also-e e)
 		   (also-b2 b2))
-	   (public (a 4) (b1 5) (c 6)
+	   (override (b1 5) (c 6))
+	   (public (a 4)
 		   (f-2-a (lambda () a))
 		   (f-2-b1 (lambda () b1))
 		   (f-2-b2 (lambda () b2))
@@ -379,11 +389,11 @@
 	      
 
 (define c100
-  (let loop ([n 99][c c1])
+  (let loop ([n 99][c (class c1 args (public [z -1]) (sequence (apply super-init args)))])
     (if (zero? n)
 	c
 	(loop (sub1 n) (class c args 
-			      (public (z n))
+			      (override (z n))
 			      (sequence
 				(apply super-init args)))))))
 
@@ -424,7 +434,7 @@
 		     ,@(order
 			override-pre?
 			'(sequence (super-init))
-			'(public [name (lambda () 'o-tester)])))
+			'(override [name (lambda () 'o-tester)])))
 	     base-class))
        w))))
 

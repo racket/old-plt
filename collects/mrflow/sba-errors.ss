@@ -33,7 +33,7 @@
   
   ; -> error-table
   (define (error-table-make)
-    (make-error-table (assoc-set-make)))
+    (make-error-table (make-assoc-set)))
   
   ; top -> boolean
   ; error-table? comes from the structure definition

@@ -44,7 +44,7 @@
   (define (put-prefs names vals)
     (put-preferences names vals)) 
 
-  (define search-height-default "130")
+  (define search-height-default "120")
   (define search-bg-default "palegreen")
   (define search-text-default "black")
   (define search-link-default "darkblue")

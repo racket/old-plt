@@ -30,7 +30,9 @@
     (HEAD ,hd-css)
     (FRAMESET ((ROWS ,(string-append search-height ",*")))
 	      (FRAME ((NAME "search")
-		      (SRC "/servlets/search.ss")))
+		      (SRC "/servlets/search.ss")
+		      (MARGINHEIGHT "2")
+		      (MARGINWIDTH "2")))
 	      (FRAME ((NAME "main")
 		      ,(if (and search-string
 				search-type

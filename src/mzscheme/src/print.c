@@ -1734,7 +1734,7 @@ print_char_string(char *str, int len,
 		  mzchar *ustr, int ulen,
 		  int notdisplay, Scheme_Thread *p)
 {
-  char minibuf[10], *esc;
+  char minibuf[12], *esc;
   int a, i, v, ui, cont_utf8 = 0, isize;
 
   if (notdisplay) {
@@ -1784,7 +1784,10 @@ print_char_string(char *str, int len,
 
       if (esc) {
 	if (esc == minibuf) {
-	  sprintf(minibuf, "\\u%.4x", ustr[ui]);
+	  if (ustr[ui] > 0xFFFF) {
+	    sprintf(minibuf, "\\U%.8X", ustr[ui]);
+	  } else
+	    sprintf(minibuf, "\\u%.4X", ustr[ui]);
 	}
 
         if (a < i)
@@ -1985,7 +1988,7 @@ static void
 print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 {
   int ch;
-  char minibuf[8+MAX_UTF8_CHAR_BYTES], *str;
+  char minibuf[10+MAX_UTF8_CHAR_BYTES], *str;
   int len = -1;
 
   ch = SCHEME_CHAR_VAL(charobj);
@@ -2028,7 +2031,10 @@ print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 				  0);
 	  minibuf[2 + ch] = 0;
 	} else {
-	  sprintf(minibuf, "#\\u%.4x", ch);
+	  if (ch > 0xFFFF)
+	    sprintf(minibuf, "#\\U%.8X", ch);
+	  else
+	    sprintf(minibuf, "#\\u%.4X", ch);
 	}
 	str = minibuf;
 	break;

@@ -127,7 +127,7 @@
      '(+inf.0 -inf.0 +nan.0 -nan.0 0.0 -0.0 0 1/2 3.4 1+2i))
 
 (test #t = 0.0 -0.0)
-(test #f eqv? 0.0 -0.0)
+(test #t eqv? 0.0 -0.0)
 
 (test #t = 22 22 22)
 (test #t = 22 22)
@@ -210,7 +210,7 @@
 (test #t = 1 1.0+0i)
 (test #t = 1 1.0+0.0i)
 (test #f eqv? 1.0 1.0+0.0i)
-(test #f eqv? 1.0-0.0i 1.0+0.0i)
+(test #t eqv? 1.0-0.0i 1.0+0.0i)
 
 (test #f = 1+2i 2+i)
 

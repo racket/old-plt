@@ -931,6 +931,15 @@
 	   string-locale-ci<?))
 
 
+(test #t byte? 10)
+(test #t byte? 0)
+(test #t byte? 255)
+(test #f byte? 256)
+(test #f byte? -1)
+(test #f byte? (expt 2 40))
+(test #f byte? (expt 2 100))
+(test #f byte? #\newline)
+
 (test #t bytes? #"The word \"recursion\\\" has many meanings.")
 (test #t bytes? #"")
 (arity-test bytes? 1 1)

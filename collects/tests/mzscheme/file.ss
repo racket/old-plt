@@ -86,7 +86,7 @@
 	"tmp1" f 'truncate))
 (check-test-file "tmp1")
 
-(test (string #\null #\null #\" #\\ #\0 #\")
+(test (string #\null #\null #\" #\\ #\u #\0 #\0 #\0 #\0 #\")
       'write-null
       (let ([p (open-output-string)])
 	(write-char #\null p)
@@ -111,10 +111,17 @@
 
 ;; Test escape printing:
 (parameterize ([current-locale #f])
-  (test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\5A\\17P\\17P\335D\3777\\0011\""
+  (test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\u0005A\\u000FP\\u000FP\u00DDD\u00FF7\\u00011\\U00012345\""
 	'output-escapes
 	(let ([p (open-output-string)])
-	  (write "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011" p)
+	  (write "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011\U12345" p)
+	  (get-output-string p))))
+
+(parameterize ([current-locale #f])
+  (test "#\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\5A\\17P\\17P\\335D\\3777\\0011\""
+	'output-escapes
+	(let ([p (open-output-string)])
+	  (write #"\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011" p)
 	  (get-output-string p))))
 
 ;; Test return, linefeed, and return--linefeed escapes:
@@ -1281,12 +1288,12 @@
 				     void
 				     (lambda (who host port mode)
 				       (raise (list* 'net-reject who host port mode))))])
-  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect #"other" 123 'client))
+  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect "other" 123 'client))
   (err/rt-test (tcp-listen 123)  (net-reject? 'tcp-listen #f 123 'server))
   (unless (eq? 'macos (system-type)) ; no UDP in Mac OS Classic
     (err/rt-test (udp-open-socket)  (net-reject? 'udp-open-socket #f #f 'client))
-    (err/rt-test (udp-bind! early-udp "localhost" 40000)  (net-reject? 'udp-bind! #"localhost" 40000 'server))
-    (err/rt-test (udp-connect! early-udp "localhost" 40000)  (net-reject? 'udp-connect! #"localhost" 40000 'client))
-    (err/rt-test (udp-send-to early-udp "localhost" 40000 #"hi")  (net-reject? 'udp-send-to #"localhost" 40000 'client))))
+    (err/rt-test (udp-bind! early-udp "localhost" 40000)  (net-reject? 'udp-bind! "localhost" 40000 'server))
+    (err/rt-test (udp-connect! early-udp "localhost" 40000)  (net-reject? 'udp-connect! "localhost" 40000 'client))
+    (err/rt-test (udp-send-to early-udp "localhost" 40000 #"hi")  (net-reject? 'udp-send-to "localhost" 40000 'client))))
 
 (report-errs)

@@ -1636,12 +1636,14 @@ read_string(int is_byte, Scheme_Object *port,
 	}
 	break;
       case 'u':
+      case 'U':
 	if (!is_byte) {
+	  int maxc = ((ch == 'u') ? 4 : 8);
 	  ch = scheme_getc_special_ok(port);
 	  if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
 	    int count = 1;
 	    n = ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10);
-	    while (count < 6) {
+	    while (count < maxc) {
 	      ch = scheme_peekc_special_ok(port);
 	      if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
 		n = n*16 + (ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10));
@@ -1666,7 +1668,8 @@ read_string(int is_byte, Scheme_Object *port,
 				 scheme_tell_column(port), 
 				 scheme_tell(port), NULL);
 	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
-			    "read: no hex digit following \\u in string");
+			    "read: no hex digit following \\%c in string", 
+			    ((maxc == 4) ? 'u' : 'U'));
 	    return NULL;
 	  }
 	  break;
@@ -2057,11 +2060,12 @@ read_symbol(int init_ch,
 /*                              char reader                               */
 /*========================================================================*/
 
-static int u_strcmp(mzchar *s, char *t)
+static int u_strcmp(mzchar *s, const char *_t)
 {
   int i;
+  unsigned char *t = (unsigned char *)_t;
 
-  for (i = 0; s[i] && (s[i] == t[i]); i++) {
+  for (i = 0; s[i] && (scheme_tolower(s[i]) == scheme_tolower(t[i])); i++) {
   }
   if (s[i] || t[i])
     return 1;
@@ -2111,9 +2115,9 @@ read_character(Scheme_Object *port,
     return scheme_make_char(ch);
   }
 
-  if ((ch == 'u')  && NOT_EOF_OR_SPECIAL(next) && scheme_isxdigit(next)) {
-    int count = 0, n = 0, nbuf[6];
-    while (count < 6) {
+  if (((ch == 'u') || (ch == 'U')) && NOT_EOF_OR_SPECIAL(next) && scheme_isxdigit(next)) {
+    int count = 0, n = 0, nbuf[8], maxc = ((ch == 'u') ? 4 : 8);
+    while (count < maxc) {
       ch = scheme_peekc_special_ok(port);
       if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
 	nbuf[count] = ch;
@@ -2143,7 +2147,7 @@ read_character(Scheme_Object *port,
 
     i = 1;
     buf = onstack;
-    buf[0] = scheme_tolower(ch);
+    buf[0] = ch;
     while ((ch = scheme_peekc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && scheme_isalpha(ch))) {
       scheme_getc(port); /* is alpha character */
       if (i >= size) {
@@ -2154,11 +2158,11 @@ read_character(Scheme_Object *port,
 	buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
 	memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
       }
-      buf[i++] = scheme_tolower(ch);
+      buf[i++] = ch;
     }
     buf[i] = '\0';
     
-    switch (buf[0]) {
+    switch (scheme_tolower(buf[0])) {
     case 'n': /* maybe `newline' or 'null' or 'nul' */
       if (!u_strcmp(buf, "newline"))
 	return scheme_make_char('\n');
@@ -2703,7 +2707,7 @@ static Scheme_Object *read_compact(CPort *port,
 	params.case_sensitive = 0;
 	params.square_brackets_are_parens = 1;
 	params.curly_braces_are_parens = 1;
-	params.read_decimal_inexact = 0;
+	params.read_decimal_inexact = 1;
 	params.can_read_dot = 1;
 	params.can_read_quasi = 1;
 

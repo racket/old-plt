@@ -116,7 +116,6 @@ struct immobile_box {
 
 struct thread {
   unsigned int		owner;
-  unsigned int		potential_kill, propogated;
   void		       *thread;
   struct thread *next, *prev;
 };
@@ -1196,38 +1195,22 @@ void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark,
 /*****************************************************************************/
 
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
-inline static void prepare_thread_list_for_collection(void)
+inline static void mark_threads(int owner)
 {
   struct thread *work;
-  
-  for(work = threads; work; work = work->next) {
-    work->potential_kill = (find_page(work->thread)->generation 
-			    <= collection_top);
-    work->propogated = 0;
-  }
+
+  for(work = threads; work; work = work->next)
+    if(work->owner == owner)
+      thread_marker(work->thread);
 }
 
-inline static int propogate_marked_threads(void)
-{
-  struct thread *work;
-  int changed = 0;
-
-  for(work = threads; work; work = work->next) 
-    if(work->potential_kill && !work->propogated && marked(work->thread)) {
-      changed = 1;  
-      current_mark_owner = work->owner;
-      thread_marker(work->thread); 
-      work->propogated = 1; 
-    }
-  return changed;
-}
 
 inline static void repair_thread_list(void)
 {
   struct thread *work = threads;
   
   while(work) {
-    if(work->potential_kill && !work->propogated) {
+    if(!marked(work->thread)) {
       struct thread *next = work->next;
       if(work->prev) work->prev->next = next; else threads = next;
       if(work->next) work->next->prev = work->prev;
@@ -1248,8 +1231,8 @@ void GC_register_thread(void *t, void *c)
       { work->owner = current_owner((Scheme_Custodian *)c); return; }
   /* nope. add the new thread */
   work = (struct thread *)malloc(sizeof(struct thread));
-  work->owner = current_owner((Scheme_Custodian *)c); work->thread = t; work->next = threads;
-  work->prev = NULL;
+  work->owner = current_owner((Scheme_Custodian *)c); work->thread = t; 
+  work->next = threads; work->prev = NULL;
   if(threads) threads->prev = work;
   threads = work;
 #endif
@@ -2297,12 +2280,6 @@ inline static void mark_older_pointers(void)
         }
 }
 
-#if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
-# define PROPOGATE_THREADS(x) x = x || propogate_marked_threads()
-#else
-# define PROPOGATE_THREADS(x) /* */
-#endif
-
 inline static void propogate_all_marks(void) 
 {
   struct mpage *page;
@@ -2331,7 +2308,6 @@ inline static void propogate_all_marks(void)
         }
       }
     }
-    PROPOGATE_THREADS(changes);
   } while(changes);
 }
 
@@ -2384,8 +2360,6 @@ inline static void mark_all_roots(void)
 	owner_table[i]->memory_use[j] = 0;
   if(collection_full)
     owner_table[i]->memory_use[collection_top] = 0;
-  /* and set up the data in the thread list */
-  prepare_thread_list_for_collection();
   /* mark the older pointers if necessary */
   if(!collection_full) mark_older_pointers();
   current_mark_owner = 0; 
@@ -2397,6 +2371,7 @@ inline static void mark_all_roots(void)
       owner_table[i]->finalizers = mark_finalizers(owner_table[i]->finalizers, 0);
       mark_roots(owner_table[i]->roots);
       mark_immobiles(owner_table[i]->immobile_boxes);
+      mark_threads(i);
     }
   current_mark_owner = current_owner(NULL);
   GC_mark_variable_stack(GC_variable_stack, 0,
@@ -2452,8 +2427,6 @@ inline static void mark_all_roots(void)
       if(collection_full)
 	owner_table[i]->memory_use[collection_top] = 0;
     }
-  /* and set up the data in the thread list */
-  prepare_thread_list_for_collection();
   /* mark the older pointers if necessary */
   if(!collection_full) mark_older_pointers();
 
@@ -2472,6 +2445,7 @@ inline static void mark_all_roots(void)
       mark_finalizers(owner_table[owner]->finalizers, 0);
     mark_roots(owner_table[owner]->roots);
     mark_immobiles(owner_table[owner]->immobile_boxes);
+    mark_threads(owner);
     if(owner == current_owner(NULL))
       GC_mark_variable_stack(GC_variable_stack, 0,
 			     (void*)(GC_get_thread_stack_base

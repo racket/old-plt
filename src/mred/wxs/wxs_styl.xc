@@ -243,5 +243,6 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
     scheme_apply_multi(f, 1, p);
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
 }
 

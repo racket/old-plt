@@ -4159,6 +4159,7 @@ static Bool KeyCallbackToScheme(UNKNOWN_OBJ media, wxKeyEvent &event,
     retval = 0;
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
  
   return retval;
 }
@@ -4186,7 +4187,8 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
     retval = 0;
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
- 
+  scheme_clear_escape();
+
   return retval;
 }
 
@@ -4210,7 +4212,8 @@ static Bool MouseCallbackToScheme(UNKNOWN_OBJ media, wxMouseEvent &event,
     retval = 0;
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
-  
+  scheme_clear_escape();
+
   return retval;
 }
 
@@ -4237,7 +4240,8 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
     retval = 0;
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
- 
+  scheme_clear_escape();
+
   return retval;
 }
 
@@ -4255,6 +4259,7 @@ static void ErrorCallbackToScheme(KeymapCallbackToSchemeRec *data, char *err)
   }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
 }
 
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
@@ -4268,6 +4273,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
   }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
 }
 
 

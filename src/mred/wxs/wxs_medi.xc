@@ -125,6 +125,11 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "redo": void Redo()
 @ "clear-undos" : void ClearUndos();
 
+@MACRO ubUndoer = ((void *){x})
+@MACRO CHECKUNDOER = scheme_check_proc_arity(METHODNAME("editor<%>","add-undo"), 0, 0, 1, p);
+
+@ "add-undo" : void AddSchemeUndo(UNKNOWN_OBJ//ubUndoer); : : /CHECKUNDOER
+
 @ "set-max-undo-history" : void SetMaxUndoHistory(rint[0|100000]);
 @ "get-max-undo-history" : int GetMaxUndoHistory();
 
@@ -187,3 +192,22 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "get-the-editor-data-class-list" : wxBufferDataClassList! wxGetTheBufferDataClassList()
 
 @END
+
+/* Called from plt/src/mred/wxme/wx_cgrec.cxx */
+int wxsSchemeUndo(void *f)
+{
+  jmp_buf savebuf;
+  int retval = 0;
+
+  COPY_JMPBUF(savebuf, scheme_error_buf);
+
+  if (!scheme_setjmp(scheme_error_buf)) {
+    Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
+    retval = SCHEME_TRUEP(v);
+  }
+
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
+
+  return retval;
+}

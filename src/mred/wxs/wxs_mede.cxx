@@ -904,6 +904,7 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
   }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
 }
 
 static void ClickbackToScheme(wxMediaEdit *media,
@@ -923,6 +924,7 @@ static void ClickbackToScheme(wxMediaEdit *media,
     scheme_apply_multi(f, 3, p);
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
 }
 
 class os_wxMediaEdit : public wxMediaEdit {

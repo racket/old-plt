@@ -1,20 +1,37 @@
 
 /* WARNING: These classes are not garbage-collected. */
 
+/* #define CGREC_COLLECTED */
+
 class wxcgList;
 
-class wxChangeRecord /* : public wxObject - uncomment to GC */
+class wxChangeRecord 
+#ifdef CGREC_COLLECTED
+: public wxObject 
+#endif
 {
  public:
   wxChangeRecord(void);
   virtual ~wxChangeRecord();
   virtual Bool Undo(wxMediaBuffer *media);
+  virtual void DropSetUnmodified(void);
+};
+
+class wxSchemeModifyRecord : public wxChangeRecord
+{
+  void *p;
+ public:
+  wxSchemeModifyRecord(void *);
+  Bool Undo(wxMediaBuffer *media);
 };
 
 class wxUnmodifyRecord : public wxChangeRecord
 {
+  int ok;
  public:
+  wxUnmodifyRecord(void);
   Bool Undo(wxMediaBuffer *media);
+  void DropSetUnmodified(void);
 };
 
 class wxInsertRecord : public wxChangeRecord

@@ -107,6 +107,8 @@ class wxMediaBuffer : public wxObject
 
   virtual Bool ReadInsert(wxSnip *snip) = 0;
 
+  void AddUndo(wxChangeRecord *);
+
   void CopyRingNext(void);
   void BeginCopyBuffer(void);
   void EndCopyBuffer(void);
@@ -116,7 +118,6 @@ class wxMediaBuffer : public wxObject
   virtual void InsertPasteSnip(wxSnip *snip, wxBufferData *) = 0;
   virtual void InsertPasteString(char *str) = 0;
 
-  void AddUndo(wxChangeRecord *);
   void PerformUndos(wxChangeRecord **, int& start, int& end);
   void PerformUndoList(wxList *);
   void AppendUndo(wxChangeRecord *, wxChangeRecord **, int& start, int& end);
@@ -205,6 +206,7 @@ class wxMediaBuffer : public wxObject
   void Undo(void);
   void Redo(void);
   void ClearUndos(void);
+  void AddSchemeUndo(void *proc);
 
   void SetMaxUndoHistory(int);
   int GetMaxUndoHistory();

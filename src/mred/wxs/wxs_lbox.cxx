@@ -1187,4 +1187,5 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
 }

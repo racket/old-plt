@@ -521,6 +521,8 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+
+
  
 
 class os_wxMediaBuffer : public wxMediaBuffer {
@@ -2622,6 +2624,24 @@ static Scheme_Object *os_wxMediaBufferSetMaxUndoHistory(Scheme_Object *obj, int 
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaBufferAddSchemeUndo(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  UNKNOWN_OBJ x0;
+
+  
+  x0 = ((void *)p[0]);
+
+  scheme_check_proc_arity(METHODNAME("editor<%>","add-undo"), 0, 0, 1, p);
+  ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AddSchemeUndo(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaBufferClearUndos(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4563,7 +4583,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 111);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 112);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4589,6 +4609,7 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "do-edit-operation", os_wxMediaBufferDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-max-undo-history", os_wxMediaBufferGetMaxUndoHistory, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-max-undo-history", os_wxMediaBufferSetMaxUndoHistory, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "add-undo", os_wxMediaBufferAddSchemeUndo, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "clear-undos", os_wxMediaBufferClearUndos, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "redo", os_wxMediaBufferRedo, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "undo", os_wxMediaBufferUndo, 0, 0);
@@ -4982,3 +5003,22 @@ void objscheme_setup_wxMediaGlobal(void *env)
   scheme_install_xc_global("get-editor-print-margin", scheme_make_prim_w_arity(wxMediaGlobalwxGetMediaPrintMargin, "get-editor-print-margin", 2, 2), env);
 }
 
+
+/* Called from plt/src/mred/wxme/wx_cgrec.cxx */
+int wxsSchemeUndo(void *f)
+{
+  jmp_buf savebuf;
+  int retval = 0;
+
+  COPY_JMPBUF(savebuf, scheme_error_buf);
+
+  if (!scheme_setjmp(scheme_error_buf)) {
+    Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
+    retval = SCHEME_TRUEP(v);
+  }
+
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_clear_escape();
+
+  return retval;
+}

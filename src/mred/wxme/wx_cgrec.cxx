@@ -60,6 +60,9 @@ public:
 };
 
 wxChangeRecord::wxChangeRecord(void)
+#ifdef CGREC_COLLECTED
+: wxObject(WXGC_NO_CLEANUP)
+#endif
 {
 }
 
@@ -72,10 +75,37 @@ Bool wxChangeRecord::Undo(wxMediaBuffer *)
   return FALSE;
 }
 
+void wxChangeRecord::DropSetUnmodified(void)
+{
+}
+
+wxSchemeModifyRecord::wxSchemeModifyRecord(void *proc)
+{
+  p = proc;
+}
+
+extern int wxsSchemeUndo(void *);
+
+Bool wxSchemeModifyRecord::Undo(wxMediaBuffer *media)
+{
+  return wxsSchemeUndo(p);
+}
+
+wxUnmodifyRecord::wxUnmodifyRecord(void)
+{
+  ok = 1;
+}
+
 Bool wxUnmodifyRecord::Undo(wxMediaBuffer *media)
 {
-  media->SetModified(FALSE);
+  if (ok)
+    media->SetModified(FALSE);
   return FALSE;
+}
+
+void wxUnmodifyRecord::DropSetUnmodified(void)
+{
+  ok = 0;
 }
 
 wxInsertRecord::wxInsertRecord(long position, long length, Bool cont)

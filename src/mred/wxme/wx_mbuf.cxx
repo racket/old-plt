@@ -1285,21 +1285,33 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
 
 void wxMediaBuffer::Undo(void)
 {
-  undomode = TRUE;
-
-  PerformUndos(changes, changes_start, changes_end);
-
-  undomode = FALSE;
+  if (!undomode && !redomode) {
+    undomode = TRUE;
+    
+    PerformUndos(changes, changes_start, changes_end);
+    
+    undomode = FALSE;
+  }
 }
 
 void wxMediaBuffer::Redo(void)
 { 
-  redomode = TRUE;
-
-  PerformUndos(redochanges, redochanges_start, redochanges_end);
-
-  redomode = FALSE;
+  if (!undomode && !redomode) {
+    redomode = TRUE;
+    
+    PerformUndos(redochanges, redochanges_start, redochanges_end);
+    
+    redomode = FALSE;
+  }
 }
+
+
+#ifdef CGREC_COLLECTED
+# define delete_cgrec(x)  /* empty */
+#else
+# define delete_cgrec(x)  delete x
+#endif
+
 
 static void wxmeClearUndos(wxChangeRecord **changes, int& start, int& end,
 			   int maxUndos)
@@ -1307,7 +1319,7 @@ static void wxmeClearUndos(wxChangeRecord **changes, int& start, int& end,
   int i;
 
   for (i = start; i != end; i = (i + 1) % maxUndos) {
-    delete changes[i];
+    delete_cgrec(changes[i]);
     changes[i] = NULL;
   }
 
@@ -1326,7 +1338,12 @@ void wxMediaBuffer::AddUndo(wxChangeRecord *rec)
 		     redochanges_end, maxUndos);
     AppendUndo(rec, changes, changes_start, changes_end);    
   } else
-    delete rec;
+    delete_cgrec(rec);
+}
+
+void wxMediaBuffer::AddSchemeUndo(void *proc)
+{
+  AddUndo(new wxSchemeModifyRecord(proc));
 }
 
 void wxMediaBuffer::AppendUndo(wxChangeRecord *rec, wxChangeRecord **changes, 
@@ -1336,12 +1353,12 @@ void wxMediaBuffer::AppendUndo(wxChangeRecord *rec, wxChangeRecord **changes,
     changes[end] = rec;
     end = (end + 1) % maxUndos;
     if (end == start) {
-      delete changes[start];
+      delete_cgrec(changes[start]);
       changes[start] = NULL;
       start = (start + 1) % maxUndos;
     }
   } else
-    delete rec;
+    delete_cgrec(rec);
 }
 
 void wxMediaBuffer::PerformUndos(wxChangeRecord **changes, 
@@ -1356,7 +1373,7 @@ void wxMediaBuffer::PerformUndos(wxChangeRecord **changes,
     rec = changes[end];
     changes[end] = NULL;
     cont = rec->Undo(this);
-    delete rec;
+    delete_cgrec(rec);
     if (!cont)
       break;
   }
@@ -1375,7 +1392,7 @@ void wxMediaBuffer::PerformUndoList(wxList *changes)
     if (node) {
       rec = (wxChangeRecord *)node->Data();
       cont = rec->Undo(this);
-      delete rec;
+      delete_cgrec(rec);
       changes->DeleteNode(node);
     }
   } while (node && cont);
@@ -1888,6 +1905,19 @@ Bool wxMediaBuffer::Modified(void)
 void wxMediaBuffer::SetModified(Bool mod)
 {
   modified = mod;
+
+  if (!mod && !undomode) {
+    /* Get rid of undos that reset the modification state. */
+    int i;
+    for (i = changes_end; i != changes_start; ) {
+      i = (i - 1 + maxUndos) % maxUndos;
+      changes[i]->DropSetUnmodified();
+    }
+    for (i = redochanges_end; i != redochanges_start; ) {
+      i = (i - 1 + maxUndos) % maxUndos;
+      redochanges[i]->DropSetUnmodified();
+    }
+  }
 }
 
 int wxMediaBuffer::GetInactiveCaretThreshold(void)

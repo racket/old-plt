@@ -680,11 +680,11 @@ void wxListBox::SetString(int N, char *s)
     SetCurrentDC();
     Handle oldHandle; 
     ALGetCell(&oldHandle,&cell,cListReference);
-    Handle newHandle = NewHandle(sizeof(s)+1);
+    Handle newHandle = NewHandle(strlen(s)+1);
     strcpy(*newHandle,s);
     c2pstr(*newHandle);
-	ALSetCell(newHandle, &cell, cListReference);
-	DisposeHandle(oldHandle);
+    ALSetCell(newHandle, &cell, cListReference);
+    DisposeHandle(oldHandle);
 }
 
 char *wxListBox::GetClientData(int N)

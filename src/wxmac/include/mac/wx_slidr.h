@@ -60,6 +60,8 @@ public:
   virtual void DoShow(Bool s);
   
   virtual void ChangeToGray(Bool gray);
+  
+  void TrackPart(int);
 };
 
 #endif // IN_CPROTO

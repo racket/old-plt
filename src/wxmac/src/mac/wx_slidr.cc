@@ -141,7 +141,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	valuebase = fDescent;
 	
 	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, NULL,
-			TRUE, value, min_value, max_value, scrollBarProc, 0);
+			TRUE, value, min_value, max_value, scrollBarProc, (long)this);
 	CheckMemOK(cMacControl);
 	
 	if (label) {
@@ -254,11 +254,8 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	}
 }
 
-// ---- everything above this line is needed for visual respresentation of the wxListBox
-#if USE_ACTIONPROC
 static pascal void SCTrackActionProc(ControlHandle theControl, short thePart);
 static ControlActionUPP SCTrackActionProcUPP = NewControlActionProc(SCTrackActionProc);
-#endif
 
 #define max(x, y) ((x > y) ? x : y)
 #define min(x, y) ((x > y) ? y : x)
@@ -273,56 +270,60 @@ void wxSlider::OnEvent(wxMouseEvent& event) // WCH: mac only ?
 		Point pt = {startV, startH};
 		SetCurrentDC();
 		int part;
-		int oldval = ::GetControlValue(cMacControl);
-#if USE_ACTIONPROC
 		part = ::TestControl(cMacControl, pt);
-		if (part && part == inThumb) {
-			::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
-		}
-		else 
-#endif
-		{
-			part = ::TrackControl(cMacControl, pt, NULL);
-			switch (part) {
-			case 0:
-				break;
-			case kControlUpButtonPart:
-				::SetControlValue(cMacControl, max(s_min, oldval-1));
-				break;
-			case kControlDownButtonPart:
-				::SetControlValue(cMacControl, min(s_max, oldval+1));
-				break;
-			case kControlPageUpPart:
-				::SetControlValue(cMacControl, max(s_min, oldval-page_size));
-				break;
-			case kControlPageDownPart:
-				::SetControlValue(cMacControl, min(s_max, oldval+page_size));
-				break;
-			case kControlIndicatorPart:
-				break;
-			} // end switch
-			if (!(windowStyle & (wxHORIZONTAL << 2))) {
-				// Draw the new value
-				::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
-				::EraseRect(&valueRect);
-				char t[8];
-				sprintf(t,"%d",::GetControlValue(cMacControl));
-				::DrawText(t,0,strlen(t));
-			}
-			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
-			ProcessCommand(*commandEvent);
+		if (part) {
+		  if (part == kControlIndicatorPart) {
+		    if (::TrackControl(cMacControl, pt, NULL))
+		      TrackPart(part);
+		  } else 
+		    ::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
 		}
 	}
 }
 
-#if USE_ACTIONPROC
+void wxSlider::TrackPart(int part)
+{
+	int oldval = ::GetControlValue(cMacControl);
+
+    switch (part) {
+	case kControlUpButtonPart:
+		::SetControlValue(cMacControl, max(s_min, oldval-1));
+		break;
+	case kControlDownButtonPart:
+		::SetControlValue(cMacControl, min(s_max, oldval+1));
+		break;
+	case kControlPageUpPart:
+		::SetControlValue(cMacControl, max(s_min, oldval-page_size));
+		break;
+	case kControlPageDownPart:
+		::SetControlValue(cMacControl, min(s_max, oldval+page_size));
+		break;
+	case kControlIndicatorPart:
+		break;
+	} // end switch
+	
+	if (!(windowStyle & (wxHORIZONTAL << 2))) {
+		// Draw the new value
+		::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
+		::EraseRect(&valueRect);
+		char t[8];
+		sprintf(t,"%d",::GetControlValue(cMacControl));
+		::DrawText(t,0,strlen(t));
+	}
+	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
+	ProcessCommand(*commandEvent);
+	
+	// So update happens correctly as we return...
+	SetCurrentDC();
+}
+
 // Update the Value rect as the thumb is dragged around
 static pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
 {
 	wxSlider*	slider;
-	slider = (wxSlider*)::GetCRefCon(theControl);
+	slider = (wxSlider*)(**theControl).contrlRfCon;
+	slider->TrackPart(thePart);
 }
-#endif
 
 // --------------------- Client API ---------------------
 int wxSlider::GetValue(void)

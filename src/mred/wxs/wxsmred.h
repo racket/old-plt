@@ -34,3 +34,5 @@ MRED_EXTERN void mred_wait_eventspace(void);
 extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 
 MRED_EXTERN Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv);
+
+extern int wxGetPreference(const char *name, int *res);

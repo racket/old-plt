@@ -1705,6 +1705,10 @@ int wxGetPreference(const char *name, char *res, long len)
      unfornatunately, due to timing constraints (i.e., it's called
      especially early during startup). */
 
+  /******************************************/
+  /* Step 1: load the pref file into memory */
+  /******************************************/
+
   if (!pref_file_cache) {
     FILE *fp;
     char *home, *s;
@@ -1806,6 +1810,12 @@ int wxGetPreference(const char *name, char *res, long len)
   }
 
 #define cgetc() ((offset < pref_file_cache_size) ? pref_file_cache[offset++] : -1)
+
+  /*******************************************/
+  /* Step 2: a lightweight `read'.           */
+  /* Assume a real `read' would succeed, and */
+  /* assume there are no comments.           */
+  /*******************************************/
 
   offset = 0;
   depth = 0;

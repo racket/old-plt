@@ -1,6 +1,8 @@
 
 (define id 40001)
 
+(define max-send 100000)
+
 (define (client host)
   (lambda ()
     (tcp-connect host id)))
@@ -28,18 +30,24 @@
 (define (twrite connect)
   (let-values ([(r w) (connect)])
     (let loop ([n 0])
-      (if (tcp-port-send-waiting? w)
+      (if (= n max-send)
 	  (begin
-	    (printf "write-full at ~s~n" n)
-	    (let loop ([m 0])
-	      (if (= m 5)
-		  (begin
-		    (printf "done: ~s~n" (+ m n -1))
-		    (close-output-port w)
-		    (close-input-port r))
-		  (begin
-		    (fprintf w "~s~n" (+ m n))
-		    (loop (add1 m))))))
-	  (begin
-	    (fprintf w "~s~n" n)
-	    (loop (add1 n)))))))
+	    (printf "stopped before ~a~n" n)
+	    (close-output-port w)
+	    (close-input-port r))
+
+	  (if (tcp-port-send-waiting? w)
+	      (begin
+		(printf "write-full at ~s~n" n)
+		(let loop ([m 0])
+		  (if (= m 5)
+		      (begin
+			(printf "done: ~s~n" (+ m n -1))
+			(close-output-port w)
+			(close-input-port r))
+		      (begin
+			(fprintf w "~s~n" (+ m n))
+			(loop (add1 m))))))
+	      (begin
+		(fprintf w "~s~n" n)
+		(loop (add1 n))))))))

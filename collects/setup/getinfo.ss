@@ -29,6 +29,6 @@
 			   'get-info
 			   "info file does not contain a module of the right shape: \"~a\""
 			   file)]))))
-	    (dynamic-require `(file ,(path->string file)) '#%info-lookup))
+	    (dynamic-require file '#%info-lookup))
 	  #f))))
 

@@ -54,24 +54,27 @@
             (set! have-first? #f)
             (if temp-have?
                 (action (list temp-stored value))
-                (void)))))))
+                (action (list no-sexp value))))))))
 
 (define t (collect-in-pairs-maker (lx _)))
-(test (void) t #f 'ahe)
+(test (list no-sexp 'ahe) t #f 'ahe)
 (test (void) t #t 13)
 (test (void) t #t 'apple)
 (test (list 'apple 'banana) t #f 'banana)
-(test (void) t #f 'oetu)
+(test (list no-sexp 'oetu) t #f 'oetu)
 
 ; : ((recon-result recon-result -> (void)) box -> syntax -> break-contract)
 (define (make-break action expr-box)
-  (let* ([recon-call (lx (apply reconstruct:reconstruct-current _))]
+  (let* ([recon-call (lx (if (eq? _ no-sexp) `((...) ()) (apply reconstruct:reconstruct-current _)))]
          [pair-action (lambda (2-list)
-                        (apply action (map recon-call 2-list)))]
+                        (unless (eq? (car 2-list) skipped-step)
+                          (apply action (map recon-call 2-list))))]
          [collector (collect-in-pairs-maker pair-action)])
     (lambda (mark-set break-kind returned-value-list)
-        (let ([mark-list (extract-mark-list mark-set)])
-          (unless (reconstruct:skip-step? break-kind mark-list)
+      (let ([mark-list (extract-mark-list mark-set)])
+        (if (reconstruct:skip-step? break-kind mark-list)
+            (when (eq? break-kind 'normal-break)
+              (collector #t skipped-step))
             (case break-kind
               ((normal-break)
                (collector #t (list (unbox expr-box) mark-list break-kind returned-value-list)))
@@ -82,7 +85,7 @@
 ; : ((listof syntax?) box (recon-result recon-result -> (void)) -> (listof syntax)
 (define (annotate-exprs stx-list expr-box action)
   (let* ([break (make-break action expr-box)]) 
-    (let loop ([env annotate:initial-env-package] [stx-list stx-list])
+    (let loop ([env (annotate:make-initial-env-package)] [stx-list stx-list])
       (if (null? stx-list)
           null
           (let*-values ([(annotated new-env)
@@ -364,12 +367,27 @@
                         `()
                         `((define (f2 x) (+ (g2 x) 10))))
 
-(err/rt-test (test-beginner-sequence "(cons 1 2)" `() `()) exn:user?)
+(err/rt-test (test-beginner-sequence "(cons 1 2)" `() `()) exn:application:type?)
 
-(test-beginner-sequence "(cons 3 (cons 1 empty)) (list 1 2 3) (define-struct a (b)) (make-a 3)"
+(test-beginner-sequence "(cons 3 (cons 1 empty)) (list 1 2 3) (define-struct aa (b)) (make-aa 3)"
                         `(((,highlight-placeholder) ((list 1 2 3)))
                           ((,highlight-placeholder) ((cons 1 (cons 2 (cons 3 empty))))))
-                        `((cons 3 (cons 1 empty)) (cons 1 (cons 2 (cons 3 empty))) (define-struct a (b)) (make-a 3)))
+                        `((cons 3 (cons 1 empty)) (cons 1 (cons 2 (cons 3 empty))) (define-struct aa (b)) (make-aa 3)))
 
+(test-beginner-sequence "(define a11 4)"
+                        `()
+                        `((define a11 4)))
+
+(test-mz-sequence "(map (lambda (x) x) (list 3 4 5))"
+                  `((((map (lambda (x) x) ,highlight-placeholder)) ((list 3 4 5)))
+                    (((map (lambda (x) x) ,highlight-placeholder)) (`( 3 4 5)))
+                    ((,highlight-placeholder) ((map (lambda (x) x) `(3 4 5))))
+                    (((... ,highlight-placeholder ...)) (3))
+                    ((...) ())
+                    (((... ,highlight-placeholder ...)) (4))
+                    ((...) ())
+                    (((... ,highlight-placeholder ...)) (5))
+                    ((...) ())
+                    ((`(3 4 5)))))
 
 (report-errs)

@@ -8,6 +8,7 @@
     (import [mred:debug : mred:debug^]
 	    [mred:preferences : mred:preferences^]
 	    [mred:application : mred:application^]
+	    [mred : mred:container^]
 	    [mred:mode : mred:mode^]
 	    [mred:match-cache : mred:match-cache^]
 	    [mred:paren : mred:paren^] 
@@ -37,6 +38,66 @@
     (scheme-init-wordbreak-map scheme-media-wordbreak-map)
 
     (mred:preferences:set-preference-default 'mred:highlight-parens #t)
+
+    (mred:preferences:add-preference-panel
+     "Indenting"
+     (lambda (p)
+       (letrec* ([all-keywords (hash-table-map (mred:preferences:get-preference 'mred:tabify) list)]
+		 [pick-out (lambda (wanted in out)
+			     (cond
+			       [(null? in) out]
+			       [else (if (eq? wanted (cadr (car in))) 
+					 (pick-out wanted (cdr in) (cons (symbol->string (car (car in))) out))
+					 (pick-out wanted (cdr in) out))]))]
+		 [begin-keywords (pick-out 'begin all-keywords null)]
+		 [define-keywords (pick-out 'define all-keywords null)]
+		 [lambda-keywords (pick-out 'lambda all-keywords null)]
+		 [add-callback
+		  (lambda (keyword-type keyword-symbol list-box)
+		    (lambda (button command)
+		      (let ([new-one (wx:get-text-from-user 
+				      (string-append keyword-type " Keyword")
+				      (string-append "Enter new " keyword-type "-like keyword:"))])
+			(unless (null? new-one)
+			  (let ([parsed (with-handlers ((exn:read? (lambda (x) #f)))
+					  (read (open-input-string new-one)))])
+			    (cond
+			      [(and (symbol? parsed)
+				    (hash-table-get (mred:preferences:get-preference 'mred:tabify)
+							      parsed
+							      (lambda () #f)))
+			       (wx:message-box (format "\"~a\" is already a specially indented keyword" parsed))]
+			      [(symbol? parsed)
+			       (hash-table-put! (mred:preferences:get-preference 'mred:tabify)
+						parsed keyword-symbol)
+			       (send list-box append (symbol->string parsed))]
+			      [else (wx:message-box (format "expected a symbol, found: ~a" new-one) "Error")]))))))]
+		 [delete-callback
+		  (lambda (list-box)
+		    (lambda (button command)
+		      (let* ([selections (box null)]
+			     [_ (send list-box get-selections selections)]
+			     [symbols (map (lambda (x) (string->symbol (send list-box get-string x))) (unbox selections))])
+			(for-each (lambda (x) (send list-box delete x)) (reverse (unbox selections)))
+			(let ([ht (mred:preferences:get-preference 'mred:tabify)])
+			  (for-each (lambda (x) (hash-table-remove! ht x)) symbols)))))])
+	 (mred:horizontal-panel p #t #t
+	   (list 
+	    (vertical-panel #t #t (let ([msg (message "Begin-like Keywords")]
+					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 begin-keywords)])
+				    (list msg box
+					  (button (add-callback "Begin" 'begin box) "Add")
+					  (button (delete-callback box) "Delete"))))
+	    (vertical-panel #t #t (let ([msg (message "Define-like Keywords")]
+					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 define-keywords)])
+				    (list msg box
+					  (button (add-callback "Define" 'define box) "Add")
+					  (button (delete-callback box) "Delete"))))
+	    (vertical-panel #t #t (let ([msg (message "Lambda-like Keywords")]
+					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 lambda-keywords)])
+				    (list msg box
+					  (button (add-callback "Lambda" 'lambda box) "Add")
+					  (button (delete-callback box) "Delete")))))))))
 
     (define make-scheme-mode% 
       (lambda (super%)

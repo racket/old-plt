@@ -159,10 +159,10 @@
 	    (link [debug : mred:debug^ (debug/s@)]
 		  [exn : mred:exn^ (mred:exn@ debug)]
 		  [container : mred:container^ (mred:container@ debug (core function@))]
-		  [preferences : mred:preferences^ (mred:preferences@ debug exn container edit (core function@))]
+		  [exit : mred:exit^ (mred:exit@ debug)]
+		  [preferences : mred:preferences^ (mred:preferences@ debug exn container exit gui-utils edit (core function@))]
 		  [autoload : mred:autoload^ (mred:autoload@ debug preferences (core file@))]
 		  [autosave : mred:autosave^ (mred:autosave@ debug preferences)]
-		  [exit : mred:exit^ (mred:exit@ debug)]
 		  [mode : mred:mode^ (mred:mode@ debug keymap)]
 		  [handler : mred:handler^ (mred:handler@ debug group frame finder (core file@))] 
 		  [keymap : mred:keymap^ (mred:keymap@ debug preferences exit finder handler find-string scheme-paren gui-utils)]
@@ -193,8 +193,9 @@
 					gui-utils scheme-mode scheme-paren (core function@) (core string@)
 					(core pretty-print@) trigger)]
 		  [scheme-mode : mred:scheme-mode^
-			       (mred:scheme-mode@ debug preferences application mode match-cache paren
-						scheme-paren icon handler keymap (core string@))]
+			       (mred:scheme-mode@ debug preferences application container
+						mode match-cache paren scheme-paren icon
+						handler keymap (core string@))]
 		  [hyper-dialog : mred:hyper-dialog^
 				(mred:hyper-dialog@ debug hyper-edit (core file@))]
 		  [hyper-edit : mred:hyper-edit^

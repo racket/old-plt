@@ -23,6 +23,7 @@
    read-user-preferences
    restore-defaults
 
+   add-preference-panel
    show-preferences-dialog
    hide-preferences-dialog))
 

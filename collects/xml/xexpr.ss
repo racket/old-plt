@@ -69,7 +69,7 @@
       [(string? x) (make-pcdata 'scheme 'scheme x)]
       [(or (symbol? x) (and (integer? x) (>= x 0))) (make-entity 'scheme 'scheme x)]
       [(or (comment? x) (pi? x)) x]
-      [else (error 'xexpr->xml "malformed xexpr ~a" x)]))
+      [else (error 'xexpr->xml "malformed xexpr ~s" x)]))
   
   ;; xexpr->string : Xexpression -> String
   (define (xexpr->string xexpr)

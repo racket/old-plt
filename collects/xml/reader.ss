@@ -10,7 +10,7 @@
   ;; Token ::= Contents | Start-tag | End-tag | Eof
   
   (define read-comments (make-parameter #f))
-  (define trim-whitespace (make-parameter #f))
+  (define collapse-whitespace (make-parameter #f))
   
   ;; read-xml : [Input-port] -> Document
   (define read-xml
@@ -225,7 +225,7 @@
                     (cond
                       [(or (eof-object? next) (eq? next #\&) (eq? next #\<))
                        null]
-                      [(and (char-whitespace? next) (trim-whitespace))
+                      [(and (char-whitespace? next) (collapse-whitespace))
                        (skip-space in)
                        (cons #\space (loop))]
                       [else (cons (read-char in) (loop))])))])

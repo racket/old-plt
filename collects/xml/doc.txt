@@ -74,11 +74,10 @@ Parameters
        two formats.  _html-empty-tags_ contains the W3 consortium's
        recommended list of XHTML tags that should use the shorthand.
 
-> trim-whitespace : Bool
+> collapse-whitespace : Bool
        Default: #f
-       All whitespace at the beginning at the beginning and end of each
-       pcdata structure is removed.  All other consecutive whitespace is
-       replaced by a single space.  CDATA sections are not affected.
+       All consecutive whitespace is replaced by a single space.
+       CDATA sections are not affected.
 
 > read-comments : Bool
        Default: #f

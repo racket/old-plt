@@ -51,6 +51,10 @@
 
 extern void wxSetSensitive(Widget, Bool enabled);
 
+static wxWindow *grabbing_panel;
+static Time grabbing_panel_time;
+static Bool grabbing_panel_regsitered;
+
 //-----------------------------------------------------------------------------
 // wxWindow constructor
 //-----------------------------------------------------------------------------
@@ -473,6 +477,31 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
       if (__type == wxTYPE_LIST_BOX) {
 	/* Yuck. Set cursor for total client area of listbox */
 	XtVaSetValues(XtParent(X->handle), XtNcursor, c, NULL);
+      }
+      if ((__type == wxTYPE_PANEL)
+	  || (__type == wxTYPE_FRAME)
+	  || (__type == wxTYPE_DIALOG_BOX)) {
+	/* Yuck. If the child panel has grabbed the cursor, update
+	   it. */
+	if (grabbing_panel) {
+	  wxWindow *p = grabbing_panel;
+	  while (p) {
+	    if (p->cursor)
+	      break;
+	    if (wxSubType(p->__type, wxTYPE_FRAME)
+		|| wxSubType(p->__type, wxTYPE_DIALOG_BOX))
+	      p = NULL;
+	    else
+	      p = p->GetParent();
+	  }
+	
+	  if (p == this) {
+	    /* Grabbing panel uses this cursor */
+	    XChangeActivePointerGrab(wxAPP_DISPLAY, 0,
+				     GETCURSOR(cursor), 
+				     grabbing_panel_time);
+	  }
+	}
       }
     }
   }
@@ -1584,7 +1613,10 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
         break;
     case ButtonPress:
-#if 0
+      /* X grab doesn't work the way we'd like for panels (since they
+	 have children), unless a grab cursor is installed.
+	 Unfortunately, we also need to watch for changes to the
+	 cursor via SetCursor(). */
       if (win->__type == wxTYPE_PANEL) {
 	wxWindow *p = win;
 	while (p) {
@@ -1601,11 +1633,19 @@ void wxWindow::WindowEventHandler(Widget w,
 	  XChangeActivePointerGrab(wxAPP_DISPLAY, 0,
 				   GETCURSOR(p->cursor), 
 				   xev->xbutton.time);
+	  if (!grabbing_panel_regsitered) {
+	    wxREGGLOB(grabbing_panel);
+	    grabbing_panel_regsitered = 1;
+	  }
+
+	  grabbing_panel = win;
+	  grabbing_panel_time = xev->xbutton.time;
 	}
       }
-#endif
-	Press = TRUE;
+      Press = TRUE;
     case ButtonRelease:  /* ^^^^ fallthrough */
+      if (!Press)
+	grabbing_panel = NULL;
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
       {

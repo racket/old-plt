@@ -176,14 +176,16 @@ static int QueueTransferredEvent(EventRecord *e)
   return 1;
 }
 
-static int GetSleepTime(void)
+static GetSleepTime(int *sleep_time, int *delay_time)
 {
 #if FG_SLEEP_TIME
   if (last_was_front && Button())
-    return 0;
+    *sleep_time = 0;
+  else
 #endif
-    
-  return last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
+   *sleep_time = last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
+   
+  *delay_time = last_was_front ? DELAY_TIME : 0;
 }
 
 static void TransferQueue(int all)
@@ -192,11 +194,7 @@ static void TransferQueue(int all)
   short mask;
   int sleep_time, delay_time;
   
-  sleep_time = GetSleepTime();
-  if (sleep_time < DELAY_TIME)
-    delay_time = DELAY_TIME;
-  else
-    delay_time = sleep_time;
+  GetSleepTime(&sleep_time, &delay_time);
   
   /* Don't call WaitNextEvent too often. */
   static unsigned long lastTime;

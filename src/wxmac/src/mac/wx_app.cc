@@ -260,7 +260,11 @@ void wxApp::doMacMouseUp(void)
 		mouseWindow->ScreenToClient(&hitX, &hitY); // mouseWindow client c.s.
 		mouseWindow->ClientToLogical(&hitX, &hitY); // mouseWindow logical c.s.
 		
-		wxMouseEvent *_theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_LEFT_UP);
+		// RightButton is cmdKey click  on the mac platform for one-button mouse
+		Bool rightButton = cCurrentEvent.modifiers & cmdKey;
+		int type = rightButton ? wxEVENT_TYPE_RIGHT_UP : wxEVENT_TYPE_LEFT_UP;
+		
+		wxMouseEvent *_theMouseEvent = new wxMouseEvent(type);
 		wxMouseEvent &theMouseEvent = *_theMouseEvent;
 		theMouseEvent.leftDown = FALSE;
 		theMouseEvent.middleDown = FALSE;
@@ -269,7 +273,7 @@ void wxApp::doMacMouseUp(void)
 		theMouseEvent.controlDown = cCurrentEvent.modifiers & controlKey;
 		// altKey is optionKey on the mac platform:
 		theMouseEvent.altDown = cCurrentEvent.modifiers & optionKey;
-		theMouseEvent.metaDown = cCurrentEvent.modifiers & cmdKey;  // mflatt
+		theMouseEvent.metaDown = FALSE;  // mflatt
 		theMouseEvent.x = hitX;
 		theMouseEvent.y = hitY;
 		theMouseEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
@@ -290,7 +294,11 @@ void wxApp::doMacMouseUp(void)
  			wxArea* frameParentArea = macWxFrame->ParentArea();
  			frameParentArea->ScreenToArea(&hitX, &hitY);
 
- 			wxMouseEvent *_theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_LEFT_UP);
+			// RightButton is cmdKey click  on the mac platform for one-button mouse
+			Bool rightButton = cCurrentEvent.modifiers & cmdKey;
+			int type = rightButton ? wxEVENT_TYPE_RIGHT_UP : wxEVENT_TYPE_LEFT_UP;
+		
+ 			wxMouseEvent *_theMouseEvent = new wxMouseEvent(type);
 			wxMouseEvent &theMouseEvent = *_theMouseEvent;
  			theMouseEvent.leftDown = FALSE;
  			theMouseEvent.middleDown = FALSE;
@@ -299,7 +307,7 @@ void wxApp::doMacMouseUp(void)
  			theMouseEvent.controlDown = cCurrentEvent.modifiers & controlKey;
  			// altKey is optionKey on the mac platform:
  			theMouseEvent.altDown = cCurrentEvent.modifiers & optionKey;
- 			theMouseEvent.metaDown = cCurrentEvent.modifiers & cmdKey; // mflatt
+ 			theMouseEvent.metaDown = FALSE; // mflatt
  			theMouseEvent.x = hitX;
  			theMouseEvent.y = hitY;
 			theMouseEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
@@ -324,13 +332,13 @@ void wxApp::doMacMouseMotion(void)
 
 	wxMouseEvent *_theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 	wxMouseEvent &theMouseEvent = *_theMouseEvent;
-    theMouseEvent.leftDown = isMouseDown && !isRightButton;
+	theMouseEvent.leftDown = isMouseDown && !isRightButton;
 	theMouseEvent.middleDown = FALSE;
 	theMouseEvent.rightDown = isMouseDown && isRightButton;
 	theMouseEvent.shiftDown = cCurrentEvent.modifiers & shiftKey;
 	theMouseEvent.controlDown = cCurrentEvent.modifiers & controlKey;
 	theMouseEvent.altDown = isAltKey;
-	theMouseEvent.metaDown = cCurrentEvent.modifiers & cmdKey;  // mflatt
+	theMouseEvent.metaDown = FALSE;  // mflatt
 	theMouseEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
 		
 	if (wxWindow::gMouseWindow)
@@ -718,8 +726,7 @@ void wxApp::doMacContentClick(wxFrame* frame)
 	// altKey is optionKey on the mac platform:
 	Bool isAltKey = cCurrentEvent.modifiers & optionKey;
 
-	WXTYPE mouseEventType = rightButton ? wxEVENT_TYPE_RIGHT_DOWN
-										: wxEVENT_TYPE_LEFT_DOWN;
+	WXTYPE mouseEventType = rightButton ? wxEVENT_TYPE_RIGHT_DOWN : wxEVENT_TYPE_LEFT_DOWN;
 	wxMouseEvent *_theMouseEvent = new wxMouseEvent(mouseEventType);
 	wxMouseEvent &theMouseEvent = *_theMouseEvent;
 	theMouseEvent.leftDown = !rightButton;

@@ -1,3 +1,4 @@
+
 (module pconvert mzscheme
   
   (require (prefix s: "string.ss")
@@ -11,7 +12,8 @@
            abbreviate-cons-as-list
            whole/fractional-exact-numbers
            booleans-as-true/false
-           use-numbered-names
+           named/undefined-handler
+           use-named/undefined-handler
            
            print-convert
            print-convert-expr
@@ -41,7 +43,8 @@
   (define abbreviate-cons-as-list (make-parameter #t boolean-filter))
   (define whole/fractional-exact-numbers (make-parameter #f boolean-filter))
   (define booleans-as-true/false (make-parameter #t boolean-filter))
-  (define use-numbered-names (make-parameter #f boolean-filter))
+  (define use-named/undefined-handler (make-parameter (lambda (x) #f)))
+  (define named/undefined-handler (make-parameter (lambda (x) #f)))
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; share-hash is the hash-table containing info on what cons cells
@@ -154,12 +157,6 @@
     (lambda (name)
       (string->symbol
        (string-append "-" (s:expr->string name) "-"))))
-  
-  (define next-number 1)
-  (define (get-next-number)
-    (begin0 next-number
-            (set! next-number (+ next-number 1))))
-
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; prints an expression given that it has already been hashed. This
@@ -325,9 +322,8 @@
                                             (eval answer))
                                           expr)
                                      answer]
-                                    [(use-numbered-names)
-                                     (string->symbol
-                                      (format "~a_~a" answer (get-next-number)))]
+                                    [((use-named/undefined-handler) expr)
+                                     ((named/undefined-handler) expr)]
                                     [else
                                      (build-unnamed)])))])
                         (lambda ()

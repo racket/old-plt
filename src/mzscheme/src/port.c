@@ -2709,6 +2709,14 @@ static int fd_getc(Scheme_Input_Port *port)
       scheme_getc((Scheme_Object *)port);
     }
 
+    /* Another thread might have filled the buffer, or
+       if SOME_FDS_ARE_NOT_SELECTABLE is set, 
+       fd_char_ready might have read one character. */
+    if (fip->bufcount) {
+      fip->bufcount--;
+      return fip->buffer[fip->buffpos++];
+    }
+
     do {
       bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
     } while ((bc == -1) && (errno == EINTR));

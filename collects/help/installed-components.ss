@@ -51,20 +51,20 @@
 					 collection
 					 `(li ()
 					      (font ((color "forest green")) (b () ,name))
-					      (p
-					       ()
-					       (font ((color "red"))
-						     (i ()
-							,(format "error during 'blurb: ~a"
-								 (if (exn? x)
-								     (exn-message x)
-								     x)))))))))])
+					      (br ())
+					      (font ((color "red"))
+						    (i ()
+						       ,(format "error during 'blurb: ~a"
+								(if (exn? x)
+								    (exn-message x)
+								    x))))))))])
 		      (proc 'blurb (lambda () (k #f))))])
 	(make-comp
 	 name
 	 `(li ()
 	      (font ((color "forest green")) (b () ,name))
-	      (p () ,@blurb)))))))
+	      (br ())
+	      ,@blurb))))))
 
 (define (comp<=? ca cb) (string<=? (comp-name ca) (comp-name cb)))
 

@@ -741,6 +741,8 @@ void wxWindow::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 //-----------------------------------------------------------------------------
 wxMacDC* wxWindow::MacDC(void) { return cMacDC; } // mac platform only
 
+#define wxIsWindowVisible(x) 1
+
 //-----------------------------------------------------------------------------
 int wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 {
@@ -749,7 +751,7 @@ int wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 
   theMacGrafPort = cMacDC->macGrafPort();
   
-  vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
+  vis = wxIsWindowVisible(GetWindowFromPort(theMacGrafPort));
   
   ::SetPort(theMacGrafPort);
 
@@ -773,7 +775,7 @@ int wxWindow::SetCurrentMacDC(void) // mac platform only
 
   theMacGrafPort = cMacDC->macGrafPort();
 
-  vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
+  vis = wxIsWindowVisible(GetWindowFromPort(theMacGrafPort));
 
   ::SetPort(theMacGrafPort);
 
@@ -794,7 +796,7 @@ int wxWindow::SetCurrentDC(void) // mac platform only
 
   theMacGrafPort = cMacDC->macGrafPort();
 
-  vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
+  vis = wxIsWindowVisible(GetWindowFromPort(theMacGrafPort));
 
   ::SetPort(theMacGrafPort);
 
@@ -1473,6 +1475,14 @@ void wxWindow::Activate(Bool flag) // mac platform only
   wxWindow* childWindow;
   wxChildList *wl;
 
+  if (!!cActive == !!flag)
+    return;
+  if (flag && (__type == wxTYPE_FRAME)) {
+    /* Don't activate unless it's still frontmost */
+    if (FrontWindow() != GetWindowFromPort(cMacDC->macGrafPort()))
+      return;
+  }
+
   cActive = flag;
   ShowAsActive(flag);
 
@@ -1488,6 +1498,7 @@ void wxWindow::Activate(Bool flag) // mac platform only
     }
     areaNode = areaNode->Next();
   }
+
   OnActivate(flag);
 }
 

@@ -566,9 +566,9 @@ void wxApp::doMacKeyUpDown(Bool down)
 	  menuResult = MenuEvent(&cCurrentEvent);
 	  wxDoneMenuDraw();
 	  if (menuResult) {
-	    if (doMacInMenuBar(menuResult, TRUE))
+	    if (doMacInMenuBar(menuResult, TRUE)) {
 	      return;
-	    else {
+	    } else {
 	      wxPrepareMenuDraw();
 	      HiliteMenu(0);
 	      wxDoneMenuDraw();

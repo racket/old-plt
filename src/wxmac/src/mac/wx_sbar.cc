@@ -181,7 +181,7 @@ void wxScrollBar::SetValue(int val)
 //-----------------------------------------------------------------------------
 int wxScrollBar::GetValue(void)
 {
-  return ::GetControl32BitValue(cMacControl);
+  return GetControl32BitValue(cMacControl);
 }
 
 //-----------------------------------------------------------------------------
@@ -194,7 +194,7 @@ void wxScrollBar::SetMaxValue(int maxValue)
 //-----------------------------------------------------------------------------
 int wxScrollBar::GetMaxValue(void)
 {
-  return ::GetControl32BitMaximum(cMacControl);
+  return GetControl32BitMaximum(cMacControl);
 }
 
 
@@ -280,12 +280,14 @@ static pascal void TrackActionProc(ControlHandle theControl, short thePart)
     /* Must queue callbacks only: */
     scrollBar->TrackAction(thePart);
 
-    while (wxHETYield(scrollBar) && StillDown()) { }
+    while (wxHETYield(scrollBar, NULL, NULL) && StillDown()) { }
   }
 
 #ifdef MZ_PRECISE_GC
+# ifndef GC_STACK_CALLEE_RESTORE
   /* Restore variable stack. */
   GC_variable_stack = (void **)__gc_var_stack__[0];
+# endif
 #endif
 }
 
@@ -470,3 +472,4 @@ wxCursor *wxScrollBar::GetEffectiveCursor(void)
   p = p->GetParent();
   return p->GetEffectiveCursor();
 }
+

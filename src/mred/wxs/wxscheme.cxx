@@ -1009,8 +1009,8 @@ void wxCheckFinishedSounds(void)
         playing = playptr->next;
       }
       MyCloseMovie(playptr->mov, playptr->file);
-    }
-    last_playptr = playptr;
+    } else
+      last_playptr = playptr;
     playptr = playptr->next;
   }      
 }      

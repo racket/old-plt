@@ -292,7 +292,7 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   ATSLineLayoutOptions ll_attribs;
   GC_CAN_IGNORE ATSUAttributeTag  ll_theTags[] = { kATSULineLayoutOptionsTag };
   GC_CAN_IGNORE ByteCount    ll_theSizes[] = { sizeof(ATSLineLayoutOptions) };
-  ATSUAttributeValuePtr ll_theValues[ sizeof(ll_theTags) / sizeof(ATSUAttributeTag) ];
+  ATSUAttributeValuePtr ll_theValues[ 1 /* = sizeof(ll_theTags) / sizeof(ATSUAttributeTag) */ ];
 
   if (!theATSUstyle) {
     CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
@@ -442,7 +442,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					   sizeof(Boolean),
 					   sizeof(Boolean),
 					   sizeof(RGBColor) };
- ATSUAttributeValuePtr theValues[ sizeof(theTags) / sizeof(ATSUAttributeTag) ];
+ ATSUAttributeValuePtr theValues[ 8 /* = sizeof(theTags) / sizeof(ATSUAttributeTag) */ ];
  
  ATSUFontID   atsuFont;
  Fixed    atsuSize;

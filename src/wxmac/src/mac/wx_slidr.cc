@@ -410,19 +410,21 @@ pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
     /* Queue callbacks only; don't run Scheme code directly: */
     slider->TrackPart(thePart);
     
-    while (wxHETYield(slider) && StillDown()) { }
+    while (wxHETYield(slider, NULL, NULL) && StillDown()) { }
   }
 
 #ifdef MZ_PRECISE_GC
+# ifndef GC_STACK_CALLEE_RESTORE
   /* Restore variable stack. */
   GC_variable_stack = (void **)__gc_var_stack__[0];
+# endif
 #endif
 }
 
 // --------------------- Client API ---------------------
 int wxSlider::GetValue(void)
 {
-  return ::GetControlValue(cMacControl);
+  return GetControlValue(cMacControl);
 }
 
 void wxSlider::SetValue(int value)

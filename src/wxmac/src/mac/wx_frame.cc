@@ -20,13 +20,20 @@
 #include "wx_main.h"
 #include "wx_messg.h"
 #include "wx_utils.h"
+#include "wx_het.h"
 
 static wxMenuBar *close_menu_bar;
+
+extern int mred_current_thread_is_handler(void *ctx);
+extern int mred_in_restricted_context();
 
 //=============================================================================
 // Public constructors
 //=============================================================================
 
+static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef, 
+				     EventRef inEvent, 
+				     void *inUserData);
 
 //-----------------------------------------------------------------------------
 wxFrame::wxFrame // Constructor (for frame window)
@@ -91,7 +98,6 @@ wxFrame::wxFrame // Constructor (for frame window)
     if (cStyle & wxNO_RESIZE_BORDER) {
       windowAttributes = kWindowNoAttributes;
     } else {
-      cIsResizableDialog = TRUE;
       windowAttributes = kWindowResizableAttribute;
     }
   } else {
@@ -171,6 +177,22 @@ wxFrame::wxFrame // Constructor (for frame window)
   // create a root control, to enable control embedding
   ::CreateRootControl(theMacWindow,&rootControl);
   cMacControl = rootControl;
+
+#ifdef OS_X
+  {
+    /* Enable updates for a frame just before it is shown.
+       The same handler could probably be used for live resizing. */
+    EventTypeSpec spec;
+    spec.eventClass = kEventClassWindow;
+    spec.eventKind = kEventWindowDrawContent;
+    InstallEventHandler(GetWindowEventTarget(theMacWindow),
+			update_if_in_handler,
+			1,
+			&spec,
+			refcon,
+			NULL);
+  }
+#endif      
 }
 
 //=============================================================================
@@ -205,6 +227,49 @@ wxFrame::~wxFrame(void)
 }
 
 //=============================================================================
+// Paint callback when showing
+//=============================================================================
+
+static int DoPaint(void *_f)
+{
+  wxFrame *f = (wxFrame *)_f;
+  f->Paint();
+  return 0;
+}
+
+static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef, 
+				     EventRef inEvent, 
+				     void *inUserData)
+{
+  wxFrame *f;
+
+  f = (wxFrame*)GET_SAFEREF(inUserData);
+
+  /* This event handler should only be used when showing a window,
+     where we've set up a trampoline around the ShowWindow call.
+     The trampoline is necessary because Paint() might invoke arbitrary
+     Scheme code, and because the system called us, we can't
+     allow thread swaps (which would copy a part of the stack that
+     the system owns). See the use of wxHETShowWindow below. */
+
+  if (f->cCanUpdateOnCallback) {
+    int c = 0;
+    f->cCanUpdateOnCallback = 0;
+    /* wxHETYield doesn't actually wxYield(). It calls our DoPaint
+       proc. This might run some Scheme code and then time out
+       for a thread swap. We give the thread up to 10 times its
+       normal alotment to finish drawing the frame. */
+    while (wxHETYield(f, DoPaint, f)) {
+      c++;
+      if (c == 10)
+	break;
+    }
+  }
+
+  return noErr;
+}
+
+//=============================================================================
 // Private methods
 //=============================================================================
 
@@ -221,7 +286,6 @@ void wxFrame::InitDefaults(void)
   cControlArea = new wxArea(this);
   cContentArea = new wxArea(this);
   cPlatformArea = new wxArea(this);
-  cIsResizableDialog = FALSE;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -804,15 +868,47 @@ void wxFrame::Show(Bool show)
 
       graf = cSheetParent->cMacDC->macGrafPort();
       pwin = GetWindowFromPort(graf);
-      ::ShowSheetWindow(theMacWindow, pwin);
+      if (mred_current_thread_is_handler(context)
+	  && !mred_in_restricted_context()) {
+	/* Enable the paint callback, which must run in
+	   a special trampoline mode; see update_if_in_handler
+	   above. */
+	SetCurrentDC();
+	cCanUpdateOnCallback = TRUE;
+	wxHETShowSheetWindow(theMacWindow, pwin);
+	if (cCanUpdateOnCallback) {
+	  cCanUpdateOnCallback = FALSE;
+	  Refresh();
+	}
+      } else {
+	ShowSheetWindow(theMacWindow, pwin);
+	Refresh();
+      }
       cSheetParent->sheet = this;
       ChangeWindowAttributes(pwin, 0, kWindowCloseBoxAttribute);
       wxMacRecalcNewSize(FALSE); // recalc new position only
-    } else
-#endif
-      { 
-	::ShowWindow(theMacWindow);
+    } else { 
+      if (mred_current_thread_is_handler(context)
+	  && !mred_in_restricted_context()) {
+	/* Enable the paint callback, which must run in
+	   a special trampoline mode; see update_if_in_handler
+	   above. */
+	SetCurrentDC();
+	cCanUpdateOnCallback = TRUE;
+	wxHETShowWindow(theMacWindow);
+	if (cCanUpdateOnCallback) {
+	  cCanUpdateOnCallback = FALSE;
+	  Refresh();
+	}
+      } else {
+	ShowWindow(theMacWindow);
+	Refresh();
       }
+    }
+#else
+    ShowWindow(theMacWindow);
+#endif
+      
     ::SelectWindow(theMacWindow); 
 
     if (cMacDC->currentUser() == this)
@@ -949,14 +1045,7 @@ RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
 	|| (theMacHeight >= y && theMacHeight <= y + h)) {
       RgnHandle rgn;
       rgn = NewRgn();  // this can fail.  use MaxMem to determine validity?       
-      if (FALSE) {  //(cIsResizableDialog) {
-	OpenRgn();
-	MoveTo(theMacHeight, theMacWidth - 15);
-	LineTo(theMacHeight, theMacWidth);
-	LineTo(theMacHeight - 15, theMacWidth);
-	LineTo(theMacHeight, theMacWidth - 15);
-	CloseRgn(rgn);
-      } else {
+      {
 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
 	RectRgn(rgn, &growRect);
       }

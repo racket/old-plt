@@ -123,8 +123,12 @@ static void UpdateRgnToWindowCoords(WindowPtr w, RgnHandle updateRgn)
   Rect windowBounds;
   RgnHandle contentRgn;
   
+#ifdef OS_X
   GetWindowBounds(w, kWindowContentRgn, &windowBounds);
-  
+#else
+  GetWindowBounds(w, kWindowGlobalPortRgn, &windowBounds);
+#endif
+
   /* Avoid overflow in offset: */
   contentRgn = NewRgn();
   if (contentRgn) {

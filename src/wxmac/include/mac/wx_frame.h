@@ -36,8 +36,6 @@ class wxFrame: public wxbFrame
   wxArea* 	cContentArea;
   wxArea* 	cControlArea;
   wxWindow*	cFocusWindow;
-  Bool		cIsResizableDialog;
-  MenuHandle	cAppleMenuHandle;
   Bool		cIsModal;
 
   wxFrame*      cSheetParent;
@@ -49,6 +47,7 @@ class wxFrame: public wxbFrame
  public:
   int         cBusyCursor;
   Bool        is_in_update;
+  Bool	      cCanUpdateOnCallback;
 
   wxDialogBox* cDialogPanel;
 

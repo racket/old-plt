@@ -23,6 +23,9 @@
 ;;       Passing the address of a pointer is dangerous; make sure
 ;;       that the pointer is used afterward, otherwise it pointer
 ;;       might not get updated during GC.
+;;
+;;       A "return;" can get converted to "{ <something>; return; };",
+;;       which can break "if (...) return; else ...".
 
 ;; To call for Precise GC:
 ;;   mzscheme -qr xform.ss [--notes] <cpp> <src> <dest>
@@ -33,7 +36,6 @@
 ;; General code conventions:
 ;;   e means a list of tokens, often ending in a '|;| token
 ;;   -e means a reversed list of tokens
-
 
 ;; Make sure we can find MzLib:
 (unless (with-handlers ([not-break-exn? (lambda (x) #f)])
@@ -49,6 +51,8 @@
 
 (error-print-width 100)
 
+;; The rest of the code is in this module, mainly to get
+;; no-free-variable checking.
 (module xform mzscheme
   (require (lib "list.ss")
 	   (lib "process.ss"))
@@ -462,6 +466,7 @@
   ;; Pre-process and S-expr-ize
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  ;; To run cpp:
   (define process2
     (if (eq? (system-type) 'windows)
 	(lambda (s)
@@ -493,6 +498,8 @@
 
   (define cpp-error-thread (mk-error-thread cpp-process))
 
+  ;; Pipe cpp results through here; we insert a filter
+  ;; between the pipe ends.
   (define-values (local-ctok-read local-ctok-write)
     (make-pipe 100000))
 
@@ -3435,9 +3442,9 @@
 		(loop (cdr e)))]
        [else (loop (cdr e))])))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Palm call-graph
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (call-graph name e)
     (let ([body-v (let* ([len (sub1 (length e))]
@@ -3469,9 +3476,9 @@
 	[else (void)]))
      e))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; More "parsing", main loop
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (body->lines e comma-sep?)
     (reverse!

@@ -458,24 +458,26 @@
 						(set-position start-pos-left start-pos-right))))))]
 				   [rename-item
 				     (make-object mred:menu-item%
-						  "Rename"
-						  menu
-						  (lambda (item evt)
-						    (unless (null? arrows)
-                                                      
-                                                      ;; deadlock; why?!?!?!
-						      ;(send (get-top-level-window) syncheck:button-callback)
-                                                      
-						      (let* ([arrow (car arrows)]
-							     [id-name (arrow-id-name arrow)]
-							     [new-id 
-							      (mred:get-text-from-user
-							       "Rename Identifier"
-							       (format "Rename ~a to:" id-name)
-							       #f
-							       (format "~a" id-name))])
-							((arrow-rename arrow) new-id))
-						      (invalidate-bitmap-cache))))])
+				       "Rename"
+				       menu
+				       (lambda (item evt)
+					 (unless (null? arrows)
+					   
+					   ;; deadlock; why?!?!?!
+					;(send (get-top-level-window) syncheck:button-callback)
+					   
+					   (let* ([arrow (car arrows)]
+						  [id-name (arrow-id-name arrow)]
+						  [new-id 
+						   (fw:keymap:call/text-keymap-initializer
+						    (lambda ()
+						      (mred:get-text-from-user
+						       "Rename Identifier"
+						       (format "Rename ~a to:" id-name)
+						       #f
+						       (format "~a" id-name))))])
+					     ((arrow-rename arrow) new-id))
+					   (invalidate-bitmap-cache))))])
 			       (send (get-canvas) popup-menu menu
 				     (inexact->exact (floor (send event get-x)))
 				     (inexact->exact (floor (send event get-y)))))))]

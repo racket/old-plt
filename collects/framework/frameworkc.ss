@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.12 1999/07/12 04:43:13 robby Exp $
+;; $Id: frameworkc.ss,v 1.13 1999/07/16 05:11:06 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -49,7 +49,7 @@
 	[finder : framework:finder^
 		((require-relative-library "finder.ss")
 		 mred
-		 preferences gui-utils
+		 preferences gui-utils keymap
 		 core:string core:function core:file)]
 
 	[group : framework:group^ 

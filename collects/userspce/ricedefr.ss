@@ -22,52 +22,80 @@
 		     (map (lambda (x) (format "~e" x)) args))))]
 	 [else (loop (cdr l))]))))
 
+  (define (check-arity prim len lst)
+    (let ([lst-len (length lst)])
+      (unless (>= lst-len len)
+	(error prim
+	       "expects at least ~a arguments, given ~a"
+	       len
+	       (if (= 0 lst-len)
+		   0
+		   (format
+		    "~a: ~a"
+		    lst-len
+		    (apply string-append
+			   (cons (format "~a" (car lst))
+				 (let loop ([rst (cdr lst)])
+				   (cond
+				    [(null? rst) null]
+				    [else (cons (format " ~a" (car rst))
+						(loop (cdr rst)))]))))))))))
+		    
+
   (define =
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%= x y args))
+	(lambda args
+	  (check-arity '= 2 args)
+	  (apply #%= args))
 	#%=))
 
   (define +
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%+ x y args))
+	(lambda args
+	  (check-arity '+ 2 args)
+	  (apply #%+ args))
 	#%+))
 
   (define /
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%/ x y args))
+	(lambda args
+	  (check-arity '/ 2 args)
+	  (apply #%/ args))
 	#%/))
 
   (define *
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%* x y args))
+	(lambda args
+	  (check-arity '* 2 args)
+	  (apply #%* args))
 	#%*))
 
   (define >=
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%>= x y args))
+	(lambda args
+	  (check-arity '>= 2 args)
+	  (apply #%>= args))
 	#%>=))
 
   (define <
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%< x  y args))
+	(lambda args
+	  (check-arity '< 2 args)
+	  (apply #%< args))
 	#%<))
 
   (define >
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%> x y args))
+	(lambda args
+	  (check-arity '> 2 args)
+	  (apply #%> args))
 	#%>))
 
   (define <=
     (if (params:<=-at-least-two-args)
-	(lambda (x y . args)
-	  (apply #%<= x y args))
+	(lambda args
+	  (check-arity '<= 2 args)
+	  (apply #%<= args))
 	#%<=))
 
   (define cons (if (params:allow-improper-lists)

@@ -242,7 +242,8 @@
     (primitive-eval
      (with-handlers ([(lambda (x) #t)
 		      (lambda (x)
-			(error 'internal-syntax-error (exn-message x)))])
+			(error 'internal-syntax-error
+			       (format "~a" (exn-message x))))])
        (expand-defmacro expr))))
   
   (define-struct process-finish (error?))
@@ -408,7 +409,7 @@
 		 [debug (if (pair? m)
 			    (car m)
 			    #f)])
-	    (dh (exn-message exn) debug exn))
+	    (dh (format "~a" (exn-message exn)) debug exn))
 	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler didn't escape")
@@ -648,9 +649,11 @@
         [else (error 'install-language "found bad setting-printing: ~a~n" 
                      (setting-printing setting))])
       
-      (mzlib:pretty-print:pretty-print-show-inexactness (setting-print-tagged-inexact-numbers setting))
+      (mzlib:pretty-print:pretty-print-show-inexactness
+       (setting-print-tagged-inexact-numbers setting))
       (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
-      (mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
+      (mzlib:print-convert:whole/fractional-exact-numbers
+       (setting-whole/fractional-exact-numbers setting))
       (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
       (mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
       

@@ -6,7 +6,7 @@
 
 (define mred:paren@
   (unit/sig mred:paren^
-    (import ([unit mred:debug : mred:debug^]))
+    (import [mred:debug : mred:debug^])
 	    
     (mred:debug:printf 'invoke "mred:paren@")
 

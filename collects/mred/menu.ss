@@ -1,7 +1,7 @@
 (define mred:menu@
   (unit/sig mred:menu^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mzlib:function : mzlib:function^]))
+    (import [mred:debug : mred:debug^]
+	    [mzlib:function : mzlib:function^])
 	    
     (mred:debug:printf 'invoke "mred:menu@")
 

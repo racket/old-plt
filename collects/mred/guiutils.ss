@@ -1,8 +1,8 @@
 (define mred:gui-utils@
   (unit/sig mred:gui-utils^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mzlib:function : mzlib:function^]
-	     [unit mzlib:trigger : mzlib:trigger^]))
+    (import [mred:debug : mred:debug^]
+	    [mzlib:function : mzlib:function^]
+	    [mzlib:trigger : mzlib:trigger^])
 
     (mred:debug:printf 'invoke "mred:gui-utils@")
 

@@ -3,8 +3,8 @@
 
 (define mred:scheme-paren@
   (unit/sig mred:scheme-paren^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mred:paren : mred:paren^]))
+    (import [mred:debug : mred:debug^]
+	    [mred:paren : mred:paren^])
 	    
     (mred:debug:printf 'invoke "mred:scheme-paren@")
 

@@ -1,7 +1,7 @@
 ; Always load the standard system with load/cd
 
 ; Print a little more than MzScheme automatically does:
-(error-print-width 1000)
+(error-print-width 250)
 
 (define mred:debug:turned-on (box (list 'startup 'invoke)))
 
@@ -86,6 +86,9 @@
 (define mzlib:constant-lib? #t)
 (require-library "corec.ss")
 (require-library "triggerc.ss")
+
+(write make-trigger)
+
 (current-library-path (normalize-path (current-library-path)))
 
 (define mred:plt-home-directory
@@ -141,9 +144,9 @@
   (lambda ()
     (let ([debug/s@ (unit->unit/sig mred:debug@ () mred:debug^)])
       (set! mred@
-	    (compound-unit/sig (import ([unit core : mzlib:core^]
-					[unit trigger : mzlib:trigger^]
-					[unit application : mred:application^]))
+	    (compound-unit/sig (import [core : mzlib:core^]
+				       [trigger : mzlib:trigger^]
+				       [application : mred:application^])
 	    (link [debug : mred:debug^ (debug/s@)]
 		  [exn : mred:exn^ (mred:exn@ debug)]
 		  [preferences : mred:preferences^ (mred:preferences@ debug exn (core function@))]
@@ -208,8 +211,8 @@
 (define mred:make-application@
   (lambda ()
     (unit/sig mred:application^
-      (import ([unit mred@ : mred^]
-	       [unit core@ : mzlib:core^]))
+      (import [mred@ : mred^]
+	      [core@ : mzlib:core^])
       (define console-frame (make-object mred@:console-frame%))
       (define eval-string (ivar (ivar console-frame edit) do-eval)))))
 
@@ -234,8 +237,8 @@
     (set! mred:make-application@
 	  (lambda ()
 	    (unit/sig mred:application^
-	      (import ([unit mred : mred^]
-		       [unit core : mzlib:core^]))
+	      (import [mred : mred^]
+		      [core : mzlib:core^])
 	      (define console-frame (make-object wx:frame% '() "hidden"))
 	      (define eval-string (lambda (string) (void))))))
     (invoke-open-unit (mred:make-invokable-unit) mred)

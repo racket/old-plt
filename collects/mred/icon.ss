@@ -1,6 +1,6 @@
 (define mred:icon@
   (unit/sig mred:icon^
-    (import ([unit mred:debug : mred:debug^]))
+    (import [mred:debug : mred:debug^])
 	    
     (mred:debug:printf 'invoke "mred:icon@")
 

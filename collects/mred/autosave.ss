@@ -1,7 +1,7 @@
 (define mred:autosave@
   (unit/sig mred:autosave^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mred:preferences : mred:preferences^]))
+    (import [mred:debug : mred:debug^]
+	    [mred:preferences : mred:preferences^])
 	    
     (mred:debug:printf 'invoke "mred:autosave@")
 

@@ -38,8 +38,8 @@
 
 (define mred:container@
   (unit/sig mred:container^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mzlib:function : mzlib:function^]))
+    (import [mred:debug : mred:debug^]
+	    [mzlib:function : mzlib:function^])
     
     (mred:debug:printf 'invoke "mred:container@")
     

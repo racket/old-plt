@@ -5,17 +5,17 @@
 
 (define mred:scheme-mode@
   (unit/sig mred:scheme-mode^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mred:preferences : mred:preferences^]
-	     [unit mred:application : mred:application^]
-	     [unit mred:mode : mred:mode^]
-	     [unit mred:match-cache : mred:match-cache^]
-	     [unit mred:paren : mred:paren^] 
-	     [unit mred:scheme-paren : mred:scheme-paren^]
-	     [unit mred:icon : mred:icon^]
-	     [unit mred:handler : mred:handler^]
-	     [unit mred:keymap : mred:keymap^]
-	     [unit mzlib:string : mzlib:string^]))
+    (import [mred:debug : mred:debug^]
+	    [mred:preferences : mred:preferences^]
+	    [mred:application : mred:application^]
+	    [mred:mode : mred:mode^]
+	    [mred:match-cache : mred:match-cache^]
+	    [mred:paren : mred:paren^] 
+	    [mred:scheme-paren : mred:scheme-paren^]
+	    [mred:icon : mred:icon^]
+	    [mred:handler : mred:handler^]
+	    [mred:keymap : mred:keymap^]
+	    [mzlib:string : mzlib:string^])
 	    
     (mred:debug:printf 'invoke "mred:scheme-mode@")
 

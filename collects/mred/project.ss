@@ -1,14 +1,14 @@
 (define mred:project@
   (unit/sig mred:project^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mred:group : mred:group^]
-	     [unit mred:gui-utils : mred:gui-utils^]
-	     [unit mred:exit : mred:exit^]
-	     [unit mred:finder : mred:finder^]
-	     [unit mred:frame : mred:frame^] 
-	     [unit mred:handler : mred:handler^]
-	     [unit mzlib:file : mzlib:file^]
-	     [unit mzlib:function : mzlib:function^]))
+    (import [mred:debug : mred:debug^]
+	    [mred:group : mred:group^]
+	    [mred:gui-utils : mred:gui-utils^]
+	    [mred:exit : mred:exit^]
+	    [mred:finder : mred:finder^]
+	    [mred:frame : mred:frame^] 
+	    [mred:handler : mred:handler^]
+	    [mzlib:file : mzlib:file^]
+	    [mzlib:function : mzlib:function^])
 	    
     (mred:debug:printf 'invoke "mred:project@")
 

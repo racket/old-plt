@@ -2,7 +2,7 @@
 ;  Implemented as a splay tree
 (define mred:match-cache@
   (unit/sig mred:match-cache^
-    (import ([unit mred:debug : mred:debug^]))
+    (import [mred:debug : mred:debug^])
 	    
     (mred:debug:printf 'invoke "mred:mcache@")
 

@@ -2,8 +2,8 @@
 
 (define mred:mode@
   (unit/sig mred:mode^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mred:keymap : mred:keymap^]))
+    (import [mred:debug : mred:debug^]
+	    [mred:keymap : mred:keymap^])
     
     (mred:debug:printf 'invoke "mred:mode@")
 

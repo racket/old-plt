@@ -43,12 +43,25 @@ during the evaluation of the mzscheme code (in both examples)
 > (open-url url) - Opens the given url
   (either a string, url record, or port) 
   in a vanilla browser frame and returns
-  the frame.
+  the frame. The frame is an instance of
+  hyper-frame%.
  
-  
-> (send browser-frame get-hyper-panel) - returns the hyper panel
+----------------------------------------
+
+> (hyper-frame-mixin frame%) - Extends the given frame% class.
+
+> get-hyper-panel% :: (send hyper-frame get-hyper-panel%)
+  returns the class that is instantiated with the frame is created.
+  Must be a panel with hyper-panel-mixin mixed in. Defaults to
+  just returning hyper-panel%.
+
+> get-hyper-panel :: (send hyper-frame get-hyper-panel) - returns the hyper panel
   in this frame
   
+----------------------------------------
+
+> hyper-frame% = (hyper-frame-mixin frame%)
+
 ----------------------------------------
 
 > (hyper-text-mixin text%) - Extends the given text% class. The

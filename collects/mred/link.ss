@@ -35,7 +35,8 @@
 	    [path-utils : mred:path-utils^ (mred:path-utils@ debug)]
 	    [gui-utils : mred:gui-utils^ (mred:gui-utils@ debug (core function@) trigger)]
 	    [finder : mred:finder^
-		    (mred:finder@ debug container preferences (core string@)
+		    (mred:finder@ debug container preferences
+				gui-utils (core string@)
 				(core function@) (core file@))]
 	    [icon : mred:icon^ (mred:icon@ debug constants)]
 	    [menu : mred:menu^ (mred:menu@ debug (core function@))]
@@ -64,7 +65,8 @@
 	    [console : mred:console^ 
 		     (mred:console@ debug preferences edit frame find-string
 				  exit finder handler gui-utils scheme-mode
-				  scheme-paren icon (core function@) (core string@) (core pretty-print@) trigger)]
+				  scheme-paren icon hyper-frame (core function@) 
+				  (core string@) (core pretty-print@) trigger)]
 	    [scheme-mode : mred:scheme-mode^ 
 			 (mred:scheme-mode@ debug preferences application container
 					  mode match-cache paren scheme-paren icon

@@ -2399,7 +2399,7 @@ static Scheme_Object *mz_recase(const char *who, int to_up, mzchar *us, long ule
       us1[ulen1] = 0;
     }
     
-    s = scheme_make_sized_char_string((mzchar *)us1, ulen, 0);
+    s = scheme_make_sized_char_string((mzchar *)us1, ulen1, 0);
 
     if (SCHEME_NULLP(parts) && (i == ulen))
       return s;

@@ -393,6 +393,7 @@
 
 # define ALPHA_CONTROL_FP
 # define USE_OSF_FP_PREDS
+# define USE_DIVIDE_MAKE_INFINITY
 
 # define FLAGS_ALREADY_SET
 
@@ -1022,7 +1023,7 @@
  /* USE_IEEE_FP_PREDS uses isinf() and isnan() to implement tests for
     infinity and not-a-number. */
 
- /* USE_OSF_IEEE_PREDS uses fp-class() and isnan() to implement tests for
+ /* USE_OSF_FP_PREDS uses fp-class() and isnan() to implement tests for
     infinity and not-a-number. */
 
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for

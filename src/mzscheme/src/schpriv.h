@@ -1035,6 +1035,7 @@ extern int scheme_is_nan(double);
 #  else
 #   ifdef USE_OSF_FP_PREDS
 #    include <math.h>
+#    include <fp_class.h>
 #    define MZ_IS_POS_INFINITY(d) (fp_class(d) == FP_POS_INF)
 #    define MZ_IS_NEG_INFINITY(d) (fp_class(d) == FP_NEG_INF)
 #    define MZ_IS_NAN(d) isnan(d)

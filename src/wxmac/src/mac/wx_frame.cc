@@ -827,12 +827,14 @@ void wxFrame::Paint(void)
 		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
 			AddWhiteRgn(subrgn);
 			DiffRgn(rgn, subrgn, rgn);
-			DiffRgn(rgn, borderRgn, rgn);
+			if (borderRgn)
+			  DiffRgn(rgn, borderRgn, rgn);
 			EraseRgn(rgn);
 			RGBColor save;
 			GetForeColor(&save);
 			ForeColor(whiteColor);
-			DiffRgn(subrgn, borderRgn, subrgn);
+			if (borderRgn)
+			  DiffRgn(subrgn, borderRgn, subrgn);
 			PaintRgn(subrgn);
 			RGBForeColor(&save);
 			if (borderRgn)

@@ -7,6 +7,8 @@
   (provide/contract [annotate (-> syntax-object? 
                                   syntax-object?)])
   
+  ; what does the iterator need to know about 
+  
   (-> (-> 
   (define (syntax-object-iterator fn stx)
     (kernel:kernel-syntax-case stx

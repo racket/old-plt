@@ -4,7 +4,6 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_hash.cxx,v 1.5 1999/11/25 22:57:08 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -51,258 +50,112 @@ wxHashTable::~wxHashTable (void)
   }
 }
 
-void wxHashTable::Put (long key, long value, wxObject * object)
+wxList *wxHashTable::GetList(int position, KeyType ktype, Bool makeit)
 {
-  int position;
   wxList *l;
-
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
-
-  position = (int) (key % n);
-  if (!hash_table[position]) {
-    l = new wxList (wxKEY_INTEGER, FALSE);
-    hash_table[position] = l;
-  }
 
   l = hash_table[position];
 
-  l->Append(value, object);
+  if (!l) {
+    if (makeit) {
+      l = new wxList(ktype, FALSE);
+      hash_table[position] = l;
+    }
+  }
+  
+  return l;
 }
 
-void wxHashTable::Put (long key, char *value, wxObject * object)
+void wxHashTable::Put(long key, wxObject * object)
 {
-  int position;
   wxList *l;
 
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
-
-  position = (int) (key % n);
-  if (!hash_table[position]) {
-    l = new wxList (wxKEY_INTEGER, FALSE);
-    hash_table[position] = l;
-  }
-
-  l = hash_table[position];
-
-  l->Append(value, object);
-}
-
-void wxHashTable::Put (long key, wxObject * object)
-{
-  int position;
-  wxList *l;
-
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
-
-  position = (int) (key % n);
-  if (!hash_table[position]) {
-    l = new wxList (wxKEY_INTEGER, FALSE);
-    hash_table[position] = l;
-  }
-
-  l = hash_table[position];
+  l = GetList(MakeKey(key));
 
   l->Append(key, object);
 }
 
-void wxHashTable::Put (const char *key, wxObject * object)
+void wxHashTable::Put(const char *key, wxObject * object)
 {
-  int position;
   wxList *l;
 
-  position = (int) (MakeKey (key) % n);
+  l = GetList(MakeKey(key), wxKEY_STRING);
 
-  if (!hash_table[position]) {
-    l = new wxList (wxKEY_STRING, FALSE);
-    hash_table[position] = l;
-  }
-
-  l = hash_table[position];
   l->Append(key, object);
 }
 
-wxObject *wxHashTable::Get (long key, long value)
+wxObject *wxHashTable::Get(long key)
 {
-  int position;
+  wxList *l;
 
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
+  l = GetList(MakeKey(key), wxKEY_INTEGER, FALSE);
 
-  position = (int) (key % n);
-  if (!hash_table[position])
-    return NULL;
-  else {
+  if (l) {
     wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find (value);
+    node = l->Find(key);
     if (node)
-      return node->Data ();
-    else
-      return NULL;
+      return node->Data();
   }
+
+  return NULL;
 }
 
-wxObject *wxHashTable::Get (long key, char *value)
+wxObject *wxHashTable::Get(const char *key)
 {
-  int position;
+  wxList *l;
 
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
+  l = GetList(MakeKey(key), wxKEY_STRING, FALSE);
 
-  position = (int) (key % n);
-  if (!hash_table[position])
-    return NULL;
-  else {
+  if (l) {
     wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find(value);
+    node = l->Find (key);
     if (node)
-      return node->Data ();
-    else
-      return NULL;
+      return node->Data();
   }
+
+  return NULL;
 }
 
-wxObject *wxHashTable::Get (long key)
+wxObject *wxHashTable::Delete(long key)
 {
-  int position;
+  wxList *l;
 
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
+  l = GetList(MakeKey(key), wxKEY_INTEGER, FALSE);
 
-  position = (int) (key % n);
-  if (!hash_table[position])
-    return NULL;
-  else {
+  if (l) {
     wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find (key);
-    return node ? node->Data() : (wxObject *)NULL;
-  }
-}
-
-wxObject *wxHashTable::Get (const char *key)
-{
-  int position;
-  position = (int) (MakeKey (key) % n);
-
-  if (!hash_table[position])
-    return NULL;
-  else {
-    wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find (key);
-    return node ? node->Data() : (wxObject *)NULL;
-  }
-}
-
-wxObject *wxHashTable::Delete (long key)
-{
-  int position;
-
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
-
-  position = (int) (key % n);
-  if (!hash_table[position])
-    return NULL;
-  else {
-    wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find (key);
-    if (node) {
-      wxObject *data;
-      data = node->Data ();
-      delete node;
-      return data;
-    } else
-      return NULL;
-  }
-}
-
-wxObject *wxHashTable::Delete (const char *key)
-{
-  int position;
-  position = (int) (MakeKey (key) % n);
-  if (!hash_table[position])
-    return NULL;
-  else {
-    wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find (key);
+    node = l->Find(key);
     if (node) {
       wxObject *data;
       data = node->Data();
       delete node;
       return data;
-    } else
-      return NULL;
+    }
   }
+  return NULL;
 }
 
-wxObject *wxHashTable::Delete (long key, int value)
+wxObject *wxHashTable::Delete(const char *key)
 {
-  int position;
+  wxList *l;
 
-  // Should NEVER be
-  if (key < 0)
-    key = -key;
+  l = GetList(MakeKey(key), wxKEY_STRING, FALSE);
 
-  position = (int) (key % n);
-  if (!hash_table[position])
-    return NULL;
-  else {
+  if (l) {
     wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find (value);
+    node = l->Find(key);
     if (node) {
       wxObject *data;
-      data = node->Data ();
+      data = node->Data();
       delete node;
       return data;
-    } else
-      return NULL;
+    }
   }
+
+  return NULL;
 }
 
-wxObject *wxHashTable::Delete (long key, char *value)
-{
-  int position = (int) (key % n);
-  if (!hash_table[position])
-    return NULL;
-  else {
-    wxNode *node;
-    wxList *l;
-    l = hash_table[position];
-    node = l->Find (value);
-    if (node) {
-      wxObject *data;
-      data = node->Data ();
-      delete node;
-      return data;
-    } else
-      return NULL;
-  }
-}
-
-long wxHashTable::MakeKey (const char *string)
+int wxHashTable::MakeKey(const char *string)
 {
   long int_key = 0;
 
@@ -310,11 +163,18 @@ long wxHashTable::MakeKey (const char *string)
     int_key += (unsigned char) *string++;
   }
 
-/* // Don't need this since int_key >= 0) 
   if (int_key < 0)
     int_key = -int_key;
-*/
-  return int_key;
+
+  return int_key % n;
+}
+
+int wxHashTable::MakeKey(long int_key)
+{
+  if (int_key < 0)
+    int_key = -int_key;
+
+  return int_key % n;
 }
 
 void wxHashTable::BeginFind (void)

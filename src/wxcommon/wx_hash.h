@@ -43,29 +43,9 @@ class wxHashTable: public wxObject
   wxHashTable(int the_key_type = 0, int size = 1000);
   ~wxHashTable(void);
 
-  // Note that there are 2 forms of Put, Get.
-  // With a key and a value, the *value* will be checked
-  // when a collision is detected. Otherwise, if there are
-  // 2 items with a different value but the same key,
-  // we'll retrieve the WRONG ONE. So where possible,
-  // supply the required value along with the key.
-  // In fact, the value-only versions make a key, and still store
-  // the value. The use of an explicit key might be required
-  // e.g. when combining several values into one key.
-  // When doing that, it's highly likely we'll get a collision,
-  // e.g. 1 + 2 = 3, 2 + 1 = 3.
-
-  // key and value are NOT necessarily the same
-  void Put(long key, long value, wxObject *object);
-  void Put(long key, char *value, wxObject *object);
-
   // key and value are the same
   void Put(long value, wxObject *object);
   void Put(const char *value, wxObject *object);
-
-  // key and value not the same
-  wxObject *Get(long key, long value);
-  wxObject *Get(long key, char *value);
 
   // key and value are the same
   wxObject *Get(long value);
@@ -75,12 +55,10 @@ class wxHashTable: public wxObject
   wxObject *Delete(long key);
   wxObject *Delete(const char *key);
 
-  wxObject *Delete(long key, int value);
-  wxObject *Delete(long key, char *value);
-
   // Construct your own integer key from a string, e.g. in case
   // you need to combine it with something
-  long MakeKey(const char *string);
+  int MakeKey(const char *string);
+  int MakeKey(long val);
 
   // Way of iterating through whole hash table (e.g. to delete everything)
   // Not necessary, of course, if you're only storing pointers to
@@ -92,6 +70,8 @@ class wxHashTable: public wxObject
   void DeleteContents(Bool flag);
   void Clear(void);
 
+private:
+  wxList *GetList(int position, KeyType ktype = wxKEY_INTEGER, Bool makeit = TRUE);
 };
 
 /* Special hash table implementation for widgets. */

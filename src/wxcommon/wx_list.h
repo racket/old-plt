@@ -39,7 +39,7 @@ class wxNode
   wxNode *next;
   wxNode *previous;
 
-  void Setup(wxList *the_list, wxNode *last_one, wxNode *next_one, 
+  void Setup(wxNode *last_one, wxNode *next_one, 
 	     wxObject *object);
 
  public:
@@ -47,13 +47,13 @@ class wxNode
   long integer_key;
   char *string_key;
 
-  wxNode(wxList *the_list = NULL, wxNode *last_one = NULL, 
-	 wxNode *next_one = NULL, wxObject *object = NULL);
-  wxNode(wxList *the_list, wxNode *last_one, wxNode *next_one,
+  wxNode(wxNode *last_one = NULL, wxNode *next_one = NULL,
+	 wxObject *object = NULL);
+  wxNode(wxNode *last_one, wxNode *next_one,
          wxObject *object, long the_key);
-  wxNode(wxList *the_list, wxNode *last_one, wxNode *next_one,
+  wxNode(wxNode *last_one, wxNode *next_one,
          wxObject *object, const char *the_key);
-  wxNode(wxList *the_list, wxNode *last_one, wxNode *next_one,
+  wxNode(wxNode *last_one, wxNode *next_one,
          wxObject *object, void *the_key);
 
   void Kill(wxList *list);

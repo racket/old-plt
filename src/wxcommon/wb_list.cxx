@@ -4,7 +4,6 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.8 1999/11/27 17:58:33 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -23,7 +22,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-void wxNode::Setup(wxList *, wxNode * last_one, wxNode * next_one, 
+void wxNode::Setup(wxNode * last_one, wxNode * next_one, 
 		   wxObject * object)
 {
   data = object;
@@ -39,31 +38,31 @@ void wxNode::Setup(wxList *, wxNode * last_one, wxNode * next_one,
     next->previous = this;  
 }
 
-wxNode::wxNode (wxList *l, wxNode * last_one, wxNode * next_one,
+wxNode::wxNode (wxNode * last_one, wxNode * next_one,
 		wxObject * object)
 {
-  Setup(l, last_one, next_one, object);
+  Setup(last_one, next_one, object);
 }
 
 // Keyed constructor
-wxNode::wxNode (wxList *l, wxNode * last_one, wxNode * next_one,
+wxNode::wxNode (wxNode * last_one, wxNode * next_one,
 		wxObject * object, long the_key)
 {
-  Setup(l, last_one, next_one, object);
+  Setup(last_one, next_one, object);
   integer_key = the_key;
 }
 
-wxNode::wxNode (wxList *l, wxNode * last_one, wxNode * next_one,
+wxNode::wxNode (wxNode * last_one, wxNode * next_one,
 		wxObject * object, const char *the_key)
 {
-  Setup(l, last_one, next_one, object);
+  Setup(last_one, next_one, object);
   string_key = copystring(the_key);
 }
 
-wxNode::wxNode (wxList *l, wxNode * last_one, wxNode * next_one,
+wxNode::wxNode (wxNode * last_one, wxNode * next_one,
 		wxObject * object, void *the_key)
 {
-  Setup(l, last_one, next_one, object);
+  Setup(last_one, next_one, object);
   string_key = (char *)the_key;
 }
 
@@ -137,7 +136,7 @@ wxList::wxList (int N, wxObject * Objects[])
 
   for (i = 0; i < N; i++) {
     wxNode *next;
-    next = new wxNode (this, last, NULL, Objects[i]);
+    next = new wxNode(last, NULL, Objects[i]);
     last = next;
     if (i == 0)
       first_node = next;
@@ -271,7 +270,7 @@ Bool wxList::DeleteObject (wxObject * object)
 wxNode *wxList::Append(wxObject *object)
 {
   wxNode *node;
-  node = new wxNode(this, last_node, NULL, object);
+  node = new wxNode(last_node, NULL, object);
   return DoAppend(node);
 }
 
@@ -281,7 +280,7 @@ wxNode *wxList::Insert (wxObject * object)
   wxNode *node;
 
   node = First();
-  node = new wxNode(this, NULL, node, object);
+  node = new wxNode(NULL, node, object);
   first_node = node;
 
   if (!(node->Next()))
@@ -300,7 +299,7 @@ wxNode *wxList::Insert (wxNode * position, wxObject * object)
   if (position)
     prev = position->Previous ();
 
-  node = new wxNode (this, prev, position, object);
+  node = new wxNode(prev, position, object);
   if (!first_node) {
       first_node = node;
       last_node = node;
@@ -316,21 +315,21 @@ wxNode *wxList::Insert (wxNode * position, wxObject * object)
 wxNode *wxList::Append (long key, wxObject * object)
 {
   wxNode *node;
-  node = new wxNode (this, last_node, NULL, object, key);
+  node = new wxNode(last_node, NULL, object, key);
   return DoAppend(node);
 }
 
 wxNode *wxList::Append (const char *key, wxObject * object)
 {
   wxNode *node;
-  node = new wxNode (this, last_node, NULL, object, key);
+  node = new wxNode(last_node, NULL, object, key);
   return DoAppend(node);
 }
 
 wxNode *wxList::Append (void *key, wxObject * object)
 {
   wxNode *node;
-  node = new wxNode (this, last_node, NULL, object, key);
+  node = new wxNode(last_node, NULL, object, key);
   return DoAppend(node);
 }
 

@@ -36,7 +36,7 @@
 			(map expand-top-level-with-compile-time-evals
 			     (syntax->list (syntax (expr ...))))]
 		       [(beg . _) e])
-	   (syntax/loc e (beg expr ...)))]
+	   (datum->syntax-object e (syntax-e (syntax (beg expr ...))) e e))]
 	[else 
 	 (let ([e (expand e)])
 	   (eval-compile-time-part-of-top-level e)

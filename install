@@ -64,7 +64,7 @@ exit 1
 (define (set-install-mode!)
   (set! install-mode? #t)
   (set! zos? #t)
-  (set! scripts? #t)
+  (set! scripts? #f)
   (set! updates? #f))
 
 (when (or (getenv "OSX_PLT_INSTALL") (getenv "RPM_INSTALL_PREFIX"))
@@ -242,7 +242,7 @@ exit 1
          [current-namespace (make-namespace)]
          [use-compiled-file-kinds 'all]
          [current-command-line-arguments
-          (if install-mode? #("--trust-zos" "--no-install" "-v") #())]
+          (if install-mode? #("--trust-zos" "--no-install") #())]
          ;; setup will use `exit' when done, so catch these, and stop if
          ;; non-zero
          [exit-handler

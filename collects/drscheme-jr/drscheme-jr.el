@@ -27,13 +27,9 @@
 ; - Doesn't provide a simple `load' interface.  (Could enhance this
 ;   further with temporary files -- platform dependence issues?)
 ;
-; - Could provide menus and other niceties.  Not even a key-binding.
+; - Could provide menus and other niceties.  Not even a key-binding
+;   for now.
 ; 
-; - Cannot handle load/cd, since the resulting filename is without a
-;   directory path, so it is no longer possible to tell which directory
-;   the file came from.  Indeed, if an identically named file is in
-;   the current directory, then it will be loaded instead.
-;
 ; Comments welcome.
 
 (defvar mzrice-stdin-filename "stdin")

@@ -37,9 +37,6 @@
 				     (mred:preferences:get-preference
 				      'mred:autosave-delay))
 				  #t))))])
-	(mred:exit:insert-exit-callback
-	 (lambda ()
-	   (send timer stop)))
 	(lambda (b)
 	  (set! objects
 		(cons (make-weak-box b) objects))))))

@@ -90,7 +90,7 @@
 			       #t)
 			     ")")))
 		      l))))
-	      (list (format "No handins for ~a" hi)))))
+	      (list (format "No handins accepted so far for user ~s, assignment ~s" user hi)))))
 
       (define (one-status-page status for-handin)
 	(let ([user (get-status status 'user (lambda () "???"))])

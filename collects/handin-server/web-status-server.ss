@@ -6,6 +6,7 @@
            (lib "configuration.ss" "web-server")
 	   (lib "ssl-tcp-unit.ss" "net")
 	   (lib "tcp-sig.ss" "net")
+	   (lib "tcp-unit.ss" "net")
 	   (lib "file.ss"))
 
   (provide serve-status)
@@ -34,7 +35,7 @@
 	 (paths
 	  (configuration-root "conf")
 	  (host-root ,(build-path (collection-path "handin-server") "status-web-root"))
-	  (log-file-path ,(build-path (current-directory) "web-status-log"))
+	  (log-file-path ,(build-path (current-directory) "web-status-log.ss"))
 	  (file-root "htdocs")
 	  (servlet-root same)
 	  (password-authentication ,(build-path (current-directory) "web-status-passwords")))))

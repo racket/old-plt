@@ -195,7 +195,7 @@
 
   (LOG "server started ------------------------------")
 
-  (serve-status)
+  (define stop-status (serve-status))
   
   (define session-count 0)
 

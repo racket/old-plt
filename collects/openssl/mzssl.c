@@ -153,7 +153,7 @@ int check_socket_ready(int s, int for_write)
 		 for_write ? NULL : writefds, 
 		 for_write ? writefds : NULL, 
 		 exnfds, &time);
-  } while((res == 0) && NOT_WINSOCK(errno == EINTR));
+  } while((res == -1) && NOT_WINSOCK(errno == EINTR));
 
   return res;
 }

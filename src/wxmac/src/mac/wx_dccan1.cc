@@ -47,78 +47,32 @@ extern CGrafPtr wxMainColormap;
 //-----------------------------------------------------------------------------
 wxCanvasDC::wxCanvasDC(void)
 {
-  __type = wxTYPE_DC_CANVAS;
-
-	selected_pixmap = NULL;
-	canvas = NULL;
-	cMacDoingDrawing = FALSE;
-
-  pixmap = 0;
-  pixmapWidth = 0;
-  pixmapHeight = 0;
-  clipping = FALSE;
-
-  current_reg = NULL ;
-  onpaint_reg = NULL ;
-
-  device = wxDEVICE_CANVAS;
-  font = wxNORMAL_FONT;
-
-  min_x = 0; min_y = 0; max_x = 0; max_y = 0;
-
-  logical_origin_x = 0;
-  logical_origin_y = 0;
-
-  device_origin_x = 0;
-  device_origin_y = 0;
-
-  logical_scale_x = 1.0;
-  logical_scale_y = 1.0;
-
-  user_scale_x = 1.0;
-  user_scale_y = 1.0;
-
-  mapping_mode = MM_TEXT;
-
-  title = NULL;
-
-#ifdef wx_motif
-  gc = NULL;
-  gcBacking = NULL;
-#endif
-
-  ok = TRUE;
-  current_pen_join = -1 ;
-  current_pen_cap = -1 ;
-  current_pen_nb_dash = -1 ;
-  current_pen_dash = NULL ;
-  current_stipple = NULL ;
-
-  Colour = wxColourDisplay();
-
-  current_pen = NULL;
-  current_brush = NULL;
-  current_background_color = *wxWHITE;
-  current_text_foreground = *wxBLACK;
-  current_text_background = *wxWHITE;
+   Init(NULL);
 }
 
 
 //-----------------------------------------------------------------------------
 wxCanvasDC::wxCanvasDC(wxCanvas* the_canvas): wxbCanvasDC(the_canvas)
 {
-__type = wxTYPE_DC_CANVAS;
+  Init(the_canvas);
+}
 
-	GrafPtr oldPort;
-	::GetPort(&oldPort);
-	canvas = the_canvas;
-	WXGC_IGNORE(canvas);
-	cMacDC = canvas->MacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	::SetPort((GrafPtr)theMacGrafPort);
+void wxCanvasDC::Init(wxCanvas* the_canvas)
+{
+  __type = wxTYPE_DC_CANVAS;
 
-	cMacDoingDrawing = FALSE;
-	pixmap = theMacGrafPort->portPixMap;	//CJC 
+  GrafPtr oldPort;
+  ::GetPort(&oldPort);
+  canvas = the_canvas;
+  if (canvas) {
+    WXGC_IGNORE(canvas);
+   cMacDC = canvas->MacDC();
+   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+   ::SetPort((GrafPtr)theMacGrafPort);
+   pixmap = theMacGrafPort->portPixMap;
+  }
+
+  cMacDoingDrawing = FALSE;
 
   clipping = FALSE;
   selected_pixmap = NULL;
@@ -133,16 +87,8 @@ __type = wxTYPE_DC_CANVAS;
 
   device = wxDEVICE_CANVAS;
   font = wxNORMAL_FONT;
-#ifndef LkB
   logical_origin_x = 0;
   logical_origin_y = 0;
-#else
-  // TO DO: temp fix for logical positioning
-  int x,y;
-  canvas->GetPosition(&x, &y);
-  logical_origin_x = -x;
-  logical_origin_y = -y;
-#endif
   device_origin_x = 0;
   device_origin_y = 0;
 
@@ -175,14 +121,12 @@ __type = wxTYPE_DC_CANVAS;
 
   ::SetPort(oldPort);
 
-// More initialization
-	if (the_canvas)
-	{
-		int clientWidth, clientHeight;
-		the_canvas->GetClientSize(&clientWidth, &clientHeight);
-		Rect paintRect = {0, 0, clientHeight, clientWidth};
-		SetPaintRegion(&paintRect);
-	}
+  if (the_canvas) {
+    int clientWidth, clientHeight;
+    the_canvas->GetClientSize(&clientWidth, &clientHeight);
+    Rect paintRect = {0, 0, clientHeight, clientWidth};
+    SetPaintRegion(&paintRect);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -250,7 +194,7 @@ void wxCanvasDC::SetCanvasClipping(void)
 		current_reg = NULL;
 		
 	if (onpaint_reg && clipping)
-		::SectRgn(current_reg, onpaint_reg, current_reg) ;
+		::SectRgn(clipping->rgn, onpaint_reg, current_reg) ;
 	else if (clipping)
 		::CopyRgn(clipping->rgn, current_reg) ;
 	else if (onpaint_reg)
@@ -582,7 +526,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			{
 			int theBrushStyle = current_brush->GetStyle();
 			int log = theBrushStyle == wxXOR ? patXor : patCopy;
-			if (theBrushStyle == wxSOLID)
+			if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
 				PenPat(&qd.black);
 			else if (theBrushStyle == wxTRANSPARENT)
 				PenPat(&qd.white); // WCH : does this work??
@@ -609,6 +553,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			int log = patCopy;
 			switch (thePenStyle) {
 			  case wxXOR:
+			    thePenStyle = wxSOLID;
 			    log = patXor;
 			    break;
 			  case wxXOR_DOT:

@@ -44,6 +44,8 @@ class wxCanvasDC: public wxbCanvasDC
   wxCanvasDC(void);
   wxCanvasDC(wxCanvas* canvas); // Create a DC corresponding to a canvas
 
+  void Init(wxCanvas*);
+
   ~wxCanvasDC(void);
 
   void SetCanvasClipping() ;

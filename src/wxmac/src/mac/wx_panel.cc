@@ -108,7 +108,7 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
          }
        }
     }
-}
+ }
 
 //-----------------------------------------------------------------------------
 void wxPanel::InitDefaults(void)

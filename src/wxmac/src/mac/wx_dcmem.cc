@@ -32,52 +32,18 @@ extern CGrafPtr wxMainColormap;
 
 wxMemoryDC::wxMemoryDC(Bool ro)
 {
+  Init(NULL);
+  
   __type = wxTYPE_DC_MEMORY;
   device = wxDEVICE_PIXMAP;
-  current_pen_join = -1 ;
-  current_pen_cap = -1 ;
-  current_pen_nb_dash = -1 ;
-  current_pen_dash = NULL ;
-  current_stipple = NULL ;
 
   read_only = ro;
-  pixmap = 0;
-  pixmapWidth = 0;
-  pixmapHeight = 0;
-  canvas = NULL;
-  clipping = FALSE;
   
   ok = FALSE;
   title = NULL;
 
-  font = wxNORMAL_FONT;
-  min_x = 0; min_y = 0; max_x = 0; max_y = 0;
-  logical_origin_x = 0;
-  logical_origin_y = 0;
-
-  device_origin_x = 0;
-  device_origin_y = 0;
-
-  logical_scale_x = 1.0;
-  logical_scale_y = 1.0;
-
-  user_scale_x = 1.0;
-  user_scale_y = 1.0;
-
-  mapping_mode = MM_TEXT;
-
-  current_pen = NULL;
-  current_brush = NULL;
-  current_text_foreground = *wxBLACK;
-
-  // mflatt: NOT ok
-  // ok = TRUE;
   selected_pixmap = NULL;
   gworldH = NULL;
-
-  Colour = wxColourDisplay();
-  SetBrush(wxWHITE_BRUSH);
-  SetPen(wxBLACK_PEN);
 }
 
 wxMemoryDC::~wxMemoryDC(void)
@@ -148,12 +114,17 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     gworldH = bitmap->x_pixmap;
     // gworldH = MacCreateGWorld(pixmapWidth, pixmapHeight);
     if (gworldH) {
-	  pixmap = ::GetGWorldPixMap(gworldH);
+	pixmap = ::GetGWorldPixMap(gworldH);
 	
-	  SetGWorld(gworldH, 0);
-	  cMacDC = new wxMacDC(gworldH);
-	  // bitmap->DrawMac(0, 0);
-	  ok = TRUE;
+	SetGWorld(gworldH, 0);
+	cMacDC = new wxMacDC(gworldH);
+	// bitmap->DrawMac(0, 0);
+	ok = TRUE;
+	    
+        SetCurrentDC();
+  	InstallColor(current_background_color, FALSE);
+	PenMode(patCopy);
+	ToolChanged(kNoTool);
     }
   }
 }

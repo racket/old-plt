@@ -125,6 +125,9 @@ void wxCanvas::InitDefaults(void)
  		cScroll = new wxScroll(this, scrollData);
  		new wxScrollArea(this, this, (cStyle & wxVSCROLL) | (cStyle & wxHSCROLL));
  	}
+ 	
+ 	if (GetParent()->IsHidden())
+	  DoShow(FALSE);
 }
 
 void wxCanvas::AddWhiteRgn(RgnHandle rgn)

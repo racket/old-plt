@@ -569,11 +569,13 @@ void wxSetCursor(wxCursor *cursor)
   
   if (cursor != curCursor) {
       /* 0x1 is the arrow cursor */
+      if (cursor) {
 	  if (cursor->cMacCursor && (cursor->cMacCursor != (Cursor **)0x1))
 		::SetCursor(*(cursor->cMacCursor));
 	  else
 	 	::SetCursor(&(qd.arrow));
-	 curCursor = cursor;
+      }
+      curCursor = cursor;
   }
   wxFlushEvents();
 }

@@ -1531,7 +1531,7 @@ void wxWindow::DoShow(Bool v)
 
 	v = !v;
 
-	cHidden = FALSE;
+	cHidden = FALSE; // temp...
 	
 	SetCurrentMacDCNoMargin(); // put newClientRect at (0, 0)
 

@@ -1,8 +1,8 @@
 (lambda (request failure)
   (case request
-    [(name) "stepper"]
+    [(name) "stepper-graphical"]
     [(compile-prefix) 
-     (begin 
-       (require-library "sig.ss" "stepper")
-       (require-library "drsig.ss" "drscheme"))]
+     '(begin 
+        (require-library "sig.ss" "stepper")
+        (require-library "drsig.ss" "drscheme"))]
     [else (failure)]))

@@ -2874,10 +2874,10 @@
   (define (for-intf name)
     (if name (format " for interface: ~a" name) ""))
   
-  (provide make-wrapper-class
-           wrapper-object-wrapped
-           extract-vtable
-           extract-method-ht
+  (provide (protect make-wrapper-class
+		    wrapper-object-wrapped
+		    extract-vtable
+		    extract-method-ht)
            
            (rename :class class)
 	   class* class*/names

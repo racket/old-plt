@@ -1165,7 +1165,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	  if (!menv2) {
 	    /* Clone menv for the new namespace: */
 	    menv2 = scheme_clone_module_env(menv, to_env, to_modchain);
-	    menv2->attached = 1;
+	    if (menv->attached)
+	      menv2->attached = 1;
 	    
 	    scheme_hash_set(MODCHAIN_TABLE(to_modchain), name, (Scheme_Object *)menv2);
 	    scheme_hash_set(to_env->module_registry, name, (Scheme_Object *)menv2->module);
@@ -1233,7 +1234,7 @@ static Scheme_Object *namespace_unprotect_module(int argc, Scheme_Object *argv[]
 			  name);
     }
 
-    if (!scheme_module_protected_wrt(menv2->insp, insp)) {
+    if (!scheme_module_protected_wrt(menv2->insp, insp) && !menv2->attached) {
       code_insp = scheme_make_inspector(code_insp);
       menv2->insp = code_insp;
     }
@@ -1292,10 +1293,14 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 			  name);
   }
 
-  if (menv->attached) {
-    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
-		     "module->namespace: cannot obtain namespace of attached module: %S",
-		     name);
+  {
+    Scheme_Object *insp;
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
+    if (scheme_module_protected_wrt(menv->insp, insp) || menv->attached) {
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+		       "module->namespace: current code inspector cannot access namespace of module: %S",
+		       name);
+    }
   }
 
   if (!menv->rename) {
@@ -2115,7 +2120,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   menv->require_names = np;
   menv->et_running = 1;
   if (scheme_starting_up)
-    menv->attached = 1;
+    menv->attached = 1; /* protect initial modules from redefinition, etc. */
 
   if (m->prim_et_body || !SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
     if (delay_exptime) {
@@ -2667,7 +2672,7 @@ module_execute(Scheme_Object *data)
   Scheme_Module *m;
   Scheme_Env *env;
   Scheme_Env *old_menv;
-  Scheme_Object *prefix;
+  Scheme_Object *prefix, *insp;
   
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   memcpy(m, data, sizeof(Scheme_Module));
@@ -2709,19 +2714,19 @@ module_execute(Scheme_Object *data)
     old_menv = scheme_initial_env;
   else
     old_menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
+
+  insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
   
-  if (old_menv && old_menv->attached) {
-    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
-		     "module: cannot re-declare attached module: %S",
-		     m->modname);
-    return NULL;
+  if (old_menv) {
+    if (scheme_module_protected_wrt(old_menv->insp, insp) || old_menv->attached) {
+      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+		       "module->namespace: current code inspector cannot re-declare module: %S",
+		       m->modname);
+      return NULL;
+    }
   }
 
-  {
-    Scheme_Object *insp;
-    insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
-    m->insp = insp;
-  }
+  m->insp = insp;
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
   /* We might compute whether the module is obviously functional (as

@@ -1317,7 +1317,7 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
     prop = scheme_stx_property(code, certify_mode_symbol, NULL);
     if (SAME_OBJ(prop, opaque_symbol)) {
       return scheme_stx_cert(code, mark, menv, orig_code);
-    } else if (SAME_OBJ(prop, opaque_symbol)) {
+    } else if (SAME_OBJ(prop, transparent_symbol)) {
       /* fall through */
     } else {
       /* Default transparency depends on module-identifier=? comparison

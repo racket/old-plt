@@ -112,6 +112,7 @@
    local-busy-cursor
    get-choice
    unsaved-warning
+   read-snips/chars-from-buffer
    open-input-buffer
    print-paper-names))
 

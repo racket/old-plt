@@ -69,7 +69,7 @@
     (send* time-edit (lock #t) (hide-caret #t))
     (define time-sema (make-semaphore 0))
 					  
-    (letrec ([loop
+    '(letrec ([loop
 	      (lambda ()
 		(unless (mred:preferences:get-preference 'mred:status-line)
 		  (semaphore-wait time-sema))

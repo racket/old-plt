@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.159 1998/11/04 19:52:54 mflatt Exp $
+; $Id: scm-main.ss,v 1.160 1998/11/04 21:09:24 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -554,7 +554,7 @@
 				      (null? (cddr v)))
 				 (loop (cadr v) (string-append "'" prefix))]
 				[else (values v prefix)]))])
-		(static-error expr "'~a~s is not a symbol" prefix v)))
+		(static-error expr "misuse of quote: '~a~s is not a symbol" prefix v)))
 	    (static-error expr "Malformed quote")))
 	(static-error expr "Malformed quote"))))
 

@@ -177,7 +177,7 @@
   (hash-table-get *lambda-to-label-table* ar (lambda () '())))
 
 (define (associate-label-with-ars label ar)
-  (let ([ars (hash-table-get *lambda-to-label-table* ar (lambda () '()))])
+  (let ([ars (hash-table-get *label-to-ars-table* label (lambda () '()))])
     (hash-table-put! *label-to-ars-table* label (cons ar ars))))
 
 (define (lookup-ars-from-label label)
@@ -188,6 +188,32 @@
   (set! *all-set-vars* (cons set-var *all-set-vars*)))
 (define (get-all-set-vars)
   *all-set-vars*)
+
+(define *dom-to-set-var* (make-hash-table))
+
+(define (encode-dom-int int alpha pos)
+  (string->symbol (string-append (number->string (Interval-lo int))
+                                 ":"
+                                 (let ([hi (Interval-hi int)])
+                                   (if (number? hi)
+                                       (number->string hi)
+                                       (symbol->string hi)))
+                                 ":"
+                                 (symbol->string (Set-var-name alpha))
+                                 ":"
+                                 (number->string pos))))
+
+(define (lookup-set-vars-from-dom-int int alpha pos)
+  (let ([code (encode-dom-int int alpha pos)])
+    (hash-table-get *dom-to-set-var* code (lambda () '()))))
+
+(define (relate-set-var-to-dom dom-int set-var)
+  (let* ([pos (Dom-interval-pos dom-int)]
+         [alpha (Dom-interval-set-var dom-int)]
+         [int (Dom-interval-interval dom-int)]
+         [code (encode-dom-int int alpha pos)]
+         [cur-list (lookup-set-vars-from-dom-int int alpha pos)])
+    (hash-table-put! *dom-to-set-var* code (cons set-var cur-list))))
 
 ; (union bool num string char '() sym) -> string
 (define (scalar->string v)
@@ -350,7 +376,7 @@
                 (cons constraint
                       *the-constraints*))
           #t))))
-    
+
 (define (add-constraint-and-update-tables lo hi)
   ;;(printf "lo: ~a~nhi: ~a~n" lo hi)
   (let ([result (add-constraint (make-constraint lo hi))])
@@ -366,7 +392,9 @@
          (relate-set-var-to-rng-ar lo)]
         [else (void)])
       (cond
-        [(Dom-interval? hi) (relate-dom-int-to-ar hi)]
+        [(Dom-interval? hi)
+         (relate-dom-int-to-ar hi)
+         (when (Set-var? lo) (relate-set-var-to-dom hi lo))]
         [(Dom-arity? hi)
          (relate-dom-ar-to-int hi)
          (relate-set-var-to-dom-ar hi)]
@@ -488,7 +516,7 @@
                                   (make-Type-Var-Set-Vars 
                                    (cons set-var (Type-Var-Set-Vars-neg set-vars))
                                    (Type-Var-Set-Vars-pos set-vars)))))
-           (error 'type-var "not specified in a scheme")))]
+           (error 'create-set-vars-lists "type var not specified in a scheme")))]
     [(Type-Cons? type)
      (create-set-vars-lists type-vars->set-vars (Type-Cons-car type) vars flag type-var->set-var)
      (create-set-vars-lists type-vars->set-vars (Type-Cons-cdr type) vars flag type-var->set-var)]
@@ -552,7 +580,7 @@
            (Type-Var-Set-Vars-neg type-var-set-vars))))
        (add-constraints-from-type scheme-type alpha flag type-var->set-var))]
     [else
-     (error "add-constraints-for-abstract-value: Expected type, got"
+     (error 'add-constraints-from-type "add-constraints-for-abstract-value: Expected type, got ~a"
             ty)]))
 
 (define get-top-level-var 
@@ -637,7 +665,7 @@
                                (cons (make-Arity cur-int previous)
                                      (loop (cdr loc-int)
                                            (cons cur-int previous))))))]
-              [_ (printf "arities: ~a~n" arities)]
+              ;;[_ (printf "arities: ~a~n" arities)]
               [alphas-l (map (lambda (index) (build-list index (lambda (_) (gen-set-var)))) indices)]
               ;;[foo (printf "indices: ~a~n" indices)]
               [betas (map (lambda (xs body alphas)
@@ -660,7 +688,9 @@
                          (loop (add1 j) (cdr loc-alphas))))
                      (add-constraint-with-bounds beta (make-Rng-arity arity alpha) #t)
                      (associate-label-with-ars (Label-name label) arity))
-                   alphas-l arities indices betas))]
+                   alphas-l arities indices betas)
+         ;;(printf "ARS: ~a~n" (lookup-ars-from-label (Label-name label)))
+         )]
       [(zodiac:app? term)
        (let* ([fun (zodiac:app-fun term)]
               [args (zodiac:app-args term)]
@@ -710,7 +740,7 @@
                (let ([beta_i (car loc-betas)]
                      [alpha_i (car loc-alphas)])
                  (add-constraint-with-bounds beta_i
-                                             (make-Dom-interval (make-Interval len len) i beta0)
+                                             (make-Dom-interval (make-Interval len len) i len beta0)
                                              #t)
                  (add-constraint-with-bounds beta_i
                                              (make-Car alpha_i)
@@ -719,7 +749,7 @@
                                              (make-Cdr alpha_i)
                                              #t)
                  (add-constraint-with-bounds alpha_i
-                                             (make-Dom-interval (make-Interval (sub1 i) 'omega) i beta0)
+                                             (make-Dom-interval (make-Interval (sub1 i) 'omega) i len beta0)
                                              #t)
                  (add-constraint-with-bounds *pair-token*
                                              alpha_i
@@ -730,7 +760,7 @@
                                              alpha_n+1
                                              #t)
                  (add-constraint-with-bounds alpha_n+1
-                                             (make-Dom-interval (make-Interval len 'omega) (add1 len) beta0)
+                                             (make-Dom-interval (make-Interval len 'omega) (add1 len) len beta0)
                                              #t))))
          (let loop-i ([i 0])
            (when (<= i len)
@@ -742,7 +772,7 @@
                                              #t)
                  (loop-j (add1 j) (cdr loc-betas))))
              (loop-i (add1 i)))))]
-      [else (error 'unknown "unknown term ~a~n" term)]
+      [else (error 'derive-top-term-constraints "unknown term ~a~n" term)]
            )
     alpha))
 
@@ -753,7 +783,7 @@
 (define (selector? set-exp)
   (or (Car? set-exp) (Cdr? set-exp)))
 
-(define (satisfies-int int1 r int2)
+(define (satisfies-int int1 int2)
   (let ([n (Interval-lo int1)]
         [m (Interval-hi int1)]
         [p (Interval-lo int2)]
@@ -761,17 +791,23 @@
     ;;(printf "n: ~a m: ~a p: ~a q: ~a~n" n m p q)
     (or ;;(and (symbol? n) (symbol=? n 'star)) APPLY
 	(and (andmap number? (list n m p q))
-             (= n m p q r))
-        (and (<= n p)
-             (>= r p)
+             (= n m p q))
+        (and (= n p)
              (andmap symbol? (list m q))
              (andmap (lambda (sym) (symbol=? sym 'omega)) (list m q))))))
+
+(define (in-interval n int)
+  (and (>= n (Interval-lo int))
+       (let ([upper (Interval-hi int)])
+         (or (eq? upper 'omega)
+             (<= n upper)))))
 
 (define (satisfies int num-of-args ar)
   (let ([ar-req (Arity-req ar)]
         [ar-proh (Arity-proh ar)])
-    (and (satisfies-int int num-of-args ar-req)
-         (not (ormap (lambda (ar-proh-int) (satisfies-int int num-of-args ar-proh-int)) ar-proh)))))
+    (and (satisfies-int int ar-req)
+         (in-interval num-of-args ar-req)
+         (not (ormap (lambda (ar-proh-int) (in-interval num-of-args ar-proh-int)) ar-proh)))))
 
 
 (define (lookup-lo-and-filter pred set-exp)
@@ -1083,7 +1119,7 @@
     [(Const? type)
      (if (number? (Const-val type))
          (number->string (Const-val type))
-         "empty")]
+         "null")]
     [(Type-Empty? type)
      "empty"]))
      

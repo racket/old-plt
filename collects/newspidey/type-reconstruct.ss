@@ -73,6 +73,7 @@
                  (let* ([arities (apply append (map (lambda (label)
                                                        (lookup-ars-from-label (Label-name label)))
                                                      labels))]
+                        ;;[foo (printf "arities: ~a~n" arities)]
                         [deltas (set-var-upper-bounds alpha '())]
 ;                        [doms-omega (apply APPLY
 ;                                     append
@@ -100,13 +101,18 @@
                                                   ;; doms-omega APPLY
                                                   (map
                                                    (lambda (delta)
-                                                     (lookup-hi-and-filter
-                                                      Set-var?
-                                                      (make-Dom-interval int j delta)))
+;                                                     (lookup-hi-and-filter
+;                                                      Set-var?
+;                                                      (make-Dom-interval int j delta))
+                                                     ;; no need to filter, we filter before calling
+                                                     ;; relate-set-var-to-dom in add-contraint-and-update-tables
+                                                     (lookup-set-vars-from-dom-int int delta j)
+                                                     )
                                                    deltas))))
                                                 (loop (add1 j)))))]
                              [omega-rng (lookup-filtered-set-exp Set-var? (make-Rng-arity arity alpha))])
                         ;;(printf "max-j: ~a~nomega-doms: ~a~n" max-j omega-doms)
+                        ;;(printf "TYPE: ~a -> ~a~n" omega-doms omega-rng)
                         (make-Type-Arrow omega-doms omega-rng)))
                     arities)))))])
     (make-Type-Union (list omega-c omega-cons omega-arrow))))

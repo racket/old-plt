@@ -259,16 +259,23 @@
       (define-struct graphic (pos* locs->thunks draw-fn click-fn))
       (define-struct arrow (start-pos-left start-pos-right end-pos-left end-pos-right
                                            start-x start-y end-x end-y
-                                           id-name rename))
+                                           id-name same-ids))
       
       (define tacked-brush (send mred:the-brush-list find-or-create-brush "BLUE" 'solid))
       (define untacked-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
       (define the-pen (send mred:the-pen-list find-or-create-pen "BLUE" 1 'solid))
       
+      (define syncheck-text<%>
+        (interface ()
+          syncheck:init-arrows
+          syncheck:clear-arrows
+          syncheck:add-menu
+          syncheck:add-arrow))
+      
       (define make-graphics-text%
         (lambda (super%)
           (let* ([cursor-arrow (make-object mred:cursor% 'arrow)])
-            (class super%
+            (class* super% (syncheck-text<%>)
               (inherit set-cursor get-admin invalidate-bitmap-cache set-position
                        position-location
                        get-canvas last-position dc-location-to-editor-location
@@ -324,11 +331,12 @@
               (public syncheck:add-arrow)
               (define (syncheck:add-arrow start-pos-left start-pos-right
                                           end-pos-left end-pos-right
-                                          id-name rename)
+                                          id-name same-names)
                 (let* ([arrow (make-arrow start-pos-left start-pos-right
                                           end-pos-left end-pos-right
                                           0 0 0 0
-                                          id-name rename)]
+                                          id-name 
+                                          same-names)]
                        [add-to-range
                         (lambda (start end)
                           (let loop ([p start])
@@ -471,10 +479,26 @@
                               (format "Rename ~a to:" id-name)
                               #f
                               (format "~a" id-name))))])
-                    ((arrow-rename arrow) new-id))
-                  (invalidate-bitmap-cache)
-                  (send (get-top-level-window)
-                        syncheck:button-callback)))
+                    (when new-id
+                      (let ([to-be-renamed (quicksort 
+                                            (arrow-same-ids arrow)
+                                            (lambda (x y) 
+                                              ((syntax-position x) . >= . (syntax-position y))))])
+                        (unless (null? to-be-renamed)
+                          (let ([first-one-source (syntax-source (car to-be-renamed))])
+                            (when (is-a? first-one-source mred:text%)
+                              (send first-one-source begin-edit-sequence)
+                              (for-each (lambda (stx) 
+                                          (let ([source (syntax-source stx)])
+                                            (when (is-a? source mred:text%)
+                                              (let* ([start (- (syntax-position stx) 1)]
+                                                     [end (+ start (syntax-span stx))])
+                                                (send source delete start end #f)
+                                                (send source insert new-id start start #f)))))
+                                        to-be-renamed)
+                              (invalidate-bitmap-cache)
+                              (send (get-top-level-window) syncheck:button-callback)
+                              (send first-one-source end-edit-sequence)))))))))
               
               ;; jump-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
@@ -529,12 +553,9 @@
             (send (get-definitions-text) syncheck:clear-arrows)
             (let* ([list (send (get-definitions-text) get-style-list)]
                    [style (send list find-named-style "Standard")])
-              (if style
-                  (send (get-definitions-text)
-                        change-style style 0 (send (get-definitions-text) last-position))
-                  (begin
-                    (set! clear-highlighting (lambda () (send (get-definitions-text) syncheck:clear-arrows)))
-                    (mred:message-box "DrScheme: Syntax Check" "Warning: couldn't find Standard style")))))
+              (when style
+                (send (get-definitions-text) change-style
+                      style 0 (send (get-definitions-text) last-position)))))
           
           (public syncheck:clear-highlighting)
           (define (syncheck:clear-highlighting)
@@ -635,158 +656,193 @@
                          0
                          (send (get-definitions-text) last-position)
                          base-style-str)
-            (send (get-interactions-text)
-                  expand-program
-                  (drscheme:language:make-text/pos (get-definitions-text) 
-                                                   0
-                                                   (send (get-definitions-text)
-                                                         last-position))
-                  (fw:preferences:get
-                   (drscheme:language-configuration:get-settings-preferences-symbol))
-                  (lambda (err? sexp run-in-evaluation-thread loop)
-                    (if err?
-                        (report-error (car sexp) (cdr sexp))
-                        (annotate sexp))
-                    (loop)))
+            (let ([binders null]
+                  [varrefs null])
+              (send (get-interactions-text)
+                    expand-program
+                    (drscheme:language:make-text/pos (get-definitions-text) 
+                                                     0
+                                                     (send (get-definitions-text)
+                                                           last-position))
+                    (fw:preferences:get
+                     (drscheme:language-configuration:get-settings-preferences-symbol))
+                    (lambda (err? sexp run-in-evaluation-thread loop)
+                      (if err?
+                          (report-error (car sexp) (cdr sexp))
+                          (let-values ([(new-binders new-varrefs) (annotate-basic sexp)])
+                            (set! binders (append new-binders binders))
+                            (set! varrefs (append new-varrefs varrefs))))
+                      (loop)))
+              (annotate-variables binders varrefs))
             (send (get-definitions-text) end-edit-sequence))
 
-          ;; annotate : syntax -> void
-          ;; annotates the program described by the sexp
-          (define (annotate sexp)
-            (let loop ([sexp sexp]
-                       [bound-vars null])
-              (annotate-original-keywords sexp)
-              (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
-                                  quote quote-syntax with-continuation-mark 
-                                  #%app #%datum #%top
-                                  define-values define-syntaxes module
-                                  require require-for-syntax provide)
-                [(lambda args bodies ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-arglist (syntax args))
-                   (for-each (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
-                             (syntax->list (syntax (bodies ...)))))]
-                [(case-lambda [argss bodiess ...]...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each
-                    (lambda (args bodies)
-                      (annotate-arglist args)
-                      (for-each
-                       (lambda (sexp) (loop sexp (args->vars args bound-vars)))
-                       (syntax->list bodies)))
-                    (syntax->list (syntax (argss ...)))
-                    (syntax->list (syntax ((bodiess ...) ...)))))]
-                [(if test then else)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (loop (syntax test) bound-vars)
-                   (loop (syntax then) bound-vars)
-                   (loop (syntax else) bound-vars))]
-                [(if test then)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (loop (syntax test) bound-vars)
-                   (loop (syntax then) bound-vars))]
-                [(begin bodies ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each (lambda (body) (loop body bound-vars))
-                             (syntax->list (syntax (bodies ...)))))]
-                
-                [(begin0 bodies ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each (lambda (body) (loop body bound-vars))
-                             (syntax->list (syntax (bodies ...)))))]
-                
-                [(let-values (((xss ...) es) ...) bs ...)
-                 (let ([new-vars (foldl 
-                                  args->vars
-                                  (apply append (map syntax->list
-                                                     (syntax->list (syntax ((xss ...) ...)))))
-                                  bound-vars)])
-                   (annotate-raw-keyword sexp)
-                   (for-each annotate-arglist (syntax->list (syntax ((xss ...) ...))))
-                   (for-each (lambda (e) (loop e bound-vars)) (syntax->list (syntax (es ...))))
-                   (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
-                [(letrec-values (((xss ...) es) ...) bs ...)
-                 (let ([new-vars (foldl 
-                                  args->vars
-                                  (apply append (map syntax->list
-                                                     (syntax->list (syntax ((xss ...) ...)))))
-                                  bound-vars)])
-                   (annotate-raw-keyword sexp)
-                   (for-each annotate-arglist (syntax->list (syntax ((xss ...) ...))))
-                   (for-each (lambda (e) (loop e new-vars)) (syntax->list (syntax (es ...))))
-                   (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
-                [(set! var E)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-variable (syntax var) bound-vars)
-                   (loop (syntax E) bound-vars))]
-                [(quote datum)
-                 (begin (annotate-raw-keyword sexp)
-                        (color (syntax datum) constant-style-str))]
-                [(quote-syntax datum)
-                 (annotate-raw-keyword sexp)]
-                [(with-continuation-mark a b c)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (loop (syntax a) bound-vars)
-                   (loop (syntax b) bound-vars)
-                   (loop (syntax c) bound-vars))]
-                [(#%app pieces ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each (lambda (arg) (loop arg bound-vars))
-                             (syntax->list (syntax (pieces ...)))))]
-                [(#%datum . datum)
-                 (color sexp constant-style-str)]
-                [(#%top . var)
-                 (void)]
-                
-                [(define-values vars b)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-arglist (syntax vars))
-                   (loop (syntax b) (args->vars (syntax vars) bound-vars)))]
-                [(define-syntaxes (names ...) exp)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (loop (syntax exp) bound-vars))]
-                [(module m-name lang bodies ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each (lambda (body) (loop body bound-vars))
-                             (syntax->list (syntax (bodies ...)))))]
-                
-                ; top level or module top level only:
-                [(require require-spec)
-                 (annotate-raw-keyword sexp)]
-                [(require-for-syntax require-spec)
-                 (annotate-raw-keyword sexp)]
-                
-                ; module top level only:
-                [(provide vars)
-                 (annotate-raw-keyword sexp)]
-                
-                [_
-                 (cond
-                   [(identifier? sexp)
-                    (annotate-variable sexp bound-vars)]
-                   [else (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
-                                 sexp
-                                 (and (syntax? sexp)
-                                      (syntax-object->datum sexp))
-                                 (and (syntax? sexp)
-                                      (syntax-source sexp)))])])))
+          ;; annotate-variables : (listof syntax) (listof syntax) -> void
+          ;; colors the variables, free are turned unbound color, bound are turned
+          ;; bound color and all binders are turned bound color.
+          (define (annotate-variables binders varrefs)
+            (send (get-definitions-text) syncheck:init-arrows)
+            (for-each (lambda (binder) (color binder bound-variable-style-str)) binders)
+            (for-each (lambda (varref)
+                        (let* ([same-as-varref? (lambda (x) (module-identifier=? x varref))]
+                               [binders (filter same-as-varref? binders)]
+                               [same-names (append binders
+                                                   (filter same-as-varref? varrefs))])
+                          (cond
+                            [(null? binders)
+                             (color varref unbound-variable-style-str)]
+                            [else
+                             (for-each 
+                              (lambda (binder) (connect-variables binder varref same-names))
+                              binders)
+                             (color varref bound-variable-style-str)])))
+                      varrefs))
+          
+          ;; connect-variable : syntax syntax (listof syntax) -> void
+          (define (connect-variables binding bound same-names)
+            (let* ([binding-source (syntax-source binding)]
+                   [binding-pos-left (- (syntax-position binding) 1)]
+                   [binding-pos-right (+ binding-pos-left (syntax-span binding))]
+                   [bound-pos-left (- (syntax-position bound) 1)]
+                   [bound-pos-right (+ bound-pos-left (syntax-span bound))])
+              (when (is-a? binding-source syncheck-text<%>)
+                (send binding-source syncheck:add-arrow
+                      binding-pos-left binding-pos-right
+                      bound-pos-left bound-pos-right
+                      (syntax-object->datum binding)
+                      same-names))))
+          
+          ;; annotate-basic : syntax -> (values (listof syntax) (listof syntax)
+          ;; annotates the lexical structure of the program `sexp', except
+          ;; for the variables in the program. returns the variables in two
+          ;; lists -- the first is the ones that occur in binding positions
+          ;; and the second is those that occur in bound positions
+          (define (annotate-basic sexp)
+            (let ([binders null]
+                  [varrefs null])
+              (let loop ([sexp sexp])
+                (annotate-original-keywords sexp)
+                (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
+                                    quote quote-syntax with-continuation-mark 
+                                    #%app #%datum #%top #%module-begin
+                                    define-values define-syntaxes module
+                                    require require-for-syntax provide)
+                  [(lambda args bodies ...)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (set! binders (combine-binders (syntax args) binders))
+                     (for-each loop (syntax->list (syntax (bodies ...)))))]
+                  [(case-lambda [argss bodiess ...]...)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (for-each
+                      (lambda (args bodies)
+                        (set! binders (combine-binders args binders))
+                        (for-each loop (syntax->list bodies)))
+                      (syntax->list (syntax (argss ...)))
+                      (syntax->list (syntax ((bodiess ...) ...)))))]
+                  [(if test then else)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (loop (syntax test))
+                     (loop (syntax then))
+                     (loop (syntax else)))]
+                  [(if test then)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (loop (syntax test))
+                     (loop (syntax then)))]
+                  [(begin bodies ...)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (for-each loop (syntax->list (syntax (bodies ...)))))]
+                  
+                  [(begin0 bodies ...)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (for-each loop (syntax->list (syntax (bodies ...)))))]
+                  
+                  [(let-values (((xss ...) es) ...) bs ...)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                               (syntax->list (syntax ((xss ...) ...))))
+                     (for-each loop (syntax->list (syntax (es ...))))
+                     (for-each loop (syntax->list (syntax (bs ...)))))]
+                  [(letrec-values (((xss ...) es) ...) bs ...)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                               (syntax->list (syntax ((xss ...) ...))))
+                     (for-each loop (syntax->list (syntax (es ...))))
+                     (for-each loop (syntax->list (syntax (bs ...)))))]
+                  [(set! var E)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (set! varrefs (cons (syntax var) varrefs))
+                     (loop (syntax E)))]
+                  [(quote datum)
+                   (begin (annotate-raw-keyword sexp)
+                          (color (syntax datum) constant-style-str))]
+                  [(quote-syntax datum)
+                   (begin (annotate-raw-keyword sexp)
+                          (color (syntax datum) constant-style-str))]
+                  [(with-continuation-mark a b c)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (loop (syntax a))
+                     (loop (syntax b))
+                     (loop (syntax c)))]
+                  [(#%app pieces ...)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (for-each loop (syntax->list (syntax (pieces ...)))))]
+                  [(#%datum . datum)
+                   (color sexp constant-style-str)]
+                  [(#%top . var)
+                   (set! varrefs (cons (syntax var) varrefs))]
+                  
+                  [(define-values vars b)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (set! binders (combine-binders (syntax vars) binders))
+                     (loop (syntax b)))]
+                  [(define-syntaxes names exp)
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (set! binders (combine-binders (syntax names) binders))
+                     (loop (syntax exp)))]
+                  [(module m-name lang (#%module-begin bodies ...))
+                   (begin
+                     (annotate-raw-keyword sexp)
+                     (for-each loop (syntax->list (syntax (bodies ...)))))]
+                  
+                  ; top level or module top level only:
+                  [(require require-spec)
+                   (annotate-raw-keyword sexp)]
+                  [(require-for-syntax require-spec)
+                   (annotate-raw-keyword sexp)]
+                  
+                  ; module top level only:
+                  [(provide vars)
+                   (annotate-raw-keyword sexp)]
+                  
+                  [_
+                   (cond
+                     [(identifier? sexp)
+                      (set! varrefs (cons sexp varrefs))]
+                     [else (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
+                                   sexp
+                                   (and (syntax? sexp)
+                                        (syntax-object->datum sexp))
+                                   (and (syntax? sexp)
+                                        (syntax-source sexp)))])]))
+              (values binders varrefs)))
 
-          ;; args->vars : syntax (listof syntax) -> (listof syntax)
+          ;; combine-binders : syntax (listof syntax) -> (listof syntax)
           ;; transforms an argument list into a bunch of symbols/symbols and puts 
           ;; them on `incoming'
-          (define (args->vars stx incoming)
+          ;; [could be more efficient if it processed the stx itself instead of append]
+          (define (combine-binders stx incoming)
             (append (syntax->list stx) incoming)
 ;            (if (null? stx)
 ;                incoming
@@ -834,7 +890,7 @@
               [else
                (color sexp unbound-variable-style-str)]))
 
-          ;; annotate-arg-list : syntax -> void
+          ;; annotate-arglist : syntax -> void
           ;; annotates the (possibly improper) syntax list as bound variables
           (define (annotate-arglist stx)
             (for-each (lambda (stx) (color stx bound-variable-style-str))

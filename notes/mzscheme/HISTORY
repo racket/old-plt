@@ -12,8 +12,8 @@ New procedures:
   local-transformer-expand
   syntax-transforming?
 module-compiled-imports now returns 3 values
-module-binding? returns a list of five items instead of
- four for the module case
+indentifier-[transformer-]binding returns a list of five items
+ instead of four for a module-bound identifier
 
 Version 299.10
 Changed the class system; see MzScheme_300.txt

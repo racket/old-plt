@@ -142,7 +142,7 @@
 		    (MZLIB function)
 		    (MZLIB string)
 		    (MZLIB file)
-		    URL INSTALLER MRED FRAMEWORK)]
+		    URL INSTALLER MRED)]
 	  [INTERACTION : mrspidey:interaction^
 		      (mrspidey:interaction@ 
 		       ZODIAC

@@ -1370,9 +1370,13 @@ static void MrEdSleep(float secs, void *fds)
 {
   long now;
 
+#ifdef NEVER_EVER_SLEEP
+  return;
+#endif
+  
   if (!(KEEP_GOING))
     return;
-  
+    
   now = (long)scheme_get_milliseconds();
   {
     wxTimer *timer = mred_timers;

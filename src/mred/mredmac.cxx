@@ -15,6 +15,8 @@
     to occur, but notice suspension and resumption ourselves (by testing 
     for the current process).
 */
+static int last_was_front;
+
 #endif
 
 #include "wx_main.h"
@@ -87,6 +89,19 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
   return NULL;
 }
 
+/* Note on Carbon Events: Under classic, there's no way to handle the event queue
+ * non-sequentially.  That is, we want to handle certain kinds of events before
+ * handling other kinds of events.  The only solution is to suck all of the events
+ * into a queue of our own, and deal with them there.  This causes certain problems,
+ * but not horrible ones.  Under Carbon, however, there's no need for this trickery,
+ * because we can scan the event queue for certain kinds of events.  So this file
+ * has a severe personality split. Of course, there's always the possibility of 
+ * carbonizing the classic version.  This would probably simplify things in the 
+ * long run.
+ */
+
+#ifndef OS_X
+
 typedef struct MrQueueElem {
   EventRecord event;
   RgnHandle rgn;
@@ -94,8 +109,6 @@ typedef struct MrQueueElem {
 } MrQueueElem;
 
 static MrQueueElem *first, *last;
-
-static int last_was_front;
 
 /* QueueTransferredEvent takes an event and puts it
  * in the MrEd queue, with several exceptions.
@@ -199,6 +212,10 @@ static int QueueTransferredEvent(EventRecord *e)
 #endif
 	TEToScrap();
       }
+      
+      /* This code generates activate events; under classic MacOS, returning an 
+       * application to the foreground does not generate (de)activate events.
+       */
         
       q->event.what = activateEvt;
       q->event.modifiers = we_are_front ? activeFlag : 0;
@@ -209,6 +226,9 @@ static int QueueTransferredEvent(EventRecord *e)
 
   return 1;
 }
+
+#endif // !defined(OS_X)
+
 
 /* Called by wxWindows to queue leave events: */
 void QueueMrEdEvent(EventRecord *e)
@@ -229,7 +249,9 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
 }
 
 /* TransferQueue sucks all of the pending events out of the 
- * Application queue and sticks them in the MrEd queue.
+ * Application queue, sticks them in the MrEd queue, and returns 1,
+ * unless it was called less than delay_time ago, in which case do
+ * nothing and return 0.
  */
  
 static int TransferQueue(int all)
@@ -382,6 +404,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
   if (!TransferQueue(0))
     kill_context = 0;
+    
+  // theoretically, we should handle high level events here.  do they still exist?
 
   if (cont_event_context)
     if (!WindowStillHere(cont_event_context_window))
@@ -408,6 +432,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
      WindowPtr front = FrontWindow();
   
      if (front) {
+     
       q = new MrQueueElem;
       q->next = NULL;
       q->prev = last;
@@ -418,6 +443,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
       last = q;
       
       q->rgn = NULL;
+      
     
       q->event.what = activateEvt;
       q->event.modifiers = we_are_front ? activeFlag : 0;

@@ -673,6 +673,7 @@
 # define MACINTOSH_EVENTS
 # define MAC_MZ_GUI_ENABLED
 # define MAC_CLASSIC_PROCESS_CONTROL
+# define NEVER_EVER_SLEEP
 # define MACINTOSH_GIVE_TIME
 # define MACINTOSH_SIOUX
 
@@ -1209,6 +1210,9 @@
 
  /* MAC_CLASSIC_PROCESS_CONTROL swaps the UNIX process commands for the mac family 
      (use under classic) */
+
+ /* NEVER_EVER_SLEEP prevents MrEdMacSleep from ever being called.  This is the
+    (unfortunate) default for Classic. */
 
  /* MACINTOSH_GIVE_TIME lets background processes run when checking for
      a user break. */

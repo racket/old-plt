@@ -85,7 +85,7 @@ class wxMediaBuffer : public wxObject
   wxSnip *caretSnip;
 
   wxStyleList *styleList;
-  long notifyId;
+  void *notifyId;
   
   char *filename;  /* last loaded file, or NULL */
 

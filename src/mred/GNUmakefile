@@ -243,6 +243,8 @@ gc2/Clipboard.cc: $(WXDIR)/src/Misc/Clipboard.cc
 gc2/Timer.cc: $(WXDIR)/src/Misc/Timer.cc
 	$(XFORM) $< $@
 
+gc2/Application.cc: $(WXDIR)/src/Utilities/Application.cc
+	$(XFORM) $< $@
 gc2/Assert.cc: $(WXDIR)/src/Utilities/Assert.cc
 	$(XFORM) $< $@
 gc2/BusyCursor.cc: $(WXDIR)/src/Utilities/BusyCursor.cc
@@ -345,10 +347,13 @@ gc2/$(OBJDIR)/%.o: gc2/%.c
 	$(CC) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CFLAGS) -o $@ $<
 
 gc2/$(OBJDIR)/wxs_%.o: wxs/wxs_%.cxx
-	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) $(LOCALFLAGS) -c -o $@ $<
+	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) -c -o $@ $<
 
 gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx
-	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) $(LOCALFLAGS) -c -o $@ $<
+	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) -c -o $@ $<
+
+gc2/$(OBJDIR)/gc2.o: ../mzscheme/gc2/gc2.c
+	$(CC) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) -c -o $@ $<
 
 XSRCS = gc2/Window.cc \
   gc2/Button.cc \
@@ -397,6 +402,7 @@ XSRCS = gc2/Window.cc \
   gc2/Clipboard.cc \
   gc2/Timer.cc \
 \
+  gc2/Application.cc \
   gc2/Assert.cc \
   gc2/BusyCursor.cc \
   gc2/Date+Time.cc \
@@ -434,14 +440,14 @@ XSRCS = gc2/Window.cc \
   gc2/wx_cgrec.cc \
 \
   gc2/wxscheme.cc \
-  gc2/xcglue.c \
 \
   gc2/mred.cc \
   gc2/mredx.cc
 
-XOBJS = ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o} \
+XOBJS = \
   gc2/$(OBJDIR)/xcglue.o \
   gc2/$(OBJDIR)/wxGC.o \
+  gc2/$(OBJDIR)/gc2.o \
   gc2/$(OBJDIR)/wxs_bmap.o \
   gc2/$(OBJDIR)/wxs_butn.o \
   gc2/$(OBJDIR)/wxs_chce.o \
@@ -468,7 +474,8 @@ XOBJS = ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o} \
   gc2/$(OBJDIR)/wxs_slid.o \
   gc2/$(OBJDIR)/wxs_snip.o \
   gc2/$(OBJDIR)/wxs_styl.o \
-  gc2/$(OBJDIR)/wxs_win.o
+  gc2/$(OBJDIR)/wxs_win.o \
+  ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o}
 
 MZOBJS = ../mzscheme/gc2/$(MZOBJDIR)/salloc.o \
 	../mzscheme/gc2/$(MZOBJDIR)/bignum.o \
@@ -501,8 +508,8 @@ MZOBJS = ../mzscheme/gc2/$(MZOBJDIR)/salloc.o \
 	../mzscheme/gc2/$(MZOBJDIR)/syntax.o \
 	../mzscheme/gc2/$(MZOBJDIR)/type.o \
         ../mzscheme/gc2/$(MZOBJDIR)/unit.o \
-	../mzscheme/gc2/$(MZOBJDIR)/vector.o \
-	../mzscheme/gc2/$(MZOBJDIR)/gc2.o
+	../mzscheme/gc2/$(MZOBJDIR)/vector.o
+#	../mzscheme/gc2/$(MZOBJDIR)/gc2.o
 
 XWOBJS = ../wxxt/src/XWidgets/$(MZOBJDIR)/xwArrow.o \
     ../wxxt/src/XWidgets/$(MZOBJDIR)/xwCommon.o \
@@ -527,7 +534,7 @@ XWOBJS = ../wxxt/src/XWidgets/$(MZOBJDIR)/xwArrow.o \
     ../wxxt/src/XWidgets/$(MZOBJDIR)/xwScrollbar.o \
     ../wxxt/src/XWidgets/$(MZOBJDIR)/xwTools3d.o
 
-xform: $(XSRCS)
+xform: $(XSRCS) gc2/xcglue.c
 
 mred2k: $(XOBJS)
-	$(LINKER) $(MREDLDFLAGS) -o $(MRBUILDDIR)mred2k $(LDSTARTERS) $(XOBJS) $(MZOBJS) $(XWOBJS) -lXpm $(LDLIBS) $(LDENDERS)
+	$(LINKER) $(MREDLDFLAGS) -o $(MRBUILDDIR)mred2k $(LDSTARTERS) $(XOBJS) $(MZOBJS) $(XWOBJS) -lXpm $(LDLIBS) $(LDNONSTATICLIBS) $(LDENDERS)

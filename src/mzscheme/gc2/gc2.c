@@ -34,8 +34,8 @@ typedef short Type_Tag;
 #include "gc2.h"
 
 #define TIME 0
-#define SEARCH 0
-#define SAFETY 0
+#define SEARCH 1
+#define SAFETY 1
 #define RECYCLE_HEAP 0
 
 #define GC_EVERY_ALLOC 0
@@ -343,12 +343,6 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
 			   void *data, void (**oldf)(void *p, void *data), 
 			   void **olddata)
 {
-  /* Used only for delete */
-  if (f) {
-    printf("Can't register regular finalizer\n");
-    exit(-1);
-  }
-  
   GC_register_eager_finalizer(p, 0, f, data, oldf, olddata);
 }
 

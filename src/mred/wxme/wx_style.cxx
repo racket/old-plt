@@ -863,10 +863,17 @@ class NotificationRec {
  public:
   wxStyleNotifyFunc f;
   void *data;
-  long id;
+#ifdef MZ_PRECISE_GC
+# define GET_WEAK_DATA(data) GC_weak_box_val(data)
+#else
+# define GET_WEAK_DATA(data) data
+#endif
+  void *id;
 };
 
-extern "C" long scheme_make_symbol(const char *name);
+extern "C" {
+  void *scheme_make_symbol(const char *name);
+}
 
 wxStyleList::wxStyleList() : wxList()
 {
@@ -1143,34 +1150,49 @@ void wxStyleList::StyleWasChanged(wxStyle *which)
 
   for (node = notifications->First(); node; node = node->Next()) {
     rec = (NotificationRec *)node->Data();
-    rec->f(which, rec->data);
+    rec->f(which, GET_WEAK_DATA(rec->data));
   }
 }
 
+#ifndef MZ_PRECISE_GC
 extern "C" void scheme_weak_reference(void **p);
+#endif
 
-long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
+void *wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
 {
   NotificationRec *rec, *orec;
   wxNode *node;
 
+#ifdef MZ_PRECISE_GC
+  rec = new NotificationRec;
+  if (weak) {
+    rec->data = GC_malloc_weak_box(data, NULL);
+  } else {
+    void *weak_data;
+    weak_data = GC_malloc_atomic(sizeof(short) + sizeof(short) + sizeof(void *));
+    *(void **)(weak_data + 2 * sizeof(short)) = data;
+    GC_finalization_weak_ptr((void **)weak_data);
+    rec->data = weak_data;
+  }
+#else
   if (weak)
     rec = new WXGC_ATOMIC NotificationRec;
   else
     rec = new NotificationRec;
-  
-  rec->f = f;
   rec->data = data;
   if (weak)
     scheme_weak_reference((void **)&rec->data);
   else
     WXGC_IGNORE(rec->data);
+#endif
+  
+  rec->f = f;
   rec->id = scheme_make_symbol("notify-change-key");
-
+    
   /* Look for dropped weak entries to replace: */
   for (node = notifications->First(); node; node = node->Next()) {
     orec = (NotificationRec *)node->Data();
-    if (!orec->data) {
+    if (!GET_WEAK_DATA(orec->data)) {
       node->SetData((wxObject *)rec);
       return rec->id;
     }
@@ -1181,7 +1203,7 @@ long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
   return rec->id;
 }
 
-void wxStyleList::ForgetNotification(long id)
+void wxStyleList::ForgetNotification(void *id)
 {
   NotificationRec *rec;
   wxNode *node;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.24 1999/11/25 20:47:00 mflatt Exp $
+ * $Id: Frame.cc,v 1.25 1999/11/26 20:18:50 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -206,7 +206,7 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 	XtNhighlightThickness, 0,
 	XtNbackground, bg->GetPixel(cmap),
 	NULL);
-    wgt = X->handle;
+    X->handle = wgt;
     AddEventHandlers();
 
     /* MATTHEW */

@@ -225,11 +225,11 @@ static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 @MACRO spCallback = (wxStyle-object-or-#f -> void)
 
 @MACRO bAnythingFromLong = ((Scheme_Object *){x})
-@MACRO ubAnythingToLong = ((long){x})
+@MACRO ubAnythingToLong = ((void *){x})
 @MACRO cAnything = 1
 
-@ "notify-on-change" : long/bAnythingFromLong NotifyOnChange(wxStyleNotifyFunc//ubCallback///spCallback/nopush,-unknown#void*//ubData)
-@ "forget-notification" : void ForgetNotification(long//ubAnythingToLong/cAnything)
+@ "notify-on-change" : void[]/bAnythingFromLong NotifyOnChange(wxStyleNotifyFunc//ubCallback///spCallback/nopush,-unknown#void*//ubData)
+@ "forget-notification" : void ForgetNotification(void[]//ubAnythingToLong/cAnything///push)
 
 @END
 

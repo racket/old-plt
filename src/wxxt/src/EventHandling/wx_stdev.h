@@ -10,8 +10,10 @@
 #ifndef wxb_stdevh
 #define wxb_stdevh
 
-#ifdef __GNUG__
-#pragma interface
+#ifndef MZ_PRECISE_GC
+# ifdef __GNUG__
+# pragma interface
+# endif
 #endif
 
 #ifndef wx_xt

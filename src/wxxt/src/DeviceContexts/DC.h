@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.8 1999/11/18 16:35:06 mflatt Exp $
+ * $Id: DC.h,v 1.9 1999/11/21 00:08:47 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -26,8 +26,10 @@
 #ifndef DC_h
 #define DC_h
 
-#ifdef __GNUG__
-#pragma interface
+#ifndef MZ_PRECISE_GC
+# ifdef __GNUG__
+# pragma interface
+# endif
 #endif
 
 /* MATTHEW: for floor(): */
@@ -37,7 +39,6 @@
 class wxPoint : public wxObject {
 public:
     wxPoint(void) : wxObject(WXGC_NO_CLEANUP) { x = y = 0.0; }
-    /* MATTHEW: */
     wxPoint(float a, float b) : wxObject(WXGC_NO_CLEANUP) { x = a; y = b; }
     float x, y;
 };
@@ -46,7 +47,6 @@ public:
 class wxIntPoint : public wxObject {
 public:
     wxIntPoint(void) : wxObject(WXGC_NO_CLEANUP) { x = y = 0; }
-    /* MATTHEW: */
     wxIntPoint(int a, int b)  : wxObject(WXGC_NO_CLEANUP) { x = a; y = b; }
     int x, y;
 };

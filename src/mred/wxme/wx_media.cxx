@@ -63,6 +63,9 @@ void wxInitMedia(void)
   wxREGGLOB(iBeam);
   wxREGGLOB(arrow);
 
+  /* Creates NIL: */
+  new wxMediaLine;
+
   wxInitClipboard();
   wxInitStyles();
 

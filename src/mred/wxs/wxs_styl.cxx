@@ -2850,14 +2850,15 @@ static Scheme_Object *os_wxStyleListForgetNotification(Scheme_Object *obj, int n
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  long x0;
+  void* x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, x0);
 
   
-  x0 = ((long)p[0]);
+  x0 = ((void *)p[0]);
 
   
   WITH_VAR_STACK(((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->ForgetNotification(x0));
@@ -2872,7 +2873,7 @@ static Scheme_Object *os_wxStyleListNotifyOnChange(Scheme_Object *obj, int n,  S
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  long r;
+  void* r;
   objscheme_check_valid(obj);
   wxStyleNotifyFunc x0;
   void* x1;

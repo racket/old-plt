@@ -215,8 +215,8 @@ class wxStyleList : public wxList /* should be private */
 
   wxStyle *Convert(wxStyle *);
 
-  long NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak = 0);
-  void ForgetNotification(long id);
+  void *NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak = 0);
+  void ForgetNotification(void *id);
 
   wxStyle *IndexToStyle(int i);
   int StyleToIndex(wxStyle *);

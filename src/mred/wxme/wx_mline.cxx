@@ -36,7 +36,7 @@
 #define REDP(node) (node->flags & WXLINE_RED)
 #define BLACKP(node) (node->flags & WXLINE_BLACK)
 
-wxMediaLine *NIL = new wxMediaLine;
+wxMediaLine *NIL;
 
 static wxMediaParagraph *plain_paragraph = NULL;
 
@@ -44,6 +44,11 @@ static wxMediaParagraph *plain_paragraph = NULL;
 
 wxMediaLine::wxMediaLine()
 {
+  if (!NIL) {
+    wxREGGLOB(NIL);
+    NIL = this;
+  }
+
   pos = line = scroll = 0;
   y = 0;
 

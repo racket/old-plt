@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Object.h,v 1.5 1999/11/24 21:20:19 mflatt Exp $
+ * $Id: Object.h,v 1.6 1999/11/25 22:57:29 mflatt Exp $
  *
  * Purpose: Top level object and memory debugging for wxWindows
  *
@@ -43,7 +43,7 @@
 #endif
 #define WXGC_NO_CLEANUP FALSE
 
-class wxObject : public gc
+class wxObject : public gc_cleanup
 {
 public:
   wxObject(void);

@@ -861,12 +861,12 @@
 	(let loop ([e e][p body-pos])
 	  (if (zero? p)
 	      (append
-	       (if (or super (eq? name 'gc_marking))
+	       (if (or super (eq? name 'gc))
 		   null
 		   (list
 		    (make-tok ': #f #f)
 		    (make-tok 'public #f #f)
-		    (make-tok 'gc_marking #f #f)))
+		    (make-tok 'gc #f #f)))
 	       (cons (make-braces
 		      (tok-n body-v)
 		      (tok-line body-v)
@@ -875,9 +875,9 @@
 		      (list->seq
 		       (append
 			body-e
-			(if (or (eq? name 'gc_marking)
+			(if (or (eq? name 'gc)
 				(assq gcMark (c++-class-prototyped cl)))
-			    ;; Don't add to gc_marking or to a class that has it
+			    ;; Don't add to gc or to a class that has it
 			    null
 
 			    ;; Add init-var decls and gcMARK method:
@@ -908,7 +908,7 @@
 			      (make-braces
 			       "{" #f #f "}"
 			       (list->seq
-				(make-mark-body (or super 'gc_marking)
+				(make-mark-body (or super 'gc)
 						(c++-class-top-vars cl)
 						init-vars
 						(car e))))))))))

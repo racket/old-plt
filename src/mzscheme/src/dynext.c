@@ -452,10 +452,18 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 #endif
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 void scheme_register_extension_global(void *ptr, long size)
 {
   GC_add_roots((char *)ptr, (char *)(((char *)ptr) + size + 1));
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 static Scheme_Object *load_extension(int argc, Scheme_Object **argv)
 {

@@ -200,6 +200,7 @@ static wxTimer *mred_timers;
 int mred_eventspace_param;
 int mred_event_dispatch_param;
 Scheme_Type mred_eventspace_type;
+static Scheme_Type mred_eventspace_hop_type;
 static Scheme_Object *def_dispatch;
 int mred_ps_setup_param;
 
@@ -207,6 +208,14 @@ typedef struct Context_Manager_Hop {
   Scheme_Type type;
   MrEdContext *context;
 } Context_Manager_Hop;
+
+#ifdef MZ_PRECISE_GC
+# define WEAKIFY(x) ((MrEdContext *)GC_malloc_weak_box(x, NULL))
+# define WEAKIFIED(x) ((MrEdContext *)GC_weak_box_val(x))
+#else
+# define WEAKIFY(x) x
+# define WEAKIFIED(x) x
+#endif
 
 static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *), 
 					 MrEdContext *tdata, int check_only);
@@ -246,7 +255,18 @@ static int mark_eventspace_val(void *p, Mark_Proc mark)
     gcMARK_TYPED(Scheme_Manager_Reference *, c->mref);
   }
 
-  return sizeof(MrEdContext);
+  return gcBYTES_TO_WORDS(sizeof(MrEdContext));
+}
+
+static int mark_eventspace_hop_val(void *p, Mark_Proc mark)
+{
+  Context_Manager_Hop *c = (Context_Manager_Hop *)p;
+
+  if (mark) {
+    gcMARK_TYPED(MrEdContext *, c->context);
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
 }
 
 END_XFORM_SKIP;
@@ -446,7 +466,7 @@ static void destroy_wxObject(wxWindow *w, void *)
 static void kill_eventspace(Scheme_Object *ec, void *)
 {
   MrEdContext *c;
-  c = ((Context_Manager_Hop *)ec)->context;
+  c = WEAKIFIED(((Context_Manager_Hop *)ec)->context);
 
   if (!c)
     return; /* must not have had any frames or timers */
@@ -565,11 +585,21 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   c->type = mred_eventspace_type;
 
+#ifdef MZ_PRECISE_GC
+  mr_hop = (Context_Manager_Hop *)GC_malloc_one_tagged(sizeof(Context_Manager_Hop));
+#else
   mr_hop = (Context_Manager_Hop *)scheme_malloc_atomic(sizeof(Context_Manager_Hop));
-  mr_hop->type = 0;
-  mr_hop->context = c;
+#endif
+  mr_hop->type = mred_eventspace_hop_type;
+  {
+    MrEdContext *ctx;
+    ctx = WEAKIFY(c);
+    mr_hop->context = ctx;
+  }
   c->mr_hop = mr_hop;
+#ifndef MZ_PRECISE_GC
   scheme_weak_reference((void **)&mr_hop->context);
+#endif
   
   {
     Scheme_Manager_Reference *mr;
@@ -2233,7 +2263,9 @@ static Scheme_Env *setup_basic_env()
 
   mred_eventspace_type = scheme_make_type("<eventspace>");
 #ifdef MZ_PRECISE_GC
+  mred_eventspace_hop_type = scheme_make_type("<internal:eventspace-hop>");
   GC_register_traverser(mred_eventspace_type, mark_eventspace_val);
+  GC_register_traverser(mred_eventspace_hop_type, mark_eventspace_hop_val);
 #endif
 
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
@@ -2507,18 +2539,18 @@ extern long wxMediaCreatorId;
 
 extern int wxEntry(int, char **);
 
-extern "C" {
 int actual_main(int argc, char **argv)
 {
+  int r;
+
 #ifndef wx_msw
   TheMrEdApp = new MrEdApp;
 #endif
 
-  int r = wxEntry(argc, argv);
+  r = wxEntry(argc, argv);
 
   return r;
 }
-};
 
 int main(int argc, char *argv[])
 {
@@ -2531,6 +2563,10 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
+#if defined(MZ_PRECISE_GC)
+  GC_set_stack_base(&__gc_var_stack__);
+  GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
+#endif
 #ifdef USE_SENORA_GC
   {
     int dummy;

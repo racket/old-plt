@@ -35,11 +35,10 @@ void operator delete(void * /*obj*/)
 {
 }
 
-void gc::install_cleanup(void)
+void gc_cleanup::install_cleanup(void)
 {
   GC_finalization_proc old_fn;
   void *old_data;
-
 
 # ifdef MZ_PRECISE_GC
 #  define ALLOW_NON_BASE 0
@@ -77,12 +76,10 @@ void gc::install_cleanup(void)
 # endif
 }
 
-extern "C" {
-  void GC_cleanup(void *obj, void *)
-  {
-    gc *clean = (gc *)gcPTR_TO_OBJ(obj);
-    clean->~gc();
-  }
+void GC_cleanup(void *obj, void *)
+{
+  gc *clean = (gc *)gcPTR_TO_OBJ(obj);
+  clean->~gc();
 }
 
 /**********************************************************************/  
@@ -156,40 +153,54 @@ int GC_is_wx_object(void *v)
 
 #ifdef MZ_PRECISE_GC
 
-int gc_marking::gcMark(Mark_Proc /* mark */)
+int gc::gcMark(Mark_Proc /* mark */)
 {
-  return 0;
+  return gcBYTES_TO_WORDS(sizeof(gc));
 }
 
-int gc::gcMark(Mark_Proc mark)
+int gc_cleanup::gcMark(Mark_Proc mark)
 {
   if (mark) {
     gcMARK(__gc_external);
   }
 
-  return gcBYTES_TO_WORDS(sizeof(gc));
+  return gcBYTES_TO_WORDS(sizeof(gc_cleanup));
 }
 
 #include "scheme.h"
 
-Scheme_Object *new_stack;
+typedef struct AllocStackLink {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  void *data;
+  AllocStackLink *next;
+} AllocStackLink;
+
+AllocStackLink *new_stack;
 
 void *GC_get_current_new()
 {
-  return SCHEME_CAR(new_stack);
+  return new_stack->data;
 }
 
 void *GC_pop_current_new()
 {
   void *p;
-  p = SCHEME_CAR(new_stack);
-  new_stack = SCHEME_CDR(new_stack);
+  p = new_stack->data;
+  new_stack = new_stack->next;
   return p;
 }
 
 static void GC_push_current_new(void *p)
 {
-  new_stack = scheme_make_pair((Scheme_Object *)p, new_stack);
+  AllocStackLink *link;
+
+  link = (AllocStackLink *)GC_malloc_one_tagged(sizeof(AllocStackLink));
+  link->type = scheme_rt_stack_object;
+  link->data = p;
+  link->next = new_stack;
+
+  new_stack = link;
 }
 
 static void *get_new_stack()
@@ -199,15 +210,29 @@ static void *get_new_stack()
 
 static void set_new_stack(void *p)
 {
-  new_stack = (Scheme_Object *)p;
+  new_stack = (AllocStackLink *)p;
 }
 
 static int mark_cpp_object(void *p, Mark_Proc mark)
 {
-  gc_marking *obj = (gc_marking *)gcPTR_TO_OBJ(p);
+  gc *obj = (gc *)gcPTR_TO_OBJ(p);
 
-  return obj->gcMark(mark);
+  return obj->gcMark(mark) + 1;
 }
+
+static int mark_stack_object(void *p, Mark_Proc mark)
+{
+  AllocStackLink *link = (AllocStackLink *)p;
+
+  if (mark) {
+    gcMARK_TYPED(void *, link->data);
+    gcMARK_TYPED(AllocStackLink *, link->next);
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(AllocStackLink));
+}
+
+static void *park;
 
 void *GC_cpp_malloc(size_t size)
 {
@@ -215,13 +240,14 @@ void *GC_cpp_malloc(size_t size)
 
   if (!new_stack) {
     /* Initialize: */
+    wxREGGLOB(park);
     wxREGGLOB(new_stack);
-    new_stack = scheme_null;
 
     scheme_get_external_stack_val = get_new_stack;
     scheme_set_external_stack_val = set_new_stack;
 
     GC_register_traverser(scheme_rt_cpp_object, mark_cpp_object);
+    GC_register_traverser(scheme_rt_stack_object, mark_stack_object);
   }
 
   p = GC_malloc_one_tagged(size + sizeof(long));
@@ -229,9 +255,12 @@ void *GC_cpp_malloc(size_t size)
 
   p = gcPTR_TO_OBJ(p);
 
+  /* push_new might trigger a gc: */
+  park = p;
+
   GC_push_current_new(p);
 
-  return p;
+  return park;
 }
 
 #endif

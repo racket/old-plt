@@ -28,8 +28,8 @@ typedef void (*GCCleanUpFunc)(void* obj, void* clientData);
 
 extern "C" {
   void gc_mark_external_invalid(void *);
-  void GC_cleanup(void *obj, void *ignored);
 };
+void GC_cleanup(void *obj, void *ignored);
 
 #include "gc.h"
 
@@ -55,19 +55,9 @@ extern "C" {
 #endif
 
 #ifdef MZ_PRECISE_GC
-class gc_marking
-{
- public:
-  virtual ~gc_marking() { }
-  /* Overridden in each subclass: */
-  virtual int gcMark(Mark_Proc mp);
-};
-
+extern void *GC_cpp_malloc(size_t);
 extern void *GC_get_current_new();
 extern void *GC_pop_current_new();
-
-extern void *GC_cpp_malloc(size_t);
-
 # define GC_register_finalizer_ignore_self GC_register_finalizer
 #endif
 
@@ -75,24 +65,17 @@ extern void *GC_cpp_malloc(size_t);
 #ifdef MZ_PRECISE_GC
 # define gcOBJ_TO_PTR(x) ((char *)x - 4)
 # define gcPTR_TO_OBJ(x) ((char *)x + 4)
-# define __GC_SUPERCLASS__ : public gc_marking
 #else
 # define gcOBJ_TO_PTR(x) x
 # define gcPTR_TO_OBJ(x) x
-# define __GC_SUPERCLASS__ /* none */
 #endif
 
-/********************* The `gc' class *************************/
+/**** The `gc' and `gc_cleanup' class ************/
 
-class gc __GC_SUPERCLASS__
+class gc
 {
 public:
-  void *__gc_external;
-
-  inline gc();
-  inline gc(int cleanup);
   inline virtual ~gc();
-  void install_cleanup();
 
   inline void *operator new(size_t size);
   inline void *operator new(size_t size, GCPlacement gcp);
@@ -104,29 +87,49 @@ public:
 #endif
 
 #ifdef MZ_PRECISE_GC
+  /* Overridden in each subclass: */
+  virtual int gcMark(Mark_Proc mp);
+#endif
+};
+
+class gc_cleanup : public gc
+{
+public:
+  void *__gc_external;
+
+  inline gc_cleanup();
+  inline gc_cleanup(int cleanup);
+  inline virtual ~gc_cleanup();
+  void install_cleanup();  
+
+#ifdef MZ_PRECISE_GC
   int gcMark(Mark_Proc mp);
 #endif
 };
 
 /***** Constructors and Destructors: ******/
 
-inline gc::gc(void)
+inline gc_cleanup::gc_cleanup(void)
 {
   __gc_external = NULL;
   install_cleanup();
 }
 
-inline gc::gc(int cleanup) {
+inline gc_cleanup::gc_cleanup(int cleanup) {
   __gc_external = NULL;
   if (cleanup)
     install_cleanup();
 }
 
-inline gc::~gc(void)
+inline gc_cleanup::~gc_cleanup(void)
 {
   if (__gc_external)
     gc_mark_external_invalid(__gc_external);
   GC_register_finalizer_ignore_self(gcOBJ_TO_PTR(this), 0, 0, 0, 0);
+}
+
+inline gc::~gc(void)
+{
 }
 
 /***** Allocators: ******/

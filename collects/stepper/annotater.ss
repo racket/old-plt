@@ -856,7 +856,7 @@
                       (values (appropriate-wrap annotated free-bindings) free-bindings))]
                    [ankle-wrap?
                     (let*-values
-                        ([(process-clause
+                        ([(process-clause-first-pass
                            (lambda (clause)
                              (if (z:define-values-form? clause)
                                  (let*-values
@@ -865,9 +865,42 @@
                                        (set!-rhs-recur (z:define-values-form-val clause) 
                                                        (if (null? binding-names)
                                                            #f
-                                                           (car binding-names)))])
-                                   (values `(#%set!-values ,binding-names annotated-rhs) free-vars ; I AM HERE
-	       
+                                                           (car binding-names)))]
+                                      [set!-form `(#%set!-values ,binding-names annotated-rhs)])
+                                   (values (appropriate-wrap set!-form free-vars) 
+                                           (binding-set-union (z:define-values-form-vars clause) free-vars)))
+                                 (let*-values
+                                     ([(annotated free-vars) (non-tail-recur clause)])
+                                   (values (appropriate-wrap annotated free-vars) free-vars)))))]
+                         [(process-clause-second-pass)
+                           (lambda (clause)
+                             (if (z:define-values-form? clause)
+                                 (let ([binding-names (map z:varref-var (z:define-values-form-vars clause))])
+                                   (list `(#%define-values ,binding-names ,binding-names)))
+                                 null))]
+                         [(annotated-clauses free-vars-clauses)
+                          (dual-map process-clause-first-pass (z:unit-form-clauses expr))]
+                         [(final-defines)
+                          (map process-clause-second-pass (z:unit-form-clauses expr))]
+                         [(free-vars)
+                          (apply binding-set-union free-vars-clauses)]
+                         [(annotated-innards)
+                          (cons (appropriate-wrap `(#%begin ,@annotated-clauses) free-vars)
+                                final-defines)]
+                         [(annotated-unit)
+                          `(#%unit
+                            (import ,@(map get-binding-name imports))
+                            (export ,@exports)
+                            ,@annotated-innards)]
+                         [(free-vars-outside)
+                          (binding-set-remove
+                           (binding-set-union imports
+                                              (extract-top-level-slots (z:unit-form-clauses expr)))
+                           free-vars
+                           expr)])
+                      (values annotated-unit free-vars-outside))]))]
+                         
+                         
                [(z:compound-unit-form? expr)
                 (let ((imports (map get-binding-name
                                     (z:compound-unit-form-imports expr)))

@@ -625,6 +625,7 @@ MZ_EXTERN Scheme_Object *scheme_struct_ref(Scheme_Object *s, int pos);
 MZ_EXTERN void scheme_struct_set(Scheme_Object *s, int pos, Scheme_Object *v);
 
 MZ_EXTERN Scheme_Object *scheme_make_struct_type_property(Scheme_Object *name);
+MZ_EXTERN Scheme_Object *scheme_make_struct_type_property_w_guard(Scheme_Object *name, Scheme_Object *guard);
 MZ_EXTERN Scheme_Object *scheme_struct_type_property_ref(Scheme_Object *prop, Scheme_Object *s);
 
 /*========================================================================*/

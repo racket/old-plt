@@ -1429,6 +1429,7 @@ mark_struct_type_val {
   gcMARK(t->uninit_val);
   gcMARK(t->props);
   gcMARK(t->proc_attr);
+  gcMARK(t->immutables);
 
  size:
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -1458,6 +1459,7 @@ mark_struct_property {
  mark:
   Scheme_Struct_Property *i = (Scheme_Struct_Property *)p;
   gcMARK(i->name);
+  gcMARK(i->guard);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }

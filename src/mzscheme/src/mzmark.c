@@ -3558,6 +3558,7 @@ int mark_struct_type_val_MARK(void *p) {
   gcMARK(t->uninit_val);
   gcMARK(t->props);
   gcMARK(t->proc_attr);
+  gcMARK(t->immutables);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -3578,6 +3579,7 @@ int mark_struct_type_val_FIXUP(void *p) {
   gcFIXUP(t->uninit_val);
   gcFIXUP(t->props);
   gcFIXUP(t->proc_attr);
+  gcFIXUP(t->immutables);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -3648,6 +3650,7 @@ int mark_struct_property_SIZE(void *p) {
 int mark_struct_property_MARK(void *p) {
   Scheme_Struct_Property *i = (Scheme_Struct_Property *)p;
   gcMARK(i->name);
+  gcMARK(i->guard);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }
@@ -3655,6 +3658,7 @@ int mark_struct_property_MARK(void *p) {
 int mark_struct_property_FIXUP(void *p) {
   Scheme_Struct_Property *i = (Scheme_Struct_Property *)p;
   gcFIXUP(i->name);
+  gcFIXUP(i->guard);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }

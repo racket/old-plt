@@ -284,8 +284,8 @@ Scheme_Object *(*scheme_append_string)(Scheme_Object *, Scheme_Object *);
 Scheme_Object *(*scheme_make_vector)(int size, Scheme_Object *fill);
 Scheme_Object *(*scheme_make_integer_value)(long i);
 Scheme_Object *(*scheme_make_integer_value_from_unsigned)(unsigned long i);
-Scheme_Object *(*scheme_make_integer_value_from_long_long)(unsigned long lohalf, unsigned long hihalf);
-Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_long)(unsigned long lohalf, unsigned long hihalf);
+Scheme_Object *(*scheme_make_integer_value_from_long_long)(unsigned long lowhalf, unsigned long hihalf);
+Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_long)(unsigned long lowhalf, unsigned long hihalf);
 Scheme_Object *(*scheme_make_double)(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
 Scheme_Object *(*scheme_make_float)(float f) ;
@@ -508,6 +508,7 @@ int (*scheme_is_struct_instance)(Scheme_Object *type, Scheme_Object *v);
 Scheme_Object *(*scheme_struct_ref)(Scheme_Object *s, int pos);
 void (*scheme_struct_set)(Scheme_Object *s, int pos, Scheme_Object *v);
 Scheme_Object *(*scheme_make_struct_type_property)(Scheme_Object *name);
+Scheme_Object *(*scheme_make_struct_type_property_w_guard)(Scheme_Object *name, Scheme_Object *guard);
 Scheme_Object *(*scheme_struct_type_property_ref)(Scheme_Object *prop, Scheme_Object *s);
 /*========================================================================*/
 /*                              utilities                                 */

@@ -215,6 +215,8 @@ extern Scheme_Object *scheme_arity_at_least;
 
 extern Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
 
+extern Scheme_Object *scheme_waitable_property;
+
 #ifdef TIME_SYNTAX
 extern Scheme_Object *scheme_date;
 #endif
@@ -352,6 +354,7 @@ typedef struct Scheme_Struct_Property {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   Scheme_Object *name; /* a symbol */
+  Scheme_Object *guard; /* NULL or a procedure */
 } Scheme_Struct_Property;
 
 int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
@@ -374,6 +377,7 @@ typedef struct Scheme_Struct_Type {
   int num_props; /* < 0 => props is really a hash table */
 
   Scheme_Object *proc_attr; /* int (position) or proc, only for proc_struct */
+  char *immutables;
 
   struct Scheme_Struct_Type *parent_types[1];
 } Scheme_Struct_Type;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: String.cc,v 1.4 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: String.cc,v 1.5 1999/11/24 21:20:20 mflatt Exp $
  *
  * Purpose: string copy and conversion
  *
@@ -43,6 +43,23 @@ char *copystring(const char *s)
   memcpy(news, s, len);        // Should be the fastest
   return news;
 }
+
+#ifdef MZ_PRECISE_GC
+char *copystring_to_aligned(const char *s)
+{
+  if ((long)s & 0x1) {
+    size_t len;
+    char *news;
+
+    s++;
+    len = strlen(s - 1) + 1;
+    news = new WXGC_ATOMIC char[len];
+    memcpy(news, s - 1, len);
+    return news;
+  } else
+    return (char *)s;
+}
+#endif
 
 void wxGetLabelAndKey(char *label, char **clean_label, char **clean_key)
 {

@@ -1645,6 +1645,8 @@ static Scheme_Object *os_wxDialogBoxOnActivate(Scheme_Object *obj, int n,  Schem
 #pragma argsused
 static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxDialogBox *realobj;
   REMEMBER_VAR_STACK();
   class wxWindow* x0;

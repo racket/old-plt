@@ -552,6 +552,10 @@ void wxWindow::Layout(void)
     // Layout only if children
     if (children->Number() == 0)
 	return;
+#ifdef MZ_PRECISE_GC
+    if (__type == wxTYPE_MENU_BAR)
+      return;
+#endif
 
     // reset all constraints to NOT done
     for (node = children->First(); node; node = node->Next()) {

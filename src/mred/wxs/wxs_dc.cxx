@@ -1753,6 +1753,8 @@ static Scheme_Object *os_wxMemoryDCGetPixel(Scheme_Object *obj, int n,  Scheme_O
 #pragma argsused
 static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMemoryDC *realobj;
   REMEMBER_VAR_STACK();
 
@@ -1896,6 +1898,8 @@ os_wxPostScriptDC::~os_wxPostScriptDC()
 #pragma argsused
 static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxPostScriptDC *realobj;
   REMEMBER_VAR_STACK();
   Bool x0;
@@ -2076,6 +2080,8 @@ os_basePrinterDC::~os_basePrinterDC()
 #pragma argsused
 static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_basePrinterDC *realobj;
   REMEMBER_VAR_STACK();
 

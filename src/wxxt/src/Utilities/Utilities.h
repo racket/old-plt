@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Utilities.h,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: Utilities.h,v 1.2 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: common utilities
  *
@@ -65,6 +65,9 @@ Bool wxGetUserName(char *buf, int sz);
 
 // String functions
 char *copystring(const char *s);
+#ifdef MZ_PRECISE_GC
+char *copystring_to_aligned(const char *s);
+#endif
 void wxGetLabelAndKey(char *label, char **clean_label, char **clean_key);
 char *wxStripMenuCodes(char *in, char *out);
 

@@ -552,7 +552,7 @@ void wxListBox::Command(wxCommandEvent *event)
 void wxListBox::EventCallback(Widget WXUNUSED(w),
 			     XtPointer dclient, XtPointer dcall)
 {
-    wxListBox                 *lbox   = *(wxListBox**)dclient;
+    wxListBox                 *lbox   = (wxListBox *)GET_SAFEREF(dclient);
     XfwfMultiListReturnStruct *rs     = (XfwfMultiListReturnStruct*)dcall;
     wxCommandEvent            *event;
 

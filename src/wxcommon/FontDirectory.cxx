@@ -360,30 +360,39 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    closer = '}';
 	  i++;
 	} else if (v[i] == closer) {
-	  int newstrlen;
+	  int newstrlen, noff;
 	  const char *r = NULL;
 	  char *naya, *name;
 	  
-	  name = v + startpos + 2;
+	  noff = startpos + 2;
+	  name = v;
 	  v[i] = 0;
 
 	  if (closer == '}') {
 	    int i, count, len;
 	    char **names;
 
-	    for (i = 0, count = 1; name[i]; i++) {
-	      if (name[i] == ',')
+	    for (i = 0, count = 1; name[i + noff]; i++) {
+	      if (name[i + noff] == ',')
 		count++;
 	    }
 	    
 	    len = i;
 
 	    names = new char*[count];
-	    names[0] = name;
+	    {
+	      char *cs;
+	      cs = COPYSTRING_TO_ALIGNED(name + noff);
+	      names[0] = cs;
+	    }
 	    for (i = 0, count = 1; i < len; i++) {
-	      if (name[i] == ',') {
-		names[count++] = name + i + 1;
-		name[i] = 0;
+	      if (name[i + noff] == ',') {
+		{
+		  char *cs;
+		  cs = COPYSTRING_TO_ALIGNED(name + i + 1 + noff);
+		  names[count++] = cs;
+		}
+		name[i + noff] = 0;
 	      }
 	    }
 
@@ -392,17 +401,17 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 
 	    if (!r) {
 	      for (i = 0; i < len; i++) {
-		if (!name[i])
-		  name[i] = ',';
+		if (!name[i + noff])
+		  name[i + noff] = ',';
 	      }
 	      r = "";
-	      printf("Bad resource name \"%s\" in font lookup\n", name);
+	      printf("Bad resource name \"%s\" in font lookup\n", name + noff);
 	    }
-	  } else if (!strcmp(name, "weight")) {
+	  } else if (!strcmp(name + noff, "weight")) {
 	    r = weight;
-	  } else if (!strcmp(name, "style")) {
+	  } else if (!strcmp(name + noff, "style")) {
 	    r = style;
-	  } else if (!strcmp(name, "family")) {
+	  } else if (!strcmp(name + noff, "family")) {
 	    switch (fam) {
 	    case wxSYSTEM:
 	      r = "System";
@@ -433,7 +442,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    }
 	  } else {
 	    r = "";
-	    printf("Bad font macro name \"%s\"\n", name);
+	    printf("Bad font macro name \"%s\"\n", name + noff);
 	  }
 	  newstrlen = strlen(r);
 

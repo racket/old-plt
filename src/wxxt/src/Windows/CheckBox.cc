@@ -237,7 +237,7 @@ void wxCheckBox::Command(wxCommandEvent *event)
 void wxCheckBox::OnEventCallback(Widget WXUNUSED(w),
 				 XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
-    wxCheckBox     *checkbox = *(wxCheckBox**)clientData;
+    wxCheckBox     *checkbox = (wxCheckBox *)GET_SAFEREF(clientData);
     wxCommandEvent *event;
 
     event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);

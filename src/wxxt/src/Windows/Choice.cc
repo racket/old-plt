@@ -311,7 +311,7 @@ void wxChoice::Command(wxCommandEvent *event)
 void wxChoice::EventCallback(Widget WXUNUSED(w),
 			     XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
-    wxChoice *choice = *(wxChoice**)clientData;
+    wxChoice *choice = (wxChoice *)GET_SAFEREF(clientData);
     Dimension hh;
 
     choice->SetFocus();

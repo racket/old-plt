@@ -975,6 +975,8 @@ static Scheme_Object *objscheme_wxFrame_Getwx_menu_bar(Scheme_Object *obj, int n
 #pragma argsused
 static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxFrame *realobj;
   REMEMBER_VAR_STACK();
   class wxFrame* x0;

@@ -456,6 +456,8 @@ static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object 
 #pragma argsused
 static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMenu *realobj;
   REMEMBER_VAR_STACK();
   nstring x0;
@@ -612,195 +614,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
 // wxMenuBar is really derived from wxItem
 //  but that makes no sense. Enforce different hierarchy here
 
-#undef l_ADDRESS
-#undef l_DEREF
-#undef l_TEST
-#undef l_POINT
-#undef l_TYPE
-#undef l_LIST_ITEM_BUNDLE
-#undef l_LIST_ITEM_UNBUNDLE
-#undef l_MAKE_LIST
-#undef l_MAKE_ARRAY
-#undef l_EXTRA
-#undef l_TERMINATE
-#undef l_COPY
-#undef l_OKTEST
-#undef l_INTTYPE
-
-#define l_ADDRESS 
-#define l_DEREF 
-#define l_NULLOK 0
-#define l_TEST 
-#define l_POINT 
-#define l_EXTRA 0
-#define l_TERMINATE 
-#define l_COPY l_COPYDEST=l_COPYSRC;
-#define l_OKTEST 
-#define l_INTTYPE int
-
-#define l_TYPE string
-#define l_LIST_ITEM_BUNDLE objscheme_bundle_string
-#define l_LIST_ITEM_UNBUNDLE objscheme_unbundle_string
-#define l_MAKE_LIST __MakestringList
-#define l_MAKE_ARRAY __MakestringArray
-
-
-
-
-
-static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
-{
-  Scheme_Object *cdr = scheme_null, *obj;
-  SETUP_VAR_STACK(1);
-  VAR_STACK_PUSH(0, cdr);
-
-  while (c--) {
-    obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
-  }
-  
-  return cdr;
-}
-
-static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
-{
-  Scheme_Object *orig_l = l;
-  int i = 0;
-  long len;
-  l_TYPE l_POINT *f = NULL;
-
-  SETUP_VAR_STACK(3);
-  VAR_STACK_PUSH(0, l);
-  VAR_STACK_PUSH(1, orig_l);
-  VAR_STACK_PUSH(2, f);
-
-  len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
-  if (c) *c = len;
-
-  if (!(len + l_EXTRA))
-    return NULL;
-
-  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
-
-  while (!SCHEME_NULLP(l)) {
-    if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
-      return NULL;
-    }
-
-#define l_COPYDEST f[i]
-#define l_COPYSRC (l_DEREF WITH_VAR_STACK(l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST)))
-
-    l_COPY
-
-    l_OKTEST
-
-    i++;
-
-    l = SCHEME_CDR(l);
-  }
-  l_TERMINATE
-
-  return f;
-}
-
-
-#undef l_ADDRESS
-#undef l_DEREF
-#undef l_TEST
-#undef l_POINT
-#undef l_TYPE
-#undef l_LIST_ITEM_BUNDLE
-#undef l_LIST_ITEM_UNBUNDLE
-#undef l_MAKE_LIST
-#undef l_MAKE_ARRAY
-#undef l_EXTRA
-#undef l_TERMINATE
-#undef l_COPY
-#undef l_OKTEST
-#undef l_INTTYPE
-
-#define l_ADDRESS 
-#define l_DEREF 
-#define l_NULLOK 0
-#define l_TEST , l_NULLOK
-#define l_POINT *
-#define l_EXTRA 0
-#define l_TERMINATE 
-#define l_COPY l_COPYDEST=l_COPYSRC;
-#define l_OKTEST 
-#define l_INTTYPE int
-
-#define l_TYPE wxMenu
-#define l_LIST_ITEM_BUNDLE objscheme_bundle_wxMenu
-#define l_LIST_ITEM_UNBUNDLE objscheme_unbundle_wxMenu
-#define l_MAKE_LIST __MakewxMenuList
-#define l_MAKE_ARRAY __MakewxMenuArray
-
-
-
-
-
-static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
-{
-  Scheme_Object *cdr = scheme_null, *obj;
-  SETUP_VAR_STACK(1);
-  VAR_STACK_PUSH(0, cdr);
-
-  while (c--) {
-    obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
-  }
-  
-  return cdr;
-}
-
-static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
-{
-  Scheme_Object *orig_l = l;
-  int i = 0;
-  long len;
-  l_TYPE l_POINT *f = NULL;
-
-  SETUP_VAR_STACK(3);
-  VAR_STACK_PUSH(0, l);
-  VAR_STACK_PUSH(1, orig_l);
-  VAR_STACK_PUSH(2, f);
-
-  len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
-  if (c) *c = len;
-
-  if (!(len + l_EXTRA))
-    return NULL;
-
-  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
-
-  while (!SCHEME_NULLP(l)) {
-    if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
-      return NULL;
-    }
-
-#define l_COPYDEST f[i]
-#define l_COPYSRC (l_DEREF WITH_VAR_STACK(l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST)))
-
-    l_COPY
-
-    l_OKTEST
-
-    i++;
-
-    l = SCHEME_CDR(l);
-  }
-  l_TERMINATE
-
-  return f;
-}
-
-
-
 
 
 
@@ -809,9 +622,6 @@ class os_wxMenuBar : public wxMenuBar {
  public:
 
   os_wxMenuBar CONSTRUCTOR_ARGS(());
-#ifndef MZ_PRECISE_GC
-  os_wxMenuBar CONSTRUCTOR_ARGS((int x0, wxMenu** x1, string* x2));
-#endif
   ~os_wxMenuBar();
 #ifdef MZ_PRECISE_GC
   void gcMark(Mark_Proc mark);
@@ -832,13 +642,6 @@ os_wxMenuBar::os_wxMenuBar CONSTRUCTOR_ARGS(())
 CONSTRUCTOR_INIT(: wxMenuBar())
 {
 }
-
-#ifndef MZ_PRECISE_GC
-os_wxMenuBar::os_wxMenuBar CONSTRUCTOR_ARGS((int x0, wxMenu** x1, string* x2))
-CONSTRUCTOR_INIT(: wxMenuBar(x0, x1, x2))
-{
-}
-#endif
 
 os_wxMenuBar::~os_wxMenuBar()
 {
@@ -978,60 +781,29 @@ static Scheme_Object *os_wxMenuBarAppend(Scheme_Object *obj, int n,  Scheme_Obje
 #pragma argsused
 static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  SETUP_PRE_VAR_STACK(2);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  PRE_VAR_STACK_PUSH(1, p);
   os_wxMenuBar *realobj;
   REMEMBER_VAR_STACK();
-  if ((n >= 1) && SCHEME_LISTP(p[0])) {
-    int x0;
-    wxMenu** x1;
-    string* x2;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, realobj);
-    VAR_STACK_PUSH(3, x1);
-    VAR_STACK_PUSH(4, x2);
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
-    if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_arg_mismatch(METHODNAME("menu-bar%","initialization"), "list size mismatch: ", p[0]);
-    if (n != 2) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar% (menu% list case)", 2, 2, n, p));
-    x1 = NULL;
-    x2 = NULL;
+  
+  if (n != 0) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar%", 0, 0, n, p));
 
-    x1 = WITH_VAR_STACK(__MakewxMenuArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("menu-bar%","initialization")));x2 = WITH_VAR_STACK(__MakestringArray((1 < n) ? p[1] : scheme_null, &x0, METHODNAME("menu-bar%","initialization")));
-    realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS((x0, x1, x2)));
+  
+  realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS(()));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxMenuBar(x0, x1, x2));
+  WITH_VAR_STACK(realobj->gcInit_wxMenuBar());
 #endif
-    realobj->__gc_external = (void *)obj;
-    objscheme_note_creation(obj);
-    
-    
-  } else  {
-
-    SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, realobj);
-
-    
-    if (n != 0) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar% (no argument case)", 0, 0, n, p));
-
-    
-    realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS(()));
-#ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxMenuBar());
-#endif
-    realobj->__gc_external = (void *)obj;
-    objscheme_note_creation(obj);
-    
-    
-  }
-
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
+  
+  
   ((Scheme_Class_Object *)obj)->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
@@ -1141,7 +913,9 @@ public:
 wxsMenuItem::wxsMenuItem(void)
 {
 #ifdef MZ_PRECISE_GC
-  my_id = GC_malloc_immobile_box(this);
+  void *mid;
+  mid = GC_malloc_immobile_box(GC_malloc_weak_box(gcOBJ_TO_PTR(this), NULL));
+  my_id = mid;
 #endif
 }
 
@@ -1159,7 +933,7 @@ START_XFORM_SKIP;
 wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {
 #ifdef MZ_PRECISE_GC
-  return *(wxsMenuItem **)id;
+  return (wxsMenuItem *)gcPTR_TO_OBJ(GC_weak_box_val(*(void **)id));
 #else
   return (wxsMenuItem *)id;
 #endif
@@ -1223,6 +997,8 @@ static Scheme_Object *os_wxsMenuItemId(Scheme_Object *obj, int n,  Scheme_Object
 #pragma argsused
 static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxsMenuItem *realobj;
   REMEMBER_VAR_STACK();
 

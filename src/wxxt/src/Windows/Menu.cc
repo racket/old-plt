@@ -62,8 +62,16 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
 	topdummy = top;
     }
 
-    saferef = MALLOC_SAFEREF();
-    *(wxMenu **)saferef = this;
+    {
+      void *p;
+      p = MALLOC_SAFEREF();
+      saferef = p;
+    }
+    SET_SAFEREF(saferef, this);
+
+#ifdef MZ_PRECISE_GC
+    children = DEBUG_NEW wxChildList;
+#endif
 
     WXGC_IGNORE(owner);
 }
@@ -82,6 +90,9 @@ wxMenu::~wxMenu(void)
 	if (temp->contents) { 	// has submenu?
 	  wxMenu *mnu;
 	  mnu = EXTRACT_TOP_MENU(temp);
+#ifdef MZ_PRECISE_GC
+	  children->DeleteObject(mnu);
+#endif
 	  DELETE_OBJ mnu;
 	  FREE_TOP_POINTER(temp->user_data);
 	}
@@ -89,6 +100,10 @@ wxMenu::~wxMenu(void)
     }
 
     FREE_SAFEREF(saferef);
+
+#ifdef MZ_PRECISE_GC
+    DELETE_OBJ children;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -226,6 +241,9 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
   tm = BUNDLE_TOP_MENU(submenu);
   item->user_data = tm;
   submenu->owner = (wxMenuItem **)&item->contents;
+#ifdef MZ_PRECISE_GC
+  children->Append(submenu);
+#endif
 }
 
 void wxMenu::AppendSeparator(void)
@@ -285,8 +303,13 @@ Bool wxMenu::DeleteItem(long id, int pos)
 
     /* If there's a submenu, let it go. */
     if (found->contents) {
-      EXTRACT_TOP_MENU(found)->owner = NULL;
+      wxMenu *mnu;
+      mnu = EXTRACT_TOP_MENU(found);
+      mnu->owner = NULL;
       FREE_TOP_POINTER(found->user_data);
+#ifdef MZ_PRECISE_GC
+      children->DeleteObject(mnu);
+#endif
     }
 
     FREE_MENU_ITEM(found);
@@ -385,8 +408,11 @@ void wxMenu::SetHelpString(long id, char *help)
 {
     menu_item *found;
     found = (menu_item*)FindItemForId(id);
-    if (found)
-      found->help_text = MAKE_MENU_STRING(help);
+    if (found) {
+      char *ms;
+      ms = MAKE_MENU_STRING(help);
+      found->help_text = ms;
+    }
 }
 
 void wxMenu::SetLabel(long id, char *label)
@@ -463,7 +489,7 @@ wxMenuItem *wxMenu::FindItemForId(long id, wxMenu **req_menu)
 
 void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcall)
 {
-  wxMenu    *menu  = *(wxMenu**)dclient;
+  wxMenu    *menu  = (wxMenu *)GET_SAFEREF(dclient);
   menu_item *item  = (menu_item*)dcall;
 
   if (menu) {

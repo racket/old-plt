@@ -484,6 +484,8 @@ static Scheme_Object *os_wxMediaStreamInBaseTell(Scheme_Object *obj, int n,  Sch
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaStreamInBase *realobj;
   REMEMBER_VAR_STACK();
 
@@ -840,6 +842,8 @@ static Scheme_Object *os_wxMediaStreamOutBaseTell(Scheme_Object *obj, int n,  Sc
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaStreamOutBase *realobj;
   REMEMBER_VAR_STACK();
 
@@ -981,6 +985,8 @@ os_wxMediaStreamInStringBase::~os_wxMediaStreamInStringBase()
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaStreamInStringBase *realobj;
   REMEMBER_VAR_STACK();
   string x0;
@@ -1146,6 +1152,8 @@ static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(Scheme_Object *obj,
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaStreamOutStringBase *realobj;
   REMEMBER_VAR_STACK();
 
@@ -1596,6 +1604,8 @@ static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Sc
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaStreamIn *realobj;
   REMEMBER_VAR_STACK();
   class wxMediaStreamInBase* x0;
@@ -1929,6 +1939,8 @@ static Scheme_Object *os_wxMediaStreamOutPutFixed(Scheme_Object *obj, int n,  Sc
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaStreamOut *realobj;
   REMEMBER_VAR_STACK();
   class wxMediaStreamOutBase* x0;

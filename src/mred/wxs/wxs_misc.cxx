@@ -204,6 +204,8 @@ static Scheme_Object *os_wxTimerInterval(Scheme_Object *obj, int n,  Scheme_Obje
 #pragma argsused
 static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxTimer *realobj;
   REMEMBER_VAR_STACK();
 
@@ -775,6 +777,8 @@ static Scheme_Object *os_wxClipboardClientBeingReplaced(Scheme_Object *obj, int 
 #pragma argsused
 static Scheme_Object *os_wxClipboardClient_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxClipboardClient *realobj;
   REMEMBER_VAR_STACK();
 
@@ -1589,6 +1593,8 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(Scheme_Object *obj, i
 #pragma argsused
 static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxPrintSetupData *realobj;
   REMEMBER_VAR_STACK();
 

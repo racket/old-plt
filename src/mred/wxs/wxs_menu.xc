@@ -62,20 +62,9 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 //  but that makes no sense. Enforce different hierarchy here
 @CLASSBASE wxMenuBar "menu-bar" : "object"
 
-@SET TYPE = string
-@SET NOTEST = 1
-@INCLUDE list.xci
-
-@SET TYPE = wxMenu
-@SET POINTERS = 1
-@INCLUDE list.xci
-
-@MACRO CHECKSAMELENGTH = if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_arg_mismatch(METHODNAME("menu-bar%","initialization"), "list size mismatch: ", p[0]);
-
 @MACRO spMenuList = (listof wxMenu-object)
 
 @CREATOR (); <> no argument
-@CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList/push, string[]/bList/ubList/cList///push); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0.METHODNAME("menu-bar%","initialization")] | glueListSet[string.1.2.0.METHODNAME("menu-bar%","initialization")]// <> menu% list
 
 @ "append" : void Append(wxMenu!,string);
 @ "delete" : bool Delete(wxMenu^,int=0);
@@ -111,7 +100,9 @@ public:
 wxsMenuItem::wxsMenuItem(void)
 {
 #ifdef MZ_PRECISE_GC
-  my_id = GC_malloc_immobile_box(this);
+  void *mid;
+  mid = GC_malloc_immobile_box(GC_malloc_weak_box(gcOBJ_TO_PTR(this), NULL));
+  my_id = mid;
 #endif
 }
 
@@ -129,7 +120,7 @@ START_XFORM_SKIP;
 wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {
 #ifdef MZ_PRECISE_GC
-  return *(wxsMenuItem **)id;
+  return (wxsMenuItem *)gcPTR_TO_OBJ(GC_weak_box_val(*(void **)id));
 #else
   return (wxsMenuItem *)id;
 #endif

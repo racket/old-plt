@@ -63,7 +63,6 @@ public:
     void  Append(long id, char *label, char *help=NULL, Bool checkable=FALSE);
     void  Append(long id, char *label, wxMenu *submenu, char *help=NULL);
     void  AppendSeparator(void);
-    /* MATTHEW: */
     Bool  DeleteItem(long id, int pos);
     Bool  Delete(long id);
     Bool  DeleteByPosition(int pos);
@@ -112,6 +111,10 @@ private:
     wxMenuItem* topdummy;
     wxMenuItem **owner; /* MATTHEW: Pointer to pointer to top */
 
+#ifdef MZ_PRECISE_GC
+    wxChildList *children;
+#endif
+
     void *client_data;
     void *saferef;
 };
@@ -122,8 +125,8 @@ extern char *copystring_xt(const char *s);
 # define FREE_MENU_ITEM(i)       XtFree((char *)i)
 # define MAKE_MENU_STRING(s)     copystring_xt(s)
 # define FREE_MENU_STRING(s)     XtFree((char *)s)
-# define EXTRACT_TOP_MENU(item)  (*(wxMenu**)(item->user_data))
-# define BUNDLE_TOP_MENU(menu)   GC_malloc_immobile_box(menu)
+# define EXTRACT_TOP_MENU(item)  ((wxMenu*)GET_SAFEREF(item->user_data))
+# define BUNDLE_TOP_MENU(menu)   GC_malloc_immobile_box(GC_malloc_weak_box(gcOBJ_TO_PTR(menu), NULL))
 # define FREE_TOP_POINTER(p)     GC_free_immobile_box(p)
 #else
 # define MALLOC_MENU_ITEM()      (new menu_item)

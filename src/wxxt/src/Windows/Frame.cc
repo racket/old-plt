@@ -126,11 +126,11 @@ wxFrame::~wxFrame(void)
     tlf->DeleteObject(this);
 }
 
-/* MATTHEW: [3] Used to ensure that hide-&-show within an event cycle works */
+/* Used to ensure that hide-&-show within an event cycle works */
 static void wxFrameMapProc(Widget w, XtPointer clientData, 
 			   XCrossingEvent * event)
 {
-  wxFrame *frame = *(wxFrame **)clientData;
+  wxFrame *frame = (wxFrame *)GET_SAFEREF(clientData);
 
   if (frame) {
     XEvent *e = (XEvent *)event;

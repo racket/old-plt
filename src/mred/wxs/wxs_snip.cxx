@@ -1937,6 +1937,8 @@ static Scheme_Object *objscheme_wxSnip_Setsnipclass(Scheme_Object *obj, int n,  
 #pragma argsused
 static Scheme_Object *os_wxSnip_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxSnip *realobj;
   REMEMBER_VAR_STACK();
 
@@ -3565,6 +3567,8 @@ static Scheme_Object *os_wxTextSnipGetExtent(Scheme_Object *obj, int n,  Scheme_
 #pragma argsused
 static Scheme_Object *os_wxTextSnip_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxTextSnip *realobj;
   REMEMBER_VAR_STACK();
   nnlong x0;
@@ -5129,6 +5133,8 @@ static Scheme_Object *os_wxTabSnipGetExtent(Scheme_Object *obj, int n,  Scheme_O
 #pragma argsused
 static Scheme_Object *os_wxTabSnip_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxTabSnip *realobj;
   REMEMBER_VAR_STACK();
 
@@ -8976,6 +8982,8 @@ static Scheme_Object *os_wxMediaSnipGetThisMedia(Scheme_Object *obj, int n,  Sch
 #pragma argsused
 static Scheme_Object *os_wxMediaSnip_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaSnip *realobj;
   REMEMBER_VAR_STACK();
   class wxMediaBuffer* x0;
@@ -9317,6 +9325,8 @@ static Scheme_Object *objscheme_wxBufferDataClass_Setclassname(Scheme_Object *ob
 #pragma argsused
 static Scheme_Object *os_wxBufferDataClass_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxBufferDataClass *realobj;
   REMEMBER_VAR_STACK();
 
@@ -9835,6 +9845,8 @@ static Scheme_Object *objscheme_wxBufferData_Getnext(Scheme_Object *obj, int n, 
 #pragma argsused
 static Scheme_Object *os_wxBufferData_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxBufferData *realobj;
   REMEMBER_VAR_STACK();
 

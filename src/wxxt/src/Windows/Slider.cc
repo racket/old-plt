@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.10 1999/11/22 20:29:35 mflatt Exp $
+ * $Id: Slider.cc,v 1.11 1999/12/01 15:53:37 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -199,7 +199,7 @@ void wxSlider::Command(wxCommandEvent *event)
 void wxSlider::EventCallback(Widget WXUNUSED(w),
 			     XtPointer dclient, XtPointer dcall)
 {
-    wxSlider       *slider = *(wxSlider**)dclient;
+    wxSlider       *slider = (wxSlider *)GET_SAFEREF(dclient);
     XfwfScrollInfo *info   = (XfwfScrollInfo*)dcall;
     Bool           process = FALSE;
     int            new_value = 0;

@@ -7189,7 +7189,7 @@
 "(super-enable-top"
 " p"
 " #f)))))))"
-"(sequence(super-init null null))))"
+"(sequence(super-init))))"
 "(define wx-menu%"
 "(class*"
 " wx:menu%"

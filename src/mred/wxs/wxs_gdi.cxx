@@ -763,6 +763,8 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
 #pragma argsused
 static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxFontList *realobj;
   REMEMBER_VAR_STACK();
 
@@ -2193,6 +2195,8 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
 #pragma argsused
 static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxBrushList *realobj;
   REMEMBER_VAR_STACK();
 
@@ -3093,6 +3097,8 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
 #pragma argsused
 static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxPenList *realobj;
   REMEMBER_VAR_STACK();
 
@@ -3957,6 +3963,8 @@ static Scheme_Object *os_wxRegionGetDC(Scheme_Object *obj, int n,  Scheme_Object
 #pragma argsused
 static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxRegion *realobj;
   REMEMBER_VAR_STACK();
   class wxDC* x0;

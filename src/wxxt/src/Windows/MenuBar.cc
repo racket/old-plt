@@ -48,22 +48,6 @@ wxMenuBar::wxMenuBar(void) : wxItem()
     topdummy = top;
 }
 
-wxMenuBar::wxMenuBar(int n, wxMenu *menus[], char *titles[]) : wxItem()
-{
-    __type = wxTYPE_MENU_BAR;
-
-    top = topdummy = help = last = 0;
-    // if a title is associated with a menu, it may not be removed
-    if (n) {
-      for (int i=0; i<n; ++i) {
-	Append(menus[i], titles[i]);
-      }
-    } else {
-      Append(NULL, NULL); // to have something if associated to frame
-      topdummy = top;
-    }
-}
-
 wxMenuBar::~wxMenuBar(void)
 {
     menu_item *item = (menu_item*)top;
@@ -78,6 +62,9 @@ wxMenuBar::~wxMenuBar(void)
 	  FREE_MENU_STRING(temp->help_text);
 
 	  mnu = EXTRACT_TOP_MENU(temp);
+#ifdef MZ_PRECISE_GC
+	  children->DeleteObject(mnu);
+#endif
 	  DELETE_OBJ mnu; 
 	  FREE_TOP_POINTER(temp->user_data);
 	}
@@ -188,6 +175,9 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
     item->next      = NULL;
     tm = BUNDLE_TOP_MENU(menu);
     item->user_data = tm;
+#ifdef MZ_PRECISE_GC
+    children->Append(menu);
+#endif
     {
       _e_menu_item_type t;
       t = (!strcmp(item->label, "Help")) ? MENU_HELP : MENU_CASCADE;
@@ -208,7 +198,6 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
     }
 }
 
-/* MATTHEW: */
 Bool wxMenuBar::Delete(wxMenu *menu, int pos)
 {
   menu_item *i;
@@ -240,10 +229,15 @@ Bool wxMenuBar::Delete(wxMenu *menu, int pos)
     }
 
     if (i->contents) {
+      wxMenu *mnu;
       FREE_MENU_STRING(i->label);
       FREE_MENU_STRING(i->help_text);
       /* Release menu: */
-      EXTRACT_TOP_MENU(i)->owner = NULL;
+      mnu = EXTRACT_TOP_MENU(i);
+      mnu->owner = NULL;
+#ifdef MZ_PRECISE_GC
+      children->Append(mnu);
+#endif
       FREE_TOP_POINTER(i->user_data);
     }
 
@@ -437,7 +431,7 @@ wxMenuItem *wxMenuBar::FindItemForId(long id, wxMenu **req_menu)
 void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
 				     XtPointer dclient, XtPointer dcall)
 {
-  wxMenuBar *menu  = *(wxMenuBar**)dclient;
+  wxMenuBar *menu  = (wxMenuBar *)GET_SAFEREF(dclient);
   menu_item *item  = (menu_item*)dcall;
 
   if (menu) {
@@ -459,7 +453,7 @@ void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
 void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
 				    XtPointer dclient, XtPointer dcall)
 {
-  wxMenuBar *menu  = *(wxMenuBar**)dclient;
+  wxMenuBar *menu  = (wxMenuBar *)GET_SAFEREF(dclient);
   menu_item *item  = (menu_item*)dcall;
 
   if (menu) {  

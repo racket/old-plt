@@ -526,6 +526,8 @@ static Scheme_Object *os_wxSliderOnKillFocus(Scheme_Object *obj, int n,  Scheme_
 #pragma argsused
 static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxSlider *realobj;
   REMEMBER_VAR_STACK();
   class wxPanel* x0;

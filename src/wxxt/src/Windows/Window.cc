@@ -102,7 +102,7 @@ wxWindow::wxWindow(void)
       wa = (wxWindow **)MALLOC_SAFEREF();
       saferef = wa;
     }
-    *saferef = this;
+    SET_SAFEREF(saferef, this);
     misc_flags = 0;
     /* except for frames, windows start out shown: */
     if (!wxSubType(__type, wxTYPE_FRAME))
@@ -1082,7 +1082,7 @@ void wxWindow::FocusChangeCallback(void*,
 				   wxWindow **winp,
 				   void*on)
 {
-  wxWindow *win = *winp;
+  wxWindow *win = (wxWindow *)GET_SAFEREF(winp);
 
   if (!win) {
 #ifdef MZ_PRECISE_GC
@@ -1242,7 +1242,7 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 				  XtPointer  p_XfwfExposeInfo)
 {
   XfwfExposeInfo *einfo;
-  wxWindow *win = *winp;
+  wxWindow *win = (wxWindow *)GET_SAFEREF(winp);
 
   if (!win) {
 #ifdef MZ_PRECISE_GC
@@ -1287,8 +1287,7 @@ void wxWindow::FrameEventHandler(Widget w,
 				 XEvent *xev,
 				 Boolean *WXUNUSED(continue_to_dispatch_return))
 {
-  /* MATTHEW: */
-  wxWindow *win = *winp;
+  wxWindow *win = (wxWindow *)GET_SAFEREF(winp);
   if (!win) {
 #ifdef MZ_PRECISE_GC
     XFORM_RESET_VAR_STACK;
@@ -1353,7 +1352,7 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   XfwfScrollInfo *sinfo = (XfwfScrollInfo*)p_XfwfScrollInfo;
   wxScrollEvent *wxevent;
 
-  wxWindow *win = *winp;
+  wxWindow *win = (wxWindow *)GET_SAFEREF(winp);
   if (!win) {
 #ifdef MZ_PRECISE_GC
     XFORM_RESET_VAR_STACK;
@@ -1467,7 +1466,7 @@ void wxWindow::WindowEventHandler(Widget w,
 				  Boolean *continue_to_dispatch_return)
 {
   Bool subWin;
-  wxWindow *win = *winp;
+  wxWindow *win = (wxWindow *)GET_SAFEREF(winp);
   Bool Enter=FALSE, Press=FALSE;
 
   if (!win) {

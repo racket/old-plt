@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.cc,v 1.8 1999/11/25 16:32:22 mflatt Exp $
+ * $Id: Button.cc,v 1.9 1999/12/01 15:53:36 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -235,7 +235,7 @@ void wxButton::Command(wxCommandEvent *event)
 void wxButton::EventCallback(Widget WXUNUSED(w), XtPointer clientData,
 			     XtPointer WXUNUSED(ptr))
 {
-    wxButton       *button = *(wxButton**)clientData;
+    wxButton       *button = (wxButton*)GET_SAFEREF(clientData);
     wxCommandEvent *event;
 
     if (button) {

@@ -99,6 +99,8 @@ static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n, 
 #pragma argsused
 static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxEvent *realobj;
   REMEMBER_VAR_STACK();
 
@@ -341,6 +343,8 @@ static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, 
 #pragma argsused
 static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxCommandEvent *realobj;
   REMEMBER_VAR_STACK();
   int x0;
@@ -516,6 +520,8 @@ static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n
 #pragma argsused
 static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxPopupEvent *realobj;
   REMEMBER_VAR_STACK();
 
@@ -842,6 +848,8 @@ static Scheme_Object *objscheme_wxScrollEvent_Setpos(Scheme_Object *obj, int n, 
 #pragma argsused
 static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxScrollEvent *realobj;
   REMEMBER_VAR_STACK();
 
@@ -1569,6 +1577,8 @@ static Scheme_Object *objscheme_wxKeyEvent_Sety(Scheme_Object *obj, int n,  Sche
 #pragma argsused
 static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxKeyEvent *realobj;
   REMEMBER_VAR_STACK();
   int x0;
@@ -2317,6 +2327,8 @@ static Scheme_Object *objscheme_wxMouseEvent_Sety(Scheme_Object *obj, int n,  Sc
 #pragma argsused
 static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMouseEvent *realobj;
   REMEMBER_VAR_STACK();
   int x0;

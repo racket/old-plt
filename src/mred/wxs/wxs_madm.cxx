@@ -925,6 +925,8 @@ static Scheme_Object *os_wxMediaCanvasSetMedia(Scheme_Object *obj, int n,  Schem
 #pragma argsused
 static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaCanvas *realobj;
   REMEMBER_VAR_STACK();
   class wxPanel* x0;
@@ -1764,6 +1766,8 @@ static Scheme_Object *os_wxMediaAdminGetDC(Scheme_Object *obj, int n,  Scheme_Ob
 #pragma argsused
 static Scheme_Object *os_wxMediaAdmin_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaAdmin *realobj;
   REMEMBER_VAR_STACK();
 
@@ -2754,6 +2758,8 @@ static Scheme_Object *os_wxSnipAdminGetMedia(Scheme_Object *obj, int n,  Scheme_
 #pragma argsused
 static Scheme_Object *os_wxSnipAdmin_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxSnipAdmin *realobj;
   REMEMBER_VAR_STACK();
 
@@ -3245,6 +3251,8 @@ static Scheme_Object *objscheme_wxSnipClass_Setversion(Scheme_Object *obj, int n
 #pragma argsused
 static Scheme_Object *os_wxSnipClass_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxSnipClass *realobj;
   REMEMBER_VAR_STACK();
 
@@ -4116,6 +4124,8 @@ static Scheme_Object *os_wxKeymapGetDoubleClickInterval(Scheme_Object *obj, int 
 #pragma argsused
 static Scheme_Object *os_wxKeymap_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxKeymap *realobj;
   REMEMBER_VAR_STACK();
 
@@ -4443,6 +4453,8 @@ static Scheme_Object *os_wxMediaWordbreakMapSetMap(Scheme_Object *obj, int n,  S
 #pragma argsused
 static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, obj);
   os_wxMediaWordbreakMap *realobj;
   REMEMBER_VAR_STACK();
 

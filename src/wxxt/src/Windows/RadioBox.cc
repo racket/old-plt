@@ -499,7 +499,7 @@ void wxRadioBox::SetSelectedButtonFocus()
 
 void wxRadioBox::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer WXUNUSED(dcall))
 {
-    wxRadioBox     *radioBox = *(wxRadioBox**)dclient;
+    wxRadioBox     *radioBox = (wxRadioBox *)GET_SAFEREF(dclient);
     wxCommandEvent *event;
 
     event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);

@@ -38,17 +38,28 @@
 #ifdef MZ_PRECISE_GC
 # define WXGC_IGNORE(ptr) GC_finalization_weak_ptr((void **)&(ptr))
 # define WXGC_ATOMIC /* empty */
+# define COPYSTRING_TO_ALIGNED(s) copystring_to_aligned(s)
 # define DELETE_OBJ delete_wxobject
 # define DELETE_VAL delete
-# define MALLOC_SAFEREF() GC_malloc_immobile_box(NULL)
+# define MALLOC_SAFEREF() GC_malloc_immobile_box(GC_malloc_weak_box(NULL, NULL))
 # define FREE_SAFEREF(x) GC_free_immobile_box(x)
+typedef struct {
+  short tag;
+  short filler_used_for_hashing;
+  void *val;
+} wxWeak_Box;
+# define SET_SAFEREF(x, v) (*(wxWeak_Box **)x)->val = gcOBJ_TO_PTR(v)
+# define GET_SAFEREF(x) gcPTR_TO_OBJ((*(wxWeak_Box **)x)->val)
 #else
 # define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 # define WXGC_ATOMIC (AtomicGC)
+# define COPYSTRING_TO_ALIGNED(s) s
 # define DELETE_OBJ delete
 # define DELETE_VAL delete
 # define MALLOC_SAFEREF() malloc(sizeof(void *))
 # define FREE_SAFEREF(x) free(x)
+# define SET_SAFEREF(x, v) (*(void **)x) = v
+# define GET_SAFEREF(x) (*(void **)x)
 #endif
 #define WXGC_NO_CLEANUP FALSE
 

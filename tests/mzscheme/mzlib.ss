@@ -4,6 +4,8 @@
 
 (load-relative "loadtest.ss")
 
+(load-relative "async-channel.ss")
+
 (load-relative "function.ss")
 
 (load-relative "string.ss")

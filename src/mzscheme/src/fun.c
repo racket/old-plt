@@ -349,16 +349,17 @@ scheme_init_fun (Scheme_Env *env)
 
   if (scheme_starting_up) {
     Scheme_Config *config = scheme_config;
-    
-    scheme_set_param(config, MZCONFIG_PRINT_HANDLER,
-		     scheme_make_prim_w_arity(default_print_handler,
-					      "default-print-handler",
-					      1, 1));
+    Scheme_Object *ph, *prh;
 
-    scheme_set_param(config, MZCONFIG_PROMPT_READ_HANDLER,
-		     scheme_make_prim_w_arity(default_prompt_read_handler,
-					      "default-prompt-read-handler",
-					      0, 0));
+    ph = scheme_make_prim_w_arity(default_print_handler,
+				  "default-print-handler",
+				  1, 1);
+    scheme_set_param(config, MZCONFIG_PRINT_HANDLER, ph);
+
+    prh = scheme_make_prim_w_arity(default_prompt_read_handler,
+				   "default-prompt-read-handler",
+				   0, 0);
+    scheme_set_param(config, MZCONFIG_PROMPT_READ_HANDLER, prh);
   
     scheme_install_type_writer(scheme_unclosed_procedure_type,
 			       write_compiled_closure);
@@ -605,8 +606,10 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
 
   oldpos = (short *)scheme_malloc_atomic(sizeof(short) * data->closure_size);
   for (i = data->closure_size; i--; ) {
+    int li;
     oldpos[i] = data->closure_map[i];
-    data->closure_map[i] = scheme_link_info_lookup(info, oldpos[i], NULL);
+    li = scheme_link_info_lookup(info, oldpos[i], NULL);
+    data->closure_map[i] = li;
   }
   
   new_info = scheme_link_info_extend(info, data->num_params, data->num_params,
@@ -626,15 +629,22 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
 				 scheme_link_info_flags(info, oldpos[i]));
   }
 
-  data->code = scheme_link_expr(data->code, new_info);
+  {
+    Scheme_Object *code;
+    code = scheme_link_expr(data->code, new_info);
+    data->code = code;
+  }
 
   /* Add code to box set!ed variables: */
   for (i = 0; i < data->num_params; i++) {
     if (cl->local_flags[i] & SCHEME_INFO_BOXED) {
       int j = i + data->closure_size;
-      data->code = scheme_make_syntax_link(scheme_bangboxenv_execute, 
-					   scheme_make_pair(scheme_make_integer(j),
-							    data->code));
+      Scheme_Object *code;
+      
+      code = scheme_make_syntax_link(scheme_bangboxenv_execute, 
+				     scheme_make_pair(scheme_make_integer(j),
+						      data->code));
+      data->code = code;
     }
   }
 
@@ -698,9 +708,13 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   scheme_init_lambda_rec(rec, &lam);
 
-  data->code = scheme_compile_sequence(forms, 
-				       scheme_no_defines(frame), 
-				       &lam);
+  {
+    Scheme_Object *code;
+    code = scheme_compile_sequence(forms, 
+				   scheme_no_defines(frame), 
+				   &lam);
+    data->code = code;
+  }
 
   scheme_merge_lambda_rec(rec, &lam);
 
@@ -709,7 +723,11 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   cl->type = scheme_rt_closure_info;
 #endif
 
-  cl->local_flags = scheme_env_get_flags(frame, 0, data->num_params);
+  {
+    int *local_flags;
+    local_flags = scheme_env_get_flags(frame, 0, data->num_params);
+    cl->local_flags = local_flags;
+  }
 
   /* Remembers positions of used vars (and unsets usage for this level) */
   scheme_env_make_closure_map(frame, &data->closure_size, &cl->real_closure_map);
@@ -742,16 +760,19 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   old_ec_ok = p->ec_ok;
   old_cc_start = p->cc_start;
 
-  p->cc_ok = cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
-  
+  cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
+  p->cc_ok = cc_ok;
+
   if (old_cc_ok)
     *old_cc_ok = 0;
   *cc_ok = 1;
 
   if (eb > 1) {
+    long *ec_ok;
     if (old_ec_ok)
       *old_ec_ok = 0;
-    p->ec_ok = (long *)scheme_malloc_atomic(sizeof(long));
+    ec_ok = (long *)scheme_malloc_atomic(sizeof(long));
+    p->ec_ok = ec_ok;
     *p->ec_ok = 1;
   }
 
@@ -961,7 +982,11 @@ scheme_tail_apply (Scheme_Object *rator, int num_rands, Scheme_Object **rands)
     Scheme_Object **a;
     if (num_rands > p->tail_buffer_size) {
       p->tail_buffer_size = num_rands;
-      p->tail_buffer = MALLOC_N(Scheme_Object *, num_rands);
+      {
+	Scheme_Object **tb;
+	tb = MALLOC_N(Scheme_Object *, num_rands);
+	p->tail_buffer = tb;
+      }
     }
     a = p->tail_buffer;
     p->ku.apply.tail_rands = a;
@@ -1300,8 +1325,11 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
 
 	arity = scheme_alloc_list(count);
 	
-	for (i = 0, a = arity; i < count; i++, a = SCHEME_CDR(a))
-	  SCHEME_CAR(a) = scheme_make_arity(cases[2 * i], cases[(2 * i) + 1]);
+	for (i = 0, a = arity; i < count; i++, a = SCHEME_CDR(a)) {
+	  Scheme_Object *av;
+	  av = scheme_make_arity(cases[2 * i], cases[(2 * i) + 1]);
+	  SCHEME_CAR(a) = av;
+	}
 
 	return arity;
       }
@@ -1760,31 +1788,48 @@ call_cc (int argc, Scheme_Object *argv[])
   argv[0] = NULL;
 
   /* Copy out stack: */
-  cont->runstack_copied = saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
+  saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
+  cont->runstack_copied = saved;
 #ifdef MZTAG_REQUIRED
   cont->runstack_copied->type = scheme_rt_saved_stack;
 #endif
   size = p->runstack_size - (MZ_RUNSTACK - MZ_RUNSTACK_START);
   saved->runstack_size = size;
-  saved->runstack_start = MALLOC_N(Scheme_Object*, size);
+  {
+    Scheme_Object **start;
+    start = MALLOC_N(Scheme_Object*, size);
+    saved->runstack_start = start;
+  }
   memcpy(saved->runstack_start, MZ_RUNSTACK, size * sizeof(Scheme_Object *));
   isaved = saved;
   for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
-    isaved->prev = MALLOC_ONE(Scheme_Saved_Stack);
+    {
+      Scheme_Saved_Stack *ss;
+      ss = MALLOC_ONE(Scheme_Saved_Stack);
+      isaved->prev = ss;
+    }
 #ifdef MZTAG_REQUIRED
     isaved->type = scheme_rt_saved_stack;
 #endif
     isaved = isaved->prev;
     size = csaved->runstack_size - (csaved->runstack - csaved->runstack_start);
     isaved->runstack_size = size;
-    isaved->runstack_start = MALLOC_N(Scheme_Object*, size);
+    {
+      Scheme_Object **start;
+      start = MALLOC_N(Scheme_Object*, size);
+      isaved->runstack_start = start;
+    }
     memcpy(isaved->runstack_start, csaved->runstack, size * sizeof(Scheme_Object *));
   }
   isaved->prev = NULL;
 
   /* Copy cont mark stack: */
   cmcount = (long)MZ_CONT_MARK_STACK;
-  cont->cont_mark_stack_copied = MALLOC_N_RT(Scheme_Cont_Mark, cmcount);
+  {
+    Scheme_Cont_Mark *cm;
+    cm = MALLOC_N_RT(Scheme_Cont_Mark, cmcount);
+    cont->cont_mark_stack_copied = cm;
+  }
   while (cmcount--) {
     Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
     long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
@@ -1872,8 +1917,11 @@ call_cc (int argc, Scheme_Object *argv[])
 	  else
 	    segs[needed] = NULL;
 
-	  if (!segs[needed])
-	    segs[needed] = MALLOC_N_RT(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
+	  if (!segs[needed]) {
+	    Scheme_Cont_Mark *cm;
+	    cm = MALLOC_N_RT(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
+	    segs[needed] = cm;
+	  }
 	}
 
 	p->cont_mark_seg_count = newcount;
@@ -1929,7 +1977,8 @@ Scheme_Object *scheme_current_continuation_marks(void)
 
       break;
     } else {
-      Scheme_Cont_Mark_Chain *pr = MALLOC_ONE_RT(Scheme_Cont_Mark_Chain);
+      Scheme_Cont_Mark_Chain *pr;
+      pr = MALLOC_ONE_RT(Scheme_Cont_Mark_Chain);
 #ifdef MZTAG_REQUIRED
       pr->type = scheme_rt_cont_mark_chain;
 #endif      

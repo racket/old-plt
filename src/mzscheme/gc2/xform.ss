@@ -50,7 +50,7 @@
 (define-struct (struct-array-type struct:struct-type) (count))
 (define-struct (union-type struct:vtype) ())
 
-(define-struct live-var-info (maxlive vars new-vars))
+(define-struct live-var-info (maxlive vars new-vars num-calls))
 
 (define-struct prototype (type pointer? pointer?-determined?))
 
@@ -495,7 +495,7 @@
 	(tok-file body-v)
 	(seq-close body-v)
 	(let-values ([(body-e live-vars)
-		      (convert-body body-e arg-vars (make-live-var-info 0 null null) #t)])
+		      (convert-body body-e arg-vars (make-live-var-info 0 null null 0) #t)])
 	  body-e))))))
 
 (define (convert-body body-e extra-vars live-vars setup-stack?)
@@ -523,7 +523,7 @@
 		(lambda (e)
 		  ;; We're not really interested in the conversion.
 		  ;; We just want to complain about function calls:
-		  (convert-function-calls e null (make-live-var-info 0 null null) #t))
+		  (convert-function-calls e null (make-live-var-info 0 null null 0) #t))
 		el)))
 	   decls)
 
@@ -536,7 +536,8 @@
 			      ;;  was pushed in the block
 			      (values null (make-live-var-info 0 
 							       (live-var-info-vars live-vars)
-							       (live-var-info-new-vars live-vars)))
+							       (live-var-info-new-vars live-vars)
+							       (live-var-info-num-calls live-vars)))
 			      (let*-values ([(rest live-vars) (loop (cdr body))]
 					    [(e live-vars)
 					     (convert-function-calls (car body)
@@ -562,7 +563,8 @@
 		    (make-live-var-info (max orig-maxlive
 					     (live-var-info-maxlive live-vars))
 					(live-var-info-vars live-vars)
-					(live-var-info-new-vars live-vars))))))))
+					(live-var-info-new-vars live-vars)
+					(live-var-info-num-calls live-vars))))))))
 
 (define (looks-like-call? e-)
   ;; e- is a reversed expression
@@ -577,8 +579,9 @@
 					 __asm __asm__ __volatile __volatile__ volatile __extension__
 					 ;; These are functions, but they don't trigger GC:
 					 strcpy strlen memcpy cos sin exp pow log sqrt atan2
-					 floor ceil round
+					 floor ceil round fmod fabs
 					 fread fwrite socket fcntl setsockopt connect send recv close
+					 scheme_get_env
 					 scheme_rational_to_double scheme_bignum_to_double
 					 scheme_rational_to_float scheme_bignum_to_float)))
        (not (string? (tok-n (cadr e-))))
@@ -668,7 +671,8 @@
 						(list
 						 (make-tok new-var #f #f #f)
 						 (make-tok semi #f #f #f)))
-					(live-var-info-new-vars live-vars)))))
+					(live-var-info-new-vars live-vars))
+				  (live-var-info-num-calls live-vars))))
 			 (loop (cdr el) (cons (car el) new-args) setups new-vars 
 			       (if must-convert?
 				   ok-calls
@@ -688,7 +692,8 @@
   ;; Reverse to calculate live vars as we go.
   ;; Also, it's easier to look for parens and then inspect preceeding
   ;;  to find function calls.
-  (let ([e- (reverse e)])
+  (let ([e- (reverse e)]
+	[orig-num-calls (live-var-info-num-calls live-vars)])
     (let loop ([e- e-][result null][live-vars live-vars])
       (cond
        [(null? e-) (values result live-vars)]
@@ -735,25 +740,6 @@
 		       (apply fprintf (current-error-port) err-stuff)
 		       (newline (current-error-port)))
 		     (apply error 'xform err-stuff))))
-	     (let ([assignee (and (not (null? rest-))
-				  (not (null? (cdr rest-)))
-				  (or (and (eq? '= (tok-n (car rest-)))
-					   (cdr rest-))
-				      (and (parens? (car rest-))
-					   (eq? '= (tok-n (cadr rest-)))
-					   (cddr rest-))))])
-	       (when (and assignee
-			  (not (null? assignee))
-			  (or (not (symbol? (tok-n (car assignee))))
-			      (and (not (null? (cdr assignee)))
-				   (not (memq (tok-n (cadr assignee)) '(else)))
-				   (not (and (parens? (cadr assignee))
-					     (pair? (cddr assignee))
-					     (memq (tok-n (caddr assignee)) '(if while for until)))))))
-		 (fprintf (current-error-port)
-			  "Suspicious assignment with a function call, line ~a, starting tok is ~s.~n"
-			  (tok-line (car func))
-			  (tok-n (car func)))))
 	     ;; Lift out function calls as arguments. (Can re-order code.
 	     ;; MzScheme source code must live with this change to C's semantics.)
 	     ;; Calls are replaced by varaibles, and setup code generated that
@@ -774,7 +760,8 @@
 									    (cdr x))
 									  new-vars))
 							     (live-var-info-vars live-vars))
-						     (live-var-info-new-vars live-vars))
+						     (live-var-info-new-vars live-vars)
+						     (live-var-info-num-calls live-vars))
 						    ok-calls)]
 			   [(func live-vars)
 			    (convert-function-calls (reverse func) vars live-vars #t)]
@@ -792,7 +779,8 @@
 										 (live-var-info-vars live-vars)
 										 (lambda (a b)
 										   (eq? a (car b))))
-									 (live-var-info-new-vars live-vars))
+									 (live-var-info-new-vars live-vars)
+									 (live-var-info-num-calls live-vars))
 									#f)])
 				    (loop (cdr setups)
 					  (cdr new-vars)
@@ -825,13 +813,43 @@
 							    (live-var-info-vars orig-live-vars)))
 					      (live-var-info-maxlive live-vars))
 					 (live-var-info-vars live-vars)
-					 (live-var-info-new-vars live-vars)))))))]
+					 (live-var-info-new-vars live-vars)
+					 (add1 (live-var-info-num-calls live-vars))))))))]
        [(eq? 'goto (tok-n (car e-)))
 	;; Goto - assume all vars are live
 	(loop (cdr e-) (cons (car e-) result) 
 	      (make-live-var-info (live-var-info-maxlive live-vars)
 				  vars 
-				  (live-var-info-new-vars live-vars)))]
+				  (live-var-info-new-vars live-vars)
+				  (live-var-info-num-calls live-vars)))]
+       [(eq? '= (tok-n (car e-)))
+	;; Check for assignments where the LHS can move due to
+	;; a function call on the RHS
+	(when (> (live-var-info-num-calls live-vars) orig-num-calls)
+	  (let ([assignee (cdr e-)])
+	    (when (and assignee
+		       (not (null? assignee))
+		       (or (if (brackets? (car assignee))
+			       (or (not (or (null? (cddr assignee))
+					    (eq? ': (tok-n (caddr assignee)))))
+				   (let ([v (cadr assignee)])
+				     (or (not (symbol? (tok-n v)))
+					 (let ([m (assq (tok-n v) vars)])
+					   (and m
+						(not (or (array-type? (cdr m))
+							 (struct-array-type? (cdr m)))))))))
+			       (not (symbol? (tok-n (car assignee)))))
+			   (and (symbol? (tok-n (car assignee)))
+				(not (null? (cdr assignee)))
+				(not (memq (tok-n (cadr assignee)) '(else :)))
+				(not (and (parens? (cadr assignee))
+					  (pair? (cddr assignee))
+					  (memq (tok-n (caddr assignee)) '(if while for until)))))))
+	      (fprintf (current-error-port)
+		       "Suspicious assignment with a function call, line ~a, LHS ends ~s.~n"
+		       (tok-line (car e-))
+		       (tok-n (cadr e-))))))
+	(loop (cdr e-) (cons (car e-) result) live-vars)]
        [(braces? (car e-))
 	(let*-values ([(v) (car e-)]
 		      [(e live-vars) (convert-body (seq-in v) vars live-vars #f)])
@@ -853,11 +871,12 @@
 					[else (loop (cdr l))]))])
 		  (make-live-var-info (live-var-info-maxlive live-vars)
 				      new-live-vars
-				      (live-var-info-new-vars live-vars)))))]
+				      (live-var-info-new-vars live-vars)
+				      (live-var-info-num-calls live-vars)))))]
        [(seq? (car e-))
 	;; Do nested body:
 	(let-values ([(v live-vars)
-		      (convert-seq-interior (car e-) (parens? (car e-)) vars live-vars #f)])
+		      (convert-seq-interior (car e-) (parens? (car e-)) vars live-vars (brackets? (car e-)))])
 	  (loop (cdr e-) (cons v result) live-vars))]
        [(and (assq (tok-n (car e-)) vars)
 	     (not (assq (tok-n (car e-)) (live-var-info-vars live-vars))))
@@ -867,7 +886,8 @@
 	      (make-live-var-info (live-var-info-maxlive live-vars)
 				  (cons (assq (tok-n (car e-)) vars)
 					(live-var-info-vars live-vars))
-				  (live-var-info-new-vars live-vars)))]
+				  (live-var-info-new-vars live-vars)
+				  (live-var-info-num-calls live-vars)))]
        [else (loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
 (define (convert-seq-interior v comma-sep? vars live-vars complain-not-in)

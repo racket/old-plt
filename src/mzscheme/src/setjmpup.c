@@ -176,12 +176,14 @@ static void remove_cs(void *_cs, void *unused)
 
 void *make_stack_copy_rec(long size)
 {
-  CopiedStack *cs;
+  CopiedStack *cs, **lk;
 
   cs = MALLOC_ONE(CopiedStack);
   cs->size = size;
-  cs->next = MALLOC_LINK();
-  cs->prev = MALLOC_LINK();
+  lk = MALLOC_LINK();
+  cs->next = lk;
+  lk = MALLOC_LINK();
+  cs->prev = lk;
 
   *cs->next = *first_copied_stack;
   if (*first_copied_stack)
@@ -230,8 +232,10 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
 
   if (b->stack_max_size < size) {
     /* printf("Stack size: %d\n", size); */
+    void *copy;
     b->stack_copy = make_stack_copy_rec(size);
-    set_copy(b->stack_copy, MALLOC_STACK(size));
+    copy = MALLOC_STACK(size)
+    set_copy(b->stack_copy, copy);
     b->stack_max_size = size;
   }
   b->stack_size = size;

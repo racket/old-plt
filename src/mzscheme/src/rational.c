@@ -74,7 +74,7 @@ int scheme_is_rational_positive(const Scheme_Object *o)
 Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
 {
   Scheme_Rational *r = (Scheme_Rational *)o;
-  Scheme_Object *gcd;
+  Scheme_Object *gcd, *tmpn;
   int negate = 0;
 
   if (r->num == scheme_make_integer(0))
@@ -86,15 +86,18 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
       negate = 1;
     }
   } else if (!SCHEME_BIGPOS(r->denom)) {
-    r->denom = scheme_bignum_negate(r->denom);
+    tmpn = scheme_bignum_negate(r->denom);
+    r->denom = tmpn;
     negate = 1;
   }
 
   if (negate) {
     if (SCHEME_INTP(r->num))
       r->num = scheme_make_integer(-SCHEME_INT_VAL(r->num));
-    else
-      r->num = scheme_bignum_negate(r->num);
+    else {
+      tmpn = scheme_bignum_negate(r->num);
+      r->num = tmpn;
+    }
   }
   
   if (r->denom == one)
@@ -105,8 +108,10 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
   if (gcd == one)
     return (Scheme_Object *)o;
 
-  r->num = scheme_bin_quotient(r->num, gcd);
-  r->denom = scheme_bin_quotient(r->denom, gcd);
+  tmpn = scheme_bin_quotient(r->num, gcd);
+  r->num = tmpn;
+  tmpn = scheme_bin_quotient(r->denom, gcd);
+  r->denom = tmpn;
 
   if (r->denom == one)
     return r->num;

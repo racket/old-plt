@@ -92,7 +92,9 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
 
   if (SCHEME_DBLP(c->i)) {
     if (SCHEME_DBLP(c->r) == 0.0) {
-      c->r = scheme_make_double(scheme_get_val_as_double(c->r));
+      Scheme_Object *r;
+      r = scheme_make_double(scheme_get_val_as_double(c->r));
+      c->r = r;
     }
     if (SCHEME_DBL_VAL(c->i) == 0.0)
       c->type = scheme_complex_izi_type;

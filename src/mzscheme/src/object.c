@@ -374,7 +374,11 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
     r->scheck_size = r->scheck_size ? 2 * r->scheck_size : 50;
     i = r->scheck_size;
-    r->scheck_hash = MALLOC_N(Scheme_Object *, i);
+    {
+      Scheme_Object **sa;
+      sa = MALLOC_N(Scheme_Object *, i);
+      r->scheck_hash = sa;
+    }
     memset(r->scheck_hash, 0, i);
 
     r->scheck_count = 0;
@@ -443,7 +447,11 @@ static Scheme_Object *NullClass(void)
     
     null_class->pos = 0;
     null_class->super_init_name = NULL;
-    null_class->heritage = MALLOC_N(Scheme_Class*,1);
+    {
+      Scheme_Class **ca;
+      ca = MALLOC_N(Scheme_Class*,1);
+      null_class->heritage = ca;
+    }
     null_class->heritage[0] = null_class;
     null_class->superclass = NULL;
     
@@ -459,7 +467,11 @@ static Scheme_Object *NullClass(void)
     null_class->cmethod_source_map = NULL;
     null_class->contributes_cmethods = FALSE;
 
-    null_class->defname = scheme_intern_symbol(NULL_CLASS);
+    {
+      Scheme_Object *s;
+      s = scheme_intern_symbol(NULL_CLASS);
+      null_class->defname = s;
+    }
     
     null_class->closure_saved = NULL;
     null_class->closure_size = 0;
@@ -631,14 +643,21 @@ static void CompileItemList(Scheme_Object *form,
   for (count = 0, classvar = cvars; classvar; classvar = classvar->next) {
     alias = isref(classvar);
 
-    if (!alias && !classvar->u.value)
-      classvar->u.value = scheme_compiled_void(rec->can_optimize_constants);
+    if (!alias && !classvar->u.value) {
+      Scheme_Object *cv;
+      cv = scheme_compiled_void(rec->can_optimize_constants);
+      classvar->u.value = cv;
+    }
 
     scheme_check_identifier(CLASS_STAR, IVAR_INT_NAME(classvar), NULL, env, form);
 
     if (!alias) {
       recs[count].value_name = IVAR_EXT_NAME(classvar);
-      classvar->u.value = scheme_compile_expr(classvar->u.value, env, recs + count);
+      {
+	Scheme_Obejct *ce;
+	ce = scheme_compile_expr(classvar->u.value, env, recs + count);
+	classvar->u.value = ce;
+      }
       count++;
     }
   }
@@ -790,13 +809,15 @@ static Scheme_Object *expandall(Scheme_Object *vars, Scheme_Comp_Env *env, int d
   name = SCHEME_CAR(vars);
   vars = SCHEME_CDR(vars);
 
-  first = last = cons(name, scheme_null);
+  first = cons(name, scheme_null);
+  last = first;
 
   if (first_from) {
     name = SCHEME_CAR(vars);
     vars = SCHEME_CDR(vars);
     
-    SCHEME_CDR(first) = last = cons(name, scheme_null);
+    last = cons(name, scheme_null);
+    SCHEME_CDR(first) = last;
   }
 
   while (!SCHEME_NULLP(vars)) {
@@ -882,8 +903,11 @@ static short *MapIvars(Scheme_Class *sclass, ClassVariable *item)
   ivar_map = MALLOC_N_ATOMIC(short, sclass->num_ivar);
 
   for (; item; item = item->next) {
-    if (ispublic(item))
-      ivar_map[item->index] = sclass->public_map[FindName(sclass, item->name)];
+    if (ispublic(item)) {
+      int pos;
+      pos = FindName(sclass, item->name);
+      ivar_map[item->index] = sclass->public_map[pos];
+    }
   }
 
   return ivar_map;
@@ -914,7 +938,11 @@ static void InstallHeritage(Scheme_Class *sclass, Scheme_Class *superclass)
   int i;
 
   sclass->pos = superclass->pos + 1;
-  sclass->heritage = MALLOC_N(Scheme_Class*, (sclass->pos + 1));
+  {
+    Scheme_Class **ca;
+    ca = MALLOC_N(Scheme_Class*, (sclass->pos + 1));
+    sclass->heritage = ca;
+  }
   for (i = 0; i < sclass->pos; i++)
     sclass->heritage[i] = superclass->heritage[i];
   sclass->heritage[sclass->pos] = sclass;
@@ -1049,8 +1077,16 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
       mbanka[i] += newcount;
 
     in->num_names = total;
-    in->names = MALLOC_N(Scheme_Object*, total);
-    in->name_map = MALLOC_N_ATOMIC(short, total);
+    {
+      Scheme_Object **sa;
+      sa = MALLOC_N(Scheme_Object*, total);
+      in->names = sa;
+    }
+    {
+      short *sa;
+      sa = MALLOC_N_ATOMIC(short, total);
+      in->name_map = sa;
+    }
 
     MergeArray(data->num_names, data->names, data->names, NULL,
 	       num_names, nbanka, nbanka, NULL,
@@ -1073,8 +1109,16 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     for (i = num_supers; i--; )
       total += supers[i]->num_supers + 1;
     in->num_supers = total;
-    in->supers = MALLOC_N(Scheme_Interface*, total);
-    in->super_offsets = MALLOC_N_ATOMIC(short, total);
+    {
+      Scheme_Interface **ia;
+      ia = MALLOC_N(Scheme_Interface*, total);
+      in->supers = ia;
+    }
+    {
+      short *sa;
+      sa = MALLOC_N_ATOMIC(short, total);
+      in->super_offsets = sa;
+    }
     {
       int j;
       j = 0;
@@ -1096,7 +1140,11 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     num_names = data->num_names;
     in->num_names = num_names;
     in->names = data->names;
-    in->name_map = MALLOC_N_ATOMIC(short, in->num_names);
+    {
+      short *sa;
+      sa = MALLOC_N_ATOMIC(short, in->num_names);
+      in->name_map = sa;
+    }
     for (i = num_names; i--; )
       in->name_map[i] = i;
     in->num_supers = 0;
@@ -1114,8 +1162,11 @@ static Scheme_Object *Interface_Link(Scheme_Object *form, Link_Info *info)
 
   data = (Interface_Data *)form;
 
-  for (i = data->num_supers; i--; )
-    data->super_exprs[i] = scheme_link_expr(data->super_exprs[i], info);
+  for (i = data->num_supers; i--; ) {
+    Scheme_Object *le;
+    le = scheme_link_expr(data->super_exprs[i], info);
+    data->super_exprs[i] = le;
+  }
 
   return scheme_make_syntax_link(Interface_Execute, 
 				 (Scheme_Object *)data);
@@ -1177,8 +1228,11 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (!rec) {
     /* Expanding */
-    for (i = 0; i < num_supers; i++)
-      supers[i] = scheme_expand_expr(supers[i], env, depth);
+    for (i = 0; i < num_supers; i++) {
+      Scheme_Object *ee;
+      ee = scheme_expand_expr(supers[i], env, depth);
+      supers[i] = ee;
+    }
     l = scheme_null;
     for (i = num_supers; i--; )
       l = cons(supers[i], l);
@@ -1196,7 +1250,11 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_compile_rec_done_local(rec);
 
     data->num_names = num_names;
-    data->names = MALLOC_N(Scheme_Object*, num_names);
+    {
+      Scheme_Object **sa;
+      sa = MALLOC_N(Scheme_Object*, num_names);
+      data->names = sa;
+    }
     l = nl;
     for (i = 0; i < num_names; i++, nl = SCHEME_CDR(nl))
       data->names[i] = SCHEME_CAR(nl);
@@ -1209,8 +1267,11 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
     recs = MALLOC_N_RT(Scheme_Compile_Info, num_supers);
     scheme_init_compile_recs(rec, recs, num_supers);
 
-    for (i = 0; i < num_supers; i++)
-      supers[i] = scheme_compile_expr(supers[i], env, recs + i);
+    for (i = 0; i < num_supers; i++) {
+      Scheme_Object *ce;
+      ce = scheme_compile_expr(supers[i], env, recs + i);
+      supers[i] = ce;
+    }
 
     scheme_merge_compile_recs(rec, recs, num_supers);
 
@@ -1347,13 +1408,17 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
   sclass->num_ivar = data->num_ivar;
 
   /* How big is the union? */
-  sclass->num_public = (MergeArray(data->num_ivar, data->ivar_names, NULL, NULL,
-				   superclass->num_public, superclass->public_names, NULL, NULL,
-				   NULL, NULL, 1)
-			+ MergeArray(data->num_cmethod, data->cmethod_names, NULL, NULL,
-				     superclass->num_public, superclass->public_names, NULL, NULL,
-				     NULL, NULL, 1)
-			- superclass->num_public);
+  {
+    int pub_count;
+    pub_count = (MergeArray(data->num_ivar, data->ivar_names, NULL, NULL,
+			    superclass->num_public, superclass->public_names, NULL, NULL,
+			    NULL, NULL, 1)
+		 + MergeArray(data->num_cmethod, data->cmethod_names, NULL, NULL,
+			      superclass->num_public, superclass->public_names, NULL, NULL,
+			      NULL, NULL, 1)
+		 - superclass->num_public);
+    sclass->num_public = pub_count;
+  }
 
   /* Make room for the union */
   num_public = sclass->num_public;
@@ -1370,9 +1435,18 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
 	     public_names, NULL, 1);
 
   /* Map names to source: */
-  sclass->public_map = MALLOC_N_ATOMIC(short, num_public);
-  sclass->vslot_map = MALLOC_N_ATOMIC(short, num_public);
-  sclass->vslot_kind = MALLOC_N_ATOMIC(slotkind, num_public);
+  {
+    short *sa;
+    sa = MALLOC_N_ATOMIC(short, num_public);
+    sclass->public_map = sa;
+    sa = MALLOC_N_ATOMIC(short, num_public);
+    sclass->vslot_map = sa;
+  }
+  {
+    slotkind *ska;
+    ska = MALLOC_N_ATOMIC(slotkind, num_public);
+    sclass->vslot_kind = ska;
+  }
   sclass->num_slots = ((sclass->priminit == pi_NOT_OVER_CPP) ? EXTRA_PRIM_SLOTS : 0);
   num_cmethod = 0;
   num_contrib_cmethod = 0;
@@ -1465,11 +1539,21 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     sclass->cmethod_ready_level = superclass->cmethod_ready_level;
     sclass->cmethod_source_map = superclass->cmethod_source_map;
   } else if (num_cmethod) {
-    sclass->cmethods = MALLOC_N(CMethod*, num_cmethod);
-    sclass->cmethod_ready_level = MALLOC_N_ATOMIC(short, num_cmethod);
-    if (num_contrib_cmethod)
-      sclass->cmethod_source_map = MALLOC_N_ATOMIC(short, num_cmethod);
-    else
+    {
+      CMethod **cma;
+      cma = MALLOC_N(CMethod*, num_cmethod);
+      sclass->cmethods = cma;
+    }
+    {
+      short *sa;
+      sa = MALLOC_N_ATOMIC(short, num_cmethod);
+      sclass->cmethod_ready_level = sa;
+    }
+    if (num_contrib_cmethod) {
+      short *sa;
+      sa = MALLOC_N_ATOMIC(short, num_cmethod);
+      sclass->cmethod_source_map = sa;
+    } else
       sclass->cmethod_source_map = NULL;
     for (i = num_cmethod; i--; ) {
       sclass->cmethods[i] = tmp_cmethods[i];
@@ -1487,10 +1571,18 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
   tmp_cmethod_source_map = NULL;
 
   /* Map ref index to instance slot: */
-  sclass->ref_map = CheckInherited(sclass, sclass->ivars);
+  {
+    short *sa;
+    sa = CheckInherited(sclass, sclass->ivars);
+    sclass->ref_map = sa;
+  }
 
   /* Map public index to instance slot: */
-  sclass->ivar_map = MapIvars(sclass, sclass->ivars);
+  {
+    short *sa;
+    sa = MapIvars(sclass, sclass->ivars);
+    sclass->ivar_map = sa;
+  }
 
   /* Map interface name positions to class positions */
   if (num_interfaces)
@@ -1501,7 +1593,11 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
   for (i = 0; i < num_interfaces; i++) {
     int j, k = 0;
     Scheme_Interface *in = (Scheme_Interface *)interfaces[i];
-    imaps[i] = MALLOC_N_ATOMIC(short, in->num_names);
+    {
+      short **sa;
+      sa = MALLOC_N_ATOMIC(short, in->num_names);
+      imaps[i] = sa;
+    }
     for (j = 0; j < in->num_names; j++) {
       while ((k < num_public) && SLESSTHAN(public_names[k], in->names[j]))
 	k++;
@@ -1547,7 +1643,8 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     Scheme_Object **saved, **stack;
     short *map = data->closure_map;
 
-    saved = sclass->closure_saved = MALLOC_N(Scheme_Object *, i);
+    saved = MALLOC_N(Scheme_Object *, i);
+    sclass->closure_saved = saved;
     stack = MZ_RUNSTACK;
     while (i--)
       saved[i] = stack[map[i]];
@@ -1571,16 +1668,24 @@ static Scheme_Object *DefineClass_Link(Scheme_Object *form, Link_Info *info)
 
   data = (Class_Data *)form;
 
-  data->super_expr = scheme_link_expr(data->super_expr, info);
+  {
+    Scheme_Object *le;
+    le = scheme_link_expr(data->super_expr, info);
+    data->super_expr = le;
+  }
   
-  for (i = data->num_interfaces; i--; )
-    data->interface_exprs[i] = scheme_link_expr(data->interface_exprs[i], info);
+  for (i = data->num_interfaces; i--; ) {
+    Scheme_Object *le;
+    le = scheme_link_expr(data->interface_exprs[i], info);
+    data->interface_exprs[i] = le;
+  }
 
   i = data->closure_size;
   info = scheme_link_info_extend(info, 0, 0, i);
   while (i--) {
-    int pos = data->closure_map[i], flags;
-    data->closure_map[i] = scheme_link_info_lookup(info, pos, &flags);
+    int pos = data->closure_map[i], flags, li;
+    li = scheme_link_info_lookup(info, pos, &flags);
+    data->closure_map[i] = li;
     scheme_link_info_add_mapping(info, pos, i, flags);
   }
 
@@ -1611,7 +1716,11 @@ static Scheme_Object *DefineClass_Link(Scheme_Object *form, Link_Info *info)
     case varPRIVATE:
     case varNOTHING:
     case varINPUT:
-      ivar->u.value = scheme_link_expr(ivar->u.value, info);
+      {
+	Scheme_Object *le;
+	le = scheme_link_expr(ivar->u.value, info);
+	ivar->u.value = le;
+      }
       break;
     case varINHERIT:
     case varRENAME:
@@ -1897,8 +2006,11 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
 
     {
       int i;
-      for (i = 0; i < num_interfaces; i++)
-	interfaces[i] = scheme_expand_expr(interfaces[i], env, depth);
+      for (i = 0; i < num_interfaces; i++) {
+	Scheme_Object *ei;
+	ei = scheme_expand_expr(interfaces[i], env, depth);
+	interfaces[i] = ei;
+      }
       
       il = scheme_null;
       for (i = num_interfaces; i--; )
@@ -1989,12 +2101,19 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_init_compile_recs(rec, recs, num_interfaces + 1);
 
     data->super_init_name = superinitname;
-    data->super_expr = scheme_compile_expr(superclass, env, recs);
+    {
+      Scheme_Object *cs;
+      cs = scheme_compile_expr(superclass, env, recs);
+      data->super_expr = cs;
+    }
     
     {
       int i;
-      for (i = 0; i < num_interfaces; i++)
-	interfaces[i] = scheme_compile_expr(interfaces[i], env, recs + i + 1);
+      for (i = 0; i < num_interfaces; i++) {
+	Scheme_Object *ci;
+	ci = scheme_compile_expr(interfaces[i], env, recs + i + 1);
+	interfaces[i] = ci;
+      }
     }
 
     data->num_interfaces = num_interfaces;
@@ -2130,7 +2249,11 @@ static Scheme_Object *read_Class_Data(Scheme_Object *obj)
   data = MALLOC_ONE_TAGGED(Class_Data);
   data->type = scheme_class_data_type;
 
-  data->ivars = CV_Unbundle(SCHEME_CAR(obj));
+  {
+    ClassVariable *cvar;
+    cvar = CV_Unbundle(SCHEME_CAR(obj));
+    data->ivars = cvar;
+  }
   obj = SCHEME_CDR(obj);
 
   data->super_expr = SCHEME_CAR(obj);
@@ -2164,7 +2287,11 @@ static Scheme_Object *read_Class_Data(Scheme_Object *obj)
 
   data->num_interfaces = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
-  data->interface_exprs = MALLOC_N(Scheme_Object*, data->num_interfaces);
+  {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object*, data->num_interfaces);
+    data->interface_exprs = sa;
+  }
 
   for (i = data->num_interfaces; i--; ) {
     data->interface_exprs[i] = SCHEME_CAR(obj);
@@ -2231,8 +2358,13 @@ static Scheme_Object *read_Interface_Data(Scheme_Object *obj)
     data->defname = 0;
   obj = SCHEME_CDR(obj);
 
-  data->names = MALLOC_N(Scheme_Object*, data->num_names);
-  data->super_exprs = MALLOC_N(Scheme_Object*, data->num_supers);
+  {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object*, data->num_names);
+    data->names = sa;
+    sa = MALLOC_N(Scheme_Object*, data->num_supers);
+    data->super_exprs = sa;
+  }
 
   for (i = data->num_names; i--; obj = SCHEME_CDR(obj))
     data->names[i] = SCHEME_CAR(obj);
@@ -2273,11 +2405,25 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
   num_methods += superclass->num_public;
 
   sclass->num_public = num_methods;
-  sclass->public_names = MALLOC_N(Scheme_Object*, num_methods);
-  sclass->cmethods = MALLOC_N(CMethod*, num_methods);
-  sclass->cmethod_ready_level = MALLOC_N_ATOMIC(short, num_methods);
-  sclass->cmethod_source_map = MALLOC_N_ATOMIC(short, num_methods);
-  sclass->public_map = MALLOC_N_ATOMIC(short, num_methods);
+  {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object*, num_methods);
+    sclass->public_names = sa;
+  }
+  {
+    CMethod **cma;
+    cma = MALLOC_N(CMethod*, num_methods);
+    sclass->cmethods = cma;
+  }
+  {
+    short *sa;
+    sa = MALLOC_N_ATOMIC(short, num_methods);
+    sclass->cmethod_ready_level = sa;
+    sa = MALLOC_N_ATOMIC(short, num_methods);
+    sclass->cmethod_source_map = sa;
+    sa = MALLOC_N_ATOMIC(short, num_methods);
+    sclass->public_map = sa;
+  }
   sclass->contributes_cmethods = 0;
 
   /* Copy superclass methods: */
@@ -2309,7 +2455,11 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
   sclass->closure_saved = NULL;
   sclass->max_let_depth = 0;
 
-  sclass->defname = scheme_intern_exact_symbol(name, strlen(name));
+  {
+    Scheme_Object *s;
+    s = scheme_intern_exact_symbol(name, strlen(name));
+    sclass->defname = s;
+  }
 
   install_class_interface(sclass);
 
@@ -2433,7 +2583,11 @@ void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
 
   len = SCHEME_SYM_LEN(sclass->defname);
   len2 =  strlen(name);
-  cmethod->closed_name = (char *)scheme_malloc_atomic(len + len2 + 3);
+  {
+    char *ca;
+    ca = (char *)scheme_malloc_atomic(len + len2 + 3);
+    cmethod->closed_name = ca;
+  }
   memcpy(cmethod->closed_name, SCHEME_SYM_VAL(sclass->defname), len);
   cmethod->closed_name[len] = ':';
   cmethod->closed_name[len + 1] = ':';
@@ -2487,15 +2641,24 @@ static void InstallInterface(Scheme_Class *sclass, Scheme_Interface *in)
   c = sclass->num_interfaces;;
   sclass->num_interfaces = c + 1;
   save = sclass->interface_maps;
-  sclass->interface_maps = MALLOC_N(short*, (c+1));
+  {
+    short **sa;
+    sa = MALLOC_N(short*, (c+1));
+    sclass->interface_maps = sa;
+  }
   for (j = 0; j < c; j++)
     sclass->interface_maps[j] = save[j];
   isave = sclass->interfaces;
-  sclass->interfaces = MALLOC_N(Scheme_Interface*, (c+1));
+  {
+    Scheme_Interface **ia;
+    ia = MALLOC_N(Scheme_Interface*, (c+1));
+    sclass->interfaces = ia;
+  }
   for (j = 0; j < c; j++)
     sclass->interfaces[j] = isave[j];
   sclass->interfaces[c] = in;
-  sclass->interface_maps[c] = imap = MALLOC_N_ATOMIC(short, in->num_names);
+  imap = MALLOC_N_ATOMIC(short, in->num_names);
+  sclass->interface_maps[c] = imap;
 
   num_public = sclass->num_public;
 
@@ -2517,8 +2680,16 @@ void scheme_made_class(Scheme_Object *c)
   sclass->num_private = 0;
   sclass->num_public = num_methods;
 
-  sclass->vslot_map = MALLOC_N_ATOMIC(short, num_methods);
-  sclass->vslot_kind = MALLOC_N_ATOMIC(slotkind, num_methods);
+  {
+    short *sa;
+    sa = MALLOC_N_ATOMIC(short, num_methods);
+    sclass->vslot_map = sa;
+  }
+  {
+    slotkind *ska;
+    ska = MALLOC_N_ATOMIC(slotkind, num_methods);
+    sclass->vslot_kind = ska;
+  }
 
   for (i = 0; i < num_methods; i++) {
     sclass->vslot_map[i] = i;
@@ -2534,8 +2705,11 @@ void scheme_made_class(Scheme_Object *c)
 Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name)
 {
   Scheme_Class *sclass = (Scheme_Class *)c;
+  Scheme_Object *s;
 
-  sclass->equiv_intf->defname = scheme_intern_symbol(name);
+  s = scheme_intern_symbol(name);
+
+  sclass->equiv_intf->defname = s;
   
   return (Scheme_Object *)sclass->equiv_intf;
 }
@@ -2632,7 +2806,12 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
 
   a->data.num_interfaces = num_interfaces;
 
-  a->data.defname = (name ? scheme_intern_exact_symbol(name, strlen(name)) : NULL);
+  if (name) {
+    Scheme_Object *s;
+    s = scheme_intern_exact_symbol(name, strlen(name));
+    a->data.defname = s;
+  } else
+    a->data.defname = NULL;
 
   InitData(&a->data);
 
@@ -2649,8 +2828,10 @@ Scheme_Object *scheme_create_class(Scheme_Class_Assembly *a,
 
   if (super)
     a->data.super_expr = super;
-  else
-    a->data.super_expr = NullClass();
+  else {
+    super = NullClass();
+    a->data.super_expr = super;
+  }
 
   a->data.interface_exprs = interfaces;
 
@@ -2673,20 +2854,30 @@ Scheme_Object *scheme_create_class(Scheme_Class_Assembly *a,
 Scheme_Interface_Assembly *
 scheme_make_interface_assembly(const char *name, int n_supers, int n_names, Scheme_Object **names)
 {
-  Scheme_Interface_Assembly *a = MALLOC_ONE_RT(Scheme_Interface_Assembly);
+  Scheme_Interface_Assembly *a;
   int i;
+
+  a = MALLOC_ONE_RT(Scheme_Interface_Assembly);
 
 #ifdef MZTAG_REQUIRED
   a->type = scheme_rt_class_assembly;
 #endif
 
   a->data.num_names = n_names;
-  a->data.names = MALLOC_N(Scheme_Object *, n_names);
+  {
+    Scheme_Object **na = MALLOC_N(Scheme_Object *, n_names);
+    a->data.names = na;
+  }
   for (i = n_names; i--; )
     a->data.names[i] = names[i];
 
   a->data.num_supers = n_supers;
-  a->data.defname = (name ? scheme_intern_exact_symbol(name, strlen(name)) : NULL);
+  if (name) {
+    Scheme_Object *s;
+    s = scheme_intern_exact_symbol(name, strlen(name));
+    a->data.defname = s;
+  } else
+    a->data.defname = NULL;
 
   /* Sort names: */
   qsort((char *)a->data.names, n_names,
@@ -2767,8 +2958,11 @@ static Scheme_Object *GetIvar(Internal_Object *obj, Init_Object_Rec *irec, Schem
 	int cindex = sclass->vslot_map[vp];
 	int lpos = sclass->cmethod_source_map[cindex];
 
-	if (!frame->cmethods)
-	  frame->cmethods = MALLOC_N(Scheme_Object*, sclass->contributes_cmethods);
+	if (!frame->cmethods) {
+	  Scheme_Object *ca;
+	  ca = MALLOC_N(Scheme_Object*, sclass->contributes_cmethods);
+	  frame->cmethods = ca;
+	}
 
 	if (!frame->cmethods[lpos]) {
 	  Scheme_Object *box;
@@ -2890,13 +3084,21 @@ PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *scla
   obj_stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, count);
 
   /* Privates: create boxes: */
-  for (i = sclass->num_private; i--; )
-    priv_stack[i] = scheme_make_envunbox(scheme_undefined);
+  for (i = sclass->num_private; i--; ) {
+    Scheme_Object *bx;
+    bx = scheme_make_envunbox(scheme_undefined);
+    priv_stack[i] = bx;
+  }
 
   /* this & super-init */
-  obj_stack[sclass->num_arg_vars] = scheme_make_envunbox((Scheme_Object *)o);
-  obj_stack[sclass->num_arg_vars + 1] = scheme_make_envunbox(MakeSuperInitPrim(o, irec, sclass->pos - 1));
-  
+  {
+    Scheme_Object *bx;
+    bx = scheme_make_envunbox((Scheme_Object *)o);
+    obj_stack[sclass->num_arg_vars] = bx;
+    bx = scheme_make_envunbox(MakeSuperInitPrim(o, irec, sclass->pos - 1));
+    obj_stack[sclass->num_arg_vars + 1] = bx;
+  }
+
   slots = o->slots;
   cvar = sclass->ivars;
   oclass = (Scheme_Class *)o->o.sclass;
@@ -2904,7 +3106,9 @@ PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *scla
   /* Push boxes for public ivars & refs onto stack */
   for (i = 0; cvar; cvar = cvar->next) {
     if (ispublic(cvar)) {
-      pub_stack[cvar->index] = GetIvar(o, irec, slots, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
+      Scheme_Object *iv;
+      iv = GetIvar(o, irec, slots, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
+      pub_stack[cvar->index] = iv;
     } else if (isprivref(cvar)) {
       ref_stack[cvar->index] = frame->refs[cvar->index];
     } else if (isref(cvar)) {
@@ -3017,9 +3221,11 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 	int cindex = sclass->vslot_map[i];
 	if (sclass->cmethod_ready_level[cindex] == level) {
 	  int lpos = sclass->cmethod_source_map[cindex];
-	  if (frame->cmethods[lpos])
-	    SCHEME_ENVBOX_VAL(frame->cmethods[lpos])
-	      = CloseMethod(sclass->cmethods[cindex], o);
+	  if (frame->cmethods[lpos]) {
+	    Scheme_Object *m;
+	    m = CloseMethod(sclass->cmethods[cindex], o);
+	    SCHEME_ENVBOX_VAL(frame->cmethods[lpos]) = m;
+	  }
 	}
       }
     }
@@ -3033,13 +3239,15 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
     total = i + sclass->max_let_depth;
 
     if (!scheme_check_runstack(total)) {
+      void *p2;
+      p2 = (void *)MALLOC_N(Scheme_Object*, argc);
       p->ku.k.p1 = o;
       p->ku.k.i1 = -1;
       p->ku.k.i2 = argc;
-      p->ku.k.p2 = (void *)MALLOC_N(Scheme_Object*, argc);
+      p->ku.k.p2 = p2;
       p->ku.k.p3 = irec;
       for (i = argc; i--; )
-	((Scheme_Object **)p->ku.k.p2)[i] = argv[i];
+	((Scheme_Object **)p2)[i] = argv[i];
 
       (void)scheme_enlarge_runstack(total, init_obj_frame_k);
       return;
@@ -3059,23 +3267,23 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 	if (!j && (sclass->num_args < 0)) {
 	  /* Turn rest of args into a list */
 	  int k;
-	  Scheme_Object *l = scheme_null;
+	  Scheme_Object *l = scheme_null, *bx;
 	  
 	  for (k = argc; k-- > i; )
 	    l = cons(argv[k], l);
 	  
-	  obj_stack[j] = scheme_make_envunbox(l);
+	  bx = scheme_make_envunbox(l);
+	  obj_stack[j] = bx;
 	} else {
-#if 0
-	  /* Box everything for now: */
-	  if (i < frame->sclass->num_required_args)
-	    obj_stack[j] = argv[i];
-	  else
-#endif
-	    obj_stack[j] = scheme_make_envunbox(argv[i]);
+	  Scheme_Object *bx;
+	  bx = scheme_make_envunbox(l);
+	  obj_stack[j] = scheme_make_envunbox(argv[i]);
 	}
-      } else
-	obj_stack[j] = scheme_make_envunbox(scheme_undefined);
+      } else {
+	Scheme_Object *bx;
+	bx = scheme_make_envunbox(scheme_undefined);
+	obj_stack[j] = bx;
+      }
     }
 
     if (argc > sclass->num_arg_vars)
@@ -3232,13 +3440,17 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
     env_values = MALLOC_N(Scheme_Object *, c);
     for (cvar = sclass->ivars, i = c; i--; cvar = cvar->next) {
       if (ispublic(cvar)) {
-	env_values[i] = GetIvar(o, irec, o->slots, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
+	Scheme_Object *iv;
+	iv = GetIvar(o, irec, o->slots, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
+	env_values[i] = iv;
 	public_values[i] = frame->ivars[cvar->index];
       } else if (isprivref(cvar)) {
 	public_values[i] = frame->refs[cvar->index];
 	env_values[i] = public_values[i];
       } else if (isref(cvar)) {
-	public_values[i] = GetIvar(o, irec, o->slots, oclass, oclass, sclass->ref_map[cvar->index], 1, 1);
+	Scheme_Object *iv;
+	iv = GetIvar(o, irec, o->slots, oclass, oclass, sclass->ref_map[cvar->index], 1, 1);
+	public_values[i] = iv;
 	env_values[i] = public_values[i];
       }
     }

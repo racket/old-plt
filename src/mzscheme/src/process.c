@@ -656,7 +656,11 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
   ATSTEP("initing tailbuf");
 
-  process->tail_buffer = MALLOC_N(Scheme_Object *, buffer_init_size);
+  {
+    Scheme_Object **tb;
+    tb = MALLOC_N(Scheme_Object *, buffer_init_size);
+    process->tail_buffer = tb;
+  }
   process->tail_buffer_size = buffer_init_size;
 #ifdef AGRESSIVE_ZERO_TB
   process->tail_buffer_set = 0;
@@ -664,7 +668,11 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   SCHEME_RELEASE_LOCK();
 
   process->runstack_size = INIT_SCHEME_STACK_SIZE;
-  process->runstack_start = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
+  {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
+    process->runstack_start = sa;
+  }
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
 
@@ -702,16 +710,22 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
      on it, which is what registering with a manager does. Instead, we
      register a weak indirection with the manager. That way, the thread
      (and anything it points to) can be collected one GC cycle earlier. */
-  process->mr_hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
-  process->mr_hop->type = scheme_process_hop_type;
-  process->mr_hop->p = process;
+  {
+    Scheme_Process_Manager_Hop *hop;
+    Scheme_Manager *mref;
+    hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
+    process->mr_hop = hop;
+    hop->type = scheme_process_hop_type;
+    hop->p = process;
 
-  process->mref = scheme_add_managed(mgr
-				     ? mgr
-				     : (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER),
-				     (Scheme_Object *)process->mr_hop, NULL, NULL, 0);
+    mref = scheme_add_managed(mgr
+			      ? mgr
+			      : (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER),
+			      (Scheme_Object *)process->mr_hop, NULL, NULL, 0);
+    process->mref = mref;
 
-  scheme_weak_reference((void **)&process->mr_hop->p);
+    scheme_weak_reference((void **)&hop->p);
+  }
 
   return process;
 }
@@ -869,7 +883,7 @@ static void adjust_manager_family(void *mgr, void *ignored)
 
 Scheme_Manager *scheme_make_manager(Scheme_Manager *parent) 
 {
-  Scheme_Manager *m;
+  Scheme_Manager *m, **mw;
 
   m = MALLOC_ONE_TAGGED(Scheme_Manager);
 
@@ -877,9 +891,12 @@ Scheme_Manager *scheme_make_manager(Scheme_Manager *parent)
 
   m->alloc = m->count = 0;
 
-  m->parent = MALLOC_ONE_WEAK(Scheme_Manager*);
-  m->children = MALLOC_ONE_WEAK(Scheme_Manager*);
-  m->sibling = MALLOC_ONE_WEAK(Scheme_Manager*);
+  mw = MALLOC_ONE_WEAK(Scheme_Manager*);
+  m->parent = mw;
+  mw = MALLOC_ONE_WEAK(Scheme_Manager*);
+  m->children = mw;
+  mw = MALLOC_ONE_WEAK(Scheme_Manager*);
+  m->sibling = mw;
 
   *(m->children) = NULL;
   *(m->sibling) = NULL;
@@ -1054,7 +1071,9 @@ void scheme_set_tail_buffer_size(int s)
 
     for (p = scheme_first_process; p; p = p->next)
       if (p->tail_buffer_size < s) {
-	p->tail_buffer = MALLOC_N(Scheme_Object *, buffer_init_size);
+	Scheme_Object **tb;
+	tb = MALLOC_N(Scheme_Object *, buffer_init_size);
+	p->tail_buffer = tb;
 	p->tail_buffer_size = buffer_init_size;
       }
   }
@@ -2390,10 +2409,11 @@ void scheme_tls_set(int pos, void *v)
 
   if (p->user_tls_size <= pos) {
     int oldc = p->user_tls_size;
-    void **old_tls = p->user_tls;
+    void **old_tls = p->user_tls, **va;
 
     p->user_tls_size = tls_pos;
-    p->user_tls = MALLOC_N(void*, tls_pos);
+    va = MALLOC_N(void*, tls_pos);
+    p->user_tls = va;
     while (oldc--)
       p->user_tls[oldc] = old_tls[oldc];
   }
@@ -2540,11 +2560,17 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   np->nester = p;
   p->nestee = np;
 
-  np->mr_hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
-  np->mr_hop->type = scheme_process_hop_type;
-  np->mr_hop->p = np;
-  np->mref = scheme_add_managed(mgr, (Scheme_Object *)np->mr_hop, NULL, NULL, 0);
-  scheme_weak_reference((void **)&np->mr_hop->p);
+  {
+    Scheme_Process_Manager_Hop *hop;
+    Scheme_Manager_Ref *mref;
+    hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
+    np->mr_hop = hop;
+    hop->type = scheme_process_hop_type;
+    hop->p = np;
+    mref = scheme_add_managed(mgr, (Scheme_Object *)np->mr_hop, NULL, NULL, 0);
+    np->mref = mref;
+    scheme_weak_reference((void **)&hop->p);
+  }
 
 #ifdef RUNSTACK_IS_GLOBAL
   MZ_CONT_MARK_STACK = np->cont_mark_stack;
@@ -2693,7 +2719,11 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
 #endif
   erec->next = param_ext_recs;
   param_ext_recs = erec;
-  erec->data = MALLOC_ONE_WEAK_RT(ParamExtensionRecData);
+  {
+    ParamExtensionRecData *erd;
+    erd = MALLOC_ONE_WEAK_RT(ParamExtensionRecData);
+    erec->data = erd;
+  }
 #ifdef MZTAG_REQUIRED
   erec->data->type = scheme_rt_param_ext_rec_data;
 #endif
@@ -2787,9 +2817,17 @@ static Scheme_Config *make_initial_config(void)
 
   scheme_set_param(config, MZCONFIG_REQUIRE_COLLECTION, scheme_false);
 
-  scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1)));
+  {
+    Scheme_Object *s;
+    s = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+    scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, s);
+  }
 
-  scheme_set_param(config, MZCONFIG_RANDOM_STATE, scheme_make_random_state(scheme_get_milliseconds()));
+  {
+    Scheme_Object *rs;
+    rs = scheme_make_random_state(scheme_get_milliseconds());
+    scheme_set_param(config, MZCONFIG_RANDOM_STATE, rs);
+  }
   
   config->extensions = NULL;
 
@@ -2816,8 +2854,11 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
   if (base->extensions) {
     Scheme_Bucket **bs = base->extensions->buckets;
     int i = base->extensions->size;
+    Scheme-Hash_table *ht;
     
-    config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+    ht = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+
+    config->extensions = ht;
     
     while (i--) {
       Scheme_Bucket *b = bs[i];
@@ -2918,8 +2959,11 @@ Scheme_Object *scheme_param_config(char *name, long pos,
       const char *key = (const char *)SCHEME_CAR((Scheme_Object *)pos);
       Scheme_Bucket *b;
 
-      if (!config->extensions)
-	config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+      if (!config->extensions) {
+	Scheme_hash_table *ht;
+	ht = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+	config->extensions = ht;
+      }
 
       b = scheme_bucket_from_table(config->extensions, key);
       b->val = naya;
@@ -2981,12 +3025,16 @@ static Scheme_Object *do_next_will(WillExecutor *w)
 
 static Scheme_Object *make_will_executor(int argc, Scheme_Object **argv)
 {
-  WillExecutor *w = MALLOC_ONE_TAGGED(WillExecutor);
+  WillExecutor *w;
+  Scheme_Object *sema;
+
+  w = MALLOC_ONE_TAGGED(WillExecutor);
+  sema = scheme_make_sema(0);
 
   w->type = scheme_will_executor_type;
   w->first = NULL;
   w->last = NULL;
-  w->sema = scheme_make_sema(0);
+  w->sema = sema;
 
   return (Scheme_Object *)w;
 }

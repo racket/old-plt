@@ -441,11 +441,13 @@ void scheme_case_lambda_wrong_count(const char *name,
   va_start(args, count);
   for (i = 0, a = arity; i < count; i++, a = SCHEME_CDR(a)) {
     short mina, maxa;
+    Scheme_Object *av;
 
     mina= va_arg(args, int);
     maxa = va_arg(args, int);
     
-    SCHEME_CAR(a) = scheme_make_arity(mina, maxa);
+    av = scheme_make_arity(mina, maxa);
+    SCHEME_CAR(a) = av;
   }
   va_end(args);
 
@@ -1231,7 +1233,9 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
  }
 
  if (need_debug) {
-   ((Scheme_Structure *)arg)->slots[1] = scheme_current_continuation_marks();
+   Scheme_Object *marks;
+   marks = scheme_current_continuation_marks();
+   ((Scheme_Structure *)arg)->slots[1] = marks;
  }
 
  v = scheme_dynamic_wind(pre_raise, now_do_raise,

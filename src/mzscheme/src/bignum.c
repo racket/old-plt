@@ -338,8 +338,10 @@ static Scheme_Object *bignum_copy(const Scheme_Object *n, int copy_array)
   SCHEME_BIGLEN(o) = c;
   SCHEME_BIGPOS(o) = SCHEME_BIGPOS(n);
   if (copy_array) {
-    SCHEME_BIGDIG(o) = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) 
-						      * (c + (copy_array - 1)));
+    bigdig *a;
+    a = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) 
+				       * (c + (copy_array - 1)));
+    SCHEME_BIGDIG(o) = a;
     memcpy(SCHEME_BIGDIG(o), SCHEME_BIGDIG(n), sizeof(bigdig) * c);
   } else
     SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);

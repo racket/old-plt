@@ -94,7 +94,8 @@ void scheme_init_print(Scheme_Env *env)
 
 Scheme_Object *scheme_make_svector(short c, short *a)
 {
-  Scheme_Object *o = scheme_alloc_object();
+  Scheme_Object *o;
+  o = scheme_alloc_object();
 
   o->type = scheme_svector_type;
   SCHEME_SVEC_LEN(o) = c;
@@ -165,6 +166,7 @@ static void do_handled_print(Scheme_Object *obj, Scheme_Object *port,
 			     Scheme_Object *proc, long maxl)
 {
   Scheme_Object *a[2];
+
   a[0] = obj;
   
   if (maxl > 0)
@@ -426,9 +428,12 @@ print_to_string(Scheme_Object *obj, long *len, int write,
 		Scheme_Config *config)
 {
   Scheme_Hash_Table *ht;
+  char *ca;
+
+  ca = (char *)scheme_malloc_atomic(p->print_allocated);
 
   p->print_allocated = 50;
-  p->print_buffer = (char *)scheme_malloc_atomic(p->print_allocated);
+  p->print_buffer = ca;
   p->print_position = 0;
   p->print_maxlen = maxl;
   p->print_port = port;
@@ -502,7 +507,11 @@ static void print_this_string(Scheme_Process *p, const char *str, int autolen)
       p->print_allocated = 2 * p->print_allocated;
 
     oldstr = p->print_buffer;
-    p->print_buffer = (char *)scheme_malloc_atomic(p->print_allocated);
+    {
+      char *ca;
+      ca = (char *)scheme_malloc_atomic(p->print_allocated);
+      p->print_buffer = ca;
+    }
     memcpy(p->print_buffer, oldstr, p->print_position);
   }
 
@@ -615,8 +624,10 @@ print_substring(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table 
   
   /* If result is NULL, just measure the output. */
   if (result) {
+    char *ca;
     p->print_allocated = 50;
-    p->print_buffer = (char *)scheme_malloc_atomic(p->print_allocated);
+    ca = (char *)scheme_malloc_atomic(p->print_allocated);
+    p->print_buffer = ca;
   } else {
     p->print_allocated = 0;
     p->print_buffer = NULL;

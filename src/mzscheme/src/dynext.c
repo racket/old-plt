@@ -121,11 +121,14 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
 #include "schemex.inc"
 #endif
 
-    scheme_set_param(scheme_config, MZCONFIG_LOAD_EXTENSION_HANDLER,
-		     scheme_make_prim_w_arity2(default_load_extension,
-					       "default-load-extension-handler",
-					       1, 1,
-					       0, -1));
+    {
+      Scheme_Object *lh;
+      lh = scheme_make_prim_w_arity2(default_load_extension,
+				     "default-load-extension-handler",
+				     1, 1,
+				     0, -1);
+      scheme_set_param(scheme_config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
+    }
   }
 
   scheme_add_global_constant("load-extension", 

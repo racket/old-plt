@@ -209,8 +209,10 @@ void scheme_init_read(Scheme_Env *env)
 
 void scheme_alloc_list_stack(Scheme_Process *process)
 {
+  Scheme_Object *sa;
   process->list_stack_pos = 0;
-  process->list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+  sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+  process->list_stack = sa;
 }
 
 #define DO_CHAR_PARAM(name, pos) \
@@ -585,7 +587,8 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      scheme_add_to_table(*ht, (const char *)scheme_make_integer(vector_length), 
 				  (void *)ph, 0);
 	      
-	      SCHEME_PTR_VAL(ph) = v = read_inner(port, ht CURRENTPROCARG);
+	      v = read_inner(port, ht CURRENTPROCARG);
+	      SCHEME_PTR_VAL(ph) = v;
 	      
 	      return v;
 	    }
@@ -645,10 +648,15 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
   }
 
   if (SCHEME_PAIRP(obj)) {
-    SCHEME_CAR(obj) = resolve_references(SCHEME_CAR(obj), port, ht);
-    SCHEME_CDR(obj) = resolve_references(SCHEME_CDR(obj), port, ht);
+    Scheme_Object *rr;
+    rr = resolve_references(SCHEME_CAR(obj), port, ht);
+    SCHEME_CAR(obj) = rr;
+    rr = resolve_references(SCHEME_CDR(obj), port, ht);
+    SCHEME_CDR(obj) = rr;
   } else if (SCHEME_BOXP(obj)) {
-    SCHEME_BOX_VAL(obj) = resolve_references(SCHEME_BOX_VAL(obj), port, ht);
+    Scheme_Object *rr;
+    rr = resolve_references(SCHEME_BOX_VAL(obj), port, ht);
+    SCHEME_BOX_VAL(obj) = rr;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
     Scheme_Object **array;
@@ -752,8 +760,10 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
     if (use_stack) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
+	Scheme_Object *sa;
 	local_list_stack_pos = 0;
-	local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	local_list_stack = sa;
       }
 
       pair = local_list_stack + (local_list_stack_pos++);
@@ -1068,7 +1078,9 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
   
   if ((ch >= '0' && ch <= '7') && (next >= '0' && next <= '7')) {
     /* a is the same as next */
-    int last = (scheme_getc(port), scheme_getc(port));
+    int last;
+
+    last = (scheme_getc(port), scheme_getc(port));
 
     if (last < '0' || last > '7' || ch > '3') {
       char buffer[4];
@@ -1367,7 +1379,9 @@ static Scheme_Object *read_compact_svector(CPort *port, int l)
   SCHEME_SVEC_VEC(o) = v;
 
   while (l--) {
-    v[l] = read_compact_number(port);
+    short cn;
+    cn = read_compact_number(port);
+    v[l] = cn;
   }
 
   return o;
@@ -1473,8 +1487,11 @@ static Scheme_Object *read_compact(CPort *port,
 	vec = scheme_make_vector(l, NULL);
 	els = SCHEME_VEC_ELS(vec);
       
-	for (i = 0; i < l; i++)
-	  els[i] = read_compact(port, ht, 0 CURRENTPROCARG);
+	for (i = 0; i < l; i++) {
+	  Scheme_Object *cv;
+	  cv = read_compact(port, ht, 0 CURRENTPROCARG);
+	  els[i] = cv;
+	}
 
 	v = vec;
       }
@@ -1610,10 +1627,11 @@ static Scheme_Object *read_compact(CPort *port,
       /* Read a vector (of symbols) and push it onto the vector "memory" stack */
       v = read_compact(port, ht, 0 CURRENTPROCARG);
       if (local_vector_memory_count == local_vector_memory_size) {
-	Scheme_Object **old = local_vector_memory;
+	Scheme_Object **old = local_vector_memory, **sa;
 	local_vector_memory_size = local_vector_memory_size ? 2 * local_vector_memory_size : 20;
-	local_vector_memory = MALLOC_N(Scheme_Object *, local_vector_memory_size);
-	memcpy(local_vector_memory, old, local_vector_memory_count * sizeof(Scheme_Object *));
+	sa = MALLOC_N(Scheme_Object *, local_vector_memory_size);
+	local_vector_memory = sa;
+	memcpy(sa, old, local_vector_memory_count * sizeof(Scheme_Object *));
       }
       local_vector_memory[local_vector_memory_count++] = v;
       break;
@@ -1654,8 +1672,10 @@ static Scheme_Object *read_compact(CPort *port,
       if (use_stack) {
 	if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	  /* Overflow */
+	  Scheme_Object *sa;
 	  local_list_stack_pos = 0;
-	  local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	  sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	  local_list_stack = sa;
 	}
 	
 	pair = local_list_stack + (local_list_stack_pos++);
@@ -1694,8 +1714,10 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
   if (use_stack) {
     if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
       /* Overflow */
+      Scheme_Object *sa;
       local_list_stack_pos = 0;
-      local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+      sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+      local_list_stack = sa;
     }
     
     last = local_list_stack + (local_list_stack_pos++);
@@ -1713,8 +1735,10 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
     if (use_stack) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
+	Scheme_Object *sa;
 	local_list_stack_pos = 0;
-	local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	local_list_stack = sa;
       }
       
       pair = local_list_stack + (local_list_stack_pos++);

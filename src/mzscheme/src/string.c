@@ -309,7 +309,8 @@ scheme_make_sized_string(char *chars, long len, int copy)
   if (copy) {
     char *naya;
 
-    SCHEME_STR_VAL(str) = naya = (char *)scheme_malloc_fail_ok(scheme_malloc_atomic, len + 1);
+    naya = (char *)scheme_malloc_fail_ok(scheme_malloc_atomic, len + 1);
+    SCHEME_STR_VAL(str) = naya;
     memcpy(naya, chars, len);
     naya[len] = 0;
   } else

@@ -263,7 +263,8 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	v = 0;
 #endif
     } else {
-      BreakableWait *bw = MALLOC_ONE_RT(BreakableWait);
+      BreakableWait *bw;
+      bw = MALLOC_ONE_RT(BreakableWait);
 
 #ifdef MZTAG_REQUIRED
       bw->type = scheme_rt_breakable_wait;
@@ -308,7 +309,8 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	w->next = NULL;
 
 	if (!scheme_current_process->next) {
-	  void **a = MALLOC_N(void*, 2);
+	  void **a;
+	  a = MALLOC_N(void*, 2);
 	  /* We're not allowed to suspend the main thread. Delay
 	     breaks so we get a chance to clean up. */
 	  scheme_current_process->suspend_break = 1;

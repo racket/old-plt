@@ -514,17 +514,21 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
   if (!(flags & SCHEME_STRUCT_NO_TYPE))
     values[pos++] = (Scheme_Object *)struct_type;
   if (!(flags & SCHEME_STRUCT_NO_CONSTR)) {
-    values[pos] = make_struct_proc(struct_type,
-				   names[pos],
-				   SCHEME_CONSTR, 
-				   struct_type->num_slots);
+    Scheme_Object *vi;
+    vi = make_struct_proc(struct_type,
+			  names[pos],
+			  SCHEME_CONSTR, 
+			  struct_type->num_slots);
+    values[pos] = vi;
     pos++;
   }
   if (!(flags & SCHEME_STRUCT_NO_PRED)) {
-    values[pos] = make_struct_proc(struct_type,
-				   names[pos],
-				   SCHEME_PRED,
-				   0);
+    Scheme_Object *vi;
+    vi = make_struct_proc(struct_type,
+			  names[pos],
+			  SCHEME_PRED,
+			  0);
+    values[pos] = vi;
     pos++;
   }
 
@@ -533,18 +537,22 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
 	      : 0);
   while (pos < count) {
     if (!(flags & SCHEME_STRUCT_NO_GET)) {
-      values[pos] = make_struct_proc(struct_type,
-				     names[pos],
-				     SCHEME_GETTER,
-				     slot_num);
+      Scheme_Object *vi;
+      vi = make_struct_proc(struct_type,
+			    names[pos],
+			    SCHEME_GETTER,
+			    slot_num);
+      values[pos] = vi;
       pos++;
     }
     
     if (!(flags & SCHEME_STRUCT_NO_SET)) {
-      values[pos] = make_struct_proc(struct_type,
-				     names[pos],
-				     SCHEME_SETTER,
-				     slot_num);
+      Scheme_Object *vi;
+      vi = make_struct_proc(struct_type,
+			    names[pos],
+			    SCHEME_SETTER,
+			    slot_num);
+      values[pos] = vi;
       pos++;
     }
 
@@ -591,12 +599,21 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
 
   pos = 0;
 
-  if (!(flags & SCHEME_STRUCT_NO_TYPE))
-    names[pos++] = TYPE_NAME(base, blen);
-  if (!(flags & SCHEME_STRUCT_NO_CONSTR))
-    names[pos++] = CSTR_NAME(base, blen);
-  if (!(flags & SCHEME_STRUCT_NO_PRED))
-    names[pos++] = PRED_NAME(base, blen);
+  if (!(flags & SCHEME_STRUCT_NO_TYPE)) {
+    Scheme_Object *nm;
+    nm = TYPE_NAME(base, blen);
+    names[pos++] = nm;
+  }
+  if (!(flags & SCHEME_STRUCT_NO_CONSTR)) {
+    Scheme_Object *nm;
+    nm = CSTR_NAME(base, blen);
+    names[pos++] = nm;
+  }
+  if (!(flags & SCHEME_STRUCT_NO_PRED)) {
+    Scheme_Object *nm;
+    nm = PRED_NAME(base, blen);
+    names[pos++] = nm;
+  }
 
   if (fcount) {
     for (slot_num = 0; slot_num < fcount; slot_num++) {
@@ -611,10 +628,16 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
 	fnlen = strlen(field_name);
       }
 
-      if (!(flags & SCHEME_STRUCT_NO_GET))
-	names[pos++] = GET_NAME(base, blen, field_name, fnlen);
-      if (!(flags & SCHEME_STRUCT_NO_SET))
-	names[pos++] = SET_NAME(base, blen, field_name, fnlen);
+      if (!(flags & SCHEME_STRUCT_NO_GET)) {
+	Scheme_Object *nm;
+	nm = GET_NAME(base, blen, field_name, fnlen);
+	names[pos++] = nm;
+      }
+      if (!(flags & SCHEME_STRUCT_NO_SET)) {
+	Scheme_Object *nm;
+	nm = SET_NAME(base, blen, field_name, fnlen);
+	names[pos++] = nm;
+      }
     }
   }
 
@@ -718,11 +741,14 @@ struct_execute (Scheme_Object *form)
 				 parent, 
 				 info->num_fields);
 
-  if (!info->memo_names)
-    info->memo_names = scheme_make_struct_names(info->name,
-						info->fields,
-						0, 
-						&info->count);
+  if (!info->memo_names) {
+    Scheme_Object **sa;
+    sa = scheme_make_struct_names(info->name,
+				  info->fields,
+				  0, 
+				  &info->count);
+    info->memo_names = sa;
+  }
   names = info->memo_names;
 
   values = scheme_make_struct_values(type, names, info->count, 0);
@@ -737,8 +763,11 @@ struct_link(Scheme_Object *expr, Link_Info *info)
 
   sinfo = (Struct_Info *)expr;
 
-  if (sinfo->parent_type_expr)
-    sinfo->parent_type_expr = scheme_link_expr(sinfo->parent_type_expr, info);
+  if (sinfo->parent_type_expr) {
+    Scheme_Object *le;
+    le = scheme_link_expr(sinfo->parent_type_expr, info);
+    sinfo->parent_type_expr = le;
+  }
 
   return scheme_make_syntax_link(struct_execute, expr);
 }
@@ -809,12 +838,14 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
   if (in_rec) {
     info->num_fields = count;
 
-    if (in_rec->can_optimize_constants)
-      info->memo_names = scheme_make_struct_names(info->name,
-						  info->fields,
-						  0, 
-						  &info->count);
-    else
+    if (in_rec->can_optimize_constants) {
+      Scheme_Object **sa;
+      sa = scheme_make_struct_names(info->name,
+				    info->fields,
+				    0, 
+				    &info->count);
+      info->memo_names = sa;
+    } else
       info->memo_names = NULL;
 
     return scheme_make_syntax_compile(struct_link, (Scheme_Object *)info);

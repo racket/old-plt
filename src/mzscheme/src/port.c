@@ -563,11 +563,14 @@ scheme_init_port (Scheme_Env *env)
     scheme_set_param(config, MZCONFIG_ERROR_PORT,
 		     scheme_orig_stdout_port);
 
-    scheme_set_param(config, MZCONFIG_LOAD_HANDLER,
-		     scheme_make_prim_w_arity2(default_load,
-					       "default-load-handler",
-					       1, 1,
-					       0, -1));
+    {
+      Scheme_Object *dlh;
+      dlh = scheme_make_prim_w_arity2(default_load,
+				      "default-load-handler",
+				      1, 1,
+				      0, -1);
+      scheme_set_param(config, MZCONFIG_LOAD_HANDLER, dlh);
+    }
 
     scheme_set_param(config, MZCONFIG_LOAD_DIRECTORY, scheme_false);
 
@@ -632,10 +635,13 @@ scheme_init_port (Scheme_Env *env)
 						     "default-port-print-handler", 
 						     2, 2);
 
-    scheme_set_param(config, MZCONFIG_PORT_PRINT_HANDLER,
-		     scheme_make_prim_w_arity(sch_default_global_port_print_handler,
-					      "default-global-port-print-handler",
-					      2, 2));
+    {
+      Scheme_Object *gpph;
+      gpph = scheme_make_prim_w_arity(sch_default_global_port_print_handler,
+				      "default-global-port-print-handler",
+				      2, 2);
+      scheme_set_param(config, MZCONFIG_PORT_PRINT_HANDLER, gpph);
+    }
   }
 
   scheme_add_global_constant("eof", scheme_eof, env);
@@ -1247,12 +1253,14 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->sema = scheme_make_sema(1);
 #endif
 
-  if (must_close)
-    ip->mref = scheme_add_managed(NULL,
-				  (Scheme_Object *)ip, 
-				  (Scheme_Close_Manager_Client *)scheme_close_input_port, 
-				  NULL, must_close);
-  else
+  if (must_close) {
+    Scheme_Manager_Ref *mref;    
+    mref = scheme_add_managed(NULL,
+			      (Scheme_Object *)ip, 
+			      (Scheme_Close_Manager_Client *)scheme_close_input_port, 
+			      NULL, must_close);
+    ip->mref = mref;
+  } else
     ip->mref = NULL;
 
   return (ip);
@@ -1299,12 +1307,14 @@ scheme_make_output_port(Scheme_Object *subtype,
   op->sema = scheme_make_sema(1);
 #endif
 
-  if (must_close)
-    op->mref = scheme_add_managed(NULL,
-				  (Scheme_Object *)op, 
-				  (Scheme_Close_Manager_Client *)scheme_close_output_port, 
-				  NULL, must_close);
-  else
+  if (must_close) {
+    Scheme_Manager_Ref *mref;
+    mref = scheme_add_managed(NULL,
+			      (Scheme_Object *)op, 
+			      (Scheme_Close_Manager_Client *)scheme_close_output_port, 
+			      NULL, must_close);
+    op->mref = mref;
+  } else
     op->mref = NULL;
 
   return op;
@@ -1545,7 +1555,11 @@ scheme_ungetc (int ch, Scheme_Object *port)
     else
       ip->ungotten_allocated = 5;
 
-    ip->ungotten = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
+    {
+      unsigned char *uca;
+      uca = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
+      ip->ungotten = uca;
+    }
     if (oldc)
       memcpy(ip->ungotten, old, oldc);
   }
@@ -1938,7 +1952,11 @@ _scheme_make_named_file_input_port(FILE *fp, const char *filename,
 			       file_need_wakeup,
 			       1);
 
-  ip->name = scheme_strdup(filename);
+  {
+    char *s;
+    s = scheme_strdup(filename);
+    ip->name = s;
+  }
 
   return (Scheme_Object *)ip;
 }
@@ -2722,13 +2740,17 @@ make_indexed_string (const char *str, long len)
       is->string = (char *)str;
       is->size = -len;
     } else {
-      is->string = (char *)scheme_malloc_atomic(len);
+      char *ca;
+      ca = (char *)scheme_malloc_atomic(len);
+      is->string = ca;
       memcpy(is->string, str, len);
       is->size = len;
     }
   } else {
+    char *ca;
     is->size = 100;
-    is->string = (char *)scheme_malloc_atomic(is->size + 1);
+    ca = (char *)scheme_malloc_atomic(is->size + 1);
+    is->string = ca;
   }
   is->index = 0;
   return (is);
@@ -2778,7 +2800,11 @@ string_write_string(char *str, long len, Scheme_Output_Port *port)
     else
       is->size *= 2;
 
-    is->string = (char *)scheme_malloc_atomic(is->size + 1);
+    {
+      char *ca;
+      ca = (char *)scheme_malloc_atomic(is->size + 1);
+      is->string = ca;
+    }
     memcpy(is->string, old, is->index);
   }
   
@@ -4282,7 +4308,11 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   ld->type = scheme_rt_load_data;
 #endif
   ld->param = handler_param;
-  ld->filename = scheme_make_sized_string((char *)filename, -1, 0);
+  {
+    Scheme_Object *ss;
+    ss = scheme_make_sized_string((char *)filename, -1, 0);
+    ld->filename = ss;
+  }
   ld->config = config;
   ld->load_dir = load_dir;
   ld->old_load_dir = scheme_get_param(config, MZCONFIG_LOAD_DIRECTORY);
@@ -4551,7 +4581,11 @@ file_position(int argc, Scheme_Object *argv[])
 	  
 	  old = is->string;
 	  is->size = is->index + n;
-	  is->string = (char *)scheme_malloc_atomic(is->size + 1);
+	  {
+	    char *ca;
+	    ca = (char *)scheme_malloc_atomic(is->size + 1);
+	    is->string = ca;
+	  }
 	  memcpy(is->string, old, is->index);
 	}
 	if (n > is->u.hot)
@@ -4682,7 +4716,11 @@ static void pipe_write(char *str, long len, Scheme_Output_Port *p)
     old = pipe->buf;
     newlen = 2 * (pipe->buflen + len);
 
-    pipe->buf = (unsigned char *)scheme_malloc_atomic(newlen);
+    {
+      unsigned char *uca;
+      uca = (unsigned char *)scheme_malloc_atomic(newlen);
+      pipe->buf = uca;
+    }
 
     if (pipe->bufstart <= pipe->bufend) {
       memcpy(pipe->buf, old + pipe->bufstart, pipe->bufend - pipe->bufstart);
@@ -4818,7 +4856,11 @@ void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
   pipe->type = scheme_rt_pipe;
 #endif
   pipe->buflen = 100;
-  pipe->buf = (unsigned char *)scheme_malloc_atomic(pipe->buflen);
+  {
+    unsigned char *uca;
+    uca = (unsigned char *)scheme_malloc_atomic(pipe->buflen);
+    pipe->buf = uca;
+  }
   pipe->bufstart = pipe->bufend = 0;
   pipe->eof = 0;
 #ifdef MZ_REAL_THREADS
@@ -5196,11 +5238,19 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     command = SCHEME_STR_VAL(args[0]);
   } else  {
     argv = MALLOC_N(char *, c + 1);
-    argv[0] = scheme_expand_filename(SCHEME_STR_VAL(args[0]),
-				     SCHEME_STRTAG_VAL(args[0]),
-				     name, NULL);
-    /* This is for Windows: */
-    argv[0] = scheme_normal_path_case(argv[0], strlen(argv[0]));
+    {
+      Scheme_Object *ef;
+      ef =  scheme_expand_filename(SCHEME_STR_VAL(args[0]),
+				   SCHEME_STRTAG_VAL(args[0]),
+				   name, NULL);
+      argv[0] =ef;
+    }
+    {
+      /* This is for Windows: */
+      Scheme_Object *np;
+      np = scheme_normal_path_case(argv[0], strlen(argv[0]));
+      argv[0] = np;
+    }
     
     for (i = 1; i < c; i++) { 
       if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
@@ -7006,15 +7056,20 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
       if (!bind(s, (struct sockaddr *)&addr, sizeof(addr)))
 	if (!listen(s, backlog)) {
-	  listener_t *l = MALLOC_ONE_TAGGED(listener_t);
+	  listener_t *l;
 
+	  l = MALLOC_ONE_TAGGED(listener_t);
 	  l->type = scheme_listener_type;
 	  l->s = s;
-	  l->mref = scheme_add_managed(NULL,
-				       (Scheme_Object *)l,
-				       (Scheme_Close_Manager_Client *)stop_listener,
-				       NULL,
-				       1);
+	  {
+	    Scheme_Manager_Reference *mref;
+	    mref = scheme_add_managed(NULL,
+				      (Scheme_Object *)l,
+				      (Scheme_Close_Manager_Client *)stop_listener,
+				      NULL,
+				      1);
+	    l->mref = mref;
+	  }
 
 	  scheme_file_open_count++;
 	  REGISTER_SOCKET(s);

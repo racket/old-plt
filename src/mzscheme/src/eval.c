@@ -201,11 +201,14 @@ scheme_init_eval (Scheme_Env *env)
     scheme_install_type_reader(scheme_begin0_sequence_type, read_sequence_save_first);
 
 
-    scheme_set_param(config, MZCONFIG_EVAL_HANDLER,
-		     scheme_make_prim_w_arity2(default_eval_handler,
-					       "default-eval-handler",
-					       1, 1,
-					       0, -1));
+    {
+      Scheme_Object *eh;
+      eh = scheme_make_prim_w_arity2(default_eval_handler,
+				     "default-eval-handler",
+				     1, 1,
+				     0, -1);
+      scheme_set_param(config, MZCONFIG_EVAL_HANDLER, eh);
+    }
   }
     
   scheme_add_global_constant("eval", 
@@ -430,8 +433,11 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
   }
 
   if (final) {
-    for (i = 0; i < n; i++)
-      evals[i] = scheme_get_eval_type(app->args[i]);
+    for (i = 0; i < n; i++) {
+      char etype;
+      etype = scheme_get_eval_type(app->args[i]);
+      evals[i] = etype;
+    }
 
     scheme_end_stubborn_change((void *)app);
   }
@@ -454,11 +460,17 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
 
   info = scheme_link_info_extend(info, n - 1, 0, 0);
 
-  for (i = 0; i < n; i++)
-    app->args[i] = scheme_link_expr(app->args[i], info);
+  for (i = 0; i < n; i++) {
+    Scheme_Object *le;
+    le = scheme_link_expr(app->args[i], info);
+    app->args[i] = le;
+  }
 
-  for (i = 0; i < n; i++)
-    evals[i] = scheme_get_eval_type(app->args[i]);
+  for (i = 0; i < n; i++) {
+    char et;
+    et = scheme_get_eval_type(app->args[i]);
+    evals[i] = et;
+  }
 
   return o;
 }
@@ -466,12 +478,16 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
 static Scheme_Object *link_branch(Scheme_Object *o, Link_Info *info)
 {
   Scheme_Branch_Rec *b;
+  Scheme_Object *t, *tb, *fb;
 
   b = (Scheme_Branch_Rec *)o;
 
-  b->test = scheme_link_expr(b->test, info);
-  b->tbranch = scheme_link_expr(b->tbranch, info);
-  b->fbranch = scheme_link_expr(b->fbranch, info);
+  t = scheme_link_expr(b->test, info);
+  tb = scheme_link_expr(b->tbranch, info);
+  fb = scheme_link_expr(b->fbranch, info);
+  b->test = t;
+  b->tbranch = tb;
+  b->fbranch = fb;
 
   return o;
 }
@@ -538,8 +554,11 @@ static Scheme_Object *link_sequence(Scheme_Object *o, Link_Info *info)
   Scheme_Sequence *s = (Scheme_Sequence *)o;
   int i;
 
-  for (i = s->count; i--; )
-    s->array[i] = scheme_link_expr(s->array[i], info);
+  for (i = s->count; i--; ) {
+    Scheme_Object *le;
+    le = scheme_link_expr(s->array[i], info);
+    s->array[i] = le;
+  }
   
   return look_for_letv_change(s);
 }
@@ -603,9 +622,13 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
   case scheme_with_cont_mark_type:
     {
       Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)expr;
-      wcm->key = scheme_link_expr(wcm->key, info);
-      wcm->val = scheme_link_expr(wcm->val, info);
-      wcm->body = scheme_link_expr(wcm->body, info);
+      Scheme_Object *k, *v, *b;
+      k = scheme_link_expr(wcm->key, info);
+      v = scheme_link_expr(wcm->val, info);
+      b = scheme_link_expr(wcm->body, info);
+      wcm->key = k;
+      wcm->val = v;
+      wcm->body = b;
       return (Scheme_Object *)wcm;
     }
   case scheme_compiled_unclosed_procedure_type:
@@ -1944,8 +1967,10 @@ int scheme_check_runstack(long size)
 void *scheme_enlarge_runstack(long size, void *(*k)())
 {
   Scheme_Process *p = scheme_current_process;
-  Scheme_Saved_Stack *saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
+  Scheme_Saved_Stack *saved;
   void *v;
+
+  saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
 
 #ifdef MZTAG_REQUIRED
   saved->type = scheme_rt_saved_stack;
@@ -2014,7 +2039,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     p->ku.k.i1 = num_rands;
     if (num_rands >= 0) {
       /* Copy rands: */
-      p->ku.k.p2 = (void *)MALLOC_N(Scheme_Object*, num_rands);
+      void *ra;
+      ra = (void *)MALLOC_N(Scheme_Object*, num_rands);
+      p->ku.k.p2 = ra;
       {
 	int i;
 	for (i = num_rands; i--; )
@@ -2095,7 +2122,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  p->tail_buffer = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+	  {
+	    Scheme_Object **tb;
+	    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+	    p->tail_buffer = tb;
+	  }
 	}
 #ifdef AGRESSIVE_ZERO_TB
 	p->tail_buffer_set = 0;
@@ -2275,7 +2306,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  p->tail_buffer = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+	  {
+	    Scheme_Object **tb;
+	    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+	    p->tail_buffer = tb;
+	  }
 	}
 #ifdef AGRESSIVE_ZERO_TB
 	p->tail_buffer_set = 0;
@@ -2383,8 +2418,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       if (num_rands == 1)
 	c->value = value;
-      else
-	c->value = scheme_values(num_rands, (Scheme_Object **)value);
+      else {
+	Scheme_Object *vals;
+	vals = scheme_values(num_rands, (Scheme_Object **)value);
+	c->value = vals;
+      }
       scheme_longjmpup(&c->buf);
       
       return NULL;
@@ -2545,7 +2583,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 		*(randsp++) = SCHEME_ENVBOX_VAL(stack[SCHEME_LOCAL_POS(v)]);
 		break;
 	      default:
-		*(randsp++) = _scheme_eval_compiled_expr_wp(v, p);
+		{
+		  Scheme_Object *er;
+		  er = _scheme_eval_compiled_expr_wp(v, p);
+		  *(randsp++) = er;
+		}
 		break;
 	      }
 
@@ -2664,8 +2706,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	    UPDATE_THREAD_RSPTR_FOR_GC();
 
-	    while (c--)
-	      stack[c] = scheme_make_envunbox(scheme_undefined);
+	    while (c--) {
+	      Scheme_Object *ub;
+	      ub = scheme_make_envunbox(scheme_undefined);
+	      stack[c] = ub;
+	    }
 	  }
 
 	  goto eval_top;
@@ -2685,8 +2730,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  UPDATE_THREAD_RSPTR_FOR_GC();
 
 	  /* Create unfinished closures */
-	  while (i--)
-	    stack[i] = scheme_make_linked_closure(p, a[i], 0); 
+	  while (i--) {
+	    Scheme_Object *uc;
+	    uc = scheme_make_linked_closure(p, a[i], 0);
+	    stack[i] = uc;
+	  }
 
 	  /* Close them: */
 	  i = l->count;

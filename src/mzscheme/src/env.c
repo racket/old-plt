@@ -516,7 +516,7 @@ current_loaded_library_table(int argc, Scheme_Object *argv[])
 
 static Scheme_Env *make_env (void)
 {
-  Scheme_Hash_Table *globals;
+  Scheme_Hash_Table *globals, *ll;
   Scheme_Env *env;
 
   globals = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 
@@ -527,9 +527,14 @@ static Scheme_Env *make_env (void)
   env->type = scheme_namespace_type;
   env->globals = globals;
 
-  env->loaded_libraries = scheme_hash_table(3, SCHEME_hash_ptr, 0, 0);
+  ll = scheme_hash_table(3, SCHEME_hash_ptr, 0, 0);
+  env->loaded_libraries = ll;
 
-  env->init = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
+  {
+    Scheme_Comp_Env *me;
+    me = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
+    env->init = me;
+  }
 #ifdef MZTAG_REQUIRED
   env->init->type = scheme_rt_comp_env;
 #endif
@@ -875,16 +880,17 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
 static void init_compile_data(Scheme_Comp_Env *env)
 {
   Compile_Data *data;
-  int i, c;
+  int i, c, *use;
 
   data = COMPILE_DATA(env);
 
   data->stat_dists = NULL;
   data->sd_depths = NULL;
   c = env->num_bindings;
-  data->use = MALLOC_N_ATOMIC(int, c);
+  use = MALLOC_N_ATOMIC(int, c);
+  data->use = use;
   for (i = 0; i < c; i++)
-    data->use[i] = 0;
+    use[i] = 0;
 
   data->constants = NULL;
 }
@@ -902,7 +908,10 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   frame->type = scheme_rt_comp_env;
 #endif
 
-  frame->values = MALLOC_N(Scheme_Object *, count);
+  {
+    Scheme_Object **vals = MALLOC_N(Scheme_Object *, count);
+    frame->values = vals;
+  }
 
   frame->num_bindings = num_bindings;
   frame->flags = flags | (base->flags & SCHEME_PRIM_GLOBALS_ONLY);
@@ -990,8 +999,8 @@ scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flag
   Scheme_Comp_Env *frame;
   int len, i, count;
   
-
-  count = len = scheme_list_length(vals);
+  len = scheme_list_length(vals);
+  count = len;
 
   frame = scheme_new_compilation_frame(count, flags, env);
 
@@ -1064,9 +1073,12 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
 		      : 0));
   
   if (!data->stat_dists) {
-    int k;
-    data->stat_dists = MALLOC_N(char*, frame->num_bindings);
-    data->sd_depths = MALLOC_N_ATOMIC(int, frame->num_bindings);
+    int k, *ia;
+    char **ca;
+    ca = MALLOC_N(char*, frame->num_bindings);
+    data->stat_dists = ca;
+    ia = MALLOC_N_ATOMIC(int, frame->num_bindings);
+    data->sd_depths = ia;
     for (k = frame->num_bindings; k--; )
       data->sd_depths[k] = 0;
   }
@@ -1283,11 +1295,15 @@ Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int m
   naya->pos = 0;
   naya->anchor_offset = 0;
   if (mapc) {
-    int i;
+    int i, *ia;
+    short *sa;
 
-    naya->old_pos = MALLOC_N_ATOMIC(short, mapc);
-    naya->new_pos = MALLOC_N_ATOMIC(short, mapc);
-    naya->flags = MALLOC_N_ATOMIC(int, mapc);
+    sa = MALLOC_N_ATOMIC(short, mapc);
+    naya->old_pos = sa;
+    sa = MALLOC_N_ATOMIC(short, mapc);
+    naya->new_pos = sa;
+    ia = MALLOC_N_ATOMIC(int, mapc);
+    naya->flags = ia;
 
     /* necessary? added when changed allocation to atomic */
     for (i = mapc; i--; ) {

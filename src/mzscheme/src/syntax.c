@@ -372,14 +372,16 @@ scheme_init_empty_cond(Scheme_Env *env)
      can't expand a (cond ...) into something that raises an error at
      a final `else'. */
   Scheme_Bucket *b;
+  void *cs;
 
   b = scheme_global_bucket(scheme_intern_symbol("#%cond"), env);
   
   REGISTER_SO(nonempty_cond);
 
   nonempty_cond = (Scheme_Object *)b->val;
-  b->val = (void *)scheme_make_compiled_syntax(empty_cond_syntax, 
-					       empty_cond_expand);
+  cs = (void *)scheme_make_compiled_syntax(empty_cond_syntax, 
+					   empty_cond_expand);
+  b->val = cs;
 }
 
 Scheme_Object *
@@ -688,7 +690,8 @@ quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *re
   if (rec->can_optimize_constants)
     return v;
   else {
-    Scheme_Object *q = scheme_alloc_small_object();
+    Scheme_Object *q;
+    q = scheme_alloc_small_object();
     q->type = scheme_quote_compilation_type;
     SCHEME_PTR_VAL(q) = v;
     return q;
@@ -888,14 +891,17 @@ set_link(Scheme_Object *data, Link_Info *link)
   val = scheme_link_expr(val, link);
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)) {
-    Scheme_Let_Value *lv;
-    int flags;
+    Scheme_Let_Value *lv, *cv;
+    int flags, li;
+
+    cv = scheme_compiled_void(link->can_optimize_constants);
 
     lv = MALLOC_ONE_TAGGED(Scheme_Let_Value);
     lv->type = scheme_let_value_type;
-    lv->body = scheme_compiled_void(link->can_optimize_constants);
+    lv->body = cv;
     lv->count = 1;
-    lv->position = scheme_link_info_lookup(link, SCHEME_LOCAL_POS(var), &flags);
+    li = scheme_link_info_lookup(link, SCHEME_LOCAL_POS(var), &flags);
+    lv->position = li;
     lv->autobox = (flags & SCHEME_INFO_BOXED);
     lv->value = val;
 
@@ -1016,8 +1022,11 @@ case_lambda_execute(Scheme_Object *expr)
   for (i = 0; i < seqin->count; i++) {
     if (SAME_TYPE(SCHEME_TYPE(seqin->array[i]), scheme_linked_closure_type))
       seqout->array[i] = seqin->array[i];
-    else
-      seqout->array[i] = scheme_make_linked_closure(p, seqin->array[i], 1);
+    else {
+      Scheme_Object *lc;
+      lc = scheme_make_linked_closure(p, seqin->array[i], 1);
+      seqout->array[i] = lc;
+    }
   }
 
   scheme_end_stubborn_change((void *)seqout);
@@ -1031,8 +1040,11 @@ case_lambda_link(Scheme_Object *expr, Link_Info *link)
   int i;
   Scheme_Case_Lambda *seq = (Scheme_Case_Lambda *)expr;
 
-  for (i = 0; i < seq->count; i++)
-    seq->array[i] = scheme_link_expr(seq->array[i], link);
+  for (i = 0; i < seq->count; i++) {
+    Scheme_Object *le;
+    le = scheme_link_expr(seq->array[i], link);
+    seq->array[i] = le;
+  }
 
   return scheme_make_syntax_link(case_lambda_execute, expr);
 }
@@ -1122,8 +1134,11 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   recs = MALLOC_N_RT(Scheme_Compile_Info, count);
   scheme_init_compile_recs(rec, recs, count);
 
-  for (i = 0; i < count; i++, list = SCHEME_CDR(list))
-    cl->array[i] = scheme_compile_expr(SCHEME_CAR(list), env, recs + i);
+  for (i = 0; i < count; i++, list = SCHEME_CDR(list)) {
+    Scheme_Object *ce;
+    ce = scheme_compile_expr(SCHEME_CAR(list), env, recs + i);
+    cl->array[i] = ce;
+  }
 
   scheme_end_stubborn_change((void *)cl);
 
@@ -1137,7 +1152,8 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   Scheme_Object *first, *last, *args, *body, *c, *orig_form = form;
 
-  last = first = cons(case_lambda_symbol, scheme_null);
+  first = cons(case_lambda_symbol, scheme_null);
+  last = first;
   form = SCHEME_CDR(form);
 
   while (SCHEME_PAIRP(form)) {
@@ -1203,7 +1219,11 @@ bangboxvalue_execute(Scheme_Object *data)
 
       for (i = p->ku.multiple.count; i--; )
 	naya[i] = a[i];
-      naya[pos] = scheme_make_envunbox(naya[pos]);
+      {
+	Scheme-Object *eb;
+	eb = scheme_make_envunbox(naya[pos]);
+	naya[pos] = eb;
+      }
 
       p->ku.multiple.array = naya;
     }
@@ -1276,9 +1296,10 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
       clv = (Scheme_Compiled_Let_Value *)head->body;
 
       for (i = 0; i < head->num_clauses; i++, clv = (Scheme_Compiled_Let_Value *)clv->body) {
-	Scheme_Let_One *lo = MALLOC_ONE_TAGGED(Scheme_Let_One);
+	Scheme_Let_One *lo;
 	int j;
 
+	lo = MALLOC_ONE_TAGGED(Scheme_Let_One);
 	lo->type = scheme_let_one_type;
 
 	/* First `i+1' now "exist at runtime". */
@@ -1288,8 +1309,16 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
 	for (j = 0; j <= i; j++)
 	  scheme_link_info_add_mapping(linfo, j, i - j, 0);
 
-	lo->value = scheme_link_expr(clv->value, linfo);
-	lo->eval_type = scheme_get_eval_type(lo->value);
+	{
+	  Scheme_Object *le;
+	  le = scheme_link_expr(clv->value, linfo);
+	  lo->value = le;
+	}
+	{
+	  int et;
+	  et = scheme_get_eval_type(lo->value);
+	  lo->eval_type = et;
+	}
 
 	if (last)
 	  ((Scheme_Let_One *)last)->body = (Scheme_Object *)lo;
@@ -1360,10 +1389,12 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
   }
 
   if (num_rec_procs) {
+    Scheme_Object **sa;
     letrec = MALLOC_ONE_TAGGED(Scheme_Letrec);
     letrec->type = scheme_letrec_type;
     letrec->count = num_rec_procs;
-    letrec->procs = MALLOC_N(Scheme_Object *, num_rec_procs);
+    sa = MALLOC_N(Scheme_Object *, num_rec_procs);
+    letrec->procs = sa;
   } else
     letrec = NULL;
 
@@ -1389,19 +1420,24 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
       
       lv->type = scheme_let_value_type;
       lv->value = expr;
-      if (clv->count)
-	lv->position = scheme_link_info_lookup(linfo, clv->position, NULL) + extra_alloc;
-      else
+      if (clv->count) {
+	int li;
+	l = scheme_link_info_lookup(linfo, clv->position, NULL);
+	lv->position = li + extra_alloc;
+      } else
 	lv->position = 0;
       lv->count = clv->count;
       lv->autobox = recbox;
 
       for (j = lv->count; j--; )
 	if (!recbox
-	    && (scheme_link_info_flags(linfo, opos + j) & SCHEME_INFO_BOXED))
-	  lv->value = scheme_make_syntax_link(bangboxvalue_execute, 
-					      cons(scheme_make_integer(j),
-						   lv->value));
+	    && (scheme_link_info_flags(linfo, opos + j) & SCHEME_INFO_BOXED)) {
+	  Scheme_Object *sl;
+	  sl = scheme_make_syntax_link(bangboxvalue_execute, 
+				       cons(scheme_make_integer(j),
+					    lv->value));
+	  lv->value = sl;
+	}
     }
     opos += clv->count;
   }
@@ -1488,7 +1524,8 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 
   names = MALLOC_N_STUBBORN(Scheme_Object *, num_bindings);
 
-  env = frame = scheme_new_compilation_frame(num_bindings, SCHEME_LET_FRAME, env);
+  frame = scheme_new_compilation_frame(num_bindings, SCHEME_LET_FRAME, env);
+  env = frame;
 
   recs = MALLOC_N_RT(Scheme_Compile_Info, (num_clauses + 1));
 
@@ -1551,9 +1588,11 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
     if (lv->count == 1)
       recs[i].value_name = names[pre_k];
 
-    if (!recursive)
-      lv->value = scheme_compile_expr(SCHEME_CADR(binding), env, &recs[i]);
-    else
+    if (!recursive) {
+      Scheme_Object *ce;
+      ce = scheme_compile_expr(SCHEME_CADR(binding), env, &recs[i]);
+      lv->value = ce;
+    } else
       lv->value = SCHEME_CADR(binding);
     
     if (star || recursive) {
@@ -1576,12 +1615,19 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
   }
 
   recs[num_clauses].value_name = defname;
-  last->body = scheme_compile_sequence(forms, env, recs + num_clauses);
+  {
+    Scheme-Object *cs;
+    cs = scheme_compile_sequence(forms, env, recs + num_clauses);
+    last->body = cs;
+  }
 
   /* Save flags: */
   lv = (Scheme_Compiled_Let_Value *)first;
-  for (i = 0; i < num_clauses; i++, lv = (Scheme_Compiled_Let_Value *)lv->body)
-    lv->flags = scheme_env_get_flags(env, lv->position, lv->count);
+  for (i = 0; i < num_clauses; i++, lv = (Scheme_Compiled_Let_Value *)lv->body) {
+    int flags;
+    flags = scheme_env_get_flags(env, lv->position, lv->count);
+    lv->flags = flags;
+  }
 
   {
     Scheme_Let_Header *head;
@@ -1967,8 +2013,11 @@ begin0_link (Scheme_Object *obj, Link_Info *info)
   i = ((Scheme_Sequence *)obj)->count;
   array = ((Scheme_Sequence *)obj)->array;
 
-  while (i--)
-    array[i] = scheme_link_expr(array[i], info);
+  while (i--) {
+    Scheme_Object *le;
+    le = scheme_link_expr(array[i], info);
+    array[i] = le;
+  }
 
   return scheme_make_syntax_link(begin0_execute, obj);
 }
@@ -2455,6 +2504,8 @@ static Scheme_Object *void_execute(Scheme_Object *expr)
 void scheme_register_syntax(const char *name, 
 			    Scheme_Syntax_Registered *f)
 {
+  Scheme_Object *s;
+
   if (num_link_names == link_names_size) {
     Linker_Name *old = linker_names;
 
@@ -2471,7 +2522,8 @@ void scheme_register_syntax(const char *name,
 #ifdef MZTAG_REQUIRED
   linker_names[num_link_names].type = scheme_rt_linker_name;
 #endif
-  linker_names[num_link_names].sym = scheme_intern_symbol(name);
+  s = scheme_intern_symbol(name);
+  linker_names[num_link_names].sym = s;
   linker_names[num_link_names].f = f;
   num_link_names++;
 }
@@ -2573,13 +2625,15 @@ static Scheme_Object *write_let_one(Scheme_Object *obj)
 static Scheme_Object *read_let_one(Scheme_Object *obj)
 {
   Scheme_Let_One *lo;
+  int et;
  
   lo = (Scheme_Let_One *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Let_One));
   lo->type = scheme_let_one_type;
 
   lo->value = SCHEME_CAR(obj);
   lo->body = SCHEME_CDR(obj);
-  lo->eval_type = scheme_get_eval_type(lo->value);
+  et = scheme_get_eval_type(lo->value);
+  lo->eval_type = et;
 
   scheme_end_stubborn_change((void *)lo);
 
@@ -2601,8 +2655,11 @@ static Scheme_Object *write_letrec(Scheme_Object *obj)
 
 static Scheme_Object *read_letrec(Scheme_Object *obj)
 {
-  Scheme_Letrec *lr = MALLOC_ONE_TAGGED(Scheme_Letrec);
+  Scheme_Letrec *lr;
   int i, c;
+  Scheme_Object **sa;
+
+  lr = MALLOC_ONE_TAGGED(Scheme_Letrec);
 
   lr->type = scheme_letrec_type;
 
@@ -2612,7 +2669,8 @@ static Scheme_Object *read_letrec(Scheme_Object *obj)
   lr->body = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
-  lr->procs = MALLOC_N(Scheme_Object*, c);
+  sa = MALLOC_N(Scheme_Object*, c);
+  lr->procs = sa;
   for (i = 0; i < c; i++) {
     lr->procs[i] = SCHEME_CAR(obj);
     obj = SCHEME_CDR(obj);

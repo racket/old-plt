@@ -100,7 +100,11 @@ scheme_hash_table (int size, int type, int has_const, int forever)
     memset((char *)table->buckets, 0, asize);
   } else
 #endif
-    table->buckets = (Scheme_Bucket **)scheme_malloc(asize);
+    {
+      Scheme_Bucket **ba;
+      ba = (Scheme_Bucket **)scheme_malloc(asize);
+      table->buckets = ba;
+    }
 
   table->has_constants = has_const;
   table->forever = forever;
@@ -196,7 +200,11 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
       memset((char *)table->buckets, 0, asize);
     } else
 #endif
-      table->buckets = (Scheme_Bucket **)scheme_malloc(asize);
+      {
+	Scheme_Bucket **ba;
+	ba = (Scheme_Bucket **)scheme_malloc(asize);
+	table->buckets = ba;
+      }
 
     table->count = 0;
     if (table->weak) {
@@ -239,7 +247,9 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
       ((Scheme_Bucket_With_Const_Flag *)bucket)->flags = 0;
 
     if (table->weak) {
-      bucket->key = (char *)MALLOC_ONE_WEAK(void *);
+      char *kb;
+      kb = (char *)MALLOC_ONE_WEAK(void *)
+      bucket->key = kb;
       *(void **)bucket->key = (void *)key;
       /* FXIME: Precise GC */
       scheme_weak_reference_indirect((void **)bucket->key, (void *)key);

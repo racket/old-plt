@@ -369,7 +369,7 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
   }
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
-    scheme_signal_error("Element no longer valid");
+    scheme_signal_error("element-replace-html: Element no longer valid");
   }
 
   MX_ELEMENT_VALIDITY(argv[0]) = FALSE;   
@@ -385,6 +385,54 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
   SysFreeString(htmlBSTR);
 
   return scheme_void;
+}
+
+Scheme_Object *mx_element_get_html(int argc,Scheme_Object **argv) {
+  BSTR bstr;
+  IHTMLElement *pIHTMLElement;
+  Scheme_Object *retval;
+
+  if (MX_ELEMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("get-html","mx-element",0,argc,argv);
+  }
+
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("get-html: Element no longer valid");
+  }
+
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
+
+  pIHTMLElement->get_innerHTML(&bstr);
+
+  retval = BSTRToSchemeString(bstr);
+
+  SysFreeString(bstr);
+
+  return retval;
+}
+
+Scheme_Object *mx_element_get_text(int argc,Scheme_Object **argv) {
+  BSTR bstr;
+  IHTMLElement *pIHTMLElement;
+  Scheme_Object *retval;
+
+  if (MX_ELEMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("get-text","mx-element",0,argc,argv);
+  }
+
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("get-text}: Element no longer valid");
+  }
+
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
+
+  pIHTMLElement->get_innerText(&bstr);
+
+  retval = BSTRToSchemeString(bstr);
+
+  SysFreeString(bstr);
+
+  return retval;
 }
 
 Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {

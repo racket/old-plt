@@ -324,6 +324,8 @@ MX_PRIM_DECL(mx_element_append_html);
 MX_PRIM_DECL(mx_element_replace_html);
 MX_PRIM_DECL(mx_element_insert_text);
 MX_PRIM_DECL(mx_element_append_text);
+MX_PRIM_DECL(mx_element_get_html);
+MX_PRIM_DECL(mx_element_get_text);
 MX_PRIM_DECL(mx_element_focus);
 MX_PRIM_DECL(mx_element_selection);
 MX_PRIM_DECL(mx_element_set_selection);

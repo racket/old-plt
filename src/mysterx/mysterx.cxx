@@ -161,6 +161,8 @@ static MX_PRIM mxPrims[] = {
   { mx_element_insert_text,"element-insert-text",2,2 },
   { mx_element_append_text,"element-append-text",2,2 },
   { mx_element_replace_html,"element-replace-html",2,2 },
+  { mx_element_get_html,"element-get-html",1,1 },
+  { mx_element_get_text,"element-get-text",1,1 },
   { mx_element_focus,"element-focus",1,1 },
   { mx_element_selection,"element-selection",1,1 },
   { mx_element_set_selection,"element-set-selection!",2,2 },
@@ -3771,11 +3773,11 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
   int i;
   
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("document-elements-with-tag","mx-document",0,argc,argv);
+    scheme_wrong_type("elements-with-tag","mx-document",0,argc,argv);
   }
   
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("document-elements-with-tag","string",1,argc,argv);
+    scheme_wrong_type("elements-with-tag","string",1,argc,argv);
   }
   
   pDocument = MX_DOCUMENT_VAL(argv[0]); 
@@ -3799,9 +3801,9 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
     pDispatch = getElementInCollection(pCollection,i);
 
     hr = pDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
-    
+
     if (hr != S_OK || pIHTMLElement == NULL) {
-      codedComError("document-elements-with-tag: Can't get IHTMLElement interface",hr);
+      codedComError("elements-with-tag: Can't get IHTMLElement interface",hr);
     }
 
     elt = (MX_Element *)scheme_malloc(sizeof(MX_Element));
@@ -3812,7 +3814,7 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
     elt->pIHTMLElement = pIHTMLElement;
 
     mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
-  
+
     retval = scheme_make_pair((Scheme_Object *)elt,retval);
   }
   

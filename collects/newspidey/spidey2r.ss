@@ -7,6 +7,7 @@
                       (import mzlib:core-flat^
                               (zodiac : zodiac:system^))
                       (include "type-reconstruct.ss")
+                      (include "debug.ss")
                       (include "parse-zodiac.ss"))
                     cf zodiac)])
     (export (open p))))

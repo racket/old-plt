@@ -70,8 +70,19 @@
             (if (null? labels)
                 *empty-type*
                 (make-Type-Union
-                 (let ([arities (apply append (map lookup-ars-from-label labels))]
-                       [deltas (set-var-upper-bounds alpha '())])
+                 (let* ([arities (apply append (map (lambda (label)
+                                                       (lookup-ars-from-label (Label-name label)))
+                                                     labels))]
+                        [deltas (set-var-upper-bounds alpha '())]
+;                        [doms-omega (apply APPLY
+;                                     append
+;                                     (map
+;                                      (lambda (delta)
+;                                        (lookup-hi-and-filter
+;                                         Set-var?
+;                                         (make-Dom-interval (make-Interval 'star 'star) 0 delta)))
+;                                      deltas))]
+			)
                    ;;(printf "alpha: ~a~nlabels: ~a~ndeltas: ~a~n" alpha labels deltas)
                    (map
                     (lambda (arity)
@@ -82,16 +93,17 @@
                              [omega-doms (let loop ([j 1])
                                            (if (> j max-j)
                                                '()
-                                               (append
-                                                (remove-duplicates-eq
+                                               (cons
+                                                (types->type (remove-duplicates-eq
                                                  (apply
                                                   append
+                                                  ;; doms-omega APPLY
                                                   (map
                                                    (lambda (delta)
                                                      (lookup-hi-and-filter
                                                       Set-var?
                                                       (make-Dom-interval int j delta)))
-                                                   deltas)))
+                                                   deltas))))
                                                 (loop (add1 j)))))]
                              [omega-rng (lookup-filtered-set-exp Set-var? (make-Rng-arity arity alpha))])
                         ;;(printf "max-j: ~a~nomega-doms: ~a~n" max-j omega-doms)

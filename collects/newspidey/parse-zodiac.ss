@@ -6,7 +6,9 @@
 (define (gensym)
   (set! counter (add1 counter))
   (string->symbol (string-append "g" (number->string counter))))
-  
+
+(define *ast* '())
+
 (define (parse-zodiac defs-thunk)
     (letrec ([read-from-thunk
               (lambda (thunk)
@@ -22,11 +24,13 @@
                       (zodiac:make-attributes)
                       zodiac:scheme-vocabulary)])
           ;;(printf "terms: ~a~n" terms)
+	  (set! *ast* terms)
           (map (lambda (term) (derive-top-term-constraints '() term))
                terms)
           (propagate-constraints)
           (init-set-var-to-type)
           (type-reduce-rec-bindings)
+	  (map debug-arity terms)
           ))))
 
 
@@ -34,9 +38,9 @@
 (define-struct Token (name))
 (define-struct Set-var (name))
 (define-struct Dom-arity (arity pos set-var))
-(define-struct Dom-interval (interval pos set-var))
+(define-struct Dom-interval (interval pos n set-var))
 (define-struct Rng-arity (arity set-var))
-(define-struct Rng-interval (interval set-var))
+(define-struct Rng-interval (interval n set-var))
 (define-struct Label (name))
 (define-struct Car (set-var))
 (define-struct Cdr (set-var))
@@ -210,12 +214,15 @@
 
 (define (encode-interval interval)
   (string-append "interval:["
-                 (number->string (Interval-lo interval))
+                 (let ([lo (Interval-lo interval)])
+                   (if (number? lo)
+                       (number->string lo)
+                       (symbol->string lo)))
                  ","
                  (let ([hi (Interval-hi interval)])
                    (if (number? hi)
                        (number->string hi)
-                       "omega"))
+                       (symbol->string hi)))
                  "]"))
 
 (define (encode-arity arity)
@@ -248,12 +255,14 @@
       [(Dom-interval? val)
        (make-hash-string
         "dom-interval" (encode-interval (Dom-interval-interval val)) (number->string (Dom-interval-pos val))
+        (number->string (Dom-interval-n val))
         (symbol->string (Set-var-name (Dom-interval-set-var val))))]
       [(Rng-arity? val)
        (build-hash-from-sym (string-append "rng-arity" (encode-arity (Rng-arity-arity val)))
                             (Set-var-name (Rng-arity-set-var val)))]
       [(Rng-interval? val)
-       (build-hash-from-sym (string-append "rng-interval" (encode-interval (Rng-interval-interval val)))
+       (build-hash-from-sym (string-append "rng-interval" (encode-interval (Rng-interval-interval val))
+                            (number->string (Rng-interval-n val)))
                             (Set-var-name (Rng-interval-set-var val)))]
 ;      [(Listexp? val)
 ;       (apply string-append
@@ -423,6 +432,10 @@
   (hash-table-put! *prim-to-label* sym label)
   (hash-table-put! *label-to-prim* label sym))
 
+;(let ([label (create-label)]) APPLY
+;  (add-prim-label 'apply label)
+;  (associate-label-with-ars label (make-Arity (make-Interval 2 2) '())))
+
 (define (init-prim prim-entries)
   (for-each
    (lambda (prim-entry)
@@ -439,7 +452,7 @@
                          [else #f])])
          (when arg-list
            (let ([len (length arg-list)])
-             (associate-label-with-ars label (make-Arity (make-Interval len len) '())))))))
+             (associate-label-with-ars (Label-name label) (make-Arity (make-Interval len len) '())))))))
    prim-entries))
 
 (define prim-init-list
@@ -551,6 +564,26 @@
                           (hash-table-put! top-level-vars var set-var)
                           set-var))))))
 
+;(define (add-constraints-for-apply alpha) APPLY
+;  (let ([alpha1 (gen-set-var)]
+;        [alpha2 (gen-set-var)]
+;        [alpha3 (gen-set-var)])
+;    (add-constraint-with-bounds (make-Dom-arity (make-Arity (make-Interval 2 2) '()) 1 alpha)
+;                                alpha1
+;                                #t)
+;    (add-constraint-with-bounds (make-Dom-arity (make-Arity (make-Interval 2 2) '()) 2 alpha)
+;                                alpha2
+;                                #t)
+;    (add-constraint-with-bounds alpha2
+;                                (make-Dom-interval (make-Interval 'star 'star) 0 alpha1)
+;                                #t)
+;    (add-constraint-with-bounds (make-Rng-interval (make-Interval 'star 'star) alpha1)
+;                                alpha3
+;                                #t)
+;    (add-constraint-with-bounds alpha3
+;                                (make-Rng-arity (make-Arity (make-Interval 2 2) '()) alpha)
+;                                #t)))
+
 (define (derive-top-term-constraints Gamma term)
   (let ([alpha (gen-set-var)])
     (associate-set-var-and-term (Set-var-name alpha) term)
@@ -574,10 +607,13 @@
        (let* ([name (zodiac:varref-var term)]
               [type (lookup-prim-type name)]
               [label (lookup-prim-label name)])
-         (if type
+         (associate-label-and-lambda label term)
+         (if type ;;(or type (symbol=? name 'apply)) APPLY
              (begin
                (add-constraint-with-bounds label alpha #t)
-               (add-constraints-from-type type alpha #t (make-hash-table)))
+;               (if (symbol=? name 'apply) APPLY
+;                   (add-constraints-for-apply alpha)
+               (add-constraints-from-type type alpha #t (make-hash-table))) ;;) APPLY
              (add-constraint-with-bounds (get-top-level-var name) alpha #t)))]
       [(zodiac:case-lambda-form? term)
        (let* (;;[xs-l (map (lambda (l) (map zodiac:binding-orig-name (zodiac:arglist-vars l))) (zodiac:case-lambda-form-args term))]
@@ -593,16 +629,15 @@
                                  [(zodiac:list-arglist? arg-list) (make-Interval len len)]
                                  [(zodiac:ilist-arglist? arg-list) (make-Interval (sub1 len) 'omega)]))
                               xs-l indices)]
-              [arities (let loop ([arities '()]
-                                  [loc-int intervals]
+              [arities (let loop ([loc-int intervals]
                                   [previous '()])
                          (if (null? loc-int)
-                             arities
+                             '()
                              (let ([cur-int (car loc-int)])
-                               (loop (cons (make-Arity cur-int previous)
-                                           arities)
-                                     (cdr loc-int)
-                                     (cons cur-int previous)))))]
+                               (cons (make-Arity cur-int previous)
+                                     (loop (cdr loc-int)
+                                           (cons cur-int previous))))))]
+              [_ (printf "arities: ~a~n" arities)]
               [alphas-l (map (lambda (index) (build-list index (lambda (_) (gen-set-var)))) indices)]
               ;;[foo (printf "indices: ~a~n" indices)]
               [betas (map (lambda (xs body alphas)
@@ -624,7 +659,7 @@
                          (add-constraint-with-bounds (make-Dom-arity arity j alpha) (car loc-alphas) #t)
                          (loop (add1 j) (cdr loc-alphas))))
                      (add-constraint-with-bounds beta (make-Rng-arity arity alpha) #t)
-                     (associate-label-with-ars label arity))
+                     (associate-label-with-ars (Label-name label) arity))
                    alphas-l arities indices betas))]
       [(zodiac:app? term)
        (let* ([fun (zodiac:app-fun term)]
@@ -632,50 +667,78 @@
               [len (length args)]
               [beta0 (derive-top-term-constraints Gamma fun)]
               [betas (map (lambda (arg) (derive-top-term-constraints Gamma arg)) args)]
-              [alphas (build-list (add1 len) (lambda (n) (gen-set-var)))])
-         (add-constraint-with-bounds (make-Rng-interval (make-Interval len len) beta0) alpha #t)
+              [alphas (build-list (add1 len) (lambda (n) (gen-set-var)))]
+              ;;[rhos (build-list len (lambda (n) (gen-set-var)))] APPLY
+	      )
+         (add-constraint-with-bounds (make-Rng-interval (make-Interval len len) len beta0) alpha #t)
          (let loop ([i 0])
            (when (<= i len)
-             (add-constraint-with-bounds (make-Rng-interval (make-Interval i 'omega) beta0) alpha #t)
+             (add-constraint-with-bounds (make-Rng-interval (make-Interval i 'omega) len beta0) alpha #t)
              (loop (add1 i))))
-         (let ([alpha_n+1
-                (let loop ([i 1]
-                           [loc-betas betas]
-                           [loc-alphas alphas])
-                  (if (<= i len)
-                      (begin
-                        (let ([beta_i (car loc-betas)]
-                              [alpha_i (car loc-alphas)])
-                          (add-constraint-with-bounds beta_i
-                                                      (make-Dom-interval (make-Interval len len) i beta0)
-                                                      #t)
-                          (add-constraint-with-bounds beta_i
-                                                      (make-Car alpha_i)
-                                                      #t)
-                          (add-constraint-with-bounds (cadr loc-alphas)
-                                                      (make-Cdr alpha_i)
-                                                      #t)
-                          (add-constraint-with-bounds alpha_i
-                                                      (make-Dom-interval (make-Interval (sub1 i) 'omega) i beta0)
-                                                      #t)
-                          (add-constraint-with-bounds *pair-token*
-                                                      alpha_i
-                                                      #t))
-                        (loop (add1 i) (cdr loc-betas) (cdr loc-alphas)))
-                      (car loc-alphas)))])
-           (add-constraint-with-bounds *Nullexp*
-                                       alpha_n+1
-                                       #t)
-           (add-constraint-with-bounds alpha_n+1
-                                       (make-Dom-interval (make-Interval len 'omega) (add1 len) beta0)
-                                       #t))
+
+;         (add-constraint-with-bounds (make-Dom-arity (make-Arity (make-Interval 'star 'star) '()) APPLY
+;                                                     0
+;                                                     alpha)
+;                                     (car rhos)
+;                                     #t)
+;         (let loop ([i 1]
+;                    [loc-alphas alphas]
+;                    [loc-rhos rhos])
+;           (if (< i len)
+;             (let ([alpha_i (car loc-alphas)]
+;                   [rho_i (car loc-rhos)])
+;               (add-constraint-with-bounds (make-Car rho_i)
+;                                           alpha_i
+;                                           #t)
+;               (add-constraint-with-bounds (make-Cdr rho_i)
+;                                           (cadr loc-rhos)
+;                                           #t)
+;               (loop (add1 i) (cdr loc-alphas) (cdr loc-rhos)))
+;             (let ([alpha_n (car loc-alphas)]
+;                   [alpha_n+1 (cadr loc-alphas)]
+;                   [rho_n (car loc-rhos)])
+;               (add-constraint-with-bounds (make-Car rho_n)
+;                                           alpha_n
+;                                           #t)
+;               (add-constraint-with-bounds (make-Cdr rho_n)
+;                                           alpha_n+1
+;                                           #t))))
+         (let loop ([i 1]
+                    [loc-betas betas]
+                    [loc-alphas alphas])
+           (if (<= i len)
+               (let ([beta_i (car loc-betas)]
+                     [alpha_i (car loc-alphas)])
+                 (add-constraint-with-bounds beta_i
+                                             (make-Dom-interval (make-Interval len len) i beta0)
+                                             #t)
+                 (add-constraint-with-bounds beta_i
+                                             (make-Car alpha_i)
+                                             #t)
+                 (add-constraint-with-bounds (cadr loc-alphas)
+                                             (make-Cdr alpha_i)
+                                             #t)
+                 (add-constraint-with-bounds alpha_i
+                                             (make-Dom-interval (make-Interval (sub1 i) 'omega) i beta0)
+                                             #t)
+                 (add-constraint-with-bounds *pair-token*
+                                             alpha_i
+                                             #t)
+                 (loop (add1 i) (cdr loc-betas) (cdr loc-alphas)))
+               (let ([alpha_n+1 (car loc-alphas)])
+                 (add-constraint-with-bounds *Nullexp*
+                                             alpha_n+1
+                                             #t)
+                 (add-constraint-with-bounds alpha_n+1
+                                             (make-Dom-interval (make-Interval len 'omega) (add1 len) beta0)
+                                             #t))))
          (let loop-i ([i 0])
            (when (<= i len)
              (let loop-j ([j 1]
                           [loc-betas betas])
                (when (<= j i)
                  (add-constraint-with-bounds (car loc-betas)
-                                             (make-Dom-interval (make-Interval i 'omega) j beta0)
+                                             (make-Dom-interval (make-Interval i 'omega) j len beta0)
                                              #t)
                  (loop-j (add1 j) (cdr loc-betas))))
              (loop-i (add1 i)))))]
@@ -690,23 +753,25 @@
 (define (selector? set-exp)
   (or (Car? set-exp) (Cdr? set-exp)))
 
-(define (satisfies-int int1 int2)
+(define (satisfies-int int1 r int2)
   (let ([n (Interval-lo int1)]
         [m (Interval-hi int1)]
         [p (Interval-lo int2)]
         [q (Interval-hi int2)])
     ;;(printf "n: ~a m: ~a p: ~a q: ~a~n" n m p q)
-    (or (and (andmap number? (list n m p q))
-             (= n m p q))
-        (and (= n p)
+    (or ;;(and (symbol? n) (symbol=? n 'star)) APPLY
+	(and (andmap number? (list n m p q))
+             (= n m p q r))
+        (and (<= n p)
+             (>= r p)
              (andmap symbol? (list m q))
              (andmap (lambda (sym) (symbol=? sym 'omega)) (list m q))))))
 
-(define (satisfies int ar)
+(define (satisfies int num-of-args ar)
   (let ([ar-req (Arity-req ar)]
         [ar-proh (Arity-proh ar)])
-    (and (satisfies-int int ar-req)
-         (not (ormap (lambda (ar-proh-int) (satisfies-int int ar-proh-int)) ar-proh)))))
+    (and (satisfies-int int num-of-args ar-req)
+         (not (ormap (lambda (ar-proh-int) (satisfies-int int num-of-args ar-proh-int)) ar-proh)))))
 
 
 (define (lookup-lo-and-filter pred set-exp)
@@ -763,9 +828,10 @@
     (when (and (Dom-interval? hi)
                (Set-var? lo))
       (let* ([interval (Dom-interval-interval hi)]
-             [n (Dom-interval-pos hi)]
-             [dom-arities (lookup-dom-int (encode-dom n (Dom-interval-set-var hi)))]
-             [good-dom-ars (filter (lambda (dom-ar) (satisfies interval (Dom-arity-arity dom-ar))) dom-arities)]
+             [pos (Dom-interval-pos hi)]
+             [n (Dom-interval-n hi)]
+             [dom-arities (lookup-dom-int (encode-dom pos (Dom-interval-set-var hi)))]
+             [good-dom-ars (filter (lambda (dom-ar) (satisfies interval n (Dom-arity-arity dom-ar))) dom-arities)]
              [his-other
               (apply append (map (lambda (dom-ar) (lookup-lo-and-filter Set-var? dom-ar)) good-dom-ars))])
         (for-each
@@ -779,7 +845,7 @@
       (let* ([arity (Rng-arity-arity hi)]
              [rng-intervals (lookup-rng-ar (encode-rng (Rng-arity-set-var hi)))]
              [good-rng-ints
-              (filter (lambda (rng-int) (satisfies (Rng-interval-interval rng-int) arity)) rng-intervals)]
+              (filter (lambda (rng-int) (satisfies (Rng-interval-interval rng-int) (Rng-interval-n rng-int) arity)) rng-intervals)]
              [his-other
               (apply append (map (lambda (rng-int) (lookup-lo-and-filter Set-var? rng-int)) good-rng-ints))])
         ;;(printf "arity: ~a~nrng-intervals: ~a~ngood-rng-ints: ~a~nhis-other: ~a~n" arity rng-intervals good-rng-ints his-other)
@@ -897,9 +963,9 @@
     (when (and (Dom-arity? lo)
                (Set-var? hi))
       (let* ([arity (Dom-arity-arity lo)]
-             [n (Dom-arity-pos lo)]
-             [dom-intervals (lookup-dom-ar (encode-dom n (Dom-arity-set-var lo)))]
-             [good-dom-ints (filter (lambda (dom-int) (satisfies (Dom-interval-interval dom-int) arity)) dom-intervals)]
+             [pos (Dom-arity-pos lo)]
+             [dom-intervals (lookup-dom-ar (encode-dom pos (Dom-arity-set-var lo)))]
+             [good-dom-ints (filter (lambda (dom-int) (satisfies (Dom-interval-interval dom-int) (Dom-interval-n dom-int) arity)) dom-intervals)]
              [los-other
               (apply append (map (lambda (dom-int) (lookup-hi-and-filter Set-var? dom-int)) good-dom-ints))])
         (for-each
@@ -911,9 +977,10 @@
                (Set-var? hi))
       ;;(printf "trans-rng 2~n")
       (let* ([interval (Rng-interval-interval lo)]
+             [n (Rng-interval-n lo)]
              [rng-arities (lookup-rng-int (encode-rng (Rng-interval-set-var lo)))]
              [good-rng-ars
-              (filter (lambda (rng-ar) (satisfies interval (Rng-arity-arity rng-ar))) rng-arities)]
+              (filter (lambda (rng-ar) (satisfies interval n (Rng-arity-arity rng-ar))) rng-arities)]
              [los-other
               (apply append (map (lambda (rng-ar) (lookup-lo-and-filter Set-var? rng-ar)) good-rng-ars))])
         (for-each
@@ -943,6 +1010,7 @@
     ))
 
 ;;(load-relative "type-reconstruct.ss")
+;;(load-relative "debug.ss")
 
 (define (get-prims) '())
 
@@ -975,7 +1043,7 @@
       "("
       (apply string-append (map (lambda (tp) (string-append (pp-type tp) " "))
                                 (Type-Arrow-doms type)))
-      " -> "
+      "-> "
       (pp-type (Type-Arrow-rng type))
       ")")]
     [(Type-Cons? type)
@@ -1019,11 +1087,11 @@
     [(Type-Empty? type)
      "empty"]))
      
-(define (parents sym)
+(define (children sym)
   (let ([par-set-vars (lookup-lo-and-filter Set-var? (make-Set-var sym))])
     (map Set-var-name par-set-vars)))
   
-(define (children sym)
+(define (parents sym)
   (let ([chi-set-vars (lookup-hi-and-filter Set-var? (make-Set-var sym))])
     (map Set-var-name chi-set-vars)))
   

@@ -150,7 +150,7 @@ libwxmac.a: $(OBJS)
 	$(RANLIB) libwxmac.a
 
 clean:
-	rm -f *.o libwxmac.a
+	rm -f *.o *.dep libwxmac.a
 
 precomp.o : $(srcdir)/precomp.cc
 	$(CXX) --dump-pch . $(WXMAC_CXXFLAGS_NO_PRECOMP) -o precomp.o -c $(srcdir)/precomp.cc

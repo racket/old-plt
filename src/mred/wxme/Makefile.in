@@ -118,7 +118,7 @@ wx_style.o : $(srcdir)/wx_style.cxx $(srcdir)/wx_style.h $(srcdir)/wx_medio.h $(
 	$(MCC) $(srcdir)/wx_style.cxx -o wx_style.o 
 
 clean:
-	rm -f *.o *.a *~ core
+	rm -f *.o *.a *.d *~ core
 
 
 @INCLUDEDEP@ wx_style.d

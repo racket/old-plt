@@ -193,7 +193,7 @@ palmos:
 	$(MAKE) bin
 	cd palm; $(MAKE) all
 
-clean:
+clean@NOT_OSX@:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
 	/bin/rm -f tests/*~
 	/bin/rm -f *.o core
@@ -206,6 +206,10 @@ clean:
 	cd src; $(MAKE) clean
 	cd dynsrc; $(MAKE) clean
 	cd guile; $(MAKE) clean
+
+clean@OSX@:
+	rm -rf PLT_MzScheme.framework
+	$(MAKE) clean@NOT_OSX@
 
 install:
 	$(MAKE) @MZINSTALLTARGET@

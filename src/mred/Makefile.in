@@ -185,11 +185,20 @@ CLEANDIR_wx_mac = ../wxmac/src
 
 clean:
 	cd $(CLEANDIR_@WXVARIANT@); $(MAKE) clean
-	rm -f *.o core
+	rm -f *.o *.d core
 	rm -f gc2/*.o gc2/xsrc/*.c gc2/xsrc/*.cc
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean
 	cd ../wxcommon/jpeg; $(MAKE) clean
+	rm -f $(WXLIBS_@WXVARIANT@)
+	$(MAKE) clean_@WXVARIANT@
+
+clean_wx_xt:
+	echo clean done
+
+clean_wx_mac:
+	rm -rf PLT_MrEd.framework MrEd.app Starter.app
+	echo clean done
 
 ICP=@ICP@
 

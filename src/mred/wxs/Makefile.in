@@ -141,7 +141,7 @@ ss: $(SSDESCS)
 ccsources: $(SOURCES)
 
 clean:
-	rm -f *.o *.a
+	rm -f *.o *.a *.d
 
 repatriate:
 	mv $(HIDEDIR)/wxs_objects/objects .

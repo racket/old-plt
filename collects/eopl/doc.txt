@@ -88,3 +88,10 @@ Differences from the book:
 
   Tracing a function causes tail-calls in the original function to
   become non-tail calls.
+
+> (provide provide-spec ...)
+
+  Useful only with a module that uses _(lib "eopl.ss" "eopl")_ as a
+  language: exports identifiers from the module. See the MzScheme
+  manual for information on `provided-spec'.
+

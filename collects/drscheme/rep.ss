@@ -10,6 +10,7 @@
 	  [drscheme:snip : drscheme:snip^]
 	  [drscheme:language : drscheme:language^]
 	  [drscheme:app : drscheme:app^]
+	  [drscheme:frame : drscheme:frame^]
 	  [basis : userspace:basis^]
 	  [drscheme:edit : drscheme:edit^])
 
@@ -483,16 +484,52 @@
 		  (when old-saved-newline?
 		    (gw (string #\newline)))
 		  (gw s1)))))]
+
+	  [this-err-write/exn
+	   (let ([fallthru-regexp (regexp "^()([a-z-]*):")]
+		 [class-regexp (regexp "^(.*[^a-z-])([a-z-]*%)")]
+		 [ivar-regexp (regexp "^(ivar: instance variable not found: )([a-z-]*)")])
+	     (lambda (s exn)
+	       (queue-io
+		(lambda ()
+		  (cleanup-transparent-io)
+		  (generic-write
+		   this
+		   s
+		   (lambda (start end)
+		     (change-style error-delta start end)
+		     (cond
+		      [(exn:variable? exn)
+		       (let* ([var (symbol->string (exn:variable-id exn))]
+			      [regexp (format "^(.*)(~a)" var)]
+			      [match (regexp-match regexp s)])
+			 (when match
+			   (let* ([var-start (+ start (string-length (cadr match)))]
+				  [var-end (+ var-start (string-length (caddr match)))])
+			     (change-style click-delta var-start var-end)
+			     (set-clickback var-start var-end
+					    (lambda x
+					      (drscheme:frame:help-desk var))))))]
+		      [else
+		       (let ([bind-to-help
+			      (lambda (regexp)
+				(let ([match (regexp-match regexp s)])
+				  (when match
+				    (let* ([prefix (cadr match)]
+					   [var (caddr match)]
+					   [var-start (+ start (string-length prefix))]
+					   [var-end (+ var-start (string-length var))])
+				      (change-style click-delta var-start var-end)
+				      (set-clickback
+				       var-start var-end
+				       (lambda x
+					 (drscheme:frame:help-desk var)))))))])
+			 (bind-to-help fallthru-regexp)
+			 (bind-to-help class-regexp)
+			 (bind-to-help ivar-regexp))])))))))]
 	  [this-err-write
 	   (lambda (s)
-	     (queue-io
-	      (lambda ()
-		(cleanup-transparent-io)
-		(generic-write this
-			       s
-			       (lambda (start end)
-				 (change-style error-delta 
-					       start end))))))]
+	     (this-err-write/exn s #f))]
 	  
 	  [this-err (make-output-port this-err-write generic-close)]
 	  [this-out (make-output-port this-out-write generic-close)]
@@ -558,26 +595,28 @@
       
       (public
 	[report-located-error
-	 (lambda (message di)
+	 (lambda (message di exn)
 	   (if (and (zodiac:zodiac? di)
 		    (basis:zodiac-vocabulary? user-setting))
 	       (let* ([start (zodiac:zodiac-start di)]
 		      [finish (zodiac:zodiac-finish di)])
-		 (report-error start finish 'dynamic message))
-	       (report-unlocated-error message)))]
+		 (report-error start finish 'dynamic message exn))
+	       (report-unlocated-error message exn)))]
 	[report-unlocated-error
-	 (lambda (message)
+	 (lambda (message exn)
 	   (let* ([frame (get-top-level-window)]
 		  [interactions-edit (ivar frame interactions-edit)])
 	     (send frame ensure-interactions-shown)
 	     (let ([locked? (send interactions-edit locked?)])
 	       (send interactions-edit begin-edit-sequence)
 	       (send interactions-edit lock #f)
-	       (send interactions-edit this-err-write (string-append message (string #\newline)))
+	       (send interactions-edit this-err-write/exn
+		     (string-append message (string #\newline))
+		     exn)
 	       (send interactions-edit lock locked?)
 	       (send interactions-edit end-edit-sequence))))]
 	[report-error
-	 (lambda (start-location end-location type input-string)
+	 (lambda (start-location end-location type input-string exn)
 	   (let* ([start (zodiac:location-offset start-location)]
 		  [finish (add1 (zodiac:location-offset end-location))]
 		  [file (zodiac:location-file start-location)]
@@ -586,7 +625,7 @@
 		       input-string
 		       (string-append (basis:format-source-loc start-location end-location)
 				      input-string))])
-	     (report-unlocated-error message)
+	     (report-unlocated-error message exn)
 	     (when (is-a? file mred:text%)
 	       (send file begin-edit-sequence)
 	       (wait-for-io-to-complete)
@@ -1057,7 +1096,7 @@
 		   (lambda (msg)
 		     (let ([rep (exception-reporting-rep)])
 		       (if rep
-			   (send rep report-unlocated-error msg)
+			   (send rep report-unlocated-error msg #f)
 			   (mred:message-box "Uncaught Error" msg))))))
 	     
 	     (let ([directory

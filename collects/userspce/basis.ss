@@ -32,7 +32,7 @@
 
   (define-struct/parse setting (name
 				vocabulary-symbol
-				extra-definitions-unit
+				extra-definitions-unit-name
 				macro-libraries
 				case-sensitive?
 				allow-set!-on-undefined?
@@ -55,7 +55,7 @@
   (define settings
     (list (make-setting/parse
 	   `((name "Beginner")
-	     (extra-definitions-unit ,(require-library "beginner.ss" "userspce"))
+	     (extra-definitions-unit-name "beginner.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol beginner)
 	     (case-sensitive? #t)
@@ -76,7 +76,7 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Intermediate")
-	     (extra-definitions-unit ,(require-library "intermediate.ss" "userspce"))
+	     (extra-definitions-unit-name "intermediate.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol intermediate)
 	     (case-sensitive? #t)
@@ -97,7 +97,7 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Advanced")
-	     (extra-definitions-unit ,(require-library "advanced.ss" "userspce"))
+	     (extra-definitions-unit-name "adcanved.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol advanced)
 	     (case-sensitive? #t)
@@ -118,7 +118,7 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "MzScheme")
-	     (extra-definitions-unit #f)
+	     (extra-definitions-unit-name #f)
 	     (macro-libraries ())
 	     (vocabulary-symbol mzscheme)
 	     (case-sensitive? #f)
@@ -140,7 +140,7 @@
 	  (make-setting/parse
 	   `((name "MzScheme Debug")
 	     (vocabulary-symbol mzscheme-debug)
-	     (extra-definitions-unit #f)
+	     (extra-definitions-unit-name #f)
 	     (macro-libraries ())
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
@@ -157,30 +157,7 @@
 	     (print-tagged-inexact-numbers #f)
 	     (whole/fractional-exact-numbers #f)
 	     (printing r4rs-style)
-	     (define-argv? #t)))
-	  (make-setting/parse
-	   (let ([drscheme? (defined? 'mred^)])
-	     `((name "Everything")
-	       (vocabulary-symbol
-		,(if drscheme? 'mred-debug 'mzscheme-debug))
-	       (extra-definitions-unit ,(require-library "everything.ss" "userspce"))
-	       (macro-libraries (("macro.ss") ("turtlm.ss" "graphics")))
-	       (case-sensitive? #f)
-	       (allow-set!-on-undefined? #f)
-	       (unmatched-cond/case-is-error? #t)
-	       (allow-improper-lists? #t)
-	       (allow-reader-quasiquote? #t)
-	       (sharing-printing? #f)
-	       (abbreviate-cons-as-list? #t)
-	       (signal-undefined #t)
-	       (signal-not-boolean #f)
-	       (eq?-only-compares-symbols? #f)
-	       (<=-at-least-two-args #f)
-	       (disallow-untagged-inexact-numbers #f)
-	       (print-tagged-inexact-numbers #t)
-	       (whole/fractional-exact-numbers #f)
-	       (printing constructor-style)
-	       (define-argv? #t))))))
+	     (define-argv? #t)))))
 
   (define (snoc x y) (append y (list x)))
 
@@ -402,10 +379,10 @@
 	      (zodiac:location-line end-location)
 	      (+ (zodiac:location-column end-location) 1))))
 
-  ;; (parameter (string debug-info -> void))
+  ;; (parameter (string debug-info exn -> void))
   (define error-display/debug-handler
     (make-parameter
-     (lambda (msg debug)
+     (lambda (msg debug exn)
        ((error-display-handler) 
 	(if (zodiac:zodiac? debug)
 	    (string-append (format-source-loc (zodiac:zodiac-start debug)
@@ -422,8 +399,8 @@
   (define (drscheme-exception-handler exn)
     (let ([dh (error-display/debug-handler)])
       (if (exn? exn)
-	  (dh (exn-message exn) (exn-debug-info exn))
-	  (dh (format "uncaught exception: ~e" exn) #f)))
+	  (dh (exn-message exn) (exn-debug-info exn) exn)
+	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler didn't escape")
     ((bottom-escape-handler)))
@@ -544,7 +521,11 @@
     ;;                       -> void
     ;; effect: sets the parameters for drscheme and drscheme-jr
     (define (initialize-parameters custodian namespace-flags setting)
-      (let-values ([(n) (apply make-namespace
+      (let-values ([(extra-definitions)
+		    (let ([name (setting-extra-definitions-unit-name setting)])
+		      (and name
+			   (require-library/proc name "userspce")))]
+		   [(n) (apply make-namespace
 			       (if (zodiac-vocabulary? setting)
 				   (append (list 'hash-percent-syntax) namespace-flags)
 				   namespace-flags))])
@@ -596,6 +577,7 @@
 	(zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
 	(zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
 
+	;;; SHOULD ONLY DO THIS IN CERTAIN LANGUAGE LEVELS!!!
 	;; ricedefs
 	(let ([improper-lists?
 	       (or (not (zodiac-vocabulary? setting))
@@ -643,5 +625,7 @@
 	(print-graph (setting-sharing-printing? setting))
 	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
 
-	(invoke-open-unit/sig (setting-extra-definitions-unit setting))
-	(for-each (lambda (l) (apply require-library/proc l)) (setting-macro-libraries setting)))))
+	(when extra-definitions
+	  (invoke-open-unit/sig extra-definitions))
+	(for-each (lambda (l) (apply require-library/proc l))
+		  (setting-macro-libraries setting)))))

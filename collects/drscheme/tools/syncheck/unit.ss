@@ -490,6 +490,8 @@
 	
 	(rename [super-disable-evaluation disable-evaluation]
 		[super-enable-evaluation enable-evaluation])
+	(private
+	  [button-visible? #t])
 	(override
 	 [enable-evaluation
 	  (lambda ()
@@ -510,7 +512,12 @@
 	       (if style
 		   (send definitions-edit
 			 change-style style 0 (send definitions-edit last-position))
-		   (printf "Warning: couldn't find Standard style~n"))))])
+		   (printf "Warning: couldn't find Standard style~n"))))]
+	  [syncheck:enable-checking
+	   (lambda (on?)
+	     (set! button-visible? on?)
+	     (when (object? check-syntax-button)
+	       (send check-syntax-button show on?)))])
 	
 	(public
 	  [button-callback
@@ -524,10 +531,8 @@
 			  [find-next-whitespace
 			   (lambda (start)
 			     (let* ([find (lambda (s)
-					    (let ([ans (find-string s 1 start)])
-					      (if (= -1 ans)
-						  #f
-						  ans)))]
+					    (let ([ans (find-string s 'forward start)])
+					       ans))]
 				    [mymin
 				     (lambda (args)
 				       (let loop ([a args]
@@ -749,7 +754,9 @@
 			
 			;; color each exp
 			(let ([semaphore (make-semaphore 0)]
-			      [output-port (current-output-port)])
+			      [output-port (current-output-port)]
+			      [error-raised? #f]
+			      [error #f])
 			  (send interactions-edit
 				run-in-evaluation-thread
 				(rec check-syntax-in-evaluation-thread
@@ -757,29 +764,41 @@
 				       (parameterize ([current-output-port output-port])
 					 (with-handlers ([(lambda (x) #t)
 							  (lambda (x)
-							    (mred:message-box
-							     "exception during syntax checking"
-							     (if (exn? x)
-								 (exn-message x)
-								 (format "~s" x)))
+							    (set! error x)
+							    (set! error-raised? #t)
 							    (semaphore-post semaphore))])
 					   (drscheme:rep:process-edit/zodiac
 					    definitions-edit
 					    (lambda (expr recur)
 					      (cond
-						[(drscheme:basis:process-finish? expr)
-						 (when (drscheme:basis:process-finish-error? expr)
-						   (send interactions-edit insert-prompt))
-						 (semaphore-post semaphore)]
-						[(not (zodiac:zodiac? expr))
-						 (recur)]
-						[else
-						 (color-loop expr)
-						 (recur)]))
+					       [(drscheme:basis:process-finish? expr)
+						(when (drscheme:basis:process-finish-error? expr)
+						  (send interactions-edit insert-prompt))
+						(semaphore-post semaphore)]
+					       [(not (zodiac:zodiac? expr))
+						(recur)]
+					       [else
+						(color-loop expr)
+						(recur)]))
 					    0
 					    (send definitions-edit last-position)
 					    #f))))))
-			  (semaphore-wait semaphore))
+			  (semaphore-wait semaphore)
+			  (when error-raised?
+			    (mred:message-box
+			     "exception during syntax checking"
+			     (let ([string-port (open-output-string)])
+			       (when (and (defined? 'print-error-trace)
+					  (exn? error))
+				 (newline string-port)
+				 ((global-defined-value 'print-error-trace)
+				  string-port
+				  error))
+			       (string-append 
+				(if (exn? error)
+				    (exn-message error)
+				    (format "~s" error))
+				(get-output-string string-port))))))
 
 			; color the top-level varrefs
 			(let ([built-in?
@@ -836,6 +855,7 @@
 			(lambda (button evt) (button-callback)))])
 	(sequence
 	  (send definitions-edit set-styles-fixed #t)
+	  (send check-syntax-button show button-visible?)
 	  (send button-panel change-children
 		(lambda (l)
 		  (cons check-syntax-button
@@ -844,12 +864,14 @@
   (define (make-syncheck-interactions-edit% super%)
     (class-asi super%
       (rename [super-reset-console reset-console])
-      (inherit get-top-level-window)
+      (inherit get-top-level-window user-setting)
       (override
        [reset-console
 	(lambda ()
 	  (send (get-top-level-window) syncheck:clear-highlighting)
-	  (super-reset-console))])))
+	  (super-reset-console)
+	  (send (get-top-level-window) syncheck:enable-checking
+		(drscheme:basis:zodiac-vocabulary? user-setting)))])))
   
   
   (drscheme:get/extend:extend-definitions-edit% make-graphics:media-edit%)

@@ -1,0 +1,8 @@
+DrScheme
+
+> (drscheme:frame:basics-mixin a-fw:frame:standard-menus<%>)
+
+  Extends input class with definitions for several of the standard DrScheme
+  menus. It overrides: help-menu:after-about, file-menu:new,
+  file-menu:between-new-and-open, file-menu:open, file-menu:about,
+  file-menu:about-string. 

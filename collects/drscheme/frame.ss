@@ -10,14 +10,27 @@
   
   (rename [-mixin mixin])
 
-  (define <%> (interface ()))
+  (define help-desk
+    (let ([help-desk-frame #f])
+      (case-lambda
+       [()
+	(mred:begin-busy-cursor)
+	(set! help-desk-frame (help:start-help-desk))
+	(mred:end-busy-cursor)]
+       [(key)
+	(let ([turn-cursor-off? (not help-desk-frame)])
+	  (if help-desk-frame
+	      (send help-desk-frame show #t)
+	      (begin (mred:begin-busy-cursor)
+		     (help-desk)))
+	  (send help-desk-frame search-for-help key 'keyword+index 'exact)
+	  (when turn-cursor-off?
+	    (mred:end-busy-cursor)))])))
 
-  (define -mixin
-    (mixin (fw:frame:info<%>) (<%>) (unit)
-      (rename [super-make-root-area-container make-root-area-container])
-      (inherit get-info-panel)
-      (public
-       [root-panel #f])
+  (define basics<%> (interface (fw:frame:standard-menus<%>)))
+
+  (define basics-mixin
+    (mixin (fw:frame:standard-menus<%>) (basics<%>) args
       (override
        [help-menu:after-about
 	(lambda (help-menu)
@@ -25,7 +38,33 @@
 	    "Help Desk"
 	    help-menu
 	    (lambda (item evt)
-	      (help:start-help-desk))))]
+	      (help-desk))))]
+      ;[file-menu:new-string (lambda () "Unit")]
+       [file-menu:new
+	(lambda (item evt)
+	  (send (drscheme:unit:make-unit #f) create-frame))]
+       [file-menu:between-new-and-open
+	(lambda (file-menu)
+	  '(send file-menu append-item "New Compound Unit"
+		 (lambda ()
+		   (send (drscheme:compound-unit:make-compound-unit #f)
+			 create-frame))))]
+       [file-menu:open (lambda (item evt) (fw:handler:open-file) #t)]
+       [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
+       [help-menu:about-string (lambda () "DrScheme")])
+      
+      (sequence 
+	(apply super-init args))))
+
+  (define <%> (interface (fw:frame:info<%> basics<%>)))
+
+  (define -mixin
+    (mixin (fw:frame:info<%> basics<%>) (<%>) (unit)
+      (rename [super-make-root-area-container make-root-area-container])
+      (inherit get-info-panel)
+      (public
+       [root-panel #f])
+      (override
        [make-root-area-container
 	(lambda (% parent)
 	  (let* ([s-root (super-make-root-area-container mred:vertical-panel% parent)]
@@ -59,20 +98,6 @@
 	   (when currently-running?
 	     (set! currently-running? #f)
 	     (send running-message set-label sleepy-bitmap)))])
-      
-      (override
-       ;[file-menu:new-string (lambda () "Unit")]
-	[file-menu:new
-	 (lambda (item evt)
-	   (send (drscheme:unit:make-unit #f) create-frame))]
-	[file-menu:between-new-and-open
-	 (lambda (file-menu)
-	   '(send file-menu append-item "New Compound Unit"
-		  (lambda ()
-		    (send (drscheme:compound-unit:make-compound-unit #f)
-			  create-frame))))]
-	[file-menu:open (lambda (item evt) (fw:handler:open-file) #t)]
-	[help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))])
       
       (inherit get-menu% get-menu-bar)
       (sequence 

@@ -1,3 +1,4 @@
+;; MrEd or MrED Debug language levels required
 (require-library "errortrace.ss" "errortrace")
 (require-library "turtle.ss" "graphics")
 
@@ -96,9 +97,9 @@
 
 (define serp
   (let ([sqrt3 (sqrt 3)]
-	[-2pi/3 (- (/ (* 2 pi) 3))]
+	[-2pi/3 (- 0 (/ (* 2 pi) 3))]
 	[pi/6 (/ pi 6)]
-	[-5pi/6 (- (/ (* 5 pi) 6))]
+	[-5pi/6 (- 0 (/ (* 5 pi) 6))]
 	[pi/2 (/ pi 2)])
     (letrec ([engine
 	      (lambda (distance)
@@ -137,9 +138,9 @@
 
 (define serp-nosplit
   (let ([sqrt3 (sqrt 3)]
-	[-2pi/3 (- (/ (* 2 pi) 3))]
+	[-2pi/3 (- 0 (/ (* 2 pi) 3))]
 	[pi/6 (/ pi 6)]
-	[-5pi/6 (- (/ (* 5 pi) 6))]
+	[-5pi/6 (- 0 (/ (* 5 pi) 6))]
 	[pi/2 (/ pi 2)])
     (letrec ([engine
 	      (lambda (distance)

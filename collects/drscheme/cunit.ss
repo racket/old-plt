@@ -60,7 +60,8 @@
   
   (define super-frame% 
     (drscheme:frame:mixin
-     fw:frame:pasteboard-info%))
+     (drscheme:frame:basics-mixin
+      fw:frame:pasteboard-info%)))
   
   (define frame%
     (class* super-frame% (drscheme:face:compound-unit-frame<%>) (unit)

@@ -78,7 +78,7 @@
    number->setting
    (struct setting (name
 		    vocabulary-symbol
-		    extra-definitions-unit
+		    extra-definitions-unit-name
 		    macro-libraries
 		    case-sensitive?
 		    allow-set!-on-undefined?

@@ -56,7 +56,9 @@
 	[app : drscheme:app^ ((require-relative-library "app.ss")
 			      mred
 			      mzlib
-			      framework)]
+			      framework
+			      (export* unit)
+			      (export* frame))]
 	[main : drscheme:main^ ((require-relative-library "main.ss")
 				i
 				framework

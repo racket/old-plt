@@ -1,11 +1,26 @@
 
 The `help' collection provides tools for working with _Help Desk_.
 
-Running or Embedding Help Desk
+_Running or Embedding Help Desk_
 ==============================
 
 Loading the _help.ss_ library directly executes the Help Desk
-program. The _helpr.ss_ library provides the Help Desk as a unit with
+program. 
+The start-help-desk.ss file contains one unit that imports:
+  mzlib:function^
+  mzlib:string^
+  mzlib:file^
+  mzlib:url^ - not really in MzLib; it's in the "net" collection
+  mred^
+  framework^
+
+and exports _help:start-help-desk^_, a signature with one definition:
+_start-help-desk_. This function, when invoked, dynamically loads the help
+desk implementation, caches it, creates and returns a help-desk frame. The
+frame it returns is the result of invoking new-help-frame with the same
+startup-url that the stand-alone help desk provides.
+
+The _helpr.ss_ library provides the Help Desk as a unit with
 the following imports:
 
 > mzlib:function^
@@ -37,7 +52,6 @@ All of the helpr.ss unit's imports must be initialized before the Help
 Desk unit itself. For dynamic-linking convenience, the`
 new-help-frame' procedure is also returned as the value of the unit's
 initialization expression.
-
 
 _Creating Help Desk Documentation_
 ==================================

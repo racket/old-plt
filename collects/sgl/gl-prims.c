@@ -14,6 +14,7 @@
  * Lesser General Public License for more details.
  *
  * Modifications Copyright (C) 2003 by Scott Owens <sowens@cs.utah.edu>
+ * GLU additions Copyright (C) 2004 by Brendan Burns of U. Mass.
  *
  */
 
@@ -2547,6 +2548,16 @@ static Scheme_Object *scm_TexEnvfv(void *p, int c, Scheme_Object **v)
 /*---------------------------------------------------------------------------*/
 /* 3.10. Fog								     */
 
+static int pnum_Fog(GLenum pname)
+{
+  if (pname==GL_FOG_COLOR) {
+    return 4;
+  }
+  else {
+    return 1;
+  }
+}
+
 static Scheme_Object *scm_Fogi(void *p, int c, Scheme_Object **v)
 {
 	glFogi(arg_GLenum(0), arg_GLint(1));
@@ -2561,14 +2572,16 @@ static Scheme_Object *scm_Fogf(void *p, int c, Scheme_Object **v)
 
 static Scheme_Object *scm_Fogiv(void *p, int c, Scheme_Object **v)
 {
-	glFogiv(arg_GLenum(0), arg_GLintv(1, 1));
-	return scheme_void;
+  GLenum e = arg_GLenum(0);
+  glFogiv(e, arg_GLintv(1, pnum_Fog(e)));
+  return scheme_void;
 }
 
 static Scheme_Object *scm_Fogfv(void *p, int c, Scheme_Object **v)
 {
-	glFogfv(arg_GLenum(0), arg_GLfloatv(1, 1));
-	return scheme_void;
+  GLenum e = arg_GLenum(0);
+  glFogfv(e, arg_GLfloatv(1, pnum_Fog(e)));
+  return scheme_void;
 }
 
 /*===========================================================================*/
@@ -3400,6 +3413,274 @@ static Scheme_Object *scm_PopClientAttrib(void *p, int c, Scheme_Object **v)
 	return scheme_void;
 }
 
+
+/** GLU Support **/
+typedef struct {
+  Scheme_Object so;
+  GLUquadricObj *quad;
+} scm_Quadric;
+
+static Scheme_Type quadric_type;
+
+static scm_Quadric *arg_quad(const char *name, Scheme_Object *arg,
+		    int which, int argc, Scheme_Object **argv)
+{
+  if (arg->type == quadric_type) {
+    return (scm_Quadric *)arg;
+  }
+  else
+    scheme_wrong_type(name, "glu-quadric", which, argc, argv);
+  
+  return 0;
+}
+
+static void free_quad(void *p, void *data) {
+  scm_Quadric *q = (scm_Quadric *)p;
+  if (q->quad) {
+    gluDeleteQuadric(q->quad);
+  }
+}
+
+/** GLU Chapter 2 **/
+
+static Scheme_Object *scm_gluGetString(void *p, int c, Scheme_Object **v)
+{
+	return scheme_make_utf8_string((char *) gluGetString(arg_GLenum(0)));
+}
+
+/*
+static Scheme_Object *scm_gluCheckExtension(void *p, int c, Scheme_Object **v)
+*/
+
+
+/** Mipmapping Chapter 3 **/
+/** 3.1 Scaling **/
+Scheme_Object *scm_gluScaleImage(void *p, int c, Scheme_Object **v) {
+  GLsizei widthIn = arg_GLsizei(1);
+  GLsizei heightIn = arg_GLsizei(2);
+  GLenum typeIn = arg_GLenum(3);
+  GLsizei widthOut = arg_GLsizei(5);
+  GLsizei heightOut = arg_GLsizei(6);
+  GLenum typeOut = arg_GLenum(7);
+  
+  int result = gluScaleImage(arg_GLenum(0), widthIn, heightIn, typeIn,
+			     arg_GLvoidv(3,widthIn*heightIn,typeIn),
+			     widthOut, heightOut, typeOut,
+			     arg_GLvoidv(8,widthOut*heightOut,typeOut));
+  return scheme_make_integer(result);
+}
+
+/** 3.2 Automatic Mipmapping **/
+
+Scheme_Object *scm_gluBuild1DMipmaps(void *p, int c, Scheme_Object **v) {
+  GLsizei width = arg_GLsizei(2);
+  GLenum t = arg_GLenum(4);
+  int res = gluBuild1DMipmaps(arg_GLenum(0),
+			      arg_GLint(1),
+			      width,
+			      arg_GLenum(3),
+			      t,
+			      arg_GLvoidv(5, width, t));
+  return scheme_make_integer(res);
+}
+
+Scheme_Object *scm_gluBuild2DMipmaps(void *p, int c, Scheme_Object **v) {
+  GLsizei width = arg_GLsizei(2);
+  GLsizei height = arg_GLsizei(3);
+  GLenum t = arg_GLenum(5);
+  int res = gluBuild2DMipmaps(arg_GLenum(0),
+			      arg_GLint(1),
+			      width,
+			      height,
+			      arg_GLenum(4),
+			      t,
+			      arg_GLvoidv(6, width * height, t));
+  return scheme_make_integer(res);
+}
+
+#ifdef GLU_VERSION_1_3
+Scheme_Object *scm_gluBuild3DMipmaps(void *p, int c, Scheme_Object **v) {
+  GLsizei width = arg_GLsizei(2);
+  GLsizei height = arg_GLsizei(3);
+  GLsizei depth = arg_GLsizei(4);
+  GLenum t = arg_GLenum(6);
+  int res = gluBuild3DMipmaps(arg_GLenum(0),
+			      arg_GLint(1),
+			      width,
+			      height,
+			      depth,
+			      arg_GLenum(5),
+			      t,
+			      arg_GLvoidv(7, width*height*depth, t));
+  return scheme_make_integer(res);
+}
+#endif
+
+Scheme_Object *scm_gluBuild1DMipmapLevels(void *p, int c, Scheme_Object **v) {
+  GLsizei width = arg_GLsizei(2);
+  GLenum t = arg_GLenum(4);
+  int res = gluBuild1DMipmapLevels(arg_GLenum(0),
+				   arg_GLint(1),
+				   width,
+				   arg_GLenum(3),
+				   t,
+				   arg_GLint(5),
+				   arg_GLint(6),
+				   arg_GLint(7),
+				   arg_GLvoidv(8, width, t));
+  return scheme_make_integer(res);
+}
+
+Scheme_Object *scm_gluBuild2DMipmapLevels(void *p, int c, Scheme_Object **v) {
+  GLsizei width = arg_GLsizei(2);
+  GLsizei height = arg_GLsizei(3);
+  GLenum t = arg_GLenum(5);
+  int res = gluBuild2DMipmapLevels(arg_GLenum(0),
+				   arg_GLint(1),
+				   width,
+				   height,
+				   arg_GLenum(4),
+				   t,
+				   arg_GLint(6),
+				   arg_GLint(7),
+				   arg_GLint(8),
+				   arg_GLvoidv(9, width * height, t));
+  return scheme_make_integer(res);
+}
+
+#ifdef GLU_VERSION_1_3
+Scheme_Object *scm_gluBuild3DMipmapLevels(void *p, int c, Scheme_Object **v) {
+  GLsizei width = arg_GLsizei(2);
+  GLsizei height = arg_GLsizei(3);
+  GLsizei depth = arg_GLsizei(4);
+  GLenum t = arg_GLenum(6);
+  int res = gluBuild3DMipmapLevels(arg_GLenum(0),
+				   arg_GLint(1),
+				   width,
+				   height,
+				   depth,
+				   arg_GLenum(5),
+				   t,
+				   arg_GLint(7),
+				   arg_GLint(8),
+				   arg_GLint(9),
+				   arg_GLvoidv(7, width*height*depth, t));
+  return scheme_make_integer(res);
+}
+#endif
+
+/*** Chapter 4 Matrix *****/
+/*** 4.1 ***/
+
+Scheme_Object *scm_gluOrtho2D(void *p, int c, Scheme_Object **v) {
+  gluOrtho2D(arg_GLdouble(0),arg_GLdouble(1),
+	     arg_GLdouble(2),arg_GLdouble(3));
+  return scheme_void;
+}
+
+
+Scheme_Object *scm_gluPerspective(void *p, int c, Scheme_Object **v) {
+  gluPerspective(arg_GLdouble(0),arg_GLdouble(1),
+		 arg_GLdouble(2),arg_GLdouble(3));
+  return scheme_void;
+}
+
+Scheme_Object *scm_gluLookAt(void *p, int c, Scheme_Object **v) {
+  gluLookAt(arg_GLdouble(0),arg_GLdouble(1),arg_GLdouble(2),
+	    arg_GLdouble(3),arg_GLdouble(4),arg_GLdouble(5),
+	    arg_GLdouble(6),arg_GLdouble(7),arg_GLdouble(8));
+  return scheme_void;
+} 
+
+Scheme_Object *scm_gluPickMatrix(void *p, int c, Scheme_Object **v) {
+  gluPickMatrix(arg_GLdouble(0), arg_GLdouble(1),
+		arg_GLdouble(2), arg_GLdouble(3),
+		arg_GLvoidv(4,4,GL_INT));
+  return scheme_void;
+}
+
+/*** Chapter 6 ****/
+/*** 6.1 ***/
+Scheme_Object *scm_gluNewQuadric(void *p, int c, Scheme_Object **v) {
+  GLUquadricObj *ptr = gluNewQuadric();
+  if (ptr) {
+    scm_Quadric *q = (scm_Quadric *)scheme_malloc(sizeof(scm_Quadric));
+    q->quad = ptr;
+    q->so.type = quadric_type;
+    scheme_register_finalizer(q, free_quad, NULL, NULL, NULL);
+    return (Scheme_Object *)q;
+  }
+  else {
+    scheme_signal_error("GLU out of memory error");
+    return scheme_void;
+  }
+}
+
+/*** 6.3 ****/
+Scheme_Object *scm_gluQuadricNormals(void *p, int c, Scheme_Object **v) {
+  gluQuadricNormals(arg_quad((char *)p, v[0], 0, c, v)->quad,
+		    arg_GLboolean(1));
+  return scheme_void;
+}
+
+Scheme_Object *scm_gluQuadricOrientation(void *p, int c, Scheme_Object **v) {
+  gluQuadricOrientation(arg_quad((char *)p, v[0], 0, c, v)->quad,
+			arg_GLenum(1));
+  return scheme_void;
+}
+
+Scheme_Object *scm_gluQuadricDrawStyle(void *p, int c, Scheme_Object **v) {
+  gluQuadricOrientation(arg_quad((char *)p, v[0], 0, c, v)->quad,
+			arg_GLenum(1));
+  return scheme_void;
+}
+
+Scheme_Object *scm_gluQuadricTexture(void *p, int c, Scheme_Object **v) {
+  gluQuadricTexture(arg_quad((char *)p, v[0], 0, c, v)->quad,
+		    arg_GLenum(1));
+  return scheme_void;
+}
+
+/**** 6.4 ****/
+Scheme_Object *scm_gluSphere(void *p, int c, Scheme_Object **v) {
+  gluSphere(arg_quad((char *)p, v[0], 0, c, v)->quad,
+	    arg_GLdouble(1),
+	    arg_GLint(2),
+	    arg_GLint(3));
+  return scheme_void;
+}
+
+Scheme_Object *scm_gluCylinder(void *p, int c, Scheme_Object **v) {
+  gluCylinder(arg_quad((char *)p, v[0], 0, c, v)->quad,
+	      arg_GLdouble(1),
+	      arg_GLdouble(2),
+	      arg_GLdouble(3),
+	      arg_GLint(4),
+	      arg_GLint(5));
+  return scheme_void;
+}
+
+
+Scheme_Object *scm_gluDisk(void *p, int c, Scheme_Object **v) {
+  gluDisk(arg_quad((char *)p, v[0], 0, c, v)->quad,
+	  arg_GLdouble(1),
+	  arg_GLdouble(2),
+	  arg_GLint(3),
+	  arg_GLint(4));
+  return scheme_void;
+}
+
+Scheme_Object *scm_gluPartialDisk(void *p, int c, Scheme_Object **v) {
+  gluPartialDisk(arg_quad((char *)p, v[0], 0, c, v)->quad,
+		 arg_GLdouble(1),
+		 arg_GLdouble(2),
+		 arg_GLint(3),
+		 arg_GLint(4),
+		 arg_GLdouble(5),
+		 arg_GLdouble(6));
+  return scheme_void;
+}		    
+
 /*****************************************************************************/
 /* Scheme environment initialization					     */
 
@@ -4171,6 +4452,20 @@ static const struct scm_enum scm_enum[] = {
 	MAKE_ENUM(GL_UNPACK_SKIP_IMAGES),
 
 #endif /* GL_VERSION_1_3 */
+
+	MAKE_ENUM(GLU_SMOOTH),
+	MAKE_ENUM(GLU_VERSION),
+	MAKE_ENUM(GLU_EXTENSIONS),
+	MAKE_ENUM(GLU_EXTERIOR),
+	MAKE_ENUM(GLU_FILL),
+	MAKE_ENUM(GLU_FLAT),
+	MAKE_ENUM(GLU_INSIDE),
+	MAKE_ENUM(GLU_INTERIOR),
+	MAKE_ENUM(GLU_LINE),
+	MAKE_ENUM(GLU_NONE),
+	MAKE_ENUM(GLU_SILHOUETTE),
+	MAKE_ENUM(GLU_OUTSIDE)
+
 };
 
 void scheme_load_enum(Scheme_Env *env)
@@ -4580,6 +4875,32 @@ static const struct scm_prim scm_prim[] = {
 
 #endif /* GL_VERSION_1_3 */
 
+	{ "gluGetString", scm_gluGetString, 1, 1},
+	{ "gluScaleImage", scm_gluScaleImage, 9, 9},
+	{ "gluBuild1DMipmaps", scm_gluBuild1DMipmaps, 6, 6},
+	{ "gluBuild2DMipmaps", scm_gluBuild2DMipmaps, 7, 7},
+	{ "gluBuild1DMipmapLevels", scm_gluBuild1DMipmapLevels, 9, 9},
+	{ "gluBuild2DMipmapLevels", scm_gluBuild2DMipmapLevels, 10, 10},
+	{ "gluOrtho2D", scm_gluOrtho2D, 4, 4},
+	{ "gluPerspective", scm_gluPerspective, 4, 4},
+	{ "gluLookAt", scm_gluLookAt, 9, 9},
+	{ "gluPickMatrix", scm_gluPickMatrix, 5, 5},
+	
+	{ "gluNewQuadric", scm_gluNewQuadric, 0, 0},
+	{ "gluQuadricNormals", scm_gluQuadricNormals, 2, 2},
+	{ "gluQuadircOrientation", scm_gluQuadricOrientation, 2, 2},
+	{ "gluQuadircDrawStyle", scm_gluQuadricOrientation, 2, 2},
+	{ "gluQuadricTexture", scm_gluQuadricTexture, 2, 2},
+	{ "gluCylinder", scm_gluCylinder, 6, 6},
+	{ "gluDisk", scm_gluDisk, 5, 5},
+	{ "gluSphere", scm_gluSphere, 4, 4},
+	{ "gluPartialDisk", scm_gluPartialDisk, 7, 7},
+
+#ifdef GLU_VERSION_1_3
+	{ "gluBuild3DMipmaps", scm_gluBuild3DMipmaps, 8, 8},
+	{ "gluBuild3DMipmapLevels", scm_gluBuild3DMipmapLevels, 11, 11},
+#endif
+ 
 };
 
 /*---------------------------------------------------------------------------*/
@@ -4611,6 +4932,7 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
 Scheme_Object *scheme_initialize(Scheme_Env *env)
 {
   scheme_set_types();
+  quadric_type = scheme_make_type("<glu-quadric>");
   return scheme_reload(env);
 }
 

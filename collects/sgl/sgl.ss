@@ -151,7 +151,7 @@
                  (else
                   (raise-type-error 'name #,(get-possible-types-v types) x))))))))
   
-    (define gl-regex2 (regexp "(^glu\\-)|(^gl\\-)"))
+    (define gl-regex2 (regexp "(^GLU\\-)|(^GL\\-)"))
     (define _-regex (regexp "_"))
     
     (define (string-downcase s)

@@ -25,11 +25,14 @@
 
 #ifdef XONX
 #include <GL/gl.h>
+#include <GL/glu.h>
 #else
 #ifdef OS_X
 #include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #else
 #include <GL/gl.h>
+#include <GL/glu.h>
 #endif
 #endif
 

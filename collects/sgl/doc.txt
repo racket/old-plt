@@ -25,7 +25,8 @@ that consume array arguments.
 
 
 Many thanks to Robert Kooima who wrote the GL binding that the gl and
-gl-unsafe modules are based on.
+gl-unsafe modules are based on.  Thanks also to Brendan Burns for the
+glu addition.
 
 _gl-vectors.ss_
 
@@ -129,7 +130,7 @@ The sgl module is still not yet complete and many functions from the gl
 module do not yet have counterparts in the sgl module.
 
 Examples:
-(require (prefix gl- (lib "gl.ss" "sgl"))
+(require (prefix gl- (lib "sgl.ss" "sgl"))
          (lib "gl-vectors.ss" "sgl"))
 (gl-begin 'triangles)
 (gl-vertex 1 2 3)
@@ -547,6 +548,25 @@ glVertex4iv
 glVertex4s
 glVertex4sv
 glViewport
+gluGetString
+gluScaleImage
+gluBuild1DMipmaps
+gluBuild2DMipmaps
+gluBuild1DMipmapLevels
+gluBuild2DMipmapLevels
+gluOrtho2D
+gluPerspective
+gluLookAt
+gluPickMatrix
+gluNewQuadric
+gluQuadricNormals
+gluQuadircOrientation
+gluQuadircDrawStyle
+gluQuadricTexture
+gluCylinder
+gluDisk
+gluSphere
+gluPartialDisk
 
 Version 1.2
 glBlendColor
@@ -672,4 +692,6 @@ glCompressedTexSubImage1D
 glCompressedTexSubImage2D
 glCompressedTexSubImage3D
 glGetCompressedTexImage
-  
+gluBuild3DMipmaps
+gluBuild3DMipmapLevels
+ 

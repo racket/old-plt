@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.37 1997/09/18 18:07:33 shriram Exp shriram $
+; $Id: x.ss,v 1.38 1997/09/20 18:51:55 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -189,8 +189,8 @@
 					 (exn?
 					   (lambda (exn)
 					     (internal-error expr
-					       "Macro expansion error: ~s"
-					       exn))))
+					       "Macro expansion error: ~a"
+					       (exn-message exn)))))
 			  (let* ((rewriter (macro-resolution-rewriter r))
 				  (m (new-mark))
 				  (marker (mark-expression m))

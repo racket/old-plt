@@ -6,6 +6,8 @@
  (are-you-sure-you-want-to-switch-languages
   "Wisselen van taal vergt een herstart van DrScheme.  Weet u zeker dat u dit wilt?")
 
+ (interact-with-drscheme-in-language "Interact with DrScheme in Dutch")
+
  ;; these two should probably be the same in all languages except English.
  ;; they are the button labels (under macos and windows, respectively)
  ;; that go the with the string above.
@@ -50,7 +52,7 @@
  (bug-report-field-tools "Tools") ; <**> -- Where is this used?
  (bug-report-field-docs-installed "Geïnstalleerde documentatie") ; if allowed, add \n
  (bug-report-field-language "Programmeertaal")
- (bug-report-field-teachpacks "Teachpacks")
+ (bug-report-field-teachpacks "Lespakketten")
  (bug-report-field-collections "Collecties")
  (bug-report-field-human-language "Spreektaal")
  (bug-report-field-version "Versie")
@@ -65,8 +67,7 @@
  (illegal-bug-report "Ongeldige defectmelding")
  (pls-fill-in-field "Gelieve het \"~a\"-veld in te vullen")
  (malformed-email-address "Onmogelijk emailadres")
- (pls-fill-in-either-description-or-reproduce 
-  "Gelieve hetzij het omschrijvings-, hetzij het \"hoe te veroorzaken\"-veld in te vullen.")
+ (pls-fill-in-either-description-or-reproduce "Gelieve hetzij het omschrijvings-, hetzij het \"hoe te veroorzaken\"-veld in te vullen.")
 
  ;;; check syntax
  (check-syntax "Controleer Syntaxis")
@@ -75,7 +76,7 @@
  (cs-underline "Onderstreept")
  (cs-change-color "Andere kleur")
  (cs-tack/untack-arrow "Pijlen vast/los")
- (cs-jump "Jump") ; <**>
+ (cs-jump "Spring") ; <**> -- "Jump" - where used?
  (cs-error-message "Foutmelding")
  (cs-open-file "Open ~a")
  (cs-rename-var "Hernoem ~a")
@@ -87,7 +88,7 @@
  (collect-button-label "GC")
  (read-only "Alleen lezen")
  (read/write "Lezen/Schrijven")
- (auto-extend-selection "Auto-extend") ; <**>
+ (auto-extend-selection "Auto-extend") ; <**> -- when does this appear?
  (overwrite "Vervang")
  (running "Bezig")
  (not-running "Klaar")
@@ -104,8 +105,8 @@
 
  (goto-line "Ga naar regel")
  (goto-line-invalid-number
-  "~a is geen geldig regelnummer. It must be an integer between 1 and ~a") ; <**>
- (goto-position "Goto Position") ; <**>
+  "~a is geen geheel getal tussen 1 en ~a, dus geen geldig regelnummer")
+ (goto-position "Naar positie")
  (no-full-name-since-not-saved "Dit bestand is nog nooit opgeslagen, en heeft dus nog geen naam.")
  (cannot-open-because-dne "~a bestaat niet, en kan dus niet geopend worden.")
  (interactions-out-of-sync
@@ -114,13 +115,13 @@
  (save "Opslaan")
  (please-choose-either "Gelieve te kiezen tussen \"~a\" en \"~a\"")
  (close-anyway "Toch sluiten")
- (clear-anyway "Toch wissen") ; <**>
+ (clear-anyway "Toch wissen") ; <**> -- check with actual usage
 
  (url "URL")
  (url: "URL:")
  (open-url... "Open URL...")
  (open-url "Open URL")
- (browse... "Surf...")
+ (browse... "Surf...") ; -- Translated as browsing on the Internet
  (bad-url "Bad URL") ; <**>
  (bad-url:this "Bad URL: ~a") ;<**>
  
@@ -128,232 +129,230 @@
  (search-results "Zoekresultaten")
  (help-desk "Hulpbron")
  (help-desk-n "Hulpbron ~a")
- (about-help-desk "Omtrent de hulpbron")
+ (about-help-desk "Omtrent de Hulpbron")
  (help-desk-about-string
   "De Hulpbron bevat complete informatie omtrent PLT programmatuur, waaronder DrScheme, MzScheme, en MrEd.\n\nVersie ~a\nAuteursrecht (c) 1995-2001 PLT")
  (help-on-help "Hulp voor hulp")
- (help-on-help-details "Voor hulp bij het gebruik van de Hulpbron, klik de link `Help Desk' de startpagina van de Hulpbron. (To get to the home page if you're not already there, click the `Home' button at the top of the Help Desk window.)")
- (find-docs-for "Find docs for:")
- (search "Search")
+ (help-on-help-details "Voor hulp bij het gebruik van de Hulpbron, klik de link `Help Desk' op de startpagina van de Hulpbron. (Om op die startpagina te komen, klik op de Startknop bovenaan het hulpbronvenster.)")
+ (find-docs-for "Zoektekst:") ; <**> - This whole part needs redoing.  The "search" button is at the wrong place for natural Dutch..
+ (search "Zoek")
  ; next 3 are popup menu choices at bottom of help desk window
- (search-for-keyword "for Keyword")
- (search-for-keyword-or-index "for Keyword or Index Entry")
- (search-for-keyword-or-index-or-text "for Keyword, Index Entry, or Text")
- (exact-match "exact match")
- (containing-match "containing match")
+ (search-for-keyword "een trefwoord")
+ (search-for-keyword-or-index "een trefwoord of ingang") ; <**>
+ (search-for-keyword-or-index-or-text "als trefwoord, Index Entry of tekst") ; <**>
+ (exact-match "precies")
+ (containing-match "die dit bevat")
  (regexp-match "regexp match")
- (feeling-lucky "Feeling Lucky")
- (nothing-found-for-search-key "Nothing found for \"~a\".")
+ (feeling-lucky "Het eerste het beste") ; -- Where does this occur?
+ (nothing-found-for-search-key "Niets gevonden voor \"~a\".")
  (searching "Searching...")
- (search-stopped "(Search stopped.)")
- (search-stopped-too-many-matches "(Search stopped - found too many matches.)")
- (reload "Reload")
+ (search-stopped "(Zoeken gestopt.)")
+ (search-stopped-too-many-matches "(Zoeken gestopt - te veel treffers.)")
+ (reload "Herlaad")
  (help "Help")
- (searching... "Searching...")
- (nothing-found-for-empty-search "Nothing found for the empty search")
- (nothing-found-for "Nothing found for ~a")
- (and "and")
- (error-finding-docs
-  "Could not find documentation.\n\n~a")
- (manual-installed-date "(installed ~a)")
+ (searching... "Zoeken...")
+ (nothing-found-for-empty-search "Gezocht naar niets -- niets gevonden")
+ (nothing-found-for "Geen treffers voor ~a")
+ (and "en")
+ (error-finding-docs "Kan documentatie niet vinden.\n\n~a")
+ (manual-installed-date "(geïnstalleerd op ~a)") ; -- assuming ~a is a date.
 
  ;; refreshing manuals
- (refreshing-manuals "Re-downloading Manuals")
- (refresh-downloading... "Downloading ~a...")
- (refresh-deleting... "Deleting old version of ~a...")
- (refresh-installing... "Installing new version of ~a...")
+ (refreshing-manuals "Handleidingen opnieuw ophalen")
+ (refresh-downloading... "~a ophalen...")
+ (refresh-deleting... "Oude versie van ~a verwijderen...")
+ (refresh-installing... "Nieuwe versie van ~a installeren...")
 
  ;; help desk htty proxy
  (http-proxy "HTTP Proxy")
- (proxy-direct-connection "Direct connection")
- (proxy-use-proxy "Use proxy:")
+ (proxy-direct-connection "Directe vebinding")
+ (proxy-use-proxy "Gebruik proxy:")
  (proxy-host "Host")
  (proxy-port "Port")
- (proxy-bad-host "Bad Proxy Host")
+ (proxy-bad-host "Verkeerde Proxy Host")
 
  ;; browser
  (rewind-in-browser-history "Terug")
  (forward-in-browser-history "Vooruit")
  (home "Start")
  (browser "Browser")
- (choose-browser "Choose a Browser")
- (no-browser "None")
- (cannot-display-url "Cannot display URL ~s: ~a")
- (install? "Install?")  ;; if a .plt file is found (title of dialog)
- (you-have-selected-an-installable-package "You have selected an installable package.")
- (do-you-want-to-install-it? "Do you want to install it?")
- (paren-file-size "(The file is ~a bytes)")
- (download-and-install "Download && Install") ;; button label
- (download "Download") ;; button label
- (save-downloaded-file/size "Save downloaded file (~a bytes) as") ;; label for get-file dialog
- (save-downloaded-file "Save downloaded file as")  ;; label for get-file dialog
- (downloading "Downloading") ;; dialog title
- (downloading-file... "Downloading file...")
- (package-was-installed "The package was installed.")
- (download-was-saved "The downloaded file was saved.")
+ (choose-browser "Kies een surfer") ; -- translated as Internet browser
+ (no-browser "Geen")
+ (cannot-display-url "Kan URL ~s niet tonen: ~a")
+ (install? "Installeren?")  ;; if a .plt file is found (title of dialog)
+ (you-have-selected-an-installable-package "U hebt een installeerbaar pakket gekozen.")
+ (do-you-want-to-install-it? "Wilt u het installeren?")
+ (paren-file-size "(Het bestand bevat ~a bytes)")
+ (download-and-install "Haal op && Installeer") ;; button label
+ (download "Haal op") ;; button label
+ (save-downloaded-file/size "Opgehaald bestand (~a bytes) opslaan als") ;; label for get-file dialog
+ (save-downloaded-file "Opgehaald bestand opslaan als")  ;; label for get-file dialog
+ (downloading "Ophalen") ;; dialog title
+ (downloading-file... "Bestand aan het ophalen...")
+ (package-was-installed "Het pakket is geïnstalleerd.")
+ (download-was-saved "Het opgehaalde bestand is opgeslagen.")
  (getting-page "Getting Page") ;; dialog title
 
- (install-plt-file-menu-item... "Install .plt File...")
- (install-plt-file-dialog-title "Install .plt File")
+ (install-plt-file-menu-item... "Installeer .plt-bestand...")
+ (install-plt-file-dialog-title "Installeer .plt-bestand")
  (install-plt-web-tab "Web")
- (install-plt-file-tab "File")
- (install-plt-filename "Filename:")
+ (install-plt-file-tab "Bestand")
+ (install-plt-filename "Bestandsnaam:")
  (install-plt-url "URL:")
  
  ;; install plt file when opened in drscheme strings
- (install-plt-file "Install ~a or open for editing?")
- (install-plt-file/yes "Install")
- (install-plt-file/no "Edit")
+ (install-plt-file "~a installeren of openen ter bewerking?")
+ (install-plt-file/yes "Installeer")
+ (install-plt-file/no "Bewerk")
  
  ;;; about box
- (about-drscheme-frame-title "About DrScheme")
- (take-a-tour "Take a Tour!")
- (release-notes "Release Notes")
- (parenthetical-last-version "(previous version ~a)")
- (parenthetical-last-language "(previous language ~a)")
- (parenthetical-last-version/language "(previous version ~a, language ~a)")
+ (about-drscheme-frame-title "Omtrent DrScheme")
+ (take-a-tour "Rondleiding!")
+ (release-notes "Versienotities")
+ (parenthetical-last-version "(vorige versie ~a)")
+ (parenthetical-last-language "(vorige taal ~a)")
+ (parenthetical-last-version/language "(vorige versie ~a, taal ~a)")
  
  
  ;;; save file in particular format prompting.
- (save-as-plain-text "Save this file as plain text?")
- (save-in-drs-format "Save this file in drscheme-specific non-text format?")
- (yes "Yes")
- (no "No")
+ (save-as-plain-text "Bestand opslaan als platte tekst?")
+ (save-in-drs-format "Bestand opslaan in DrScheme (niet tekst) -vorm?")
+ (yes "Ja")
+ (no "Nee") ; -- I personally prefer 'Neen', but it seems most younger people don't..
  
  ;;; preferences
- (preferences "Preferences")
- (saving-preferences "Saving Prefs")
- (error-unmarshalling "Error unmarshalling ~a preference")
- (error-saving-preferences "Error saving preferences: ~a")
- (error-reading-preferences "Error reading preferences")
- (expected-list-of-length2 "expected a list of length 2")
+ (preferences "Voorkeuren")
+ (saving-preferences "Voorkeuren opslaan")
+ (error-unmarshalling "Error unmarshalling ~a preference") ; <**> -- What does that mean?
+ (error-saving-preferences "Fout bij opslaan voorkeuren: ~a")
+ (error-reading-preferences "Fout bij lezen voorkeuren")
+ (expected-list-of-length2 "verwachtte een lijst van 2 lang")
  (scheme-prefs-panel-label "Scheme")
- (warnings-prefs-panel-label "Warnings")
- (editor-prefs-panel-label "Editing")
- (highlight-parens "Highlight between matching parens")
- (fixup-parens "Correct parens")
- (flash-paren-match "Flash paren match")
- (auto-save-files "Auto-save files")
- (backup-files "Backup files")
- (map-delete-to-backspace "Map delete to backspace")
- (verify-exit "Verify exit")
- (ask-before-changing-format "Ask before changing save format")
+ (warnings-prefs-panel-label "Waarschuwingen")
+ (editor-prefs-panel-label "Bewerken")
+ (highlight-parens "Oplichten tussen bijeenhorende haken") ; -- ugly Dutch - should say something completely different, such as "highlight substructure"
+ (fixup-parens "Haken corrigeren")
+ (flash-paren-match "Knipper bijbehorende haak")
+ (auto-save-files "Bestanden automatisch opslaan")
+ (backup-files "Reservebestanden")
+ (map-delete-to-backspace "Delete naar links") ; -- to be changed if RtoL languages are supported
+ (verify-exit "Bevestiging bij afsluiten")
+ (ask-before-changing-format "Bevestiging bij opslaan in ander formaat")
  (wrap-words-in-editor-buffers "Wrap words in editor buffers")
- (show-status-line "Show status-line")
- (count-from-one "Count line and column numbers from one") 
- (display-line-numbers "Display line numbers in buffer; not character offsets")
- (enable-keybindings-in-menus "Enable keybindings in menus")
+ (show-status-line "Toon statusregel")
+ (count-from-one "Regels en kolommen tellen vanaf 1") 
+ (display-line-numbers "Toon regelnummers (geen letternummers) in buffer") ; -- 'buffer' is not wrong, but unclear
+ (enable-keybindings-in-menus "Gebruik sneltoetsen in menus")
  (automatically-to-ps "Automatically print to postscript file")
- (use-mdi "Use MDI Windows") ;;; ms windows only -- use that window in a window thingy
+ (use-mdi "Vensters in vensters") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Use separate dialog for searching")
  (reuse-existing-frames "Reuse existing frames when opening new files")
- (default-fonts "Default Fonts")
+ (default-fonts "Verstek-lettertypen")
  
  ; should have entire alphabet
- (font-example-string "The quick brown fox jumped over the lazy dogs.") 
+ (font-example-string "The quick brown fox jumps over lazy dogs.") 
 
- (change-font-button-label "Change")
- (fonts "Fonts")
+ (change-font-button-label "Veranderen") ; or: 'aanpassen' (= adapt)
+ (fonts "Lettertypen") ; -- Where is this used?  If context is clear, then just 'typen' is more natural.
 
  ; filled with type of font, eg modern, swiss, etc.
- (choose-a-new-font "Please choose a new \"~a\" font")
+ (choose-a-new-font "Gelieve een nieuw \"~a\" type te kiezen")
 
- (font-size-slider-label "Size")
- (restart-to-see-font-changes "Restart to see font changes")
+ (font-size-slider-label "Grootte")
+ (restart-to-see-font-changes "Herstart om veranderingen te zien")
 
- (font-prefs-panel-title "Font")
- (font-name "Font Name")
- (font-size "Font Size")
- (set-font "Set Font...")
- (select-font-name "Select Font Name")
- (example-text "Example Text:")
- (only-warn-once "Only warn once when executions and interactions are not synchronized")
+ (font-prefs-panel-title "Lettertypen")
+ (font-name "Naam")
+ (font-size "Grootte")
+ (set-font "Lettertype instellen...")
+ (select-font-name "Kies naam")
+ (example-text "Voorbeeldtekst:")
+ (only-warn-once "Slechts eenmaal waarschuwen als interacties niet met definitievenster overeenkomen") ; <**> -- The original English seems wrong here.  I translated "interactions" / "definitions" rather than "executions".
  
  ; warning message when lockfile is around
- (waiting-for-pref-lock "Waiting for the preferences lockfile...")
+ (waiting-for-pref-lock "Waiting for the preferences lockfile...") ; <**>
  (pref-lock-not-gone
   "The preferences lockfile:\n\n   ~a\n\nprevents the preferences from being saved. Ensure that no PLT software is running and delete this file.")
- (still-locked-exit-anyway? "The preferences were not saved sucessfully. Exit anyway?")
+ (still-locked-exit-anyway? "Opslaan voorkeuren mislukt. Toch afsluiten?")
  
  ;;; indenting preferences panel
- (indenting-prefs-panel-label "Indenting")
+ (indenting-prefs-panel-label "Indenteren")
 
  ; filled with define, lambda, or begin
- (enter-new-keyword "Enter new ~a-like keyword:")
- (x-keyword "~a Keyword")
- (x-like-keywords "~a-like Keywords")
+ (enter-new-keyword "Nieuw ~a-achtig trefwoord")
+ (x-keyword "~a trefwoord") ; -- Funny in English too, isn't it?  "Begin Keyword"
+ (x-like-keywords "~a-achtige trefwoorden")
 
- (expected-a-symbol "expected a symbol, found: ~a")
- (already-used-keyword "\"~a\" is already a specially indented keyword")
- (add-keyword "Add")
- (remove-keyword "Remove")
+ (expected-a-symbol "verwachtte een symbool, kreeg: ~a")
+ (already-used-keyword "Het trefwoord \"~a\" heeft al een speciale indentatie")
+ (add-keyword "Toevoegen")
+ (remove-keyword "Verwijderen")
  
  ;;; find/replace
- (find-and-replace "Find and Replace")
- (find "Find")
- (replace "Replace")
- (dock "Dock")
- (undock "Undock")
- (use-separate-dialog-for-searching "Use separate dialog for searching")
- (replace&find-again "Replace && Find Again") ;;; need double & to get a single &
- (replace-to-end "Replace to End")
- (forward "Forward")
- (backward "Backward")
+ (find-and-replace "Zoek en vervang")
+ (find "Zoek")
+ (replace "Vervang")
+ (dock "Aanhaken")
+ (undock "Zweven")
+ (use-separate-dialog-for-searching "Gebruik een apart zoekvenster")
+ (replace&find-again "Vervang && Zoek opnieuw") ;;; need double & to get a single &
+ (replace-to-end "Vervang tot einde")
+ (forward "Voorwaarts")
+ (backward "Terug")
  (hide "Sluiten")
  
  ;;; multi-file-search
- (mfs-multi-file-search-menu-item "Search in Files...")
- (mfs-string-match/graphics "String match (handles files with graphics)")
- (mfs-regexp-match/no-graphics "Regular Expression (only raw text files)")
- (mfs-searching... "Searching...")
- (mfs-configure-search "Configure Search") ;; dialog title
- (mfs-files-section "Files")   ;; section in config dialog
- (mfs-search-section "Search") ;; section in config dialog
+ (mfs-multi-file-search-menu-item "Zoek in bestanden...")
+ (mfs-string-match/graphics "String match (handles files with graphics)") ; <**>
+ (mfs-regexp-match/no-graphics "Regular Expression (alleen platte tekstbestanden)")
+ (mfs-searching... "Zoekt...")
+ (mfs-configure-search "Zoekinstellingen") ;; dialog title
+ (mfs-files-section "Bestanden")   ;; section in config dialog
+ (mfs-search-section "Zoek") ;; section in config dialog
  (mfs-dir "Dir")
- (mfs-recur-over-subdirectories "Recur over subdirectories")
+ (mfs-recur-over-subdirectories "Recursief in mappen")
  (mfs-regexp-filename-filter "Regexp filename filter")
- (mfs-search-string "Search string")
+ (mfs-search-string "Zoektekst")
  (mfs-drscheme-multi-file-search "DrScheme - Multi File Search") ;; results window and error message title
- (mfs-not-a-dir "\"~a\" is not a directory")
- (mfs-open-file "Open File")
- (mfs-stop-search "Stop Search")
- (mfs-case-sensitive-label "Case sensitive")
- (mfs-no-matches-found "No matches found.")
- (mfs-search-interrupted "Search aborted.")
+ (mfs-not-a-dir "\"~a\" is geen map")
+ (mfs-open-file "Bestand openen")
+ (mfs-stop-search "Stop met zoeken")
+ (mfs-case-sensitive-label "Case sensitive") ; <**>
+ (mfs-no-matches-found "Geen treffers.")
+ (mfs-search-interrupted "Zoeken afgebroken.")
  
  ;;; reverting a file
- (error-reverting "DrScheme - Error Reverting")
- (could-not-read "could not read \"~a\"")
- (are-you-sure-revert
-  "Are you sure that you want to revert this file? This change cannot be undone.")
+ (error-reverting "DrScheme - Fout bij herladen")
+ (could-not-read "kan \"~a\" niet lezen")
+ (are-you-sure-revert "Herladen kan niet ongedaan gemaakt worden.  Toch doen?")
  (are-you-sure-revert-title
-  "Revert?")
+  "Herladen?")
  
  ;;; saving a file
  ; ~a is filled with the filename
- (error-saving "Error Saving") ;; title of error message dialog
- (error-saving-file/name "There was an error saving ~a.")
+ (error-saving "Fout bij opslaan") ;; title of error message dialog
+ (error-saving-file/name "Er trad een fout op bij het opslaan van ~a.")
 
  ;;; finder dialog
  (must-specify-a-filename "You must specify a file name")
- (file-does-not-exist "The file \"~a\" does not exist.")
- (ask-because-file-exists "The file \"~a\" already exists. Replace it?")
- (dne-or-cycle "The file \"~a\" contains a nonexistent directory or a cycle.")
- (get-file "Get file")
+ (file-does-not-exist "Bestand \"~a\" bestaat niet.")
+ (ask-because-file-exists "Bestand \"~a\" bestaat al. Vervangen?")
+ (dne-or-cycle "Bestand \"~a\" bevat een nietbestaande map, of een cykel.") ; -- weird English.  How can a file contain a directory?
+ (get-file "Get file") ; <**>
  (put-file "Put file")
- (full-pathname "Full pathname")
- (show-dot-files "Show files and directories that begin with a dot.")
- (up-directory-button-label "Up directory")
- (add-button-label "Add") ;;; for multi-file selection
- (add-all-button-label "Add all") ;;; for multi-file selection
- (remove-button-label "Remove") ;;; for multi-file selection
- (file-wrong-form "That filename does not have the right form.")
- (select-files "Select files")
- (select-file "Select a file")
- (dir-dne "That directory does not exist.")
- (file-dne "That file does not exist.")
- (empty-filename "The filename must have some letters in it.")
- (that-is-dir-name "That is a directory name.")
+ (full-pathname "Volledige padnaam")
+ (show-dot-files "Toon ook bestanden en mappen waarvan de naam met een punt begint.")
+ (up-directory-button-label "Één map omhoog")
+ (add-button-label "Toevoegen") ;;; for multi-file selection
+ (add-all-button-label "Alles toevoegen") ;;; for multi-file selection
+ (remove-button-label "Verwijderen") ;;; for multi-file selection
+ (file-wrong-form "Bestandsnaam heeft niet de juiste vorm.")
+ (select-files "Kies bestanden")
+ (select-file "Kies bestand")
+ (dir-dne "Map bestaat niet.")
+ (file-dne "Bestand bestaat niet.")
+ (empty-filename "Bestandsnaam moet minstens één letter bevatten.")
+ (that-is-dir-name "Dat is de naam van een map.")
  
  ;;; raw menu names -- these must match the 
  ;;; versions below, once the &s have been stripped.
@@ -391,19 +390,19 @@
  (revert-info "Negeer de gemaakte wijzigingen, en herlaad het bestand")
  (revert-menu-item "&Herlaad")
 
- (save-info "Save this file to disk")
+ (save-info "Sla dit bestand op een schijf op")
  (save-menu-item "O&pslaan")
 
- (save-as-info "Prompt for a filename and save this file to disk")
+ (save-as-info "Vraag om een naam en sla dit bestand onder die naam op")
  (save-as-menu-item "Ops&laan als...")
 
  (print-info "Stuur dit bestand naar een printer")
  (print-menu-item "Af&drukken...")
 
- (close-info "Close this file")
+ (close-info "Sluit dit bestand")
  (close-menu-item "&Sluiten")
 
- (quit-info "Close all windows")
+ (quit-info "Sluit alle vensters")
  (quit-menu-item-windows "&Afsluiten")
  (quit-menu-item-others "&Afsluiten")
  
@@ -452,7 +451,7 @@
  (insert-text-box-item "Tekst")
  (insert-pb-box-item "Pasteboard Box") ;<**>
  (insert-image-item "Plaatje...")
- (wrap-text-item "Wrap Text")
+ (wrap-text-item "Wrap Text") ; <**>
 
  (windows-menu-label "&Vensters")
  (bring-frame-to-front "Kies venster")       ;;; title of dialog
@@ -465,7 +464,7 @@
  (hide-overview "Toon overzicht niet")
 
  (help-menu-label "&Hulp")
- (about-info "Credits and details for this application")
+ (about-info "Credits and details for this application") ; <**>
  (about-menu-item "Info...")
  (help-menu-check-for-updates "Recentere versies...")
  
@@ -487,8 +486,8 @@
  (are-you-sure-quit "Weet u zeker dat u wilt afsluiten?")
  
  ;;; autosaving
- (error-autosaving "Error autosaving \"~a\".")
- (autosaving-turned-off "Autosaving is turned off\nuntil the file is saved.")
+ (error-autosaving "Fout bij automatisch opslaan van \"~a\".")
+ (autosaving-turned-off "Automatisch opslaan uitgezet tot\nhet bestand handmatig is opgeslagen.")
  
  ;;; file modified warning
  (file-has-been-modified
@@ -499,7 +498,7 @@
   "Het bestand met de definities is gewijzigd.  Gelieve op te slaan of te herladen.")
  (drscheme-internal-error "Interne Fout van DrScheme")
  
- ;;; tools
+ ;;; tools <**>
  (invalid-tool-spec "The tool specification in collection ~a's info.ss file is invalid. Expected either a string or a non-empty list of strings, got: ~e")
  (error-loading-tool-title "DrScheme - Error loading tool ~s; ~s")
  (error-invoking-tool-title "Error invoking tool ~s;~s")
@@ -515,13 +514,13 @@
 
  ;;; define popup menu
  (end-of-buffer-define "<< buffereinde >>")
- (sort-by-name "Sort by name")
- (sort-by-position "Sort by position in file")
+ (sort-by-name "Sorteer op naam")
+ (sort-by-position "Sorteer op positie in bestand")
  (no-definitions-found "<< geen definities gevonden >>")
- (jump-to-defn "Jump to definition of ~a")
+ (jump-to-defn "Spring naa definitie van ~a")
 
- (recent-items-sort-by-age "Sort by Age")
- (recent-items-sort-by-name "Sort by Name")
+ (recent-items-sort-by-age "Sorteer op leeftijd")
+ (recent-items-sort-by-name "Sorteer op naam")
  
  ;;; show menu
  (hide-definitions-menu-item-label "Toon &Definities niet")
@@ -537,11 +536,11 @@
  (print-definitions "Definitions af&drukken...")
  (about-drscheme "Omtrent DrScheme")
  (save-other "Anderszins opslaan")
- (save-definitions-as-text "Save Definitions As Text...")
- (save-interactions "Save Interactions")
- (save-interactions-as "Save Interactions As...")
- (save-interactions-as-text "Save Interactions As Text...")
- (print-interactions "Print Interactions...")
+ (save-definitions-as-text "Definities opslaan als tekst...")
+ (save-interactions "Interacties opslaan")
+ (save-interactions-as "Interacties opslaan als...")
+ (save-interactions-as-text "Interacties opslaan als tekst...")
+ (print-interactions "Interacties afdrukken...")
  
  ;;; edit-menu
  (split-menu-item-label "&Splits")
@@ -560,10 +559,10 @@
  (kill-menu-item-help-string "Beëindig de huidige berekening")
  (clear-error-highlight-menu-item-label "Verwijder foutkleur")
  (clear-error-highlight-item-help-string "Verwijdert de roze kleur die de fout aangeeft")
- (reindent-menu-item-label "&Herindenteer")
+ (reindent-menu-item-label "He&rindenteer")
  (reindent-all-menu-item-label "Herindenteer &Alles")
- (comment-out-menu-item-label "&Comment Out")
- (uncomment-menu-item-label "&Uncomment")
+ (comment-out-menu-item-label "&Commentarieer weg")
+ (uncomment-menu-item-label "&Verwijder commentaartekens") ; -- Sorry, couldn't keep the &U..
  
  ;;; executables
  (create-executable-menu-item-label "Create Executable...")
@@ -576,74 +575,74 @@
  (use-mred-binary?
   "Use the mred binary for this executable?\n\nIf yes, your program can use the (lib \"mred.ss\" \"mred\") library. If no, DrScheme will use mzscheme as the binary for this executable and you cannot use that library.\n\nIf unsure, choose yes.")
  (inline-saved-program-in-executable/windows/path
-   "WARNING! The generated executable relies on three DLLs: libmred.dll, libmzsch.gll, and libgc.dll, which are located at\n\n~a\n\nThe executable finds the DLLs either in the executable's directory or through the PATH enviornment variable.\n\nWhen you installed DrScheme, the installer adjusted the user's PATH to include the directory where the DLLs were installed. Beware of configuration or user changes since installation.\n\nIf you move the executable to another machine, you must also copy the DLLs to the other machine --- either to the same directory as the executable, or to a directory in the other machine's PATH.")
+   "WARNING! The generated executable relies on three DLLs: libmred.dll, libmzsch.gll, and libgc.dll, which are located at\n\n~a\n\nThe executable finds the DLLs either in the executable's directory or through the PATH enviornment variable.\n\nWhen you installed DrScheme, the installer adjusted the user's PATH to include the directory where the DLLs were installed. Beware of configuration or user changes since installation.\n\nIf you move the executable to another machine, you must also copy the DLLs to the other machine --- either to the same directory as the executable, or to a directory in the other machine's PATH.") ; -- error in English: enviornment
  (launcher "Launcher")
  (stand-alone "Stand-alone")
  (executable-type "Type")
  (executable-base "Base")
- (filename "Filename: ")
- (create "Create")
- (please-choose-an-executable-filename "Please choose a filename to save the executable.")
+ (filename "Bestandsnaam: ")
+ (create "Maak")
+ (please-choose-an-executable-filename "Kies een bestandsnaam voor het programma.")
  
  (create-servlet "Create Servlet...")
   
  ;;; buttons
  (execute-button-label "Doen!") 
- (save-button-label "Save")
- (break-button-label "Break")
+ (save-button-label "Opslaan")
+ (break-button-label "Onderbreken")
  
  ;;; search help desk popup menu
  (search-help-desk-for "Search in Help Desk for \"~a\"")
  (exact-lucky-search-help-desk-for "Exact lucky search in Help Desk for \"~a\"")
 
  ;; collapse and expand popup menu items
- (collapse-sexp "Collapse sexpression")
- (expand-sexp "Expand sexpression")
+ (collapse-sexp "Collapse Sexpressie samenvouwen")
+ (expand-sexp "Sexpressie ontvouwen")
  
  ;;; fraction dialog
- (enter-fraction "Enter Fraction")
- (whole-part "Whole Part")
- (numerator "Numerator")
- (denominator "Denominator")
- (invalid-number "Invalid number: must be an exact, real, non-integral number.")
+ (enter-fraction "Geef breuk")
+ (whole-part "Gehelen")
+ (numerator "Teller")
+ (denominator "Noemer")
+ (invalid-number "Onjuist getal: moet exact, reëel, en niet geheel zijn.")
  (insert-fraction-menu-item-label "Breuk...")
 
  ;; number snip popup menu
- (show-decimal-expansion "View decimal expansion")
- (show-fraction-view "View as fraction")
- (show-more-decimal-places "Show more decimal places")
+ (show-decimal-expansion "Toon als decimaal getal")
+ (show-fraction-view "Toon als breuk")
+ (show-more-decimal-places "Toon meer decimalen")
  
  ;;; Teachpack messages
- (select-a-teachpack "Select a Teachpack")
- (clear-teachpack "Clear ~a Teachpack")
- (teachpack-error-label "DrScheme - Teachpack error")
- (teachpack-dne/cant-read "The teachpack file ~a does not exist or is not readable.")
- (teachpack-didnt-load "The teachpack file ~a did not load properly.")
- (teachpack-error-invoke "The teachpack file ~a raised an error when invoked.")
- (add-teachpack-menu-item-label "Add Teachpack...")
- (clear-all-teachpacks-menu-item-label "Clear All Teachpacks")
- (teachpack-not-only-one-import "The teachpack unit/sig in ~a must have exactly one import.")
- (drscheme-teachpack-message-title "DrScheme Teachpack")
- (already-added-teachpack "Already added ~a teachpack")
+ (select-a-teachpack "Kies een lespakket")
+ (clear-teachpack "Verwijder lespakket ~a")
+ (teachpack-error-label "DrScheme - fout in lespakket") ; -- translated as "error in Teachpack".
+ (teachpack-dne/cant-read "Lespakket ~a bestaat niet of is onleesbaar.")
+ (teachpack-didnt-load "Lespakket ~a niet correct geladen.")
+ (teachpack-error-invoke "Lespakket ~a veroorzaakte bij aanroep een fout.")
+ (add-teachpack-menu-item-label "Lespakket toevoegen...")
+ (clear-all-teachpacks-menu-item-label "Alle lespakketten verwijderen")
+ (teachpack-not-only-one-import "Lespakket unit/sig in ~a moet precies één 'import' hebben.") ; <**> -- ??
+ (drscheme-teachpack-message-title "DrScheme-lespakket")
+ (already-added-teachpack "Lespakket ~a al aanwezig")
  
  ;;; Language dialog
  (introduction-to-language-dialog
   "Kies een taal.  De verstekwaarde is normaliter de juiste voor beginnende cursisten.")
- (language-dialog-title "Configure Language")
- (case-sensitive-label "Case sensitive")
- (output-style-label "Output Style")
+ (language-dialog-title "Taal instellen")
+ (case-sensitive-label "Verschil tussen hoofd- en kleine letters") ; -- ugly
+ (output-style-label "Uitvoerstijl")
  (constructor-printing-style "Constructor")
  (quasiquote-printing-style "Quasiquote")
  (write-printing-style "write")
- (sharing-printing-label "Show sharing in values")
- (use-pretty-printer-label "Insert newlines in printed values")
+ (sharing-printing-label "Geef weerkerende delen in uitvoer aan")
+ (use-pretty-printer-label "Toon uitvoer netjes over meer regels") ; -- maybe rather: 'show indented'?
  (input-syntax "Invoersyntaxis")
  (dynamic-properties "Dynamische eigenschappen")
  (output-syntax "Uitvoersyntaxis")
- (no-debugging-or-profiling "No debugging or profiling")
- (debugging "Debugging")
- (debugging-and-profiling "Debugging and profiling")
- (whole/fractional-exact-numbers-label "Print numbers as fractions")
+ (no-debugging-or-profiling "Geen ontwikkelhulp")
+ (debugging "Alleen foutvinden")
+ (debugging-and-profiling "Foutvinden en klokken")
+ (whole/fractional-exact-numbers-label "Rationale getallen als breuken") ; -- 'rational numbers as fractions'
  (booleans-as-true/false-label "Schrijf true/false in plaats van #T/#F")
  (show-details-button-label "Toon details")
  (hide-details-button-label "Toon details niet")
@@ -659,7 +658,7 @@
  
  ;;; languages
  (beginning-student "Beginner")
- (beginning-one-line-summary "define, cond, structs, constanten, and primitieven")
+ (beginning-one-line-summary "define, cond, structs, constanten, en primitieven")
  (beginning-student/abbrev "Beginner, met lijstnotatie")
  (beginning/abbrev-one-line-summary "Beginner, maar lijsten worden met lijstnotatie afgedrukt")
  (intermediate-student "Middenmoot")
@@ -694,29 +693,28 @@
  (profiling-high-color "Hoog")
  (profiling-choose-low-color "Kies een onderkleur")
  (profiling-choose-high-color "Kies een bovenkleur")
- (profiling "Profiling") ; <**> - need to check actual usage.
+ (profiling "Klokken")
  (profiling-example-text "(define (jippie) (jippie))")
- (profiling-color-config "Profiling Color Range") 
- (profiling-scale "Profiling Color Scale")
+ (profiling-color-config "Kleurbereik")
+ (profiling-scale "Kleurschaling")
  (profiling-sqrt "Vierkantswortel")
  (profiling-linear "Lineair")
- (profiling-square "Kwadraat")
+ (profiling-square "Kwadratisch")
  (profiling-number "Aantal aanroepen")
  (profiling-time "Totaaltijd")
- (profiling-clear "Wis profiel")
- (profiling-update "Werk profiel bij")
+ (profiling-clear "Wis klokgegevens")
+ (profiling-update "Werk klokgegevens bij")
  (profiling-col-percent-time "% Tijd")
  (profiling-col-function "Functie")
  (profiling-col-name "Naam")
  (profiling-col-time-in-msec "Msec")
  (profiling-col-calls "Aanroepen")
- (profiling-show-profile "Toon profiel")
- (profiling-hide-profile "Toon profiel niet")
+ (profiling-show-profile "Toon klokgegevens")
+ (profiling-hide-profile "Toon klokgegevens niet")
  (profiling-unknown-src "<< onbekend >>")
- (profiling-no-information-available
- "Er is geen profielinformatie beschikbaar.  Daartoe moet profilering in uw taal mogelijk zijn, en uw programma al gelopen hebben.")
+ (profiling-no-information-available "Er zijn geen klokgegevens.  Deze zijn enkel beschikbaar als klokken in uw taal aanstaat, en u uw programma al gedraaid hebt.")
 
- (profiling-clear? "Veranderingen in het definitievenster maken de profielinformatie ongeldig.  Toch doorgaan?")
+ (profiling-clear? "Veranderingen in het definitievenster maken de klokgegevens ongeldig.  Toch doorgaan?")
  
  ;;; repl stuff
  (evaluation-terminated "Berekening gestopt")
@@ -727,11 +725,11 @@
  (next-stack-frames "toon volgende ~a van de stapel")
  
  ;;; welcoming message in repl
- (language "Language")
- (custom "custom")
- (teachpack "Teachpack")
- (welcome-to "Welcome to")
- (version "version")
+ (language "Taal")
+ (custom "aangepast")
+ (teachpack "Lespakket")
+ (welcome-to "Welkom bij")
+ (version "versie")
  
  ;;; kill evaluation dialog
  (kill-evaluation? "Wilt u de berekeing beëindigen?")
@@ -741,7 +739,7 @@
 
  ;;; version checker
  (vc-update-check "Versie bijwerken")
- (vc-check-prompt "Check for PLT software updates over the Internet?")
+ (vc-check-prompt "Kijk op het Internet voor nieuwere versies van PLT-programmatuur?")
  (vc-please-wait "Even wachten a.u.b.")
  (vc-connecting-version-server "Legt verbinding met PLT versieleverancier")
  (vc-network-timeout "Netwerk plat") 
@@ -757,33 +755,33 @@
  (vc-binary-name "Binair") ; <**> - translated as adjective.  Actual use not checked.
  (vc-updates-available "Nieuwere versies verkrijgbaar te")
  (vc-latest-binary-information-format "Jongste vrijgegeven versie: ~a (stap ~a)")
- (vc-update-dialog-title "PLT update status")
- (vc-need-update-string "One or more installed PLT software packages needs updating")
+ (vc-update-dialog-title "Status PLT-versie")
+ (vc-need-update-string "Sommige PLT-programmatuur is verouderd")
  (vc-no-update-string "Alle geïnstalleerde PLT-programmatuur is bij")
 
  ;; special menu
  (special-menu "Invoegen")
  
  ;; large semi colon letters
- (insert-large-letters... "Insert Large Letters...") ; <**>
- (large-semicolon-letters "Large Semicolon Letters")
- (text-to-insert "Text to insert")
+ (insert-large-letters... "Krantenkop")
+ (large-semicolon-letters "Puntkommaletters")
+ (text-to-insert "Invoegtekst")
 
- (module-browser-filename-format "Full Filename: ~a (~a lines)")
+ (module-browser-filename-format "Complete bestandsnaam: ~a (~a lines)")
  (module-browser-root-filename "Root Filename: ~a")
  (module-browser-font-size-gauge-label "Lettergrootte")
  (module-browser-progress-label "Module overview progress")
  (module-browser-adding-file "Toevoegen bestand: ~a...")
- (module-browser-laying-out-graph-label "Laying out graph")
+ (module-browser-laying-out-graph-label "Opmaken graaf")
  (module-browser-open-file-format "Open ~a")
- (module-browser "Module Browser") ;; frame title
- (module-browser... "Module Browser...") ;; menu item title
+ (module-browser "Modulekiezer") ;; frame title
+ (module-browser... "Vind module...") ;; menu item title
  (module-browser-error-expanding "Error expanding the program:\n\n~a")
 
  (happy-birthday-matthias "Lang zal Matthias leven!")
 
  (mrflow-using-default-language-title "Verstektaal gebruikt")
- (mrflow-using-default-language "The language currently used does not have a type table defined for its primitives. Using R5RS Scheme instead.")
+ (mrflow-using-default-language "Er bestaat geen typetabel voor de primitieven van uw huidige taal.  Gelieve R5RS te gebruiken.")
  (mrflow-button-title "Analyseer")
  ;(mrflow-unknown-style-delta-error-title "Unknown Box Style Delta")
  ;(mrflow-unknown-style-delta-error "Unknown box style delta: ~a")
@@ -815,8 +813,7 @@
  (xml-tool-switch-to-scheme-splice "Switch to Scheme splice box")
  (xml-tool-eliminate-whitespace-in-empty-tags
   "Verwijder wit in lege tags") ; <**> - don't know the official Dutch for 'tag' here..
- (xml-tool-leave-whitespace-alone
-  "Laat wit staan")
+ (xml-tool-leave-whitespace-alone "Laat wit staan")
  
  (show-recent-items-window-menu-item "Toon onlangs geopende bestanden in een apart venster")
  (show-recent-items-window-label "Onlangs geopende bestanden")

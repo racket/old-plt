@@ -287,7 +287,7 @@
  (set-font "Set Font...")
  (select-font-name "Select Font Name")
  (example-text "Example Text:")
- (only-warn-once "Only warn once when executions and interactions are not synchronized")
+ (only-warn-once "Only warn once when definitions and interactions are not synchronized")
  
  ; warning message when lockfile is around
  (waiting-for-pref-lock "Waiting for the preferences lockfile...")
@@ -653,7 +653,6 @@
  (teachpack-error-invoke "The teachpack file ~a raised an error when invoked.")
  (add-teachpack-menu-item-label "Add Teachpack...")
  (clear-all-teachpacks-menu-item-label "Clear All Teachpacks")
- (teachpack-not-only-one-import "The teachpack unit/sig in ~a must have exactly one import.")
  (drscheme-teachpack-message-title "DrScheme Teachpack")
  (already-added-teachpack "Already added ~a teachpack")
  

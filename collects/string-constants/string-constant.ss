@@ -30,7 +30,7 @@
          (make-sc 'spanish spanish:string-constants)
          (make-sc 'french french:string-constants)
          (make-sc 'german german:string-constants)
-         ;(make-sc 'dutch dutch:string-constants)
+	 (make-sc 'dutch dutch:string-constants)
          (make-sc 'danish danish:string-constants)))
       
       (define first-string-constant-set (car available-string-constant-sets))

@@ -430,6 +430,8 @@ void wxMediaEdit::PushStreaks(void)
   saveKillStreak = killStreak;
   saveAnchorStreak = anchorStreak;
   saveExtendStreak = extendStreak;
+  savePrevPasteStart = prevPasteStart;
+  savePrevPasteEnd = prevPasteEnd;
 }
 
 void wxMediaEdit::PopStreaks(void)
@@ -443,6 +445,8 @@ void wxMediaEdit::PopStreaks(void)
     killStreak = saveKillStreak;
     anchorStreak = saveAnchorStreak;
     extendStreak = saveExtendStreak;
+    prevPasteStart = savePrevPasteStart;
+    prevPasteEnd = savePrevPasteEnd;
   }
 }
 

@@ -543,6 +543,7 @@ class wxMediaEdit : public wxMediaBuffer
   long readInsert, readInsertStart;
 
   long prevPasteStart, prevPasteEnd;
+  long savePrevPasteStart, savePrevPasteEnd;
 
   wxWordbreakFunc wordBreak;
   void *wordBreakData;

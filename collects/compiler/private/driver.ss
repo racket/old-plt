@@ -495,7 +495,8 @@
 	    (when input-path 
 	      (parameterize ([main-source-file input-path])
 		(let ([input-port (open-input-file input-path 'text)])
-	      
+		  (port-count-lines! input-port)
+
 		  ;;-----------------------------------------------------------------------
 		  ;; read all top-level s-expressions
 		  ;;

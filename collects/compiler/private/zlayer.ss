@@ -133,6 +133,7 @@
 	(lambda (ast)
 	  (let ([v (zodiac:make-lexical-varref (zodiac:zodiac-stx ast)
 					       (make-empty-box)
+					       (syntax-e (zodiac:zodiac-stx ast))
 					       (zodiac:binding-var ast))])
 	    (set-annotation! v (varref:empty-attributes))
 	    v)))

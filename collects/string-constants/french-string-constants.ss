@@ -3,7 +3,9 @@
  ; anglais->francais sont tres pauvres en ce qui concerne le jargon technique, et l'academie
  ; francaise (http://www-rocq.inria.fr/qui/Philippe.Deschamp/RETIF/) a quelques longueures de
  ; retard. http://www.can.ibm.com/francais/dico/ peut aider aussi...
- ; Update: http://www.dicofr.com/ permet les recherches a partir du mot anglais.
+ ; http://www.dicofr.com/ permet les recherches a partir du mot anglais.
+ ; http://www.francophonie.hachette-livre.fr/ est un dico standard de base
+ ; http://zeus.inalf.fr/academie9.htm est le dico de l'academie (A-M pour l'instant seulement)
  
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language "Le Français est-il votre langue maternelle ?")
@@ -540,6 +542,8 @@
  (definitions-not-saved "La fenêtre de définition n'a pas été sauvegardée. L'exécutable va utiliser la dernière version sauvegardée de la fenêtre de définition. Continuer ?")
  (inline-saved-program-in-executable?
   "Insérer dans l'exécutable le programme sauvegardé ? Si oui, vous pourrez copier l'exécutable sur un autre ordinateur ~a, mais l'exécutable sera probablement gros. Si vous choisissez non, vous ne pourrez pas copier l'exécutable sur un autre ordinateur, mais il sera bien plus petit. De plus, si vous choisissez non, l'exécutable utilisera toujours la version la plus récente du programme.")
+ (inline-saved-program-in-executable/windows
+  "ATTENTION: sous Windows, vous avez également besoin de libmred.dll, libmzsch.dll et libmzgc.dll pour pouvoir exécuter un exécutable.")
  (use-mred-binary?
   "Utiliser le binaire de mred pour cet exécutable ?\n\nSi oui, votre program peut utiliser la bibliothèque (lib \"mred.ss\" \"mred\"). Si non, DrScheme va choisir mzscheme comme binaire pour cet exécutable.\n\nASi vous n'êtes pas sûr, choisissez oui.")
  
@@ -599,6 +603,10 @@
  (choose-language-menu-item-label "Sélectionner le language...")
  (revert-to-language-defaults "Retourner aux valeurs par défaut pour le language.")
  (language-docs-button-label "Docs languages")
+ (fraction-style "Style de fractions")
+ (use-mixed-fractions "Fractions mêlées")
+ (use-repeating-decimals "Décimales répétitives")
+ (decimal-notation-for-rationals "Utiliser la notation décimale pour les nombres rationnels")
  
  ;;; languages
  (beginning-student "Etudiant niveau débutant")

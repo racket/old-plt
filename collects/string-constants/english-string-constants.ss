@@ -219,7 +219,7 @@
  (error-reading-preferences "Error reading preferences")
  (expected-list-of-length2 "expected a list of length 2")
  (scheme-prefs-panel-label "Scheme")
- (misc-prefs-panel-label "Miscellaneous")
+ (warnings-prefs-panel-label "Warnings")
  (editor-prefs-panel-label "Editing")
  (highlight-parens "Highlight between matching parens")
  (fixup-parens "Correct parens")

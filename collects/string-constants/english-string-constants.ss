@@ -99,6 +99,8 @@
  (use-pretty-printer-label "Insert newlines in printed values")
  (input-syntax "Input Syntax")
  (output-syntax "Output Syntax")
+ (whole/fractional-exact-numbers-label "Print numbers as fractions")
+ (booleans-as-true/false-label "Print booleans using true and false")
  
  ;; repl stuff
  (evaluation-terminated "Evaluation Terminated")

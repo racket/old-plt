@@ -1,85 +1,87 @@
 (module htdp-langs mzscheme
+  (require (lib "string-constant.ss" "string-constants")
+           (lib "unitsig.ss")
+           (lib "class.ss")
+           (lib "tool.ss" "drscheme")
+           (lib "macro.ss" "userspce")
+           (lib "mred.ss" "mred"))
+  
   (provide tool@)
-
+  
   (define tool@
     (unit/sig () 
       (import [drscheme:frame^ : drscheme:frame^]
               [drscheme:unit^ : drscheme:unit^]
               [drscheme:rep : drscheme:rep^]
-              [drscheme:get/extend : drscheme:get/extend^])
+              [drscheme:get/extend : drscheme:get/extend^]
+              [drscheme:language-tower : drscheme:language-tower^]
+              [drscheme:language : drscheme:language^])
       
-      (define htdp-based-language<%>
+      (define htdp-language<%>
         (interface ()
           get-module
           get-language-position
-          
-          default-case-sensitive
-          default-whole/fractional-exact-numbers
-          default-printing
-          default-use-pretty-printer
-          default-sharing-printing
-          read-decimal-as-exact
-          disallow-untagged-inexact-numbers
-          abbreviate-cons-as-list
-          print-tagged-inexact-numbers
-          print-booleans-as-true/false
-          print-exact-as-decimal
-          print-.-symbols-without-bars
-          print-whole/part-fractions))
+          sharing-printing
+          abbreviate-cons-as-list))
       
       ;; settings structure
       (define-struct/parse 
        setting
-       (language-defining-module
-        
-        read-decimal-as-exact
-        case-sensitive
-        disallow-untagged-inexact-numbers
-        
-        whole/fractional-exact-numbers
-        
-        printing
-        use-pretty-printer
+       (case-sensitive
+        printing-style
         sharing-printing
-        abbreviate-cons-as-list
-        print-tagged-inexact-numbers
-        print-booleans-as-true/false
-        print-exact-as-decimal
-        print-.-symbols-without-bars
-        print-whole/part-fractions))
+        booleans-as-true/false
+        use-pretty-printer))
+
+      (define htdp-language->module-based-language
+        (class* object% (drscheme:language-tower:module-based-language<%>)
+          (init-field htdp-language)
+          (public marshall-settings unmarshall-settings default-settings
+                  get-module config-panel on-execute
+                  get-teachpack-names
+                  render-value/format render-value
+                  get-language-position)
+
+          (define (get-language-position) (send htdp-language get-language-position))
+
+          (define (marshall-settings settings)
+            (setting/unparse settings))
+          (define (unmarshall-settings printable)
+            (and (list? printable)
+                 (= (length printable)
+                    (procedure-arity make-setting))
+                 (andmap (lambda (x) (and (list? x) 
+                                          (= 2 (length x))
+                                          (symbol? (car x))))
+                         printable)
+                 (make-setting/parse printable)))
+          (define (default-settings)
+            (make-setting/parse
+             `((case-sensitive #t)
+               (printing-style 'constructor)
+               (use-pretty-printer #t)
+               (sharing-printing ,(send htdp-language sharing-printing))
+               (abbreviate-cons-as-list ,(send htdp-language abbreviate-cons-as-list))
+               (booleans-as-true/false #t))))
+          
+          (define (get-module) (send htdp-language get-module))
+          
+          (define (config-panel parent settings)
+            (htdp-language-config-panel parent settings))
+          
+          (define (get-teachpack-names) (send htdp-language get-teachpack-names))
+          
+          (define (on-execute settings run-in-user-thread)
+            (void))
       
-      (define (use-number-snip? x)
-        (and (number? x)
-             (exact? x)
-             (real? x)
-             (not (integer? x))))
-      
-      (define (drscheme-pretty-print-size-hook x _ port)
-        (cond
-          [(is-a? x snip%) 1]
-          [(and (use-number-snip? x))
-           (+ (string-length (number->string (floor x)))
-              (max (string-length
-                    (number->string 
-                     (numerator (- x (floor x)))))
-                   (string-length
-                    (number->string 
-                     (numerator (- x (floor x)))))))]
-          [else #f]))
-      
-      #|
-                                         ;; used to print values
-                                         (let* ([v (print-convert:print-convert v)])
-                                           (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-                                                           drscheme-pretty-print-size-hook]
-                                                          [mzlib:pretty-print:pretty-print-print-hook
-                                                           (lambda (x _ port) (this-result-write x))])
-                                             (mzlib:pretty-print:pretty-print v this-result)))
-                                         |#
-                                         
-      ;; build-simple-module-based-language-settings : ((instanceof panel<%>) -> (-> setting))
+          (define (render-value/format val settings port dump-snip)
+            (display "value" port))
+          (define (render-value val settings port dump-snip)
+            (display "value" port))))
+
+      ;; htdp-language-config-panel : ((instanceof panel<%>) -> (-> setting))
       ;; constrcts the standard settings panel
-      (define (build-simple-module-based-language-settings parent language)
+      (define (htdp-language-config-panel parent settings)
         (let* ([make-sub-panel
                 (lambda (name panel)
                   (let* ([p (make-object vertical-pane% panel)]
@@ -88,7 +90,7 @@
                [input-syntax-panel (make-sub-panel (string-constant input-syntax) parent)]
                [output-syntax-panel (make-sub-panel (string-constant output-syntax) parent)]
                [right-align
-                (opt-lambda (mo panel)
+                (lambda (mo panel)
                   (let* ([hp (make-object horizontal-pane% panel)])
                     (begin0
                       (mo hp)
@@ -99,16 +101,11 @@
                    (lambda (hp)
                      (make-object check-box% name hp void))
                    panel))]
-               [case-sensitive-cb (make-check-box (string-constant case-sensitive-label)
-                                                  input-syntax-panel)]
-               
-               
                [symbol->printer-number
                 (lambda (printing-setting)
                   (case printing-setting
                     [(constructor-style) 0]
                     [(quasi-style) 1]
-                    [(quasi-read-style) 1]
                     [(r4rs-style) 2]
                     [else (error 'drscheme:language:update-to "got: ~a as printing style"
                                  printing-setting)]))]
@@ -132,34 +129,67 @@
                      void))
                  output-syntax-panel)]
                
+               
+               [case-sensitive-cb 
+                (make-check-box (string-constant case-sensitive-label) input-syntax-panel)]               
                [sharing-printing-cb
                 (make-check-box (string-constant sharing-printing-label) output-syntax-panel)]
-               [whole/fractional-exact-numbers-cb
-                (make-check-box (string-constant whole/fractional-exact-numbers-label) output-syntax-panel)]
                [booleans-as-true/false-cb
                 (make-check-box (string-constant booleans-as-true/false-label) output-syntax-panel)]
                [use-pretty-printer-cb
                 (make-check-box (string-constant use-pretty-printer-label) output-syntax-panel)])
           
-          (send printing-rb set-value (symbol->printer-number (setting-use-pretty-printer setting)))
-          (send case-sensitive-cb set-value (setting-case-sensitive setting))
-          (send whole/fractional-exact-numbers-cb set-value (setting-whole/fractional-exact-numbers-cb setting))
-          (send sharing-printing-cb set-value (setting-sharing-printing setting))
-          (send booleans-as-true/false-cb set-value (setting-booleans-as-true/false setting))
-          (send use-pretty-printer-cb set-value (setting-use-pretty-printer-cb setting))
+          (send printing-rb set-value (symbol->printer-number (setting-use-pretty-printer settings)))
+          (send case-sensitive-cb set-value (setting-case-sensitive settings))
+          (send sharing-printing-cb set-value (setting-sharing-printing settings))
+          (send booleans-as-true/false-cb set-value (setting-booleans-as-true/false settings))
+          (send use-pretty-printer-cb set-value (setting-use-pretty-printer settings))
           
           (lambda ()
-            (make-settings/parse 
+            (make-setting/parse 
              `((case-sensitive ,(send case-sensitive-cb get-value))
-               (whole/fractional-exact-numbers ,(send whole/fractional-exact-numbers-cb get-value))
                (printing ,(printer-number->symbol (send printing-rb get-value)))
-               (use-pretty-printer ,(send use-pretty-printer-cb get-value))
                (sharing-printing ,(send sharing-printing-cb get-value))
-               (read-decimal-as-exact #t)
-               (disallow-untagged-inexact-numbers #f)
-               (abbreviate-cons-as-list #t)
-               (print-tagged-inexact-numbers #t)
-               (print-booleans-as-true/false #t)
-               (print-exact-as-decimal #t)
-               (print-.-symbols-without-bars #f)
-               (print-whole/part-fractions #t)))))))))
+               (booleans-as-true/false ,(send booleans-as-true/false-cb get-value))
+               (use-pretty-printer ,(send use-pretty-printer-cb get-value)))))))
+      
+      
+      ;; add-htdp-language : (implements htdp-language<%>) -> void
+      (define (add-htdp-language class%)
+        (drscheme:language:add-language
+         (make-object drscheme:language-tower:module-based-language->language
+           (make-object htdp-language->module-based-language
+             (make-object class%)))))
+
+      (add-htdp-language
+       (class* object% (htdp-language<%>)
+         (public get-module
+                 get-language-position
+                 sharing-printing
+                 abbreviate-cons-as-list)
+         (define (get-module) '(lib "beginner.ss" "langs"))
+         (define (get-language-position) '("How to Design Programs" "Beginning Student"))
+         (define (sharing-printing) #f)
+         (define (abbreviate-cons-as-list) #f)))
+      
+      (add-htdp-language
+       (class* object% (htdp-language<%>) 
+         (public get-module
+                 get-language-position
+                 sharing-printing
+                 abbreviate-cons-as-list)
+         (define (get-module) '(lib "intermediate.ss" "langs"))
+         (define (get-language-position) '("How to Design Programs" "Intermediate Student"))
+         (define (sharing-printing) #f)
+         (define (abbreviate-cons-as-list) #t)))
+      
+      (add-htdp-language
+       (class* object% (htdp-language<%>) 
+         (public get-module
+                 get-language-position
+                 sharing-printing
+                 abbreviate-cons-as-list)
+         (define (get-module) '(lib "advanced.ss" "langs"))
+         (define (get-language-position) '("How to Design Programs" "Advanced Student"))
+         (define (sharing-printing) #t)
+         (define (abbreviate-cons-as-list) #t))))))

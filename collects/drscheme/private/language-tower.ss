@@ -1,6 +1,6 @@
 (module language-tower mzscheme
   (require "drsig.ss"
-           "string-constant.ss"
+           (lib "string-constant.ss" "string-constants")
            (lib "pconvert.ss")
            (lib "pretty.ss")
 	   (lib "macro.ss" "userspce")
@@ -25,6 +25,7 @@
           front-end
 	  config-panel
 	  on-execute
+          get-teachpack-names
           render-value/format
           render-value
           
@@ -40,6 +41,7 @@
           get-module
 	  config-panel
 	  on-execute
+          get-teachpack-names
           render-value/format
           render-value
           
@@ -63,7 +65,8 @@
       (define simple-module-based-language->module-based-language%
 	(class* object% (module-based-language<%>)
 	  (init-field simple-module-based-language)
-	  (public get-module config-panel on-execute get-language-position 
+	  (public get-module config-panel on-execute get-teachpack-names 
+                  get-language-position 
                   render-value/format render-value
                   default-settings? default-settings marshall-settings unmarshall-settings)
 	  (define the-default-settings (make-simple-settings #f 'write #f #t))
@@ -78,6 +81,10 @@
           (define (default-settings? x) (equal? x the-default-settings))
           (define (get-module)
             (send simple-module-based-language get-module))
+          (define (get-teachpack-names) 
+            ;; might like to find a list of names exported by the module here,
+            ;; but that's not really possible, right?
+            null)
           (define (config-panel _parent settings)
 	    (simple-module-based-language-config-panel _parent settings))
 	  (define (on-execute setting run-in-user-thread)
@@ -216,7 +223,8 @@
       (define module-based-language->language%
 	(class* object% (language<%>)
 	  (init-field module-based-language)
-	  (public front-end config-panel on-execute get-language-position 
+	  (public front-end config-panel on-execute get-teachpack-names
+                  get-language-position 
                   render-value/format render-value
                   default-settings? default-settings marshall-settings unmarshall-settings)
           (define (marshall-settings settings)
@@ -233,6 +241,8 @@
             (send module-based-language config-panel panel settings))
           (define (on-execute settings run-in-user-thread)
             (send module-based-language on-execute settings run-in-user-thread))
+          (define (get-teachpack-names)
+            (send module-based-language get-teachpack-names))
 	  (define (get-language-position)
 	    (send module-based-language get-language-position))
           (define (render-value/format value settings port put-snip)

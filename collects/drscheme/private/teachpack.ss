@@ -4,7 +4,7 @@
            (lib "file.ss")
 	   (lib "framework.ss" "framework")
 	   (lib "mred.ss" "mred")
-	   "string-constant.ss"
+	   (lib "string-constant.ss" "string-constants")
 	   "reload.ss"
            "drsig.ss")
 
@@ -168,7 +168,7 @@
         (define (extend-prefix current-prefix new-bit)
           (string-append current-prefix new-bit ":"))
         
-        ;; start the helper function
+        ;; start the helper functions
         (handle-exploded signature null ""))
 
        ;; show-teachpack-error : TST -> void

@@ -20,7 +20,7 @@
       (import (drscheme:app : drscheme:app^)
               (drscheme:unit : drscheme:unit^)
               (drscheme:get/extend : drscheme:get/extend^)
-              (drscheme:language : drscheme:language^)
+              (drscheme:language : drscheme:language/internal^)
 	      (drscheme:language-tower : drscheme:language-tower^)
               (drscheme:teachpack : drscheme:teachpack^))
       

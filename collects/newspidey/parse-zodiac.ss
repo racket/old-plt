@@ -956,7 +956,8 @@
     [(Type-Arrow? type)
      (string-append
       "("
-      (apply string-append (map pp-type (Type-Arrow-doms type)))
+      (apply string-append (map (lambda (tp) (string-append (pp-type tp) " "))
+                                (Type-Arrow-doms type)))
       " -> "
       (pp-type (Type-Arrow-rng type))
       ")")]

@@ -115,7 +115,7 @@
                                    (#%cons ,x
                                     null))))
                              kept-vars)])
-      `(#%lambda () (#%list ,source (#%quote ,label) ,@var-clauses))))
+      `(#%lambda () (#%list ,#f (#%quote ,label) ,@var-clauses)))) ; took source out temporarily
   
   
   ; wrap-struct-form 

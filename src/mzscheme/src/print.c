@@ -711,8 +711,6 @@ static Scheme_Object *print_k(void)
 }
 #endif
 
-#define SCHEME_VARIABLE_TYPE scheme_variable_type
-
 static int
 print_substring(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 		Scheme_Hash_Table *vht, Scheme_Process *p, char **result, long *rlen)
@@ -828,7 +826,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   }
 #endif
 
-  if (compact && SCHEME_PROCP(obj)) {
+  /* Built-in functions, exception types, eof, object%, ... */
+  if (compact && (SCHEME_PROCP(obj) 
+		  || SCHEME_STRUCT_TYPEP(obj) 
+		  || SCHEME_EOFP(obj)
+		  || SCHEME_CLASSP(obj))) {
     /* Check whether this is a global constant */
     Scheme_Object *val;
     val = scheme_lookup_in_table(global_constants_ht, (const char *)obj);
@@ -1139,7 +1141,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       print_this_string(p, "#", 1);
       print_this_string(p, scheme_symbol_val(op->sub_type), SCHEME_SYM_LEN(op->sub_type));
     }
-  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), SCHEME_VARIABLE_TYPE)
+  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_variable_type)
 	   && (((Scheme_Bucket_With_Const_Flag *)obj)->flags & GLOB_HAS_REF_ID))
     {
       int pos;

@@ -782,6 +782,7 @@ void scheme_copy_from_original_env(Scheme_Env *env)
       Scheme_Object *name = (Scheme_Object *)b->key;
       Scheme_Object *val = (Scheme_Object *)b->val;
       int key = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_KEYWORD;
+      int cst = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_CONST;
       int builtin = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_PRIMITIVE;
       int refid = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_HAS_REF_ID;
       
@@ -815,6 +816,8 @@ void scheme_copy_from_original_env(Scheme_Env *env)
 	  b2 = scheme_bucket_from_table(get_globals(env), (char *)name);
 	  if (builtin)
 	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_PRIMITIVE;
+	  if (cst && !scheme_no_keywords)
+	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_CONST;
 	  if (key && !scheme_no_keywords)
 	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_KEYWORD;
 	  if (refid) {
@@ -849,7 +852,7 @@ Scheme_Object **scheme_make_builtin_references_table(void)
   for (i = ht->size; i--; ) {
     Scheme_Bucket *b = bs[i];
     if (b && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_HAS_REF_ID))
-      t[((Scheme_Bucket_With_Ref_Id *)b)->id] = (Scheme_Object *)b;
+      t[((Scheme_Bucket_With_Ref_Id *)b)->id] = (Scheme_Object *)b->val;
   }
 
   return t;
@@ -1653,12 +1656,6 @@ static Scheme_Object *write_variable(Scheme_Object *obj)
 
 static Scheme_Object *read_variable(Scheme_Object *obj)
 {
-#if 0
-  if (!SCHEME_PAIRP(obj) || !SCHEME_NULLP(SCHEME_CDR(obj))
-      || !SCHEME_SYMBOLP(SCHEME_CAR(obj)))
-    scheme_signal_error("bad compiled global");
-#endif
-
 #define SCHEME_GLOBAL_REFERENCE (Scheme_Object *)scheme_global_bucket
 
   return SCHEME_GLOBAL_REFERENCE(obj, scheme_get_env(scheme_config));

@@ -332,7 +332,7 @@ static short tcpDriverId;
 #define	SOCK_STATE_LISTENING 2 /* Socket is listening for connection. */
 #define	SOCK_STATE_CONNECTING 4 /* Socket is initiating a connection. */
 #define	SOCK_STATE_CONNECTED 5 /* Socket is connected. */
-#define	SOCK_STATE_CLOSING 6 /* Socket is closing */
+#define	SOCK_STATE_OUTPUT_CLOSED 6 /* Socket is half-closed */
 #define	SOCK_STATE_CLOSED 8 /* Socket closed nicely */
 
 typedef struct TCPiopbX {
@@ -364,13 +364,13 @@ static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
 
   switch (eventCode) {
   case TCPClosing:
-    t->state = SOCK_STATE_CLOSING;
+    t->state = SOCK_STATE_OUTPUT_CLOSED;
     break;
     
   case TCPTerminate:
     if (t->state == SOCK_STATE_LISTENING)
       t->state = SOCK_STATE_CLOSED;
-    else if (t->state == SOCK_STATE_CLOSING)
+    else if (t->state == SOCK_STATE_OUTPUT_CLOSED)
       t->state == SOCK_STATE_CLOSED;
     else
       t->state = SOCK_STATE_UNCONNECTED;
@@ -946,7 +946,8 @@ static int tcp_char_ready (Scheme_Input_Port *port)
 #endif
 
 #ifdef USE_MAC_TCP
-  if (data->tcp.state == SOCK_STATE_CONNECTED) {
+  if ((data->tcp.state == SOCK_STATE_CONNECTED)
+      (data->tcp.state == SOCK_STATE_OUTPUT_CLOSED)) {
     /* socket is connected */
     TCPiopbX *xpb;
     TCPiopb *pb;
@@ -1022,7 +1023,9 @@ static int tcp_getc(Scheme_Input_Port *port)
     }
   }
   
-  if (data->activeRcv || (data->tcp.state == SOCK_STATE_CONNECTED)) {
+  if (data->activeRcv 
+      || (data->tcp.state == SOCK_STATE_CONNECTED)
+      || (data->tcp.state == SOCK_STATE_OUTPUT_CLOSED)) {
     /* socket is connected or an old recv is unfinished */
     TCPiopb *pb;    
 
@@ -1062,7 +1065,7 @@ static int tcp_getc(Scheme_Input_Port *port)
     default:
       break;
     }
-  } else if (data->tcp.state == SOCK_STATE_CLOSING 
+  } else if (data->tcp.state == SOCK_STATE_OUTPUT_CLOSED 
              || data->tcp.state == SOCK_STATE_CLOSED) {
     data->b.bufmax = 0;
     errid = 0;

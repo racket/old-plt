@@ -129,7 +129,7 @@
         (class* object% (drscheme:language:language<%>)
 
           (define/public (order-manuals x)
-            (let* ((beg-list (#"profj-beginner" #"tour" #"drscheme" #"help"))
+            (let* ((beg-list '(#"profj-beginner" #"tour" #"drscheme" #"help"))
                    (int-list (cons #"profj-intermediate" beg-list)))
               (values (case level
                         ((beginner) beg-list)
@@ -354,11 +354,7 @@
                       `(parse-java-interactions ,(parse-interactions port name level) ,name)
                       #f))))))
 
-	  (define/private (syntax-as-top s)
-	    (if (syntax? s)
-		(namespace-syntax-introduce s)
-		s))
-          
+          ;process-extras: (list struct) type-record -> (list syntax)
           (define/private (process-extras extras type-recs)
             (cond
               ((null? extras) null)
@@ -369,15 +365,11 @@
                          (let* ((type-editor (car example))
                                 (type (parse-type (open-input-text-editor type-editor) type-editor level))
                                 (name-editor (cadr example))
-                                (name-text (send name-editor get-text))
+                                (name (parse-name (open-input-text-editor name-editor) name-editor))
                                 (val-editor (caddr example))
                                 (val (parse-expression (open-input-text-editor val-editor) val-editor level)))
                            (compile-interactions-ast
-                            (make-var-init (make-var-decl 
-                                            (make-id name-text 
-                                                     (make-src 1 1 1 (string-length name-text) name-editor))
-                                            null type #f)
-                                           val #f)
+                            (make-var-init (make-var-decl name null type #f) val #f)
                             val-editor level type-recs)))
                        contents)
                   (process-extras (cdr extras) type-recs))))
@@ -470,6 +462,9 @@
           (define/public (get-language-url) #f)
           (define/public (get-teachpack-names) null)
 
+          (define/private (syntax-as-top s)
+	    (if (syntax? s) (namespace-syntax-introduce s) s))
+          
           (define/public (on-execute settings run-in-user-thread)
             (dynamic-require '(lib "Object.ss" "profj" "libs" "java" "lang") #f)
             (let ([path ((current-module-name-resolver) '(lib "Object.ss" "profj" "libs" "java" "lang") #f #f)]
@@ -506,7 +501,7 @@
                                     (old-current-eval syn)
                                     (loop (cdr mods) extras #t))))))))
                         ((parse-java-interactions ex loc)
-                         (let ((exp (old-current-eval (syntax ex))))
+                         (let ((exp (old-current-eval (syntax-as-top (syntax ex)))))
                            (old-current-eval 
                             (syntax-as-top (compile-interactions-ast exp (syntax loc) level execute-types)))))
                         (_ (old-current-eval exp))))))

@@ -4,12 +4,15 @@
            "parsers/advanced-parser.ss"
            "parsers/intermediate-parser.ss"
            "parsers/beginner-parser.ss"
+           "parsers/general-parsing.ss"
            "parsers/parse-error.ss"
            "parsers/lexer.ss"
+           "ast.ss"
            "parameters.ss")
   
-  (require (all-except (lib "lex.ss" "parser-tools") input-port))
-  (provide parse parse-interactions parse-expression parse-type lex-stream)
+  (require (all-except (lib "lex.ss" "parser-tools") input-port)
+           (lib "readerr.ss" "syntax"))
+  (provide parse parse-interactions parse-expression parse-type parse-name lex-stream)
   
   ;function to lex in the entire port
   ;lex-port: port string -> (list position-token)
@@ -99,5 +102,38 @@
          (determine-error find-advanced-error-type)
          (parse-advanced-type my-get))
         ((full) (parse-full-type my-get)))))
+  
+  ;parse-name: port string -> id
+  ;Might not return if a parse-error occurs
+  (define (parse-name is loc)
+    (let* ((lexed (lex-port is loc))
+           (get (getter lexed))
+           (parse-error 
+            (lambda (message start stop)
+              (raise-read-error message
+                                loc
+                                (position-line start)
+                                (position-col start)
+                                (position-offset start)
+                                (- (position-offset stop) (position-offset start)))))
+           (first (get))
+           (next (get))
+           (first-tok (position-token-token first))
+           (first-start (position-token-start-pos first))
+           (first-end (position-token-end-pos first))
+           (next-tok (position-token-token next)))
+        (cond
+          ((and (id-token? first-tok) (eof? next-tok))
+           (make-id (token-value first-tok)
+                    (make-src (position-line first-start)
+                              (position-col first-start)
+                              (position-offset first-start)
+                              (- (position-offset first-end) (position-offset first-start))
+                              loc)))
+          ((not (eof? next-tok))
+           (parse-error "Only one name may appear here, found excess content" 
+                        (position-token-start-pos next) (position-token-end-pos next)))
+          (else (parse-error "Only identifiars may be names: not a valid identifier" 
+                             first-start first-end)))))
   
   )

@@ -54,7 +54,7 @@
     "type"
     "vector"))
 
-(define (try src deps dest objdest includes use-precomp extra-compile-flags expand-extra-flags)
+(define (try src deps dest objdest includes use-precomp extra-compile-flags expand-extra-flags msvc-pch)
   (when (or (not re:only) (regexp-match re:only dest))
     (unless (and (file-exists? dest)
 		 (let ([t (file-or-directory-modify-seconds dest)])
@@ -70,28 +70,34 @@
 			      (if (file-exists? deps)
 				  (with-input-from-file deps read)
 				  null))))))
-      (unless (restart-mzscheme #() (lambda (x) x)
-				(list->vector 
-				 (append
-				  (list "-r"
-					"../../mzscheme/gc2/xform.ss")
-				  "--setup"
-				  (if objdest
-				      (if use-precomp
-					  (list "--precompiled" use-precomp)
-					  null)
-				      (list "--precompile"))
-				  (list
-				   "--depends"
-				   (format "cl.exe /MT /E ~a ~a" expand-extra-flags includes)
-				   src
-				   dest)))
-				void)
+      (unless (parameterize
+	       ([use-compiled-file-paths (list "compiled")])
+	       (restart-mzscheme #() (lambda (x) x)
+				 (list->vector 
+				  (append
+				   (list "-r"
+					 "../../mzscheme/gc2/xform.ss"
+					 "--setup")
+				   (if objdest
+				       (if use-precomp
+					   (list "--precompiled" use-precomp)
+					   null)
+				       (list "--precompile"))
+				   (list
+				    "--depends"
+				    (format "cl.exe /MT /E ~a ~a" expand-extra-flags includes)
+				    src
+				    dest)))
+				 void))
         (when (file-exists? dest)
 	  (delete-file dest))
 	(error "error xforming")))
     (when objdest
-      (compile dest objdest null extra-compile-flags))))
+      (compile dest objdest null (string-append
+				  extra-compile-flags
+				  (if msvc-pch
+				      (format " /Fp~a" msvc-pch)
+				      ""))))))
 
 (define (compile c o deps flags)
   (unless (and (file-exists? o)
@@ -104,7 +110,8 @@
     (unless (system- (format "cl.exe ~a /MT /Zi ~a /c ~a /Fdxsrc/ /Fo~a" flags opt-flags c o))
       (error "failed compile"))))
 
-(define common-deps (list "../../mzscheme/gc2/xform.ss"))
+(define common-deps (list "../../mzscheme/gc2/xform.ss"
+			  "../../mzscheme/gc2/xform-mod.ss"))
 
 (define (find-obj f d) (format "../../worksp/~a/release/~a.obj" d f))
 
@@ -116,7 +123,7 @@
 			common-deps)
      "xsrc/precomp.h" #f 
      (string-append mz-inc "/I ../../mzscheme/src")
-     #f "" "")
+     #f "" "" #f)
 
 (for-each
  (lambda (x)
@@ -129,7 +136,8 @@
 	mz-inc
 	"xsrc/precomp.h"
 	""
-	""))
+	""
+	"mz.pch"))
  srcs)
 
 (try "../../mzscheme/main.c"
@@ -141,7 +149,8 @@
      mz-inc
      #f
      ""
-     "")
+     ""
+     #f)
 
 (try "../../foreign/foreign.c"
      (list* ; (find-obj "main" "mzscheme")
@@ -155,7 +164,8 @@
       "/I../../mzscheme/src ")
      #f
      ""
-     "")
+     ""
+     #f)
 
 (compile "../../mzscheme/gc2/gc2.c" "xsrc/gc2.obj"
 	 (map (lambda (f) (build-path "../../mzscheme/gc2/" f))
@@ -232,7 +242,7 @@
 			      "/I ../../wxWindow/contrib/fafa "
 			      "/I ../../wxcommon/jpeg /I ../../worksp/jpeg /I ../../wxcommon/zlib "))
 (try "wxprecomp.cxx" (list* "../../mzscheme/src/schvers.h" common-deps)
-     "xsrc/wxprecomp.h" #f wx-inc #f "" "-DGC2_AS_IMPORT")
+     "xsrc/wxprecomp.h" #f wx-inc #f "" "-DGC2_AS_IMPORT" #f)
 
 (define (wx-try base proj x use-precomp? suffix)
   (let ([cxx-file (format "../../~a/~a.~a" base x suffix)])
@@ -245,7 +255,8 @@
 	 wx-inc
 	 (and use-precomp? "xsrc/wxprecomp.h")
 	 "-DGC2_JUST_MACROS /FI../../../mzscheme/gc2/gc2.h"
-	 "-DGC2_AS_IMPORT")))
+	 "-DGC2_AS_IMPORT"
+	 "wx.pch")))
 
 (define wxwin-base-srcs
   '("wb_canvs"

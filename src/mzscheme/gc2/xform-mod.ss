@@ -3596,6 +3596,7 @@
 	     (not (memq first '(typedef enum __extension__)))
 	     (or (not (memq first '(static extern const struct union)))
 		 (equal? second "C") ; => extern "C" ...
+		 (equal? second "C++") ; => extern "C++" ...
 		 (ormap parens? result))) ; => function prototype
 	(let ([rest (cdr e)])
 	  (if (or (null? rest)

@@ -1305,6 +1305,33 @@
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed with-handlers")))))
 
+    (add-micro-form 'define-macro scheme-vocabulary
+      (let* ((kwd '(define-macro))
+	      (in-pattern '(define-macro macro-name macro-handler))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((macro-name (pat:pexpand 'macro-name p-env kwd))
+		       (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
+		  (valid-syntactic-id? macro-name)
+		  (let ((real-name (sexp->raw macro-name))
+			 (real-handler (sexp->raw macro-handler)))
+		    (add-macro-form real-name vocab
+		      (eval
+			`(lambda (m-expr m-env)
+			   (,structurize-syntax
+			     (#%apply ,real-handler
+			       (let ((in (#%cdr (,sexp->raw m-expr))))
+				 in))
+			     m-expr))))
+		    (expand-expr (structurize-syntax '(#%void) expr)
+		      env attributes vocab)))))
+	    (else
+	      (static-error expr "Malformed define-macro"))))))
+
     ; (quasiquote exp)                                         [macro]
     ; (unquote exp)                                            [macro]
     ; (unquote-splicing exp)                                   [macro]

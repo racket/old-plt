@@ -1,7 +1,0 @@
-
-mlu:
-    /home/mflatt/proj/collects/compiler -> (africa hk 128.42.176.116)
-	install /home/mflatt/proj/collects/compiler ;
-        except_pat RCS ;
-        except_pat .*/compiled/.*[^z].\$ ;
-        except_pat ~\$ ;

@@ -4,12 +4,10 @@
 (require-library "file.ss" "mzscheme" "dynext")
 
 (require-library "functio.ss")
+(require-library "options.ss" "compiler")
 (require-library "library.ss" "compiler")
 
-(define multi-linker:verbose (make-parameter #f))
-
 (define (link-multi-file-extension
-	 linker-prefix
 	 files
 	 dest-dir)
 
@@ -41,6 +39,8 @@
 	  (if (eq? (caar l) 'o)
 	      (loop (cdr l) (cons (cadar l) ofs) (cons (caddar l) os) kps)
 	      (loop (cdr l) ofs os (cons (cdar l) kps))))))
+
+  (define linker-prefix (compiler:option:setup-prefix))
 
   (define suffixes
     (let ([linker-prefix (compiler:clean-string linker-prefix)])
@@ -188,14 +188,14 @@
   (let ([tmp-dir (let ([d (getenv "PLTLDTMPDIR")])
 		   (and d (directory-exists? d) d))])
     
-    (compile-extension (not (multi-linker:verbose))
+    (compile-extension (not (compiler:option:verbose))
 		       (build-path dest-dir _loader.c)
 		       (build-path dest-dir _loader.o)
 		       (list (collection-path "compiler")))
     
     (delete-file (build-path dest-dir _loader.c))
     
-    (link-extension (not (multi-linker:verbose))
+    (link-extension (not (compiler:option:verbose))
 		    (cons (build-path dest-dir _loader.o) o-files) 
 		    (build-path (if tmp-dir
 				    tmp-dir

@@ -16,6 +16,3 @@
 ; (reference "options.ss")         ; parses and sets options
 (reference "toplevel.ss")        ; abstractions for top-level stuff
 (reference "driver.ss")          ; runs the compiler
-
-(define (compiler:banner)
-  (format "MzScheme compiler version 4.x, Copyright (c) 1996-7 Sebastian Good.~n"))

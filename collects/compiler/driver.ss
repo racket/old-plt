@@ -72,29 +72,39 @@
     (compiler:report-messages! #t)
     (exit -1)))
 
+(define (is-mzlib-library? path lib)
+  (and (regexp-match lib path)
+       (string=? (build-path (collection-path "mzlib") lib) path)))
+
 (define load-prefix-file
   (lambda (prefix)
-    (printf " Prefix: loading \"~a\"~n" prefix)
-    (let-values ([(base file dir?) (split-path prefix)]
-		 [(p) (open-input-file prefix 'text)])
-	(let ([results
-	       (s:expand-top-level-expressions! 
-		(path->complete-path
-		 (if (eq? 'relative base)
-		     (build-path 'same)
-		     base))
-		(zodiac:read p (zodiac:make-location 1 1 0 prefix))
-		#f
-		(lambda (expr)
-		  (if (void? expr)
-		      expr
-		      (let ([r (zodiac:parsed->raw expr)])
-			(call-with-values
-			 (lambda () 
-			   (eval r))
-			 list)))))])
-	  (close-input-port p)
-	  (apply values (car (last-pair results)))))))
+    (if (or (is-mzlib-library? prefix "refer.ss")
+	    (is-mzlib-library? prefix "macrox.ss"))
+	(begin
+	  (printf " Prefix: skipping \"~a\"~n" prefix)
+	  (void))
+	(begin
+	  (printf " Prefix: loading \"~a\"~n" prefix)
+	  (let-values ([(base file dir?) (split-path prefix)]
+		       [(p) (open-input-file prefix 'text)])
+	    (let ([results
+		   (s:expand-top-level-expressions! 
+		    (path->complete-path
+		     (if (eq? 'relative base)
+			 (build-path 'same)
+			 base))
+		    (zodiac:read p (zodiac:make-location 1 1 0 prefix))
+		    #f
+		    (lambda (expr)
+		      (if (void? expr)
+			  expr
+			  (let ([r (zodiac:parsed->raw expr)])
+			    (call-with-values
+			     (lambda () 
+			       (eval r))
+			     list)))))])
+	      (close-input-port p)
+		 (apply values (car (last-pair results)))))))))
 
 (define s:expand-top-level-expressions!
   (lambda (input-directory reader verbose? r-eval)

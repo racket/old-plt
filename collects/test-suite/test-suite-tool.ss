@@ -17,7 +17,9 @@
    "private/case-tab.ss"
    "private/def.ss"
    "private/helper.ss"
-   "private/expand-program.ss")
+   "private/expand-program.ss"
+   ;; The new test-case boxes
+   "tool.ss")
   
   (provide tool@)
   
@@ -109,7 +111,8 @@
             (CASE-SNIPCLASS  : case^ (case-snipclass@ CASE-TAB))
             
             (DEF             : def^ (def@))
-            (EXPAND-PROGRAM  : expand-program^ (expand-program@ TOOL)))
+            (EXPAND-PROGRAM  : expand-program^ (expand-program@ TOOL))
+            (TEST-CASE-BOX   : tool-phases^ (test-case-box-tool@ TOOL)))
       (export (var (PHASES phase1))
               (var (PHASES phase2)))
       ))

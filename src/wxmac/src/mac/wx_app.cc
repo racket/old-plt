@@ -289,7 +289,8 @@ void wxApp::doMacMouseUp(void)
 		  mouseWindow->ReleaseMouse();
 		
 		if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))
-		  mouseWindow->OnEvent(&theMouseEvent);
+		  if (!mouseWindow->IsGray())
+		    mouseWindow->OnEvent(&theMouseEvent);
 	}
 	else
  	{
@@ -359,7 +360,8 @@ void wxApp::doMacMouseMotion(void)
 		  mouseWindow->ReleaseMouse();
            
 		if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))		  
-		  mouseWindow->OnEvent(&theMouseEvent);
+		  if (!mouseWindow->IsGray())
+		    mouseWindow->OnEvent(&theMouseEvent);
 	}
 	else
 	{
@@ -404,7 +406,8 @@ void wxApp::doMacMouseLeave(void)
 	  theMouseEvent.y = cCurrentEvent.where.v;
 
 	  if (!doCallPreMouseEvent(win, win, &theMouseEvent))
-	    win->OnEvent(&theMouseEvent);
+	    if (!win->IsGray())
+	      win->OnEvent(&theMouseEvent);
 	}
 }
 
@@ -536,7 +539,8 @@ void wxApp::doMacKeyDown(void)
 	wxWindow *in_win = theMacWxFrame->GetFocusWindow();
 
 	if (!in_win || !doPreOnChar(in_win, in_win, &theKeyEvent))
-		theMacWxFrame->OnChar(&theKeyEvent);
+	  if (!theMacWxFrame->IsGray())
+	    theMacWxFrame->OnChar(&theKeyEvent);
 }
 
 //-----------------------------------------------------------------------------

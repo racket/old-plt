@@ -1045,7 +1045,8 @@ static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsr
 	    theMouseEvent->y = clientHitY;
 
 	    if (!doCallPreMouseEvent(target, target, theMouseEvent))		  
-	      target->OnEvent(theMouseEvent);
+	      if (!target->IsGray())
+		target->OnEvent(theMouseEvent);
    }
 }
 
@@ -1214,7 +1215,9 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 						    ReleaseMouse();
 						}
 						
-						OnEvent(areaMouseEvent);
+						/* PreOnEvent could disable the target... */
+						if (!IsGray())
+						  OnEvent(areaMouseEvent);
 					}
 				}
 			}
@@ -1234,7 +1237,8 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
 	  if (!doCallPreMouseEvent(this, this, areaMouseEvent))
-	    OnEvent(areaMouseEvent);
+	    if (!IsGray())
+	      OnEvent(areaMouseEvent);
 	}
 	
 	return result;

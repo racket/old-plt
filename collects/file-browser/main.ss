@@ -34,7 +34,7 @@
               (define f-int name) ...)))))))
   
   (define orig-output (current-output-port))
-  (define trace? #t)
+  (define trace? #f)
   (define-syntax trace
     (syntax-rules ()
       ((_ str arg ...)
@@ -47,27 +47,45 @@
       (define activate-bitmap
         (drscheme:unit:make-bitmap "Browse Files"
                                    (build-path (collection-path "icons") "file.gif")))
-      
 
-      (define active? (make-parameter #f))
+      (define (setup-namespace run-thread unit)
+        (trace "entering setup-namespace")
+        (if (not (null? unit))
+            (let ((s (make-semaphore)))
+              (trace "starting setup-namespace user-thread")
+              (run-thread
+               (lambda () 
+                 (trace "in setup-namespace user-thread")
+                 (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
+                   (script-unit-param unit)
+                   (namespace-require `(lib "script.ss" "file-browser"))
+                   ;(load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
+                   (trace "no exception in setup-namespace user-thread"))
+                 (semaphore-post s)
+                 (trace "semaphore posted")))
+              (yield s)
+              (trace "finished setup-namespace user-thread")))
+        (trace "leaving setup-namespace"))
+
+      (define script-unit null)
+      (define active? #f)
       
       (drscheme:get/extend:extend-unit-frame
        (lambda (frame%)
          (class frame%
-           (inherit get-button-panel get-area-container get-execute-button get-interactions-text)
-
+           (inherit get-button-panel get-interactions-text)
+           
            (define code-engine@
              (unit/sig code-engine^
                (import script^)
                
                (trace "invoking code-engine")
                
-               (script-unit-param
-                (make-unit script^ (signature->symbols script^)))
+               (set! script-unit (make-unit script^ (signature->symbols script^)))
                
                (setup-namespace (lambda (t)
                                   (send (get-interactions-text) run-in-evaluation-thread t))
-                                (script-unit-param))
+                                script-unit)
                
                (trace "code-engine through")
                
@@ -92,15 +110,15 @@
              (super-disable-evaluation))
            
            (rename (super-make-root-area-container make-root-area-container))
-           (define browser-panel #f)
+           (define container #f)
            
            (define/public (set-bp x)
-             (set! browser-panel x))
+             (set! container x))
            
            (define/override (make-root-area-container % parent)
-             (set! browser-panel
+             (set! container
                    (super-make-root-area-container panel:vertical-dragable% parent))
-             (let ((root (make-object % browser-panel)))
+             (let ((root (make-object % container)))
                root))
            
            (super-instantiate ())
@@ -108,52 +126,28 @@
            (define button
              (make-object button% (activate-bitmap this) (get-button-panel)
                (lambda (a b)
-                 (cond
-                   ((active?)
-                    (active? #f)
-                    (script-unit-param null)
-                    (send browser-panel delete-child (car (send browser-panel get-children)))
-                    (send (get-execute-button) command b))
-                   (else
-                    (active? #t)
-                    (send (get-execute-button) command b)
-                    (let ((container browser-panel))
-                      (send container begin-container-sequence)
-                      (invoke-unit/sig 
-                       (compound-unit/sig
-                         (import)
-                         (link (FS : file-system^ ((make-file-system@ state)))
-                               (SCRIPT : script^ (script@ GUI FS))
-                               (CODE : code-engine^ (code-engine@ SCRIPT))
-                               (GUI : gui^ ((make-gui@ state container)
-                                            SCRIPT CODE)))
-                         (export)))
-                      (send container change-children
-                            (lambda (c) (cons (cadr c) (cons (car c) null))))
-                      (send container end-container-sequence)))))))
+		 (set! active? #t)
+                 (drscheme:unit:open-drscheme-window))))
            
-           (send (get-button-panel) change-children
-                 (lambda (x) (cons button (remq button x)))))))
-      
-      
-      (define (setup-namespace run-thread unit)
-        (trace "entering setup-namespace")
-        (if (not (null? unit))
-            (let ((s (make-semaphore)))
-              (trace "starting setup-namespace user-thread")
-              (run-thread
-               (lambda () 
-                 (trace "in setup-namespace user-thread")
-                 (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
-                   (script-unit-param unit)
-                   (namespace-require `(lib "script.ss" "file-browser"))
-                   (load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
-                   (trace "no exception in setup-namespace user-thread"))
-                 (semaphore-post s)
-                 (trace "semaphore posted")))
-              (yield s)
-              (trace "finished setup-namespace user-thread")))
-        (trace "leaving setup-namespace"))
+	   (cond
+             (active?
+              (set! active? #f)
+              (send container begin-container-sequence)
+              (invoke-unit/sig 
+               (compound-unit/sig
+                 (import)
+                 (link (FS : file-system^ ((make-file-system@ state)))
+                       (SCRIPT : script^ (script@ GUI FS))
+                       (CODE : code-engine^ (code-engine@ SCRIPT))
+                       (GUI : gui^ ((make-gui@ state container)
+                                    SCRIPT CODE)))
+                 (export)))
+              (send container change-children
+                    (lambda (c) (cons (cadr c) (cons (car c) null))))
+              (send container end-container-sequence)))
+              
+              (send (get-button-panel) change-children
+                    (lambda (x) (cons button (remq button x)))))))
       
       (define (phase1)
         (drscheme:language:extend-language-interface
@@ -163,22 +157,19 @@
              (rename (super-on-execute on-execute))
              (define/override (on-execute settings run-in-user-thread)
                (trace "entering on-execute")
-               (if (active?)
-                   (let ((module-name ((current-module-name-resolver) 
-                                       '(lib "script-param.ss" "file-browser")
-                                       'script-param #f))
-                         (prog-namespace (current-namespace))
-                         (s (make-semaphore)))
-                     (trace "starting on-execute user-thread")
-                     (run-in-user-thread
-                      (lambda ()
-                        (trace "in on-execute user-thread")
-                        (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
-                          (namespace-attach-module prog-namespace module-name))
-                        (semaphore-post s)))
-                     (yield s)
-                     (trace "finish on-execute user-thread")
-                     (setup-namespace run-in-user-thread (script-unit-param))))
+	       (if active?
+		   (let ((module-name ((current-module-name-resolver) 
+				       '(lib "script-param.ss" "file-browser")
+				       'script-param #f))
+			 (prog-namespace (current-namespace)))
+		     (trace "starting on-execute user-thread")
+		     (run-in-user-thread
+		      (lambda ()
+			(trace "in on-execute user-thread")
+			(with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
+			  (namespace-attach-module prog-namespace module-name))))
+		     (trace "finish on-execute user-thread")
+		     (setup-namespace run-in-user-thread script-unit)))
                (trace "calling super-on-execute")
                (super-on-execute settings run-in-user-thread))
              (super-instantiate ())))))

@@ -29,7 +29,7 @@
 	[stop? #f])
     
     (define (go box s s-amt)
-      (parameterize ([current-thread-set s])
+      (parameterize ([current-thread-group s])
 	(thread (lambda ()
 		  (let loop ()
 		    (set-box! box (add1 (unbox box)))
@@ -58,29 +58,29 @@
       (test #t roughly= vd (* d% va)))))
 
 ;; Simple test:
-(let ([ts (make-thread-set)])
-  (test-set-balance (current-thread-set) ts ts ts
+(let ([ts (make-thread-group)])
+  (test-set-balance (current-thread-group) ts ts ts
 		    0 0 0 0
 		    1 1/3 1/3 1/3))
 
 ;; Make two sets, should be balanced:
-(let ([ts1 (make-thread-set)]
-      [ts2 (make-thread-set)])
+(let ([ts1 (make-thread-group)]
+      [ts2 (make-thread-group)])
   (test-set-balance ts1 ts2 ts2 ts1
 		    0 0 0 0
 		    1 1 1 1))
 
 ;; Like first test, but with an explicit "root" set
-(let* ([ts1 (make-thread-set)]
-       [ts2 (make-thread-set ts1)])
+(let* ([ts1 (make-thread-group)]
+       [ts2 (make-thread-group ts1)])
   (test-set-balance ts1 ts2 ts2 ts2
 		    0 0 0 0
 		    1 1/3 1/3 1/3))
 
 ;; Like second test, but with an explicit "root" set
-(let* ([ts0 (make-thread-set)]
-       [ts1 (make-thread-set ts0)]
-       [ts2 (make-thread-set ts0)])
+(let* ([ts0 (make-thread-group)]
+       [ts1 (make-thread-group ts0)]
+       [ts2 (make-thread-group ts0)])
   (test-set-balance ts1 ts2 ts2 ts1
 		    0 0 0 0
 		    1 1 1 1))
@@ -88,20 +88,20 @@
 ;; Check that suspended threads don't break
 ;;  scheduling. (The test really continues past this
 ;;  one, since the threads don't die right away.)
-(let* ([ts0 (make-thread-set)]
-       [ts1 (make-thread-set ts0)]
-       [ts2 (make-thread-set ts0)])
+(let* ([ts0 (make-thread-group)]
+       [ts1 (make-thread-group ts0)]
+       [ts2 (make-thread-group ts0)])
   (test-set-balance ts1 ts2 ts2 ts1
 		    0 0 (* SLEEP-TIME 10) (* SLEEP-TIME 10)
 		    1 1 0 0))
 
-(arity-test make-thread-set 0 1)
-(err/rt-test (make-thread-set 5) type?)
-(arity-test thread-set? 1 1)
-(test #t thread-set? (make-thread-set))
-(test #f thread-set? 5)
-(arity-test current-thread-set 0 1)
-(err/rt-test (current-thread-set 5))
+(arity-test make-thread-group 0 1)
+(err/rt-test (make-thread-group 5) type?)
+(arity-test thread-group? 1 1)
+(test #t thread-group? (make-thread-group))
+(test #f thread-group? 5)
+(arity-test current-thread-group 0 1)
+(err/rt-test (current-thread-group 5))
 
 ;; ----------------------------------------
 

@@ -524,19 +524,19 @@ void scheme_init_thread(Scheme_Env *env)
 						       MZCONFIG_SECURITY_GUARD),
 			     env);
 
-  scheme_add_global_constant("thread-set?", 
+  scheme_add_global_constant("thread-group?", 
 			     scheme_make_prim_w_arity(thread_set_p,
-						      "thread-set?", 
+						      "thread-group?", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("make-thread-set", 
+  scheme_add_global_constant("make-thread-group", 
 			     scheme_make_prim_w_arity(make_thread_set,
-						      "make-thread-set", 
+						      "make-thread-group", 
 						      0, 1), 
 			     env);
-  scheme_add_global_constant("current-thread-set", 
+  scheme_add_global_constant("current-thread-group", 
 			     scheme_register_parameter(current_thread_set,
-						       "current-thread-set",
+						       "current-thread-group",
 						       MZCONFIG_THREAD_SET),
 			     env);
 
@@ -1536,7 +1536,7 @@ static Scheme_Object *make_thread_set(int argc, Scheme_Object *argv[])
 
   if (argc) {
     if (!(SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_set_type)))
-      scheme_wrong_type("make-thread-set", "thread-set", 0, argc, argv);
+      scheme_wrong_type("make-thread-group", "thread-group", 0, argc, argv);
     parent = (Scheme_Thread_Set *)argv[0];
   } else
     parent = (Scheme_Thread_Set *)scheme_get_param(scheme_config, MZCONFIG_THREAD_SET);
@@ -1553,10 +1553,10 @@ static Scheme_Object *thread_set_p(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *current_thread_set(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-thread-set", 
+  return scheme_param_config("current-thread-group", 
 			     scheme_make_integer(MZCONFIG_THREAD_SET),
 			     argc, argv,
-			     -1, thread_set_p, "thread-set", 0);
+			     -1, thread_set_p, "thread-group", 0);
 }
 
 static TSET_IL void set_t_set_next(Scheme_Object *o, Scheme_Object *n)

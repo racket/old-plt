@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.2 1997/07/06 20:21:26 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.3 1997/07/11 20:13:04 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -11,29 +11,26 @@
     [wx : mred:wx^]
     [mred : mred:testable-window^]
     [mred:test : mred:test:struct^]
-    [mred:test : mred:test:globals^])
+    [mred:test : mred:test:globals^]
+    [mred:test : mred:test:run^])
 
   (define arg-error error)
   (define run-error error)
   
   ;;
-  ;; Do the action now in separate thread.
-  ;; SWITCH THIS OVER TO RUN-SINGLE OR RUN-MULTIPLE.
+  ;; Do one action now in single/multiple thread.
   ;;
   
   (define do-now
     (lambda (thunk-maker)
       (lambda args
-	(let* ([thunk  (mred:test:event-thunk (apply thunk-maker args))]
-	       [done   (make-semaphore 0)]
-	       [ans    (void)])
-	  (thread
-	   (lambda ()
-	     (set! ans (thunk))
-	     (semaphore-post done)))
-	  (semaphore-wait done)
-	  ans))))
+	(mred:test:run-single (list (apply thunk-maker args))))))
   
+  (define do-now*
+    (lambda (thunk-maker)
+      (lambda args
+	(mred:test:run-multiple (list (apply thunk-maker args))))))
+
   ;;
   ;; BUTTONS are pushed by
   ;; (send <button> command <wx:command-event>)
@@ -56,7 +53,8 @@
 		(send button command event)
 		(void))))]))))
   
-  (define button-push-now (do-now button-push))
+  (define button-push-now  (do-now  button-push))
+  (define button-push-now* (do-now* button-push))
   
   ;;
   ;; MENU ITEMS are selected with
@@ -82,7 +80,8 @@
 		(send frame command item-id)
 		(void))))]))))
   
-  (define menu-select-now (do-now menu-select))
+  (define menu-select-now  (do-now  menu-select))
+  (define menu-select-now* (do-now* menu-select))
   
   ;;
   ;; KEYSTROKES are sent to the currently-focused window.
@@ -108,6 +107,8 @@
 					  wx:const-event-type-char)])
 		(send event set-key-code key-num)
 		(cond
+		  [(not window)
+		   (run-error tag "no focused window")]
 		  [(not (ivar-in-class? 'on-char (object-class window)))
 		   (run-error tag "focused window does not have on-char")]
 		  [(not (send window is-shown?))
@@ -116,7 +117,8 @@
 		   (send window on-char event)
 		   (void)]))))]))))
   
-  (define keystroke-now (do-now keystroke))
+  (define keystroke-now  (do-now  keystroke))
+  (define keystroke-now* (do-now* keystroke))
   
   ;;
   ;; SIMPLE MOUSE ACTIONS.  NEED TO EXPAND THIS LATER.
@@ -152,6 +154,7 @@
 		   (send canvas on-event up)
 		   (void)]))))]))))
 
-  (define mouse-click-now (do-now mouse-click))
+  (define mouse-click-now  (do-now  mouse-click))
+  (define mouse-click-now* (do-now* mouse-click))
   
   )

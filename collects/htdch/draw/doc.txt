@@ -73,6 +73,9 @@ The _World_ class has the following class interface:
      // stop the time 
      boolean endOfTime()
 
+     // stop the world
+     World endOfWorld()
+
      // view the last World that onTick or onKeyEvent or bigBang created
      World lastWorld()
 

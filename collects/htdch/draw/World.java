@@ -34,5 +34,7 @@ public class World {
 
      public native boolean endOfTime();
 
+     public native World endOfWorld();
+
      public native World lastWorld();
 }    

@@ -101,6 +101,10 @@
     (set! last-world (end-of-time))
     #t)
 
+  (define/provide (endOfWorld-native this)
+    (set! last-world (end-of-time))
+    last-world)
+
   (define/provide (lastWorld-native this)
     (if last-world last-world this))
 )

@@ -1382,7 +1382,6 @@
            (exp-type #f)
            (handle-call-error 
             (lambda (exn)
-;              (when (or (not (access? expr)) (memq level '(beginner intermediate))) (raise exn))
               (when (not (access? expr)) (raise exn))
               (if (eq? level 'full)
                   (let ((record (car (find-static-class 
@@ -1485,8 +1484,20 @@
                                        (lambda () (call-arg-error 'conflict name args exp-type src))
                                        (lambda () (call-arg-error 'no-match name args exp-type src))
                                        type-recs)
-                  (when (check-method-args args (method-record-atypes (car methods)) name exp-type src type-recs)
-                    (car methods))))
+                  (if (> (length methods) 1)
+                      (let ((teaching-error
+                             (lambda (kind)
+                               (if (error-file-exists? (method-record-class (car methods)) type-recs)
+                                   (call-provided-error (id-string name) args kind)
+                                   (teaching-call-error kind name args exp-type src methods)))))
+                        (resolve-overloading methods
+                                             args
+                                             (lambda () (teaching-error 'number))
+                                             (lambda () (teaching-error 'type))
+                                             (lambda () (teaching-error 'type))
+                                             type-recs))
+                      (when (check-method-args args (method-record-atypes (car methods)) name exp-type src type-recs)
+                        (car methods)))))
              (mods (method-record-modifiers method-record)))
         
         (when (and static? 
@@ -1518,6 +1529,9 @@
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))
     
+  (define (error-file-exists? class type-recs) #f)
+  (define (call-provided-error) null)
+  
   ;check-method-args: (list type) (list type) id type src type-records -> void
   (define (check-method-args args atypes name exp-type src type-recs)
     (unless (= (length args) (length atypes))
@@ -1526,6 +1540,8 @@
                 (unless (assignment-conversion atype arg type-recs)
                   (method-arg-error 'type (list arg) (cons atype atypes) name exp-type src)))
               args atypes))
+  
+      
   
   ;;Skip package access controls
   ;; 15.9
@@ -1944,6 +1960,57 @@
                               n e awitht (map type->ext-name (cdr atypes)) (car givens) (type->ext-name (car atypes)))))
                    n src)))
 
+  ;teaching-call-error: symbol id (list type) type src (list method-record) -> void
+  (define (teaching-call-error kind name args exp-type src methods)
+    (let* ((method-args (map method-record-atypes methods))
+           (predominant-number (get-most-occuring-length method-args))
+           (type-lists (get-string-of-types (filter (lambda (a) (= (length a) predominant-number)) method-args))))
+      (let ((n (id->ext-name name))
+            (e (get-call-type exp-type))
+            (givens (map type->ext-name args)))
+        (raise-error n
+                     (case kind
+                       ((number)
+                        (format "method ~a from ~a expects ~a arguments with types ~a. Given ~a"
+                                n e predominant-number type-lists givens))
+                       (else
+                        (format "method ~a from ~a expects arguments with types ~a. Given ~a"
+                                n e type-lists givens)))
+                     n src))))
+  
+  ;get-most-occuring-lenght: (list (list type)) -> number
+  (define (get-most-occuring-length args)
+    (let* ((lengths (map length args))
+           (max-length (apply max lengths))
+           (vec (make-vector (add1 max-length) 0))
+           (loc 0))
+      (let loop ((l lengths))
+        (unless (null? l)
+          (vector-set! vec (car l) (add1 (vector-ref vec (car l))))
+          (loop (cdr l))))
+      (let loop ((i 0) (max-loc 0) (max 0))
+        (if (= i (vector-length vec))
+            (set! loc max-loc)
+            (if (> (vector-ref vec i) max)
+                (loop (add1 i) i (vector-ref vec i))
+                (loop (add1 i) max-loc max))))
+      loc))
+        
+  ;get-string-of-types: (list (list type)) -> string
+  (define (get-string-of-types types)
+    (let ((out (if (= 1 (length (car types)))
+                   (apply string-append 
+                          (map (lambda (a) (format "~a, or " (type->ext-name (car a)))) types))
+                   (apply string-append
+                          (map (lambda (a) (format "(~a), or "
+                                                   (let ((internal 
+                                                          (apply string-append 
+                                                                 (map (lambda (aI) 
+                                                                        (format "~a, " (type->ext-name aI))) a))))
+                                                     (substring internal 0 (- (string-length internal) 2)))))
+                               types)))))
+      (substring out 0 (- (string-length out) 5))))                                                         
+  
   ;call-access-error: symbol id type src -> void
   (define (call-access-error kind name exp src)
     (let ((n (id->ext-name name))

@@ -70,8 +70,7 @@
         ""
         (substring (apply string-append
                           (map 
-                           (lambda (p) (string-append (type->ext-name p)) " ")
-                           parms))
+                           (lambda (p) (format "~a" (type->ext-name p))) parms))
                    0 (sub1 (length parms)))))
   
   ;method-name->ext-name: string (list type) -> symbol

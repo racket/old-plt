@@ -58,7 +58,10 @@
           ;(drscheme:get/extend:extend-definitions-text profj-editor)
           
           ;default-settings: -> profj-settings
-          (define/public (default-settings) (make-profj-settings 'type #f null))
+          (define/public (default-settings) 
+            (if (memq level `(beginner intermediate))
+                (make-profj-settings 'field #f null)
+                (make-profj-settings 'type #f null)))
           ;default-settings? any -> bool
           (define/public (default-settings? s) (equal? s (default-settings)))
 
@@ -93,7 +96,7 @@
                                      (lambda (x y) update-pf)))]
                      [print-style (make-object radio-box%
                                     "Display style"
-                                    (list "Class" "Class+Fields" "Graphical")
+                                    (list "Class" "Class+Fields" );"Graphical")
                                     output-panel
                                     (lambda (x y) (update-ps)))]
                      
@@ -378,14 +381,13 @@
             (dynamic-require '(lib "Object.ss" "profj" "libs" "java" "lang") #f)
             (let ([path ((current-module-name-resolver) '(lib "Object.ss" "profj" "libs" "java" "lang") #f #f)]
                   [n (current-namespace)])
+              (read-case-sensitive #t)
               (run-in-user-thread
                (lambda ()
                  (error-display-handler 
                   (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
                  (current-eval 
                   (drscheme:debug:make-debug-eval-handler (current-eval)))
-                 (when (memq level '(beginner intermediate advanced))
-                   (error-print-source-location #f))
                  (with-handlers ([void (lambda (x)  (printf "~a~n" (exn-message x)))])
                    (namespace-attach-module n path)
                    (namespace-require 'mzscheme)
@@ -394,12 +396,17 @@
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
           (define/public (render-value value settings port port-write)
-            (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings) null) port))
-            ;(write value port))
+            (display (format-java value 
+                                  (preferences:get 'profj:print-full?)
+                                  (preferences:get 'profj:print-style) 
+                                  null)
+                     port))
+          ;(write value port))
           (define/public (render-value/format value settings port port-write width) 
             (render-value value settings port port-write)(newline port))
             ;(write value port))
 
+          
 	  ;format-java: java-value bool symbol (list value) -> string
           (define (format-java value full-print? style already-printed)
             (cond

@@ -400,7 +400,13 @@ WXVARIANT="wx_xt"
 INCLUDEDEP="#"
 
 if test "${enable_quartz}" = "yes" ; then
-  MROPTIONS="$MROPTIONS -cpp-precomp -fpascal-strings"
+  MROPTIONS="$MROPTIONS -fpascal-strings"
+  gcc_vers_three=`gcc -v 2>&1 | grep "version 3[.]"`
+  if test "$gcc_vers_three" = "" ; then
+    MROPTIONS="$MROPTIONS -cpp-precomp"
+  else
+    MROPTIONS="$MROPTIONS -fno-rtti"
+  fi
   WXVARIANT="wx_mac"
   INCLUDEDEP="-include"
 fi

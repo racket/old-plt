@@ -274,7 +274,10 @@
     (convert-to-prim-format-helper sig-elements
       (cond
 	((symbol? prefix)
-	  (string-append (symbol->string prefix) ":"))
+	  (let ((s (symbol->string prefix)))
+	    (if (string=? "" s)
+	      s
+	      (string-append s ":"))))
 	((string? prefix)
 	  prefix)
 	(else
@@ -1094,7 +1097,6 @@
 
 (define prefix-w/-:
   (lambda (prefix name)
-    (printf "prefix: ~s~n~n" prefix)
     (cond
       ((symbol? prefix)
 	(if (string=? "" (symbol->string prefix))

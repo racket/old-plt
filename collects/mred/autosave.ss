@@ -19,17 +19,17 @@
 			 (public
 			  [notify
 			   (lambda ()
-			     (if (mred:preferences:get-preference 'mred:autosaving-on?)
-				 (set! objects
-				       (let loop ([list objects])
-					 (if (null? list)
-					     ()
-					     (let ([object (weak-box-value (car list))])
-					       (if object
-						   (begin
-						     (send object do-autosave)
-						     (cons (car list) (loop (cdr list))))
-						   (loop (cdr list))))))))
+			     (when (mred:preferences:get-preference 'mred:autosaving-on?)
+			       (set! objects
+				     (let loop ([list objects])
+				       (if (null? list)
+					   ()
+					   (let ([object (weak-box-value (car list))])
+					     (if object
+						 (begin
+						   (send object do-autosave)
+						   (cons (car list) (loop (cdr list))))
+						 (loop (cdr list))))))))
 			     (start (* 1000 (mred:preferences:get-preference 'mred:autosave-delay)) #t))])
 			 (sequence
 			   (super-init)

@@ -39,11 +39,13 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Matthew
 
- * _Gin Rummy_ (against the computer) - Put all cards in your hand
-   into straight and 3- or 4-of-a-kind sets to win. On each turn, you
-   can either draw from the deck or from the discard pile, then you
-   must discard one of your own cards. [The computer player is
-   fairly smart.]
+ * _Rummy_ (against the computer) - A simple variant of Rummy: put all
+   cards in your hand into straights (3 or more cards) and 3- or
+   4-of-a-kind sets to win. Each card must be used in one set. On each
+   turn, you can either draw from the deck or from the top of the
+   discard pile, then you must discard one of your own cards. Aces can
+   be use in both A-2-3 sequences and Q-K-A sequences. [The computer
+   player is fairly smart.]
 
                                               - by Matthew
 

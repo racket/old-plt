@@ -35,13 +35,9 @@ static Scheme_Type maxtype, allocmax;
 long scheme_type_table_count;
 #endif
 
-void
-scheme_init_type (Scheme_Env *env)
+static void init_type_arrays()
 {
   long n;
-
-  if (!scheme_starting_up)
-    return;
 
   REGISTER_SO(type_names);
   REGISTER_SO(scheme_type_readers);
@@ -66,7 +62,17 @@ scheme_init_type (Scheme_Env *env)
 
 #ifdef MEMORY_COUNTING_ON
   scheme_type_table_count += n;
-#endif
+#endif  
+}
+
+void
+scheme_init_type (Scheme_Env *env)
+{
+  if (!scheme_starting_up)
+    return;
+
+  if (!type_names)
+    init_type_arrays();
 
 #define set_name(t, n) type_names[t] = n
 
@@ -174,6 +180,9 @@ scheme_init_type (Scheme_Env *env)
 
 Scheme_Type scheme_make_type(const char *name)
 {
+  if (!type_names)
+    init_type_arrays();
+
   if (maxtype == allocmax) {
     /* Expand arrays */
     void *naya;

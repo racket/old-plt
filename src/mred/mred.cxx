@@ -2261,13 +2261,6 @@ static Scheme_Env *setup_basic_env()
 
   wxsScheme_setup(global_env);
 
-  mred_eventspace_type = scheme_make_type("<eventspace>");
-#ifdef MZ_PRECISE_GC
-  mred_eventspace_hop_type = scheme_make_type("<internal:eventspace-hop>");
-  GC_register_traverser(mred_eventspace_type, mark_eventspace_val);
-  GC_register_traverser(mred_eventspace_hop_type, mark_eventspace_hop_val);
-#endif
-
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
 
   def_dispatch = scheme_make_prim_w_arity(def_event_dispatch_handler,
@@ -2335,12 +2328,19 @@ wxFrame *MrEdApp::OnInit(void)
 
   wxInitSnips(); /* and snip classes */
 
+  mred_eventspace_type = scheme_make_type("<eventspace>");
+#ifdef MZ_PRECISE_GC
+  mred_eventspace_hop_type = scheme_make_type("<internal:eventspace-hop>");
+  GC_register_traverser(mred_eventspace_type, mark_eventspace_val);
+  GC_register_traverser(mred_eventspace_hop_type, mark_eventspace_hop_val);
+#endif
+
 #ifdef MZ_PRECISE_GC
   mmc = (MrEdContext *)GC_malloc_one_tagged(sizeof(MrEdContext));
-  mmc->type = mred_eventspace_type;
 #else
   mmc = new MrEdContext;
 #endif
+  mmc->type = mred_eventspace_type;
   mred_main_context = mmc;
   {
     wxChildList *cl;

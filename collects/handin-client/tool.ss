@@ -25,7 +25,7 @@
           (error 'handin-client
                  "Bad configuration ~s, expecting \"server:port\""
                  server:port))
-        (values (cadr m) (caddr m)))
+        (values (cadr m) (string->number (caddr m))))
       (values #f #f)))
 
   (define handin-name (#%info-lookup 'name))

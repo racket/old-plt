@@ -481,12 +481,15 @@ Bool wxDC::GetPixel(float x, float y, wxColour *col)
   if (!dc) return FALSE;
 
   ShiftXY(x, y, &xx1, &yy1);
-  
+
   // get the color of the pixel
   pixelcolor = ::GetPixel(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1));
   
   DoneDC(dc);
 
+  if (pixelcolor == CLR_INVALID)
+    return FALSE;
+  
   // return the color of the pixel
   if (col)
     col->Set(GetRValue(pixelcolor),GetGValue(pixelcolor),GetBValue(pixelcolor));
@@ -1694,6 +1697,8 @@ static int tried_ab = 0;
 # define AC_SRC_ALPHA 0x01
 #endif
 
+extern "C" void GC_gcollect();
+
 Bool wxDC::Blit(float xdest, float ydest, float width, float height,
                 wxBitmap *source, float xsrc, float ysrc, int rop,
 		wxColour *c, wxBitmap *mask)
@@ -1701,6 +1706,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   int xdest1, ydest1, xdest2, ydest2, xsrc1, ysrc1, iw, ih;
   HDC dc, dc_src, invented_dc, mdc = NULL;
   wxMemoryDC *sel, *msel = NULL, *invented_memdc = NULL;
+  float selxs = 1.0, selys = 1.0, mselxs = 1.0, mselys = 1.0;
   wxBitmap *invented = NULL;
   Bool success = 1, invented_col = 0, use_alpha = 0;
   DWORD op = 0;
@@ -1715,9 +1721,11 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   }
 
   sel = (wxMemoryDC *)source->selectedInto;
-  if (sel) 
+  if (sel) {
+    sel->GetUserScale(&selxs, &selys);
+    sel->SetUserScale(1, 1);
     dc_src = sel->ThisDC();
-  else {
+  } else {
     blit_dc->SelectObject(source);
     dc_src = blit_dc->ThisDC();
   }
@@ -1748,6 +1756,8 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
     } else {
       msel = (wxMemoryDC *)mask->selectedInto;
       if (msel) {
+	msel->GetUserScale(&mselxs, &mselys);
+	msel->SetUserScale(1, 1);
 	mdc = msel->ThisDC();
       } else {
 	if (!blit_mdc) {
@@ -1792,7 +1802,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
       invented_memdc = new wxMemoryDC();
       invented_memdc->SelectObject(invented);
-      
+
       if (invented_memdc->Ok()) {
 	invented_dc = invented_memdc->ThisDC();
 
@@ -1856,16 +1866,18 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
     if (!invented_memdc) {
       /* Failed */
-      if (msel) 
+      if (msel) {
 	msel->DoneDC(mdc);
-      else {
+	msel->SetUserScale(mselxs, mselys);
+      } else {
 	blit_mdc->DoneDC(mdc);
 	blit_mdc->SelectObject(NULL);
       }
       DoneDC(dc);
-      if (sel)
+      if (sel) {
 	sel->DoneDC(dc_src);
-      else {
+	sel->SetUserScale(selxs, selys);
+      } else {
 	blit_dc->DoneDC(dc_src);
 	blit_dc->SelectObject(NULL);
       }
@@ -1949,15 +1961,17 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   }
 
   DoneDC(dc);
-  if (sel)
+  if (sel) {
     sel->DoneDC(dc_src);
-  else {
+    sel->SetUserScale(selxs, selys);
+  } else {
     blit_dc->DoneDC(dc_src);
     blit_dc->SelectObject(NULL);
   }
   if (mdc && (mdc != dc_src)) {
     if (msel) {
       msel->DoneDC(mdc);
+      msel->SetUserScale(mselxs, mselys);
     } else {
       blit_mdc->DoneDC(mdc);
       blit_mdc->SelectObject(NULL);

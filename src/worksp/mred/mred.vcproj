@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="..\libmred\Release\libmredxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib ..\libmzgc\Release\libmzgcxxxxxxx.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib"
+				AdditionalDependencies="..\libmred\Release\libmredxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib ..\libmzgc\Release\libmzgcxxxxxxx.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib $(NOINHERIT)"
 				OutputFile="..\..\..\MrEd.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -97,7 +97,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="..\libmred\Debug\libmredxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib ..\libmzgc\Debug\libmzgcxxxxxxx.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib"
+				AdditionalDependencies="..\libmred\Debug\libmredxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib ..\libmzgc\Debug\libmzgcxxxxxxx.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib $(NOINHERIT)"
 				OutputFile="..\..\..\MrEd.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

@@ -22,7 +22,6 @@
 #endif
 #include "wxButtonBorder.h"
 
-#define MIN_BUTTON_WIDTH 58
 // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
 #define PAD_X 5
 #define PAD_Y 5
@@ -68,7 +67,6 @@ void wxButton::Create // Real constructor (given parentPanel, label)
  WXTYPE		objectType
  ) 	
 {
-  OSErr err;
   Rect boundsRect = {0,0,0,0};
   SInt16 baselineOffset; // ignored
   CFStringRef title;
@@ -94,9 +92,14 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
   CFRelease(title);
 
+  wxSetControlFont(cMacControl, font);
+
   // Now, ignore the font data and let the control find the "best" size 
   ::SetRect(&boundsRect,0,0,0,0);
-  err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
+  wxGetBestControlRect(cMacControl,&boundsRect,&baselineOffset,
+		       font, 17, 15, 
+		       label, 20);
+
   cWindowWidth = boundsRect.right - boundsRect.left + (padLeft + padRight);
   cWindowHeight = boundsRect.bottom - boundsRect.top + (padTop + padBottom);
   ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);

@@ -83,9 +83,13 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 				 0, FALSE, &cMacControl);
 
   CFRelease(theMacLabel);
+
+  wxSetControlFont(cMacControl, font);
   
   // Now, ignore the font data and let the control find the "best" size 
-  err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
+  wxGetBestControlRect(cMacControl,&boundsRect,&baselineOffset,
+		       font, 15, 11,
+		       label, 2 * IR_CIRCLE_SIZE);
   cWindowWidth = boundsRect.right - boundsRect.left;
   cWindowHeight = boundsRect.bottom - boundsRect.top;
   ::SizeControl(cMacControl, boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);

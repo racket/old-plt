@@ -151,6 +151,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   ::SetControlMinimum(cMacControl, 1);
   ::SetControlMaximum(cMacControl, no_strings);
 
+  wxSetControlFont(cMacControl, valueFont);
+
   // Now, ignore the font data and let the control find the "best" size 
   err = ::GetBestControlRect(cMacControl, &r, &baselineOffset);
   maxdfltw = r.right - r.left;

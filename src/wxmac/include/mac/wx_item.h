@@ -65,6 +65,10 @@ class wxItem: public wxbItem
 
 char *wxItemStripLabel(char *label);
 Bool wxAllControlsWantFocus();
+void wxSetControlFont(ControlRef c, wxFont *font);
+void wxGetBestControlRect(ControlRef c, Rect *r, SInt16 *offset, 
+			  wxFont *font, int small_height, int mini_height, 
+			  char *label, int width_pad);
 
 #endif // IN_CPROTO
 #endif // wx_itemh

@@ -151,6 +151,46 @@ void wxItem::OnChar(wxKeyEvent *event)
   }
 }
 
+void wxSetControlFont(ControlRef c, wxFont *font)
+{
+  ControlFontStyleRec rec;
+
+  rec.flags = (kControlUseFontMask
+	       | kControlUseFaceMask
+	       | kControlUseSizeMask);
+  rec.font = font->GetMacFontNum();
+  rec.size = font->GetPointSize();
+  rec.style = font->GetMacFontStyle();
+
+  SetControlFontStyle(c, &rec);
+}
+
+void wxGetBestControlRect(ControlRef c, Rect *r, SInt16 *offset, 
+			  wxFont *font, int small_height, int mini_height, 
+			  char *label, int width_pad)
+{
+  int size;
+  
+  ::GetBestControlRect(c, r, offset);
+
+  size = font->GetPointSize();
+
+  /* Enforce Apple guidelines for standard sizes,
+     because GetBestControlRect() doesn't. */
+  if (size == 11) {
+    r->bottom = r->top + small_height;
+  } else if (size == 9) {
+    r->bottom = r->top + mini_height;
+  }
+
+  if (label && (size < 13)) {
+    /* GetBestControlRect makes things too wide */
+    double x, y;
+    font->GetTextExtent(label, 0, &x, &y, NULL, NULL);
+    if (r->right - r->left > x + width_pad)
+      r->right = r->left + (short)x + (short)width_pad;
+  }
+}
 
 char *wxItemStripLabel(char *label)
 {

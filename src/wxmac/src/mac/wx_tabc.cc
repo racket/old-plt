@@ -24,8 +24,6 @@ static int OS_103 = -1;
 #define TAB_BOTTOM_EXTRA_MARGIN 3
 #define TAB_TITLE_SPACE 24
 #define TAB_BASE_SIDE_SPACE 16
-#define TAB_PANE_OVERLAP (OS_103 ? 6 : 7)
-#define TAB_PANE_CLIP_OVERLAP (OS_103 ? 9 : 3)
 
 static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Rect *boundsRect)
 {
@@ -87,11 +85,11 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect, SetOriginX, SetOriginY + TAB_TOP_SPACE);
 
-  /* FIXME: style & wxBORDER */
-
   cMacControl = MakeTabs(theMacGrafPort, N, Choices, &boundsRect);
    
   CheckMemOK(cMacControl);
+
+  wxSetControlFont(cMacControl, font);
 
   focused_button = -1;
 
@@ -402,6 +400,7 @@ void wxTabChoice::Append(char *s, int new_sel)
   r.right = r.left + cWindowWidth - (padLeft + padRight);
 
   naya = MakeTabs(cMacDC->macGrafPort(), tab_count, tab_labels, &r);
+  wxSetControlFont(naya, font);
 
   if (cMacControl) {
     HIViewRef prev;

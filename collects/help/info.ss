@@ -1,6 +1,15 @@
+; help collection
 (module info (lib "infotab.ss" "setup")
   (define name "Help")
   (define mzscheme-launcher-libraries (list "help.ss"))
-  (define mzscheme-launcher-names (list "Help Desk")))
+  (define mzscheme-launcher-names (list "Help Desk"))
+  (define install-collection "installer.ss"))
+
+
+
+	
+
+
+	
 
 

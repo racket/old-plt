@@ -2,7 +2,7 @@
   (require (lib "list.ss")
            (lib "xml.ss" "xml")
            (lib "getinfo.ss" "setup")
-	   (lib "util.ss" "doc" "help" "servlets" "private"))
+	   (lib "util.ss" "help" "servlets" "private"))
 
   (provide help-desk:installed-components)
   

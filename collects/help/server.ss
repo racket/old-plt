@@ -35,7 +35,7 @@
 	   (load-configuration
 	    (extract-flag 
 	     'config '() 
-	     (build-path (collection-path "doc") "help" 
+	     (build-path (collection-path "help")
 			 "server-configuration")))])
       ; restrict connections to localhost
       (make-hd-cookie help-desk-port  	

@@ -6,11 +6,11 @@
 	   (lib "pregexp.ss")
            "colldocs.ss"
            "docpos.ss"
-	   (lib "util.ss" "doc" "help" "servlets" "private"))
+	   (lib "util.ss" "help" "servlets" "private"))
 
   ; to get CSS style spec
   (require (lib "xml.ss" "xml"))
-  (require (lib "hd-css.ss" "doc" "help" "servlets" "private"))  
+  (require (lib "hd-css.ss" "help" "servlets" "private"))  
 
   (provide find-manuals)
  

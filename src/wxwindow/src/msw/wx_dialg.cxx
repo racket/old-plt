@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.7 1998/12/07 02:52:30 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.8 1999/01/29 02:48:28 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -369,9 +369,8 @@ Bool wxDialogBox::Show(Bool show)
     } else
       wxModelessWindows.DeleteObject(this);
   }
-  if (!window_parent) {
-    wxTopLevelWindows(this)->Show(this, show);
-  } else
+  wxTopLevelWindows(this)->Show(this, show);
+  if (window_parent)
     window_parent->GetChildren()->Show(this, show);
 
   if (modal)

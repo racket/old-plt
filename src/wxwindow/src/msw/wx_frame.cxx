@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.8 1998/12/07 02:52:30 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.9 1998/12/22 23:51:12 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -356,11 +356,9 @@ Bool wxFrame::Show(Bool show)
     wxModelessWindows.DeleteObject(this);
   }
 
-  if (window_parent) {
+  wxTopLevelWindows(this)->Show(this, show);
+  if (window_parent)
     window_parent->GetChildren()->Show(this, show);
-  } else {
-    wxTopLevelWindows(this)->Show(this, show);
-  }
 
   if (!show) {
     // Try to highlight the correct window (the parent)

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.11 1998/09/18 23:09:52 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.12 1998/12/11 01:07:22 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -667,20 +667,12 @@ Bool wxFrame::Show(Bool show)
   SetShown(show);
 
   visibleStatus = show; /* MATTHEW: show-&-hide fix */
-#if WXGARBAGE_COLLECTION_ON
-  if (!window_parent) {
-# if 0
-    if (show) {
-      if (!wxTopLevelWindows(this)->Member(this))
-	wxTopLevelWindows(this)->Append(this);
-    } else 
-      wxTopLevelWindows(this)->DeleteObject(this);
-# else
-    wxTopLevelWindows(this)->Show(this, show);
-# endif
-  } else
+
+
+  wxTopLevelWindows(this)->Show(this, show);
+  if (window_parent)
     window_parent->GetChildren()->Show(this, show);
-#endif
+
   if (show) {
     XtMapWidget(frameShell);
     XRaiseWindow(XtDisplay(frameShell), XtWindow(frameShell));

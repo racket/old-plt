@@ -87,7 +87,7 @@
 #endif
 
 #if defined(wx_x) || defined(wx_msw)
-# define ADD_OBJ_DUMP 1
+# define ADD_OBJ_DUMP 0
 #else
 # define ADD_OBJ_DUMP 0
 #endif
@@ -1516,8 +1516,9 @@ static void MrEdSchemeMessages(char *msg, ...)
       ioFrame->beginEditSeq = 0;
     }
   } else {
-    char buffer[2048];
-    vsprintf(buffer, msg, args);
+# define VSP_BUFFER_SIZE 4096
+    char buffer[VSP_BUFFER_SIZE];
+    MSC_IZE(vsnprintf)(buffer, VSP_BUFFER_SIZE, msg, args);
     ioFrame->media->Lock(0);
     ioFrame->media->Insert((char *)buffer, ioFrame->media->LastPosition());
     ioFrame->media->Lock(1);
@@ -2158,6 +2159,16 @@ wxFrame *MrEdApp::OnInit(void)
 #endif
 
   run_from_cmd_line(argc, argv, setup_basic_env, do_main_loop);
+
+#ifndef wx_x
+  /* The only reason we get here is that a command-line error or
+     -h occured. In either case, stick around for the sake of the
+     console. */
+  setup_basic_env();
+  TheMrEdApp->initialized = 1;
+  stdio_kills_prog = 1;
+  wxTheApp->MainLoop();
+#endif
 
   return NULL;
 }

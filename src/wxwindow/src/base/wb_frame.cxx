@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cxx,v 1.4 1998/08/16 19:23:12 mflatt Exp $
+ * RCS_ID:      $Id: wb_frame.cxx,v 1.5 1999/01/09 19:18:39 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -59,10 +59,8 @@ Bool wxbFrame::Create(wxFrame *Parent, char *WXUNUSED(title), int WXUNUSED(x), i
   context = (void *)wxGetContextForFrame();
   /* WXGC_IGNORE(context); - NO context itself is not finalized */
 
-  if (!Parent) {
-    wxTopLevelWindows(this)->Append(this);
-    wxTopLevelWindows(this)->Show(this, FALSE);
-  }
+  wxTopLevelWindows(this)->Append(this);
+  wxTopLevelWindows(this)->Show(this, FALSE);
 
   SetShown(FALSE);
 

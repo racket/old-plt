@@ -176,6 +176,7 @@ please adhere to these guidelines:
  (cs-tack/untack-arrow "Tack/Untack Arrow(s)")
  (cs-jump-to-next-bound-occurrence "Jump to Next Bound Occurrence")
  (cs-jump-to-binding "Jump to Binding Occurrence")
+ (cs-jump-to-definition "Jump to Definition")
  (cs-error-message "Error Message")
  (cs-open-file "Open ~a")
  (cs-rename-var "Rename ~a")

@@ -32,7 +32,7 @@
   
   (define jump-to-next-bound-occurrence (string-constant cs-jump-to-next-bound-occurrence))
   (define jump-to-binding (string-constant cs-jump-to-binding))
-  (define jump-to-definition "Jump to Definition")
+  (define jump-to-definition (string-constant cs-jump-to-definition))
   
   (define tool@
     (unit/sig drscheme:tool-exports^

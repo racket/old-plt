@@ -244,7 +244,8 @@
 		    (lambda (out)
 		      (fluid-let ((*intext?* #f)
 				  (*code-env-spec* "ZZZZschemedisplay"))
-			(scheme2tex in out)))))
+			(scheme2tex in out)))
+		    'text))
 		'text)
 	      (if *slatex-in-protected-region?*
 		  (set! *protected-files* (cons aux.tex *protected-files*)))
@@ -268,7 +269,8 @@
 					    plainrespbox plainbox))
 		   (dump-display in out (string-append "\\end" env)))
 		  (else (error "trigger-scheme2tex: ~
-Unknown triggerer ~s." typ)))))
+Unknown triggerer ~s." typ))))
+	  'text)
 	(call-with-input-file aux.scm
 	  (lambda (in)
 	    (call-with-output-file aux.tex
@@ -289,7 +291,9 @@ Unknown triggerer ~s." typ)))))
 			     "ZZZZschemebox")
 			    (else (error "trigger-scheme2tex: ~
 Unknown triggerer ~s." typ)))))
-		  (scheme2tex in out))))))
+		  (scheme2tex in out)))
+	      'text))
+	  'text)
 	(if *slatex-in-protected-region?*
 	    (set! *protected-files* (cons aux.tex *protected-files*)))
 	(if (memq typ '(envdisplay plaindisplay envbox plainbox))
@@ -315,14 +319,17 @@ Unknown triggerer ~s." typ)))))
 		    ((eq? typ 'plainregion)
 		     (dump-display in out (string-append "\\end" env)))
 		    (else (error "trigger-region: ~
-Unknown triggerer ~s." typ)))))
+Unknown triggerer ~s." typ))))
+	    'text)
 	  (process-tex-file aux2.tex)
 	  (set! *protected-files* (reverse! *protected-files*))
 	  (call-with-input-file aux2.tex
 	    (lambda (in)
 	      (call-with-output-file aux.tex
 		(lambda (out)
-		  (slatex::inline-protected-files in out)))))
+		  (slatex::inline-protected-files in out))
+		'text))
+	    'text)
 	  (delete-file aux2.tex)
 	  ))))
 
@@ -409,7 +416,8 @@ Unknown triggerer ~s." typ)))))
 		    (set! *protected-files* (cdr *protected-files*))
 		    (call-with-input-file f
 		      (lambda (in)
-			(inline-protected-files in out)))
+			(inline-protected-files in out))
+		      'text)
 		    (delete-file f)
 		    )
 		  (cond ((memq typ '(intext resultintext))

@@ -846,6 +846,115 @@
 (++//def ++//get-foo)
 (test 17 values ++//get-foo)
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; lifting expressions
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-syntax (@@foo stx)
+  (syntax-case stx ()
+    [(_ n)
+     (if (zero? (syntax-e #'n))
+	 #'0
+	 (with-syntax ([m (sub1 (syntax-e #'n))])
+	   (syntax-local-lift-expression #'(add1 (@@foo m)))))]))
+
+(define lifted-output #f) 
+
+(define-syntax (@@goo stx)
+  (syntax-case stx ()
+    [(_)
+     (with-syntax ([id (syntax-local-lift-expression #'(set! lifted-output "lifted!"))])
+       #'(list lifted-output id))]))
+
+(test 2 '@@foo (@@foo 2))
+(test 2 eval (expand-once #'(@@foo 2)))
+(test 2 eval (expand #'(@@foo 2)))
+(test 2 eval (expand-to-top-form #'(@@foo 2)))
+(test (list "lifted!" (void)) '@@goo (@@goo))
+(set! lifted-output #f)
+(test (list "lifted!" (void)) eval (expand-once #'(@@goo)))
+(test (list "lifted!" (void)) eval (expand #'(@@goo)))
+(test (list "lifted!" (void)) eval (expand-to-top-form #'(@@goo)))
+
+(module @@n mzscheme
+  (define-syntax (@@foo stx)
+    (syntax-case stx ()
+      [(_ n)
+       (if (zero? (syntax-e #'n))
+	   #'0
+	   (with-syntax ([m (sub1 (syntax-e #'n))])
+	     (syntax-local-lift-expression #'(add1 (@@foo m)))))]))
+  (define-syntax (@@foox stx)
+    (syntax-case stx ()
+      [(_ n)
+       (syntax-local-lift-expression #'n)]))
+  (provide @@foo @@foox))
+
+(require-for-syntax @@n)
+
+(test (void) eval (expand #'(define-syntax (@@x stx) #`(list #,(@@foo 1) #,(@@foo 2) #,(@@foo 3)))))
+(test (list 1 2 3) '@@x @@x)
+(test (void) eval (expand #'(define-syntax (@@x stx) #`(list #,(@@foox 1) #,(@@foox 2) #,(@@foox 3)))))
+(test (list 1 2 3) '@@x @@x)
+(define-syntax (@@x stx) #`(list #,(@@foox 1) #,(@@foox 2) #,(@@foox 3)))
+(test (list 1 2 3) '@@x @@x)
+(define-syntax (@@x stx) #`(list #,(@@foo 1) #,(@@foo 2) #,(@@foo 3)))
+(test (list 1 2 3) '@@x @@x)
+(define-syntax (@@x stx) #`#,(@@foo 2))
+(test 2 '@@x @@x)
+
+(test 3
+      'ls-foo
+      (let-syntax ([z (lambda (stx) #`#,(@@foo 3))])
+	z))
+
+(test (void) eval (expand #'(begin-for-syntax (define @@zoo (@@foo 2)))))
+(define-syntax (@@x stx) #`#, @@zoo)
+(test 2 '@@x/@@zoo @@x)
+(begin-for-syntax (define @@zoo2 (@@foo 2)))
+(define-syntax (@@x stx) #`#, @@zoo2)
+(test 2 '@@x/@@zoo @@x)
+
+(begin-for-syntax (@@foo 1))
+(test (void) eval (expand #'(begin-for-syntax (@@foo 1))))
+
+(module @@p mzscheme
+  (require-for-syntax @@n)
+  (provide @@goo)
+  (define-syntax (@@goo stx) #`#,(@@foo 10)))
+
+(require @@p)
+(test 10 '@@goo (@@goo))
+
+(module @@m mzscheme
+  (define-syntax (@@foo stx)
+    (syntax-case stx ()
+      [(_ n)
+       (if (zero? (syntax-e #'n))
+	   #'0
+	   (with-syntax ([m (sub1 (syntax-e #'n))])
+	     (syntax-local-lift-expression #'(add1 (@@foo m)))))]))
+  (define @@local #f)
+  (define (set-local v)
+    (set! @@local v))
+  (set-local (@@foo 2))
+  (provide @@local))
+
+(require @@m)
+(test 2 '@@local @@local)
+
+(define-syntax (@@local-top stx)
+  (syntax-case stx ()
+    [(_ expr)
+     (local-expand/capture-lifts #'expr
+				 (list (gensym))
+				 (list #'begin #'#%top))]))
+
+(test 1 'let-foo (let ([x 5]) (@@foo 1)))
+(test 1 eval (expand #'(let ([x 5]) (@@foo 1))))
+(test 1 'local-foo (let ([x 5]) (@@local-top (@@foo 1))))
+(test 1 eval (expand #'(let ([x 5]) (@@local-top (@@foo 1)))))
+
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)

@@ -13,6 +13,15 @@
        (inherit button-panel)
        (sequence (apply super-init args))
        (private
+	 [bitmap (make-object wx:bitmap% 
+			      (if (<= (wx:display-depth) 1)
+				  (build-path mred:constants:plt-home-directory
+					      "icons"
+					      "bb-sm-bw.bmp")
+				  (build-path mred:constants:plt-home-directory
+					      "icons"
+					      "bb-small.bmp"))
+			      wx:const-bitmap-type-bmp)]
 	 [button (make-object
 		  mred:button%
 		  button-panel
@@ -24,15 +33,9 @@
 					  (lambda ()
 					    (read-eval-print-loop)
 					    (printf "~nREP finished~n"))))))
-		  (make-object wx:bitmap% 
-			       (if (<= (wx:display-depth) 1)
-				   (build-path mred:constants:plt-home-directory
-					       "icons"
-					       "bb-sm-bw.bmp")
-				   (build-path mred:constants:plt-home-directory
-					       "icons"
-					       "bb-small.bmp"))
-			       wx:const-bitmap-type-bmp))])
+		  (if (send bitmap ok?)
+		      bitmap
+		      "Console"))])
        (sequence
 	 (send button-panel change-children
 	       (lambda (l)

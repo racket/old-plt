@@ -123,10 +123,10 @@
 		[on-something
 		 (lambda (super)
 		   (lambda (start len)
-		     (or erasing?
-			 (and (or (not (number? prompt-position))
-				  (>= start prompt-position))
-			      ((super) start len)))))])
+		     (and (or (not (number? prompt-position))
+			      (>= start prompt-position)
+			      erasing?)
+			  ((super) start len))))])
 	       (public
 		[on-insert (on-something (lambda () super-on-insert))]
 		[on-delete (on-something (lambda () super-on-delete))]

@@ -2733,8 +2733,10 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
       last = elem;
     }
     counter++;
-    if (!(counter & 0x15))
+    if (!(counter & 0x15)) {
+      /* FIXME: escape means not closed; multiple return may come back when it's closed */
       scheme_process_block(0);
+    }
   } while (!FIND_NEXT(hfile, &info));
   FIND_CLOSE(hfile);
 
@@ -2766,8 +2768,10 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     last = elem;
 
     counter++;
-    if (!(counter & 0xF))
+    if (!(counter & 0xF)) {
+      /* FIXME: escape means not closed; multiple return may come back when it's closed */
       scheme_process_block(0);
+    }
   }
   
   closedir(dir);
@@ -3893,6 +3897,7 @@ static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *
      escaped = 1;
      return TRUE; /* Immediately return to AESend */
    } else {
+     /* FIXME: multiple return can lead to use of disposed AE recs */      
      scheme_process_block(0);
      memcpy(&scheme_error_buf, &save, sizeof(mz_jmp_buf));
    }
@@ -3936,23 +3941,23 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
     if (e.what == kHighLevelEvent)
       AEProcessAppleEvent(&e);
     else {
-	  if (while_waiting(&e, NULL, NULL))
-	    break;
-	}
+      if (while_waiting(&e, NULL, NULL))
+	break;
+    }
 	
-	prev = NULL;
-	for (r = reply_queue; r; r = r->next) {
-	  if (r->id == id) {
-	    /* Got the reply */
-	    memcpy(reply, &r->ae, sizeof(AppleEvent));
-	    if (prev)
-	      prev->next = r->next;
-	    else
-	      reply_queue = r->next;
-	    return;
-	  }
-	  prev = r;
-	}
+    prev = NULL;
+    for (r = reply_queue; r; r = r->next) {
+      if (r->id == id) {
+	/* Got the reply */
+	memcpy(reply, &r->ae, sizeof(AppleEvent));
+	if (prev)
+	  prev->next = r->next;
+	else
+	  reply_queue = r->next;
+	return;
+      }
+      prev = r;
+    }
   }
 }
 

@@ -1646,9 +1646,9 @@ static int check_sleep(int need_activity, int sleep_now)
 void scheme_check_threads(void)
 {
 #ifndef MZ_REAL_THREADS
-  scheme_current_process->suspend_break = 1;
+  scheme_current_process->suspend_break++;
   scheme_process_block((float)0);
-  scheme_current_process->suspend_break = 0;
+  --scheme_current_process->suspend_break;
 
   check_sleep(have_activity, 0);
 #endif

@@ -316,7 +316,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	  else
 	    sema->last = w->prev;
 	  
-	  scheme_process_block(0);
+	  scheme_process_block(0); /* ok if it returns multiple times */
 	} else {
 	  /* The semaphore picked us to go */
 	  if (scheme_current_process->running & MZTHREAD_KILLED) {
@@ -327,7 +327,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	      --sema->value;
 	      scheme_post_sema((Scheme_Object *)sema);
 	    }
-	    scheme_process_block(0);
+	    scheme_process_block(0); /* dies */
 	  }
 
 	  if (sema->value) {
@@ -346,7 +346,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       scheme_current_process->blocker = (Scheme_Object *)sema;
       
       while (!sema->value)
-	scheme_process_block(0);
+	scheme_process_block(0); /* ok if it returns multiple times */
       --sema->value;
       
       scheme_current_process->block_descriptor = NOT_BLOCKED;

@@ -1293,6 +1293,8 @@ scheme_make_output_port(Scheme_Object *subtype,
 
 #ifdef MZ_REAL_THREADS
 
+ /* FIXME: these locks protect against escape-cont hop only: */
+
 # define BEGIN_LOCK_PORT(sema) \
     { mz_jmp_buf savebuf; \
       ADD_PORT_LOCK() \
@@ -4555,7 +4557,7 @@ static int pipe_getc(Scheme_Input_Port *p)
     SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
     SCHEME_SEMA_DOWN(pipe->wait_sem);
     SCHEME_LOCK_MUTEX(pipe->change_mutex);
-    scheme_process_block(0);
+    scheme_process_block(0); /* FIXME: escape possible, multiple returns possible */
   }
 #else
   scheme_current_process->block_descriptor = PIPE_BLOCKED;
@@ -5820,6 +5822,8 @@ static int tcp_addr(char *address, struct hostInfo *info)
   *done = 0;
   info->rtnCode = 0;
   if (StrToAddr(address, info, u_dnr_done, (char *)done) == cacheFault) {
+    /* FIXME: If we get a break, it's possible that `info' and `done' will be
+              GCed before the async call completes. */
     while (!*done) { scheme_process_block(0.25); }
     scheme_current_process->ran_some = 1;
   }
@@ -6315,6 +6319,7 @@ static int tcp_getc(Scheme_Input_Port *port)
       PBControlAsync((ParamBlockRec*)pb);
     }
 
+    /* FIXME: break escapes without unlocking */
     scheme_block_until(tcp_check_read, tcp_read_needs_wakeup, pb, 0);
 
     data->activeRcv = NULL;
@@ -6693,6 +6698,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       goto tcp_close_and_error;
     }
     
+    /* FIXME! multiple returns look dangerous */
     scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, pb, 0);
     
     if (data->tcp.state != SOCK_STATE_CONNECTED) {
@@ -6760,6 +6766,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	scheme_file_open_count++;
 	
 	if (inprogress) {
+	  /* FIXME! multiple returns look dangerous */
 	  status = scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)s, (float)0.0);
 	  if (status == 1) {
 #ifdef USE_UNIX_SOCKETS_TCP

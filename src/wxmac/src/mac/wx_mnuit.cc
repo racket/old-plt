@@ -161,6 +161,9 @@ void wxMenuItem::SetLabel(char* label)
     /* restore the submenu id, if any */
     if (subMenu)
       ::SetMenuItemHierarchicalID(nmh, macMenuItem, subMenu->cMacMenuId);
+
+    if (!cEnabled)
+      DisableMenuItem(nmh, macMenuItem);    
   }
 }
 

@@ -12,7 +12,7 @@
  (are-you-sure-you-want-to-switch-languages
   "Sind Sie sicher, dass Sie die Sprache des GUI wechseln wollen? (Wenn ja, muss DrScheme neugestartet werden)")
 
- (interact-with-drscheme-in-language "Interact with DrScheme in German")
+ (interact-with-drscheme-in-language "arbeite mit DrScheme in Deutsch")
  
  ;;; general purpose (DrScheme is hereb4y a word in every language, by decree of Robby :)
  (plt "PLT")

@@ -762,7 +762,7 @@
                             (py-number%->number key))
                  value)]
       [(py-is-a? key py-slice%)
-       (let ([list-len (py-number%->number
+       (let* ([list-len (py-number%->number
                         (python-method-call this '__len__))]
              [start (py-number%->number
                      (python-get-member key 'start))]

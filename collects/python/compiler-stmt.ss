@@ -144,18 +144,18 @@
                                                                             expression) target)
                                                      to-scheme)
                                               '__setitem__
-                                              (list (let ([lower ((class-field-accessor tsimple-slicing%
+                                              (list ,(let ([lower ((class-field-accessor tsimple-slicing%
                                                                                         lower) target)]
                                                           [upper ((class-field-accessor tsimple-slicing%
                                                                                         upper) target)])
-                                                      (,(py-so 'py-create)
-                                                       ,(py-so 'py-slice%)
-                                                       ,(if lower
-                                                            (send lower to-scheme)
-                                                            `(,(py-so 'number->py-number%) 0))
-                                                       ,(if upper
-                                                            (send upper to-scheme)
-                                                            `(,(py-so 'number->py-number%) +inf.0))))
+                                                      `(,(py-so 'py-create)
+                                                        ,(py-so 'py-slice%)
+                                                        ,(if lower
+                                                             (send lower to-scheme)
+                                                             `(,(py-so 'number->py-number%) 0))
+                                                        ,(if upper
+                                                             (send upper to-scheme)
+                                                             `(,(py-so 'number->py-number%) +inf.0))))
                                                     ,rhs))]
            [(or (is-a? target ttuple%)
                 (is-a? target tlist-display%))

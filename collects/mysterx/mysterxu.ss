@@ -4,6 +4,8 @@
 (require-library "macro.ss")
 (require-library "functio.ss")
 
+(require-library "urlu.ss" "net")
+
 (require-library "sigs.ss" "mysterx")
 
 (define mysterx@
@@ -23,9 +25,11 @@
 		((require-library "filter.ss" "mysterx") 
 		 (core string)
 		 properties util)] 
+	 [url : mzlib:url^
+	      (mzlib:url@ (core file))]
 	 [mysterx : mysterx:mysterx^ 
 		  ((require-library "mysterxe.ss" "mysterx") 
-		   (core function) (core string) mxprims
+		   (core function) (core string) url mxprims
 		   style filter properties util)])
    (export
     (open mysterx))))

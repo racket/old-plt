@@ -116,6 +116,17 @@ _MysterX_
   are not shown.  Returns a string that is the actual URL 
   navigated to.
 
+> navigate/status :: (send an-mx-browser navigate/status url)
+
+  Navigates the browser to the URL given by `url', a string.
+  Any DHTML changes to the page associated with the URL 
+  are not shown.  Returns a list, whose first element string that 
+  is the actual URL navigated to, and whose second element is
+  a status code, one of: #f, indicating no status could be 
+  obtained; a number, such as 200 or 404, indicating the 
+  http status; or 'no-status, indicating that `url' does not 
+  denote a URL with the `http' scheme.
+
 > go-back :: (send an-mx-browser go-back)
 
   Navigates the browser back to a URL within its history list.

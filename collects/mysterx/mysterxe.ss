@@ -4,6 +4,7 @@
   (import 
    [mzlib : mzlib:function^]
    mzlib:string^
+   mzlib:url^
    [mxprims : mysterx:prims^]
    [style : mysterx:style^]
    mysterx:filter^
@@ -1547,6 +1548,7 @@
 	    [navigate-sem (make-semaphore 0)]
 	    [navigate-mutex (make-semaphore 1)]
 	    [navigate-url #f]
+	    [port-mutex (make-semaphore 1)]
 	    [handler-sem (make-semaphore 1)]  ; protects *handler-table* and its contained hash tables
 	    [handler-wait (lambda () (semaphore-wait handler-sem))]
 	    [handler-post (lambda () (semaphore-post handler-sem))]
@@ -1582,6 +1584,26 @@
 	       (mxprims:browser-show browser b))]
 	    [navigate
 	     (make-navigator mxprims:navigate 'navigate)]
+	    [navigate/status
+	     (lambda (url)
+	       (let ([actual (navigate url)])
+		 (if (and (>= (string-length actual) 7)
+			  (string=? (substring actual 0 7)
+				    "http://"))
+		     (begin
+		       (semaphore-wait port-mutex)
+		       (let* ([p (get-impure-port (string->url actual))]
+			      [response (read-line p)]
+			      [raw-status 
+			       (regexp-match "[0-9][0-9][0-9]" response)])
+			 (close-input-port p)
+			 (begin0
+			  (list actual 
+				(if raw-status 
+				    (string->number (car raw-status))
+				    #f))
+			  (semaphore-post port-mutex))))
+		     (list actual 'no-status))))]
 	    [go-back
 	     (make-navigator mxprims:go-back 'go-back)]
 	    [go-forward

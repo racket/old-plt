@@ -36,7 +36,7 @@
 	If this is non-zero, you need to link (or weak link) to AppearanceLib for a non-Carbon CFM target (CFM-68K or PPC).
 */
 #if !defined( ALIST_USEAPPEARANCEMGR )
-#define ALIST_USEAPPEARANCEMGR	0
+#define ALIST_USEAPPEARANCEMGR	1
 #endif
 
 /* Set ALIST_USECONTROLMGR2 to 0 if you want to strip out the Control Manager 2.0 (proportional scroll thumbs) code.
@@ -76,6 +76,11 @@
 	Note: with Carbon, you don't need UPPs since it's all PPC code.  However, as a shared library under Carbon, you may need
 	UPPs.  I haven't tested that configuration.
 */
+
+#ifdef OS_X
+#define ALIST_USE_UPPS 0
+#endif
+
 #if !defined( ALIST_USE_UPPS )
 	#if !defined( TARGET_API_MAC_CARBON ) || ( TARGET_API_MAC_CARBON == 0 )
 		#define ALIST_USE_UPPS			TARGET_RT_MAC_CFM	/* Change this if you want to */

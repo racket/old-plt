@@ -640,13 +640,18 @@ void *wxBitmap::GetLabelPixmap()
     h = GetHeight();
     label_bm = new wxBitmap(w, h, 0);
     if (label_bm->Ok()) {
+      int r, g, b;
+
       if (selectedTo)
 	selectedTo->EndSetPixel();
       if (loaded_mask->selectedTo)
 	loaded_mask->selectedTo->EndSetPixel();
 
-      wxAlphaBlit(label_bm, this, loaded_mask, 
-		  wxGREY->Red(), wxGREY->Green(), wxGREY->Blue());
+      r = wxGREY->Red();
+      g = wxGREY->Green();
+      b = wxGREY->Blue();
+
+      wxAlphaBlit(label_bm, this, loaded_mask, r, g, b);
     } else
       label_bm = NULL;
   }

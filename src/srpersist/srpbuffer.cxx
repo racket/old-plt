@@ -8,8 +8,8 @@
 #include <sql.h>
 
 #include "escheme.h"
-#include "srpersist.h"
 #include "srptypes.h"
+#include "srpersist.h"
 #include "srpbuffer.h"
 
 #include <stdarg.h>

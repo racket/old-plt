@@ -36,7 +36,17 @@
      qsort(array,sizeray(array),sizeof(array[0]), \
 	   (int (*)(const void *,const void *))namedBitsDictCmp)
 
-typedef struct _SRP_prim_ {
+#define NO_BIT_NAME "sql-unknown-number"
+
+typedef struct _buffer_tbl_entry_ {
+  void *address;
+  SRP_SQL_BUFFER *buffer;
+  struct _buffer_tbl_entry_ *next;
+} SRP_BUFFER_TBL_ENTRY;
+
+#define BUFFER_TBL_SIZE 97
+
+typedef struct _srp_prim_ {
   Scheme_Object *(*c_fun)(int argc,Scheme_Object **);
   char *name;
   short minargs;
@@ -61,13 +71,23 @@ typedef  enum _const_type_ {
   namedusmallint,
   namedinteger,
   nameduinteger,
+  possiblynameduinteger,
   boolstring,
   string,
   bitmask,
   henv,
   hdbc,
   hstmt,
-  hdesc
+  hdesc,
+  apdesc,
+  ardesc,
+  ipdesc,
+  irdesc,
+  operationarray,
+  paramsprocessed,
+  rowstatus,
+  rowsfetched,
+  sqlboxeduint,
 } SRP_CONST_TYPE;
 
 typedef struct _named_typed_constant_ {
@@ -125,6 +145,8 @@ Scheme_Object *readGUIDBuffer(SQLGUID *buffer,long);
 SRP_PRIM_DECL(srp_make_indicator);
 SRP_PRIM_DECL(srp_read_indicator);
 SRP_PRIM_DECL(srp_set_indicator);
+SRP_PRIM_DECL(srp_read_row_status);
+SRP_PRIM_DECL(srp_read_boxed_uint);
 SRP_PRIM_DECL(srp_make_buffer);
 SRP_PRIM_DECL(srp_read_buffer);
 

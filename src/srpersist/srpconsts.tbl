@@ -10,41 +10,114 @@ SRP_NAMED_SMALL_CONSTANT fetchOrientation[] = {
   { "sql-fetch-bookmark", SQL_FETCH_BOOKMARK },
 };
 
-SRP_NAMED_SMALL_CONSTANT stmtAttributes[] = {
-{ "sql_attr_app_param_desc", SQL_ATTR_APP_PARAM_DESC },
-{ "sql_attr_app_row_desc", SQL_ATTR_APP_ROW_DESC },
-{ "sql_attr_async_enable", SQL_ATTR_ASYNC_ENABLE },
-{ "sql_attr_concurrency", SQL_ATTR_CONCURRENCY },
-{ "sql_attr_cursor_scrollable", SQL_ATTR_CURSOR_SCROLLABLE },
-{ "sql_attr_cursor_sensitivity", SQL_ATTR_CURSOR_SENSITIVITY },
-{ "sql_attr_cursor_type", SQL_ATTR_CURSOR_TYPE },
-{ "sql_attr_enable_auto_ipd", SQL_ATTR_ENABLE_AUTO_IPD },
-{ "sql_attr_fetch_bookmark_ptr", SQL_ATTR_FETCH_BOOKMARK_PTR },
-{ "sql_attr_imp_param_desc", SQL_ATTR_IMP_PARAM_DESC },
-{ "sql_attr_imp_row_desc", SQL_ATTR_IMP_ROW_DESC },
-{ "sql_attr_keyset_size", SQL_ATTR_KEYSET_SIZE },
-{ "sql_attr_max_length", SQL_ATTR_MAX_LENGTH },
-{ "sql_attr_max_rows", SQL_ATTR_MAX_ROWS },
-{ "sql_attr_metadata_id", SQL_ATTR_METADATA_ID },
-{ "sql_attr_noscan", SQL_ATTR_NOSCAN },
-{ "sql_attr_param_bind_offset_ptr", SQL_ATTR_PARAM_BIND_OFFSET_PTR },
-{ "sql_attr_param_bind_offset_ptr", SQL_ATTR_PARAM_BIND_OFFSET_PTR },
-{ "sql_attr_param_bind_type", SQL_ATTR_PARAM_BIND_TYPE },
-{ "sql_attr_param_operation_ptr", SQL_ATTR_PARAM_OPERATION_PTR },
-{ "sql_attr_param_status_ptr", SQL_ATTR_PARAM_STATUS_PTR },
-{ "sql_attr_params_processed_ptr", SQL_ATTR_PARAMS_PROCESSED_PTR },
-{ "sql_attr_paramset_size", SQL_ATTR_PARAMSET_SIZE },
-{ "sql_attr_query_timeout", SQL_ATTR_QUERY_TIMEOUT },
-{ "sql_attr_retrieve_data", SQL_ATTR_RETRIEVE_DATA },
-{ "sql_attr_row_array_size", SQL_ATTR_ROW_ARRAY_SIZE },
-{ "sql_attr_row_bind_offset_ptr", SQL_ATTR_ROW_BIND_OFFSET_PTR },
-{ "sql_attr_row_bind_type", SQL_ATTR_ROW_BIND_TYPE },
-{ "sql_attr_row_number", SQL_ATTR_ROW_NUMBER },
-{ "sql_attr_row_operation_ptr", SQL_ATTR_ROW_OPERATION_PTR },
-{ "sql_attr_row_status_ptr", SQL_ATTR_ROW_STATUS_PTR },
-{ "sql_attr_rows_fetched_ptr", SQL_ATTR_ROWS_FETCHED_PTR },
-{ "sql_attr_simulate_cursor", SQL_ATTR_SIMULATE_CURSOR },
-{ "sql_attr_use_bookmarks", SQL_ATTR_USE_BOOKMARKS },
+SRP_NAMED_CONSTANT asyncEnableBits[] = {
+  { "sql-async-enable-off", SQL_ASYNC_ENABLE_OFF },
+  { "sql-async-enable-on", SQL_ASYNC_ENABLE_ON },
+};
+
+SRP_NAMED_CONSTANT concurrencyBits[] = {
+  { "sql-concur-read-only", SQL_CONCUR_READ_ONLY },
+  { "sql-concur-lock", SQL_CONCUR_LOCK },
+  { "sql-concur-rowver", SQL_CONCUR_ROWVER },
+  { "sql-concur-values", SQL_CONCUR_VALUES },
+};
+
+SRP_NAMED_CONSTANT cursorScrollableBits[] = {
+  { "sql-nonscrollable", SQL_NONSCROLLABLE },
+  { "sql-scrollable", SQL_SCROLLABLE },
+};
+
+SRP_NAMED_CONSTANT stmtCursorSensitivityBits[] = {
+  { "sql-unspecified", SQL_UNSPECIFIED },
+  { "sql-insensitive", SQL_INSENSITIVE },
+  { "sql-sensitive", SQL_SENSITIVE },
+};
+
+SRP_NAMED_CONSTANT cursorTypeBits[] = {
+  { "sql-cursor-forward-only", SQL_CURSOR_FORWARD_ONLY },
+  { "sql-cursor-static", SQL_CURSOR_STATIC },
+  { "sql-cursor-keyset-driven", SQL_CURSOR_KEYSET_DRIVEN },
+  { "sql-cursor-dynamic", SQL_CURSOR_DYNAMIC },
+};
+
+SRP_NAMED_CONSTANT noscanBits[] = {
+  { "sql-noscan-off", SQL_NOSCAN_OFF },
+  { "sql-noscan-on ", SQL_NOSCAN_ON },
+};
+
+SRP_NAMED_CONSTANT paramBindTypeBits[] = {
+  { "sql-param-bind-by-column", SQL_PARAM_BIND_BY_COLUMN },
+};
+
+SRP_NAMED_CONSTANT retrieveDataBits[] = {
+ { "sql-rd-on", SQL_RD_ON },
+ { "sql-rd-off ", SQL_RD_OFF },
+};
+
+SRP_NAMED_CONSTANT rowBindTypeBits[] = {
+  { "sql-bind-by-column", SQL_BIND_BY_COLUMN },
+};
+
+SRP_NAMED_CONSTANT simulateCursorBits[] = {
+  { "sql-sc-non-unique", SQL_SC_NON_UNIQUE },
+  { "sql-sc-try-unique", SQL_SC_TRY_UNIQUE },
+  { "sql-sc-unique ", SQL_SC_UNIQUE },
+};
+
+SRP_NAMED_CONSTANT useBookmarksBits[] = {
+ { "sql-ub-off", SQL_UB_OFF },
+ { "sql-ub-variable", SQL_UB_VARIABLE },
+ { "sql-ub-fixed", SQL_UB_FIXED },
+};
+
+SRP_NAMED_BITS_DICT namedStmtAttributes[] = {
+  { "sql-attr-async-enable", asyncEnableBits, sizeray(asyncEnableBits) },
+  { "sql-attr-concurrency", concurrencyBits, sizeray(concurrencyBits) },
+  { "sql-attr-cursor-scrollable", cursorScrollableBits, sizeray(cursorScrollableBits) },
+  { "sql-attr-cursor-sensitivity", stmtCursorSensitivityBits, sizeray(stmtCursorSensitivityBits) },
+  { "sql-attr-cursor-type", cursorTypeBits, sizeray(cursorTypeBits) },
+  { "sql-attr-noscan", noscanBits, sizeray(noscanBits) },
+  { "sql-attr-param-bind-type", paramBindTypeBits, sizeray(paramBindTypeBits) },
+  { "sql-attr-retrieve-data", retrieveDataBits, sizeray(retrieveDataBits) },
+  { "sql-attr-row-bind-type", rowBindTypeBits, sizeray(rowBindTypeBits) },
+  { "sql-attr-simulate-cursor", simulateCursorBits, sizeray(simulateCursorBits) },
+  { "sql-attr-use-bookmarks", useBookmarksBits, sizeray(useBookmarksBits) },
+};
+
+SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
+{ "sql-attr-app-param-desc", SQL_ATTR_APP_PARAM_DESC, apdesc },
+{ "sql-attr-app-row-desc", SQL_ATTR_APP_ROW_DESC, ardesc },
+{ "sql-attr-async-enable", SQL_ATTR_ASYNC_ENABLE, nameduinteger },
+{ "sql-attr-concurrency", SQL_ATTR_CONCURRENCY, nameduinteger },
+{ "sql-attr-cursor-scrollable", SQL_ATTR_CURSOR_SCROLLABLE, nameduinteger },
+{ "sql-attr-cursor-sensitivity", SQL_ATTR_CURSOR_SENSITIVITY, nameduinteger },
+{ "sql-attr-cursor-type", SQL_ATTR_CURSOR_TYPE, nameduinteger },
+{ "sql-attr-enable-auto-ipd", SQL_ATTR_ENABLE_AUTO_IPD, sqlbool },
+{ "sql-attr-fetch-bookmark-ptr", SQL_ATTR_FETCH_BOOKMARK_PTR, sqluinteger },
+{ "sql-attr-imp-param-desc", SQL_ATTR_IMP_PARAM_DESC, ipdesc },
+{ "sql-attr-imp-row-desc", SQL_ATTR_IMP_ROW_DESC, irdesc },
+{ "sql-attr-keyset-size", SQL_ATTR_KEYSET_SIZE, sqluinteger },
+{ "sql-attr-max-length", SQL_ATTR_MAX_LENGTH, sqluinteger },
+{ "sql-attr-max-rows", SQL_ATTR_MAX_ROWS, sqluinteger },
+{ "sql-attr-metadata-id", SQL_ATTR_METADATA_ID, sqluinteger },
+{ "sql-attr-noscan", SQL_ATTR_NOSCAN, nameduinteger },
+{ "sql-attr-param-bind-offset-ptr", SQL_ATTR_PARAM_BIND_OFFSET_PTR, sqlboxeduint },
+{ "sql-attr-param-bind-type", SQL_ATTR_PARAM_BIND_TYPE, possiblynameduinteger },
+{ "sql-attr-param-operation-ptr", SQL_ATTR_PARAM_OPERATION_PTR, operationarray },
+{ "sql-attr-param-status-ptr", SQL_ATTR_PARAM_STATUS_PTR, rowstatus },
+{ "sql-attr-params-processed-ptr", SQL_ATTR_PARAMS_PROCESSED_PTR, sqlboxeduint },
+{ "sql-attr-paramset-size", SQL_ATTR_PARAMSET_SIZE, sqluinteger },
+{ "sql-attr-query-timeout", SQL_ATTR_QUERY_TIMEOUT, sqluinteger },
+{ "sql-attr-retrieve-data", SQL_ATTR_RETRIEVE_DATA, nameduinteger  },
+{ "sql-attr-row-array-size", SQL_ATTR_ROW_ARRAY_SIZE, sqluinteger },
+{ "sql-attr-row-bind-offset-ptr", SQL_ATTR_ROW_BIND_OFFSET_PTR, sqlboxeduint },
+{ "sql-attr-row-bind-type", SQL_ATTR_ROW_BIND_TYPE, possiblynameduinteger },
+{ "sql-attr-row-number", SQL_ATTR_ROW_NUMBER, sqluinteger },
+{ "sql-attr-row-operation-ptr", SQL_ATTR_ROW_OPERATION_PTR, operationarray },
+{ "sql-attr-row-status-ptr", SQL_ATTR_ROW_STATUS_PTR, rowstatus },
+{ "sql-attr-rows-fetched-ptr", SQL_ATTR_ROWS_FETCHED_PTR, sqlboxeduint },
+{ "sql-attr-simulate-cursor", SQL_ATTR_SIMULATE_CURSOR, nameduinteger },
+{ "sql-attr-use-bookmarks", SQL_ATTR_USE_BOOKMARKS, nameduinteger },
 };
 
 SRP_NAMED_CONSTANT sqlFunctions[] = {
@@ -182,7 +255,7 @@ SRP_NAMED_SMALL_CONSTANT fieldDescriptors[] = {
   { "sql-desc-concise-type",  SQL_DESC_CONCISE_TYPE },
   { "sql-desc-data-ptr", SQL_DESC_DATA_PTR },
   { "sql-desc-datetime-interval-code", SQL_DESC_DATETIME_INTERVAL_CODE },
-  { "sql_desc_datetime_interval_precision", SQL_DESC_DATETIME_INTERVAL_PRECISION },
+  { "sql-desc-datetime-interval-precision", SQL_DESC_DATETIME_INTERVAL_PRECISION },
   { "sql-desc-display-size", SQL_DESC_DISPLAY_SIZE },
   { "sql-desc-fixed-prec-scale", SQL_DESC_FIXED_PREC_SCALE },
   { "sql-desc-indicator-ptr", SQL_DESC_INDICATOR_PTR },
@@ -480,5 +553,24 @@ SRP_NAMED_CONSTANT scrollCursor[] = {
   { "sql-scroll-static", SQL_SCROLL_STATIC },
 };
 
+SRP_NAMED_SMALL_CONSTANT posOperations[] = {
+  { "sql-position", SQL_POSITION },
+  { "sql-refresh", SQL_REFRESH },
+  { "sql-add", SQL_ADD },
+  { "sql-update", SQL_UPDATE },
+  { "sql-delete", SQL_DELETE },
+};
 
+SRP_NAMED_SMALL_CONSTANT lockTypes[] = {
+  { "sql-lock-no-change", SQL_LOCK_NO_CHANGE },
+  { "sql-lock-exclusive", SQL_LOCK_EXCLUSIVE },
+  { "sql-lock-unlock", SQL_LOCK_UNLOCK },
+};
+
+SRP_NAMED_SMALL_CONSTANT stmtFreeOptions[] = {
+  { "sql-close", SQL_CLOSE },
+  { "sql-drop", SQL_DROP },
+  { "sql-unbind", SQL_UNBIND },
+  { "sql-reset-params", SQL_RESET_PARAMS },
+};
 

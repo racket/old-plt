@@ -902,7 +902,7 @@ void wxRegion::Install(long target)
     Graphics *g = (Graphics *)target;
     GraphicsPath *gp;
     PathTarget *t;
-	int i;
+    int i;
 
     if (paths) {
       wxGSetClip(g, paths[0], CombineModeReplace);
@@ -935,7 +935,15 @@ void wxRegion::Install(long target)
 #endif
 #if defined(wx_mac) || defined(wx_msw)
     npaths = t->npaths + 1;
-    paths = new WXGC_ATOMIC PathTargetPath_t[npaths];
+    {
+# ifdef MZ_PRECISE_GC
+      PathTargetPath_t *ps;
+      ps = (PathTargetPath_t *)scheme_malloc_atomic(sizeof(PathTargetPath_t) * npaths);
+      paths = ps;
+# else
+      paths = new WXGC_ATOMIC PathTargetPath_t[npaths];
+# endif
+    }
 # ifdef wx_mac
     oes = new WXGC_ATOMIC Bool[npaths];
 # endif
@@ -1560,7 +1568,11 @@ Bool wxIntersectPathRgn::Install(long target, Bool reverse)
 # endif
       int n = (t->apaths + 5) * 2;
       
+# ifdef MZ_PRECISE_GC
+      naya = (PathTargetPath_t *)scheme_malloc_atomic(sizeof(PathTargetPath_t) * n);
+# else
       naya = new WXGC_ATOMIC PathTargetPath_t[n];
+# endif
 # ifdef wx_mac
       naya_oes = new WXGC_ATOMIC Bool[n];
 # endif

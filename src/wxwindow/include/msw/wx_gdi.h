@@ -14,7 +14,21 @@
 #define wx_gdih
 
 #include "wb_gdi.h"
+
+#ifdef MZ_PRECISE_GC
+class Graphics;
+class GraphicsPath;
+class Pen;
+class Brush;
+class Matrix;
+START_XFORM_SKIP;
+#endif
+
 #include <gdiplus.h>
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 // Font
 class wxFont: public wxbFont

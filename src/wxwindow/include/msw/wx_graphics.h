@@ -1,5 +1,18 @@
 
+#ifdef MZ_PRECISE_GC
+class Graphics;
+class GraphicsPath;
+class Pen;
+class Brush;
+class Matrix;
+START_XFORM_SKIP;
+#endif
+
 #include <gdiplus.h>
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 #ifndef WX_GRAPHICS_EXPORT
 # define WX_GRAPHICS_EXPORT extern

@@ -301,6 +301,7 @@
     "wx_gauge"
     "wx_gbox"
     "wx_gdi"
+    "wx_graph_glue"
     "wx_item"
     "wx_lbox"
     "wx_main"

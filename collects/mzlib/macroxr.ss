@@ -45,7 +45,7 @@
 			       [(#%define define)
 				(and (or (and (= 3 (length def))
 					      (symbol? (cadr def)))
-					 (and (>= 3 (length def))
+					 (and (<= 3 (length def))
 					      (pair? (cadr def))
 					      (symilist? (cadr def))))
 				     (let-values ([(d kind) (local-expand-body-expression `(,(car def) ,(gensym) 1))])

@@ -623,7 +623,7 @@
       ;; 	    no intervening white space, by any token>
       (define x-token
         (lambda (value)
-          (let* ((r  (regexp "^[xX]-(.*)"))
+          (let* ((r  #rx"^[xX]-(.*)")
                  (h (trim-spaces value))
                  (ans (regexp-match r h)))
             (and ans
@@ -643,7 +643,7 @@
       ;; 	       as specified in RFC 2048.>
       (define iana-token
         (lambda (value)
-          (let ((ans (assoc (trim-spaces value) iana-extensions)))
+          (let ((ans (assoc (lowercase (trim-spaces value)) iana-extensions)))
             (and ans
                  (cdr ans)))))
       

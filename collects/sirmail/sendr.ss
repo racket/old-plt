@@ -206,6 +206,7 @@
             d)
           (let ([type-list (make-object choice% "Type:" types d void)]
                 [encoding-list (make-object choice% "Encoding:" encodings d void)]
+		[inline-check (make-object check-box% "Inline in recipient's view" d void)]
                 [button-panel (instantiate horizontal-pane% (d)
                                 [alignment '(right center)]
                                 [stretchable-height #f])]
@@ -235,8 +236,9 @@
               (send d show #t)
               (if ok?
                   (values (list-ref types (send type-list get-selection))
-                          (list-ref encodings (send encoding-list get-selection)))
-                  (values #f #f))))))
+                          (list-ref encodings (send encoding-list get-selection))
+			  (send inline-check get-value))
+                  (values #f #f #f))))))
 			
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Composer Instance                                     ;;
@@ -421,23 +423,30 @@
 		     (lambda (i env)
 		       (let ([file (get-file "Get Enclosure" mailer-frame)])
 			 (when file
-                           (let-values ([(type encoding) (get-enclosure-type-and-encoding file mailer-frame)])
+                           (let-values ([(type encoding inline?) (get-enclosure-type-and-encoding file mailer-frame)])
                              (when (and type encoding)
                                (let ([i (send enclosure-list new-item)]
                                      [enc (make-enclosure
                                            file
-                                           (insert-field
-                                            "Content-Type" 
-                                            (data-lines->data
-                                             (list
-                                              (string-append type ";")
-                                              (format "name=~s" (clean-filename
-                                                                 (with-handlers ([void (lambda (x) "unknown")])
-                                                                   (let-values ([(base name dir?) (split-path file)])
-                                                                     name))))))
-                                            (insert-field
-                                             "Content-Transfer-Encoding" encoding
-                                             empty-header))
+					   (let ([fn (clean-filename
+						      (with-handlers ([void (lambda (x) "unknown")])
+							(let-values ([(base name dir?) (split-path file)])
+							  name)))])
+					     (insert-field
+					      "Content-Type" 
+					      (data-lines->data
+					       (list
+						(string-append type ";")
+						(format "name=~s" fn)))
+					      (insert-field
+					       "Content-Transfer-Encoding" encoding
+					       (insert-field
+						"Content-Disposition"
+						(data-lines->data
+						 (list
+						  (format "~a; " (if inline? 'inline 'attachment))
+						  (format "filename=~s" fn)))
+						empty-header))))
                                            (lambda ()
                                              (let ([content (with-input-from-file file
                                                               (lambda ()

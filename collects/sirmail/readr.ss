@@ -749,6 +749,7 @@
       (define show-full-headers? #f)
       (define quote-in-reply? #t)
       (define mime-mode? #t)
+      (define no-mime-inline? #f)
       (define html-mode? #t)
       (define img-mode? #f)
       
@@ -1030,13 +1031,16 @@
                                (begin
                                  ;; Disable others:
                                  (send raw check (eq? raw item))
-                                 (send mime check (eq? mime item))
+                                 (send mime-lite check (eq? mime-lite item))
+				 (send mime check (eq? mime item))
                                  (send html check (eq? html item))
                                  (send img check (eq? img item))
                                  ;; Update flags
                                  (set! mime-mode? (or (send mime is-checked?)
+						      (send mime-lite is-checked?)
                                                       (send html is-checked?)
                                                       (send img is-checked?)))
+				 (set! no-mime-inline? (or (send mime-lite is-checked?)))
                                  (set! html-mode? (or (send html is-checked?)
                                                       (send img is-checked?)))
                                  (set! img-mode? (send img is-checked?))
@@ -1045,6 +1049,7 @@
                                ;; Turn it back on
                                (send item check #t)))]
                  [raw (make-object checkable-menu-item% "&Raw" m switch)]
+                 [mime-lite (make-object checkable-menu-item% "MIME &without Inline" m switch)]
                  [mime (make-object checkable-menu-item% "&MIME" m switch)]
                  [html (make-object checkable-menu-item% "MIME and &HTML" m switch)]
                  [img (make-object checkable-menu-item% "MIME, HTML, and &Images" m switch)])
@@ -2032,7 +2037,8 @@
 		(case (mime:entity-type ent)
 		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
                             (cond
-                              [(memq disp '(inline error))
+                              [(or (eq? disp 'error)
+				   (and (eq? disp 'inline) (not no-mime-inline?)))
                                (cond
                                  [(and html-mode?
                                        (eq? 'html (mime:entity-subtype ent)))
@@ -2070,11 +2076,12 @@
 			 (lambda (port)
 			   (display (get) port))
 			 'truncate)
-		       (let ([bitmap (make-object bitmap% tmp-file)])
-			 (when (send bitmap ok?)
-			   (insert (make-object image-snip% bitmap) void)
-			   (insert "\r\n" void))
-			 (delete-file tmp-file))))]
+		       (unless no-mime-inline?
+			 (let ([bitmap (make-object bitmap% tmp-file)])
+			   (when (send bitmap ok?)
+			     (insert (make-object image-snip% bitmap) void)
+			     (insert "\r\n" void))
+			   (delete-file tmp-file)))))]
 		  [(multipart message)
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)

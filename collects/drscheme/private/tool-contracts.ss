@@ -912,6 +912,18 @@
 ;                     ;    ;                 ;    ;         
 ;                      ;;;;                   ;;;;          
   
+  
+  (drscheme:language:add-snip-value
+   (-> (-> any/c boolean?)
+       (-> any/c (is-a?/c snip%))
+       void?)
+   (test-value convert-value)
+   "Registers a handler to convert values into snips as they are printed in the REPL."
+   ""
+   "The \var{test-snip} argument is called to determine if this handler can convert the value"
+   "and the \var{convert-value} argument is called to build a snip."
+   "Both functions are called on the user's thread and with the user's settings.")
+  
   (drscheme:language:extend-language-interface
    (interface?
     ((implementation?/c drscheme:language:language<%>) . ->d . (lambda (%) (subclass?/c %)))

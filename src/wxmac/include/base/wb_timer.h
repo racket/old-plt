@@ -7,17 +7,11 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_timer.h	1.2 5/9/94" */
-
 #ifndef wxb_timerh
 #define wxb_timerh
 
 #include "common.h"
 #include "wx_obj.h"
-
-#if (!defined(__SC__) && !defined(__sgi)) && !defined(wx_mac)
-#include <sys/timeb.h>
-#endif
 
 #ifdef IN_CPROTO
 typedef       void    *wxbTimer ;
@@ -26,13 +20,8 @@ typedef       void    *wxbTimer ;
 class wxbTimer: public wxObject
 {
  public:
-#if 0
-  Bool oneShot ;
-  int  milli ;
-  int  lastMilli ;
-#else
   int interval;
-#endif
+
   wxbTimer(void);
   ~wxbTimer(void);
   virtual Bool Start(int milliseconds = -1,Bool one_shot=FALSE) = 0; // Start timer

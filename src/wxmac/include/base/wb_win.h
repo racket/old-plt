@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_win.h	1.2 5/9/94" */
-
 /*
  * Purpose:  wxWindow class declaration. Base class for all windows and
  *           panel items.
@@ -57,15 +55,8 @@ class wxbWindow: public wxObject
   wxCursor *wx_cursor;                        // Window's cursor
 
   char *wx_client_data;                       // Any user client data
-#ifndef wx_mac
-  wxList *children;                           // Window's children
-#endif // wx_mac
   Bool paintingEnabled;
   Bool winCaptured;
-
-#ifndef wx_mac
-  wxWindow *window_parent;                     // Each window always knows its parent
-#endif // wx_mac
 
   char *handle;                                // Pointer to real window
   char *windowName;                            // Window name
@@ -75,9 +66,7 @@ class wxbWindow: public wxObject
 
   // Constructors/Destructors
   wxbWindow(void);
-#ifdef wx_mac
   wxbWindow(char* windowName);
-#endif 
 
   virtual ~wxbWindow(void);
 
@@ -111,15 +100,9 @@ class wxbWindow: public wxObject
 
   virtual char *GetHandle(void);
   char *GetClientData(void);
-#ifdef wx_mac
   virtual wxWindow *GetParent(void) = 0;
   virtual wxWindow *GetGrandParent(void) = 0;
   virtual wxChildList *GetChildren(void) = 0;
-#else // wx_mac
-  virtual wxWindow *GetParent(void);
-  virtual wxWindow *GetGrandParent(void);
-  inline virtual wxList *GetChildren() { return children; }
-#endif // wx_mac
 
   void SetClientData(char *);
   virtual void Show(Bool show) = 0;
@@ -128,13 +111,8 @@ class wxbWindow: public wxObject
 
   virtual float GetCharWidth(void) = 0;
   virtual float GetCharHeight(void) = 0;
-#ifdef wx_mac
   inline virtual void GetTextExtent(const char* string, float* x, float* y, float* descent = NULL,
-  						float* externalLeading = NULL, wxFont* the_font = NULL, Bool use16=FALSE) {};
-#else // wx_mac
-  inline virtual void GetTextExtent(const char *string, float *x, float *y,
-       float *descent = NULL, float *externalLeading = NULL, wxFont *theFont = NULL) {};
-#endif
+				    float* externalLeading = NULL, wxFont* the_font = NULL, Bool use16=FALSE) {};
   inline virtual void SetTitle(char *title) {};      // Set window title
   inline virtual char *GetTitle(void) { return NULL; }; // Set window title
   // Most windows have the concept of a label; for frames, this is the
@@ -158,19 +136,11 @@ class wxbWindow: public wxObject
   virtual Bool PopupMenu(wxMenu *menu, float x, float y) = 0;
 
   // INTERNAL FUNCTIONS
-#ifdef wx_mac
   virtual void AddChild(wxObject *child) = 0;      // Adds reference to the child object
   virtual void DestroyChildren(void) = 0;  		   // Removes and destroys all children
-#else // wx_mac
-  virtual void AddChild(wxObject *child);      // Adds reference to the child object
-  virtual void RemoveChild(wxObject *child);   // Removes reference to child
-                                       // (but doesn't delete the child object)
-  virtual void DestroyChildren(void);  // Removes and destroys all children
-#endif // wx_mac
 
   wxWindow *ContextWindow(void);
 
-#ifdef wx_mac
 //=============================================================================
 // Private methods
 //=============================================================================
@@ -178,16 +148,10 @@ private:
 
 	void InitDefaults(void);
 
-#endif // wx_mac
-
 };
 
-#if 0
-extern wxList wxTopLevelWindows;
-#else
 extern wxChildList *wxGetTopLevelWindowsList(wxObject*);
 #define wxTopLevelWindows(w) (wxGetTopLevelWindowsList(w))
-#endif
 
 extern void *wxGetContextForFrame();
 

@@ -34,11 +34,6 @@
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 
-wxGauge::wxGauge()
-{
-  /* Bad */
-}
-
 wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 		 int width, int height, long style, char *name) :
 		 wxbGauge(panel, label, _range, x, y, width, height, style, name)

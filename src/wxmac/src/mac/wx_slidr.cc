@@ -59,7 +59,7 @@ wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
 		   int min_value, int max_value, int width, int x, int y,
 		   long style, char *name, WXTYPE objectType
 		   ):
-  wxbSlider(panel, label, value, min_value, max_value, width, x, y, style, name)
+  wxbSlider(panel, func, label, value, min_value, max_value, width, x, y, style, name)
 {
   Create(panel, func, label, value, min_value, max_value, width, x, y, style, name);
 }

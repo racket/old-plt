@@ -217,6 +217,8 @@ wxColour *wxColour::CopyFrom(const char *col)
       blue = 0;
       isInit = FALSE;
     }
+
+  return this;
 }
 
 wxColour &wxColour::operator = (wxColour &src)

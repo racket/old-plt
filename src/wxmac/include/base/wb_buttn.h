@@ -26,9 +26,7 @@ class wxbButton: public wxItem
 {
  public:
 
-  wxbButton(wxPanel *panel, wxFunction func, char *label, int x = -1, int y = -1,
-           int width = -1, int height = -1, long style = 0, char *name = "button");
-  wxbButton(wxPanel *panel, wxFunction func, wxBitmap *bitmap, int x = -1, int y = -1,
+  wxbButton(wxPanel *panel, wxFunction func, int x = -1, int y = -1,
            int width = -1, int height = -1, long style = 0, char *name = "button");
   ~wxbButton(void);
 

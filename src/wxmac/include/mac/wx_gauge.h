@@ -25,7 +25,6 @@ class wxGauge: public wxbGauge
   int    value;
 
  public:
-  wxGauge(void);
   wxGauge(wxPanel *panel, char *label, int range, int x = -1, int y = -1,
            int width = -1, int height = -1, long style = 0, char *name = "gauge");
   ~wxGauge(void);

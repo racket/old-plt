@@ -277,22 +277,7 @@ void wxbItem::ProcessCommand (wxCommandEvent * event)
     (void) (*(fun)) (this, event);
 }
 
-
-wxbButton::wxbButton (wxPanel * panel, wxFunction Function, char *label,
-	   int x, int y, int width, int height, long style, char *name)
-{
-  __type = wxTYPE_BUTTON;
-  windowStyle = style;
-  window_parent = panel;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-}
-
-wxbButton::wxbButton (wxPanel * panel, wxFunction Function, wxBitmap * bitmap,
+wxbButton::wxbButton (wxPanel * panel, wxFunction Function,
 	   int x, int y, int width, int height, long style, char *name)
 {
   __type = wxTYPE_BUTTON;
@@ -633,6 +618,25 @@ Bool wxbListBox::SetStringSelection (char *s)
 }
 
 // Radiobox item
+wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
+	     char *Title,
+	     int x, int y, int width, int height,
+	     int N, char **Choices,
+	     int majorDim, long style, char *name)
+{
+  __type = wxTYPE_RADIO_BOX;
+  windowStyle = style;
+  selected = -1;
+  window_parent = panel;
+  no_items = 0;
+  labelPosition = panel->label_position;
+  buttonFont = panel->buttonFont;
+  labelFont = panel->labelFont;
+  backColour = panel->backColour;
+  labelColour = panel->labelColour;
+  buttonColour = panel->buttonColour;
+}
+
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
 			  char *Title,
 			  int x, int y, int width, int height,

@@ -396,7 +396,7 @@ void CSink::unmarshalSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
 
     BSTR bstr;
 
-    bstr = schemeStringToBSTR(obj);
+    bstr = schemeToBSTR(obj);
     wcscpy(pVariantArg->bstrVal,bstr);
     SysFreeString(bstr);
     break;
@@ -408,7 +408,7 @@ void CSink::unmarshalSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
     if (SCHEME_STRSYMP (val) == FALSE)
       handlerUpdateError ("string or symbol");
 
-    bstr2 = schemeStringToBSTR(val);
+    bstr2 = schemeToBSTR(val);
     wcscpy(*(pVariantArg->pbstrVal),bstr2);
     SysFreeString(bstr2);
     break;

@@ -148,7 +148,7 @@ typedef struct _mx_omit_ {
 
 typedef struct _mx_type_tbl_entry_ {
   IDispatch *pIDispatch;
-  char *name;
+  LPCTSTR name;
   INVOKEKIND invKind;
   MX_TYPEDESC *pTypeDesc;
   struct _mx_type_tbl_entry_ *next;
@@ -159,7 +159,7 @@ typedef enum _mx_html_where_ {
 } MX_HTML_WHERE;
 
 typedef struct _browser_window_ { // parameters a la MrEd frame% class
-  char *label;
+  const char *label;
   int width;
   int height;
   int x;
@@ -607,15 +607,15 @@ void mx_register_com_object(Scheme_Object *,IDispatch *);
 void mx_register_simple_com_object(Scheme_Object *,IUnknown *);
 void scheme_release_browser(void *,void *);
 void scheme_release_document(void *,void *);
-void codedComError(char *,HRESULT);
-IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *,char *);
+void codedComError(const char *,HRESULT);
+IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *,LPCTSTR);
 IDispatch *getElementInCollection(IHTMLElementCollection *,int);
 IDispatch *getObjectInCollection(IHTMLElementCollection *,int);
 Scheme_Object *variantToSchemeObject(VARIANTARG *);
 void marshalSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
 void initEventNames(void);
-IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *,int);
-CLSID getCLSIDFromCoClass(const char *);
+IHTMLElement *findBodyElement(IHTMLDocument2 *,LPCTSTR,LPCTSTR,int);
+CLSID getCLSIDFromCoClass (LPCTSTR);
 ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);
 void signalCodedEventSinkError(char *,HRESULT);
 

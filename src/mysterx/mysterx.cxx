@@ -63,7 +63,7 @@ static Scheme_Object *mx_name;     /* module name */
 /* best.  Obviously this has GC implications, so don't use it.    */
 /* jrm uses it for dotnet.                                        */
 
-static int mx_marshal_raw_scheme_objects;
+Scheme_Object * mx_marshal_raw_scheme_objects;
 
 Scheme_Object *scheme_date_type;
 
@@ -390,20 +390,19 @@ static MX_PRIM mxPrims[] = {
 
 };
 
-#define SCHEME_NONNEGATIVE(thing) (SCHEME_INTP(thing) && SCHEME_INT_VAL(thing) >= 0)
+#if !defined(SCHEME_NONNEGATIVE)
+#define SCHEME_NONNEGATIVE(thing) (SCHEME_INTP (thing) && SCHEME_INT_VAL (thing) >= 0)
+#endif
 
-BOOL isEmptyClsId(CLSID clsId) {
-  if (memcmp(&clsId,&emptyClsId,sizeof(CLSID)) == 0) {
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
+BOOL isEmptyClsId (CLSID clsId)
+{
+  return memcmp (&clsId, &emptyClsId, sizeof (CLSID)) == 0;
 }
 
-void scheme_release_typedesc(void *p,void *) {
+void scheme_release_typedesc (void *p, void *)
+{
   MX_TYPEDESC *pTypeDesc;
-  ITypeInfo *pITypeInfo,*pITypeInfoImpl;
+  ITypeInfo *pITypeInfo, *pITypeInfoImpl;
   IDispatch *pInterface;
 
   /* NEED TO DO SOME NEW CLEANUP HERE */
@@ -411,7 +410,7 @@ void scheme_release_typedesc(void *p,void *) {
 
   pTypeDesc = (MX_TYPEDESC *)p;
 
-  if (MX_MANAGED_OBJ_RELEASED(pTypeDesc)) {
+  if (MX_MANAGED_OBJ_RELEASED (pTypeDesc)) {
     return;
   }
 
@@ -420,13 +419,13 @@ void scheme_release_typedesc(void *p,void *) {
   pInterface = pTypeDesc->pInterface;
 
   if (pTypeDesc->descKind == funcDesc) {
-    pITypeInfo->ReleaseFuncDesc(pTypeDesc->funcdescs.pFuncDesc);
+    pITypeInfo->ReleaseFuncDesc (pTypeDesc->funcdescs.pFuncDesc);
     if (pITypeInfoImpl) {
-      pITypeInfoImpl->ReleaseFuncDesc(pTypeDesc->funcdescs.pFuncDescImpl);
+      pITypeInfoImpl->ReleaseFuncDesc (pTypeDesc->funcdescs.pFuncDescImpl);
     }
   }
   else if (pTypeDesc->descKind == varDesc) {
-    pITypeInfo->ReleaseVarDesc(pTypeDesc->pVarDesc);
+    pITypeInfo->ReleaseVarDesc (pTypeDesc->pVarDesc);
   }
 
   pITypeInfo->Release();
@@ -438,26 +437,27 @@ void scheme_release_typedesc(void *p,void *) {
     pInterface->Release();
   }
 
-  MX_MANAGED_OBJ_RELEASED(pTypeDesc) = TRUE;
+  MX_MANAGED_OBJ_RELEASED (pTypeDesc) = TRUE;
 }
 
-void scheme_release_com_object(void *comObject,void *pIDispatch) {
+void scheme_release_com_object (void *comObject, void *pIDispatch)
+{
   ITypeInfo *pITypeInfo;
   ITypeInfo *pEventTypeInfo;
   IConnectionPoint *pIConnectionPoint;
   ISink *pISink;
 
-  if (MX_MANAGED_OBJ_RELEASED(comObject)) {
+  if (MX_MANAGED_OBJ_RELEASED (comObject)) {
     return;
   }
 
   // when COM object GC'd, release associated interfaces
 
-  pITypeInfo = MX_COM_OBJ_TYPEINFO(comObject);
+  pITypeInfo = MX_COM_OBJ_TYPEINFO (comObject);
 
-  pEventTypeInfo = MX_COM_OBJ_EVENTTYPEINFO(comObject);
-  pIConnectionPoint = MX_COM_OBJ_CONNECTIONPOINT(comObject);
-  pISink = MX_COM_OBJ_EVENTSINK(comObject);
+  pEventTypeInfo = MX_COM_OBJ_EVENTTYPEINFO (comObject);
+  pIConnectionPoint = MX_COM_OBJ_CONNECTIONPOINT (comObject);
+  pISink = MX_COM_OBJ_EVENTSINK (comObject);
 
   if (pITypeInfo) {
     pITypeInfo->Release();
@@ -479,26 +479,29 @@ void scheme_release_com_object(void *comObject,void *pIDispatch) {
     ((IDispatch *)pIDispatch)->Release();
   }
 
-  MX_MANAGED_OBJ_RELEASED(comObject) = TRUE;
+  MX_MANAGED_OBJ_RELEASED (comObject) = TRUE;
 }
 
-void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
-			void (*release_fun)(void *p, void *data)) {
+void mx_register_object (Scheme_Object *obj, IUnknown *pIUnknown,
+			void (*release_fun) (void *p, void *data))
+{
 
   if (pIUnknown == NULL) {
     // nothing to do
     return;
   }
 
-  scheme_register_finalizer(obj,release_fun,pIUnknown,NULL,NULL);
-  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,
+  scheme_register_finalizer (obj, release_fun, pIUnknown, NULL, NULL);
+
+  scheme_add_managed ((Scheme_Custodian *)scheme_get_param (scheme_current_config(),
 							  MZCONFIG_CUSTODIAN),
 		     (Scheme_Object *)obj,
 		     (Scheme_Close_Custodian_Client *)release_fun,
-		     pIUnknown,0);
+		     pIUnknown, 0);
 }
 
-Scheme_Object *mx_com_add_ref(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_add_ref (int argc, Scheme_Object **argv)
+{
   IDispatch *pIDispatch;
 
   pIDispatch = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ ("com-add-ref", 0));
@@ -508,7 +511,8 @@ Scheme_Object *mx_com_add_ref(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-Scheme_Object *mx_com_ref_count(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_ref_count (int argc, Scheme_Object **argv)
+{
   IDispatch *pIDispatch;
   unsigned long n;
 
@@ -519,25 +523,27 @@ Scheme_Object *mx_com_ref_count(int argc,Scheme_Object **argv) {
 
   pIDispatch->Release();
 
-  return scheme_make_integer_value_from_unsigned(n);
+  return scheme_make_integer_value_from_unsigned (n);
 }
 
-void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {
-  mx_register_object(obj,pIDispatch,scheme_release_com_object);
+void mx_register_com_object (Scheme_Object *obj, IDispatch *pIDispatch)
+{
+  mx_register_object (obj, pIDispatch, scheme_release_com_object);
 }
 
-Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv)
+Scheme_Object *mx_com_register_object (int argc, Scheme_Object **argv)
 {
   GUARANTEE_COM_OBJ ("com-register-com-object", 0);
 
-  mx_register_com_object (argv[0], MX_COM_OBJ_VAL(argv[0]));
+  mx_register_com_object (argv[0], MX_COM_OBJ_VAL (argv[0]));
 
   return scheme_void;
 }
 
-void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
+void scheme_release_simple_com_object (void *comObject, void *pIUnknown)
+{
 
-  if (MX_MANAGED_OBJ_RELEASED(comObject)) {
+  if (MX_MANAGED_OBJ_RELEASED (comObject)) {
     return;
   }
 
@@ -545,17 +551,19 @@ void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
     ((IUnknown *)pIUnknown)->Release();
   }
 
-  MX_MANAGED_OBJ_RELEASED(comObject) = TRUE;
+  MX_MANAGED_OBJ_RELEASED (comObject) = TRUE;
 }
 
-void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
-  mx_register_object(obj,pIUnknown,scheme_release_simple_com_object);
+void mx_register_simple_com_object (Scheme_Object *obj, IUnknown *pIUnknown)
+{
+  mx_register_object (obj, pIUnknown, scheme_release_simple_com_object);
 }
 
-void scheme_release_browser(void *wb,void *hwndDestroy) {
+void scheme_release_browser (void *wb, void *hwndDestroy)
+{
   MX_Browser_Object *b;
 
-  if (MX_MANAGED_OBJ_RELEASED(wb)) {
+  if (MX_MANAGED_OBJ_RELEASED (wb)) {
     return;
   }
 
@@ -576,17 +584,18 @@ void scheme_release_browser(void *wb,void *hwndDestroy) {
   if (hwndDestroy) {
     b->destroy = TRUE;
     // dummy msg to force GetMessage() to return
-    PostMessage(b->hwnd,WM_NULL,0,0);
+    PostMessage (b->hwnd, WM_NULL, 0, 0);
   }
 
   browserCount--;
 
-  MX_MANAGED_OBJ_RELEASED(wb) = TRUE;
+  MX_MANAGED_OBJ_RELEASED (wb) = TRUE;
 }
 
-void scheme_release_document(void *doc,void *) {
+void scheme_release_document (void *doc, void *)
+{
 
-  if (MX_MANAGED_OBJ_RELEASED(doc)) {
+  if (MX_MANAGED_OBJ_RELEASED (doc)) {
     return;
   }
 
@@ -594,67 +603,64 @@ void scheme_release_document(void *doc,void *) {
     ((MX_Document_Object *)doc)->pIHTMLDocument2->Release();
   }
 
-  MX_MANAGED_OBJ_RELEASED(doc) = TRUE;
+  MX_MANAGED_OBJ_RELEASED (doc) = TRUE;
 }
 
-Scheme_Object *mx_com_release_object(int argc,Scheme_Object **argv)
+Scheme_Object *mx_com_release_object (int argc, Scheme_Object **argv)
 {
   GUARANTEE_COM_OBJ ("com-release-object", 0);
 
-  scheme_release_com_object((void *)argv[0],MX_COM_OBJ_VAL(argv[0]));
+  scheme_release_com_object ((void *)argv[0], MX_COM_OBJ_VAL (argv[0]));
 
   return scheme_void;
 }
 
-char *inv_kind_string(INVOKEKIND invKind) {
-  switch (invKind) {
-  case INVOKE_FUNC :
-    return "method";
-  case INVOKE_PROPERTYGET :
-  case INVOKE_PROPERTYPUT :
-    return "property";
-  case INVOKE_EVENT :
-    return "event";
-  }
-
-  return NULL;
+static
+const char * inv_kind_string (INVOKEKIND invKind)
+{
+  return
+      invKind == INVOKE_FUNC ? "method"
+      : invKind == INVOKE_PROPERTYGET ? "property"
+      : invKind == INVOKE_PROPERTYPUT ? "property"
+      : invKind == INVOKE_EVENT ? "event"
+      : NULL;
 }
 
-char *mx_fun_string(INVOKEKIND invKind) {
-  switch (invKind) {
-  case INVOKE_FUNC :
-    return "com-invoke";
-  case INVOKE_PROPERTYGET :
-    return "com-get-property";
-  case INVOKE_PROPERTYPUT :
-    return "com-set-property!";
-  }
-
-  return NULL;
+static
+const char * mx_fun_string (INVOKEKIND invKind)
+{
+  return
+      invKind == INVOKE_FUNC ? "com-invoke"
+      : invKind == INVOKE_PROPERTYGET ? "com-get-property"
+      : invKind == INVOKE_PROPERTYPUT ? "com-set-property!"
+      : NULL;
 }
 
-unsigned short getHashValue(IDispatch *pIDispatch,INVOKEKIND invKind,
-			    char *name) {
-  char *p;
+static
+unsigned short getHashValue (IDispatch *pIDispatch,
+			     INVOKEKIND invKind,
+			     LPCTSTR name)
+{
+  LPCTSTR p;
   unsigned short hashVal;
 
   hashVal = (unsigned short)pIDispatch + invKind;
 
   p = name;
   while (*p) {
-    hashVal += (unsigned short)(*p);
-    p++;
-  }
+      hashVal ^= (hashVal << 5) + (hashVal >> 2) + (unsigned short) (*p);
+      p++;
+      }
 
   return hashVal % TYPE_TBL_SIZE;
-
 }
 
-void addTypeToTable(IDispatch *pIDispatch,char *name,
+void addTypeToTable (IDispatch *pIDispatch, LPCTSTR name,
 		    INVOKEKIND invKind,
-		    MX_TYPEDESC *pTypeDesc) {
+		    MX_TYPEDESC *pTypeDesc)
+{
   unsigned short hashVal;
-  MX_TYPE_TBL_ENTRY *pEntry,*p;
+  MX_TYPE_TBL_ENTRY *pEntry, *p;
 
   // we don't call AddRef() for the IDispatch pointer
   // because it's not used as an interface, only its
@@ -662,83 +668,84 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
 
   pTypeDesc->pITypeInfo->AddRef();
 
-  pEntry = (MX_TYPE_TBL_ENTRY *)scheme_malloc(sizeof(MX_TYPE_TBL_ENTRY));
-  scheme_dont_gc_ptr(pEntry);
+  pEntry = (MX_TYPE_TBL_ENTRY *)scheme_malloc (sizeof (MX_TYPE_TBL_ENTRY));
+  scheme_dont_gc_ptr (pEntry);
   pEntry->pTypeDesc = pTypeDesc;
   pEntry->pIDispatch = pIDispatch;
   pEntry->invKind = invKind;
   pEntry->name = name;
   pEntry->next = NULL;
 
-  hashVal = getHashValue(pIDispatch,invKind,name);
+  hashVal = getHashValue (pIDispatch, invKind, name);
 
   p = typeTable[hashVal];
 
-  if (p == NULL) {
-    typeTable[hashVal] = pEntry;
-  }
+  if (p == NULL)
+      typeTable[hashVal] = pEntry;
+
   else {
-    while (p->next != NULL) {
-      p = p->next;
-    }
-    p->next = pEntry;
-  }
+      while (p->next != NULL)
+	  p = p->next;
+      p->next = pEntry;
+      }
 }
 
-MX_TYPEDESC *lookupTypeDesc(IDispatch *pIDispatch,char *name,
-			    INVOKEKIND invKind) {
+MX_TYPEDESC * lookupTypeDesc (IDispatch *pIDispatch, LPCTSTR name,
+			      INVOKEKIND invKind)
+{
   unsigned short hashVal;
   MX_TYPE_TBL_ENTRY *p;
 
-  hashVal = getHashValue(pIDispatch,invKind,name);
+  hashVal = getHashValue (pIDispatch, invKind, name);
 
   p = typeTable[hashVal];
 
   while (p) {
-    if (p->pIDispatch == pIDispatch &&
-	p->invKind == invKind &&
-	strcmp(p->name,name) == 0) {
-      return p->pTypeDesc;
-    }
-    p = p->next;
-  }
+      if (p->pIDispatch == pIDispatch &&
+	  p->invKind == invKind &&
+	  lstrcmp (p->name, name) == 0)
+	  return p->pTypeDesc;
+
+      p = p->next;
+      }
 
   return NULL;
 }
 
-void codedComError(char *s,HRESULT hr) {
+void codedComError (const char *s, HRESULT hr)
+{
   char buff[1024];
   char finalBuff[2048];
 
-  if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-		    0,hr,0,buff,sizeof(buff),NULL) > 0) {
-    sprintf(finalBuff,"%s, code = %X: %s",s,hr,buff);
-  }
-  else {
-    sprintf(finalBuff,"%s, code = %X",s,hr);
-  }
+  if (FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM,
+		     0, hr, 0, buff, sizeof (buff), NULL) > 0)
+      sprintf (finalBuff, "%s, code = %X: %s", s, hr, buff);
+  else
+      sprintf (finalBuff, "%s, code = %X", s, hr);
 
-  scheme_signal_error(finalBuff);
+  scheme_signal_error (finalBuff);
 }
 
-Scheme_Object *mx_version(int argc,Scheme_Object **argv) {
-  return scheme_make_string(MX_VERSION);
+Scheme_Object *mx_version (int argc, Scheme_Object **argv)
+{
+  return scheme_make_utf8_string (MX_VERSION);
 }
 
-Scheme_Object *do_cocreate_instance(CLSID clsId,
-                                    const char *name,
-                                    const char *location,
-				    const char *machine) {
+Scheme_Object *do_cocreate_instance (CLSID clsId,
+				     LPCTSTR name,
+				     LPCTSTR location,
+				     LPCTSTR machine)
+{
   HRESULT hr;
   IDispatch *pIDispatch;
   MX_COM_Object *com_object;
 
-  if (stricmp(location,"local") == 0) {
-    hr = CoCreateInstance(clsId,NULL,
+  if (lstrcmpi (location, TEXT ("local")) == 0) {
+    hr = CoCreateInstance (clsId, NULL,
 			  CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
-			  IID_IDispatch,(void **)&pIDispatch);
+			  IID_IDispatch, (void **)&pIDispatch);
   }
-  else if (stricmp(location,"remote") == 0) {
+  else if (lstrcmpi (location, TEXT ("remote")) == 0) {
     COSERVERINFO csi;
     MULTI_QI mqi;
     OLECHAR machineBuff[1024];
@@ -751,15 +758,15 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,
       csi.dwReserved2 = 0;
       csi.pAuthInfo = NULL;
 
-      len = (unsigned int)strlen(machine);
-      count = MultiByteToWideChar(CP_ACP,(DWORD)0,
-				  machine,len,
+      len = (unsigned int)lstrlen (machine);
+      count = MultiByteToWideChar (CP_ACP, (DWORD)0,
+				  machine, len,
 				  machineBuff,
-				  sizeray(machineBuff) - 1);
+				  sizeray (machineBuff) - 1);
       machineBuff[len] = '\0';
 
       if (count < len) {
-	scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
+	scheme_signal_error ("cocreate-instance-from-{coclass, progid}: "
 			    "Unable to translate machine name to Unicode");
       }
 
@@ -771,34 +778,34 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,
     mqi.pItf = NULL;
     mqi.hr = 0;
 
-    hr = CoCreateInstanceEx(clsId,NULL,
+    hr = CoCreateInstanceEx (clsId, NULL,
 			    CLSCTX_REMOTE_SERVER,
 			    machine ? &csi : NULL,
-			    1,&mqi);
+			    1, &mqi);
 
-    pIDispatch = (IDispatch *)(mqi.pItf);
+    pIDispatch = (IDispatch *) (mqi.pItf);
 
     if (mqi.hr != S_OK || pIDispatch == NULL) {
-      codedComError("cocreate-instance-from-{coclass,progid}: "
+      codedComError ("cocreate-instance-from-{coclass, progid}: "
 		    "Unable to obtain IDispatch interface for remote server",
 		    hr);
     }
 
   }
   else {
-    scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
+    scheme_signal_error ("cocreate-instance-from-{coclass, progid}: "
 			"Expected 'local, 'remote, or machine name for 2nd argument, "
-			"got '%s",location);
+			"got '%s", location);
   }
 
   if (hr != ERROR_SUCCESS) {
     char errBuff[2048];
-    sprintf(errBuff,"cocreate-instance-from-{coclass,progid}: Unable to create instance of %s",
+    sprintf (errBuff, "cocreate-instance-from-{coclass, progid}: Unable to create instance of %s",
 	    name);
-    codedComError(errBuff,hr);
+    codedComError (errBuff, hr);
   }
 
-  com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
+  com_object = (MX_COM_Object *)scheme_malloc (sizeof (MX_COM_Object));
 
   com_object->type = mx_com_object_type;
   com_object->pIDispatch = pIDispatch;
@@ -810,95 +817,99 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,
   com_object->connectionCookie = (DWORD)0;
   com_object->released = FALSE;
 
-  mx_register_com_object((Scheme_Object *)com_object,pIDispatch);
+  mx_register_com_object ((Scheme_Object *)com_object, pIDispatch);
 
   return (Scheme_Object *)com_object;
 }
 
-void bindCocreateLocation(int argc,Scheme_Object **argv,
-			  char **pLocation,char **pMachine,
-			  char *f) {
+static
+void bindCocreateLocation (int argc, Scheme_Object **argv,
+			   LPCTSTR * pLocation, LPCTSTR * pMachine,
+			   char *f)
+{
   if (argc == 2) {
-    if (SCHEME_SYMBOLP(argv[1])) {
-      *pLocation = SCHEME_SYM_VAL(argv[1]);
-      *pMachine = NULL;
-    }
-    else if (SCHEME_STRINGP(argv[1])) {
-      *pLocation = "remote";
-      *pMachine = SCHEME_STR_VAL(argv[1]);
-    }
-    else {
-      scheme_wrong_type(f,"symbol or string",0,argc,argv);
-    }
-  }
+      if (SCHEME_SYMBOLP (argv[1])) {
+	  *pLocation = schemeSymbolToText (argv[1]);
+	  *pMachine = NULL;
+	  }
+      else if (SCHEME_CHAR_STRINGP (argv[1])) {
+	  *pLocation = TEXT ("remote");
+	  *pMachine = schemeCharStringToText (argv[1]);
+	  }
+      else
+	  scheme_wrong_type (f, "symbol or string", 0, argc, argv);
+      }
   else {
-    *pLocation = "local";
-    *pMachine = NULL;
-  }
+      *pLocation = TEXT ("local");
+      *pMachine = NULL;
+      }
 }
 
-Scheme_Object *mx_cocreate_instance_from_coclass(int argc,Scheme_Object **argv) {
-  const char *coclass;
-  char *location;
-  char *machine;
+Scheme_Object *mx_cocreate_instance_from_coclass (int argc, Scheme_Object **argv)
+{
+  LPCTSTR coclass;
+  LPCTSTR location;
+  LPCTSTR machine;
 
-  bindCocreateLocation(argc,argv,&location,&machine,
-		       "cocreate-instance-from-coclass");
+  GUARANTEE_STRSYM ("cocreate-instance-from-coclass", 0);
 
-  coclass = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("cocreate-instance-from-coclass", 0));
+  bindCocreateLocation (argc, argv, &location, &machine,
+			"cocreate-instance-from-coclass");
+
+  coclass = schemeToText (argv[0]);
 
   return do_cocreate_instance (getCLSIDFromCoClass (coclass), coclass, location, machine);
 }
 
-CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
-  HRESULT hr;
+CLSID schemeProgIdToCLSID (Scheme_Object *obj, const char * fname)
+{
   CLSID clsId;
-  BSTR wideProgId;
+  BSTR wideProgId = schemeToBSTR (obj);
 
-  wideProgId = schemeStringToBSTR(obj);
+  HRESULT hr = CLSIDFromProgID (wideProgId, &clsId);
 
-  hr = CLSIDFromProgID(wideProgId,&clsId);
-
-  SysFreeString(wideProgId);
+  SysFreeString (wideProgId);
 
   if (FAILED (hr)) {
-    char errBuff[2048];
-    sprintf(errBuff, "%s: Error retrieving CLSID from ProgID %s",
-	    fname, SCHEME_STRSYM_VAL (obj));
-    codedComError (errBuff,hr);
-  }
+      char errBuff[2048];
+      sprintf (errBuff, "%s: Error retrieving CLSID from ProgID %s",
+	       fname, schemeToMultiByte (obj));
+      codedComError (errBuff, hr);
+      }
 
   return clsId;
 }
 
-Scheme_Object *mx_cocreate_instance_from_progid(int argc,
-						Scheme_Object **argv) {
-  char *location;
-  char *machine;
+Scheme_Object *mx_cocreate_instance_from_progid (int argc,
+						 Scheme_Object **argv)
+{
+  LPCTSTR location;
+  LPCTSTR machine;
 
   GUARANTEE_STRSYM ("cocreate-instance-from-progid", 0);
 
-  bindCocreateLocation(argc,argv,&location,&machine,
-		       "cocreate-instance-from-progid");
+  bindCocreateLocation (argc, argv, &location, &machine,
+			"cocreate-instance-from-progid");
 
-  return do_cocreate_instance (schemeProgIdToCLSID (argv[0],"cocreate-instance-from-progid"),
-                               SCHEME_STRSYM_VAL (argv[0]),
-                               location,machine);
+  return do_cocreate_instance (schemeProgIdToCLSID (argv[0], "cocreate-instance-from-progid"),
+                               schemeToText (argv[0]),
+                               location, machine);
 }
 
-Scheme_Object *mx_set_coclass(int argc,Scheme_Object **argv)
+Scheme_Object *mx_set_coclass (int argc, Scheme_Object **argv)
 {
   GUARANTEE_COM_OBJ ("set-coclass!", 0);
   GUARANTEE_STRSYM ("set-coclass!", 1);
 
-  MX_COM_OBJ_CLSID(argv[0]) = getCLSIDFromCoClass (SCHEME_STRSYM_VAL (argv[1]));
+  MX_COM_OBJ_CLSID (argv[0]) = getCLSIDFromCoClass (schemeToText (argv[1]));
 
   return scheme_void;
 }
 
-Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_coclass (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
-  HKEY hkey,hsubkey;
+  HKEY hkey, hsubkey;
   LONG result;
   FILETIME fileTime;
   unsigned long keyIndex;
@@ -908,28 +919,26 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
   DWORD dataType;
   BYTE dataBuffer[256];
   DWORD dataBufferSize;
-  CLSID clsId,registryClsId;
+  CLSID clsId, registryClsId;
   int count;
   Scheme_Object *retval;
 
   clsId = MX_COM_OBJ_CLSID (GUARANTEE_COM_OBJ ("coclass", 0));
 
-  if (isEmptyClsId(clsId)) {
-    scheme_signal_error("coclass: No coclass for object");
-  }
+  if (isEmptyClsId (clsId))
+    scheme_signal_error ("coclass: No coclass for object");
 
   // use CLSID to rummage through Registry to find coclass
 
-  result = RegOpenKeyEx(HKEY_CLASSES_ROOT,
+  result = RegOpenKeyEx (HKEY_CLASSES_ROOT,
 			"CLSID",
-			(DWORD)0,
+			 (DWORD)0,
 			KEY_READ,
 			&hkey);
 
 
-  if (result != ERROR_SUCCESS) {
-    scheme_signal_error("Error while searching Windows registry");
-  }
+  if (result != ERROR_SUCCESS)
+      scheme_signal_error ("Error while searching Windows registry");
 
   // enumerate subkeys until we find the one we want
 
@@ -943,121 +952,101 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
 
     // get next subkey
 
-    clsIdBufferSize = sizeof(clsIdBuffer);
+    clsIdBufferSize = sizeof (clsIdBuffer);
 
-    result = RegEnumKeyEx(hkey,keyIndex++,
+    result = RegEnumKeyEx (hkey, keyIndex++,
 			  clsIdBuffer,
 			  &clsIdBufferSize,
-			  0,NULL,NULL,
+			  0, NULL, NULL,
 			  &fileTime);
 
-    if (result == ERROR_NO_MORE_ITEMS) {
+    if (result == ERROR_NO_MORE_ITEMS)
       break;
-    }
 
-    if (result != ERROR_SUCCESS) {
-      scheme_signal_error("Error enumerating subkeys in Windows registry");
-    }
+    if (result != ERROR_SUCCESS)
+      scheme_signal_error ("Error enumerating subkeys in Windows registry");
 
-    if (strlen(clsIdBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
+    if (strlen (clsIdBuffer) != CLSIDLEN) // not a CLSID -- bogus entry
       continue;
-    }
 
-    count = MultiByteToWideChar(CP_ACP,(DWORD)0,
-				clsIdBuffer,(unsigned int)strlen(clsIdBuffer),
-				oleClsIdBuffer,sizeray(oleClsIdBuffer));
 
-    if (count == 0) {
-      scheme_signal_error("Error translating CLSID to Unicode");
-    }
+    count = MultiByteToWideChar (CP_ACP, (DWORD)0,
+				clsIdBuffer, (unsigned int)strlen (clsIdBuffer),
+				oleClsIdBuffer, sizeray (oleClsIdBuffer));
+
+    if (count == 0)
+      scheme_signal_error ("Error translating CLSID to Unicode");
 
     oleClsIdBuffer[CLSIDLEN] = '\0';
 
-    hr = CLSIDFromString(oleClsIdBuffer,&registryClsId);
+    hr = CLSIDFromString (oleClsIdBuffer, &registryClsId);
 
-    if (hr != NOERROR) {
-      scheme_signal_error("coclass: Error obtaining coclass CLSID");
-    }
+    if (hr != NOERROR)
+      scheme_signal_error ("coclass: Error obtaining coclass CLSID");
 
-    if (registryClsId != clsId) {
+    if (registryClsId != clsId)
       continue;
-    }
 
     // open subkey
 
-    result = RegOpenKeyEx(hkey,clsIdBuffer,
+    result = RegOpenKeyEx (hkey, clsIdBuffer,
 			  (DWORD)0,
-			  KEY_READ,&hsubkey);
+			  KEY_READ, &hsubkey);
 
-    if (result != ERROR_SUCCESS) {
-      scheme_signal_error("coclass: Error obtaining coclass value");
-    }
+    if (result != ERROR_SUCCESS)
+      scheme_signal_error ("coclass: Error obtaining coclass value");
 
-    dataBufferSize = sizeof(dataBuffer);
+    dataBufferSize = sizeof (dataBuffer);
 
-    RegQueryValueEx(hsubkey,"",0,&dataType,dataBuffer,&dataBufferSize);
+    RegQueryValueEx (hsubkey, "", 0, &dataType, dataBuffer, &dataBufferSize);
 
-    RegCloseKey(hsubkey);
+    RegCloseKey (hsubkey);
 
     if (dataType == REG_SZ) {
-      retval = scheme_make_string((char *)dataBuffer);
-      break;
-    }
+	retval = multiByteToSchemeCharString ((char *)dataBuffer);
+	break;
+	}
   }
 
-  RegCloseKey(hkey);
+  RegCloseKey (hkey);
 
-  if (retval == NULL) {
-    scheme_signal_error("coclass: object's coclass not found in Registry");
-  }
+  if (retval == NULL)
+    scheme_signal_error ("coclass: object's coclass not found in Registry");
 
   return retval;
 }
 
-Scheme_Object *mx_progid(int argc,Scheme_Object **argv) {
+Scheme_Object * mx_progid (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   LPOLESTR wideProgId;
   CLSID clsId;
-  char *buff;
-  unsigned int len;
 
   clsId = MX_COM_OBJ_CLSID (GUARANTEE_COM_OBJ ("progid", 0));
 
-  if (isEmptyClsId(clsId)) {
-    scheme_signal_error("progid: No coclass for object");
-  }
+  if (isEmptyClsId (clsId))
+      scheme_signal_error ("progid: No coclass for object");
 
-  hr = ProgIDFromCLSID(clsId,&wideProgId);
+  hr = ProgIDFromCLSID (clsId, &wideProgId);
 
-  if (FAILED (hr)) {
-    scheme_signal_error("progid: Error finding coclass");
-  }
+  if (FAILED (hr))
+      scheme_signal_error ("progid: Error finding coclass");
 
-  len = (unsigned int) wcslen(wideProgId);
-
-  buff = (char *)scheme_malloc(len + 1);
-
-  WideCharToMultiByte(CP_ACP,(DWORD)0,
-		      wideProgId,len,
-		      buff,len + 1,
-		      NULL,NULL);
-
-  buff[len] = '\0';
-
-  return scheme_make_string(buff);
+  return BSTRToSchemeString (wideProgId);
 }
 
-Scheme_Object *mx_set_coclass_from_progid(int argc,Scheme_Object **argv)
+Scheme_Object *mx_set_coclass_from_progid (int argc, Scheme_Object **argv)
 {
   GUARANTEE_COM_OBJ ("set-coclass-from-progid!", 0);
   GUARANTEE_STRSYM ("set-coclass-from-progid!", 1);
 
-  MX_COM_OBJ_CLSID(argv[0]) = schemeProgIdToCLSID (argv[1], "set-coclass-from-progid!");
+  MX_COM_OBJ_CLSID (argv[0]) = schemeProgIdToCLSID (argv[1], "set-coclass-from-progid!");
 
   return scheme_void;
 }
 
-ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
+ITypeInfo *typeInfoFromComObject (MX_COM_Object *obj)
+{
   HRESULT hr;
   ITypeInfo *pITypeInfo;
   IDispatch *pIDispatch;
@@ -1065,30 +1054,28 @@ ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
 
   pITypeInfo = obj->pITypeInfo;
 
-  if (pITypeInfo) {
+  if (pITypeInfo)
     return pITypeInfo;
-  }
 
   pIDispatch = obj->pIDispatch;
 
-  pIDispatch->GetTypeInfoCount(&count);
+  pIDispatch->GetTypeInfoCount (&count);
 
-  if (count == 0) {
-    scheme_signal_error("COM object does not expose type information");
-  }
+  if (count == 0)
+    scheme_signal_error ("COM object does not expose type information");
 
-  hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
+  hr = pIDispatch->GetTypeInfo (0, LOCALE_SYSTEM_DEFAULT, &pITypeInfo);
 
-  if (FAILED (hr) || pITypeInfo == NULL) {
-    codedComError("Error getting COM type information",hr);
-  }
+  if (FAILED (hr) || pITypeInfo == NULL)
+    codedComError ("Error getting COM type information", hr);
 
   obj->pITypeInfo = pITypeInfo;
 
   return pITypeInfo;
 }
 
-Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_get_object_type (int argc, Scheme_Object **argv)
+{
   ITypeInfo *pITypeInfo;
   MX_COM_Type *retval;
   MX_COM_Object *obj;
@@ -1096,64 +1083,64 @@ Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
   GUARANTEE_COM_OBJ ("com-object-type", 0);
 
   obj = (MX_COM_Object *)argv[0];
-  pITypeInfo = typeInfoFromComObject(obj);
+  pITypeInfo = typeInfoFromComObject (obj);
 
-  retval = (MX_COM_Type *)scheme_malloc(sizeof(MX_COM_Type));
+  retval = (MX_COM_Type *)scheme_malloc (sizeof (MX_COM_Type));
 
   retval->type = mx_com_type_type;
   retval->released = FALSE;
   retval->pITypeInfo = pITypeInfo;
   retval->clsId = obj->clsId;
 
-  mx_register_simple_com_object((Scheme_Object *)retval,pITypeInfo);
+  mx_register_simple_com_object ((Scheme_Object *)retval, pITypeInfo);
 
   return (Scheme_Object *)retval;
 }
 
-BOOL typeInfoEq(ITypeInfo *pITypeInfo1,ITypeInfo *pITypeInfo2) {
+BOOL typeInfoEq (ITypeInfo *pITypeInfo1, ITypeInfo *pITypeInfo2)
+{
   HRESULT hr;
-  TYPEATTR *pTypeAttr1,*pTypeAttr2;
+  TYPEATTR *pTypeAttr1, *pTypeAttr2;
   BOOL retval;
 
   // intensional equality
 
-  if (pITypeInfo1 == pITypeInfo2) {
+  if (pITypeInfo1 == pITypeInfo2)
     return TRUE;
-  }
 
-  hr = pITypeInfo1->GetTypeAttr(&pTypeAttr1);
+  hr = pITypeInfo1->GetTypeAttr (&pTypeAttr1);
 
-  if (FAILED (hr) || pTypeAttr1 == NULL) {
-    codedComError("Error getting type attributes",hr);
-  }
+  if (FAILED (hr) || pTypeAttr1 == NULL)
+    codedComError ("Error getting type attributes", hr);
 
-  hr = pITypeInfo2->GetTypeAttr(&pTypeAttr2);
+  hr = pITypeInfo2->GetTypeAttr (&pTypeAttr2);
 
-  if (FAILED (hr) || pTypeAttr2 == NULL) {
-    codedComError("Error getting type attributes",hr);
-  }
+  if (FAILED (hr) || pTypeAttr2 == NULL)
+    codedComError ("Error getting type attributes", hr);
 
   retval = (pTypeAttr1->guid == pTypeAttr2->guid);
 
-  pITypeInfo1->ReleaseTypeAttr(pTypeAttr1);
-  pITypeInfo2->ReleaseTypeAttr(pTypeAttr2);
+  pITypeInfo1->ReleaseTypeAttr (pTypeAttr1);
+  pITypeInfo2->ReleaseTypeAttr (pTypeAttr2);
 
   return retval;
 }
 
-Scheme_Object *mx_com_is_a(int argc,Scheme_Object **argv) {
-  ITypeInfo *pITypeInfo1,*pITypeInfo2;
+Scheme_Object *mx_com_is_a (int argc, Scheme_Object **argv)
+{
+  ITypeInfo *pITypeInfo1, *pITypeInfo2;
 
   GUARANTEE_COM_OBJ ("com-is-a?", 0);
   GUARANTEE_COM_TYPE ("com-is-a?", 1);
 
-  pITypeInfo1 = typeInfoFromComObject((MX_COM_Object *)argv[0]);
-  pITypeInfo2 = MX_COM_TYPE_VAL((MX_COM_Type *)argv[1]);
+  pITypeInfo1 = typeInfoFromComObject ((MX_COM_Object *)argv[0]);
+  pITypeInfo2 = MX_COM_TYPE_VAL ((MX_COM_Type *)argv[1]);
 
-  return typeInfoEq(pITypeInfo1,pITypeInfo2) ? scheme_true : scheme_false;
+  return typeInfoEq (pITypeInfo1, pITypeInfo2) ? scheme_true : scheme_false;
 }
 
-Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_help (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   ITypeInfo *pITypeInfo;
   BSTR helpFileName;
@@ -1167,67 +1154,59 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
 
   pITypeInfo =
       MX_COM_TYPEP (argv[0])
-      ? MX_COM_TYPE_VAL(argv[0])
-      : (MX_COM_OBJ_VAL(argv[0]) == NULL)
+      ? MX_COM_TYPE_VAL (argv[0])
+      : (MX_COM_OBJ_VAL (argv[0]) == NULL)
       ? (scheme_signal_error ("com-help: NULL COM object"), (ITypeInfo *) NULL)
-      : typeInfoFromComObject((MX_COM_Object *)argv[0]);
+      : typeInfoFromComObject ((MX_COM_Object *)argv[0]);
 
-  hr = pITypeInfo->GetDocumentation(MEMBERID_NIL,NULL,NULL,NULL,
+  hr = pITypeInfo->GetDocumentation (MEMBERID_NIL, NULL, NULL, NULL,
 				    &helpFileName);
 
-  if (FAILED (hr)) {
-    codedComError("Can't get help",hr);
+  if (FAILED (hr))
+    codedComError ("Can't get help", hr);
+
+  else if (helpFileName == NULL || wcscmp (helpFileName, L"") == 0)
+    scheme_signal_error ("No help available");
+
+  WideCharToMultiByte (CP_ACP, (DWORD)0, helpFileName, SysStringLen (helpFileName),
+		      buff, sizeof (buff) - 1,
+		      NULL, NULL);
+
+  SysFreeString (helpFileName);
+
+  buff[sizeof (buff)-1] = '\0';
+
+  len = (unsigned int) strlen (buff);
+
+  if (stricmp (buff + len - 4, ".CHM") == 0) {
+      HWND hwnd = (argc >= 2)
+	  ? HtmlHelp (NULL, buff,
+		      HH_DISPLAY_INDEX, PtrToInt (schemeToText (argv[1])))
+	  : HtmlHelp (NULL, buff, HH_DISPLAY_TOPIC, 0);
+
+    if (hwnd)
+      SetForegroundWindow (hwnd);
   }
-  else if (helpFileName == NULL || wcscmp(helpFileName,L"") == 0) {
-    scheme_signal_error("No help available");
+  else if (stricmp (buff + len - 4, ".HLP") == 0) {
+    if (argc >= 2)
+      WinHelp (NULL, buff, HELP_KEY, PtrToInt (schemeToText (argv[1])));
+    else
+      WinHelp (NULL, buff, HELP_FINDER, 0);
   }
-
-  WideCharToMultiByte(CP_ACP,(DWORD)0,helpFileName,SysStringLen(helpFileName),
-		      buff,sizeof(buff) - 1,
-		      NULL,NULL);
-
-  SysFreeString(helpFileName);
-
-  buff[sizeof(buff)-1] = '\0';
-
-  len = (unsigned int) strlen(buff);
-
-  if (stricmp(buff + len - 4,".CHM") == 0) {
-    HWND hwnd;
-
-    if (argc >= 2) {
-      hwnd = HtmlHelp(NULL,buff,
-		      HH_DISPLAY_INDEX,PtrToInt (SCHEME_STRSYM_VAL (argv[1])));
-    }
-    else {
-      hwnd = HtmlHelp(NULL,buff,HH_DISPLAY_TOPIC,0);
-    }
-
-    if (hwnd) {
-      SetForegroundWindow(hwnd);
-    }
-  }
-  else if (stricmp(buff + len - 4,".HLP") == 0) {
-    if (argc >= 2) {
-      WinHelp(NULL,buff,HELP_KEY,PtrToInt (SCHEME_STRSYM_VAL (argv[1])));
-    }
-    else {
-      WinHelp(NULL,buff,HELP_FINDER,0);
-    }
-  }
-  else {
-    scheme_signal_error("Unknown help file type: %s",buff);
-  }
+  else
+    scheme_signal_error ("Unknown help file type: %s", buff);
 
   return scheme_void;
 }
 
-void signalCodedEventSinkError(char *s,HRESULT hr) {
-  ReleaseSemaphore(eventSinkMutex,1,NULL);
-  codedComError(s,hr);
+void signalCodedEventSinkError (char *s, HRESULT hr)
+{
+  ReleaseSemaphore (eventSinkMutex, 1, NULL);
+  codedComError (s, hr);
 }
 
-void connectComObjectToEventSink(MX_COM_Object *obj) {
+void connectComObjectToEventSink (MX_COM_Object *obj)
+{
   HRESULT hr;
   IUnknown *pIUnknown;
   IDispatch *pIDispatch;
@@ -1238,82 +1217,76 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   DWORD cookie;
   TYPEATTR *pTypeAttr;
 
-  if (obj->pIConnectionPoint) {
+  if (obj->pIConnectionPoint)
     return;
-  }
 
-  WaitForSingleObject(eventSinkMutex,INFINITE);
+  WaitForSingleObject (eventSinkMutex, INFINITE);
 
   pIDispatch = obj->pIDispatch;
 
-  hr = pIDispatch->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer);
+  hr = pIDispatch->QueryInterface (IID_IConnectionPointContainer, (void **)&pIConnectionPointContainer);
 
-  if (FAILED (hr) || pIConnectionPointContainer == NULL) {
-    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
+  if (FAILED (hr) || pIConnectionPointContainer == NULL)
+    signalCodedEventSinkError ("cocreate-instance-from-{coclass, progid}: "
 			      "Unable to get COM object connection point "
-			      "container",hr);
-  }
+			      "container", hr);
 
-  pITypeInfo = eventTypeInfoFromComObject(obj);
+  pITypeInfo = eventTypeInfoFromComObject (obj);
 
   if (pITypeInfo == NULL) {
-    ReleaseSemaphore(eventSinkMutex,1,NULL);
-    scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
+    ReleaseSemaphore (eventSinkMutex, 1, NULL);
+    scheme_signal_error ("cocreate-instance-from-{coclass, progid}: "
 			"Unable to get type information for events");
   }
 
-  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+  hr = pITypeInfo->GetTypeAttr (&pTypeAttr);
 
-  if (FAILED (hr) || pTypeAttr == NULL) {
-    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
-			      "Unable to get type attributes for events",hr);
-  }
+  if (FAILED (hr) || pTypeAttr == NULL)
+    signalCodedEventSinkError ("cocreate-instance-from-{coclass, progid}: "
+			      "Unable to get type attributes for events", hr);
 
-  hr = pIConnectionPointContainer->FindConnectionPoint(pTypeAttr->guid,&pIConnectionPoint);
+  hr = pIConnectionPointContainer->FindConnectionPoint (pTypeAttr->guid, &pIConnectionPoint);
 
-  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  pITypeInfo->ReleaseTypeAttr (pTypeAttr);
   pIConnectionPointContainer->Release();
 
-  if (FAILED (hr) || pIConnectionPoint == NULL) {
-    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
-			      "Unable to find COM object connection point",hr);
-  }
+  if (FAILED (hr) || pIConnectionPoint == NULL)
+    signalCodedEventSinkError ("cocreate-instance-from-{coclass, progid}: "
+			      "Unable to find COM object connection point", hr);
 
-  hr = CoCreateInstance(CLSID_Sink,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
-			IID_IUnknown,(void **)&pIUnknown);
+  hr = CoCreateInstance (CLSID_Sink, NULL, CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
+			IID_IUnknown, (void **)&pIUnknown);
 
-  if (FAILED (hr) || pIUnknown == NULL) {
-    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
-			      "Unable to create sink object",hr);
-  }
+  if (FAILED (hr) || pIUnknown == NULL)
+    signalCodedEventSinkError ("cocreate-instance-from-{coclass, progid}: "
+			      "Unable to create sink object", hr);
 
-  hr = pIUnknown->QueryInterface(IID_ISink,(void **)&pISink);
+  hr = pIUnknown->QueryInterface (IID_ISink, (void **)&pISink);
 
-  if (FAILED (hr) || pISink == NULL) {
-    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
-			      "Unable to find sink interface",hr);
-  }
+  if (FAILED (hr) || pISink == NULL)
+    signalCodedEventSinkError ("cocreate-instance-from-{coclass, progid}: "
+			      "Unable to find sink interface", hr);
 
-  pISink->set_myssink_table(&myssink_table);
+  pISink->set_myssink_table (&myssink_table);
 
-  hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
+  hr = pIConnectionPoint->Advise (pIUnknown, &cookie);
 
   pIUnknown->Release();
 
-  if (FAILED (hr)) {
-    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
-			      "Unable to connect sink to connection point",hr);
-  }
+  if (FAILED (hr))
+    signalCodedEventSinkError ("cocreate-instance-from-{coclass, progid}: "
+			      "Unable to connect sink to connection point", hr);
 
   obj->pEventTypeInfo = pITypeInfo;
   obj->pIConnectionPoint = pIConnectionPoint;
   obj->connectionCookie = cookie;
   obj->pISink = pISink;
 
-  ReleaseSemaphore(eventSinkMutex,1,NULL);
+  ReleaseSemaphore (eventSinkMutex, 1, NULL);
 }
 
-FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {
+FUNCDESC *getFuncDescForEvent (LPOLESTR name, ITypeInfo *pITypeInfo)
+{
   HRESULT hr;
   TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
@@ -1322,46 +1295,44 @@ FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {
   unsigned short numFuncDescs;
   int i;
 
-  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+  hr = pITypeInfo->GetTypeAttr (&pTypeAttr);
 
-  if (FAILED (hr) || pTypeAttr == NULL) {
-    codedComError("Unable to get type attributes for events",hr);
-  }
+  if (FAILED (hr) || pTypeAttr == NULL)
+    codedComError ("Unable to get type attributes for events", hr);
 
   numFuncDescs = pTypeAttr->cFuncs;
 
-  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  pITypeInfo->ReleaseTypeAttr (pTypeAttr);
 
   for (i = 0; i < numFuncDescs; i++) {
 
-    hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);
+    hr = pITypeInfo->GetFuncDesc (i, &pFuncDesc);
 
-    if (FAILED (hr)) {
-      codedComError("Error getting event method type description",hr);
-    }
+    if (FAILED (hr))
+      codedComError ("Error getting event method type description", hr);
 
     // rely on name of event
 
-    hr = pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&bstrCount);
+    hr = pITypeInfo->GetNames (pFuncDesc->memid, &bstr, 1, &bstrCount);
 
-    if (FAILED (hr)) {
-      codedComError("Error getting event method name",hr);
-    }
+    if (FAILED (hr))
+      codedComError ("Error getting event method name", hr);
 
-    if (wcscmp(name,bstr) == 0) {
-      SysFreeString(bstr);
+    if (wcscmp (name, bstr) == 0) {
+      SysFreeString (bstr);
       return pFuncDesc;
     }
 
-    SysFreeString(bstr);
+    SysFreeString (bstr);
 
-    pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+    pITypeInfo->ReleaseFuncDesc (pFuncDesc);
   }
 
   return NULL;
 }
 
-Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_register_event_handler (int argc, Scheme_Object **argv)
+{
   ITypeInfo *pITypeInfo;
   ISink *pISink;
   FUNCDESC *pFuncDesc;
@@ -1371,28 +1342,29 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
   GUARANTEE_STRSYM    ("com-register-event-handler", 1);
   GUARANTEE_PROCEDURE ("com-register-event-handler", 2);
 
-  connectComObjectToEventSink((MX_COM_Object *)argv[0]);
+  connectComObjectToEventSink ((MX_COM_Object *)argv[0]);
 
-  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
-  pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
+  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO (argv[0]);
+  pISink = MX_COM_OBJ_EVENTSINK (argv[0]);
 
-  unicodeName = schemeStringToBSTR (argv[1]);
+  unicodeName = schemeToBSTR (argv[1]);
 
-  pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
+  pFuncDesc = getFuncDescForEvent (unicodeName, pITypeInfo);
 
-  SysFreeString(unicodeName);
+  SysFreeString (unicodeName);
 
   if (pFuncDesc == NULL)
-      scheme_signal_error ("Can't find event %s in type description", SCHEME_STRSYM_VAL (argv[1]));
+      scheme_signal_error ("Can't find event %s in type description", schemeToText (argv[1]));
 
-  pISink->register_handler(pFuncDesc->memid, argv[2]);
+  pISink->register_handler (pFuncDesc->memid, argv[2]);
 
-  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+  pITypeInfo->ReleaseFuncDesc (pFuncDesc);
 
   return scheme_void;
 }
 
-Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_unregister_event_handler (int argc, Scheme_Object **argv)
+{
   ITypeInfo *pITypeInfo;
   ISink *pISink;
   FUNCDESC *pFuncDesc;
@@ -1402,33 +1374,31 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
 
   pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO (GUARANTEE_COM_OBJ ("com-unregister-event-handler", 0));
 
-  if (pITypeInfo == NULL) {
-    scheme_signal_error("No event type information for object");
-  }
+  if (pITypeInfo == NULL)
+    scheme_signal_error ("No event type information for object");
 
-  pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
+  pISink = MX_COM_OBJ_EVENTSINK (argv[0]);
 
-  if (pISink == NULL) { // no events registered
+  if (pISink == NULL) // no events registered
     return scheme_void;
-  }
 
-  unicodeName = schemeStringToBSTR (argv[1]);
+  unicodeName = schemeToBSTR (argv[1]);
 
-  pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
+  pFuncDesc = getFuncDescForEvent (unicodeName, pITypeInfo);
 
-  SysFreeString(unicodeName);
+  SysFreeString (unicodeName);
 
   if (pFuncDesc == NULL)
-      scheme_signal_error ("Can't find event %s in type description", SCHEME_STRSYM_VAL (argv[1]));
+      scheme_signal_error ("Can't find event %s in type description", schemeToText (argv[1]));
 
-  pISink->unregister_handler(pFuncDesc->memid);
+  pISink->unregister_handler (pFuncDesc->memid);
 
-  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+  pITypeInfo->ReleaseFuncDesc (pFuncDesc);
 
   return scheme_void;
 }
 
-MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
+MX_TYPEDESC *doTypeDescFromTypeInfo (BSTR name, INVOKEKIND invKind,
 				    ITypeInfo *pITypeInfo) {
   HRESULT hr;
   TYPEATTR *pTypeAttr;
@@ -1441,14 +1411,13 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
   UINT nameCount;
   UINT funcDescIndex;
   BOOL foundDesc;
-  unsigned short dispFuncs,implFuncs;
+  unsigned short dispFuncs, implFuncs;
   int i;
 
-  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+  hr = pITypeInfo->GetTypeAttr (&pTypeAttr);
 
-  if (FAILED (hr)) {
-    codedComError("Error getting attributes for type library",hr);
-  }
+  if (FAILED (hr))
+    codedComError ("Error getting attributes for type library", hr);
 
   foundDesc = FALSE;
 
@@ -1456,22 +1425,21 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
   dispFuncs = pTypeAttr->cFuncs;
   for (i = 7; i < dispFuncs; i++) {
 
-    hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);
+    hr = pITypeInfo->GetFuncDesc (i, &pFuncDesc);
 
-    if (FAILED (hr)) {
-      codedComError("Error getting type description",hr);
-    }
+    if (FAILED (hr))
+      codedComError ("Error getting type description", hr);
 
-    pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
+    pITypeInfo->GetNames (pFuncDesc->memid, &bstr, 1, &nameCount);
 
     // see if this FUNCDESC is the one we want
 
-    if (wcscmp(bstr,name) == 0 &&
-	(invKind == INVOKE_EVENT || pFuncDesc->invkind == invKind)) {
+    if (wcscmp (bstr, name) == 0 &&
+	 (invKind == INVOKE_EVENT || pFuncDesc->invkind == invKind)) {
 
       foundDesc = TRUE;
       descKind = funcDesc;
-      SysFreeString(bstr);
+      SysFreeString (bstr);
       memID = pFuncDesc->memid;
       funcDescIndex = i;
 
@@ -1480,8 +1448,8 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
 
     // if not, throw it back
 
-    SysFreeString(bstr);
-    pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+    SysFreeString (bstr);
+    pITypeInfo->ReleaseFuncDesc (pFuncDesc);
 
   }
 
@@ -1490,16 +1458,16 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
       invKind == INVOKE_PROPERTYPUTREF) {
 
     for (i = 0; i < pTypeAttr->cVars; i++) {
-      hr = pITypeInfo->GetVarDesc(i,&pVarDesc);
+      hr = pITypeInfo->GetVarDesc (i, &pVarDesc);
       if (FAILED (hr)) {
-	codedComError("Error getting type description",hr);
+	codedComError ("Error getting type description", hr);
       }
 
       // see if this VARDESC is the one we want
 
-      pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&nameCount);
+      pITypeInfo->GetNames (pVarDesc->memid, &bstr, 1, &nameCount);
 
-      if (wcscmp(bstr,name)) {
+      if (wcscmp (bstr, name)) {
 	foundDesc = TRUE;
 	descKind = varDesc;
 	memID = pVarDesc->memid;
@@ -1509,12 +1477,12 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
 
       // if not, throw it back
 
-      pITypeInfo->ReleaseVarDesc(pVarDesc);
+      pITypeInfo->ReleaseVarDesc (pVarDesc);
 
     }
   }
 
-  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  pITypeInfo->ReleaseTypeAttr (pTypeAttr);
 
   if (foundDesc == FALSE) {
     ITypeInfo *pITypeInfoImpl;
@@ -1523,40 +1491,36 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
 
     // search in inherited interfaces
     for (i = 0; i < pTypeAttr->cImplTypes; i++) {
-      hr = pITypeInfo->GetRefTypeOfImplType(i,&refType);
+      hr = pITypeInfo->GetRefTypeOfImplType (i, &refType);
 
-      if (FAILED(hr)) {
-	scheme_signal_error("Can't get implementation type library handle");
-      }
+      if (FAILED (hr))
+	scheme_signal_error ("Can't get implementation type library handle");
 
-      hr = pITypeInfo->GetRefTypeInfo(refType,&pITypeInfoImpl);
+      hr = pITypeInfo->GetRefTypeInfo (refType, &pITypeInfoImpl);
 
-      if (FAILED(hr)) {
-	scheme_signal_error("Can't get implementation type library");
-      }
+      if (FAILED (hr))
+	scheme_signal_error ("Can't get implementation type library");
 
-      hr = pITypeInfoImpl->GetTypeAttr(&pTypeAttrImpl);
+      hr = pITypeInfoImpl->GetTypeAttr (&pTypeAttrImpl);
 
-      if (FAILED(hr)) {
-	scheme_signal_error("Can't get implementation type library attributes");
-      }
+      if (FAILED (hr))
+	scheme_signal_error ("Can't get implementation type library attributes");
 
       // recursion, to ascend the inheritance graph
-      pTypeDesc = doTypeDescFromTypeInfo(name,invKind,pITypeInfoImpl);
+      pTypeDesc = doTypeDescFromTypeInfo (name, invKind, pITypeInfoImpl);
 
       // release interfaces
-      pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
+      pITypeInfoImpl->ReleaseTypeAttr (pTypeAttrImpl);
       pITypeInfoImpl->Release();
 
-      if (pTypeDesc) {
+      if (pTypeDesc)
 	return pTypeDesc;
-      }
     }
 
     return NULL;
   }
 
-  pTypeDesc = (MX_TYPEDESC *)scheme_malloc(sizeof(MX_TYPEDESC));
+  pTypeDesc = (MX_TYPEDESC *)scheme_malloc (sizeof (MX_TYPEDESC));
 
   pTypeDesc->type = mx_com_typedesc_type;
   pTypeDesc->released = FALSE;
@@ -1575,20 +1539,20 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
     ITypeInfo *pITypeInfoImpl;
 
     pTypeDesc->funcdescs.pFuncDesc = pFuncDesc;
-    hr = pITypeInfo->GetRefTypeOfImplType(-1,&refType);
+    hr = pITypeInfo->GetRefTypeOfImplType (-1, &refType);
     if (hr == S_OK) {
-      hr = pITypeInfo->GetRefTypeInfo(refType,&pITypeInfoImpl);
+      hr = pITypeInfo->GetRefTypeInfo (refType, &pITypeInfoImpl);
       if (hr == S_OK) {
 	TYPEATTR *pTypeAttrImpl;
 	FUNCDESC *pFuncDescImpl;
-	hr = pITypeInfoImpl->GetTypeAttr(&pTypeAttrImpl);
+	hr = pITypeInfoImpl->GetTypeAttr (&pTypeAttrImpl);
 	if (hr == S_OK) {
 	  implFuncs = pTypeAttrImpl->cFuncs;
 	  // assumption: impl TypeInfo has FuncDescs in same order
 	  //             as the Dispatch TypeInfo
 	  // but dispFuncs has IDispatch methods
 	  funcDescIndex -= dispFuncs - implFuncs;
-	  hr = pITypeInfoImpl->GetFuncDesc(funcDescIndex,&pFuncDescImpl);
+	  hr = pITypeInfoImpl->GetFuncDesc (funcDescIndex, &pFuncDescImpl);
 	  if (hr == S_OK) {
 	    if (pFuncDescImpl->funckind == FUNC_VIRTUAL ||
 		pFuncDescImpl->funckind == FUNC_PUREVIRTUAL) {
@@ -1599,10 +1563,10 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
 	      pTypeDesc->funcdescs.pFuncDescImpl = pFuncDescImpl;
 	    }
 	    else {
-	      pITypeInfoImpl->ReleaseFuncDesc(pFuncDescImpl);
+	      pITypeInfoImpl->ReleaseFuncDesc (pFuncDescImpl);
 	    }
 	  }
-	  pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
+	  pITypeInfoImpl->ReleaseTypeAttr (pTypeAttrImpl);
 	}
 	else {
 	  pITypeInfoImpl->Release();
@@ -1614,31 +1578,34 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
     pTypeDesc->pVarDesc = pVarDesc;
   }
 
-  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,MZCONFIG_CUSTODIAN),
+  scheme_add_managed ((Scheme_Custodian *)scheme_get_param (scheme_current_config(), MZCONFIG_CUSTODIAN),
 		     (Scheme_Object *)pTypeDesc,
 		     (Scheme_Close_Custodian_Client *)scheme_release_typedesc,
-		     NULL,0);
-  scheme_register_finalizer(pTypeDesc,scheme_release_typedesc,NULL,NULL,NULL);
+		     NULL, 0);
+  scheme_register_finalizer (pTypeDesc, scheme_release_typedesc, NULL, NULL, NULL);
 
   return pTypeDesc;
 
 }
 
-MX_TYPEDESC *typeDescFromTypeInfo (char *name,
+static
+MX_TYPEDESC *typeDescFromTypeInfo (LPCTSTR name,
                                    INVOKEKIND invKind,
-                                   ITypeInfo *pITypeInfo) {
+                                   ITypeInfo *pITypeInfo)
+{
   BSTR unicodeName;
   MX_TYPEDESC *retval;
 
-  unicodeName = stringToBSTR(name,strlen(name));
-  retval = doTypeDescFromTypeInfo(unicodeName,invKind,pITypeInfo);
+  unicodeName = textToBSTR (name, strlen (name));
+  retval = doTypeDescFromTypeInfo (unicodeName, invKind, pITypeInfo);
 
-  SysFreeString(unicodeName);
+  SysFreeString (unicodeName);
 
   return retval;
 }
 
-MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
+MX_TYPEDESC *getMethodType (MX_COM_Object *obj, LPCTSTR name, INVOKEKIND invKind)
+{
   IDispatch *pIDispatch;
   MX_TYPEDESC *pTypeDesc;
   ITypeInfo *pITypeInfo;
@@ -1650,36 +1617,35 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
 
   // check in hash table to see if we already have the type information
 
-  pTypeDesc = lookupTypeDesc(pIDispatch,name,invKind);
+  pTypeDesc = lookupTypeDesc (pIDispatch, name, invKind);
 
-  if (pTypeDesc) {
-    return pTypeDesc;
-  }
+  if (pTypeDesc)
+      return pTypeDesc;
 
   if (invKind == INVOKE_EVENT) {
-    pITypeInfo = eventTypeInfoFromComObject(obj);
+      pITypeInfo = eventTypeInfoFromComObject (obj);
 
-    if (pITypeInfo == NULL) {
-      scheme_signal_error("Can't find event type information");
-    }
-  }
-  else {
-    pITypeInfo = typeInfoFromComObject(obj);
-  }
+      if (pITypeInfo == NULL)
+	  scheme_signal_error ("Can't find event type information");
+      }
+  else
+      pITypeInfo = typeInfoFromComObject (obj);
 
-  pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
+  pTypeDesc = typeDescFromTypeInfo (name, invKind, pITypeInfo);
   // pTypeDesc may be NULL
   if (pTypeDesc != NULL)
-      addTypeToTable(pIDispatch,name,invKind,pTypeDesc);
+      addTypeToTable (pIDispatch, name, invKind, pTypeDesc);
 
   return pTypeDesc;
 }
 
-int dispatchCmp(char *s1,char **s2) {
-  return strcmp(s1,*s2);
+static int dispatchCmp (const char * s1, const char * * s2)
+{
+  return lstrcmp (s1, *s2);
 }
 
-BOOL isDispatchName(char *s) {
+BOOL isDispatchName (const char *s)
+{
   static char *names[] = { // must be in alpha order
     "AddRef",
     "GetIDsOfNames",
@@ -1689,140 +1655,138 @@ BOOL isDispatchName(char *s) {
     "QueryInterface",
     "Release",
   };
-  void *p;
 
-  p = bsearch(s,names,sizeray(names),sizeof(names[0]),
-	      (int (*)(const void *,const void *))dispatchCmp);
-
-  return p ? TRUE : FALSE;
+  return bsearch (s, names, sizeray (names), sizeof (names[0]),
+		  (int (*) (const void *, const void *))dispatchCmp)
+      ? TRUE
+      : FALSE;
 }
 
-Scheme_Object *getTypeNames(ITypeInfo *pITypeInfo,
-			    TYPEATTR *pTypeAttr,Scheme_Object *retval,
-			    INVOKEKIND invKind) {
+Scheme_Object *getTypeNames (ITypeInfo *pITypeInfo,
+			    TYPEATTR *pTypeAttr, Scheme_Object *retval,
+			    INVOKEKIND invKind)
+{
   ITypeInfo *pITypeInfoImpl;
   TYPEATTR *pTypeAttrImpl;
   BSTR bstr;
   FUNCDESC *pFuncDesc;
   VARDESC *pVarDesc;
   HREFTYPE refType;
-  char buff[256];
-  unsigned int len;
   unsigned int count;
   int i;
-  HRESULT hr;
 
   for (i = 0; i < pTypeAttr->cImplTypes; i++) {
-    hr = pITypeInfo->GetRefTypeOfImplType(i,&refType);
+      HRESULT hr = pITypeInfo->GetRefTypeOfImplType (i, &refType);
 
-    if (FAILED(hr)) {
-      scheme_signal_error("Can't get implementation type library handle");
-    }
+      if (FAILED (hr))
+	  scheme_signal_error ("Can't get implementation type library handle");
 
-    hr = pITypeInfo->GetRefTypeInfo(refType,&pITypeInfoImpl);
+      hr = pITypeInfo->GetRefTypeInfo (refType, &pITypeInfoImpl);
 
-    if (FAILED(hr)) {
-      scheme_signal_error("Can't get implementation type library");
-    }
+      if (FAILED (hr))
+	  scheme_signal_error ("Can't get implementation type library");
 
-    hr = pITypeInfoImpl->GetTypeAttr(&pTypeAttrImpl);
+      hr = pITypeInfoImpl->GetTypeAttr (&pTypeAttrImpl);
 
-    if (FAILED(hr)) {
-      scheme_signal_error("Can't get implementation type library attributes");
-    }
+      if (FAILED (hr))
+	  scheme_signal_error ("Can't get implementation type library attributes");
 
-    // recursion, to ascend the inheritance graph
-    retval = getTypeNames(pITypeInfoImpl,pTypeAttrImpl,retval,invKind);
+      // recursion, to ascend the inheritance graph
+      retval = getTypeNames (pITypeInfoImpl, pTypeAttrImpl, retval, invKind);
 
-    // release interfaces
-    pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
-    pITypeInfoImpl->Release();
-  }
+      // release interfaces
+      pITypeInfoImpl->ReleaseTypeAttr (pTypeAttrImpl);
+      pITypeInfoImpl->Release();
+      }
 
   // properties can appear in list of functions
   // or in list of variables
 
   for (i = 0; i < pTypeAttr->cFuncs; i++) {
-    pITypeInfo->GetFuncDesc(i,&pFuncDesc);
-    if (pFuncDesc->invkind == invKind) {
-      pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&count);
-      len = SysStringLen(bstr);
-      WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
-			  buff,sizeof(buff) - 1,
-			  NULL,NULL);
-      buff[len] = '\0';
-      // don't consider names inherited from IDispatch
-      if (invKind != INVOKE_FUNC || !isDispatchName(buff)) {
-	retval = scheme_make_pair(scheme_make_string(buff),retval);
-      }
-      SysFreeString(bstr);
-    }
-    pITypeInfo->ReleaseFuncDesc(pFuncDesc);
-  }
+      char buff[256];
+      unsigned int len;
 
-  if (invKind == INVOKE_FUNC) { // done, if not a property
-    return retval;
-  }
+      pITypeInfo->GetFuncDesc (i, &pFuncDesc);
+      if (pFuncDesc->invkind == invKind) {
+	  pITypeInfo->GetNames (pFuncDesc->memid, &bstr, 1, &count);
+
+	  if (invKind == INVOKE_FUNC) {
+	      len = SysStringLen (bstr);
+	      WideCharToMultiByte (CP_ACP, (DWORD)0, bstr, len,
+				   buff, sizeof (buff) - 1,
+				   NULL, NULL);
+	      buff[len] = '\0';
+	      }
+
+	  // don't consider names inherited from IDispatch
+	  if (invKind != INVOKE_FUNC || !isDispatchName (buff))
+	      retval = scheme_make_pair (BSTRToSchemeString (bstr), retval);
+	  SysFreeString (bstr);
+	  }
+      pITypeInfo->ReleaseFuncDesc (pFuncDesc);
+      }
+
+  if (invKind == INVOKE_FUNC) // done, if not a property
+      return retval;
 
   for (i = 0; i < pTypeAttr->cVars; i++) {
-    pITypeInfo->GetVarDesc(i,&pVarDesc);
-    pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&count);
-    len = SysStringLen(bstr);
-    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
-			buff,sizeof(buff) - 1,
-			NULL,NULL);
-    buff[len] = '\0';
-    retval = scheme_make_pair(scheme_make_string(buff),retval);
-    SysFreeString(bstr);
-    pITypeInfo->ReleaseVarDesc(pVarDesc);
-  }
+      pITypeInfo->GetVarDesc (i, &pVarDesc);
+      pITypeInfo->GetNames (pVarDesc->memid, &bstr, 1, &count);
+      retval = scheme_make_pair (BSTRToSchemeString (bstr), retval);
+      SysFreeString (bstr);
+      pITypeInfo->ReleaseVarDesc (pVarDesc);
+      }
 
   return retval;
 }
 
 
-Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKind) {
+Scheme_Object *mx_do_get_methods (int argc, Scheme_Object **argv, INVOKEKIND invKind)
+{
   ITypeInfo *pITypeInfo;
   HRESULT hr;
   TYPEATTR *pTypeAttr;
   Scheme_Object *retval;
 
-  GUARANTEE_COM_OBJ_OR_TYPE ("com-{methods,{get,set}-properties}", 0);
+  GUARANTEE_COM_OBJ_OR_TYPE ("com-{methods, {get, set}-properties}", 0);
 
   pITypeInfo =
       MX_COM_TYPEP (argv[0])
-      ? MX_COM_TYPE_VAL(argv[0])
-      : (MX_COM_OBJ_VAL(argv[0]) == NULL)
-      ? (scheme_signal_error("com-{methods,{get,set}-properties}: NULL COM object"), (ITypeInfo *) NULL)
-      : typeInfoFromComObject((MX_COM_Object *)argv[0]);
+      ? MX_COM_TYPE_VAL (argv[0])
+      : (MX_COM_OBJ_VAL (argv[0]) == NULL)
+      ? (scheme_signal_error ("com-{methods, {get, set}-properties}: NULL COM object"), (ITypeInfo *) NULL)
+      : typeInfoFromComObject ((MX_COM_Object *)argv[0]);
 
-  hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+  hr = pITypeInfo->GetTypeAttr (&pTypeAttr);
 
-  if (FAILED (hr) || pTypeAttr == NULL) {
-    codedComError("Error getting type attributes",hr);
-  }
+  if (FAILED (hr) || pTypeAttr == NULL)
+    codedComError ("Error getting type attributes", hr);
 
-  retval = getTypeNames(pITypeInfo,pTypeAttr,scheme_null,invKind);
+  retval = getTypeNames (pITypeInfo, pTypeAttr, scheme_null, invKind);
 
-  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  pITypeInfo->ReleaseTypeAttr (pTypeAttr);
 
   return retval;
 
 }
 
-Scheme_Object *mx_com_methods(int argc,Scheme_Object **argv) {
-  return mx_do_get_methods(argc,argv,INVOKE_FUNC);
+Scheme_Object *mx_com_methods (int argc, Scheme_Object **argv)
+{
+  return mx_do_get_methods (argc, argv, INVOKE_FUNC);
 }
 
-Scheme_Object *mx_com_get_properties(int argc,Scheme_Object **argv) {
-  return mx_do_get_methods(argc,argv,INVOKE_PROPERTYGET);
+Scheme_Object *mx_com_get_properties (int argc, Scheme_Object **argv)
+{
+  return mx_do_get_methods (argc, argv, INVOKE_PROPERTYGET);
 }
 
-Scheme_Object *mx_com_set_properties(int argc,Scheme_Object **argv) {
-  return mx_do_get_methods(argc,argv,INVOKE_PROPERTYPUT);
+Scheme_Object *mx_com_set_properties (int argc, Scheme_Object **argv)
+{
+  return mx_do_get_methods (argc, argv, INVOKE_PROPERTYPUT);
 }
 
-ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
+ITypeInfo *coclassTypeInfoFromTypeInfo (ITypeInfo *pITypeInfo, CLSID clsId)
+{
   HRESULT hr;
   ITypeLib *pITypeLib;
   ITypeInfo *pCoclassTypeInfo;
@@ -1835,23 +1799,22 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
   UINT coclassCount;
   UINT typeCount;
   UINT coclassNdx;
-  UINT i,j;
+  UINT i, j;
 
-  hr = pITypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
+  hr = pITypeInfo->GetContainingTypeLib (&pITypeLib, &ndx);
 
-  if (FAILED (hr)) {
-    scheme_signal_error("Can't get dispatch type library");
-  }
+  if (FAILED (hr))
+    scheme_signal_error ("Can't get dispatch type library");
 
   // first try using explicit clsId
 
-  if (!isEmptyClsId(clsId)) {
-    hr = pITypeLib->GetTypeInfoOfGuid(clsId,&pCoclassTypeInfo);
+  if (!isEmptyClsId (clsId)) {
+    hr = pITypeLib->GetTypeInfoOfGuid (clsId, &pCoclassTypeInfo);
 
     pITypeLib->Release();
 
     if (FAILED (hr) || pCoclassTypeInfo == NULL) {
-      codedComError("Error getting type info for coclass",hr);
+      codedComError ("Error getting type info for coclass", hr);
       return NULL;
     }
 
@@ -1869,53 +1832,53 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
 
   for (i = 0; i < typeInfoCount; i++) {
 
-    pITypeLib->GetTypeInfoType(i,&typeKind);
+    pITypeLib->GetTypeInfoType (i, &typeKind);
 
     if (typeKind == TKIND_COCLASS) {
 
-      hr = pITypeLib->GetTypeInfo(i,&pCoclassTypeInfo);
+      hr = pITypeLib->GetTypeInfo (i, &pCoclassTypeInfo);
 
       if (FAILED (hr) || pCoclassTypeInfo == NULL) {
 	pITypeLib->Release();
-	codedComError("Error getting type info for coclass",hr);
+	codedComError ("Error getting type info for coclass", hr);
       }
 
-      hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
+      hr = pCoclassTypeInfo->GetTypeAttr (&pTypeAttr);
 
       if (FAILED (hr) || pTypeAttr == NULL) {
 	pCoclassTypeInfo->Release();
 	pITypeLib->Release();
-	codedComError("Error getting coclass type attributes",hr);
+	codedComError ("Error getting coclass type attributes", hr);
       }
 
       typeCount = pTypeAttr->cImplTypes;
 
-      pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
+      pCoclassTypeInfo->ReleaseTypeAttr (pTypeAttr);
 
       for (j = 0; j < typeCount; j++) {
-	hr = pCoclassTypeInfo->GetRefTypeOfImplType(j,&hRefType);
+	hr = pCoclassTypeInfo->GetRefTypeOfImplType (j, &hRefType);
 
 	if (FAILED (hr)) {
 	  pCoclassTypeInfo->Release();
 	  pITypeLib->Release();
-	  codedComError("Error retrieving type info handle",hr);
+	  codedComError ("Error retrieving type info handle", hr);
 	}
 
-	hr = pCoclassTypeInfo->GetRefTypeInfo(hRefType,&pCandidateTypeInfo);
+	hr = pCoclassTypeInfo->GetRefTypeInfo (hRefType, &pCandidateTypeInfo);
 
 	if (FAILED (hr) || pCandidateTypeInfo == NULL) {
 	  pCoclassTypeInfo->Release();
 	  pITypeLib->Release();
-	  codedComError("Error retrieving candidate type info",hr);
+	  codedComError ("Error retrieving candidate type info", hr);
 	}
 
-	if (typeInfoEq(pCandidateTypeInfo,pITypeInfo)) {
+	if (typeInfoEq (pCandidateTypeInfo, pITypeInfo)) {
 	  coclassNdx = i;
 	  if (++coclassCount >= 2) {
 	    pCandidateTypeInfo->Release();
 	    pCoclassTypeInfo->Release();
 	    pITypeLib->Release();
-	    scheme_signal_error("Ambiguous coclass for object");
+	    scheme_signal_error ("Ambiguous coclass for object");
 	  }
 	}
 
@@ -1933,18 +1896,18 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
     return NULL;
   }
 
-  hr = pITypeLib->GetTypeInfo(coclassNdx,&pCoclassTypeInfo);
+  hr = pITypeLib->GetTypeInfo (coclassNdx, &pCoclassTypeInfo);
 
   pITypeLib->Release();
 
-  if (FAILED (hr) || pCoclassTypeInfo == NULL) {
-    codedComError("Error getting type info for coclass",hr);
-  }
+  if (FAILED (hr) || pCoclassTypeInfo == NULL)
+    codedComError ("Error getting type info for coclass", hr);
 
   return pCoclassTypeInfo;
 }
 
-ITypeInfo *eventTypeInfoFromCoclassTypeInfo(ITypeInfo *pCoclassTypeInfo) {
+ITypeInfo *eventTypeInfoFromCoclassTypeInfo (ITypeInfo *pCoclassTypeInfo)
+{
   HRESULT hr;
   ITypeInfo *pEventTypeInfo;
   TYPEATTR *pTypeAttr;
@@ -1954,155 +1917,143 @@ ITypeInfo *eventTypeInfoFromCoclassTypeInfo(ITypeInfo *pCoclassTypeInfo) {
   int typeFlags;
   UINT i;
 
-  hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
+  hr = pCoclassTypeInfo->GetTypeAttr (&pTypeAttr);
 
-  if (FAILED (hr) || pTypeAttr == NULL) {
-    codedComError("Error getting type attributes",hr);
-  }
+  if (FAILED (hr) || pTypeAttr == NULL)
+    codedComError ("Error getting type attributes", hr);
 
   typeCount = pTypeAttr->cImplTypes;
 
-  pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
+  pCoclassTypeInfo->ReleaseTypeAttr (pTypeAttr);
 
   eventTypeInfoNdx = -1;
 
   for (i = 0; i < typeCount; i++) {
 
-    hr = pCoclassTypeInfo->GetImplTypeFlags(i,&typeFlags);
+    hr = pCoclassTypeInfo->GetImplTypeFlags (i, &typeFlags);
 
-    if (FAILED (hr)) {
-      codedComError("Error retrieving type flags",hr);
-    }
+    if (FAILED (hr))
+      codedComError ("Error retrieving type flags", hr);
 
     // look for [source, default]
 
     if ((typeFlags & IMPLTYPEFLAG_FSOURCE) &&
-	(typeFlags & IMPLTYPEFLAG_FDEFAULT)) {
+	 (typeFlags & IMPLTYPEFLAG_FDEFAULT)) {
       eventTypeInfoNdx = i;
       break;
     }
   }
 
-  if (eventTypeInfoNdx == -1) {
+  if (eventTypeInfoNdx == -1)
     return NULL;
-  }
 
-  hr = pCoclassTypeInfo->GetRefTypeOfImplType(eventTypeInfoNdx,&hRefType);
+  hr = pCoclassTypeInfo->GetRefTypeOfImplType (eventTypeInfoNdx, &hRefType);
 
-  if (FAILED (hr)) {
-    codedComError("Error retrieving type info handle",hr);
-  }
+  if (FAILED (hr))
+    codedComError ("Error retrieving type info handle", hr);
 
-  hr = pCoclassTypeInfo->GetRefTypeInfo(hRefType,&pEventTypeInfo);
+  hr = pCoclassTypeInfo->GetRefTypeInfo (hRefType, &pEventTypeInfo);
 
-  if (FAILED (hr)) {
-    codedComError("Error retrieving event type info",hr);
-  }
+  if (FAILED (hr))
+    codedComError ("Error retrieving event type info", hr);
 
   return pEventTypeInfo;
 }
 
-ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
+ITypeInfo *eventTypeInfoFromComObject (MX_COM_Object *obj)
+{
   HRESULT hr;
   IDispatch *pIDispatch;
-  ITypeInfo *pCoclassTypeInfo,*pEventTypeInfo;
+  ITypeInfo *pCoclassTypeInfo, *pEventTypeInfo;
   IProvideClassInfo *pIProvideClassInfo;
 
   pEventTypeInfo = obj->pEventTypeInfo;
 
-  if (pEventTypeInfo) {
+  if (pEventTypeInfo)
     return pEventTypeInfo;
-  }
 
   pIDispatch = obj->pIDispatch;
 
   /* preferred mechanism for finding coclass ITypeInfo */
 
-  hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,
+  hr = pIDispatch->QueryInterface (IID_IProvideClassInfo,
 				  (void **)&pIProvideClassInfo);
 
   if (SUCCEEDED (hr) && pIProvideClassInfo != NULL) {
 
-    hr = pIProvideClassInfo->GetClassInfo(&pCoclassTypeInfo);
+    hr = pIProvideClassInfo->GetClassInfo (&pCoclassTypeInfo);
 
-    if (FAILED (hr) || pCoclassTypeInfo == NULL) {
-      scheme_signal_error("Error getting coclass type information");
-    }
+    if (FAILED (hr) || pCoclassTypeInfo == NULL)
+      scheme_signal_error ("Error getting coclass type information");
   }
   else if (hr == E_NOINTERFACE) {
     ITypeInfo *pDispatchTypeInfo;
 
     /* alternate mechanism */
 
-    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pDispatchTypeInfo);
+    hr = pIDispatch->GetTypeInfo (0, LOCALE_SYSTEM_DEFAULT, &pDispatchTypeInfo);
 
-    if (FAILED (hr)) {
-      codedComError("Can't get dispatch type information",hr);
-    }
+    if (FAILED (hr))
+      codedComError ("Can't get dispatch type information", hr);
 
-    pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(pDispatchTypeInfo,
+    pCoclassTypeInfo = coclassTypeInfoFromTypeInfo (pDispatchTypeInfo,
 						   obj->clsId);
     pDispatchTypeInfo->Release();
 
-    if (pCoclassTypeInfo == NULL) {
-      scheme_signal_error("Error getting coclass type information");
-    }
+    if (pCoclassTypeInfo == NULL)
+      scheme_signal_error ("Error getting coclass type information");
   }
 
-  else {
-    codedComError("Error getting COM event type information",hr);
-  }
+  else
+    codedComError ("Error getting COM event type information", hr);
 
   // have type info for coclass
   // event type info is one of the "implemented" interfaces
 
-  pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo(pCoclassTypeInfo);
+  pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo (pCoclassTypeInfo);
 
   pCoclassTypeInfo->Release();
 
-  if (pEventTypeInfo == NULL) {
-    scheme_signal_error("Error retrieving event type info");
-  }
+  if (pEventTypeInfo == NULL)
+    scheme_signal_error ("Error retrieving event type info");
 
   obj->pEventTypeInfo = pEventTypeInfo;
 
   return pEventTypeInfo;
 }
 
-ITypeInfo *eventTypeInfoFromComType(MX_COM_Type *obj) {
-  ITypeInfo *pCoclassTypeInfo,*pEventTypeInfo;
+ITypeInfo *eventTypeInfoFromComType (MX_COM_Type *obj)
+{
+  ITypeInfo *pCoclassTypeInfo, *pEventTypeInfo;
 
-  pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(obj->pITypeInfo,
+  pCoclassTypeInfo = coclassTypeInfoFromTypeInfo (obj->pITypeInfo,
 						 obj->clsId);
 
-  if (pCoclassTypeInfo == NULL) {
-    scheme_signal_error("Error getting coclass type information");
-  }
+  if (pCoclassTypeInfo == NULL)
+    scheme_signal_error ("Error getting coclass type information");
 
   // have type info for coclass
   // event type info is one of the "implemented" interfaces
 
-  pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo(pCoclassTypeInfo);
+  pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo (pCoclassTypeInfo);
 
   pCoclassTypeInfo->Release();
 
-  if (pEventTypeInfo == NULL) {
-    scheme_signal_error("Error retrieving event type info");
-  }
+  if (pEventTypeInfo == NULL)
+    scheme_signal_error ("Error retrieving event type info");
 
   return pEventTypeInfo;
 }
 
-Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_events (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   ITypeInfo *pEventTypeInfo;
   TYPEATTR *pEventTypeAttr;
   FUNCDESC *pFuncDesc;
   Scheme_Object *retval;
-  char buff[256];
   UINT nameCount;
   BSTR bstr;
-  unsigned int len;
   UINT i;
 
   GUARANTEE_COM_OBJ_OR_TYPE ("com-events", 0);
@@ -2116,72 +2067,56 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
 
   // query for outbound interface info
 
-  if (pEventTypeInfo == NULL) {
-    scheme_signal_error("Can't find event type information");
-  }
+  if (pEventTypeInfo == NULL)
+    scheme_signal_error ("Can't find event type information");
 
-  hr = pEventTypeInfo->GetTypeAttr(&pEventTypeAttr);
+  hr = pEventTypeInfo->GetTypeAttr (&pEventTypeAttr);
 
-  if (FAILED (hr) || pEventTypeAttr == NULL) {
-    codedComError("Error retrieving event type attributes",hr);
-  }
+  if (FAILED (hr) || pEventTypeAttr == NULL)
+    codedComError ("Error retrieving event type attributes", hr);
 
   retval = scheme_null;
 
   for (i = 0; i < pEventTypeAttr->cFuncs; i++) {
-    pEventTypeInfo->GetFuncDesc(i,&pFuncDesc);
-    pEventTypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
-    len = SysStringLen(bstr);
-    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
-			buff,sizeof(buff) - 1,
-			NULL,NULL);
-    buff[len] = '\0';
-    retval = scheme_make_pair(scheme_make_string(buff),retval);
-    SysFreeString(bstr);
+    pEventTypeInfo->GetFuncDesc (i, &pFuncDesc);
+    pEventTypeInfo->GetNames (pFuncDesc->memid, &bstr, 1, &nameCount);
+    retval = scheme_make_pair (BSTRToSchemeString (bstr), retval);
+    SysFreeString (bstr);
   }
 
-  pEventTypeInfo->ReleaseFuncDesc(pFuncDesc);
-  pEventTypeInfo->ReleaseTypeAttr(pEventTypeAttr);
+  pEventTypeInfo->ReleaseFuncDesc (pFuncDesc);
+  pEventTypeInfo->ReleaseTypeAttr (pEventTypeAttr);
 
   return retval;
 }
 
 
-VARTYPE getVarTypeFromElemDesc(ELEMDESC *pElemDesc) {
-  unsigned short flags;
+VARTYPE getVarTypeFromElemDesc (ELEMDESC * pElemDesc)
+{
 
-  flags = pElemDesc->paramdesc.wParamFlags;
+  unsigned short flags = pElemDesc->paramdesc.wParamFlags;
 
-  if ((flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT))  {
-
-    // use type of default value
-
-    return pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt;
-  }
-
-  if (pElemDesc->tdesc.vt == VT_PTR) {
-    return pElemDesc->tdesc.lptdesc->vt | VT_BYREF;
-  }
-
-  return pElemDesc->tdesc.vt;
-
+  return (flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT)
+      ? pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt
+      : pElemDesc->tdesc.vt == VT_PTR ? pElemDesc->tdesc.lptdesc->vt | VT_BYREF
+      : pElemDesc->tdesc.vt;
 }
 
-Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL isOpt) {
+Scheme_Object *elemDescToSchemeType (ELEMDESC *pElemDesc, BOOL ignoreByRef, BOOL isOpt)
+{
   static char buff[256];
   char *s;
   BOOL isBox;
   VARTYPE vt;
 
-  vt = getVarTypeFromElemDesc(pElemDesc);
+  vt = getVarTypeFromElemDesc (pElemDesc);
 
-  if (ignoreByRef) {
+  if (ignoreByRef)
     vt &= ~VT_BYREF;
-  }
 
   isBox = FALSE;
 
-  switch(vt) {
+  switch (vt) {
 
   case VT_HRESULT :
   case VT_NULL :
@@ -2388,7 +2323,7 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
   case VT_VARIANT | VT_BYREF :
 
     s = "mx-any";
-    isBox = TRUE;
+    isBox = FALSE;  // Yes, FALSE.
     break;
 
   case VT_USERDEFINED :
@@ -2418,81 +2353,76 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
 
     {
       char defaultBuff[32];
-      sprintf(defaultBuff,"COM-0x%X",vt);
-      return scheme_intern_symbol(defaultBuff);
+      sprintf (defaultBuff, "COM-0x%X", vt);
+      return scheme_intern_symbol (defaultBuff);
     }
   }
 
   if (isBox) {
-    if (isOpt) {
-      sprintf(buff,"%s-box-opt",s);
-    }
-    else {
-      sprintf(buff,"%s-box",s);
-    }
+    if (isOpt)
+      sprintf (buff, "%s-box-opt", s);
+    else
+      sprintf (buff, "%s-box", s);
   }
   else {
-    if (isOpt) {
-      sprintf(buff,"%s-opt",s);
-    }
-    else {
-      strcpy(buff,s);
-    }
+    if (isOpt)
+      sprintf (buff, "%s-opt", s);
+    else
+      strcpy (buff, s);
   }
 
-  return scheme_intern_exact_symbol (buff, (unsigned int)strlen(buff));
+  return scheme_intern_exact_symbol (buff, (unsigned int)strlen (buff));
 }
 
-Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
-				     Scheme_Object *returnType) {
-  Scheme_Object *arrow;
-
-  arrow = scheme_intern_symbol("->");
-
-  return scheme_append(paramTypes,
-		       scheme_make_pair(arrow,
-					scheme_make_pair(returnType,
+Scheme_Object * mx_make_function_type (Scheme_Object *paramTypes,
+				       Scheme_Object *returnType)
+{
+  return
+      scheme_append (paramTypes,
+		     scheme_make_pair (scheme_intern_symbol ("->"),
+				       scheme_make_pair (returnType,
 							 scheme_null)));
 }
 
-BOOL isDefaultParam(FUNCDESC *pFuncDesc,short int i) {
+BOOL isDefaultParam (FUNCDESC *pFuncDesc, short int i)
+{
   unsigned short flags;
 
-  if (pFuncDesc->lprgelemdescParam == NULL) {
+  if (pFuncDesc->lprgelemdescParam == NULL)
     return FALSE;
-  }
 
   flags = pFuncDesc->lprgelemdescParam[i].paramdesc.wParamFlags;
   return ((flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT));
 }
 
-BOOL isOptionalParam(FUNCDESC *pFuncDesc,short int i) {
+BOOL isOptionalParam (FUNCDESC *pFuncDesc, short int i)
+{
   unsigned short flags;
 
-  if (pFuncDesc->lprgelemdescParam == NULL) {
+  if (pFuncDesc->lprgelemdescParam == NULL)
     return FALSE;
-  }
 
   flags = pFuncDesc->lprgelemdescParam[i].paramdesc.wParamFlags;
   return (flags & PARAMFLAG_FOPT);
 }
 
-short getOptParamCount(FUNCDESC *pFuncDesc,short hi) {
+short getOptParamCount (FUNCDESC *pFuncDesc, short hi)
+{
   short i;
   short numOptParams;
 
   numOptParams = 0;
 
-  for (i = hi; i >= 0; i--) {
-    if (isOptionalParam(pFuncDesc,i)) {
+  for (i = hi; i >= 0; i--)
+    if (isOptionalParam (pFuncDesc, i))
       numOptParams++;
-    }
-  }
+
   return numOptParams;
 }
 
-BOOL isLastParamRetval(short int numParams,
-		       INVOKEKIND invKind,FUNCDESC *pFuncDesc) {
+BOOL isLastParamRetval (short int numParams,
+		       INVOKEKIND invKind, FUNCDESC *pFuncDesc)
+{
   return (numParams > 0 &&
 	  (invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC)
 	  &&
@@ -2501,14 +2431,15 @@ BOOL isLastParamRetval(short int numParams,
 }
 
 
-Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
-				     INVOKEKIND invKind) {
+Scheme_Object *mx_do_get_method_type (int argc, Scheme_Object **argv,
+				     INVOKEKIND invKind)
+{
   MX_TYPEDESC *pTypeDesc;
   ITypeInfo* pITypeInfo;
   FUNCDESC *pFuncDesc;
   VARDESC *pVarDesc;
-  Scheme_Object *s,*paramTypes,*returnType;
-  char *name;
+  Scheme_Object *s, *paramTypes, *returnType;
+  const char *name;
   short int numActualParams;
   short int numOptParams;
   short int firstOptArg;
@@ -2519,34 +2450,29 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   GUARANTEE_COM_OBJ_OR_TYPE ("com-method-type", 0);
 
 
-  if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
-    scheme_signal_error("NULL COM object");
-  }
+  if (MX_COM_OBJ_VAL (argv[0]) == NULL)
+    scheme_signal_error ("NULL COM object");
 
-  name = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("com-method-type", 1));
+  name = schemeToMultiByte (GUARANTEE_STRSYM ("com-method-type", 1));
 
-  if (invKind == INVOKE_FUNC && isDispatchName(name)) {
-    scheme_signal_error("com-method-type: IDispatch methods not available");
-  }
+  if (invKind == INVOKE_FUNC && isDispatchName (name))
+    scheme_signal_error ("com-method-type: IDispatch methods not available");
 
-  if (MX_COM_OBJP(argv[0])) {
-    pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
-  }
+  if (MX_COM_OBJP (argv[0]))
+    pTypeDesc = getMethodType ((MX_COM_Object *)argv[0], name, invKind);
+
   else {
-    if (invKind == INVOKE_EVENT) {
-      pITypeInfo = eventTypeInfoFromComType((MX_COM_Type *)argv[0]);
-    }
-    else {
-      pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
-    }
-    pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
-  }
+      pITypeInfo =
+	  invKind == INVOKE_EVENT
+	  ? eventTypeInfoFromComType ((MX_COM_Type *)argv[0])
+	  : MX_COM_TYPE_VAL (argv[0]);
+      pTypeDesc = typeDescFromTypeInfo (name, invKind, pITypeInfo);
+      }
 
   // pTypeDesc may be NULL if there is no type info.
 
-  if (pTypeDesc == NULL) {
+  if (pTypeDesc == NULL)
     return scheme_false;
-  }
 
   if (pTypeDesc->descKind == funcDesc) {
     pFuncDesc = pTypeDesc->funcdescs.pFuncDesc;
@@ -2560,33 +2486,28 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
       // this branch is untested
 
       lastParamIsRetval = FALSE;
-      paramTypes = scheme_make_pair(scheme_intern_symbol("..."),paramTypes);
+      paramTypes = scheme_make_pair (scheme_intern_symbol ("..."), paramTypes);
       for (i = numActualParams - 1; i >= 0; i--) {
-	s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE,FALSE);
-	paramTypes = scheme_make_pair(s,paramTypes);
+	s = elemDescToSchemeType (&pFuncDesc->lprgelemdescParam[i], FALSE, FALSE);
+	paramTypes = scheme_make_pair (s, paramTypes);
       }
     }
     else {
       lastParamIsRetval =
-	isLastParamRetval(numActualParams,invKind,pFuncDesc);
+	isLastParamRetval (numActualParams, invKind, pFuncDesc);
 
-      if (lastParamIsRetval) {
-	hiBound = numActualParams - 2;
-      }
-      else {
-	hiBound = numActualParams - 1;
-      }
+      hiBound = numActualParams - (lastParamIsRetval ? 2 : 1);
 
       // parameters that are optional with a default value in IDL are not
       // counted in pFuncDesc->cParamsOpt, so look for default bit flag
 
-      numOptParams = getOptParamCount(pFuncDesc,hiBound);
+      numOptParams = getOptParamCount (pFuncDesc, hiBound);
 
       firstOptArg = hiBound - numOptParams + 1;
 
       for (i = hiBound; i >= 0; i--) {
-	s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE,i >= firstOptArg);
-	paramTypes = scheme_make_pair(s,paramTypes);
+	s = elemDescToSchemeType (&pFuncDesc->lprgelemdescParam[i], FALSE, i >= firstOptArg);
+	paramTypes = scheme_make_pair (s, paramTypes);
       }
     }
   }
@@ -2602,30 +2523,27 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   else if (invKind == INVOKE_PROPERTYPUT) {
     pVarDesc = pTypeDesc->pVarDesc;
     paramTypes =
-      scheme_make_pair(elemDescToSchemeType(&pVarDesc->elemdescVar,FALSE,FALSE),
+      scheme_make_pair (elemDescToSchemeType (&pVarDesc->elemdescVar, FALSE, FALSE),
 		       scheme_null);
     numActualParams = 1;
   }
 
-  switch(invKind) {
+  switch (invKind) {
 
   case INVOKE_FUNC :
 
     // if final parameter is marked as retval, use its type
 
-    if (lastParamIsRetval) {
-      returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams-1],TRUE,FALSE);
-    }
-    else {
-      returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
-    }
+    returnType = lastParamIsRetval
+	? elemDescToSchemeType (&pFuncDesc->lprgelemdescParam[numActualParams-1], TRUE, FALSE)
+	: elemDescToSchemeType (&pFuncDesc->elemdescFunc, TRUE, FALSE);
 
     break;
 
   case INVOKE_EVENT :
   case INVOKE_PROPERTYPUT :
 
-    returnType = scheme_intern_symbol("void");
+    returnType = scheme_intern_symbol ("void");
 
     break;
 
@@ -2633,44 +2551,45 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 
     // pTypeDesc->descKind may be either funcDesc or varDesc
 
-    if (pTypeDesc->descKind == funcDesc) {
+    if (pTypeDesc->descKind == funcDesc)
 
-      if (lastParamIsRetval == FALSE || pFuncDesc->cParams == 0) {
-	returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
-      }
-      else {
-	returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams-1],TRUE,FALSE);
-      }
-    }
-    else { // pTypeDesc->descKind == varDesc
-      returnType = elemDescToSchemeType(&pVarDesc->elemdescVar,TRUE,FALSE);
-    }
+	returnType = (lastParamIsRetval == FALSE || pFuncDesc->cParams == 0)
+	    ? elemDescToSchemeType (&pFuncDesc->elemdescFunc, TRUE, FALSE)
+	    : elemDescToSchemeType (&pFuncDesc->lprgelemdescParam[numActualParams-1], TRUE, FALSE);
+
+    else // pTypeDesc->descKind == varDesc
+      returnType = elemDescToSchemeType (&pVarDesc->elemdescVar, TRUE, FALSE);
 
     break;
   }
 
-  return mx_make_function_type(paramTypes,returnType);
+  return mx_make_function_type (paramTypes, returnType);
 
 }
 
 
-Scheme_Object *mx_com_method_type(int argc,Scheme_Object **argv) {
-  return mx_do_get_method_type(argc,argv,INVOKE_FUNC);
+Scheme_Object *mx_com_method_type (int argc, Scheme_Object **argv)
+{
+  return mx_do_get_method_type (argc, argv, INVOKE_FUNC);
 }
 
-Scheme_Object *mx_com_get_property_type(int argc,Scheme_Object **argv) {
-  return mx_do_get_method_type(argc,argv,INVOKE_PROPERTYGET);
+Scheme_Object *mx_com_get_property_type (int argc, Scheme_Object **argv)
+{
+  return mx_do_get_method_type (argc, argv, INVOKE_PROPERTYGET);
 }
 
-Scheme_Object *mx_com_set_property_type(int argc,Scheme_Object **argv) {
-  return mx_do_get_method_type(argc,argv,INVOKE_PROPERTYPUT);
+Scheme_Object *mx_com_set_property_type (int argc, Scheme_Object **argv)
+{
+  return mx_do_get_method_type (argc, argv, INVOKE_PROPERTYPUT);
 }
 
-Scheme_Object *mx_com_event_type(int argc,Scheme_Object **argv) {
-  return mx_do_get_method_type(argc,argv,(INVOKEKIND)INVOKE_EVENT);
+Scheme_Object *mx_com_event_type (int argc, Scheme_Object **argv)
+{
+  return mx_do_get_method_type (argc, argv, (INVOKEKIND)INVOKE_EVENT);
 }
 
-BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
+BOOL schemeValueFitsVarType (Scheme_Object *val, VARTYPE vt)
+{
   long int longInt;
   unsigned long uLongInt;
 
@@ -2678,47 +2597,47 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
   case VT_NULL :
 
-    return SCHEME_VOIDP(val);
+    return SCHEME_VOIDP (val);
 
   case VT_I1 :
   case VT_UI1 :
 
-    return SCHEME_CHARP(val);
+    return SCHEME_CHARP (val);
 
   case VT_I2 :
 
-    return SCHEME_INTP(val) &&
-      scheme_get_int_val(val,&longInt) &&
+    return SCHEME_INTP (val) &&
+      scheme_get_int_val (val, &longInt) &&
       longInt <= SHRT_MAX && longInt >= SHRT_MIN;
 
   case VT_UI2 :
 
-    return SCHEME_INTP(val) &&
-      scheme_get_unsigned_int_val(val,&uLongInt) &&
+    return SCHEME_INTP (val) &&
+      scheme_get_unsigned_int_val (val, &uLongInt) &&
       uLongInt <= USHRT_MAX;
 
   case VT_I4 :
   case VT_INT :
 
-    return SCHEME_EXACT_INTEGERP(val) &&
-      scheme_get_int_val(val,&longInt);
+    return SCHEME_EXACT_INTEGERP (val) &&
+      scheme_get_int_val (val, &longInt);
 
   case VT_UI4 :
   case VT_UINT :
 
-    return SCHEME_EXACT_INTEGERP(val) &&
-      scheme_get_unsigned_int_val(val,&uLongInt);
+    return SCHEME_EXACT_INTEGERP (val) &&
+      scheme_get_unsigned_int_val (val, &uLongInt);
 
   case VT_R4 :
 
-    return SCHEME_FLTP(val) ||
-      (SCHEME_DBLP(val) &&
-       SCHEME_DBL_VAL(val) >= FLT_MIN &&
-       SCHEME_DBL_VAL(val) <= FLT_MAX);
+    return SCHEME_FLTP (val) ||
+      (SCHEME_DBLP (val) &&
+       SCHEME_DBL_VAL (val) >= FLT_MIN &&
+       SCHEME_DBL_VAL (val) <= FLT_MAX);
 
   case VT_R8 :
 
-    return SCHEME_DBLP(val);
+    return SCHEME_DBLP (val);
 
   case VT_BSTR :
 
@@ -2726,11 +2645,11 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
   case VT_CY :
 
-    return MX_CYP(val);
+    return MX_CYP (val);
 
   case VT_DATE :
 
-    return MX_DATEP(val);
+    return MX_DATEP (val);
 
   case VT_BOOL :
 
@@ -2738,15 +2657,15 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
   case VT_ERROR :
 
-    return MX_SCODEP(val);
+    return MX_SCODEP (val);
 
   case VT_UNKNOWN :
 
-    return MX_IUNKNOWNP(val);
+    return MX_IUNKNOWNP (val);
 
   case VT_DISPATCH :
 
-    return MX_COM_OBJP(val);
+    return MX_COM_OBJP (val);
 
   case VT_VARIANT : // we can package anything into a VARIANTARG
 
@@ -2763,64 +2682,57 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 }
 
 
-BOOL subArrayFitsVarType(Scheme_Object *val,
-			 unsigned short numDims,SAFEARRAYBOUND *bounds,
-			 VARTYPE vt) {
+BOOL subArrayFitsVarType (Scheme_Object *val,
+			 unsigned short numDims, SAFEARRAYBOUND *bounds,
+			 VARTYPE vt)
+{
   Scheme_Object **els;
   unsigned long len;
 
-  if (SCHEME_VECTORP(val) == FALSE) {
+  if (SCHEME_VECTORP (val) == FALSE)
     return FALSE;
-  }
 
-  len = SCHEME_VEC_SIZE(val);
+  len = SCHEME_VEC_SIZE (val);
 
-  if (len != bounds->cElements) {
+  if (len != bounds->cElements)
     return FALSE;
-  }
 
-  els = SCHEME_VEC_ELS(val);
+  els = SCHEME_VEC_ELS (val);
 
   if (numDims == 1) { // innermost vector
-    for (unsigned long i = 0; i < len; i++) {
-      if (schemeValueFitsVarType(els[i],vt) == FALSE) {
+    for (unsigned long i = 0; i < len; i++)
+      if (schemeValueFitsVarType (els[i], vt) == FALSE)
 	return FALSE;
-      }
-    }
   }
   else {
-    for (unsigned long i = 0; i < len; i++) {
-
+    for (unsigned long i = 0; i < len; i++)
       // recursion, the programmer's best friend
-
-      if (subArrayFitsVarType(els[i],numDims - 1,bounds + 1,vt) == FALSE) {
+      if (subArrayFitsVarType (els[i], numDims - 1, bounds + 1, vt) == FALSE)
 	return FALSE;
-      }
-    }
   }
 
   return TRUE;
 }
 
-BOOL schemeValueFitsElemDesc(Scheme_Object *val,ELEMDESC *pElemDesc) {
+BOOL schemeValueFitsElemDesc (Scheme_Object *val, ELEMDESC *pElemDesc)
+{
   unsigned short flags;
 
   // if default available, check value has appropriate type
 
   flags = pElemDesc->paramdesc.wParamFlags;
   if (flags & PARAMFLAG_FOPT) {
-    if (val == mx_omit_obj) {
+    if (val == mx_omit_obj)
       return TRUE;
-    }
-    if (flags & PARAMFLAG_FHASDEFAULT)  {
-      return schemeValueFitsVarType(val,pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt);
-    }
+
+    if (flags & PARAMFLAG_FHASDEFAULT)
+      return schemeValueFitsVarType (val, pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt);
   }
 
   // if array, check we have a vector of proper dimension and contained types
 
   if (pElemDesc->tdesc.vt & VT_ARRAY) {
-    return subArrayFitsVarType(val,
+    return subArrayFitsVarType (val,
 			       pElemDesc->tdesc.lpadesc->cDims,
 			       pElemDesc->tdesc.lpadesc->rgbounds,
 			       pElemDesc->tdesc.lpadesc->tdescElem.vt);
@@ -2833,41 +2745,39 @@ BOOL schemeValueFitsElemDesc(Scheme_Object *val,ELEMDESC *pElemDesc) {
   if (pElemDesc->tdesc.vt == VT_PTR) {
       // A VT_PTR to a VT_USERDEFINED isn't a box, it's
       // an IUnknown.
-      return (pElemDesc->tdesc.lptdesc->vt == VT_USERDEFINED)
-          ? (MX_COM_OBJP (val) || MX_IUNKNOWNP (val))
+      return
+	  (pElemDesc->tdesc.lptdesc->vt == VT_VARIANT) ? TRUE
+	  : (pElemDesc->tdesc.lptdesc->vt == VT_USERDEFINED) ? (MX_COM_OBJP (val) || MX_IUNKNOWNP (val))
           : (SCHEME_BOXP (val)
-             && schemeValueFitsVarType(SCHEME_BOX_VAL(val),pElemDesc->tdesc.lptdesc->vt));
+             && schemeValueFitsVarType (SCHEME_BOX_VAL (val), pElemDesc->tdesc.lptdesc->vt));
       }
 
   // not array or box or default value
-  return schemeValueFitsVarType(val,pElemDesc->tdesc.vt);
+  return schemeValueFitsVarType (val, pElemDesc->tdesc.vt);
 }
 
-VARIANT_BOOL schemeValToBool(Scheme_Object *val) {
-  return SCHEME_FALSEP(val) ? 0 : 0xFFFF;
+VARIANT_BOOL schemeValToBool (Scheme_Object *val)
+{
+  return SCHEME_FALSEP (val) ? 0 : 0xFFFF;
 }
 
-VARTYPE schemeValueToVarType(Scheme_Object *obj) {
+VARTYPE schemeValueToVarType (Scheme_Object *obj)
+{
 
   // test for global constants
-
-  if (SCHEME_FALSEP(obj)) {
+  if (SCHEME_FALSEP (obj))
     return VT_BOOL;
-  }
 
-  if (SCHEME_VOIDP(obj)) {
+  if (SCHEME_VOIDP (obj))
     return VT_NULL;
-  }
 
   // handle fixnums
-
-  if (SCHEME_INTP(obj)) {
+  if (SCHEME_INTP (obj))
     return VT_I4;
-  }
 
   // otherwise, dispatch on value type
 
-  switch(obj->type) {
+  switch (obj->type) {
   case scheme_char_type :
     return VT_UI1;
   case scheme_integer_type :
@@ -2877,67 +2787,70 @@ VARTYPE schemeValueToVarType(Scheme_Object *obj) {
   case scheme_double_type :
     return VT_R8;
   case scheme_symbol_type :
-  case scheme_string_type :
+  case scheme_char_string_type :
+  case scheme_byte_string_type :
     return VT_BSTR;
   case scheme_vector_type : // may need to specify elt type
     return VT_ARRAY;
   }
 
-  scheme_signal_error("Unable to coerce value to VARIANT");
+  scheme_signal_error ("Unable to coerce value to VARIANT");
 
   return 0; // keep compiler happy
 }
 
-void *allocParamMemory(size_t n) {
+void *allocParamMemory (size_t n)
+{
   void *retval;
 
   // do we need a semaphore here?
 
-  retval = scheme_malloc(n);
-  scheme_dont_gc_ptr(retval);
+  retval = scheme_malloc (n);
+  scheme_dont_gc_ptr (retval);
   return retval;
 }
 
-void marshalSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
+void marshalSchemeValueToVariant (Scheme_Object *val, VARIANTARG *pVariantArg)
+{
 
   // called when COM type spec allows any VARIANT
   // or when COM type spec is unknown
 
-  if (SCHEME_CHARP(val)) {
+  if (SCHEME_CHARP (val)) {
     pVariantArg->vt = VT_UI1;
-    pVariantArg->bVal = SCHEME_CHAR_VAL(val);
+    pVariantArg->bVal = SCHEME_CHAR_VAL (val);
   }
 
-  else if (SCHEME_EXACT_INTEGERP(val)) {
+  else if (SCHEME_EXACT_INTEGERP (val)) {
     pVariantArg->vt = VT_I4;
-    scheme_get_int_val(val,&pVariantArg->lVal);
+    scheme_get_int_val (val, &pVariantArg->lVal);
   }
 
 #ifdef MZ_USE_SINGLE_FLOATS
-  else if (SCHEME_FLTP(val)) {
+  else if (SCHEME_FLTP (val)) {
     pVariantArg->vt = VT_R4;
-    pVariantArg->fltVal = SCHEME_FLT_VAL(val);
+    pVariantArg->fltVal = SCHEME_FLT_VAL (val);
   }
 #endif
 
-  else if (SCHEME_DBLP(val)) {
+  else if (SCHEME_DBLP (val)) {
     pVariantArg->vt = VT_R8;
-    pVariantArg->dblVal = SCHEME_DBL_VAL(val);
+    pVariantArg->dblVal = SCHEME_DBL_VAL (val);
   }
 
   else if (SCHEME_STRSYMP (val)) {
     pVariantArg->vt = VT_BSTR;
-    pVariantArg->bstrVal = schemeStringToBSTR (val);
+    pVariantArg->bstrVal = schemeToBSTR (val);
   }
 
-  else if (MX_CYP(val)) {
+  else if (MX_CYP (val)) {
     pVariantArg->vt = VT_CY;
-    pVariantArg->cyVal = MX_CY_VAL(val);
+    pVariantArg->cyVal = MX_CY_VAL (val);
   }
 
-  else if (MX_DATEP(val)) {
+  else if (MX_DATEP (val)) {
     pVariantArg->vt = VT_DATE;
-    pVariantArg->date = MX_DATE_VAL(val);
+    pVariantArg->date = MX_DATE_VAL (val);
   }
 
   else if (val == scheme_false) {
@@ -2950,28 +2863,28 @@ void marshalSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
     pVariantArg->boolVal = -1;
   }
 
-  else if (MX_SCODEP(val)) {
+  else if (MX_SCODEP (val)) {
     pVariantArg->vt = VT_ERROR;
-    pVariantArg->scode = MX_SCODE_VAL(val);
+    pVariantArg->scode = MX_SCODE_VAL (val);
   }
 
-  else if (MX_COM_OBJP(val)) {
-    pVariantArg->pdispVal = MX_COM_OBJ_VAL(val);
+  else if (MX_COM_OBJP (val)) {
+    pVariantArg->pdispVal = MX_COM_OBJ_VAL (val);
     pVariantArg->vt = VT_DISPATCH;
   }
 
-  else if (MX_IUNKNOWNP(val)) {
+  else if (MX_IUNKNOWNP (val)) {
     pVariantArg->vt = VT_UNKNOWN;
-    pVariantArg->punkVal = MX_IUNKNOWN_VAL(val);
+    pVariantArg->punkVal = MX_IUNKNOWN_VAL (val);
   }
 
   else if (SCHEME_VECTORP (val)) {
     pVariantArg->vt = VT_ARRAY | VT_VARIANT;
-    pVariantArg->parray = schemeVectorToSafeArray(val);
+    pVariantArg->parray = schemeVectorToSafeArray (val);
   }
 
-  else if (scheme_get_param (scheme_config, mx_marshal_raw_scheme_objects) == scheme_false)
-      scheme_signal_error("Unable to inject Scheme value %V into VARIANT",val);
+  else if (scheme_apply (mx_marshal_raw_scheme_objects, 0, NULL) == scheme_false)
+      scheme_signal_error ("Unable to inject Scheme value %V into VARIANT", val);
   else {
       pVariantArg->vt = VT_INT;
       pVariantArg->intVal = PtrToInt (val);
@@ -2979,105 +2892,89 @@ void marshalSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
   return;
 }
 
-void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
+void marshalSchemeValue (Scheme_Object *val, VARIANTARG *pVariantArg)
+{
   char errBuff[128];
 
-  if (pVariantArg->vt & VT_ARRAY) {
-    pVariantArg->parray = schemeVectorToSafeArray(val);
-  }
+  if (pVariantArg->vt & VT_ARRAY)
+    pVariantArg->parray = schemeVectorToSafeArray (val);
 
   switch (pVariantArg->vt) {
 
   case VT_NULL :
-
     break;
 
   case VT_I1 :
-
-    pVariantArg->cVal = SCHEME_CHAR_VAL(val);
+    pVariantArg->cVal = SCHEME_CHAR_VAL (val);
     break;
 
   case VT_I1 | VT_BYREF :
-
     pVariantArg->pcVal =
-      (char *)allocParamMemory(sizeof(char));
-    *pVariantArg->pcVal = SCHEME_CHAR_VAL(SCHEME_BOX_VAL(val));
+      (char *)allocParamMemory (sizeof (char));
+    *pVariantArg->pcVal = SCHEME_CHAR_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_UI1 :
-
-    pVariantArg->bVal = SCHEME_CHAR_VAL(val);
+    pVariantArg->bVal = SCHEME_CHAR_VAL (val);
     break;
 
   case VT_UI1 | VT_BYREF :
-
-    pVariantArg->pbVal = (unsigned char *)allocParamMemory(sizeof(unsigned char));
-    *pVariantArg->pbVal = (unsigned char)SCHEME_CHAR_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->pbVal = (unsigned char *)allocParamMemory (sizeof (unsigned char));
+    *pVariantArg->pbVal = (unsigned char)SCHEME_CHAR_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_I2 :
-
-    pVariantArg->iVal = (short)SCHEME_INT_VAL(val);
+    pVariantArg->iVal = (short)SCHEME_INT_VAL (val);
     break;
 
   case VT_I2 | VT_BYREF :
-
-    pVariantArg->piVal = (short *)allocParamMemory(sizeof(short));
-    *pVariantArg->piVal = (short)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
-
+    pVariantArg->piVal = (short *)allocParamMemory (sizeof (short));
+    *pVariantArg->piVal = (short)SCHEME_INT_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_UI2 :
-
-    pVariantArg->uiVal = (unsigned short)SCHEME_INT_VAL(val);
+    pVariantArg->uiVal = (unsigned short)SCHEME_INT_VAL (val);
     break;
 
   case VT_UI2 | VT_BYREF :
-
-    pVariantArg->puiVal = (unsigned short *)allocParamMemory(sizeof(unsigned short));
-    *pVariantArg->puiVal = (unsigned short)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->puiVal = (unsigned short *)allocParamMemory (sizeof (unsigned short));
+    *pVariantArg->puiVal = (unsigned short)SCHEME_INT_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_I4 :
-
-    pVariantArg->lVal = SCHEME_INT_VAL(val);
+    pVariantArg->lVal = SCHEME_INT_VAL (val);
     break;
 
   case VT_I4 | VT_BYREF :
-
-    pVariantArg->plVal = (long *)allocParamMemory(sizeof(long));
-    *pVariantArg->plVal = (long)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->plVal = (long *)allocParamMemory (sizeof (long));
+    *pVariantArg->plVal = (long)SCHEME_INT_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_UI4 :
-
-    pVariantArg->ulVal = SCHEME_INT_VAL(val);
+    pVariantArg->ulVal = SCHEME_INT_VAL (val);
     break;
 
   case VT_UI4 | VT_BYREF :
-
-    pVariantArg->pulVal = (unsigned long *)allocParamMemory(sizeof(unsigned long));
-    *pVariantArg->pulVal = (unsigned long)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->pulVal = (unsigned long *)allocParamMemory (sizeof (unsigned long));
+    *pVariantArg->pulVal = (unsigned long)SCHEME_INT_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_INT :
-
-    pVariantArg->intVal = SCHEME_INT_VAL(val);
+    pVariantArg->intVal = SCHEME_INT_VAL (val);
     break;
 
   case VT_INT | VT_BYREF :
-    pVariantArg->pintVal = (int *)allocParamMemory(sizeof(long));
-    *pVariantArg->pintVal = (int)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->pintVal = (int *)allocParamMemory (sizeof (long));
+    *pVariantArg->pintVal = (int)SCHEME_INT_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_UINT :
-
-    pVariantArg->uintVal = SCHEME_INT_VAL(val);
+    pVariantArg->uintVal = SCHEME_INT_VAL (val);
     break;
 
   case VT_UINT | VT_BYREF :
-    pVariantArg->puintVal = (unsigned int *)allocParamMemory(sizeof(long));
-    *pVariantArg->puintVal = (unsigned int)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->puintVal = (unsigned int *)allocParamMemory (sizeof (long));
+    *pVariantArg->puintVal = (unsigned int)SCHEME_INT_VAL (SCHEME_BOX_VAL (val));
     break;
 
     // VT_USERDEFINED in the typeDesc indicates an ENUM,
@@ -3092,90 +2989,75 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     break;
 
   case VT_R4 :
-
-    pVariantArg->fltVal = (float)SCHEME_DBL_VAL(val);
+    pVariantArg->fltVal = (float)SCHEME_DBL_VAL (val);
     break;
 
   case VT_R4 | VT_BYREF :
-
-    pVariantArg->pfltVal = (float *)allocParamMemory(sizeof(float));
-    *pVariantArg->pfltVal = (float)SCHEME_DBL_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->pfltVal = (float *)allocParamMemory (sizeof (float));
+    *pVariantArg->pfltVal = (float)SCHEME_DBL_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_R8 :
-
-    pVariantArg->dblVal = SCHEME_DBL_VAL(val);
+    pVariantArg->dblVal = SCHEME_DBL_VAL (val);
     break;
 
   case VT_R8 | VT_BYREF :
-
-    pVariantArg->pdblVal = (double *)allocParamMemory(sizeof(double));
-    *pVariantArg->pdblVal = (double)SCHEME_DBL_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->pdblVal = (double *)allocParamMemory (sizeof (double));
+    *pVariantArg->pdblVal = (double)SCHEME_DBL_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_BSTR :
-    pVariantArg->bstrVal = schemeStringToBSTR(val);
+    pVariantArg->bstrVal = schemeToBSTR (val);
     break;
 
   case VT_BSTR | VT_BYREF :
-
-    pVariantArg->pbstrVal = (BSTR *)allocParamMemory(sizeof(BSTR));
-    *pVariantArg->pbstrVal = schemeStringToBSTR(val);
+    pVariantArg->pbstrVal = (BSTR *)allocParamMemory (sizeof (BSTR));
+    *pVariantArg->pbstrVal = schemeToBSTR (val);
     break;
 
   case VT_CY :
-
-    pVariantArg->cyVal = MX_CY_VAL(val);
+    pVariantArg->cyVal = MX_CY_VAL (val);
     break;
 
   case VT_CY | VT_BYREF :
-
-    pVariantArg->pcyVal = (CY *)allocParamMemory(sizeof(CY));
-    *pVariantArg->pcyVal = (CY)MX_CY_VAL(val);
+    pVariantArg->pcyVal = (CY *)allocParamMemory (sizeof (CY));
+    *pVariantArg->pcyVal = (CY)MX_CY_VAL (val);
     break;
 
   case VT_DATE :
-
-    pVariantArg->date = MX_DATE_VAL(val);
+    pVariantArg->date = MX_DATE_VAL (val);
     break;
 
   case VT_DATE | VT_BYREF :
-
-    pVariantArg->pdate = (DATE *)allocParamMemory(sizeof(DATE));
-    *pVariantArg->pdate = (DATE)MX_DATE_VAL(val);
+    pVariantArg->pdate = (DATE *)allocParamMemory (sizeof (DATE));
+    *pVariantArg->pdate = (DATE)MX_DATE_VAL (val);
     break;
 
   case VT_BOOL :
-
-    pVariantArg->boolVal = schemeValToBool(val);
+    pVariantArg->boolVal = schemeValToBool (val);
     break;
 
   case VT_BOOL | VT_BYREF :
-
-    pVariantArg->pboolVal = (VARIANT_BOOL *)allocParamMemory(sizeof(VARIANT_BOOL));
-    *pVariantArg->pboolVal = schemeValToBool(val);
+    pVariantArg->pboolVal = (VARIANT_BOOL *)allocParamMemory (sizeof (VARIANT_BOOL));
+    *pVariantArg->pboolVal = schemeValToBool (val);
     break;
 
   case VT_ERROR :
-
-    pVariantArg->scode = MX_SCODE_VAL(val);
+    pVariantArg->scode = MX_SCODE_VAL (val);
     break;
 
   case VT_ERROR | VT_BYREF :
-
-    pVariantArg->pscode = (SCODE *)allocParamMemory(sizeof(SCODE));
-    *pVariantArg->pscode = MX_SCODE_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->pscode = (SCODE *)allocParamMemory (sizeof (SCODE));
+    *pVariantArg->pscode = MX_SCODE_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_DISPATCH :
-
-    pVariantArg->pdispVal = MX_COM_OBJ_VAL(val);
+    pVariantArg->pdispVal = MX_COM_OBJ_VAL (val);
     break;
 
   case VT_DISPATCH | VT_BYREF :
-
-    pVariantArg->ppdispVal = (IDispatch **)allocParamMemory(sizeof(IDispatch *));
-    *pVariantArg->ppdispVal = MX_COM_OBJ_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->ppdispVal = (IDispatch **)allocParamMemory (sizeof (IDispatch *));
+    *pVariantArg->ppdispVal = MX_COM_OBJ_VAL (SCHEME_BOX_VAL (val));
     break;
 
     // VT_USERDEFINED | VT_BYREF indicates that we should pass
@@ -3190,7 +3072,7 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
           // shouldn't fail
           MX_COM_OBJ_VAL (val)->QueryInterface (IID_IUnknown, (void **)&pVariantArg->punkVal);
 
-      else if (MX_IUNKNOWNP(val))
+      else if (MX_IUNKNOWNP (val))
           pVariantArg->punkVal = MX_COM_OBJ_VAL (val);
       // should never happen
       else
@@ -3198,146 +3080,115 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
       break;
 
   case VT_VARIANT | VT_BYREF :
-
     // pass boxed value of almost-arbitrary type
-
-    Scheme_Object *boxedVal;
-
-    boxedVal = SCHEME_BOX_VAL(val);
-
-    pVariantArg->pvarVal = (VARIANTARG *)allocParamMemory(sizeof(VARIANTARG));
-    pVariantArg->pvarVal->vt = schemeValueToVarType(boxedVal);
-    marshalSchemeValue(boxedVal,pVariantArg->pvarVal);
+    pVariantArg->pvarVal = (VARIANTARG *) allocParamMemory (sizeof (VARIANTARG));
+    pVariantArg->pvarVal->vt = schemeValueToVarType (val);
+    marshalSchemeValue (val, pVariantArg->pvarVal);
     break;
 
   case VT_UNKNOWN :
-    pVariantArg->punkVal = MX_IUNKNOWN_VAL(val);
+    pVariantArg->punkVal = MX_IUNKNOWN_VAL (val);
     break;
 
   case VT_UNKNOWN | VT_BYREF :
-    pVariantArg->ppunkVal = (IUnknown **)allocParamMemory(sizeof(IUnknown *));
-    *pVariantArg->ppunkVal = MX_IUNKNOWN_VAL(SCHEME_BOX_VAL(val));
+    pVariantArg->ppunkVal = (IUnknown **)allocParamMemory (sizeof (IUnknown *));
+    *pVariantArg->ppunkVal = MX_IUNKNOWN_VAL (SCHEME_BOX_VAL (val));
     break;
 
   case VT_VARIANT :
-    marshalSchemeValueToVariant(val,pVariantArg);
+    marshalSchemeValueToVariant (val, pVariantArg);
     break;
 
   case VT_PTR:
-    scheme_signal_error("unable to marshal VT_PTR");
+    scheme_signal_error ("unable to marshal VT_PTR");
     break;
 
   default :
-    sprintf(errBuff,"Unable to marshal Scheme value into VARIANT: 0x%X",
+    sprintf (errBuff, "Unable to marshal Scheme value into VARIANT: 0x%X",
 	    pVariantArg->vt);
-    scheme_signal_error(errBuff);
+    scheme_signal_error (errBuff);
 
   }
 }
 
-Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
+Scheme_Object *variantToSchemeObject (VARIANTARG *pVariantArg)
+{
   char errBuff[128];
 
-  if (pVariantArg->vt & VT_ARRAY) {
-    return safeArrayToSchemeVector(pVariantArg->parray);
-  }
+  if (pVariantArg->vt & VT_ARRAY)
+    return safeArrayToSchemeVector (pVariantArg->parray);
 
-  switch(pVariantArg->vt) {
+  switch (pVariantArg->vt) {
 
   case VT_EMPTY :
   case VT_NULL :
-
     return scheme_void;
 
   case VT_I1 :
-
-    return scheme_make_character(pVariantArg->cVal);
+    return scheme_make_character (pVariantArg->cVal);
 
   case VT_I2 :
-
-    return scheme_make_integer_value(pVariantArg->iVal);
+    return scheme_make_integer_value (pVariantArg->iVal);
 
   case VT_I4 :
-
-    return scheme_make_integer(pVariantArg->lVal);
+    return scheme_make_integer (pVariantArg->lVal);
 
   case VT_I8 :
-    LARGE_INTEGER li;
-    li.QuadPart = pVariantArg->llVal;
-
-    return scheme_make_integer_value_from_long_long (li.u.LowPart, li.u.HighPart);
+    return scheme_make_integer_value_from_long_long (pVariantArg->llVal);
 
   case VT_UI1 :
-
-    return scheme_make_character((char)(pVariantArg->bVal));
+    return scheme_make_character ((char) (pVariantArg->bVal));
 
   case VT_UI2 :
-
     return scheme_make_integer (pVariantArg->uiVal);
 
   case VT_UI4 :
-
     return scheme_make_integer_value_from_unsigned (pVariantArg->ulVal);
 
   case VT_UI8 :
-    ULARGE_INTEGER uli;
-    uli.QuadPart = pVariantArg->ullVal;
-
-    return scheme_make_integer_value_from_unsigned_long_long (uli.u.LowPart, uli.u.HighPart);
+    return scheme_make_integer_value_from_unsigned_long_long (pVariantArg->ullVal);
 
   case VT_INT :
-
-    return scheme_make_integer(pVariantArg->intVal);
+    return scheme_make_integer (pVariantArg->intVal);
 
   case VT_UINT :
-
-    return scheme_make_integer_value_from_unsigned(pVariantArg->uintVal);
+    return scheme_make_integer_value_from_unsigned (pVariantArg->uintVal);
 
   case VT_R4 :
-
 #ifdef MZ_USE_SINGLE_FLOATS
-    return scheme_make_float(pVariantArg->fltVal);
+    return scheme_make_float (pVariantArg->fltVal);
 #else
-    return scheme_make_double((double)(pVariantArg->fltVal));
+    return scheme_make_double ((double) (pVariantArg->fltVal));
 #endif
 
   case VT_R8 :
-
-    return scheme_make_double(pVariantArg->dblVal);
+    return scheme_make_double (pVariantArg->dblVal);
 
   case VT_BSTR :
-
     return unmarshalBSTR (pVariantArg->bstrVal);
 
   case VT_CY :
-
-    return mx_make_cy(&pVariantArg->cyVal);
+    return mx_make_cy (&pVariantArg->cyVal);
 
   case VT_DATE :
-
-    return mx_make_date(&pVariantArg->date);
+    return mx_make_date (&pVariantArg->date);
 
   case VT_BOOL :
-
-    return mx_make_bool(pVariantArg->boolVal);
+    return mx_make_bool (pVariantArg->boolVal);
 
   case VT_ERROR :
-
-    return mx_make_scode(pVariantArg->scode);
+    return mx_make_scode (pVariantArg->scode);
 
   case VT_DISPATCH :
-
-    return mx_make_idispatch(pVariantArg->pdispVal);
+    return mx_make_idispatch (pVariantArg->pdispVal);
 
   case VT_UNKNOWN :
-
     return mx_make_iunknown (pVariantArg->punkVal);
 
   default :
-
-    sprintf(errBuff,"Can't make Scheme value from VARIANT 0x%X",
+    sprintf (errBuff, "Can't make Scheme value from VARIANT 0x%X",
 	    pVariantArg->vt);
-    scheme_signal_error(errBuff);
+    scheme_signal_error (errBuff);
 
   }
 
@@ -3346,200 +3197,177 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 
 // we need this for direct calls, where the return value
 // is created by passing as a C pointer, which is stored in a VARIANTARG
-Scheme_Object *retvalVariantToSchemeObject(VARIANTARG *pVariantArg) {
-  switch(pVariantArg->vt) {
+Scheme_Object *retvalVariantToSchemeObject (VARIANTARG *pVariantArg)
+{
+  switch (pVariantArg->vt) {
   case VT_HRESULT :
   case VT_VOID :
     return scheme_void;
   case VT_BYREF|VT_UI1 :
-    return scheme_make_character(*pVariantArg->pcVal);
+    return scheme_make_character (*pVariantArg->pcVal);
   case VT_BYREF|VT_I2 :
-    return scheme_make_integer(*pVariantArg->piVal);
+    return scheme_make_integer (*pVariantArg->piVal);
   case VT_BYREF|VT_I4 :
-    return scheme_make_integer_value(*pVariantArg->plVal);
+    return scheme_make_integer_value (*pVariantArg->plVal);
   case VT_BYREF|VT_I8 :
-    LARGE_INTEGER li;
-    li.QuadPart = *pVariantArg->pllVal;
     return
-      scheme_make_integer_value_from_long_long(li.u.LowPart,li.u.HighPart);
+      scheme_make_integer_value_from_long_long (*pVariantArg->pllVal);
   case VT_BYREF|VT_R4 :
 #ifdef MZ_USE_SINGLE_FLOATS
-    return scheme_make_float(*pVariantArg->pfltVal);
+    return scheme_make_float (*pVariantArg->pfltVal);
 #else
-    return scheme_make_double((double)(*pVariantArg->pfltVal));
+    return scheme_make_double ((double) (*pVariantArg->pfltVal));
 #endif
   case VT_BYREF|VT_R8 :
-    return scheme_make_double(*pVariantArg->pdblVal);
+    return scheme_make_double (*pVariantArg->pdblVal);
   case VT_BYREF|VT_BOOL :
-    return mx_make_bool(*pVariantArg->pboolVal);
+    return mx_make_bool (*pVariantArg->pboolVal);
   case VT_BYREF|VT_ERROR :
-    return mx_make_scode(*pVariantArg->pscode);
+    return mx_make_scode (*pVariantArg->pscode);
   case VT_BYREF|VT_CY :
-    return mx_make_cy(pVariantArg->pcyVal);
+    return mx_make_cy (pVariantArg->pcyVal);
   case VT_BYREF|VT_DATE :
-    return mx_make_date(pVariantArg->pdate);
+    return mx_make_date (pVariantArg->pdate);
   case VT_BYREF|VT_BSTR :
     return unmarshalBSTR (*pVariantArg->pbstrVal);
   case VT_BYREF|VT_UNKNOWN :
     return mx_make_iunknown (*pVariantArg->ppunkVal);
   case VT_BYREF|VT_PTR :
   case VT_BYREF|VT_DISPATCH :
-    return mx_make_idispatch(*pVariantArg->ppdispVal);
+    return mx_make_idispatch (*pVariantArg->ppdispVal);
   case VT_BYREF|VT_SAFEARRAY :
   case VT_BYREF|VT_ARRAY :
-    return safeArrayToSchemeVector(*pVariantArg->pparray);
+    return safeArrayToSchemeVector (*pVariantArg->pparray);
   case VT_BYREF|VT_VARIANT :
-    return variantToSchemeObject(pVariantArg->pvarVal);
+    return variantToSchemeObject (pVariantArg->pvarVal);
   case VT_BYREF|VT_I1 :
-    return scheme_make_character(*pVariantArg->pcVal);
+    return scheme_make_character (*pVariantArg->pcVal);
   case VT_BYREF|VT_UI2 :
-    return scheme_make_integer_value_from_unsigned(*pVariantArg->puiVal);
+    return scheme_make_integer_value_from_unsigned (*pVariantArg->puiVal);
   case VT_BYREF|VT_UI4 :
-    return scheme_make_integer_value_from_unsigned(*pVariantArg->pulVal);
+    return scheme_make_integer_value_from_unsigned (*pVariantArg->pulVal);
   case VT_BYREF|VT_UI8 :
-    ULARGE_INTEGER uli;
-    uli.QuadPart = *pVariantArg->pullVal;
     return
-      scheme_make_integer_value_from_unsigned_long_long(uli.u.LowPart,
-							uli.u.HighPart);
+      scheme_make_integer_value_from_unsigned_long_long (*pVariantArg->pullVal);
   case VT_BYREF|VT_INT :
-    return scheme_make_integer_value(*pVariantArg->pintVal);
+    return scheme_make_integer_value (*pVariantArg->pintVal);
   case VT_BYREF|VT_UINT :
-    return scheme_make_integer_value_from_unsigned(*pVariantArg->puintVal);
+    return scheme_make_integer_value_from_unsigned (*pVariantArg->puintVal);
   default :
     {char buff[128];
-    sprintf(buff,"Can't create return value for VARIANT 0x%X",pVariantArg->vt);
-    scheme_signal_error(buff); }
+    sprintf (buff, "Can't create return value for VARIANT 0x%X", pVariantArg->vt);
+    scheme_signal_error (buff); }
   }
   return NULL;
 }
 
-void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
+void unmarshalVariant (Scheme_Object *val, VARIANTARG *pVariantArg)
+{
 
-  switch(pVariantArg->vt) {
+  switch (pVariantArg->vt) {
 
   case VT_I1 | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = scheme_make_character(*pVariantArg->pcVal);
-    scheme_gc_ptr_ok(pVariantArg->pcVal);
+    SCHEME_BOX_VAL (val) = scheme_make_character (*pVariantArg->pcVal);
+    scheme_gc_ptr_ok (pVariantArg->pcVal);
     break;
 
   case VT_UI1 | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = scheme_make_character((char)(*pVariantArg->pbVal));
-    scheme_gc_ptr_ok(pVariantArg->pbVal);
+    SCHEME_BOX_VAL (val) = scheme_make_character ((char) (*pVariantArg->pbVal));
+    scheme_gc_ptr_ok (pVariantArg->pbVal);
     break;
 
   case VT_I2 | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->piVal);
-    scheme_gc_ptr_ok(pVariantArg->piVal);
+    SCHEME_BOX_VAL (val) = scheme_make_integer (*pVariantArg->piVal);
+    scheme_gc_ptr_ok (pVariantArg->piVal);
     break;
 
   case VT_UI2 | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) =
-      scheme_make_integer_value_from_unsigned(*pVariantArg->puiVal);
-    scheme_gc_ptr_ok(pVariantArg->puiVal);
+    SCHEME_BOX_VAL (val) =
+      scheme_make_integer_value_from_unsigned (*pVariantArg->puiVal);
+    scheme_gc_ptr_ok (pVariantArg->puiVal);
     break;
 
   case VT_I4 | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = scheme_make_integer_value(*pVariantArg->plVal);
-    scheme_gc_ptr_ok(pVariantArg->plVal);
+    SCHEME_BOX_VAL (val) = scheme_make_integer_value (*pVariantArg->plVal);
+    scheme_gc_ptr_ok (pVariantArg->plVal);
     break;
 
   case VT_UI4 | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) =
-      scheme_make_integer_value_from_unsigned(*pVariantArg->pulVal);
-    scheme_gc_ptr_ok(pVariantArg->pulVal);
+    SCHEME_BOX_VAL (val) =
+      scheme_make_integer_value_from_unsigned (*pVariantArg->pulVal);
+    scheme_gc_ptr_ok (pVariantArg->pulVal);
     break;
 
   case VT_INT | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = scheme_make_integer_value(*pVariantArg->pintVal);
-    scheme_gc_ptr_ok(pVariantArg->pintVal);
+    SCHEME_BOX_VAL (val) = scheme_make_integer_value (*pVariantArg->pintVal);
+    scheme_gc_ptr_ok (pVariantArg->pintVal);
     break;
 
   case VT_UINT | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) =
-      scheme_make_integer_value_from_unsigned(*pVariantArg->puintVal);
-    scheme_gc_ptr_ok(pVariantArg->puintVal);
+    SCHEME_BOX_VAL (val) =
+      scheme_make_integer_value_from_unsigned (*pVariantArg->puintVal);
+    scheme_gc_ptr_ok (pVariantArg->puintVal);
     break;
 
   case VT_R4 | VT_BYREF :
-
 #ifdef MZ_USE_SINGLE_FLOATS
-    SCHEME_BOX_VAL(val) = scheme_make_float(*pVariantArg->pfltVal);
+    SCHEME_BOX_VAL (val) = scheme_make_float (*pVariantArg->pfltVal);
 #else
-    SCHEME_BOX_VAL(val) = scheme_make_double((double)(*pVariantArg->pfltVal));
+    SCHEME_BOX_VAL (val) = scheme_make_double ((double) (*pVariantArg->pfltVal));
 #endif
-    scheme_gc_ptr_ok(pVariantArg->pfltVal);
+    scheme_gc_ptr_ok (pVariantArg->pfltVal);
     break;
 
   case VT_R8 | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = scheme_make_double(*pVariantArg->pdblVal);
-    scheme_gc_ptr_ok(pVariantArg->pdblVal);
+    SCHEME_BOX_VAL (val) = scheme_make_double (*pVariantArg->pdblVal);
+    scheme_gc_ptr_ok (pVariantArg->pdblVal);
     break;
 
   case VT_CY | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = mx_make_cy(pVariantArg->pcyVal);
-    scheme_gc_ptr_ok(pVariantArg->pcyVal);
+    SCHEME_BOX_VAL (val) = mx_make_cy (pVariantArg->pcyVal);
+    scheme_gc_ptr_ok (pVariantArg->pcyVal);
     break;
 
   case VT_DATE | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = mx_make_date(pVariantArg->pdate);
-    scheme_gc_ptr_ok(pVariantArg->pdate);
+    SCHEME_BOX_VAL (val) = mx_make_date (pVariantArg->pdate);
+    scheme_gc_ptr_ok (pVariantArg->pdate);
     break;
 
   case VT_BOOL | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = mx_make_bool(*pVariantArg->pboolVal);
-    scheme_gc_ptr_ok(pVariantArg->pboolVal);
+    SCHEME_BOX_VAL (val) = mx_make_bool (*pVariantArg->pboolVal);
+    scheme_gc_ptr_ok (pVariantArg->pboolVal);
     break;
 
   case VT_ERROR | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = mx_make_scode(*pVariantArg->pscode);
-    scheme_gc_ptr_ok(pVariantArg->pscode);
+    SCHEME_BOX_VAL (val) = mx_make_scode (*pVariantArg->pscode);
+    scheme_gc_ptr_ok (pVariantArg->pscode);
     break;
 
   case VT_DISPATCH | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = mx_make_idispatch(*pVariantArg->ppdispVal);
-    scheme_gc_ptr_ok(pVariantArg->ppdispVal);
+    SCHEME_BOX_VAL (val) = mx_make_idispatch (*pVariantArg->ppdispVal);
+    scheme_gc_ptr_ok (pVariantArg->ppdispVal);
     break;
 
   case VT_UNKNOWN | VT_BYREF :
-
     SCHEME_BOX_VAL (val) = mx_make_iunknown (*pVariantArg->ppunkVal);
-    scheme_gc_ptr_ok(pVariantArg->ppunkVal);
+    scheme_gc_ptr_ok (pVariantArg->ppunkVal);
     break;
 
   case VT_VARIANT | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = variantToSchemeObject(pVariantArg->pvarVal);
-    scheme_gc_ptr_ok(pVariantArg->pvarVal);
+    scheme_gc_ptr_ok (pVariantArg->pvarVal);
     break;
 
   case VT_BSTR :
-
     // Don't try to update symbols!
     if (!SCHEME_SYMBOLP (val))
-        updateSchemeStringFromBSTR (val,pVariantArg->bstrVal);
+        updateSchemeFromBSTR (val, pVariantArg->bstrVal);
     SysFreeString (pVariantArg->bstrVal);
     break;
 
   case VT_BSTR | VT_BYREF :
-
-    SCHEME_BOX_VAL(val) = unmarshalBSTR (*pVariantArg->pbstrVal);
-    SysFreeString(*pVariantArg->pbstrVal);
-    scheme_gc_ptr_ok(pVariantArg->pbstrVal);
+    SCHEME_BOX_VAL (val) = unmarshalBSTR (*pVariantArg->pbstrVal);
+    SysFreeString (*pVariantArg->pbstrVal);
+    scheme_gc_ptr_ok (pVariantArg->pbstrVal);
     break;
 
   default :
@@ -3556,10 +3384,11 @@ void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 // No optional or named args, no type checking.
 short int buildMethodArgumentsUsingDefaults (INVOKEKIND invKind,
                                              int argc, Scheme_Object **argv,
-                                             DISPPARAMS *methodArguments) {
+                                             DISPPARAMS *methodArguments)
+{
   short int numParamsPassed;
   BOOL lastParamIsRetval;
-  int i,j,k;
+  int i, j, k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
 
   // First argument is object, second is name of method.
@@ -3568,7 +3397,7 @@ short int buildMethodArgumentsUsingDefaults (INVOKEKIND invKind,
   // Need a return value if property get or invoking a function.
   lastParamIsRetval = (invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC);
 
-  switch(invKind) {
+  switch (invKind) {
 
   case INVOKE_PROPERTYPUT :
 
@@ -3596,72 +3425,71 @@ short int buildMethodArgumentsUsingDefaults (INVOKEKIND invKind,
 
   if (numParamsPassed > 0) {
     methodArguments->rgvarg =
-      (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
-    scheme_dont_gc_ptr(methodArguments->rgvarg);
+      (VARIANTARG *)scheme_malloc (numParamsPassed * sizeof (VARIANTARG));
+    scheme_dont_gc_ptr (methodArguments->rgvarg);
   }
 
   // marshal Scheme argument list into COM argument list
   // arguments are in reverse order in rgvarg
 
-  for (i = 0,j = numParamsPassed - 1,k = 2; i < argc - 2; i++,j--,k++) {
+  for (i = 0, j = numParamsPassed - 1, k = 2; i < argc - 2; i++, j--, k++) {
 
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
 
-    VariantInit(&methodArguments->rgvarg[j]);
+    VariantInit (&methodArguments->rgvarg[j]);
 
     if (argv[k] == mx_omit_obj) { // omitted argument
       methodArguments->rgvarg[j].vt = VT_ERROR;
       methodArguments->rgvarg[j].lVal = DISP_E_PARAMNOTFOUND;
     }
     else
-      marshalSchemeValueToVariant(argv[k],&methodArguments->rgvarg[j]);
+      marshalSchemeValueToVariant (argv[k], &methodArguments->rgvarg[j]);
   }
 
   return numParamsPassed;
 }
 
-short int getLcidParamIndex(FUNCDESC *pFuncDesc,short int numParams) {
+short int getLcidParamIndex (FUNCDESC *pFuncDesc, short int numParams)
+{
   ELEMDESC *pElemDescs;
   int i;
 
   pElemDescs = pFuncDesc->lprgelemdescParam;
   for (i = 0; i < numParams; i++) {
-    if (pElemDescs[i].paramdesc.wParamFlags & PARAMFLAG_FLCID) {
+    if (pElemDescs[i].paramdesc.wParamFlags & PARAMFLAG_FLCID)
       return i;
-    }
   }
   return NO_LCID;
 }
 
-void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
+void checkArgTypesAndCounts (FUNCDESC *pFuncDesc,
 			    BOOL direct,
 			    INVOKEKIND invKind,
-			    int argc,Scheme_Object **argv,
-			    MX_ARGS_COUNT *argsCount) {
+			    int argc, Scheme_Object **argv,
+			    MX_ARGS_COUNT *argsCount)
+{
   char errBuff[256];
   short int numParamsPassed;
   short int numOptParams;
   short int lcidIndex;
-  int i,j,k;
+  int i, j, k;
 
   numParamsPassed = pFuncDesc->cParams;
 
   argsCount->retvalInParams =
-    isLastParamRetval(numParamsPassed,invKind,pFuncDesc);
+    isLastParamRetval (numParamsPassed, invKind, pFuncDesc);
 
-  if (argsCount->retvalInParams) {
+  if (argsCount->retvalInParams)
     numParamsPassed--;
-  }
 
-  numOptParams = getOptParamCount(pFuncDesc,numParamsPassed - 1);
+  numOptParams = getOptParamCount (pFuncDesc, numParamsPassed - 1);
 
   lcidIndex = NO_LCID;
   if (direct) {
-    lcidIndex = getLcidParamIndex(pFuncDesc,numParamsPassed);
-    if (lcidIndex != NO_LCID) {
+    lcidIndex = getLcidParamIndex (pFuncDesc, numParamsPassed);
+    if (lcidIndex != NO_LCID)
       numParamsPassed--;
-    }
   }
   argsCount->lcidIndex = lcidIndex;
 
@@ -3675,11 +3503,11 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
     // optional parameters with default values not counted in pFuncDesc->cParamsOpt
 
     if (argc < numParamsPassed + 2 - 1) {
-      sprintf(errBuff,"%s (%s \"%s\")",
-	      mx_fun_string(invKind),
-	      inv_kind_string(invKind),
-	      SCHEME_STRSYM_VAL (argv[1]));
-      scheme_wrong_count(errBuff,numParamsPassed-1,-1,argc-2,argv+2);
+      sprintf (errBuff, "%s (%s \"%s\")",
+	      mx_fun_string (invKind),
+	      inv_kind_string (invKind),
+	      schemeToText (argv[1]));
+      scheme_wrong_count (errBuff, numParamsPassed-1, -1, argc-2, argv+2);
     }
   }
   else {
@@ -3689,51 +3517,51 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
 
     if (argc < numParamsPassed - numOptParams + 2 ||  // too few
 	argc > numParamsPassed + 2) {  // too many
-      sprintf(errBuff,"%s (%s \"%s\")",
-	      mx_fun_string(invKind),
-	      inv_kind_string(invKind),
-	      SCHEME_STRSYM_VAL (argv[1]));
-      scheme_wrong_count(errBuff,numParamsPassed-numOptParams,numParamsPassed,argc-2,argv+2);
+      sprintf (errBuff, "%s (%s \"%s\")",
+	      mx_fun_string (invKind),
+	      inv_kind_string (invKind),
+	      schemeToText (argv[1]));
+      scheme_wrong_count (errBuff, numParamsPassed-numOptParams, numParamsPassed, argc-2, argv+2);
     }
   }
 
   // compare types of actual arguments to prescribed types
 
-  for (i = 0,j = 2,k = 0; i < argc - 2; i++,j++,k++) {
+  for (i = 0, j = 2, k = 0; i < argc - 2; i++, j++, k++) {
 
     // i = index of ELEMDESC's
     // j = index of actual args in argv
 
-    if (direct && k == lcidIndex) { // skip an entry
+    if (direct && k == lcidIndex) // skip an entry
       k++;
-    }
 
-    if (schemeValueFitsElemDesc(argv[j],&pFuncDesc->lprgelemdescParam[k]) == FALSE) {
-      sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
-	      inv_kind_string(invKind), SCHEME_STRSYM_VAL(argv[1]));
-      scheme_wrong_type(errBuff,
-			SCHEME_SYM_VAL(elemDescToSchemeType(&(pFuncDesc->lprgelemdescParam[k]),FALSE,FALSE)),
-			j,argc,argv);
+    if (schemeValueFitsElemDesc (argv[j], &pFuncDesc->lprgelemdescParam[k]) == FALSE) {
+      sprintf (errBuff, "%s (%s \"%s\")", mx_fun_string (invKind),
+	      inv_kind_string (invKind), schemeToText (argv[1]));
+      scheme_wrong_type (errBuff,
+			SCHEME_SYM_VAL (elemDescToSchemeType (&(pFuncDesc->lprgelemdescParam[k]), FALSE, FALSE)),
+			j, argc, argv);
     }
   }
 }
 
-short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
+short int buildMethodArgumentsUsingFuncDesc (FUNCDESC *pFuncDesc,
 					    INVOKEKIND invKind,
-					    int argc,Scheme_Object **argv,
-					    DISPPARAMS *methodArguments) {
+					    int argc, Scheme_Object **argv,
+					    DISPPARAMS *methodArguments)
+{
   MX_ARGS_COUNT argsCount;
   short int numParamsPassed;
   short int numOptParams;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
-  int i,j,k;
+  int i, j, k;
 
-  checkArgTypesAndCounts(pFuncDesc,FALSE, // indirect
-			 invKind,argc,argv,&argsCount);
+  checkArgTypesAndCounts (pFuncDesc, FALSE, // indirect
+			 invKind, argc, argv, &argsCount);
   numParamsPassed = argsCount.numParamsPassed;
   numOptParams = argsCount.numOptParams;
 
-  switch(invKind) {
+  switch (invKind) {
 
   case INVOKE_PROPERTYPUT :
 
@@ -3761,19 +3589,19 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 
   if (numParamsPassed > 0) {
     methodArguments->rgvarg =
-      (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
-    scheme_dont_gc_ptr(methodArguments->rgvarg);
+      (VARIANTARG *)scheme_malloc (numParamsPassed * sizeof (VARIANTARG));
+    scheme_dont_gc_ptr (methodArguments->rgvarg);
   }
 
   // marshal Scheme argument list into COM argument list
   // arguments are in reverse order in rgvarg
 
-  for (i = 0,j = numParamsPassed - 1,k = 2; i < argc - 2; i++,j--,k++) {
+  for (i = 0, j = numParamsPassed - 1, k = 2; i < argc - 2; i++, j--, k++) {
 
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
 
-    VariantInit(&methodArguments->rgvarg[j]);
+    VariantInit (&methodArguments->rgvarg[j]);
 
     if (argv[k] == mx_omit_obj) { // omitted argument
       methodArguments->rgvarg[j].vt = VT_ERROR;
@@ -3781,8 +3609,8 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     }
     else {
       methodArguments->rgvarg[j].vt =
-	getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[i]);
-      marshalSchemeValue(argv[k],&methodArguments->rgvarg[j]);
+	getVarTypeFromElemDesc (&pFuncDesc->lprgelemdescParam[i]);
+      marshalSchemeValue (argv[k], &methodArguments->rgvarg[j]);
     }
   }
 
@@ -3790,13 +3618,12 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   // supply default if available
 
   if (numOptParams > 0) {
-    for (i = argc - 2,j = numParamsPassed - 1 - (argc - 2); j >= 0; i++,j--) {
-      if (isDefaultParam(pFuncDesc,i)) {
+    for (i = argc - 2, j = numParamsPassed - 1 - (argc - 2); j >= 0; i++, j--) {
+      if (isDefaultParam (pFuncDesc, i))
 	methodArguments->rgvarg[j] =
 	  pFuncDesc->lprgelemdescParam[i].paramdesc.pparamdescex->varDefaultValue;
-      }
       else {
-	VariantInit(&methodArguments->rgvarg[j]);
+	VariantInit (&methodArguments->rgvarg[j]);
 	methodArguments->rgvarg[j].vt = VT_ERROR;
 	methodArguments->rgvarg[j].lVal = DISP_E_PARAMNOTFOUND;
       }
@@ -3806,44 +3633,43 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   return numParamsPassed;
 }
 
-short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
+short int buildMethodArgumentsUsingVarDesc (VARDESC *pVarDesc,
 					   INVOKEKIND invKind,
-					   int argc,Scheme_Object **argv,
-					   DISPPARAMS *methodArguments) {
+					   int argc, Scheme_Object **argv,
+					   DISPPARAMS *methodArguments)
+{
   char errBuff[256];
   short int numParamsPassed;
-  int i,j,k;
+  int i, j, k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
 
-  if (invKind == INVOKE_PROPERTYGET) {
-    numParamsPassed = 0;
-  }
-  else if (invKind == INVOKE_PROPERTYPUT) {
-    numParamsPassed = 1;
-  }
+  numParamsPassed =
+      (invKind == INVOKE_PROPERTYGET) ? 0
+      : (invKind == INVOKE_PROPERTYPUT) ? 1
+      : 0;
 
   if (argc != numParamsPassed + 2) {
-    sprintf(errBuff,"%s (%s \"%s\")",
-	    mx_fun_string(invKind),
-	    inv_kind_string(invKind),
-	    SCHEME_STRSYM_VAL (argv[1]));
-    scheme_wrong_count(errBuff,
-		       numParamsPassed + 2,numParamsPassed + 2,
-		       argc,argv);
+    sprintf (errBuff, "%s (%s \"%s\")",
+	    mx_fun_string (invKind),
+	    inv_kind_string (invKind),
+	    schemeToText (argv[1]));
+    scheme_wrong_count (errBuff,
+		       numParamsPassed + 2, numParamsPassed + 2,
+		       argc, argv);
   }
 
-  switch(invKind) {
+  switch (invKind) {
 
   case INVOKE_PROPERTYPUT :
 
     // check that value is of expected type
 
-    if (schemeValueFitsElemDesc(argv[2],
+    if (schemeValueFitsElemDesc (argv[2],
 				&pVarDesc->elemdescVar) == FALSE) {
-      sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
-	      inv_kind_string(invKind), SCHEME_STRSYM_VAL(argv[1]));
-      scheme_wrong_type(errBuff,
-			SCHEME_SYM_VAL(elemDescToSchemeType(&(pVarDesc->elemdescVar),FALSE,FALSE)),2,argc,argv);
+      sprintf (errBuff, "%s (%s \"%s\")", mx_fun_string (invKind),
+	      inv_kind_string (invKind), schemeToText (argv[1]));
+      scheme_wrong_type (errBuff,
+			SCHEME_SYM_VAL (elemDescToSchemeType (&(pVarDesc->elemdescVar), FALSE, FALSE)), 2, argc, argv);
     }
 
     methodArguments->rgdispidNamedArgs = &dispidPropPut;
@@ -3863,128 +3689,131 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
 
   if (numParamsPassed > 0) {
     methodArguments->rgvarg =
-      (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
-    scheme_dont_gc_ptr(methodArguments->rgvarg);
+      (VARIANTARG *)scheme_malloc (numParamsPassed * sizeof (VARIANTARG));
+    scheme_dont_gc_ptr (methodArguments->rgvarg);
   }
 
   // marshal Scheme argument list into COM argument list
 
-  for (i = 0,j = numParamsPassed - 1,k = 2; i < numParamsPassed; i++,j--,k++) {
+  for (i = 0, j = numParamsPassed - 1, k = 2; i < numParamsPassed; i++, j--, k++) {
 
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
 
-    VariantInit(&methodArguments->rgvarg[j]);
+    VariantInit (&methodArguments->rgvarg[j]);
 
     methodArguments->rgvarg[j].vt =
-      getVarTypeFromElemDesc(&pVarDesc->elemdescVar);
-    marshalSchemeValue(argv[k],&methodArguments->rgvarg[j]);
+      getVarTypeFromElemDesc (&pVarDesc->elemdescVar);
+    marshalSchemeValue (argv[k], &methodArguments->rgvarg[j]);
   }
 
   return numParamsPassed;
 }
 
-short int buildMethodArguments(MX_TYPEDESC *pTypeDesc,
+short int buildMethodArguments (MX_TYPEDESC *pTypeDesc,
 			       INVOKEKIND invKind,
 			       int argc, Scheme_Object **argv,
-			       DISPPARAMS *methodArguments) {
+			       DISPPARAMS *methodArguments)
+{
     return (pTypeDesc == NULL)
         ? buildMethodArgumentsUsingDefaults (invKind, argc, argv,
                                              methodArguments)
         : (pTypeDesc->descKind == funcDesc)
         ? buildMethodArgumentsUsingFuncDesc (pTypeDesc->funcdescs.pFuncDesc,
-                                             invKind,argc,argv,
+                                             invKind, argc, argv,
                                              methodArguments)
         : buildMethodArgumentsUsingVarDesc (pTypeDesc->pVarDesc,
-                                            invKind,argc,argv,
+                                            invKind, argc, argv,
                                             methodArguments);
 }
 
-void allocateDirectRetval(VARIANT *va) {
-  switch(va->vt) {
+void allocateDirectRetval (VARIANT *va)
+{
+  switch (va->vt) {
   case VT_BYREF|VT_UI1 :
-    va->pbVal = (BYTE *)allocParamMemory(sizeof(BYTE));
+    va->pbVal = (BYTE *)allocParamMemory (sizeof (BYTE));
     break;
   case VT_BYREF|VT_I2 :
-    va->piVal = (SHORT *)allocParamMemory(sizeof(SHORT));
+    va->piVal = (SHORT *)allocParamMemory (sizeof (SHORT));
     break;
   case VT_BYREF|VT_I4 :
-    va->plVal = (LONG *)allocParamMemory(sizeof(LONG));
+    va->plVal = (LONG *)allocParamMemory (sizeof (LONG));
     break;
   case VT_BYREF|VT_I8 :
-    va->pllVal = (LONGLONG *)allocParamMemory(sizeof(LONGLONG));
+    va->pllVal = (LONGLONG *)allocParamMemory (sizeof (LONGLONG));
     break;
   case VT_BYREF|VT_R4 :
-    va->pfltVal = (FLOAT *)allocParamMemory(sizeof(FLOAT));
+    va->pfltVal = (FLOAT *)allocParamMemory (sizeof (FLOAT));
     break;
   case VT_BYREF|VT_R8 :
-    va->pdblVal = (DOUBLE *)allocParamMemory(sizeof(DOUBLE));
+    va->pdblVal = (DOUBLE *)allocParamMemory (sizeof (DOUBLE));
     break;
   case VT_BYREF|VT_BOOL :
-    va->pboolVal = (VARIANT_BOOL *)allocParamMemory(sizeof(VARIANT_BOOL));
+    va->pboolVal = (VARIANT_BOOL *)allocParamMemory (sizeof (VARIANT_BOOL));
     break;
   case VT_BYREF|VT_ERROR :
-    va->pscode = (SCODE *)allocParamMemory(sizeof(SCODE));
+    va->pscode = (SCODE *)allocParamMemory (sizeof (SCODE));
     break;
   case VT_BYREF|VT_CY :
-    va->pcyVal = (CY *)allocParamMemory(sizeof(CY));
+    va->pcyVal = (CY *)allocParamMemory (sizeof (CY));
     break;
   case VT_BYREF|VT_DATE :
-    va->pdate = (DATE *)allocParamMemory(sizeof(DATE));
+    va->pdate = (DATE *)allocParamMemory (sizeof (DATE));
     break;
   case VT_BYREF|VT_BSTR :
-    va->pbstrVal = (BSTR *)allocParamMemory(sizeof(BSTR));
+    va->pbstrVal = (BSTR *)allocParamMemory (sizeof (BSTR));
     break;
   case VT_BYREF|VT_UNKNOWN :
-    va->ppunkVal = (IUnknown **)allocParamMemory(sizeof(IUnknown *));
+    va->ppunkVal = (IUnknown **)allocParamMemory (sizeof (IUnknown *));
     break;
   case VT_BYREF|VT_PTR :
   case VT_BYREF|VT_DISPATCH :
-    va->ppdispVal = (IDispatch **)allocParamMemory(sizeof(IDispatch *));
+    va->ppdispVal = (IDispatch **)allocParamMemory (sizeof (IDispatch *));
     break;
   case VT_BYREF|VT_ARRAY :
   case VT_BYREF|VT_SAFEARRAY :
-    va->pparray = (SAFEARRAY **)allocParamMemory(sizeof(SAFEARRAY *));
+    va->pparray = (SAFEARRAY **)allocParamMemory (sizeof (SAFEARRAY *));
     break;
   case VT_BYREF|VT_VARIANT :
-    va->pvarVal = (VARIANT *)allocParamMemory(sizeof(VARIANT));
+    va->pvarVal = (VARIANT *)allocParamMemory (sizeof (VARIANT));
     break;
   case VT_BYREF|VT_I1 :
-    va->pcVal = (CHAR *)allocParamMemory(sizeof(CHAR));
+    va->pcVal = (CHAR *)allocParamMemory (sizeof (CHAR));
     break;
   case VT_BYREF|VT_UI2 :
-    va->puiVal = (USHORT *)allocParamMemory(sizeof(USHORT));
+    va->puiVal = (USHORT *)allocParamMemory (sizeof (USHORT));
     break;
   case VT_BYREF|VT_UI4 :
-    va->pulVal = (ULONG *)allocParamMemory(sizeof(ULONG));
+    va->pulVal = (ULONG *)allocParamMemory (sizeof (ULONG));
     break;
   case VT_BYREF|VT_UI8 :
-    va->pullVal = (ULONGLONG *)allocParamMemory(sizeof(ULONGLONG));
+    va->pullVal = (ULONGLONG *)allocParamMemory (sizeof (ULONGLONG));
     break;
   case VT_BYREF|VT_INT :
-    va->pintVal = (INT *)allocParamMemory(sizeof(INT));
+    va->pintVal = (INT *)allocParamMemory (sizeof (INT));
     break;
   case VT_BYREF|VT_UINT :
-    va->puintVal = (UINT *)allocParamMemory(sizeof(UINT));
+    va->puintVal = (UINT *)allocParamMemory (sizeof (UINT));
     break;
   default :
     {char buff[128];
-    sprintf(buff,"Can't allocate return value for VARIANT 0x%X",va->vt);
-    scheme_signal_error(buff); }
+    sprintf (buff, "Can't allocate return value for VARIANT 0x%X", va->vt);
+    scheme_signal_error (buff); }
   }
 }
 
-static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
-					  INVOKEKIND invKind,
-					  IDispatch *pIDispatch,
-					  char *name,
-					  MX_TYPEDESC *pTypeDesc) {
+static Scheme_Object *mx_make_direct_call (int argc, Scheme_Object **argv,
+					   INVOKEKIND invKind,
+					   IDispatch *pIDispatch,
+					   const char * name,
+					   MX_TYPEDESC *pTypeDesc)
+{
   HRESULT hr;
   Scheme_Object *retval;
   MX_ARGS_COUNT argsCount;
   IDispatch *pInterface;
   COMPTR funPtr;
-  VARIANT retvalVa,va,*vaPtr;
+  VARIANT retvalVa, va, *vaPtr;
   static VARIANT argVas[MAXDIRECTARGS];
   static VARIANT optArgVas[MAXDIRECTARGS];
   FUNCDESC *pFuncDesc;
@@ -3992,32 +3821,32 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
   short numOptParams;
   short lcidIndex;
   char buff[128];
-  int i,j;
+  int i, j;
 
   pFuncDesc = pTypeDesc->funcdescs.pFuncDescImpl;
-  checkArgTypesAndCounts(pFuncDesc,TRUE, // direct
-			 invKind,argc,argv,&argsCount);
+  checkArgTypesAndCounts (pFuncDesc, TRUE, // direct
+			  invKind, argc, argv, &argsCount);
   numParamsPassed = argsCount.numParamsPassed;
   numOptParams = argsCount.numOptParams;
   lcidIndex = argsCount.lcidIndex;
 
   if (pTypeDesc->pInterface == NULL) {
-    COMPTR *vtbl;
+      COMPTR *vtbl;
 
-    hr = pIDispatch->QueryInterface(pTypeDesc->implGuid,(void **)&pInterface);
+      hr = pIDispatch->QueryInterface (pTypeDesc->implGuid, (void **)&pInterface);
 
-    if (FAILED(hr) || pInterface == NULL) {
-      sprintf(buff,"Failed to get direct interface for call to `%s'",name);
-      codedComError(buff,hr);
-    }
-    vtbl = ((COMPTR * *)pInterface)[0];
-    pTypeDesc->pInterface = pInterface;
-    pTypeDesc->funPtr = funPtr = vtbl[pTypeDesc->funOffset];
-  }
+      if (FAILED (hr) || pInterface == NULL) {
+	  sprintf (buff, "Failed to get direct interface for call to `%s'", name);
+	  codedComError (buff, hr);
+	  }
+      vtbl = ((COMPTR * *)pInterface)[0];
+      pTypeDesc->pInterface = pInterface;
+      pTypeDesc->funPtr = funPtr = vtbl[pTypeDesc->funOffset];
+      }
   else {
-    pInterface = pTypeDesc->pInterface;
-    funPtr = pTypeDesc->funPtr;
-  }
+      pInterface = pTypeDesc->pInterface;
+      funPtr = pTypeDesc->funPtr;
+      }
 
   // push return value ptr
 
@@ -4029,65 +3858,62 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
   if (invKind != INVOKE_PROPERTYPUT &&
       retvalVa.vt != VT_VOID &&
       retvalVa.vt != VT_HRESULT) {
-    retvalVa.vt |= VT_BYREF;
-    allocateDirectRetval(&retvalVa);
-    pushOneArg(retvalVa,buff);
-  }
+      retvalVa.vt |= VT_BYREF;
+      allocateDirectRetval (&retvalVa);
+      pushOneArg (retvalVa, buff);
+      }
 
   // these must be macros, not functions, so that stack is maintained
 
-  pushOptArgs(pFuncDesc,numParamsPassed,numOptParams,optArgVas,vaPtr,va,
-	      argc,i,j,lcidIndex,buff);
+  pushOptArgs (pFuncDesc, numParamsPassed, numOptParams, optArgVas, vaPtr, va,
+	       argc, i, j, lcidIndex, buff);
 
-  pushSuppliedArgs(pFuncDesc,numParamsPassed,argc,argv,argVas,vaPtr,va,
-		   i,j,lcidIndex,buff);
+  pushSuppliedArgs (pFuncDesc, numParamsPassed, argc, argv, argVas, vaPtr, va,
+		   i, j, lcidIndex, buff);
 
   // push the "this" pointer before calling
 
   __asm {
     push pInterface;
     call funPtr;
-    mov hr,eax;
+    mov hr, eax;
   }
 
-  if (FAILED(hr)) {
-     char buff[128];
-     sprintf(buff,"COM method `%s' failed",name);
-     codedComError(buff,hr);
-  }
+  if (FAILED (hr)) {
+      char buff[128];
+      sprintf (buff, "COM method `%s' failed", name);
+      codedComError (buff, hr);
+      }
 
   // unmarshal boxed values, cleanup
   i = argc - 1;
   j = argc - 3;
-  if (lcidIndex != NO_LCID && lcidIndex <= j + 1) {
-    j++;
-  }
+  if (lcidIndex != NO_LCID && lcidIndex <= j + 1)
+      j++;
+
   vaPtr = argVas + j;
-  for ( ; j >= 0; i--,j--,vaPtr--) {
-    if (j == lcidIndex) {
-      i++;
-    }
-    else {
-      unmarshalVariant(argv[i],vaPtr);
-    }
-  }
+  for ( ; j >= 0; i--, j--, vaPtr--) {
+      if (j == lcidIndex)
+	  i++;
+      else
+	  unmarshalVariant (argv[i], vaPtr);
+      }
 
-  if (invKind == INVOKE_PROPERTYPUT) {
-    return scheme_void;
-  }
+  if (invKind == INVOKE_PROPERTYPUT)
+      return scheme_void;
 
-  retval = retvalVariantToSchemeObject(&retvalVa);
+  retval = retvalVariantToSchemeObject (&retvalVa);
 
   // all pointers are 32 bits, choose arbitrary one
-  if (retvalVa.vt != VT_VOID) {
-    scheme_gc_ptr_ok(retvalVa.pullVal);
-  }
+  if (retvalVa.vt != VT_VOID)
+      scheme_gc_ptr_ok (retvalVa.pullVal);
 
   return retval;
 }
 
-static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
-				   INVOKEKIND invKind) {
+static Scheme_Object *mx_make_call (int argc, Scheme_Object **argv,
+				   INVOKEKIND invKind)
+{
   Scheme_Object *retval;
   MX_TYPEDESC *pTypeDesc;
   DISPID dispid = 0;
@@ -4096,29 +3922,28 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   EXCEPINFO exnInfo;
   unsigned int errorIndex;
   IDispatch *pIDispatch;
-  char *name;
+  const char *name;
   short numParamsPassed;
-  int i,j;
+  int i, j;
   HRESULT hr;
   char buff[256];
 
   pIDispatch = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ (mx_fun_string (invKind), 0));
 
-  if (pIDispatch == NULL) {
-    scheme_signal_error("NULL COM object");
-  }
+  if (pIDispatch == NULL)
+    scheme_signal_error ("NULL COM object");
 
-  name = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM (mx_fun_string (invKind), 1));
+  name = schemeToText (GUARANTEE_STRSYM (mx_fun_string (invKind), 1));
 
-  if (invKind == INVOKE_FUNC && isDispatchName(name)) {
-    sprintf(buff,"%s: IDispatch methods may not be called",
-	    mx_fun_string(invKind));
-    scheme_signal_error(buff);
+  if (invKind == INVOKE_FUNC && isDispatchName (name)) {
+    sprintf (buff, "%s: IDispatch methods may not be called",
+	    mx_fun_string (invKind));
+    scheme_signal_error (buff);
   }
 
   // check arity, types of method arguments
 
-  pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
+  pTypeDesc = getMethodType ((MX_COM_Object *)argv[0], name, invKind);
 
   // try direct call via function pointer
   // otherwise, use COM Automation
@@ -4126,14 +3951,13 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (pTypeDesc &&
       (pTypeDesc->funOffset != NO_FUNPTR) &&
       /* assignment */
-      (retval = mx_make_direct_call(argc,argv,invKind,
-				    pIDispatch,name,pTypeDesc))) {
+      (retval = mx_make_direct_call (argc, argv, invKind,
+				    pIDispatch, name, pTypeDesc)))
     return retval;
-  }
 
-  if (pTypeDesc) {
+  if (pTypeDesc)
     dispid = pTypeDesc->memID;
-  }
+
   else {
     // If there is no pTypeDesc, then we have to wing it.
     // Look for a dispid for the method name.  If we find it, just push
@@ -4141,52 +3965,51 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
     // Translate the name to Unicode.
     OLECHAR namebuf[1024];
-    unsigned int len = (unsigned int)strlen(name);
-    unsigned int count = MultiByteToWideChar(CP_ACP,(DWORD)0,name,len,
-				    namebuf,sizeray(namebuf)-1);
+    unsigned int len = (unsigned int)strlen (name);
+    unsigned int count = MultiByteToWideChar (CP_ACP, (DWORD)0, name, len,
+				    namebuf, sizeray (namebuf)-1);
     namebuf[len] = '\0';
     if (count < len) {
-      sprintf(buff,"%s: Unable to translate name \"%s\" to Unicode",
-	      mx_fun_string(invKind),name);
-      scheme_signal_error(buff);
+      sprintf (buff, "%s: Unable to translate name \"%s\" to Unicode",
+	      mx_fun_string (invKind), name);
+      scheme_signal_error (buff);
     }
 
     LPOLESTR namearray = (LPOLESTR)&namebuf;
 
-    hr = pIDispatch->GetIDsOfNames (IID_NULL,&namearray,1,
-				    LOCALE_SYSTEM_DEFAULT,&dispid);
+    hr = pIDispatch->GetIDsOfNames (IID_NULL, &namearray, 1,
+				    LOCALE_SYSTEM_DEFAULT, &dispid);
 
     if (FAILED (hr)) {
-      char *funString = mx_fun_string(invKind);
+	const char *funString = mx_fun_string (invKind);
       switch (hr) {
       case E_OUTOFMEMORY :
-	sprintf(buff,"%s: out of memory",funString);
-	scheme_signal_error(buff);
+	sprintf (buff, "%s: out of memory", funString);
+	scheme_signal_error (buff);
       case DISP_E_UNKNOWNNAME :
-	sprintf(buff,"%s: unknown name \"%s\"",funString,name);
-	scheme_signal_error(buff);
+	sprintf (buff, "%s: unknown name \"%s\"", funString, name);
+	scheme_signal_error (buff);
       case DISP_E_UNKNOWNLCID :
-	sprintf(buff,"%s: unknown LCID",funString);
-	scheme_signal_error(buff);
+	sprintf (buff, "%s: unknown LCID", funString);
+	scheme_signal_error (buff);
       default :
-	codedComError(funString,hr);
+	codedComError (funString, hr);
       }
     }
   }
 
   // Build the method arguments even if pTypeDesc is NULL.
-  numParamsPassed = buildMethodArguments(pTypeDesc,
+  numParamsPassed = buildMethodArguments (pTypeDesc,
 					 invKind,
-					 argc,argv,
+					 argc, argv,
 					 &methodArguments);
 
-  if (invKind != INVOKE_PROPERTYPUT) {
-    VariantInit(&methodResult);
-  }
+  if (invKind != INVOKE_PROPERTYPUT)
+    VariantInit (&methodResult);
 
   // invoke requested method
 
-  hr = pIDispatch->Invoke(dispid,IID_NULL,LOCALE_SYSTEM_DEFAULT,
+  hr = pIDispatch->Invoke (dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
 			  invKind,
 			  &methodArguments,
 			  (invKind == INVOKE_PROPERTYPUT) ?
@@ -4206,74 +4029,75 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     if (hasDescription) {
       unsigned int len;
 
-      len = SysStringLen(exnInfo.bstrDescription);
-      WideCharToMultiByte(CP_ACP,(DWORD)0,
-			  exnInfo.bstrDescription,len,
-			  description,sizeof(description)-1,
-			  NULL,NULL);
+      len = SysStringLen (exnInfo.bstrDescription);
+      WideCharToMultiByte (CP_ACP, (DWORD)0,
+			  exnInfo.bstrDescription, len,
+			  description, sizeof (description)-1,
+			  NULL, NULL);
       description[len] = '\0';
     }
 
     if (hasErrorCode) {
-      sprintf(errBuff,
+      sprintf (errBuff,
 	      "COM object exception, error code 0x%X%s%s",
 	      exnInfo.wCode,
 	      hasDescription ? "\nDescription: " : "" ,
 	      hasDescription ? description : "");
-      scheme_signal_error(errBuff);
+      scheme_signal_error (errBuff);
     }
     else {
-      sprintf(errBuff,
+      sprintf (errBuff,
 	      "COM object exception%s%s",
 	      hasDescription ? "\nDescription: " : "" ,
 	      hasDescription ? description : "");
-      codedComError(errBuff,exnInfo.scode);
+      codedComError (errBuff, exnInfo.scode);
     }
   }
 
   if (FAILED (hr)) {
     char buff[2048];
-    sprintf(buff,"\"%s\" (%s) failed",
-	    SCHEME_STRSYM_VAL(argv[1]), inv_kind_string(invKind));
-    codedComError(buff,hr);
+    sprintf (buff, "\"%s\" (%s) failed",
+	    schemeToText (argv[1]), inv_kind_string (invKind));
+    codedComError (buff, hr);
   }
 
   // unmarshal data passed by reference, cleanup
 
-  for (i = 2,j = numParamsPassed - 1; i < argc; i++,j--) {
-    unmarshalVariant(argv[i],&methodArguments.rgvarg[j]);
-  }
+  for (i = 2, j = numParamsPassed - 1; i < argc; i++, j--)
+    unmarshalVariant (argv[i], &methodArguments.rgvarg[j]);
 
-  if (numParamsPassed > 0) {
-    scheme_gc_ptr_ok(methodArguments.rgvarg);
-  }
+  if (numParamsPassed > 0)
+    scheme_gc_ptr_ok (methodArguments.rgvarg);
 
-  if (invKind == INVOKE_PROPERTYPUT) {
+  if (invKind == INVOKE_PROPERTYPUT)
     return scheme_void;
-  }
 
   // unmarshal return value
 
-  return variantToSchemeObject(&methodResult);
+  return variantToSchemeObject (&methodResult);
 
 }
 
-Scheme_Object *mx_com_invoke(int argc,Scheme_Object **argv) {
-  return mx_make_call(argc,argv,INVOKE_FUNC);
+Scheme_Object *mx_com_invoke (int argc, Scheme_Object **argv)
+{
+  return mx_make_call (argc, argv, INVOKE_FUNC);
 }
 
-Scheme_Object *mx_com_get_property(int argc,Scheme_Object **argv) {
-  return mx_make_call(argc,argv,INVOKE_PROPERTYGET);
+Scheme_Object *mx_com_get_property (int argc, Scheme_Object **argv)
+{
+  return mx_make_call (argc, argv, INVOKE_PROPERTYGET);
 }
 
-Scheme_Object *mx_com_set_property(int argc,Scheme_Object **argv) {
-  return mx_make_call(argc,argv,INVOKE_PROPERTYPUT);
+Scheme_Object *mx_com_set_property (int argc, Scheme_Object **argv)
+{
+  return mx_make_call (argc, argv, INVOKE_PROPERTYPUT);
 }
 
-Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
+Scheme_Object *mx_all_clsid (int argc, Scheme_Object **argv, char **attributes)
+{
   LONG result;
   Scheme_Object *retval;
-  HKEY hkey,hsubkey;
+  HKEY hkey, hsubkey;
   FILETIME fileTime;
   unsigned long keyIndex;
   TCHAR clsidBuffer[256];
@@ -4286,15 +4110,14 @@ Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
 
   retval = scheme_null;
 
-  result = RegOpenKeyEx(HKEY_CLASSES_ROOT,
+  result = RegOpenKeyEx (HKEY_CLASSES_ROOT,
 			"CLSID",
-			(DWORD)0,
+			 (DWORD)0,
 			KEY_READ,
 			&hkey);
 
-  if (result != ERROR_SUCCESS) {
+  if (result != ERROR_SUCCESS)
     return retval;
-  }
 
   // enumerate subkeys until we find the one we want
 
@@ -4304,35 +4127,32 @@ Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
 
     // get next subkey
 
-    clsidBufferSize = sizeray(clsidBuffer);
+    clsidBufferSize = sizeray (clsidBuffer);
 
-    result = RegEnumKeyEx(hkey,keyIndex++,
+    result = RegEnumKeyEx (hkey, keyIndex++,
 			  clsidBuffer,
 			  &clsidBufferSize,
-			  0,NULL,NULL,
+			  0, NULL, NULL,
 			  &fileTime);
 
-    if (result == ERROR_NO_MORE_ITEMS) {
+    if (result == ERROR_NO_MORE_ITEMS)
       break;
-    }
 
-    if (strlen(clsidBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
+    if (strlen (clsidBuffer) != CLSIDLEN) // not a CLSID -- bogus entry
       continue;
-    }
 
     // open subkey
 
-    result = RegOpenKeyEx(hkey,clsidBuffer,
+    result = RegOpenKeyEx (hkey, clsidBuffer,
 			  (DWORD)0,
-			  KEY_READ,&hsubkey);
+			  KEY_READ, &hsubkey);
 
-    if (result != ERROR_SUCCESS) {
-      scheme_signal_error("Error while searching Windows registry");
-    }
+    if (result != ERROR_SUCCESS)
+      scheme_signal_error ("Error while searching Windows registry");
 
-    dataBufferSize = sizeof(dataBuffer);
+    dataBufferSize = sizeof (dataBuffer);
 
-    RegQueryValueEx(hsubkey,"",0,&dataType,dataBuffer,&dataBufferSize);
+    RegQueryValueEx (hsubkey, "", 0, &dataType, dataBuffer, &dataBufferSize);
 
     if (dataType == REG_SZ) {
       int subkeyIndex;
@@ -4345,24 +4165,23 @@ Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
 
       while (loopFlag) {
 
-	subkeyBufferSize = sizeray(subkeyBuffer);
+	subkeyBufferSize = sizeray (subkeyBuffer);
 
-	result = RegEnumKeyEx(hsubkey,subkeyIndex++,
+	result = RegEnumKeyEx (hsubkey, subkeyIndex++,
 			      subkeyBuffer,
 			      &subkeyBufferSize,
-			      0,NULL,NULL,
+			      0, NULL, NULL,
 			      &fileTime);
 
-	if (result == ERROR_NO_MORE_ITEMS) {
+	if (result == ERROR_NO_MORE_ITEMS)
 	  break;
-	}
 
 	p = attributes;
 
 	while (*p) {
-	  if (stricmp(subkeyBuffer,*p) == 0) {
-	    retval = scheme_make_pair(scheme_make_string((char *)dataBuffer),
-				      retval);
+	  if (stricmp (subkeyBuffer, *p) == 0) {
+	    retval = scheme_make_pair (multiByteToSchemeCharString ((char *)dataBuffer),
+				       retval);
 	    loopFlag = FALSE;
 	    break; // *p loop
 	  }
@@ -4371,25 +4190,28 @@ Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
       }
     }
 
-    RegCloseKey(hsubkey);
+    RegCloseKey (hsubkey);
   }
 
-  RegCloseKey(hkey);
+  RegCloseKey (hkey);
 
   return retval;
 }
 
-Scheme_Object *mx_all_controls(int argc,Scheme_Object **argv) {
-  return mx_all_clsid(argc,argv,controlAttributes);
+Scheme_Object *mx_all_controls (int argc, Scheme_Object **argv)
+{
+  return mx_all_clsid (argc, argv, controlAttributes);
 }
 
-Scheme_Object *mx_all_coclasses(int argc,Scheme_Object **argv) {
-  return mx_all_clsid(argc,argv,objectAttributes);
+Scheme_Object *mx_all_coclasses (int argc, Scheme_Object **argv)
+{
+  return mx_all_clsid (argc, argv, objectAttributes);
 }
 
-Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
-  IUnknown *pIUnknown1,*pIUnknown2;
-  IDispatch *pIDispatch1,*pIDispatch2;
+Scheme_Object *mx_com_object_eq (int argc, Scheme_Object **argv)
+{
+  IUnknown *pIUnknown1, *pIUnknown2;
+  IDispatch *pIDispatch1, *pIDispatch2;
   Scheme_Object *retval;
 
   pIDispatch1 = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ ("com-object-eq?", 0));
@@ -4397,8 +4219,8 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
 
   // these should never fail
 
-  pIDispatch1->QueryInterface(IID_IUnknown,(void **)&pIUnknown1);
-  pIDispatch2->QueryInterface(IID_IUnknown,(void **)&pIUnknown2);
+  pIDispatch1->QueryInterface (IID_IUnknown, (void **)&pIUnknown1);
+  pIDispatch2->QueryInterface (IID_IUnknown, (void **)&pIUnknown2);
 
   retval = (pIUnknown1 == pIUnknown2) ? scheme_true : scheme_false;
 
@@ -4408,7 +4230,8 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-Scheme_Object *mx_document_title(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_document_title (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   IHTMLDocument2 *pDocument;
   BSTR bstr;
@@ -4416,20 +4239,20 @@ Scheme_Object *mx_document_title(int argc,Scheme_Object **argv) {
 
   pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("document-title", 0));
 
-  hr = pDocument->get_title(&bstr);
+  hr = pDocument->get_title (&bstr);
 
-  if (FAILED (hr)) {
-    scheme_signal_error("document-title: Can't get title");
-  }
+  if (FAILED (hr))
+    scheme_signal_error ("document-title: Can't get title");
 
-  retval = BSTRToSchemeString(bstr);
+  retval = BSTRToSchemeString (bstr);
 
-  SysFreeString(bstr);
+  SysFreeString (bstr);
 
   return retval;
 }
 
-Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_document_objects (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
@@ -4442,25 +4265,24 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
 
   pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("document-objects", 0));
 
-  hr = pDocument->get_body(&pBody);
+  hr = pDocument->get_body (&pBody);
 
-  if (FAILED (hr) || pBody == NULL) {
-    codedComError("document-objects: Can't find document BODY",hr);
-  }
+  if (FAILED (hr) || pBody == NULL)
+    codedComError ("document-objects: Can't find document BODY", hr);
 
-  pObjectsCollection = getBodyElementsWithTag(pBody,"OBJECT");
+  pObjectsCollection = getBodyElementsWithTag (pBody, TEXT ("OBJECT"));
 
   pBody->Release();
 
-  pObjectsCollection->get_length(&numObjects);
+  pObjectsCollection->get_length (&numObjects);
 
   retval = scheme_null;
 
   for (i = numObjects - 1; i >= 0; i--) {
 
-    pObjectDispatch = getObjectInCollection(pObjectsCollection,i);
+    pObjectDispatch = getObjectInCollection (pObjectsCollection, i);
 
-    com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
+    com_object = (MX_COM_Object *)scheme_malloc (sizeof (MX_COM_Object));
 
     com_object->type = mx_com_object_type;
     com_object->pIDispatch = pObjectDispatch;
@@ -4472,9 +4294,9 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
     com_object->connectionCookie = (DWORD)0;
     com_object->released = FALSE;
 
-    mx_register_com_object((Scheme_Object *)com_object,pObjectDispatch);
+    mx_register_com_object ((Scheme_Object *)com_object, pObjectDispatch);
 
-    retval = scheme_make_pair((Scheme_Object *)com_object,retval);
+    retval = scheme_make_pair ((Scheme_Object *)com_object, retval);
   }
 
   pObjectsCollection->Release();
@@ -4482,10 +4304,11 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-MX_Element *make_mx_element(IHTMLElement *pIHTMLElement) {
+MX_Element *make_mx_element (IHTMLElement *pIHTMLElement)
+{
   MX_Element *elt;
 
-  elt = (MX_Element *)scheme_malloc(sizeof(MX_Element));
+  elt = (MX_Element *)scheme_malloc (sizeof (MX_Element));
 
   elt->type = mx_element_type;
   elt->released = FALSE;
@@ -4495,19 +4318,19 @@ MX_Element *make_mx_element(IHTMLElement *pIHTMLElement) {
   // this should not be necessary
   // apparently, IE does not always call AddRef()
   //  for HTML elements
-  if (pIHTMLElement->AddRef() > 2) {
+  if (pIHTMLElement->AddRef() > 2)
     pIHTMLElement->Release();
-  }
 
-  mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
+  mx_register_simple_com_object ((Scheme_Object *)elt, pIHTMLElement);
 
   return elt;
 }
 
-Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_elements_with_tag (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   IHTMLDocument2 *pDocument;
-  IHTMLElement *pBody,*pIHTMLElement;
+  IHTMLElement *pBody, *pIHTMLElement;
   IHTMLElementCollection *pCollection;
   long numObjects;
   Scheme_Object *retval;
@@ -4519,40 +4342,37 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
 
   pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("elements-with-tag", 0));
 
-  pDocument->get_body(&pBody);
+  pDocument->get_body (&pBody);
 
-  if (pBody == NULL) {
-    scheme_signal_error("elements-with-tag: Can't find document BODY");
-  }
+  if (pBody == NULL)
+    scheme_signal_error ("elements-with-tag: Can't find document BODY");
 
-  if (stricmp (SCHEME_STRSYM_VAL (argv[1]), "BODY") == 0) {
-    return scheme_make_pair((Scheme_Object *)(make_mx_element(pBody)),
+  if (stricmp (schemeToText (argv[1]), "BODY") == 0)
+    return scheme_make_pair ((Scheme_Object *) (make_mx_element (pBody)),
 			    scheme_null);
-  }
 
-  pCollection = getBodyElementsWithTag(pBody, SCHEME_STRSYM_VAL (argv[1]));
+  pCollection = getBodyElementsWithTag (pBody, schemeToText (argv[1]));
 
   pBody->Release();
 
-  pCollection->get_length(&numObjects);
+  pCollection->get_length (&numObjects);
 
   retval = scheme_null;
 
   for (i = numObjects - 1; i >= 0; i--) {
 
-    pDispatch = getElementInCollection(pCollection,i);
+    pDispatch = getElementInCollection (pCollection, i);
 
-    hr = pDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
+    hr = pDispatch->QueryInterface (IID_IHTMLElement, (void **)&pIHTMLElement);
 
-    if (FAILED (hr) || pIHTMLElement == NULL) {
-      codedComError("elements-with-tag: Can't get IHTMLElement interface",hr);
-    }
+    if (FAILED (hr) || pIHTMLElement == NULL)
+      codedComError ("elements-with-tag: Can't get IHTMLElement interface", hr);
 
-    elt = make_mx_element(pIHTMLElement);
+    elt = make_mx_element (pIHTMLElement);
 
-    mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
+    mx_register_simple_com_object ((Scheme_Object *)elt, pIHTMLElement);
 
-    retval = scheme_make_pair((Scheme_Object *)elt,retval);
+    retval = scheme_make_pair ((Scheme_Object *)elt, retval);
   }
 
   pCollection->Release();
@@ -4560,8 +4380,9 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-CLSID getCLSIDFromCoClass(const char *name) {
-  HKEY hkey,hsubkey;
+CLSID getCLSIDFromCoClass (LPCTSTR name)
+{
+  HKEY hkey, hsubkey;
   LONG result;
   FILETIME fileTime;
   unsigned long keyIndex;
@@ -4583,16 +4404,15 @@ CLSID getCLSIDFromCoClass(const char *name) {
 
   // get HKEY to Interfaces listing in Registry
 
-  result = RegOpenKeyEx(HKEY_CLASSES_ROOT,
+  result = RegOpenKeyEx (HKEY_CLASSES_ROOT,
 			"CLSID",
-			(DWORD)0,
+			 (DWORD)0,
 			KEY_READ,
 			&hkey);
 
 
-  if (result != ERROR_SUCCESS) {
-    scheme_signal_error("Error while searching Windows registry");
-  }
+  if (result != ERROR_SUCCESS)
+    scheme_signal_error ("Error while searching Windows registry");
 
   // enumerate subkeys until we find the one we want
 
@@ -4604,41 +4424,37 @@ CLSID getCLSIDFromCoClass(const char *name) {
 
     // get next subkey
 
-    clsIdBufferSize = sizeof(clsIdBuffer);
+    clsIdBufferSize = sizeof (clsIdBuffer);
 
-    result = RegEnumKeyEx(hkey,keyIndex++,
+    result = RegEnumKeyEx (hkey, keyIndex++,
 			  clsIdBuffer,
 			  &clsIdBufferSize,
-			  0,NULL,NULL,
+			  0, NULL, NULL,
 			  &fileTime);
 
-    if (result == ERROR_NO_MORE_ITEMS) {
+    if (result == ERROR_NO_MORE_ITEMS)
       break;
-    }
 
-    if (result != ERROR_SUCCESS) {
-      scheme_signal_error("Error enumerating subkeys in Windows registry");
-    }
+    if (result != ERROR_SUCCESS)
+      scheme_signal_error ("Error enumerating subkeys in Windows registry");
 
-    if (strlen(clsIdBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
+    if (strlen (clsIdBuffer) != CLSIDLEN) // not a CLSID -- bogus entry
       continue;
-    }
 
     // open subkey
 
-    result = RegOpenKeyEx(hkey,clsIdBuffer,
+    result = RegOpenKeyEx (hkey, clsIdBuffer,
 			  (DWORD)0,
-			  KEY_READ,&hsubkey);
+			  KEY_READ, &hsubkey);
 
-    if (result != ERROR_SUCCESS) {
+    if (result != ERROR_SUCCESS)
       return clsId;
-    }
 
-    dataBufferSize = sizeof(dataBuffer);
+    dataBufferSize = sizeof (dataBuffer);
 
-    RegQueryValueEx(hsubkey,"",0,&dataType,dataBuffer,&dataBufferSize);
+    RegQueryValueEx (hsubkey, "", 0, &dataType, dataBuffer, &dataBufferSize);
 
-    if (dataType == REG_SZ && strcmp(name,(char *)dataBuffer) == 0) {
+    if (dataType == REG_SZ && lstrcmp (name, (char *)dataBuffer) == 0) {
       int subkeyIndex;
       TCHAR subkeyBuffer[256];
       DWORD subkeyBufferSize;
@@ -4651,38 +4467,35 @@ CLSID getCLSIDFromCoClass(const char *name) {
 
       while (loopFlag) {
 
-	subkeyBufferSize = sizeray(subkeyBuffer);
+	subkeyBufferSize = sizeray (subkeyBuffer);
 
-	result = RegEnumKeyEx(hsubkey,subkeyIndex++,
+	result = RegEnumKeyEx (hsubkey, subkeyIndex++,
 			      subkeyBuffer,
 			      &subkeyBufferSize,
-			      0,NULL,NULL,
+			      0, NULL, NULL,
 			      &fileTime);
 
-	if (result == ERROR_NO_MORE_ITEMS) {
+	if (result == ERROR_NO_MORE_ITEMS)
 	  break;
-	}
 
-	if (result != ERROR_SUCCESS) {
-	  scheme_signal_error("Error enumerating subkeys in Windows registry");
-	}
+	if (result != ERROR_SUCCESS)
+	  scheme_signal_error ("Error enumerating subkeys in Windows registry");
 
 	p = objectAttributes;
 
 	while (*p) {
-	  if (stricmp(subkeyBuffer,*p) == 0) {
-	    len = (unsigned int) strlen(clsIdBuffer);
-	    count = MultiByteToWideChar(CP_ACP,(DWORD)0,
-					clsIdBuffer,len,
+	  if (stricmp (subkeyBuffer, *p) == 0) {
+	    len = (unsigned int) strlen (clsIdBuffer);
+	    count = MultiByteToWideChar (CP_ACP, (DWORD)0,
+					clsIdBuffer, len,
 					oleClsIdBuffer,
-					sizeray(oleClsIdBuffer) - 1);
+					sizeray (oleClsIdBuffer) - 1);
 	    oleClsIdBuffer[len] = '\0';
 
-	    if (count == 0) {
-	      scheme_signal_error("Error translating CLSID to Unicode",name);
-	    }
+	    if (count == 0)
+	      scheme_signal_error ("Error translating CLSID to Unicode", name);
 
-	    CLSIDFromString(oleClsIdBuffer,&clsId);
+	    CLSIDFromString (oleClsIdBuffer, &clsId);
 	    loopFlag = FALSE;
 	    break; // *p loop
 	  }
@@ -4691,22 +4504,21 @@ CLSID getCLSIDFromCoClass(const char *name) {
       }
     }
 
-    RegCloseKey(hsubkey);
+    RegCloseKey (hsubkey);
 
   }
 
-  RegCloseKey(hkey);
+  RegCloseKey (hkey);
 
-  if (isEmptyClsId(clsId)) {
-    scheme_signal_error("Coclass %s not found",name);
-  }
+  if (isEmptyClsId (clsId))
+    scheme_signal_error ("Coclass %s not found", name);
 
   return clsId;
 }
 
-Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_find_element (int argc, Scheme_Object **argv)
+{
   IHTMLElement *pIHTMLElement;
-  MX_Element *retval;
   int index;
 
   GUARANTEE_DOCUMENT ("find-element", 0);
@@ -4715,35 +4527,29 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
 
   if (argc > 3)
       GUARANTEE_NONNEGATIVE ("find-element", 3);
-  if (argc > 3) {
-    index = SCHEME_INT_VAL(argv[3]);
-  }
-  else {
-    index = 0;
-  }
 
-  pIHTMLElement = findBodyElement(MX_DOCUMENT_VAL(argv[0]),
-				  SCHEME_STRSYM_VAL (argv[1]),
-				  SCHEME_STRSYM_VAL (argv[2]),
+  index = (argc > 3) ? SCHEME_INT_VAL (argv[3]) : 0;
+
+  pIHTMLElement = findBodyElement (MX_DOCUMENT_VAL (argv[0]),
+				  schemeToText (argv[1]),
+				  schemeToText (argv[2]),
 				  index);
 
-  if (pIHTMLElement == NULL) {
-    scheme_signal_error("find-element: HTML element with tag = %s, id = %s not found",
-			SCHEME_STRSYM_VAL(argv[1]),
-                        SCHEME_STRSYM_VAL(argv[2]));
-  }
+  if (pIHTMLElement == NULL)
+    scheme_signal_error ("find-element: HTML element with tag = %s, id = %s not found",
+			schemeToText (argv[1]),
+                        schemeToText (argv[2]));
 
-  retval = make_mx_element(pIHTMLElement);
-
-  return (Scheme_Object *)retval;
+  return (Scheme_Object *) make_mx_element (pIHTMLElement);
 }
 
-Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_find_element_by_id_or_name (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   IHTMLElement *pIHTMLElement;
   IHTMLElementCollection *pIHTMLElementCollection;
   IHTMLDocument2 *pIHTMLDocument2;
-  VARIANT name,index;
+  VARIANT name, index;
   BSTR bstr;
   IDispatch *pEltDispatch;
 
@@ -4752,50 +4558,49 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
 
   pIHTMLDocument2 = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("find-element-by-id-or-name", 0));
 
-  hr = pIHTMLDocument2->get_all(&pIHTMLElementCollection);
+  hr = pIHTMLDocument2->get_all (&pIHTMLElementCollection);
 
   if (FAILED (hr) || pIHTMLElementCollection == NULL) {
-    scheme_signal_error("find-element-by-id-or-name: "
+    scheme_signal_error ("find-element-by-id-or-name: "
 			"Couldn't retrieve element collection "
 			"from HTML document");
   }
 
-  bstr = schemeStringToBSTR (GUARANTEE_STRSYM ("find-element-by-id-or-name", 1));
+  bstr = schemeToBSTR (GUARANTEE_STRSYM ("find-element-by-id-or-name", 1));
 
   name.vt = VT_BSTR;
   name.bstrVal = bstr;
 
   index.vt = VT_I4;
-  index.lVal = (argc > 2) ? SCHEME_INT_VAL(argv[2]) : 0;
+  index.lVal = (argc > 2) ? SCHEME_INT_VAL (argv[2]) : 0;
 
-  pIHTMLElementCollection->item(name,index,&pEltDispatch);
+  pIHTMLElementCollection->item (name, index, &pEltDispatch);
 
-  SysFreeString(bstr);
+  SysFreeString (bstr);
 
   pIHTMLElementCollection->Release();
 
-  if (pEltDispatch == NULL) {
-    scheme_signal_error("find-element-by-id-or-name: "
-			"Couldn't find element with id = %s", SCHEME_STRSYM_VAL (argv[1]));
-  }
+  if (pEltDispatch == NULL)
+    scheme_signal_error ("find-element-by-id-or-name: "
+			"Couldn't find element with id = %s", schemeToText (argv[1]));
 
-  hr = pEltDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
+  hr = pEltDispatch->QueryInterface (IID_IHTMLElement, (void **)&pIHTMLElement);
 
-  if (FAILED (hr) || pIHTMLElement == NULL) {
-    scheme_signal_error("find-element-by-id-or-name: "
+  if (FAILED (hr) || pIHTMLElement == NULL)
+    scheme_signal_error ("find-element-by-id-or-name: "
 			"Couldn't retrieve element interface "
 			"for element with id = %s",
-                        SCHEME_STRSYM_VAL (argv[1]));
-  }
+                        schemeToText (argv[1]));
 
-  return (Scheme_Object *)(make_mx_element(pIHTMLElement));
+  return (Scheme_Object *) make_mx_element (pIHTMLElement);
 }
 
 // for coclass->html, progid->html
-Scheme_Object *mx_clsid_to_html(CLSID clsId,
+Scheme_Object *mx_clsid_to_html (CLSID clsId,
                                 const char *controlName,
 				const char *fname,
-				int argc,Scheme_Object **argv ) {
+				int argc, Scheme_Object **argv )
+{
   LPOLESTR clsIdString;
   char widthBuff[25];
   char heightBuff[25];
@@ -4808,126 +4613,120 @@ Scheme_Object *mx_clsid_to_html(CLSID clsId,
   format = "%u";
 
   if (argc > 3) {
-    char *symString;
+      const char * symString = schemeToMultiByte (GUARANTEE_STRSYM (fname, 3));
 
-    symString = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM (fname, 3));
+      if (stricmp (symString, "percent") == 0)
+	  format = "%u%%";
 
-    if (stricmp(symString,"percent") == 0) {
-      format = "%u%%";
-    }
-    else if (stricmp(symString,"pixels")) {
-      scheme_signal_error("%s: Invalid size specifier '%s: "
-			  "must be either 'pixels or 'percent",
-			  fname,symString);
-    }
-  }
+      else if (stricmp (symString, "pixels"))
+	  scheme_signal_error ("%s: Invalid size specifier '%s: "
+			      "must be either 'pixels or 'percent",
+			      fname, symString);
 
-  sprintf(widthBuff,format,SCHEME_INT_VAL(argv[1]));
-  sprintf(heightBuff,format,SCHEME_INT_VAL(argv[2]));
+      }
 
-  StringFromCLSID(clsId,&clsIdString);
+  sprintf (widthBuff, format, SCHEME_INT_VAL (argv[1]));
+  sprintf (heightBuff, format, SCHEME_INT_VAL (argv[2]));
 
-  *(clsIdString + wcslen(clsIdString) - 1) = L'\0';
+  StringFromCLSID (clsId, &clsIdString);
 
-  if (clsIdString == NULL) {
-    scheme_signal_error("%s: Can't convert control CLSID to string",fname);
-  }
+  * (clsIdString + wcslen (clsIdString) - 1) = L'\0';
 
-  sprintf(buff,
+  if (clsIdString == NULL)
+      scheme_signal_error ("%s: Can't convert control CLSID to string", fname);
+
+  sprintf (buff,
 	  "<OBJECT ID=\"%s\" WIDTH=\"%s\" HEIGHT=\"%s\" CLASSID=\"clsid:%S\">\n"
 	  "</OBJECT>",
 	  controlName,
-	  widthBuff,heightBuff,
+	  widthBuff, heightBuff,
 	  clsIdString + 1);
 
-  return (Scheme_Object *)scheme_make_string(buff);
+  return multiByteToSchemeCharString (buff);
 }
 
-Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
-  char *controlName;
-  CLSID clsId;
+Scheme_Object * mx_coclass_to_html (int argc, Scheme_Object **argv)
+{
+  LPCTSTR controlName = schemeToText (GUARANTEE_STRSYM ("coclass->html", 0));
+  CLSID clsId = getCLSIDFromCoClass (controlName);
 
-  controlName = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("coclass->html", 0));
+  if (isEmptyClsId (clsId))
+      scheme_signal_error ("coclass->html: Coclass \"%s\" not found",
+			   schemeToMultiByte (argv[0]));
 
-  clsId = getCLSIDFromCoClass (controlName);
-
-  if (isEmptyClsId(clsId)) {
-    scheme_signal_error("coclass->html: Coclass \"%s\" not found",
-			controlName);
-  }
-
-  return mx_clsid_to_html(clsId,controlName,"coclass->html",argc,argv);
-
+  return mx_clsid_to_html (clsId, controlName, "coclass->html", argc, argv);
 }
 
-Scheme_Object *mx_progid_to_html(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_progid_to_html (int argc, Scheme_Object **argv)
+{
   HRESULT hr;
   BSTR wideProgId;
   CLSID clsId;
 
-  wideProgId = schemeStringToBSTR (GUARANTEE_STRSYM ("progid->html", 0));
+  wideProgId = schemeToBSTR (GUARANTEE_STRSYM ("progid->html", 0));
 
-  hr = CLSIDFromProgID(wideProgId,&clsId);
+  hr = CLSIDFromProgID (wideProgId, &clsId);
 
-  SysFreeString(wideProgId);
+  SysFreeString (wideProgId);
 
   if (FAILED (hr))
-      scheme_signal_error("progid->html: ProgID \"%s\" not found", SCHEME_STRSYM_VAL (argv[0]));
+      scheme_signal_error ("progid->html: ProgID \"%s\" not found", schemeToText (argv[0]));
 
-  return mx_clsid_to_html(clsId,SCHEME_STRSYM_VAL (argv[0]),"progid->html", argc,argv);
+  return mx_clsid_to_html (clsId, schemeToText (argv[0]), "progid->html", argc, argv);
 }
 
-Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
-			     WCHAR *oleWhere,char *scheme_name) {
+Scheme_Object *mx_stuff_html (int argc, Scheme_Object **argv,
+			     WCHAR *oleWhere, char *scheme_name) {
   IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
-  BSTR where,html;
+  BSTR where, html;
 
   pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT (scheme_name, 0));
 
-  html = schemeStringToBSTR (GUARANTEE_STRSYM (scheme_name, 1));
-  pDocument->get_body(&pBody);
+  html = schemeToBSTR (GUARANTEE_STRSYM (scheme_name, 1));
+  pDocument->get_body (&pBody);
 
-  if (pBody == NULL) {
-    scheme_signal_error("Can't find document BODY");
-  }
+  if (pBody == NULL)
+    scheme_signal_error ("Can't find document BODY");
 
-  where = SysAllocString(oleWhere);
+  where = SysAllocString (oleWhere);
 
-  pBody->insertAdjacentHTML(where,html);
+  pBody->insertAdjacentHTML (where, html);
 
-  SysFreeString(where);
-  SysFreeString(html);
+  SysFreeString (where);
+  SysFreeString (html);
 
   return scheme_void;
 
 }
 
-Scheme_Object *mx_insert_html(int argc,Scheme_Object **argv) {
-  return mx_stuff_html(argc,argv,L"AfterBegin","doc-insert-html");
+Scheme_Object *mx_insert_html (int argc, Scheme_Object **argv)
+{
+  return mx_stuff_html (argc, argv, L"AfterBegin", "doc-insert-html");
 }
 
-Scheme_Object *mx_append_html(int argc,Scheme_Object **argv) {
-  return mx_stuff_html(argc,argv,L"BeforeEnd","doc-append-html");
+Scheme_Object *mx_append_html (int argc, Scheme_Object **argv)
+{
+  return mx_stuff_html (argc, argv, L"BeforeEnd", "doc-append-html");
 }
 
-Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_replace_html (int argc, Scheme_Object **argv)
+{
   IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
   BSTR html;
 
   pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("replace-html", 0));
-  html = schemeStringToBSTR (GUARANTEE_STRSYM ("replace-html", 1));
+  html = schemeToBSTR (GUARANTEE_STRSYM ("replace-html", 1));
 
-  pDocument->get_body(&pBody);
+  pDocument->get_body (&pBody);
 
-  if (pBody == NULL) {
-    scheme_signal_error("Can't find document body");
-  }
+  if (pBody == NULL)
+    scheme_signal_error ("Can't find document body");
 
-  pBody->put_innerHTML(html);
+  pBody->put_innerHTML (html);
 
-  SysFreeString(html);
+  SysFreeString (html);
 
   return scheme_void;
 }
@@ -4937,48 +4736,52 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
 blocking on Win events doesn't seem to work
 any longer
 
-static BOOL win_event_available(void *) {
+static BOOL win_event_available (void *)
+{
   MSG msg;
 
-  return (PeekMessage(&msg,NULL,0x400,0x400,PM_NOREMOVE) ||
-	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
+  return (PeekMessage (&msg, NULL, 0x400, 0x400, PM_NOREMOVE) ||
+	  PeekMessage (&msg, NULL, 0x113, 0x113, PM_NOREMOVE));
 }
 
-static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
+static void win_event_sem_fun (MX_Document_Object *doc, void *fds)
+{
   static HANDLE dummySem;
 
   if (!dummySem) {
-    dummySem = CreateSemaphore(NULL,0,1,NULL);
+    dummySem = CreateSemaphore (NULL, 0, 1, NULL);
     if (!dummySem) {
-      scheme_signal_error("Error creating Windows event semaphore");
+      scheme_signal_error ("Error creating Windows event semaphore");
     }
   }
 
-  scheme_add_fd_eventmask(fds,QS_ALLINPUT);
-  scheme_add_fd_handle(dummySem,fds,TRUE);
+  scheme_add_fd_eventmask (fds, QS_ALLINPUT);
+  scheme_add_fd_handle (dummySem, fds, TRUE);
 }
 */
 
-Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_process_win_events (int argc, Scheme_Object **argv)
+{
   MSG msg;
 
   /* this used to work, sort of
 
-    scheme_block_until((int (*)(Scheme_Object *))win_event_available,
-		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
-		     NULL,0.0F);
+    scheme_block_until ((int (*) (Scheme_Object *))win_event_available,
+		     (void (*) (Scheme_Object *, void *))win_event_sem_fun,
+		     NULL, 0.0F);
   */
 
-  while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE) ||
-	 PeekMessage(&msg,NULL,0x113,0x113,PM_REMOVE)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+  while (PeekMessage (&msg, NULL, 0x400, 0x400, PM_REMOVE) ||
+	 PeekMessage (&msg, NULL, 0x113, 0x113, PM_REMOVE)) {
+    TranslateMessage (&msg);
+    DispatchMessage (&msg);
   }
 
   return scheme_void;
 }
 
-void initMysSinkTable(void) {
+void initMysSinkTable (void)
+{
   myssink_table.pmake_cy = mx_make_cy;
   myssink_table.pmake_date = mx_make_date;
   myssink_table.pmake_bool = mx_make_bool;
@@ -4999,73 +4802,78 @@ void initMysSinkTable(void) {
   myssink_table.piunknown_val = mx_iunknown_val;
 }
 
-Scheme_Object *mx_release_type_table(void) {
+Scheme_Object *mx_release_type_table (void)
+{
   int i;
-  MX_TYPE_TBL_ENTRY *p,*psave;
+  MX_TYPE_TBL_ENTRY *p, *psave;
 
-  for (i = 0; i < sizeray(typeTable); i++) {
+  for (i = 0; i < sizeray (typeTable); i++) {
     p = typeTable[i];
     while (p) {
-      scheme_release_typedesc((void *)p->pTypeDesc,NULL);
+      scheme_release_typedesc ((void *)p->pTypeDesc, NULL);
       psave = p;
       p = p->next;
-      scheme_gc_ptr_ok(psave);
+      scheme_gc_ptr_ok (psave);
     }
   }
 
   return scheme_void;
 }
 
-void mx_exit_closer(Scheme_Object *obj,
-		    Scheme_Close_Custodian_Client *fun,void *data) {
+void mx_exit_closer (Scheme_Object *obj,
+		    Scheme_Close_Custodian_Client *fun, void *data)
+{
   if ((fun == (Scheme_Close_Custodian_Client *)
                      scheme_release_com_object) ||
       (fun == (Scheme_Close_Custodian_Client *)
        scheme_release_simple_com_object)) {
-    (*fun)(obj,data);
+    (*fun) (obj, data);
   }
 }
 
-void mx_cleanup(void) {
+void mx_cleanup (void)
+{
   mx_release_type_table();
   /* looks like CoUninitialize() gets called automatically */
 }
 
-Scheme_Object *scheme_module_name(void) {
-    return scheme_intern_symbol(MXMAIN);
+Scheme_Object *scheme_module_name (void)
+{
+    return scheme_intern_symbol (MXMAIN);
 }
 
-Scheme_Object *scheme_initialize(Scheme_Env *env) {
+Scheme_Object *scheme_initialize (Scheme_Env *env)
+{
   HRESULT hr;
   Scheme_Object *mx_fun;
   int i;
 
-  scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
+  scheme_register_extension_global (&mx_omit_obj, sizeof (mx_omit_obj));
 
   // should not be necessary, but sometimes
   // this variable is not 0'd out - bug in VC++ or MzScheme?
 
-  memset(typeTable,0,sizeof(typeTable));
+  memset (typeTable, 0, sizeof (typeTable));
 
   // globals in mysterx.cxx
 
   mx_name = scheme_intern_symbol (MXMAIN);
-  scheme_date_type = scheme_builtin_value("struct:date");
+  scheme_date_type = scheme_builtin_value ("struct:date");
 
-  mx_com_object_type = scheme_make_type("<com-object>");
-  mx_com_type_type = scheme_make_type("<com-type>");
-  mx_browser_type = scheme_make_type("<mx-browser>");
-  mx_document_type = scheme_make_type("<mx-document>");
-  mx_element_type = scheme_make_type("<mx-element>");
-  mx_event_type = scheme_make_type("<mx-event>");
-  mx_com_cy_type = scheme_make_type("<com-currency>");
-  mx_com_date_type = scheme_make_type("<com-date>");
-  mx_com_scode_type = scheme_make_type("<com-scode>");
-  mx_com_iunknown_type = scheme_make_type("<com-iunknown>");
-  mx_com_omit_type = scheme_make_type("<com-omit>");
-  mx_com_typedesc_type = scheme_make_type("<com-typedesc>");
+  mx_com_object_type = scheme_make_type ("<com-object>");
+  mx_com_type_type = scheme_make_type ("<com-type>");
+  mx_browser_type = scheme_make_type ("<mx-browser>");
+  mx_document_type = scheme_make_type ("<mx-document>");
+  mx_element_type = scheme_make_type ("<mx-element>");
+  mx_event_type = scheme_make_type ("<mx-event>");
+  mx_com_cy_type = scheme_make_type ("<com-currency>");
+  mx_com_date_type = scheme_make_type ("<com-date>");
+  mx_com_scode_type = scheme_make_type ("<com-scode>");
+  mx_com_iunknown_type = scheme_make_type ("<com-iunknown>");
+  mx_com_omit_type = scheme_make_type ("<com-omit>");
+  mx_com_typedesc_type = scheme_make_type ("<com-typedesc>");
 
-  hr = CoInitialize(NULL);
+  hr = CoInitialize (NULL);
 
   // S_OK means success, S_FALSE means COM already loaded
 
@@ -5073,54 +4881,58 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
     return scheme_false;
   }
 
-  mx_unmarshal_strings_as_symbols = scheme_new_param();
-  mx_marshal_raw_scheme_objects = scheme_new_param();
-  scheme_set_param (scheme_config, mx_unmarshal_strings_as_symbols, scheme_false);
-  scheme_set_param (scheme_config, mx_marshal_raw_scheme_objects, scheme_false);
+  Scheme_Object * arglist[1] = {scheme_false};
+  scheme_register_extension_global (&mx_unmarshal_strings_as_symbols, sizeof mx_unmarshal_strings_as_symbols);
+  scheme_register_extension_global (&mx_marshal_raw_scheme_objects, sizeof mx_marshal_raw_scheme_objects);
+
+  mx_unmarshal_strings_as_symbols = scheme_apply (scheme_builtin_value ("make-parameter"), 1, arglist);
+  mx_marshal_raw_scheme_objects = scheme_apply (scheme_builtin_value ("make-parameter"), 1, arglist);
 
   // export prims + omit value
 
-  env = scheme_primitive_module(mx_name,env);
+  env = scheme_primitive_module (mx_name, env);
 
-  for (i = 0; i < sizeray(mxPrims); i++) {
-    mx_fun = scheme_make_prim_w_arity(mxPrims[i].c_fun,
+  for (i = 0; i < sizeray (mxPrims); i++) {
+    mx_fun = scheme_make_prim_w_arity (mxPrims[i].c_fun,
 				      mxPrims[i].name,
 				      mxPrims[i].minargs,
 				      mxPrims[i].maxargs);
-    scheme_add_global(mxPrims[i].name,mx_fun,env);
+    scheme_add_global (mxPrims[i].name, mx_fun, env);
   }
 
-  mx_omit_obj = (Scheme_Object *)scheme_malloc(sizeof(MX_OMIT));
+  mx_omit_obj = (Scheme_Object *)scheme_malloc (sizeof (MX_OMIT));
   mx_omit_obj->type = mx_com_omit_type;
 
-  scheme_add_global("com-omit",mx_omit_obj,env);
+  scheme_add_global ("com-omit", mx_omit_obj, env);
 
-  scheme_finish_primitive_module(env);
+  scheme_finish_primitive_module (env);
 
   initEventNames();
 
   initMysSinkTable();
 
-  if (isatty(fileno(stdin))) {
-    fprintf(stderr,
+  if (isatty (fileno (stdin))) {
+    fprintf (stderr,
 	    "MysterX extension for PLT Scheme, "
 	    "Copyright (c) 1999-2003 PLT (Paul Steckler)\n");
   }
 
-  scheme_add_atexit_closer(mx_exit_closer);
-  atexit(mx_cleanup);
+  scheme_add_atexit_closer (mx_exit_closer);
+  atexit (mx_cleanup);
 
   return scheme_void;
 }
 
-Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return scheme_initialize(env);
+Scheme_Object * scheme_reload (Scheme_Env *env)
+{
+  return scheme_initialize (env);
 }
 
 // for some reason, couldn't put ATL stuff in browser.cxx
 // so we leave the Win message loop here
 
-void browserHwndMsgLoop(LPVOID p) {
+void browserHwndMsgLoop (LPVOID p)
+{
   HRESULT hr;
   MSG msg;
   HWND hwnd;
@@ -5133,69 +4945,65 @@ void browserHwndMsgLoop(LPVOID p) {
 
   // set apparently-unused low bit in style to inform
   // DHTMLPage object that we want scrollbars
-  if (pBrowserWindowInit->browserWindow.style & (WS_HSCROLL|WS_VSCROLL)) {
-    hasScrollBars = 1L;
-  }
-  else {
-    hasScrollBars = 0L;
-  }
 
-  hwnd = CreateWindow("AtlAxWin7","myspage.DHTMLPage.1",
+  hasScrollBars = (pBrowserWindowInit->browserWindow.style & (WS_HSCROLL|WS_VSCROLL))
+      ? 1L
+      : 0L;
+
+  hwnd = CreateWindow ("AtlAxWin7", "myspage.DHTMLPage.1",
 		      WS_VISIBLE | hasScrollBars |
-		      (pBrowserWindowInit->browserWindow.style & ~(WS_HSCROLL|WS_VSCROLL)),
-		      pBrowserWindowInit->browserWindow.x,pBrowserWindowInit->browserWindow.y,
-		      pBrowserWindowInit->browserWindow.width,pBrowserWindowInit->browserWindow.height,
-		      NULL,NULL,hInstance,NULL);
+		      (pBrowserWindowInit->browserWindow.style & ~ (WS_HSCROLL|WS_VSCROLL)),
+		      pBrowserWindowInit->browserWindow.x, pBrowserWindowInit->browserWindow.y,
+		      pBrowserWindowInit->browserWindow.width, pBrowserWindowInit->browserWindow.height,
+		      NULL, NULL, hInstance, NULL);
 
-  if (hwnd == NULL) {
-    scheme_signal_error("make-browser: Can't create browser window");
-  }
+  if (hwnd == NULL)
+    scheme_signal_error ("make-browser: Can't create browser window");
 
-  ShowWindow(hwnd,SW_SHOW);
-  SetForegroundWindow(hwnd);
+  ShowWindow (hwnd, SW_SHOW);
+  SetForegroundWindow (hwnd);
 
   browserHwnd = hwnd;
 
-  if (hasScrollBars) {
+  if (hasScrollBars)
     // clear spurious low bit to avoid trouble
-    SetWindowLong(hwnd,GWL_STYLE,
-		  GetWindowLong(hwnd,GWL_STYLE) & ~1L);
-  }
+    SetWindowLong (hwnd, GWL_STYLE,
+		  GetWindowLong (hwnd, GWL_STYLE) & ~1L);
 
-  SetClassLong(hwnd,GCL_HICON,HandleToLong (hIcon));
+  SetClassLong (hwnd, GCL_HICON, HandleToLong (hIcon));
 
-  SetWindowText(hwnd,pBrowserWindowInit->browserWindow.label);
+  SetWindowText (hwnd, pBrowserWindowInit->browserWindow.label);
 
   pIUnknown = NULL;
 
-  destroy = &(pBrowserWindowInit->browserObject->destroy);
+  destroy = & (pBrowserWindowInit->browserObject->destroy);
 
-  while (IsWindow(hwnd)) {
+  while (IsWindow (hwnd)) {
 
     if (pIUnknown == NULL) {
-      AtlAxGetControl(hwnd,&pIUnknown);
+      AtlAxGetControl (hwnd, &pIUnknown);
 
       if (pIUnknown) {
 
-	hr = CoMarshalInterThreadInterfaceInStream(IID_IUnknown,pIUnknown,
+	hr = CoMarshalInterThreadInterfaceInStream (IID_IUnknown, pIUnknown,
 						   pBrowserWindowInit->ppIStream);
 
 	if (FAILED (hr)) {
-	  DestroyWindow(hwnd);
-	  ReleaseSemaphore(createHwndSem,1,NULL);
-	  codedComError("Can't marshal document interface",hr);
+	  DestroyWindow (hwnd);
+	  ReleaseSemaphore (createHwndSem, 1, NULL);
+	  codedComError ("Can't marshal document interface", hr);
 	}
 
-	ReleaseSemaphore(createHwndSem,1,NULL);
+	ReleaseSemaphore (createHwndSem, 1, NULL);
       }
     }
 
-    while (IsWindow(hwnd) && GetMessage(&msg,NULL,0,0)) {
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
+    while (IsWindow (hwnd) && GetMessage (&msg, NULL, 0, 0)) {
+      TranslateMessage (&msg);
+      DispatchMessage (&msg);
       if (*destroy) {
 	*destroy = FALSE;
-	DestroyWindow(hwnd);
+	DestroyWindow (hwnd);
       }
     }
 
@@ -5203,32 +5011,32 @@ void browserHwndMsgLoop(LPVOID p) {
   }
 }
 
-BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
+BOOL APIENTRY DllMain (HANDLE hModule, DWORD reason, LPVOID lpReserved)
+{
 
   if (reason == DLL_PROCESS_ATTACH) {
 
     hInstance = (HINSTANCE)hModule;
 
-    browserHwndMutex = CreateSemaphore(NULL,1,1,NULL);
-    createHwndSem = CreateSemaphore(NULL,0,1,NULL);
-    eventSinkMutex = CreateSemaphore(NULL,1,1,NULL);
+    browserHwndMutex = CreateSemaphore (NULL, 1, 1, NULL);
+    createHwndSem = CreateSemaphore (NULL, 0, 1, NULL);
+    eventSinkMutex = CreateSemaphore (NULL, 1, 1, NULL);
 
-    hIcon = (HICON)LoadImage(hInstance,
-			     MAKEINTRESOURCE(MYSTERX_ICON),
-			     IMAGE_ICON,0,0,0);
+    hIcon = (HICON)LoadImage (hInstance,
+			     MAKEINTRESOURCE (MYSTERX_ICON),
+			     IMAGE_ICON, 0, 0, 0);
 
-    _Module.Init(NULL,hInstance);
+    _Module.Init (NULL, hInstance, &LIBID_ATLLib);
     AtlAxWinInit();
 
   }
-  else if (reason == DLL_PROCESS_DETACH) {
+  else if (reason == DLL_PROCESS_DETACH)
     _Module.Term();
-  }
 
   return TRUE;
 }
 
-#if defined(MYSTERX_DOTNET)
+#if defined (MYSTERX_DOTNET)
 /// JRM HACKS for CLR
 // Note that these must come last because the #include and #import
 // both screw up some names used above.
@@ -5241,7 +5049,7 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
 
 // This doesn't appear to be necessary.
 //
-//  raw_interfaces_only high_property_prefixes("_get","_put","_putref")
+//  raw_interfaces_only high_property_prefixes ("_get", "_put", "_putref")
 //
 using namespace mscorlib;
 
@@ -5285,8 +5093,10 @@ initialize_dotnet_runtime (int argc, Scheme_Object **argv)
     if (FAILED (hr) || pAppDomainDispatch == NULL)
         scheme_signal_error ("%%%%initialize-dotnet-runtime:  QueryInterface for IDispatch failed.");
 
-    scheme_set_param (scheme_config, mx_unmarshal_strings_as_symbols, scheme_true);
-    scheme_set_param (scheme_config, mx_marshal_raw_scheme_objects, scheme_true);
+    Scheme_Object * arglist[1] = {scheme_true};
+
+    scheme_apply (mx_unmarshal_strings_as_symbols, 1, arglist);
+    scheme_apply (mx_marshal_raw_scheme_objects, 1, arglist);
 
     return mx_make_idispatch (pAppDomainDispatch);
 }

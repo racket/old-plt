@@ -35,14 +35,16 @@ Scheme_Type mx_com_iunknown_type;
 Scheme_Type mx_com_omit_type;
 Scheme_Type mx_com_typedesc_type;
 
-Scheme_Object *mx_document_pred(int argc,Scheme_Object **argv) {
-  return MX_DOCUMENTP(argv[0]) ? scheme_true : scheme_false;
+Scheme_Object *mx_document_pred(int argc,Scheme_Object **argv)
+{
+  return MX_DOCUMENTP (argv[0]) ? scheme_true : scheme_false;
 }
 
-Scheme_Object *mx_make_cy(CY *pCy) {
+Scheme_Object *mx_make_cy (CY *pCy)
+{
   MX_COM_Data_Object *retval;
 
-  retval = (MX_COM_Data_Object *)scheme_malloc(sizeof(MX_COM_Data_Object));
+  retval = (MX_COM_Data_Object *)scheme_malloc_atomic (sizeof (MX_COM_Data_Object));
 
   retval->type = mx_com_cy_type;
   retval->cy = *pCy;
@@ -50,26 +52,28 @@ Scheme_Object *mx_make_cy(CY *pCy) {
   return (Scheme_Object *)retval;
 }
 
-Scheme_Object *mx_make_date(DATE *pDate) {
+Scheme_Object *mx_make_date (DATE *pDate)
+{
   MX_COM_Data_Object *retval;
 
-  retval = (MX_COM_Data_Object *)scheme_malloc(sizeof(MX_COM_Data_Object));
+  retval = (MX_COM_Data_Object *)scheme_malloc_atomic (sizeof (MX_COM_Data_Object));
 
   retval->type = mx_com_date_type;
   retval->date = *pDate;
 
   return (Scheme_Object *)retval;
-
 }
 
-Scheme_Object *mx_make_bool(unsigned boolVal) {
+Scheme_Object *mx_make_bool(unsigned boolVal)
+{
   return (boolVal == 0) ? scheme_false : scheme_true;
 }
 
-Scheme_Object *mx_make_scode(SCODE scode) {
+Scheme_Object *mx_make_scode(SCODE scode)
+{
   MX_COM_Data_Object *retval;
 
-  retval = (MX_COM_Data_Object *)scheme_malloc(sizeof(MX_COM_Data_Object));
+  retval = (MX_COM_Data_Object *)scheme_malloc_atomic (sizeof (MX_COM_Data_Object));
 
   retval->type = mx_com_scode_type;
   retval->scode = scode;
@@ -77,7 +81,8 @@ Scheme_Object *mx_make_scode(SCODE scode) {
   return (Scheme_Object *)retval;
 }
 
-Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
+Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch)
+{
   MX_COM_Object *retval;
 
   if (pIDispatch == NULL) return scheme_false;
@@ -152,31 +157,38 @@ BOOL mx_scode_pred(Scheme_Object *obj) {
   return MX_SCODEP(obj);
 }
 
-Scheme_Object *mx_scode_pred_ex(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_scode_pred_ex (int argc,Scheme_Object **argv)
+{
   return mx_scode_pred(argv[0]) ? scheme_true : scheme_false;
 }
 
-BOOL mx_comobj_pred(Scheme_Object *obj) {
+BOOL mx_comobj_pred (Scheme_Object *obj)
+{
   return MX_COM_OBJP(obj);
 }
 
-Scheme_Object *mx_comobj_pred_ex(int argc,Scheme_Object **argv) {
-  return mx_comobj_pred(argv[0]) ? scheme_true : scheme_false;
+Scheme_Object *mx_comobj_pred_ex(int argc,Scheme_Object **argv)
+{
+  return mx_comobj_pred (argv[0]) ? scheme_true : scheme_false;
 }
 
-BOOL mx_iunknown_pred(Scheme_Object *obj) {
+BOOL mx_iunknown_pred(Scheme_Object *obj)
+{
   return MX_IUNKNOWNP(obj);
 }
 
-Scheme_Object *mx_iunknown_pred_ex(int argc,Scheme_Object **argv) {
-  return mx_iunknown_pred(argv[0]) ? scheme_true : scheme_false;
+Scheme_Object *mx_iunknown_pred_ex(int argc,Scheme_Object **argv)
+{
+  return mx_iunknown_pred (argv[0]) ? scheme_true : scheme_false;
 }
 
-CY mx_cy_val(Scheme_Object *obj) {
+CY mx_cy_val (Scheme_Object *obj)
+{
   return MX_CY_VAL(obj);
 }
 
-Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv)
+{
   CY cy;
   char buff[40];
   int len;
@@ -210,24 +222,28 @@ Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
     buff[1] = '\0';
   }
 
-  port = scheme_make_string_input_port(buff);
+  port = scheme_make_byte_string_input_port(buff);
 
   return scheme_read(port);
 }
 
-BOOL lt64(_int64 n1,_int64 n2) {
+BOOL lt64 (_int64 n1,_int64 n2)
+{
   return n1 < n2;
 }
 
-BOOL gt64(_int64 n1,_int64 n2) {
+BOOL gt64 (_int64 n1,_int64 n2)
+{
   return n1 > n2;
 }
 
-_int64 add64(_int64 n,int m) {
+_int64 add64(_int64 n,int m)
+{
   return n + m;
 }
 
-_int64 sub64(_int64 n,int m) {
+_int64 sub64(_int64 n,int m)
+{
   return n - m;
 }
 
@@ -239,11 +255,11 @@ _int64 scanNum64(char *s,_int64 (*combine)(_int64,int),
   while (*s) {
     cy *= 10;
     cy = combine(cy,*s - '0');
-    if (cmp(cy,last)) {
+    if (cmp(cy,last))
       scheme_signal_error("number->com-currency: "
 			  "number %V too big to fit in com-currency",
 			  obj);
-    }
+
     last = cy;
     s++;
   }
@@ -259,9 +275,8 @@ Scheme_Object *scheme_number_to_mx_currency(int argc,Scheme_Object **argv) {
   int i;
 
   if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE &&
-      SCHEME_FLOATP(argv[0]) == FALSE) {
+      SCHEME_FLOATP(argv[0]) == FALSE)
     scheme_wrong_type("number->com-currency","exact or inexact number",0,argc,argv);
-  }
 
   s = scheme_display_to_string(argv[0],NULL);
   strncpy(buff,s,sizeof(buff)-1);
@@ -286,44 +301,32 @@ Scheme_Object *scheme_number_to_mx_currency(int argc,Scheme_Object **argv) {
     neededZeroes = 4;
   }
 
-  for (i = 0; i < neededZeroes; i++) {
+  for (i = 0; i < neededZeroes; i++)
     *q++ = '0';
-  }
 
   *q = '\0';
 
   r = buff;
 
-  cy = 0;
-  if (*r == '-') {
-    r++;
-    cy = scanNum64(r,sub64,gt64,argv[0]);
-  }
-  else {
-    cy = scanNum64(r,add64,lt64,argv[0]);
-  }
+  cy = (*r == '-')
+      ? scanNum64 (r+1, sub64, gt64, argv[0])
+      : scanNum64 (r,   add64, lt64, argv[0]);
 
   return mx_make_cy((CY *)&cy);
 }
 
-DATE mx_date_val(Scheme_Object *obj) {
-  return MX_DATE_VAL(obj);
+DATE mx_date_val (Scheme_Object *obj)
+{
+  return MX_DATE_VAL (obj);
 }
 
-BOOL isLeapYear(int year) {
-  if (year % 4) {
-    return FALSE;
-  }
-
-  if (year % 400) {
-    return TRUE;
-  }
-
-  if (year % 100) {
-    return FALSE;
-  }
-
-  return TRUE;
+BOOL isLeapYear(int year)
+{
+  return
+      (year % 4) ? FALSE
+      : (year % 400) ? TRUE
+      : (year % 100) ? FALSE
+      : TRUE;
 }
 
 Scheme_Object *mx_date_to_scheme_date(int argc,Scheme_Object **argv) {
@@ -347,17 +350,16 @@ Scheme_Object *mx_date_to_scheme_date(int argc,Scheme_Object **argv) {
 
   GUARANTEE_DATE ("date->com-date", 0);
 
-  if (VariantTimeToSystemTime(MX_DATE_VAL(argv[0]),&sysTime) == FALSE) {
+  if (VariantTimeToSystemTime(MX_DATE_VAL(argv[0]),&sysTime) == FALSE)
     scheme_signal_error("com-date->date: error in conversion");
-  }
+
 
   yearDay = offsets[sysTime.wMonth - 1] + sysTime.wDay;
 
   yearDay--; /* because 0-based */
 
-  if (sysTime.wMonth > 2 && isLeapYear(sysTime.wYear)) {
+  if (sysTime.wMonth > 2 && isLeapYear(sysTime.wYear))
     yearDay++;
-  }
 
   p[0] = scheme_make_integer(sysTime.wSecond);
   p[1] = scheme_make_integer(sysTime.wMinute);
@@ -383,18 +385,16 @@ Scheme_Object *scheme_date_to_mx_date(int argc,Scheme_Object **argv) {
   };
   int i;
 
-  if (scheme_is_struct_instance(scheme_date_type,argv[0]) == FALSE) {
+  if (scheme_is_struct_instance(scheme_date_type,argv[0]) == FALSE)
     scheme_wrong_type("date->com-date","struct:date",0,argc,argv);
-  }
 
   date = argv[0];
 
   for (i = 0; i < 10; i++) {
     // ignore DST boolean field
-    if (i != 8 && SCHEME_INTP(scheme_struct_ref(date,i)) == FALSE) {
+    if (i != 8 && SCHEME_INTP(scheme_struct_ref(date,i)) == FALSE)
       scheme_signal_error("date->com-date: date structure contains "
 			  "non-fixnum in %s field",fieldNames[i]);
-    }
   }
 
   sysTime.wMilliseconds = 0;
@@ -406,38 +406,41 @@ Scheme_Object *scheme_date_to_mx_date(int argc,Scheme_Object **argv) {
   sysTime.wYear = (WORD)SCHEME_INT_VAL(scheme_struct_ref(date,5));
   sysTime.wDayOfWeek = (WORD)SCHEME_INT_VAL(scheme_struct_ref(date,6));
 
-  if (SystemTimeToVariantTime(&sysTime,&vDate) == 0) {
+  if (SystemTimeToVariantTime(&sysTime,&vDate) == 0)
     scheme_signal_error("date->com-date: unable to perform conversion");
-  }
 
   return mx_make_date(&vDate);
 }
 
-SCODE mx_scode_val(Scheme_Object *obj) {
-  return MX_SCODE_VAL(obj);
+SCODE mx_scode_val (Scheme_Object *obj)
+{
+  return MX_SCODE_VAL (obj);
 }
 
-Scheme_Object *mx_scode_to_scheme_number(int argc,Scheme_Object **argv) {
-  return scheme_make_integer_value (mx_scode_val (GUARANTEE_SCODE ("com-scode->number", 0)));
+Scheme_Object * mx_scode_to_scheme_number (int argc, Scheme_Object **argv)
+{
+  return scheme_make_integer_value (MX_SCODE_VAL (GUARANTEE_SCODE ("com-scode->number", 0)));
 }
 
-Scheme_Object *scheme_number_to_mx_scode(int argc,Scheme_Object **argv) {
+Scheme_Object * scheme_number_to_mx_scode(int argc, Scheme_Object **argv)
+{
   SCODE scode;
 
   GUARANTEE_TYPE ("number->com-scode", 0, SCHEME_REALP, "number");
 
-  if (scheme_get_int_val(argv[0],&scode) == 0) {
-    scheme_signal_error("number->com-scode: "
-			"number %V too big to fit in com-scode",argv[0]);
-  }
+  if (scheme_get_int_val (argv[0], &scode) == 0)
+      scheme_signal_error("number->com-scode: "
+			  "number %V too big to fit in com-scode", argv[0]);
 
-  return mx_make_scode(scode);
+  return mx_make_scode (scode);
 }
 
-IDispatch *mx_comobj_val(Scheme_Object *obj) {
-  return MX_COM_OBJ_VAL(obj);
+IDispatch * mx_comobj_val (Scheme_Object * obj)
+{
+  return MX_COM_OBJ_VAL (obj);
 }
 
-IUnknown *mx_iunknown_val(Scheme_Object *obj) {
-  return MX_IUNKNOWN_VAL(obj);
+IUnknown * mx_iunknown_val (Scheme_Object * obj)
+{
+  return MX_IUNKNOWN_VAL (obj);
 }

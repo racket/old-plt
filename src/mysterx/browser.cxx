@@ -76,7 +76,7 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   BROWSER_WINDOW_STYLE_OPTION *pBwso;
   DWORD cookie;
 
-  browserWindowInit.browserWindow.label = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("make-browser", 0));
+  browserWindowInit.browserWindow.label = schemeToMultiByte (GUARANTEE_STRSYM ("make-browser", 0));
 
   assignIntOrDefault(&browserWindowInit.browserWindow.width,argv,argc,1);
   assignIntOrDefault(&browserWindowInit.browserWindow.height,argv,argc,2);
@@ -243,7 +243,7 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   browser->pISink = pISink;
   browser->pIEventQueue = pIEventQueue;
 
-  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,MZCONFIG_CUSTODIAN),
+  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_current_config(),MZCONFIG_CUSTODIAN),
 		     (Scheme_Object *)browser,
 		     (Scheme_Close_Custodian_Client *)scheme_release_browser,
 		     (void *)TRUE,0);
@@ -282,7 +282,7 @@ Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
 
   pIWebBrowser2 = MX_BROWSER_VAL (GUARANTEE_BROWSER ("navigate", 0));
 
-  url = schemeStringToBSTR (GUARANTEE_STRSYM ("navigate", 1));
+  url = schemeToBSTR (GUARANTEE_STRSYM ("navigate", 1));
 
   memset(vars,0,sizeof(vars));
 
@@ -399,7 +399,7 @@ Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
   doc->type = mx_document_type;
   doc->pIHTMLDocument2 = pIHTMLDocument2;
 
-  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,MZCONFIG_CUSTODIAN),
+  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_current_config(),MZCONFIG_CUSTODIAN),
 		     (Scheme_Object *)doc,
 		     (Scheme_Close_Custodian_Client *)scheme_release_document,
 		     NULL,0);

@@ -11,7 +11,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 // CTestControl
-class ATL_NO_VTABLE CTestControl : 
+class ATL_NO_VTABLE CTestControl :
 	public CComObjectRootEx<CComSingleThreadModel>,
 	public CStockPropImpl<CTestControl, ITestControl, &IID_ITestControl, &LIBID_TESTOBJECTLib>,
 	public CComControl<CTestControl>,
@@ -112,66 +112,74 @@ public:
 	STDMETHOD(get_Numprop)(long ndx,long *retVal);
 	STDMETHOD(put_Numprop)(long ndx,long newVal);
 
-	HRESULT OnDraw(ATL_DRAWINFO& di)
+	HRESULT OnDraw (ATL_DRAWINFO& di)
 	{
 		RECT& rc = *(RECT*)di.prcBounds;
 		Rectangle(di.hdcDraw, rc.left, rc.top, rc.right, rc.bottom);
 
 		SetTextAlign(di.hdcDraw, TA_CENTER|TA_BASELINE);
 		LPCTSTR pszText = _T("MysterX Test Control");
-		TextOut(di.hdcDraw, 
-			(rc.left + rc.right) / 2, 
-			(rc.top + rc.bottom) / 2, 
-			pszText, 
+		TextOut(di.hdcDraw,
+			(rc.left + rc.right) / 2,
+			(rc.top + rc.bottom) / 2,
+			pszText,
 			lstrlen(pszText));
 
 		return S_OK;
 	}
+
 	CComBSTR m_bstrCaption;
+
 	LRESULT OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
-    Fire_MouseDown(0x1,wParam,GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
-    Fire_Click();
-    return DefWindowProc(uMsg,wParam,lParam);
+	  Fire_MouseDown (0x1, wParam, GET_X_LPARAM (lParam), GET_Y_LPARAM (lParam));
+	  Fire_Click();
+	  return DefWindowProc (uMsg, wParam, lParam);
 	}
+
 	LRESULT OnLButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
-    Fire_MouseUp(0x1,wParam,GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
-    return DefWindowProc(uMsg,wParam,lParam);
+	  Fire_MouseUp (0x1, wParam, GET_X_LPARAM (lParam), GET_Y_LPARAM (lParam));
+	  return DefWindowProc (uMsg, wParam, lParam);
 	}
-	LRESULT OnMButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-    Fire_MouseDown(0x4,wParam,GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
-    Fire_Click();
-    return DefWindowProc(uMsg,wParam,lParam);
-	}
-	LRESULT OnMButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-    Fire_MouseUp(0x4,wParam,GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
-    return DefWindowProc(uMsg,wParam,lParam);
-	}
-	LRESULT OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-    Fire_MouseDown(0x2,wParam,GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
-    Fire_Click();
-    return DefWindowProc(uMsg,wParam,lParam);
-	}
-	LRESULT OnRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-    Fire_MouseUp(0x2,wParam,GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
-    return DefWindowProc(uMsg,wParam,lParam);
-	}
-	LRESULT OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-    short button;
-    short shift;
 
-    button = wParam & (MK_LBUTTON | MK_MBUTTON | MK_RBUTTON);
-    shift = wParam & (MK_CONTROL | MK_SHIFT);
-    
-    Fire_MouseMove(button,shift,GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
+	LRESULT OnMButtonDown (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+	  Fire_MouseDown (0x4, wParam, GET_X_LPARAM (lParam), GET_Y_LPARAM (lParam));
+	  Fire_Click();
+	  return DefWindowProc (uMsg, wParam, lParam);
+	}
 
-    return DefWindowProc(uMsg,wParam,lParam);
+	LRESULT OnMButtonUp (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+	  Fire_MouseUp (0x4, wParam, GET_X_LPARAM (lParam), GET_Y_LPARAM (lParam));
+	  return DefWindowProc (uMsg, wParam, lParam);
+	}
+
+	LRESULT OnRButtonDown (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+	  Fire_MouseDown (0x2, wParam, GET_X_LPARAM (lParam), GET_Y_LPARAM (lParam));
+	  Fire_Click();
+	  return DefWindowProc(uMsg, wParam, lParam);
+	}
+
+	LRESULT OnRButtonUp (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+	  Fire_MouseUp (0x2, wParam, GET_X_LPARAM (lParam), GET_Y_LPARAM (lParam));
+	  return DefWindowProc (uMsg, wParam, lParam);
+	}
+
+	LRESULT OnMouseMove (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+	  short button;
+	  short shift;
+
+	  button = wParam & (MK_LBUTTON | MK_MBUTTON | MK_RBUTTON);
+	  shift = wParam & (MK_CONTROL | MK_SHIFT);
+
+	  Fire_MouseMove (button, shift, GET_X_LPARAM (lParam), GET_Y_LPARAM (lParam));
+
+	  return DefWindowProc (uMsg, wParam, lParam);
 	}
 };
 

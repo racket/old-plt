@@ -53,7 +53,7 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
   case VT_UI8 :
     ULARGE_INTEGER uli;
     SafeArrayGetElement(theArray,allIndices, &uli.QuadPart);
-    return scheme_make_integer_value_from_unsigned_long_long(uli.u.LowPart, uli.u.HighPart);
+    return scheme_make_integer_value_from_unsigned_long_long(uli.QuadPart);
 
   case VT_I1  :
     char scArg;
@@ -73,7 +73,7 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
   case VT_I8 :
     LARGE_INTEGER li;
     SafeArrayGetElement(theArray,allIndices, &li.QuadPart);
-    return scheme_make_integer_value_from_long_long(li.u.LowPart, li.u.HighPart);
+    return scheme_make_integer_value_from_long_long(li.QuadPart);
 
   case VT_R4 :
     double dArg;

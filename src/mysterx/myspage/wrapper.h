@@ -21,30 +21,41 @@ END_COM_MAP()
 
 // IDispatch
 
-    STDMETHODIMP GetTypeInfoCount(UINT* pctinfo) {
-        if( !m_spdisp ) return E_UNEXPECTED;
-        return m_spdisp->GetTypeInfoCount(pctinfo);
+    STDMETHODIMP GetTypeInfoCount (UINT* pctinfo)
+    {
+      return m_spdisp != NULL
+	  ? m_spdisp->GetTypeInfoCount (pctinfo)
+	  : E_UNEXPECTED;
     }
 
-	STDMETHODIMP GetTypeInfo(UINT itinfo, LCID lcid, ITypeInfo** pptinfo) {
-        if( !pptinfo ) return E_POINTER;
-        *pptinfo = 0;
-        if( !m_spdisp ) return E_UNEXPECTED;
-        return m_spdisp->GetTypeInfo(itinfo, lcid, pptinfo);
+    STDMETHODIMP GetTypeInfo (UINT itinfo, LCID lcid, ITypeInfo** pptinfo)
+    {
+      return pptinfo != NULL
+	  ? ((* pptinfo = 0, m_spdisp != NULL)
+	     ? m_spdisp->GetTypeInfo (itinfo, lcid, pptinfo)
+	     : E_UNEXPECTED)
+	  : E_POINTER;
     }
 
-	STDMETHODIMP GetIDsOfNames(REFIID riid, LPOLESTR* rgszNames, UINT cNames,
-							   LCID lcid, DISPID* rgdispid) {
-        if( !m_spdisp ) return E_UNEXPECTED;
-        return m_spdisp->GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid);
+    STDMETHODIMP GetIDsOfNames (REFIID riid, LPOLESTR* rgszNames, UINT cNames,
+				LCID lcid, DISPID* rgdispid)
+    {
+      return m_spdisp != NULL
+	  ? m_spdisp->GetIDsOfNames (riid, rgszNames, cNames, lcid, rgdispid)
+	  : E_UNEXPECTED;
     }
 
-	STDMETHODIMP Invoke(DISPID dispidMember, REFIID riid, LCID lcid,
-						WORD wFlags, DISPPARAMS* pdispparams,
-						VARIANT* pvarResult, EXCEPINFO* pexcepinfo,
-						UINT* puArgErr) {
-        if( !m_spdisp ) return E_UNEXPECTED;
-        return m_spdisp->Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr);
+    STDMETHODIMP Invoke (DISPID dispidMember, REFIID riid, LCID lcid,
+			 WORD wFlags, DISPPARAMS* pdispparams,
+			 VARIANT* pvarResult, EXCEPINFO* pexcepinfo,
+			 UINT* puArgErr)
+    {
+      return m_spdisp != NULL
+	  ? m_spdisp->Invoke (dispidMember, riid, lcid,
+			      wFlags, pdispparams,
+			      pvarResult, pexcepinfo,
+			      puArgErr)
+	  : E_UNEXPECTED;
     }
 
 private:
@@ -70,137 +81,124 @@ END_COM_MAP()
 
 // IDocHostUIHandler
 
-  STDMETHODIMP ShowContextMenu(DWORD dwID,POINT *ppt,
-			       IUnknown *pcmdtReserved,
-			       IDispatch *pdispReserved) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
-  
-  return S_OK; // overrides default menu
-}
-	
- STDMETHODIMP GetHostInfo(DOCHOSTUIINFO *pInfo) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
+  STDMETHODIMP ShowContextMenu (DWORD, POINT *,
+			       IUnknown *,
+			       IDispatch *)
+  {
+    return m_spHandler != NULL
+	? S_OK // overrides default menu
+	: E_UNEXPECTED;
+
   }
 
-  return m_spHandler->GetHostInfo(pInfo);
-}
-	
- STDMETHODIMP ShowUI(DWORD dwID,
-		     IOleInPlaceActiveObject *pActiveObject,
-		     IOleCommandTarget *pCommandTarget,
-		     IOleInPlaceFrame *pFrame,
-		     IOleInPlaceUIWindow *pDoc) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
-
-  return m_spHandler->ShowUI(dwID,pActiveObject,pCommandTarget,pFrame,pDoc);
- }
-	
- STDMETHODIMP HideUI(void) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
-
-  return m_spHandler->HideUI();
- }
-	
- STDMETHODIMP UpdateUI(void) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
-
-  return m_spHandler->UpdateUI();
- }
-	
- STDMETHODIMP EnableModeless(BOOL fEnable) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
-
-  return m_spHandler->EnableModeless(fEnable);
- }
-	
- STDMETHODIMP OnDocWindowActivate(BOOL fActivate) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
-
-  return m_spHandler->OnDocWindowActivate(fActivate);
- }
-	
-  STDMETHODIMP OnFrameWindowActivate(BOOL fActivate) {
-    if (!m_spHandler) {
-      return E_UNEXPECTED;
+    STDMETHODIMP GetHostInfo (DOCHOSTUIINFO *pInfo)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->GetHostInfo (pInfo)
+	  : E_UNEXPECTED;
     }
 
-  return m_spHandler->OnFrameWindowActivate(fActivate);
- }
-	
-  STDMETHODIMP ResizeBorder(LPCRECT prcBorder,
-			    IOleInPlaceUIWindow *pUIWindow,BOOL fFrameWindow) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
+    STDMETHODIMP ShowUI (DWORD dwID,
+			 IOleInPlaceActiveObject *pActiveObject,
+			 IOleCommandTarget *pCommandTarget,
+			 IOleInPlaceFrame *pFrame,
+			 IOleInPlaceUIWindow *pDoc)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->ShowUI (dwID, pActiveObject,
+				 pCommandTarget, pFrame, pDoc)
+	  : E_UNEXPECTED;
+    }
 
-  return m_spHandler->ResizeBorder(prcBorder,pUIWindow,fFrameWindow);
- }
-	
-  STDMETHODIMP TranslateAccelerator(LPMSG lpMsg,
-				    const GUID __RPC_FAR *pguidCmdGroup,
-				    DWORD nCmdID) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
+    STDMETHODIMP HideUI (void)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->HideUI()
+	  : E_UNEXPECTED;
+    }
 
-  return m_spHandler->TranslateAccelerator(lpMsg,pguidCmdGroup,nCmdID);
- }
-	
- STDMETHODIMP GetOptionKeyPath(LPOLESTR *pchKey,DWORD dw) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
+    STDMETHODIMP UpdateUI (void)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->UpdateUI()
+	  : E_UNEXPECTED;
+    }
 
-  return m_spHandler->GetOptionKeyPath(pchKey,dw);
- }
-	
- STDMETHODIMP GetDropTarget(IDropTarget *pDropTarget,IDropTarget **ppDropTarget) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
+    STDMETHODIMP EnableModeless (BOOL fEnable)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->EnableModeless (fEnable)
+	  : E_UNEXPECTED;
+    }
 
-  return m_spHandler->GetDropTarget(pDropTarget,ppDropTarget);
- }
-	
- STDMETHODIMP GetExternal(IDispatch **ppDispatch) {
-   if (!m_spHandler) {
-     return E_UNEXPECTED;
-   }
+    STDMETHODIMP OnDocWindowActivate (BOOL fActivate)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->OnDocWindowActivate (fActivate)
+	  : E_UNEXPECTED;
+    }
 
-   return m_spHandler->GetExternal(ppDispatch);
- }
-	
- STDMETHODIMP TranslateUrl(DWORD dwTranslate,
-			   OLECHAR  *pchURLIn,
-			   OLECHAR  **ppchURLOut) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
+    STDMETHODIMP OnFrameWindowActivate (BOOL fActivate)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->OnFrameWindowActivate (fActivate)
+	  : E_UNEXPECTED;
+    }
 
-  return m_spHandler->TranslateUrl(dwTranslate,pchURLIn,ppchURLOut);
- }
-	
- STDMETHODIMP FilterDataObject(IDataObject *pDO,
-			       IDataObject **ppDORet) {
-  if (!m_spHandler) {
-    return E_UNEXPECTED;
-  }
+    STDMETHODIMP ResizeBorder (LPCRECT prcBorder,
+			       IOleInPlaceUIWindow *pUIWindow, BOOL fFrameWindow)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->ResizeBorder (prcBorder, pUIWindow, fFrameWindow)
+	  : E_UNEXPECTED;
+    }
 
-  return m_spHandler->FilterDataObject(pDO,ppDORet);
+    STDMETHODIMP TranslateAccelerator (LPMSG lpMsg,
+				       const GUID __RPC_FAR *pguidCmdGroup,
+				       DWORD nCmdID)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->TranslateAccelerator (lpMsg, pguidCmdGroup, nCmdID)
+	  : E_UNEXPECTED;
+    }
+
+    STDMETHODIMP GetOptionKeyPath (LPOLESTR *pchKey, DWORD dw)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->GetOptionKeyPath (pchKey,dw)
+	  : E_UNEXPECTED;
+    }
+
+    STDMETHODIMP GetDropTarget (IDropTarget *pDropTarget, IDropTarget **ppDropTarget)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->GetDropTarget (pDropTarget, ppDropTarget)
+	  : E_UNEXPECTED;
+    }
+
+    STDMETHODIMP GetExternal (IDispatch **ppDispatch)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->GetExternal (ppDispatch)
+	  : E_UNEXPECTED;
  }
+
+    STDMETHODIMP TranslateUrl (DWORD dwTranslate,
+			       OLECHAR  *pchURLIn,
+			       OLECHAR  **ppchURLOut)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->TranslateUrl (dwTranslate, pchURLIn, ppchURLOut)
+	  : E_UNEXPECTED;
+    }
+
+    STDMETHODIMP FilterDataObject (IDataObject *pDO,
+				   IDataObject **ppDORet)
+    {
+      return m_spHandler != NULL
+	  ? m_spHandler->FilterDataObject (pDO,ppDORet)
+	  : E_UNEXPECTED;
+    }
 
 private:
   CComPtr<IDocHostUIHandler> m_spHandler;

@@ -17,7 +17,7 @@
 #include "mysterx.h"
 
 IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
-			      char *tag,char *id,int index) {
+			      LPCTSTR tag, LPCTSTR id,int index) {
   IHTMLElementCollection *pTagCollection;
   IHTMLElement *pBody,*pIHTMLElement,*retval;
   IDispatch *pIDispatch;
@@ -40,9 +40,9 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
 
   // special-handling if body element requested
 
-  if (stricmp(tag,"BODY") == 0) {
+  if (lstrcmpi(tag,TEXT("BODY")) == 0) {
     idAttribute = SysAllocString(L"id");
-    idBSTR = stringToBSTR(id,strlen(id));
+    idBSTR = textToBSTR(id,lstrlen(id));
 
     pBody->getAttribute(idAttribute,FALSE,&variant);
 
@@ -105,7 +105,7 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
 
 }
 
-IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *pBody,char *tag) {
+IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *pBody, LPCTSTR tag) {
   IDispatch *pBodyDispatch;
   IDispatch *pObjectsDispatch;
   IHTMLElementCollection *pBodyEltCollection;
@@ -127,7 +127,7 @@ IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *pBody,char *tag) {
 
   pBodyEltCollection->get_length(&numBodyItems);
 
-  bstr = stringToBSTR(tag,strlen(tag));
+  bstr = textToBSTR(tag,lstrlen(tag));
 
   VariantInit(&variant);
   VariantInit(&emptyVariant);
@@ -269,7 +269,7 @@ Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
     codedComError("element-set-selection!: Couldn't find IHTMLSelectElement interface",hr);
   }
 
-  selection = schemeStringToBSTR (argv[1]);
+  selection = schemeToBSTR (argv[1]);
 
   hr = pIHTMLSelectElement->put_value(selection);
 
@@ -296,7 +296,7 @@ Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   whereBSTR = SysAllocString(where);
-  htmlBSTR = schemeStringToBSTR (argv[1]);
+  htmlBSTR = schemeToBSTR (argv[1]);
 
   pIHTMLElement->insertAdjacentHTML(whereBSTR,htmlBSTR);
 
@@ -324,7 +324,7 @@ Scheme_Object *mx_element_stuff_text(int argc,Scheme_Object **argv,WCHAR *where,
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   whereBSTR = SysAllocString(where);
-  textBSTR = schemeStringToBSTR (argv[1]);
+  textBSTR = schemeToBSTR (argv[1]);
 
   pIHTMLElement->insertAdjacentText(whereBSTR,textBSTR);
 
@@ -357,7 +357,7 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  htmlBSTR = schemeStringToBSTR (argv[1]);
+  htmlBSTR = schemeToBSTR (argv[1]);
 
   pIHTMLElement->put_outerHTML(htmlBSTR);
 
@@ -426,7 +426,7 @@ Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  attributeBSTR = schemeStringToBSTR (argv[1]);
+  attributeBSTR = schemeToBSTR (argv[1]);
 
   pIHTMLElement->getAttribute(attributeBSTR,FALSE,&variant);
 
@@ -459,7 +459,7 @@ Scheme_Object *mx_element_set_attribute(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  attributeBSTR = schemeStringToBSTR (argv[1]);
+  attributeBSTR = schemeToBSTR (argv[1]);
 
   marshalSchemeValueToVariant(argv[2],&variant);
 
@@ -485,7 +485,7 @@ Scheme_Object *mx_element_remove_attribute(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  attributeBSTR = schemeStringToBSTR (argv[1]);
+  attributeBSTR = schemeToBSTR (argv[1]);
 
   pIHTMLElement->removeAttribute(attributeBSTR,FALSE,&success);
 
@@ -588,7 +588,7 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   GUARANTEE_ELEMENT (scm_name, 0); \
   GUARANTEE_STRSYM (scm_name, 1);  \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
-  bstr = schemeStringToBSTR (argv[1]); \
+  bstr = schemeToBSTR (argv[1]); \
   hr = pIHTMLStyle->dhtml_name(bstr); \
   SysFreeString(bstr); \
   pIHTMLStyle->Release(); \

@@ -43,6 +43,9 @@ typedef void (*p_wxGDrawPolygon)(Graphics *g, Pen *p, PointF *pts, int n);
 typedef void (*p_wxGFillPath)(Graphics *g, Brush *b, GraphicsPath *gp);
 typedef void (*p_wxGDrawPath)(Graphics *g, Pen *p, GraphicsPath *gp);
 
+typedef void (*p_wxGDrawString)(Graphics *g, wchar_t *w, int len, Font *f, PointF *pos, StringFormat *fmt, COLORREF c);
+typedef void (*p_wxGMeasureString)(Graphics *g, wchar_t *w, int len, Font *f, PointF *pos, StringFormat *fmt, RectF *r);
+
 typedef GraphicsPath *(*p_wxGPathNew)(FillMode m);
 typedef void (*p_wxGPathRelease)(GraphicsPath *gp);
 
@@ -66,6 +69,11 @@ typedef void (*p_wxGBrushRelease)(Brush *b);
 
 typedef Pen *(*p_wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join, int ndash, REAL *dashes, REAL offset);
 typedef void (*p_wxGPenRelease)(Pen *b);
+
+typedef Font (*p_wxGFontCreate)(HFONT hf);
+typedef void (*p_wxGFontRelease)(Font f);
+
+typedef StringFormat (*p_wxGStringFormatCreate)(int flags);
 
 /* ********************************************************************** */
 
@@ -103,6 +111,9 @@ p_wxGDrawPolygon wxGDrawPolygon;
 p_wxGFillPath wxGFillPath;
 p_wxGDrawPath wxGDrawPath;
 
+p_wxGDrawString wxGDrawString;
+p_wxGMeasureString wxGMeasureString;
+
 p_wxGPathNew wxGPathNew;
 p_wxGPathRelease wxGPathRelease;
 
@@ -125,6 +136,11 @@ p_wxGBrushRelease wxGBrushRelease;
 
 p_wxGPenNew wxGPenNew;
 p_wxGPenRelease wxGPenRelease;
+
+p_wxGFontCreate wxGFontCreate;
+p_wxGFontRelease wxGFontRelease;
+
+p_wxGStringFormatCreate wxGStringFormatCreate;
 
 /* ********************************************************************** */
 
@@ -164,6 +180,9 @@ static void GetProcs(HMODULE m)
   wxGFillPath = (p_wxGFillPath)GetProcAddress(m, "wxGFillPath");
   wxGDrawPath = (p_wxGDrawPath)GetProcAddress(m, "wxGDrawPath");
 
+  wxGDrawString = (p_wxGDrawString)GetProcAddress(m, "wxGDrawString");
+  wxGMeasureString = (p_wxGMeasureString)GetProcAddress(m, "wxGMeasureString");
+
   wxGPathNew = (p_wxGPathNew)GetProcAddress(m, "wxGPathNew");
   wxGPathRelease = (p_wxGPathRelease)GetProcAddress(m, "wxGPathRelease");
 
@@ -186,6 +205,11 @@ static void GetProcs(HMODULE m)
 
   wxGPenNew = (p_wxGPenNew)GetProcAddress(m, "wxGPenNew");
   wxGPenRelease = (p_wxGPenRelease)GetProcAddress(m, "wxGPenRelease");
+
+  wxGFontCreate = (p_wxGFontCreate)GetProcAddress(m, "wxGFontCreate");
+  wxGFontRelease = (p_wxGFontRelease)GetProcAddress(m, "wxGFontRelease");
+
+  wxGStringFormatCreate = (p_wxGStringFormatCreate)GetProcAddress(m, "wxGStringFormatCreate");
 }
 
 void wxInitGraphicsPlus()

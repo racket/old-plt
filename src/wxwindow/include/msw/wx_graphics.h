@@ -40,6 +40,9 @@ WX_GRAPHICS_EXPORT void WX_GPROC(wxGDrawPolygon)(Graphics *g, Pen *p, PointF *pt
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGFillPath)(Graphics *g, Brush *b, GraphicsPath *gp);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGDrawPath)(Graphics *g, Pen *p, GraphicsPath *gp);
 
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGDrawString)(Graphics *g, wchar_t *w, int len, Font *f, PointF *pos, StringFormat *fmt, COLORREF c);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGMeasureString)(Graphics *g, wchar_t *w, int len, Font *f, PointF *pos, StringFormat *fmt, RectF *r);
+
 WX_GRAPHICS_EXPORT GraphicsPath *WX_GPROC(wxGPathNew)(FillMode m);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathRelease)(GraphicsPath *gp);
 
@@ -64,3 +67,8 @@ WX_GRAPHICS_EXPORT void WX_GPROC(wxGBrushRelease)(Brush *b);
 
 WX_GRAPHICS_EXPORT Pen *WX_GPROC(wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join, int ndash, REAL *dashes, REAL offset);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPenRelease)(Pen *b);
+
+WX_GRAPHICS_EXPORT Font WX_GPROC(wxGFontCreate)(HFONT hf);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGFontRelease)(Font f);
+
+WX_GRAPHICS_EXPORT StringFormat WX_GPROC(wxGStringFormatCreate)(int flags);

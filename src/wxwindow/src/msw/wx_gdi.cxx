@@ -97,6 +97,11 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
 
 wxFont::~wxFont()
 {
+  if (c_f) {
+    wxGFontRelease(c_f);
+    c_f = NULL;
+  }
+
   if (screen_cfont)
     DeleteRegisteredGDIObject(screen_cfont);
   if (general_cfont)
@@ -391,6 +396,22 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, double angle)
     general_cfont = cfont;
 
   return cfont;
+}
+
+Font *wxFont::GraphicsFont(HFONT cf)
+{
+  if (cf == c_f_cfont)
+    return c_f;
+
+  if (c_f) {
+    wxGFontRelease(c_f);
+    c_f = NULL;
+  }
+
+  c_f_cfont = cf;
+  c_f = wxGFontCreate(cf);
+
+  return c_f;
 }
 
 /*

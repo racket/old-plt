@@ -24,6 +24,9 @@ class wxFont: public wxbFont
   HFONT general_cfont;
   wxList *rotated_font;
 
+  Font *c_f;
+  HFONT c_f_cfont;
+
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
 	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, double Rotation = 0.0);
@@ -34,6 +37,8 @@ class wxFont: public wxbFont
 	      int smoothing, Bool sip, double Rotation);
   HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE, double angle = 0.0);
   inline HFONT GetInternalFont(HDC dc, double angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
+
+  Font *GraphicsFont(HFONT cf);
 
   Bool ScreenGlyphAvailable(int c);
   Bool GlyphAvailable(int c, HDC hdc, int screen_font);

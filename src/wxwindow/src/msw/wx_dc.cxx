@@ -32,6 +32,8 @@ static wxMemoryDC *blit_dc, *blit_mdc;
 static HANDLE null_brush;
 static HANDLE null_pen;
 
+static StringFormat *the_fmt;
+
 void RegisterGDIObject(HANDLE x);
 
 extern Bool wx_gdi_plus;
@@ -48,6 +50,13 @@ void wxGDIShutdown(void)
 {
   if (wx_gdi_plus)
     wxGShutdown();
+}
+
+static void init_the_format()
+{
+  if (!the_fmt) {
+    the_fmt = wxGNewStringFormat(0);
+  }
 }
 
 static is_nt()
@@ -1495,7 +1504,40 @@ static int ucs4_strlen(const unsigned int *c)
 #define QUICK_UBUF_SIZE 1024
 static wchar_t u_buf[QUICK_UBUF_SIZE];
 
-wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen)
+static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 8704, 0, 8707, 0, 0, 8717,
+			    0, 0, 8727, 0, 0, 8722, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    8773, 913, 914, 935, 916, 917, 934, 915,
+			    919, 921, 977, 922, 923, 924, 925, 927,
+			    928, 920, 929, 931, 932, 933, 962, 937,
+			    926, 936, 918, 0, 8756, 0, 8869, 0,
+			    0, 945, 946, 967, 948, 949, 966, 947,
+			    951, 953, 981, 954, 955, 956, 957, 959,
+			    960, 952, 961, 963, 964, 965, 982, 969,
+			    958, 968, 950, 0, 0, 0, 8764, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 0, 0, 0, 0, 0, 0, 0,
+			    0, 978, 8242, 8804, 8260, 8734, 402, 9827,
+			    9830, 9829, 9824, 8596, 8592, 8593, 8594, 8595,
+			    0, 177, 8243, 8805, 215, 8733, 8706, 8729,
+			    247, 8800, 8801, 8776, 8230, 9168, /* 9135 */8212, 8629,
+			    8501, 8465, 8476, 8472, 8855, 8853, 8709, 8745,
+			    8746, 8835, 8839, 8836, 8834, 8838, 8712, 8713,
+			    8736, 8711, 174, 169, 8482, 8719, 8730, 8901,
+			    172, 8743, 8744, 8660, 8656, 8657, 8658, 8659,
+			    9674, 9001, 174, 169, 8482, 8721, 9115, 9116,
+			    9117, 9121, 9122, 9123, 9127, 9128, 9129, 9130,
+			    8364, 9002, 8747, 8992, 9134, 8993, 9118, 9119,
+			    9120, 9124, 9125, 9126, 9131, 9132, 9133, 0 };
+
+wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, Bool is_sym)
 {
   int ulen, alloc_ulen;
   wchar_t *unicode;
@@ -1527,6 +1569,8 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     /* UCS-4 -> UTF-16 conversion */
     for (i = 0, extra = 0; i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
+      if (is_sym && (v < 256))
+	v = symbol_map[v];
       if (v > 0xFFFF) {
 	v -= 0x10000;
 	unicode[i+extra] = 0xD800 | ((v >> 10) & 0x3FF);
@@ -1548,6 +1592,17 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
 			      (unsigned int *)unicode, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
+
+    if (is_sym) {
+      int i, v;
+      for (i = 0; i < ulen; i++) {
+	v = ((wchar_t *)unicode)[i];
+	if (v < 256) {
+	  v = symbol_map[v];
+	  ((wchar_t *)unicode)[i] = v;
+	}
+      }
+    }
   }
   
   *_ulen = ulen;
@@ -1558,18 +1613,17 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 {
   HDC dc;
   DWORD old_background;
-  double w, h;
+  COLORREF col;
+  double w;
   wchar_t *ustring;
   long len, alen;
   SIZE sizeRect;
   double oox, ooy;
+  int fam;
 
   dc = ThisDC();
 
   if (!dc) return;
-
-  ReleaseGraphics(dc);
-  SetScaleMode(wxWINDOWS_SCALE, dc);
 
   if (font) {
     HFONT cfont;
@@ -1580,25 +1634,37 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
       if (!old_font)
         old_font = f;
     }
+    fam = font->GetFamuly();
+  } else
+    fam = wxDEFAULT;
+  
+  ustring = convert_to_drawable_format(text, d, ucs4, &len, fam == wxSYMBOL);
+
+  if (wx_gdi_plus) {
+    InitGraphics(dc);
+    init_the_format();
+    if (current_text_background->Ok())
+      col = current_text_background->pixel;
+    else
+      col = 0;
+  } else {
+    ReleaseGraphics(dc);
+    if (current_text_foreground->Ok())
+      SetTextColor(dc, current_text_foreground->pixel);
+    if (current_text_background->Ok()) {
+      old_background = SetBkColor(dc, current_text_background->pixel);
+    }
+  
+    SetBkMode(dc, (((current_bk_mode == wxTRANSPARENT) 
+		    || (angle != 0.0))
+		   ? TRANSPARENT
+		   : OPAQUE));
+    SetRop(dc, wxSOLID);
+    col  = 0;
   }
+  SetScaleMode(wxWINDOWS_SCALE, dc);
   
-  if (current_text_foreground->Ok())
-    SetTextColor(dc, current_text_foreground->pixel);
-
-  if (current_text_background->Ok()) {
-    old_background = SetBkColor(dc, current_text_background->pixel);
-  }
-  
-  SetBkMode(dc, (((current_bk_mode == wxTRANSPARENT) 
-		  || (angle != 0.0))
-		 ? TRANSPARENT
-		 : OPAQUE));
-  
-  SetRop(dc, wxSOLID);
-
-  ustring = convert_to_drawable_format(text, d, ucs4, &len);
-
-  w = h = 0;
+  w = 0;
   d = 0;
 
   oox = device_origin_x;
@@ -1612,17 +1678,23 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
     SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
 
-    (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
-
-    if (alen == 1) {
-      ABCFLOAT cw;
-      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
-      w += cw.abcfA + cw.abcfB + cw.abcfC;
+    if (wx_gdi_plus) {
+      PointF p;
+      p.X = p.Y = 0;
+      wxGDrawString(g, ustring XFORM_OK_PLUS d, alen, &p, the_fmt, col);
+      w += r.Width;
     } else {
-      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+      (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
 
-      w += sizeRect.cx;
-      h += sizeRect.cy;
+      if (alen == 1) {
+	ABCFLOAT cw;
+	GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
+	w += cw.abcfA + cw.abcfB + cw.abcfC;
+      } else {
+	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+
+	w += sizeRect.cx;
+      }
     }
 
     len -= alen;
@@ -1631,8 +1703,10 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
   SetDeviceOrigin(oox, ooy);
 
-  if (current_text_background->Ok())
-    (void)SetBkColor(dc, old_background);
+  if (!wx_gdi_plus) {
+    if (current_text_background->Ok())
+      (void)SetBkColor(dc, old_background);
+  }
 
   DoneDC(dc);
 }
@@ -1876,13 +1950,16 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
   long len, alen;
   double tx, ty;
   wchar_t *ustring;
-  int once = 1;
+  int once = 1, fam;
 
   if (theFont) {
     oldFont = font;
     SetFont(theFont);
-  } else
+    fam = theFont->GetFamuly();
+  } else {
     SetFont(font);
+    fam = font->GetFamuly();
+  }
 
   dc = ThisDC();
 
@@ -1894,15 +1971,21 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
     return;
   }
 
-  ReleaseGraphics(dc);
+  ustring = convert_to_drawable_format(string, d, ucs4, &len, fam == wxSYMBOL);
+  
+  if (wx_gdi_plus) {
+    InitGraphics(dc);
+    init_the_format();
+  } else {
+    ReleaseGraphics(dc);
+  }
+
   SetScaleMode(wxWINDOWS_SCALE, dc);
-
-  ustring = convert_to_drawable_format(string, d, ucs4, &len);
-
+  
   d = 0;
   tx = 0;
   ty = 0;
-
+  
   while (len || once) {
     if (!len)
       alen = 0;
@@ -1911,18 +1994,28 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
     else
       alen = 1;
 
-    if (alen == 1) {
-      ABCFLOAT cw;
-      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
-      tx += cw.abcfA + cw.abcfB + cw.abcfC;
-      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+    if (wx_gdi_plus) {
+      PointF p;
+      RectF r;
+      p.X = p.Y = 0;
+      wxGMeasureString(g, ustring XFORM_OK_PLUS d, alen, &p, the_fmt, &r);
+      tx += r.Width;
+      if (rect.Height > ty)
+	ty = rect.Height;
     } else {
-      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-      if (len)
-	tx += sizeRect.cx;
+      if (alen == 1) {
+	ABCFLOAT cw;
+	GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
+	tx += cw.abcfA + cw.abcfB + cw.abcfC;
+	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+      } else {
+	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+	if (len)
+	  tx += sizeRect.cx;
+      }
+      if (sizeRect.cy > ty)
+	ty = sizeRect.cy;
     }
-    if (sizeRect.cy > ty)
-      ty = sizeRect.cy;
 
     len -= alen;
     d += alen;
@@ -2167,8 +2260,8 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
   ysrc1 = (int)floor(ysrc);
 
   /* Source w/h */
-  iw = (int)floor(width);
-  ih = (int)floor(height);
+  iw = (int)floor(xsrc + width) - xsrc1;
+  ih = (int)floor(ysrc + height) - ysrc1;
  
   if (!blit_dc) {
     wxREGGLOB(blit_dc);

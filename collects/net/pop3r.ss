@@ -1,4 +1,4 @@
-; Time-stamp: <97/11/10 23:33:17 shriram>
+; Time-stamp: <98/07/14 14:45:59 shriram>
 
 (unit/sig mzlib:pop3^
   (import)
@@ -243,9 +243,7 @@
 
   (define get-one-line-from-server
     (lambda (server->client-port)
-      (begin0
-	(read-line server->client-port)
-	(read-line server->client-port)))) ; Second needed for LF of CR-LF
+      (read-line server->client-port 'return-linefeed)))
 
   ;; get-server-status-response :
   ;; communicator -> server-responses x string

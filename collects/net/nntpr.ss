@@ -1,4 +1,4 @@
-; Time-stamp: <97/08/26 21:06:41 shriram>
+; Time-stamp: <98/07/14 14:41:20 shriram>
 ; Time-stamp: <97/03/05 15:34:09 shriram>
 
 (unit/sig mzlib:nntp^
@@ -119,9 +119,7 @@
 
   (define get-one-line-from-server
     (lambda (server->client-port)
-      (begin0
-	(read-line server->client-port)
-	(read-line server->client-port)))) ; Second needed for LF of CR-LF
+      (read-line server->client-port 'return-linefeed)))
 
   ; get-single-line-response :
   ; communicator -> number x string

@@ -1,6 +1,8 @@
 (unit/sig mzlib:cgi^
-  (import (sendmail : mzlib:sendmail^))
+  (import)
    
+  ;; type bindings = list ((symbol . string))
+
   ;; --------------------------------------------------------------------
 
   ;; Exceptions:
@@ -137,7 +139,7 @@
 	      (loop (cons c chars))))))))
 
   ;; read-name+value :
-  ;; iport -> (string + bool) x (string + bool) x bool
+  ;; iport -> (symbol + bool) x (string + bool) x bool
 
   ;; -- If the first value is false, so is the second, and the third is
   ;; true, indicating EOF was reached without any input seen.  Otherwise,
@@ -166,12 +168,12 @@
 	  (else
 	    (let-values (((value eof?)
 			   (read-until-char ip #\&)))
-	      (values (query-chars->string name)
+	      (values (string->symbol (query-chars->string name))
 		(query-chars->string value)
 		eof?)))))))
    
   ;; get-bindings/post :
-  ;; () -> list ((string . string))
+  ;; () -> bindings
    
   (define get-bindings/post
     (lambda ()
@@ -188,7 +190,7 @@
 	      (get-bindings/post)))))))
 
   ;; get-bindings/get :
-  ;; () -> list ((string . string))
+  ;; () -> bindings
 
   (define get-bindings/get
     (lambda ()
@@ -207,7 +209,7 @@
 		  (loop)))))))))
 
   ;; get-bindings :
-  ;; () -> list ((string . string))
+  ;; () -> bindings
 
   (define get-bindings
     (lambda ()
@@ -225,21 +227,24 @@
       (exit)))
 
   ;; bindings-as-html :
-  ;; list ((string . string)) -> list (html-string)
-  ;; -- formats name-value bindings as HTML appropriate for passing to
-  ;; generate-error-output or 
+  ;; bindings -> list (html-string)
+  ;; -- formats name-value bindings as HTML appropriate for displaying
 
   (define bindings-as-html
     (lambda (bindings)
       `("<code>"
 	 ,@(map
 	     (lambda (bind)
-	       (string-append (car bind) "&nbsp;-->&nbsp;" (cdr bind) "<br>"))
+	       (string-append
+		 (symbol->string (car bind))
+		 "&nbsp;--&gt;&nbsp;"
+		 (cdr bind)
+		 "<br>"))
 	     bindings)
 	 "</code>")))
 
   ;; extract-bindings :
-  ;; string x list ((string . string)) -> list (string)
+  ;; (string + symbol) x bindings -> list (string)
 
   ;; -- Extracts the bindings associated with a given name.  The semantics
   ;; of forms states that a CHECKBOX may use the same NAME field multiple
@@ -248,32 +253,36 @@
 
   (define extract-bindings
     (lambda (field-name bindings)
-      (let loop ((found null) (bindings bindings))
-	(if (null? bindings)
-	  found
-	  (if (equal? field-name (caar bindings))
-	    (loop (cons (cdar bindings) found) (cdr bindings))
-	    (loop found (cdr bindings)))))))
+      (let ((field-name (if (symbol? field-name) field-name
+			  (string->symbol field-name))))
+	(let loop ((found null) (bindings bindings))
+	  (if (null? bindings)
+	    found
+	    (if (equal? field-name (caar bindings))
+	      (loop (cons (cdar bindings) found) (cdr bindings))
+	      (loop found (cdr bindings))))))))
 
   ;; extract-binding/single : 
-  ;; string x list ((string . string)) -> string
+  ;; (string + symbol) x bindings -> string
   ;; -- used in cases where only one binding is supposed to occur
 
   (define extract-binding/single
     (lambda (field-name bindings)
-      (let ((result (extract-bindings field-name bindings)))
-	(cond
-	  ((null? result)
-	    (generate-error-output
-	      `(,(string-append "No binding for field `" field-name "' in <p>")
-		 ,@(bindings-as-html bindings))))
-	  ((null? (cdr result))
-	    (car result))
-	  (else
-	    (generate-error-output
-	      `(,(string-append "Multiple bindings for field `" field-name "'")
-		 ,(string-append "where only one was expected in <p>")
-		 ,@(bindings-as-html bindings))))))))
+      (let ((field-name (if (symbol? field-name) field-name
+			  (string->symbol field-name))))
+	(let ((result (extract-bindings field-name bindings)))
+	  (cond
+	    ((null? result)
+	      (generate-error-output
+		`(,(string-append "No binding for field `" field-name "' in <p>")
+		   ,@(bindings-as-html bindings))))
+	    ((null? (cdr result))
+	      (car result))
+	    (else
+	      (generate-error-output
+		`(,(string-append "Multiple bindings for field `" field-name "'")
+		   ,(string-append "where only one was expected in <p>")
+		   ,@(bindings-as-html bindings)))))))))
 
   ;; get-cgi-method :
   ;; () -> string

@@ -262,7 +262,7 @@
       (define (lex-name in pos)
         (let ([c (read-char in)])
           (unless (name-start? c)
-            (lex-error in pos "expected name, received ~a" c))
+            (lex-error in pos "expected name, received ~s" c))
           (string->symbol
            (list->string
             (cons c (let lex-rest ()

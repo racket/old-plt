@@ -247,13 +247,13 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 				  the_handle, (HMENU)newId, wxhInstance, NULL);
       radioButtons[i] = rbhand;
 
-      SetBitmapDimensionEx(rbm->ms_bitmap,
+      SetBitmapDimensionEx(rbm->GetLabelBitmap(),
 			   rbm->GetWidth(),
 			   rbm->GetHeight(),
 			   NULL);
       SendMessage((HWND)radioButtons[i], WM_CHANGEBITMAP,
 		  (WPARAM)0xFFFF,
-		  (LPARAM)rbm->ms_bitmap);
+		  (LPARAM)rbm->GetLabelBitmap());
     } else {
       HWND rbhand;
 
@@ -320,6 +320,7 @@ wxRadioBox::~wxRadioBox(void)
       if (bm_labels[i]) {
 	wxBitmap *rbm = bm_labels[i];
 	--rbm->selectedIntoDC;
+	rbm->ReleaseLabel();
       }
     }
 
@@ -363,16 +364,17 @@ void wxRadioBox::SetLabel(int item,wxBitmap *bitmap)
   rbm = bm_labels[item];
 
   --rbm->selectedIntoDC;
+  rbm->ReleaseLabel();
   bm_labels[item] = bitmap;
   bitmap->selectedIntoDC++;
 
-  SetBitmapDimensionEx(bitmap->ms_bitmap,
+  SetBitmapDimensionEx(bitmap->GetLabelBitmap(),
 		       bitmap->GetWidth(),
 		       bitmap->GetHeight(),
 		       NULL);
   SendMessage((HWND)radioButtons[item],WM_CHANGEBITMAP,
 	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-	      (LPARAM)bitmap->ms_bitmap);
+	      (LPARAM)bitmap->GetLabelBitmap());
   {
     int bw, bh;
     bw = bitmap->GetWidth();

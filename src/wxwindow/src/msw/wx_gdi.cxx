@@ -1660,6 +1660,10 @@ wxBitmap::~wxBitmap(void)
     DeleteRegisteredGDIObject(ms_bitmap);
   }
   ms_bitmap = NULL;
+  if (label_bitmap) {
+    DeleteRegisteredGDIObject(label_bitmap);
+  }
+  label_bitmap = NULL;
   if (accounting) {
     GC_free_accounting_shadow(accounting);
     accounting = NULL;
@@ -1839,5 +1843,54 @@ wxBitmap *wxLoadBitmap(char *filename, wxColourMap **pal)
   {
     delete bitmap;
     return NULL;
+  }
+}
+
+/****************************************/
+
+HBITMAP wxBitmap::GetLabelBitmap()
+{
+  wxBitmap *bm;
+  wxMemoryDC *dc;
+  DWORD v;
+  wxColor *c;
+
+  if (label_bitmap)
+    return label_bitmap;
+
+  if (!mask || (mask->GetWidth() != GetWidth())
+      || (mask->GetHeight() != GetHeight()))
+    return ms_bitmap;
+
+  /* Draw with mask into a background-gray area... */
+  bm = new wxBitmap(GetWidth(), GetHeight(), GetDepth());
+
+  if (!bm->Ok())
+    return ms_bitmap;
+
+  dc = new wxMemoryDC(0);
+  dc->SelectObject(bm);
+  v = GetSysColor(COLOR_BTNFACE);
+  c = new wxColour(GetRValue(v), GetGValue(v), GetBValue(v));
+  dc->SetBackground(c);
+  dc->Clear();
+  dc->Blit(0, 0, GetWidth(), GetHeight(),
+	   this, 0, 0, wxSOLID,
+	   wxBLACK, mask);
+  dc->SelectObject(NULL);
+
+  /* Take over ownership of label_bitmap: */
+  label_bitmap = bm->ms_bitmap;
+  bm->ms_bitmap = 0;
+  DELETE_OBJ bm;
+
+  return label_bitmap;
+}
+
+void wxBitmap::ReleaseLabel()
+{
+  if (!selectedIntoDC && label_bitmap) {
+    DeleteRegisteredGDIObject(label_bitmap);
+    label_bitmap = NULL;
   }
 }

@@ -165,7 +165,8 @@
 	     (lambda (n descs)
 	       (if (null? descs)
 		   '()
-		   (let* ([the-snip (send definitions-edit find-snip n wx:const-snip-after)]
+		   (let* ([the-snip (send definitions-edit 
+					  find-snip n wx:const-snip-after)]
 			  [the-style (send the-snip get-style)]
 			  [the-font (send the-style get-font)]
 			  [exp-desc (car descs)]

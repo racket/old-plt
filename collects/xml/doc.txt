@@ -24,6 +24,13 @@ Xexpr:
 
 The end of this document has more details.
 
+Exceptions
+==========
+
+> (define-struct (exn:invalid-xexpr exn) (code))
+       Raised by validate-xexpr when passed an invalid Xexpr. Code contains an
+       invalid part of an Xexpr.
+
 Functions
 =========
 
@@ -88,6 +95,16 @@ Functions
        Passing in the function called "not" instead of the identity function
        filters all elements which are not named in the list.  Using void
        filters all elements regardless of the list.
+
+> xexpr? : any -> Boolean
+       Is the given thing an Xexpr?
+
+> validate-xexpr : any -> #t
+       If the given thing is an Xexpr, produce true. Otherwise, raise
+       _exn:invalid-xexpr_, with the message set to "Expected something, given
+       something-else", where "something" is what it expected and
+       "something-else" set to what it was really given; and the code set to
+       the part of the non-Xexpr that caused the exception.
 
 Parameters
 ==========

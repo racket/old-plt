@@ -1,133 +1,11 @@
 (module tester mzscheme
-  (require (lib "mred.ss" "mred"))
+  (require "private/tester-gui.ss")
+  (require "private/tester-structs.ss")
   (require (lib "class.ss"))
-  (require (lib "thread.ss"))
-  (require "private/growable-vector.ss"
-	   "private/tester-view.ss"
-	   "private/tester-model.ss"
-	   "private/tester-structs.ss")
   
-  (provide run-tests test test-error test-function
+  (provide run-tests run-tests/initialize
+           test test-error test-function
            test-manifest)
-
-;; output-spec -> str
-;; creates a printable string for the given output spec
-(define (output-spec->str os)
-  (cond
-   [(error? os)
-    (format "exception: ~a" (error-exception os))]
-   [(finish? os)
-    (format "result: ~n~v~n" (finish-value os))]
-   [else (error (format "oops! received ~v" os))]))
-  
-;; expect->str : expectation -> str
-;; creates a printable string for the given expectation
-(define (expect->str expect)
-  (string-append
-   (cond
-     [(procedure? (expect-output-criterion expect))
-      "<value passing given procedure>"]
-     [else (output-spec->str (expect-output-criterion expect))])
-   (if (expect-print expect)
-       (format-printed-output-descrip (expect-print expect))
-       "")))
-
-;; format-printed-output-descrip : str -> str
-;; formats a description of printed output.
-(define (format-printed-output-descrip the-str)
-  (format "~nPrinted output:~n~v" the-str))
-     
-;; received->str : received -> str
-;; formats a received struct for printing
-(define (received->str received)
-  (string-append
-   (output-spec->str (received-value received))
-   (format-printed-output-descrip
-    (received-print received))))
-   
-
-;; The tester GUI's controller, responsible for translating
-;; requests in the model's domain into requests in the view's domain
-;; and vice versa.   
-(define controller%
-  (class* object% ()
-    
-    (public run-test-group test-manifest)
-
-    ;; print-error-message : test x expectation x received -> void
-    ;; side-effect: prints the given error message in the view
-    (define print-error-message
-      (lambda (test expect received)
-        (send view set-text 
-              (string-append
-               "Test:\n"
-               (format "~v" (test-text test))
-               "\nDescription: "
-               (format "~a" (test-description test))
-               "\n\nExpected:\n"
-               (expect->str expect)
-               "\n\nReceived\n" 
-               (received->str received)))))
-    
-    (field 
-     [model (make-object model% 
-              (lambda (number-of-loads)
-                (send view single-msgarea-mode)
-                (send view update-status "Loading tests")
-                (send view set-gauge-size number-of-loads)
-                (send view set-overall-size number-of-loads))
-              (lambda (new-load-spec)
-                (send view update (format "Loading ~v" new-load-spec)))
-              (lambda () (send view tick-gauge))
-              (lambda (total-tests)
-                (send view reset-overall-gauge)
-                (send view set-overall-size total-tests)
-                (send view multi-msgarea-mode))
-              (lambda (group-name size) 
-                (send view update-status group-name)
-                (send view set-gauge-size size))
-              (case-lambda 
-               [()
-                (send view tick-gauge)]
-               [(err) ;; (list str expect received)
-                (begin
-                  (apply print-error-message err)
-                  (send view tick-gauge))])
-              (lambda () (send view tick-gauge))
-              (lambda () (wait-for-shutdown)))]
-     [view
-      (parameterize ([current-custodian  (make-custodian (current-custodian))]
-                     [current-eventspace (make-eventspace)])
-        (make-object view%
-          (lambda (btn evnt)
-            (if (send model prev-error?)
-                (let ((new-err (send model get-prev-error)))
-                  (apply print-error-message new-err))))
-          (lambda (btn evnt)
-            (if (send model next-error?)
-                (let ((new-err (send model get-next-error)))
-                  (apply print-error-message new-err))))))]
-     [wait-thread (send view get-thread)])
-
-    ;; run-test-group : test-group -> void
-    ;; runs the given test-group
-    (define run-test-group (lambda (x) (send model test x)))
-    
-    (define test-manifest
-      (lambda (manifest)
-        (send model run-all-tests manifest)))
-    
-    ;; wait-for-shutdown : -> void
-    ;; blocks until the GUI has been closed
-    (define wait-for-shutdown
-        (lambda () (begin
-                     (send view update-status "Done.")
-                     (thread-wait wait-thread))))
-    
-    (super-instantiate ())))
-
-
-      
   
 ;; =======================================================================
 ;; Program interface -- provides syntax and functions for attaching the
@@ -161,19 +39,32 @@
                                    (lambda () body)
                                    (make-expect expect-criterion printed-output))))]))))
     (values syntax->test-struct syntax->test-struct syntax->test-struct)))
-           
-(define tester (make-object controller%))
+
+;; current-tester : (union #f controller%)
+;; the currently-registered tester gui.
+(define current-tester (make-parameter #f)) 
   
-;; run-tests-int : str x test ... -> void
+;; run-tests : str x test ... -> void
 ;; side effect: runs all the tests.
 (define run-tests
   (lambda (name . tests)
-    (send tester run-test-group (make-test-group name tests))))
+    (apply run-tests/initialize (list* name #f tests))))
 
-;; test-manifest : (listof require-spec-datum) -> void
-;; side effect: tests the given manifest.
-(define (test-manifest man)
-  (send tester test-manifest man)))
+;; run-tests/initialize : str x (-> void) x test ... -> void
+;; side effect: queues a test-group that, is evaluated by running the provided 
+;; initializer thunk, then running all the given tests in order.
+;; Runs the tests in either the current-tester (if one is defined, meaning that 
+;; this run-tests/initialize is being loaded from a complete manifest) or a
+;; newly-created tester.
+(define run-tests/initialize
+  (lambda (name init-thunk . tests)
+    (let ((the-group (make-test-group name init-thunk tests)))
+      (if (current-tester)
+          (send (current-tester) run-test-group the-group)
+          (send (get-tester-gui) test-one-group the-group)))))
   
-
-
+;; test-manifest : (listof require-spec-datum) -> void
+;; side effect: tests the given manifest (i.e., allows 
+(define (test-manifest man)
+  (parameterize ([current-tester (get-tester-gui)])
+    (send (current-tester) test-manifest man))))

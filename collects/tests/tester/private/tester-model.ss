@@ -9,6 +9,7 @@
   (class* object% ()
     (public (register-test test) 
             run-all-tests
+            run-test-groups
             next-error?
             prev-error?
             get-first-error
@@ -75,6 +76,9 @@
          (begin
            (report-new-test-group (test-group-description test-group)
                                   (length (test-group-tests test-group)))
+           (let ((initializer (test-group-initializer test-group)))
+             (if initializer
+                 (initializer)))
            (for-each (lambda (x) (run-test x))
                      (test-group-tests test-group)))))
       
@@ -179,14 +183,44 @@
           (for-each 
            (lambda (spec) (begin
                             (report-new-load spec)
-                            (dynamic-require spec #f)
-                            (report-finished-load)))
+                            (with-handlers
+                                ([exn? (lambda (e) (report-load-error e))])
+                              ((dynamic-require spec 'test-main))
+                              (report-finished-load))))
            manifest)
-          (report-test-phase (apply + 
-                                    (map (lambda (tg) (length (test-group-tests tg)))
-                                         tests-to-run)))
-          (for-each test tests-to-run)
-          (wait-for-user-exit))))
+          (run-test-groups tests-to-run)
+          ;;(wait-for-user-exit)
+          
+          )))
+    
+    ;; for now ...
+    (define (report-load-error e)
+      (printf "Oh no! ~a~n" (exn-message e))
+      (report-finished-load))
+    
+    ;; get-size-and-nonempties : (listof test-group) -> (values natnum (listof test-group))
+    ;; given a listof test-groups, produces the total number of tests in all groups and the
+    ;; sublist of groups that have at least one test. defined as one function with 2 return
+    ;; values here to avoid O(n) extra work in recurring twice down the same structure.
+    (define (get-size-and-nonempties tgs)
+      (cond
+        [(null? tgs) (values 0 null)]
+        [else (let-values ([(size)               (length (test-group-tests (car tgs)))]
+                           [(rest-size rest-tgs) (get-size-and-nonempties (cdr tgs))])
+                (values (+ size rest-size)
+                        (if (> size 0)
+                            (cons (car tgs) rest-tgs)
+                            rest-tgs)))]))
+    
+    ;; run-test-groups : (listof test-group) -> void
+    ;; side effect: runs the tests. Skips over groups with no tests (doesn't even run
+    ;; the initializers)
+    (define run-test-groups
+      (lambda (tgs)
+        (let-values (((total-size nonempty-tgs) (get-size-and-nonempties tgs)))
+          (begin
+            (report-test-phase total-size)
+            (for-each test nonempty-tgs)))))
         
     
     (super-instantiate ()))))

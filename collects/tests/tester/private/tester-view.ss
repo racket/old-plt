@@ -35,14 +35,13 @@
             (make-editor ep txt)))))
     
     (field
-     [top-frame 
-      (make-object 
-          (class* frame% ()
-            (override on-close)
-            (define on-close
-              (lambda ()
-                (custodian-shutdown-all (current-custodian))))
-            (super-instantiate ("Tester" #f 600 400))))]
+     [top-frame  (make-object frame% "Tester" #f 600 400)]
+;          (class* frame% ()
+;            (override on-close)
+;            (define on-close
+;              (lambda ()
+;                (custodian-shutdown-all (current-custodian))))
+;            (super-instantiate ("Tester" #f 600 400))))]
      
      [main-pane      (make-object vertical-pane% top-frame)]
      [message-pane   (make-object vertical-pane% main-pane)]

@@ -47,6 +47,10 @@ typedef struct {
 Scheme_Object *scheme_arity_at_least, *scheme_date;
 
 /* locals */
+static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
+static Scheme_Object *inspector_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[]);
+
 static Scheme_Object *struct_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
@@ -227,6 +231,23 @@ scheme_init_struct (Scheme_Env *env)
 						      1, 1),
 			    env);
   
+  scheme_add_global_constant("make-inspector",
+			     scheme_make_prim_w_arity(make_inspector,
+						      "make-inspector",
+						      0, 1),
+			     env);
+  scheme_add_global_constant("inspector?",
+			     scheme_make_prim_w_arity(inspector_p,
+						      "inspector?",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("current-inspector", 
+			     scheme_register_parameter(current_inspector,
+						       "current-inspector",
+						       MZCONFIG_INSPECTOR),
+			     env);
+
+
   /* Add arity structure */
   for (i = 0; i < as_count; i++) {
     scheme_add_global_constant(scheme_symbol_val(as_names[i]), as_values[i],
@@ -247,6 +268,78 @@ scheme_init_struct (Scheme_Env *env)
   }
 #endif
 }
+
+Scheme_Object *scheme_make_initial_inspectors(void)
+{
+  Scheme_Inspector *superior, *root;
+
+  superior = MALLOC_ONE_TAGGED(Scheme_Inspector);
+  superior->type = scheme_inspector_type;
+  superior->depth = 0;
+  
+  root = MALLOC_ONE_TAGGED(Scheme_Inspector);
+  root->type = scheme_inspector_type;
+  root->depth = 1;
+  root->superior = superior;
+
+  return (Scheme_Object *)root;
+}
+
+Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *superior;
+  Scheme_Inspector *naya;
+
+  if (argc) {
+    superior = argv[0];
+    if (!SAME_TYPE(SCHEME_TYPE(superior), scheme_inspector_type))
+      scheme_wrong_type("make-inspector", "inspector", 0, argc, argv);
+  } else
+    superior = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+
+  naya = MALLOC_ONE_TAGGED(Scheme_Inspector);
+  naya->type = scheme_inspector_type;
+  naya->depth = ((Scheme_Inspector *)superior)->depth + 1;
+  naya->superior = (Scheme_Inspector *)superior;
+
+  return (Scheme_Object *)naya;
+}
+
+Scheme_Object *inspector_p(int argc, Scheme_Object **argv)
+{
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_inspector_type)
+	  ? scheme_true
+	  : scheme_false);
+}
+
+int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup)
+{
+  Scheme_Inspector *ins, *superior;
+
+  if (SCHEME_FALSEP(i))
+    return 1;
+
+  ins = (Scheme_Inspector *)i;
+  superior = (Scheme_Inspector *)sup;
+
+  while (ins->depth >= superior->depth) {
+    if (ins == superior)
+      return 1;
+    ins = ins->superior;
+  }
+   
+  return 0;
+}
+
+static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-inspector", 
+			     scheme_make_integer(MZCONFIG_INSPECTOR),
+			     argc, argv,
+			     -1, inspector_p, "inspector", 0);
+}
+
+/**********************************************************************/
 
 static void wrong_struct_type(Scheme_Object *name, 
 			      Scheme_Object *expected,
@@ -429,6 +522,12 @@ struct_ref(int argc, Scheme_Object *argv[])
   if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
     scheme_wrong_type(name, "struct", 0, argc, argv);
   
+  if (!scheme_is_subinspector(SCHEME_STRUCT_INSPECTOR(argv[0]), 
+			      scheme_get_param(scheme_config, MZCONFIG_INSPECTOR))) {
+    scheme_arg_mismatch(name, "current inspector cannot inspect struct: ", argv[0]);
+    return NULL;
+  }
+
   s = (Scheme_Structure *)argv[0];
   m = SCHEME_STRUCT_NUM_SLOTS(s);
 
@@ -453,6 +552,12 @@ static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
     scheme_wrong_type("struct->vector", "struct", 0, argc, argv);
+
+  if (!scheme_is_subinspector(SCHEME_STRUCT_INSPECTOR(argv[0]), 
+			      scheme_get_param(scheme_config, MZCONFIG_INSPECTOR))) {
+    scheme_arg_mismatch("struct->vector", "current inspector cannot inspect struct: ", argv[0]);
+    return NULL;
+  }
 
   s = (Scheme_Structure *)argv[0];
 
@@ -700,6 +805,7 @@ Scheme_Object **scheme_make_struct_names_from_array(const char *base,
 
 static Scheme_Object *_make_struct_type(const char *base, int blen,
 					Scheme_Object *parent,
+					Scheme_Object *inspector,
 					int num_fields)
 {
   Scheme_Struct_Type *struct_type, *parent_type;
@@ -727,30 +833,41 @@ static Scheme_Object *_make_struct_type(const char *base, int blen,
   }
   struct_type->num_slots = num_fields + (parent_type ? parent_type->num_slots : 0);
 
+  if (!inspector) {
+    if (parent_type)
+      inspector = parent_type->inspector;
+    else {
+      inspector = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
+    }
+  }
+  struct_type->inspector = inspector;
+
   return (Scheme_Object *)struct_type;
 }
 
 Scheme_Object *scheme_make_struct_type(Scheme_Object *base,
 				       Scheme_Object *parent,
+				       Scheme_Object *inspector,
 				       int num_fields)
 {
   return _make_struct_type(scheme_symbol_val(base),
 			   SCHEME_SYM_LEN(base),
-			   parent, num_fields);
+			   parent, inspector, num_fields);
 }
 
 Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   Scheme_Object *parent,
 						   int num_fields)
 {
-  return _make_struct_type(base, strlen(base), parent, num_fields);
+  return _make_struct_type(base, strlen(base), parent, scheme_false, num_fields);
 }
 
 static Scheme_Object *
 struct_execute (Scheme_Object *form)
 {
   Struct_Info *info;
-  Scheme_Object **values, **names, *parent;
+  Scheme_Object **values, **names, *parent, *inspector;
   Scheme_Object *type;
 
   info = (Struct_Info *)form;
@@ -759,14 +876,22 @@ struct_execute (Scheme_Object *form)
 	    ? NULL 
 	    : _scheme_eval_compiled_expr(info->parent_type_expr));
 
+  if (parent && (SCHEME_FALSEP(parent) 
+		 || SAME_TYPE(SCHEME_TYPE(parent), scheme_inspector_type))) {
+    inspector = parent;
+    parent = NULL;
+  } else
+    inspector = NULL;
+
   if (parent && !SAME_TYPE(SCHEME_TYPE(parent),
 			   scheme_struct_type_type))
     scheme_raise_exn(MZEXN_STRUCT,
 		     "struct: supertype expression returned "
 		     "a value that is not a struct type value");
-  
-  type = scheme_make_struct_type(info->name, 
+
+  type = scheme_make_struct_type(info->name,
 				 parent, 
+				 inspector,
 				 info->num_fields);
 
   if (!info->memo_names) {
@@ -820,8 +945,11 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     scheme_wrong_syntax("struct", form, forms, NULL);
   field_symbols = SCHEME_STX_CAR(form);
   form = SCHEME_STX_CDR(form);
-  if (!SCHEME_STX_NULLP(form))
+  if (!SCHEME_STX_NULLP(form)) 
     scheme_wrong_syntax("struct", form, forms, NULL);
+
+  if (in_rec)
+    scheme_compile_rec_done_local(in_rec, drec);
 
   if (SCHEME_STX_PAIRP(base_symbol)) {
     parent_expr = SCHEME_STX_CDR(base_symbol);

@@ -167,6 +167,8 @@ void scheme_init_error_config(void);
 void scheme_init_exn_config(void);
 #endif
 
+Scheme_Object *scheme_make_initial_inspectors(void);
+
 extern int scheme_builtin_ref_counter;
 
 Scheme_Object **scheme_make_builtin_references_table(void);
@@ -323,12 +325,22 @@ void scheme_copy_from_original_env(Scheme_Env *env);
 /*                              structs                                   */
 /*========================================================================*/
 
+typedef struct Scheme_Inspector {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  int depth;
+  struct Scheme_Inspector *superior;
+} Scheme_Inspector;
+
+int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
+
 typedef struct Scheme_Struct_Type {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   short num_slots;
   short name_pos;
   Scheme_Object *type_name;
+  Scheme_Object *inspector;
   struct Scheme_Struct_Type *parent_types[1];
 } Scheme_Struct_Type;
 
@@ -354,6 +366,8 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   int num_fields);
 
 int scheme_equal_structs(Scheme_Object *obj1, Scheme_Object *obj2);
+
+#define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
 
 /*========================================================================*/
 /*                         syntax objects                                 */

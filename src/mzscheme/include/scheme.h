@@ -608,7 +608,7 @@ typedef struct Scheme_Process {
   Scheme_Object *current_local_mark;
   Scheme_Object *current_local_name;
 
-  /* These are used to lock in values during `read': */
+  /* These are used to lock in values during `read' and `print': */
   char quick_can_read_compiled;
   char quick_can_read_pipe_quote;
   char quick_can_read_box;
@@ -617,6 +617,7 @@ typedef struct Scheme_Process {
   char quick_square_brackets_are_parens;
   char quick_curly_braces_are_parens;
   char quick_read_decimal_inexact;
+  Scheme_Object *quick_inspector;
 
   /* Used during `display' and `write': */
   char *print_buffer;
@@ -751,6 +752,7 @@ enum {
   MZCONFIG_COND_AUTO_ELSE,
 
   MZCONFIG_MANAGER,
+  MZCONFIG_INSPECTOR,
 
   MZCONFIG_USE_COMPILED_KIND,
 

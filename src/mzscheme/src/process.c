@@ -2902,6 +2902,12 @@ static Scheme_Config *make_initial_config(void)
 				   0, -1);
     scheme_set_param(config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
   }
+
+  {
+    Scheme_Object *ins;
+    ins = scheme_make_initial_inspectors();
+    scheme_set_param(config, MZCONFIG_INSPECTOR, ins);
+  }
   
   config->extensions = NULL;
 

@@ -70,14 +70,18 @@ static Scheme_Hash_Table *global_constants_ht;
 
 #define print_compact(p, v) print_this_string(p, &compacts[v], 1)
 
+#define PRINTABLE_STRUCT(obj, p) (scheme_is_subinspector(SCHEME_STRUCT_INSPECTOR(obj), p->quick_inspector))
+
 #define HAS_SUBSTRUCT(obj, qk) \
    (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) \
     || (qk(p->quick_print_box, 1) && SCHEME_BOXP(obj)) \
-    || (qk(p->quick_print_struct, 0)  \
-	&& SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)))
+    || (qk(p->quick_print_struct  \
+	   && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type) \
+	   && PRINTABLE_STRUCT(obj, p), 0)))
 #define ssQUICK(x, isbox) x
 #define ssQUICKp(x, isbox) (p ? x : isbox)
 #define ssALL(x, isbox) 1
+#define ssALLp(x, isbox) isbox
 
 #ifdef MZ_PRECISE_GC
 # define ZERO_SIZED(closure) !(closure->closure_size)
@@ -360,7 +364,9 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p, Scheme_Hash_Table
   if (SCHEME_PAIRP(obj)
       || (p->quick_print_box && SCHEME_BOXP(obj))
       || SCHEME_VECTORP(obj)
-      || (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type))) {
+      || (p->quick_print_struct 
+	  && SAME_TYPE(t, scheme_structure_type)
+	  && PRINTABLE_STRUCT(obj, p))) {
     b = scheme_bucket_from_table(ht, (const char *)obj);
     if (b->val)
       return 1;
@@ -383,7 +389,7 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p, Scheme_Hash_Table
 	return 1;
       }
     }
-  } else if (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type)) {
+  } else if (SAME_TYPE(t, scheme_structure_type)) { /* got here => printable */
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
@@ -443,7 +449,9 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Process *p)
 	break;
     }
     obj->type = t;
-  } else if (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type)) {
+  } else if (p->quick_print_struct 
+	     && SAME_TYPE(t, scheme_structure_type)
+	     && PRINTABLE_STRUCT(obj, p)) {
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     obj->type = -t;
@@ -534,8 +542,7 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     for (i = 0; i < len; i++) {
       setup_graph_table(SCHEME_VEC_ELS(obj)[i], ht, counter, p);
     }
-  } else if (p && p->quick_print_struct 
-	     && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) {
+  } else if (p && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) { /* got here => printable */
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
@@ -582,6 +589,7 @@ print_to_string(Scheme_Object *obj,
   p->quick_print_struct = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_STRUCT));
   p->quick_print_vec_shorthand = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND));
   p->quick_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
+  p->quick_inspector = scheme_get_param(config, MZCONFIG_INSPECTOR);
 
   if (p->quick_print_graph)
     cycles = 1;
@@ -611,6 +619,8 @@ print_to_string(Scheme_Object *obj,
 
   if (len)
     *len = p->print_position;
+
+  p->quick_inspector = NULL;
 
   return p->print_buffer;
 }
@@ -1039,8 +1049,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_escaped(p, notdisplay, obj, ht);
       else {
 	Scheme_Object *name = SCHEME_STRUCT_NAME_SYM(obj);
+	int pb;
 
-	print_this_string(p, p->quick_print_struct ? "#(" : "#<", 2);
+	pb = p->quick_print_struct && PRINTABLE_STRUCT(obj, p);
+
+	print_this_string(p, pb ? "#(" : "#<", 2);
 	{
 	  int l;
 	  const char *s;
@@ -1054,7 +1067,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  print_this_string(p, s, l);
 	}
 
-	if (p->quick_print_struct) {
+	if (pb) {
 	  int i, count = SCHEME_STRUCT_NUM_SLOTS(obj), no_sp_ok;
 	  
 	  if (count)
@@ -1591,7 +1604,7 @@ print_char(Scheme_Object *charobj, int notdisplay, Scheme_Process *p)
 
 Scheme_Object *scheme_protect_quote(Scheme_Object *expr)
 {
-  if (HAS_SUBSTRUCT(expr, ssALL)) {
+  if (HAS_SUBSTRUCT(expr, ssALLp)) {
     Scheme_Object *q;
     q = scheme_alloc_small_object();
     q->type = scheme_quote_compilation_type;

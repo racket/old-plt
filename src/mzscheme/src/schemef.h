@@ -554,6 +554,7 @@ Scheme_Object **scheme_make_struct_names(Scheme_Object *base,
 					 int flags, int *count_out);
 Scheme_Object *scheme_make_struct_type(Scheme_Object *base, 
 				       Scheme_Object *parent, 
+				       Scheme_Object *inspector,
 				       int num_fields);
 Scheme_Object *scheme_make_struct_instance(Scheme_Object *stype,
 					   int argc,

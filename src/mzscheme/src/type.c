@@ -163,12 +163,13 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_manager_type, "<custodian>");
   set_name(scheme_cont_mark_set_type, "<continuation-mark-set>");
+
+  set_name(scheme_inspector_type, "<inspector>");
   
   set_name(scheme_stx_type, "<syntax>");
   set_name(scheme_id_macro_type, "<id-macro>");
 
   set_name(scheme_reserved_1_type, "<reserved1>");
-  set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
   set_name(scheme_reserved_5_type, "<reserved5>");
 

@@ -1381,6 +1381,7 @@ mark_struct_type_val {
     gcMARK(t->parent_types[i]);
   }
   gcMARK(t->type_name);
+  gcMARK(t->inspector);
 
  size:
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -1394,6 +1395,7 @@ mark_struct_info_val {
   gcMARK(i->name);
   gcMARK(i->fields);
   gcMARK(i->parent_type_expr);
+  gcMARK(i->inspector_expr);
   gcMARK(i->memo_names);
 
  size:

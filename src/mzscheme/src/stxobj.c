@@ -478,6 +478,9 @@ int scheme_stx_list_length(Scheme_Object *list)
 {
   int len;
 
+  if (SCHEME_STXP(list))
+    list = SCHEME_STX_VAL(list);
+
   len = 0;
   while (!SCHEME_NULLP(list)) {
     len++;

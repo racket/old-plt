@@ -89,8 +89,10 @@
 					    ((zero? s) 'done-ok)
 					    (else 'done-error))))
 			  ((wait) (subprocess-wait subp))
+			  ((interrupt) (subprocess-kill subp #f))
+			  ((kill) (subprocess-kill subp #t))
 			  (else
-			   (raise-type-error 'control-process "'status or 'wait" m))))))
+			   (raise-type-error 'control-process "'status, 'wait, 'interrupt, or 'kill" m))))))
 	      control))))
 
   (define (process/ports out in err str)

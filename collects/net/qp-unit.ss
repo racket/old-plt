@@ -111,10 +111,11 @@
       
       (define warning
         (lambda (msg . args)
-          (fprintf (current-error-port)
-                   (apply format msg args))
-          (newline (current-error-port))))
-      
+	  (when #f
+	    (fprintf (current-error-port)
+		     (apply format msg args))
+	    (newline (current-error-port)))))
+	
       (define hex-digit?
         (lambda (char)
           (regexp-match (regexp "[0-9abcdefABCDEF]")

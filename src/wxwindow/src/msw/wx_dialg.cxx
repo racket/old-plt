@@ -208,94 +208,96 @@ extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 
 static int CheckDialogShowing(void *data)
 {
-  return !((wxDialogBox *)data)->modal_showing;
+  return (!((wxDialogBox *)data)->modal_showing
+	  || ((wxDialogBox *)data)->close_requested);
 }
 
 Bool wxDialogBox::Show(Bool show)
 {
   wxWnd *dialog = (wxWnd *)handle;
 
-  if (!!show == !!IsShown()) {
-    if (show)
-      wxwmBringWindowToTop(dialog->handle);
-    return TRUE;
-  }
-
-  SetShown(show);
-
-  wxTopLevelWindows(this)->Show(this, show);
-  if (window_parent)
-    window_parent->GetChildren()->Show(this, show);
-
   if (modal) {
     if (show) {
-      if (modal_showing) {
+      close_requested = 0;
+
+      if (!!show == !!IsShown()) {
 	wxwmBringWindowToTop(dialog->handle);
-	return TRUE;
       }
-      
-      modal_showing = TRUE;
 
-      disabled_windows = new wxList();
-
-      wxPushModalWindow(this, this);
-
-      ShowWindow(dialog->handle, SW_SHOW); /* can involve callbacks? */
-
-      if (disabled_windows)
- 	wxwmBringWindowToTop(dialog->handle);
-
-      if (disabled_windows) {
+      if (modal_showing) {
+	wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
+      } else {    
 	wxChildNode *cnode;
+	wxNode *node;
+	wxList *disabled_windows;
+
+	SetShown(TRUE);
 	
-	// Make list of windows to disable:
+	wxTopLevelWindows(this)->Show(this, TRUE);
+	if (window_parent)
+	  window_parent->GetChildren()->Show(this, TRUE);
+      
+	modal_showing = TRUE;
+	
+	disabled_windows = new wxList();
+	
+	wxPushModalWindow(this, this);
+	
+	ShowWindow(dialog->handle, SW_SHOW);
+
+	wxwmBringWindowToTop(dialog->handle);
+	
+	// Make list of windows that are disabled:
 	for (cnode = wxTopLevelWindows(this)->First(); cnode; cnode = cnode->Next()) {
 	  wxWindow *w = (wxWindow *)cnode->Data();
 	  if (w && cnode->IsShown() && w != this) {
 	    disabled_windows->Append(w);
+	    w->InternalEnable(FALSE);
 	  }
 	}
-	
-	// Disable them (may involve callbacks):
-	{
-	  wxNode *node;
-	  
-	  for (node = disabled_windows->First(); node; node = node->Next()) {
-	    wxWindow *w = (wxWindow *)node->Data();
-	    w->InternalEnable(FALSE);
-	    if (!disabled_windows) /* means the dialog was closed while we were disabling */
-	      break;
-	  } 
-	}
-	
-	if (disabled_windows)
-	  wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
-      }
-    } else {
-      if (modal_showing) {
+    
+	wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
+
 	modal_showing = FALSE;
-
+	
+	SetShown(FALSE);
+	
+	wxTopLevelWindows(this)->Show(this, FALSE);
+	if (window_parent)
+	  window_parent->GetChildren()->Show(this, FALSE);
+	
 	wxPopModalWindow(this, this);
+	    
+	node = disabled_windows->First();
 	
-	if (disabled_windows) {
-	  wxNode *node;
-
-	  node = disabled_windows->First();
-	  disabled_windows = NULL;
-
-	  for (; node; node = node->Next()) {
-	    wxWindow *w = (wxWindow *)node->Data();
-	    w->InternalEnable(TRUE);
-	  } 
+	for (; node; node = node->Next()) {
+	  wxWindow *w = (wxWindow *)node->Data();
+	  w->InternalEnable(TRUE);
 	}
-	
+
+	close_requested = 1;
+      
 	ShowWindow(dialog->handle, SW_HIDE);
-	
+	    
 	if (GetParent())
 	  wxwmBringWindowToTop(GetParent()->GetHWND());
       }
+    } else {
+      close_requested = 1;
     }
   } else {
+    if (!!show == !!IsShown()) {
+      if (show)
+	wxwmBringWindowToTop(dialog->handle);
+      return TRUE;
+    }
+    
+    SetShown(show);
+    
+    wxTopLevelWindows(this)->Show(this, show);
+    if (window_parent)
+      window_parent->GetChildren()->Show(this, show);
+
     if (show) {
       ShowWindow(dialog->handle, SW_SHOW);
       wxwmBringWindowToTop(dialog->handle);

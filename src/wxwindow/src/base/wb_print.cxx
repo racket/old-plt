@@ -202,6 +202,8 @@ wxPrinter::wxPrinter()
 }
 
 wxWindow *wxPrinter::abortWindow = NULL;
+int aw_registered = 0;
+
 Bool wxPrinter::abortIt = FALSE;
 
 wxPrinter::~wxPrinter(void)
@@ -280,7 +282,10 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     delete dc;
   }
 
-  wxREGGLOB(abortWindow);
+  if (!aw_registered) {
+    wxREGGLOB(abortWindow);
+    aw_registered = 1;
+  }
   abortWindow = win;
   abortWindow->Show(TRUE);
   wxYield();
@@ -316,6 +321,8 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 	  dc->StartPage();
 	  printout->OnPrintPage(pn);
 	  dc->EndPage();
+	  if (abortWindow)
+	    wxYield();
 	}
       }
     }
@@ -422,7 +429,10 @@ LONG APIENTRY wxAbortProc(HDC WXUNUSED(hPr), int WXUNUSED(Code))
   if (!wxPrinter::abortWindow)              /* If the abort dialog isn't up yet */
     return(TRUE);
   
-  wxYield();
+  /* Don't yield here, because we might change threads,
+     which causes Windows-owned portions of the stack to
+     be copied, etc. */
+  /* wxYield(); */
   
   /* bAbort is TRUE (return is FALSE) if the user has aborted */
   

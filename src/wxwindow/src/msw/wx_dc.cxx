@@ -1522,7 +1522,7 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name,
     pd->nFromPage=0;
     pd->nToPage=0;
     pd->nMinPage=0;
-    pd->nMaxPage=32000;
+    pd->nMaxPage=0;
     pd->nCopies=1;
     pd->hInstance=(HINSTANCE)NULL;
     

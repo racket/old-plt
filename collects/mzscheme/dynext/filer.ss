@@ -9,7 +9,8 @@
 	       (not (directory-exists? base)))
       (make-directory* base))
     (unless (make-directory dir)
-      (error 'make-directory* "couldn't make directory: ~s" dir))))
+      (error 'make-directory* "couldn't make directory: ~s" 
+	     (path->complete-path dir)))))
 
  (define (append-zo-suffix s)
    (string-append s ".zo"))

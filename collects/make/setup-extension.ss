@@ -40,7 +40,7 @@
 	(append
 	 (let ([v (getenv "PLT_EXTENSION_LIB_PATHS")])
 	   (if v 
-	       (path-list-string->path-list v default-lib-dir)
+	       (path-list-string->path-list v (list default-lib-dir))
 	       (list default-lib-dir)))
 	 (list "/usr"
 	       "/usr/local"

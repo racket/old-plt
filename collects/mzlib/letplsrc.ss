@@ -145,6 +145,7 @@
 	  ;; eg '(cons x y) becomes (cons 'x 'y)
 	  ;; and `(,x ,y) becomse (list 'x 'y)
 	  (define translation-namespace (make-namespace 'empty))
+	  (global-defined-value 'translation-namespace translation-namespace)
 	  (define _1
 	    (let* ([tmp-namespace (make-namespace)]
 		   [add-already-macro
@@ -176,7 +177,12 @@
 	  (define translate-pattern
 	    (lambda (pattern)
 	      (let ([expanded (parameterize ([current-namespace translation-namespace])
+				(printf "expanding: ~a~n" pattern)
+				(printf "to: ~a~n" (expand-defmacro-once pattern))
+				(printf "to: ~a~n" (expand-defmacro-once (expand-defmacro-once pattern)))
+				(printf "to: ~a~n" (expand-defmacro-once (expand-defmacro-once (expand-defmacro-once pattern))))
 				(expand-defmacro pattern))])
+		(printf "expanded: ~a~n" pattern)
 		(let loop ([in expanded])
 		  (match in
 		    [`(#%repeat ,p) (make-prepeat (loop p))]

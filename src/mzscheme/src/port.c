@@ -5101,23 +5101,23 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 			    args[i]);
     }
 
-    if (argc > 4) {
-      if (argc == 5) {
+    if (c > 4) {
+      if (c == 5) {
 	if (!SCHEME_STRINGP(args[3]) || scheme_string_has_null(args[3]))
 	  scheme_wrong_type(name, STRING_W_NO_NULLS, 3, c, args);
-	if (!strcmp(SCHEME_STR_VAL(argv[3]), "by-id"))
+	if (!strcmp(SCHEME_STR_VAL(args[3]), "by-id"))
 	  scheme_arg_mismatch(name, 
 			      "in five-argument mode on this platform, the 4th argument must be \"by-id\": ", 
 			      args[3]);
 	
-	i = scheme_mac_start_app(name, 1, args[4]);
+	i = scheme_mac_start_app((char *)name, 1, args[4]);
       } else
 	scheme_arg_mismatch(name,
 			    "extra arguments after the application id are "
 			    "not allowed on this platform: ",
 			    args[5]);
     } else
-      i = scheme_mac_start_app(name, 0, args[3]);
+      i = scheme_mac_start_app((char *)name, 0, args[3]);
 
     subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
     subproc->type = scheme_subprocess_type;

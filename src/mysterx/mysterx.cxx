@@ -1892,7 +1892,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 	returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
       }
       else {
-	returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE,FALSE);
+	returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams-1],TRUE,FALSE);
       }
     }
     else { // pTypeDesc->descKind == varDesc

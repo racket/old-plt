@@ -413,7 +413,8 @@
 (define (_enum* name symbols)
   (define sym->int '())
   (define int->sym '())
-  (define s->c (string->symbol (format "enum:~a->int" name)))
+  (define s->c
+    (if name (string->symbol (format "enum:~a->int" name)) 'enum->int))
   (let loop ([i 0] [symbols symbols])
     (unless (null? symbols)
       (when (and (pair? (cdr symbols))
@@ -429,7 +430,7 @@
       (let ([a (assq x sym->int)])
         (if a
           (cdr a)
-          (raise-type-error s->c (format "~a" name) x))))
+          (raise-type-error s->c (format "~a" (or name "enum")) x))))
     (lambda (x) (cond [(assq x int->sym) => cdr] [else #f]))))
 
 ;; Macro wrapper -- no need for a name
@@ -437,14 +438,16 @@
 (define-syntax (_enum stx)
   (syntax-case stx ()
     [(_ syms) (with-syntax ([name (syntax-local-name)])
-                #'(_enum* 'name syms))]))
+                #'(_enum* 'name syms))]
+    [id (identifier? #'id) #'(lambda (syms) (_enum* #f syms))]))
 
 ;; Call this with a name (symbol) and a list of (symbol int) or symbols like
 ;; the above with '= -- but the numbers have to be specified in some way.  The
 ;; generated type will convert a list of these symbols into the logical-or of
 ;; their values and back.
 (define (_bitmask* name symbols->integers)
-  (define s->c (string->symbol (format "bitmask:~a->int" name)))
+  (define s->c
+    (if name (string->symbol (format "bitmask:~a->int" name)) 'bitmask->int))
   (let loop ([s->i symbols->integers])
     (unless (null? s->i)
       (when (and (pair? (cdr s->i)) (eq? '= (cadr s->i)) (pair? (cddr s->i)))
@@ -462,7 +465,8 @@
           (cond [(null? xs) n]
                 [(assq (car xs) symbols->integers) =>
                  (lambda (x) (loop (cdr xs) (bitwise-ior (cadr x) n)))]
-                [else (raise-type-error s->c (format "~a" name) symbols)]))))
+                [else (raise-type-error s->c (format "~a" (or name "bitmaks"))
+                                        symbols)]))))
     (lambda (n)
       (if (zero? n) ; probably common
         '()
@@ -480,7 +484,8 @@
 (define-syntax (_bitmask stx)
   (syntax-case stx ()
     [(_ syms) (with-syntax ([name (syntax-local-name)])
-                #'(_bitmask* 'name syms))]))
+                #'(_bitmask* 'name syms))]
+    [id (identifier? #'id) #'(lambda (syms) (_bitmask* #f syms))]))
 
 ;; ----------------------------------------------------------------------------
 ;; Custom function type macros

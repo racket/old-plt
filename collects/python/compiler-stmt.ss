@@ -10,72 +10,7 @@
            "empty-context.ss")
 
   (provide (all-defined-except bindings-mixin))
-  
-  ;; unpack: (or symbol (listof symbol)) syntax-object -> sexp
-  (define (unpack tuple var)
-    (cond
-      [(list? tuple) (map (lambda (i)
-                            (unpack (list-ref tuple i)
-                                    `(,(py-so 'python-index) ,var ,i)))
-                          (build-list (length tuple) identity))]
-      [else `[,(send tuple to-scheme) ,var]]))
-  
-  (define (target->parm-tup target)
-    (cond
-      [(is-a? target tidentifier%) (make-object identifier%
-                                     (symbol->string (send target get-symbol))
-                                     (send target get-start-pos)
-                                     (send target get-end-pos))]
-      [(or (is-a? target ttuple%)
-           (is-a? target tlist-display%)) (map target->parm-tup
-                                               (send target get-sub-targets))]
-      [else (error "target->parm-tup invalid target")]))
-  
-  (define (target->parameters target)
-    (make-object parameters%
-      (list (list 'pos (target->parm-tup target)))
-      (send target get-start-pos)
-      (send target get-end-pos)))
-  
-  
-  ;; generate-lambda: parameters% syntax-object (or false bindings-mixin%) -> sexp
-  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
-  (define (generate-lambda parms body-so scope)
-    ;; this is where the outer "let" for default values should
-    ;; be placed; I'll do that after I finish the rest of the def/call code.
-    ;; it's bad design anyway...
-    `(opt-lambda ,(send parms to-scheme)
-       (let ,(append (normalize-assoc-list
-                      (flatten1
-                       (map (lambda (tuple)
-                              (unpack tuple
-                                      (send (first-atom tuple) to-scheme)))
-                            (filter list? (send parms get-pos)))))
-                     (if scope
-                         (map (lambda (b)
-                                `[,(send b to-scheme) (void)])
-                              (send scope get-bindings))
-                         empty))
-         ,body-so)))
-
-  ;; generate-py-lambda: symbol parameters% syntax-object (or false bindings-mixin%) -> sexp
-  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
-  (define (generate-py-lambda name parms body-so scope)
-    (let ([seq (send parms get-seq)]
-          [dict (send parms get-dict)])
-      `(,(py-so 'procedure->py-function%)
-        ,(generate-lambda parms body-so scope)
-        ',name
-        (list ,@(map (lambda (p)
-                       `',(send (first-atom p) to-scheme))
-                     (send parms get-pos)))
-        (list ,@(map (lambda (k)
-                       `(cons ',(send (car k) to-scheme)
-                              ,(send (cdr k) to-scheme)))
-                     (send parms get-key)))
-        ,(and seq (send seq to-scheme))
-        ,(and dict (send dict to-scheme)))))
-  
+    
   
   (define statement%
     (class ast-node%
@@ -195,6 +130,33 @@
                                                                             identifier) target)
                                                      to-scheme)
                                              ,rhs)]
+           [(is-a? target tsubscription%) `(,(py-so 'python-method-call)
+                                            ,(send ((class-field-accessor tsubscription%
+                                                                          expression) target)
+                                                   to-scheme)
+                                            '__setitem__
+                                            (list ,(send ((class-field-accessor tsubscription%
+                                                                          sub) target)
+                                                         to-scheme)
+                                                  ,rhs))]
+           [(is-a? target tsimple-slicing%) `(,(py-so 'python-method-call)
+                                              ,(send ((class-field-accessor tsimple-slicing%
+                                                                            expression) target)
+                                                     to-scheme)
+                                              '__setitem__
+                                              (list (let ([lower ((class-field-accessor tsimple-slicing%
+                                                                                        lower) target)]
+                                                          [upper ((class-field-accessor tsimple-slicing%
+                                                                                        upper) target)])
+                                                      (,(py-so 'py-create)
+                                                       ,(py-so 'py-slice%)
+                                                       ,(if lower
+                                                            (send lower to-scheme)
+                                                            `(,(py-so 'number->py-number%) 0))
+                                                       ,(if upper
+                                                            (send upper to-scheme)
+                                                            `(,(py-so 'number->py-number%) +inf.0))))
+                                                    ,rhs))]
            [(or (is-a? target ttuple%)
                 (is-a? target tlist-display%))
             `(begin ,@(let ([sub-targets (send target get-sub-targets)])
@@ -317,10 +279,13 @@
       ;; expression: (or/f false? (is-a?/c expression%)
       (init-field expression)
       
+      (inherit stx-err)
       (define scope #f)
       
       (define/override (set-bindings! enclosing-scope)
         (set! scope enclosing-scope)
+        (unless (is-a? enclosing-scope function-definition%)
+          (stx-err "'return' outside function"))
         (when expression
           (send expression set-bindings! enclosing-scope)))
       
@@ -373,10 +338,17 @@
     (class statement%
       (inherit stx-err)
       
+      (define loop #f)
+      
       (define/override (check-break/cont enclosing-loop)
+        (set! loop enclosing-loop)
         (if enclosing-loop
             (send enclosing-loop set-can-break?)
             (stx-err "Break statement must be within loop")))
+      
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(send loop get-break-symbol) (void))))
       
       (super-instantiate ())))
 
@@ -385,10 +357,17 @@
     (class statement%
       (inherit stx-err)
 
+      (define loop #f)
+      
       (define/override (check-break/cont enclosing-loop)
+        (set! loop enclosing-loop)
         (if enclosing-loop
             (send enclosing-loop set-can-cont?)
             (stx-err "Continue statement must be within loop")))
+      
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(send loop get-continue-symbol) (void))))
       
       (super-instantiate ())))
   
@@ -567,15 +546,24 @@
         (send body check-break/cont this)
         (if else
             (send else check-break/cont enclosing-loop)))
+
+      (define break-symbol (gensym 'break))
+      (define continue-symbol (gensym 'continue))
+      
+      (define/public (get-break-symbol) break-symbol)
+      (define/public (get-continue-symbol) continue-symbol)
       
       (inherit ->orig-so)
       (define/override (to-scheme)
         (let ([loop (gensym 'loop)])
-          (->orig-so `(let ,loop ()
-                        (,(py-so 'py-if) ,(send test to-scheme)
-                         (begin ,(send body to-scheme)
-                                (,loop))
-                         ,(send else to-scheme))))))
+          (->orig-so `(begin
+                        (call-with-escape-continuation
+                         (lambda (,break-symbol)
+                           (let ,loop ()
+                             (,(py-so 'py-if) ,(send test to-scheme)
+                              (begin ,(send body to-scheme continue-symbol)
+                                     (,loop))))))
+                         ,(send else to-scheme)))))
       
       
       (super-instantiate ())))
@@ -596,8 +584,8 @@
       (define target (send targ-exp to-target))
       (define can-break? #f)
       (define can-cont? #f)
-      (define (set-can-break?) (set! can-break? #t))
-      (define (set-can-cont?) (set! can-cont? #t))
+      (define/public (set-can-break?) (set! can-break? #t))
+      (define/public (set-can-cont?) (set! can-cont? #t))
       
       (define/override (set-bindings! enclosing-scope)
         (send target set-bindings! enclosing-scope)
@@ -612,26 +600,37 @@
         (send body check-break/cont this)
         (if else
             (send else check-break/cont enclosing-loop)))
+      
+      (define break-symbol (gensym 'break))
+      (define continue-symbol (gensym 'continue))
+      
+      (define/public (get-break-symbol) break-symbol)
+      (define/public (get-continue-symbol) continue-symbol)
 
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(begin
-                      (for-each ,(cond
-                                [(is-a? target tidentifier%)
-                                 `(lambda (,(send target to-scheme))
-                                    ,(send body to-scheme))]
-                                [(or (is-a? target ttuple%)
-                                     (is-a? target tlist-display%))
-                                 (let ([item (gensym 'item)])
-                                   `(lambda (,item)
-                                      (apply 
-                                       (lambda (,@(map (lambda (t) (send t to-scheme))
-                                                       (send target get-sub-targets)))
-                                         ,(send body to-scheme))
-                                       (,(py-so 'py-sequence%->list) ,item))))]
-                                [else (error "bad target for a 'for' loop")])
-                              (,(py-so 'py-sequence%->list) ,(send vals to-scheme)))
+                      (call-with-escape-continuation
+                       (lambda (,break-symbol)
+                         (for-each ,(generate-lambda (target->parameters target)
+                                                     (send body to-scheme continue-symbol)
+                                                     #f)
+;                                ,(cond
+;                                [(is-a? target tidentifier%)
+;                                 `(lambda (,(send target to-scheme))
+;                                    ,(send body to-scheme))]
+;                                [(or (is-a? target ttuple%)
+;                                     (is-a? target tlist-display%))
+;                                 (let ([item (gensym 'item)])
+;                                   `(lambda (,item)
+;                                      (apply 
+;                                       (lambda (,@(map (lambda (t) (send t to-scheme))
+;                                                       (send target get-sub-targets)))
+;                                         ,(send body to-scheme))
+;                                       (,(py-so 'py-sequence%->list) ,item))))]
+;                                [else (error "bad target for a 'for' loop")])
+                                   (,(py-so 'py-sequence%->list) ,(send vals to-scheme)))))
                       ,(if else
                           (send else to-scheme)))))
       
@@ -725,7 +724,10 @@
       ;; finalizer: (is-a?/c suite%)
       (init-field body finalizer)
       
+      (define scope #f)
+      
       (define/override (set-bindings! enclosing-scope)
+        (set! scope enclosing-scope)
         (send body set-bindings! enclosing-scope)
         (send finalizer set-bindings! enclosing-scope))
       
@@ -737,6 +739,29 @@
         (append (send body collect-globals)
                 (send finalizer collect-globals)))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (let ([ec (send scope get-escape-continuation-symbol)]
+              [value (gensym 'value)]
+              [handled (gensym 'handled)]
+              [finally (gensym 'finally)])
+          (->orig-so `(let ([,ec (lambda (,value)
+                                   (let ([,finally ,(send finalizer to-scheme)])
+                                     (if (,(py-so 'exn:python?) ,value)
+                                         (raise ,value)
+                                         (,ec (if (void? ,finally) ; void unless finalizer returned something
+                                                  ,value
+                                                  ,finally)))))])
+                        (,ec (with-handlers ([,(py-so 'exn:python?) identity])
+                               ,(send body to-scheme)))))))
+;                     `(let ([,handled (with-handlers ([,(py-so 'exn:python?) identity])
+;                                        ,(send body to-scheme))])
+;                        (let ([,finally ,(send finalizer to-scheme)])
+;                          (if (,(py-so 'exn:python?) ,handled)
+;                              (raise ,handled)
+;                              ,finally))))))
+                   
       (super-instantiate ())))
   
   

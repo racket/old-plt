@@ -21,6 +21,8 @@
     (let ([scope (make-object module-scope%)])
       (for-each (lambda (a) (send a set-bindings! scope))
                 ast-l)
+      (for-each (lambda (a) (send a check-break/cont #f))
+                ast-l)
       ast-l))
 
 

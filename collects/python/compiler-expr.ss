@@ -1,6 +1,7 @@
 (module compiler-expr mzscheme
   (require (lib "class.ss")
-         ;  (lib "list.ss")
+           (lib "list.ss")
+           (lib "etc.ss") ;build-list
 	   "compiler.ss"
 	   "compiler-target.ss"
            "empty-context.ss"
@@ -8,6 +9,73 @@
            "runtime-context.ss")
   
   (provide (all-defined))
+  
+  
+  ;; unpack: (or symbol (listof symbol)) syntax-object -> sexp
+  (define (unpack tuple var)
+    (cond
+      [(list? tuple) (map (lambda (i)
+                            (unpack (list-ref tuple i)
+                                    `(,(py-so 'python-index) ,var ,i)))
+                          (build-list (length tuple) identity))]
+      [else `[,(send tuple to-scheme) ,var]]))
+  
+  (define (target->parm-tup target)
+    (cond
+      [(is-a? target tidentifier%) (make-object identifier%
+                                     (symbol->string (send target get-symbol))
+                                     (send target get-start-pos)
+                                     (send target get-end-pos))]
+      [(or (is-a? target ttuple%)
+           (is-a? target tlist-display%)) (map target->parm-tup
+                                               (send target get-sub-targets))]
+      [else (error "target->parm-tup invalid target")]))
+  
+  (define (target->parameters target)
+    (make-object parameters%
+      (list (list 'pos (target->parm-tup target)))
+      (send target get-start-pos)
+      (send target get-end-pos)))
+  
+  
+  ;; generate-lambda: parameters% syntax-object (or false bindings-mixin%) -> sexp
+  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
+  (define (generate-lambda parms body-so scope)
+    ;; this is where the outer "let" for default values should
+    ;; be placed; I'll do that after I finish the rest of the def/call code.
+    ;; it's bad design anyway...
+    `(opt-lambda ,(send parms to-scheme)
+       (let ,(append (normalize-assoc-list
+                      (flatten1
+                       (map (lambda (tuple)
+                              (unpack tuple
+                                      (send (first-atom tuple) to-scheme)))
+                            (filter list? (send parms get-pos)))))
+                     (if scope
+                         (map (lambda (b)
+                                `[,(send b to-scheme) (void)])
+                              (send scope get-bindings))
+                         empty))
+         ,body-so)))
+
+  ;; generate-py-lambda: symbol parameters% syntax-object (or false bindings-mixin%) -> sexp
+  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
+  (define (generate-py-lambda name parms body-so scope)
+    (let ([seq (send parms get-seq)]
+          [dict (send parms get-dict)])
+      `(,(py-so 'procedure->py-function%)
+        ,(generate-lambda parms body-so scope)
+        ',name
+        (list ,@(map (lambda (p)
+                       `',(send (first-atom p) to-scheme))
+                     (send parms get-pos)))
+        (list ,@(map (lambda (k)
+                       `(cons ',(send (car k) to-scheme)
+                              ,(send (cdr k) to-scheme)))
+                     (send parms get-key)))
+        ,(and seq (send seq to-scheme))
+        ,(and dict (send dict to-scheme)))))
+
   
   (define parameters%
     (class ast-node%
@@ -261,20 +329,23 @@
         (let ([body (if iter
                         (send iter to-scheme expr-so result)
                         `(set! ,result (append ,result (cons ,expr-so null))))])
-        (->orig-so `(for-each ,(cond
-                                [(is-a? targ tidentifier%)
-                                 `(lambda (,(send targ to-scheme))
-                                    ,body)]
-                                [(or (is-a? targ ttuple%)
-                                     (is-a? targ tlist-display%))
-                                 (let ([item (gensym 'item)])
-                                   `(lambda (,item)
-                                      (apply 
-                                       (lambda (,@(map (lambda (t) (send t to-scheme))
-                                                       (send targ get-sub-targets)))
-                                         ,body)
-                                       (,(py-so 'py-sequence%->list) ,item))))]
-                                [else (error "bad target for a list comprehension")])
+        (->orig-so `(for-each ,(generate-lambda (target->parameters targ)
+                                                body
+                                                #f)
+;                              ,(cond
+;                                [(is-a? targ tidentifier%)
+;                                 `(lambda (,(send targ to-scheme))
+;                                    ,body)]
+;                                [(or (is-a? targ ttuple%)
+;                                     (is-a? targ tlist-display%))
+;                                 (let ([item (gensym 'item)])
+;                                   `(lambda (,item)
+;                                      (apply 
+;                                       (lambda (,@(map (lambda (t) (send t to-scheme))
+;                                                       (send targ get-sub-targets)))
+;                                         ,body)
+;                                       (,(py-so 'py-sequence%->list) ,item))))]
+;                                [else (error "bad target for a list comprehension")])
                               (,(py-so 'py-sequence%->list) ,(send vals to-scheme))))))
       
       
@@ -608,8 +679,12 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'procedure->py-function%) (lambda ,(send parms to-scheme)
-                                                         ,(send body to-scheme)))))
+        (->orig-so (generate-py-lambda 'anonymous-function
+                                       parms
+                                       (send body to-scheme)
+                                       this)))
+;                   `(,(py-so 'procedure->py-function%) (lambda ,(send parms to-scheme)
+;                                                         ,(send body to-scheme)))))
       
       (define/public (is-global? b) #f)
       

@@ -737,6 +737,8 @@
                                                                   v)))
                         (__getitem__ ,(py-lambda '__getitem__ (this key)
                                                  (simple-get-item this key list->py-tuple% py-tuple%->list)))
+                        (__setitem__ ,(py-lambda '__setitem__ (this key value)
+                                                 (simple-set-item this key value py-tuple%->list)))
                         (__len__ ,(py-lambda '__len__ (this)
                                              (number->py-number% (length (py-tuple%->list this)))))))
   
@@ -747,10 +749,31 @@
                                                                   v)))
                         (__getitem__ ,(py-lambda '__getitem__ (this key)
                                                  (simple-get-item this key list->py-list% py-list%->list)))
+                        (__setitem__ ,(py-lambda '__setitem__ (this key value)
+                                                 (simple-set-item this key value py-list%->list)))
                         (__len__ ,(py-lambda '__len__ (this)
                                              (number->py-number% (length (py-list%->list this)))))))
                                                                           
 
+  (define (simple-set-item this key value sequence-to-list)
+    (cond
+      [(py-is-a? key py-number%)
+       (set-car! (list-tail (sequence-to-list this)
+                            (py-number%->number key))
+                 value)]
+      [(py-is-a? key py-slice%)
+       (let ([list-len (py-number%->number
+                        (python-method-call this '__len__))]
+             [start (py-number%->number
+                     (python-get-member key 'start))]
+             [stop (py-number%->number
+                    (python-get-member key 'stop))]
+             [slice-len (- stop start)]
+             [value-len (py-number%->number
+                         (python-method-call value '__len__))])
+         (error "I refuse to assign to slices right now, try again later"))]
+      [else (error "Invalid key for __setitem__")]))
+  
   (define (simple-get-item this key list-to-sequence sequence-to-list)
     (cond
       [(py-is-a? key py-number%)
@@ -760,12 +783,10 @@
        (let* ([len (py-number%->number
                     (python-method-call this '__len__))]
               [start (py-number%->number
-                      (python-get-member key
-                                         'start))]
+                      (python-get-member key 'start))]
               [stop (min len
                          (py-number%->number
-                          (python-get-member key
-                                             'stop)))]
+                          (python-get-member key 'stop)))]
               [step (let ([s (python-get-member key 'step)])
                       (if (py-is? s py-none)
                           1

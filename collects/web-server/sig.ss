@@ -12,7 +12,11 @@
 
   ; more here - rename
   (define-signature web-config/pervasive^
-    (max-waiting virtual-hosts access scripts initial-connection-timeout))
+    (max-waiting 
+     virtual-hosts
+     access
+     scripts ;; : equal-hash-table
+     initial-connection-timeout))
 
   ; more here - rename
   (define-signature web-config/local^ (port listen-ip instances make-servlet-namespace))

@@ -17,6 +17,19 @@
            "gl-vectors.ss"
            "gl.ss")
   
+  (define-syntax (_provide stx)
+    (syntax-case stx ()
+      ((_ x ...)
+       (begin
+         #;(for-each
+          (lambda (x)
+            (syntax-case x (rename)
+              ((rename _ n)
+               (display (syntax-object->datum #'n)))
+              (_ (display (syntax-object->datum x))))
+            (newline))
+          (syntax->list #'(x ...)))
+         #'(provide x ...)))))
   
   (define-syntax-set (multi-arg multi-type-v)
     
@@ -191,7 +204,7 @@
                 desired-length (gl-vector-length v))))))
 
   ;; 2.5
-  (provide get-error)
+  (_provide get-error)
   (make-inv-enum-table get-error-table
                        GL_NO_ERROR 
                        GL_INVALID_ENUM
@@ -204,7 +217,7 @@
     (get-error-table (glGetError)))
 
   ;; 2.6.1
-  (provide (rename gl-begin begin) (rename glEnd end))
+  (_provide (rename gl-begin begin) (rename glEnd end))
   (make-enum-table begin-table
                    GL_LINES
                    GL_LINE_LOOP
@@ -220,10 +233,10 @@
     (glBegin (begin-table enum 'begin)))
   
   ;; 2.6.2
-  (provide (rename glEdgeFlag edge-flag))
+  (_provide (rename glEdgeFlag edge-flag))
 
   ;; 2.7
-  (provide vertex vertex-v
+  (_provide vertex vertex-v
            tex-coord tex-coord-v
            multi-tex-coord multi-tex-coord-v
            (rename glNormal3d normal) normal-v
@@ -261,14 +274,14 @@
   ;; 2.8, 2.9 not implemented
 
   ;; 2.10
-  (provide (rename glRectd rect) rect-v)
+  (_provide (rename glRectd rect) rect-v)
   (multi-type-v rect-v glRect () (4) (dv iv fv sv) #f)
   
   ;; 2.11.1
-  (provide (rename glDepthRange depth-range) (rename glViewport viewport))
+  (_provide (rename glDepthRange depth-range) (rename glViewport viewport))
   
   ;; 2.11.2
-  (provide matrix-mode load-matrix mult-matrix
+  (_provide matrix-mode load-matrix mult-matrix
            load-transpose-matrix mult-transpose-matrix
            (rename glLoadIdentity load-identity)
            (rename glRotated rotate)
@@ -299,7 +312,7 @@
     (glActiveTexture (multi-tex-coord-table texture 'active-texture texture)))
 
   ;; 2.11.3
-  (provide enable disable)
+  (_provide enable disable)
   (make-enum-table enable-table
 		   GL_VERTEX_ARRAY GL_NORMAL_ARRAY GL_FOG_COORD_ARRAY
 		   GL_COLOR_ARRAY GL_SECONDARY_COLOR_ARRAY GL_INDEX_ARRAY
@@ -343,7 +356,7 @@
     (glDisable (enable-table x 'disable)))
 
   ;; 2.11.4
-  (provide tex-gen tex-gen-v)
+  (_provide tex-gen tex-gen-v)
   (make-enum-table tex-gen-coord-table GL_S GL_T GL_R GL_Q)
   (make-enum-table tex-gen-pname-table
                    GL_TEXTURE_GEN_MODE GL_OBJECT_PLANE GL_EYE_PLANE)
@@ -373,7 +386,7 @@
         (f cv pv v))))
   
   ;; 2.12
-  (provide clip-plane)
+  (_provide clip-plane)
   (make-enum-table clip-plane-table
                    GL_CLIP_PLANE0 GL_CLIP_PLANE1 GL_CLIP_PLANE2
                    GL_CLIP_PLANE3 GL_CLIP_PLANE4 GL_CLIP_PLANE5)
@@ -385,7 +398,7 @@
       (glClipPlane v eqn)))
   
   ;; 2.13
-  (provide raster-pos raster-pos-v
+  (_provide raster-pos raster-pos-v
            window-pos window-pos-v)
   (multi-arg raster-pos glRasterPos () (2 3 4))
   (multi-type-v raster-pos-v glRasterPos () (2 3 4) (dv iv fv sv) #t)
@@ -393,13 +406,13 @@
   (multi-type-v window-pos-v glWindowPos () (2 3) (dv iv fv sv) #t)
  
   ;; 2.14.1
-  (provide front-face)
+  (_provide front-face)
   (make-enum-table front-face-table GL_CCW GL_CW)
   (define (front-face x)
     (glFrontFace (front-face-table x 'front-face)))
 
   ;; 2.14.2
-  (provide material material-v light light-v light-model light-model-v)
+  (_provide material material-v light light-v light-model light-model-v)
   (make-enum-table face-table GL_FRONT GL_BACK GL_FRONT_AND_BACK)
   (make-enum-table material-pname-table
                    GL_AMBIENT GL_DIFFUSE GL_AMBIENT_AND_DIFFUSE 
@@ -512,7 +525,7 @@
       (f v params)))
       
   ;; 2.14.3
-  (provide color-material)
+  (_provide color-material)
   (make-enum-table color-material-mode-table
                    GL_EMISSION GL_AMBIENT GL_DIFFUSE
                    GL_SPECULAR GL_AMBIENT_AND_DIFFUSE)
@@ -521,25 +534,25 @@
                      (color-material-mode-table y 'color-material)))
   
   ;; 2.14.7
-  (provide shade-model)
+  (_provide shade-model)
   (make-enum-table shade-model-table GL_FLAT GL_SMOOTH)
   (define (shade-model x)
     (glShadeModel (shade-model-table x 'shade-model)))
 
   ;; 3.3 
-  (provide (rename glPointSize point-size)
+  (_provide (rename glPointSize point-size)
            ;; point-parameter
            ;; point-parameter-v
            )
   
   ;; 3.4
-  (provide (rename glLineWidth line-width))
+  (_provide (rename glLineWidth line-width))
   
   ;; 3.4.2
-  (provide (rename glLineStipple line-stipple))
+  (_provide (rename glLineStipple line-stipple))
   
   ;; 3.5.1
-  (provide cull-face)  
+  (_provide cull-face)  
   (define (cull-face x)
     (glCullFace (face-table x)))
 
@@ -547,17 +560,17 @@
   ;; polygon-stipple
 
   ;;3.5.4
-  (provide polygon-mode)
+  (_provide polygon-mode)
   (make-enum-table polygon-mode-mode-table GL_POINT GL_LINE GL_FILL)
   (define (polygon-mode x y)
     (glPolygonMode (face-table x 'polygon-mode)
                    (polygon-mode-mode-table y 'polygon-mode)))
 
   ;; 3.5.5
-  (provide (rename glPolygonOffset polygon-offset))
+  (_provide (rename glPolygonOffset polygon-offset))
   
   ;; 3.6.1
-  (provide pixel-store)
+  (_provide pixel-store)
   (make-enum-table pixel-store-table 
                    GL_UNPACK_SWAP_BYTES GL_UNPACK_LSB_FIRST
                    GL_UNPACK_ROW_LENGTH GL_UNPACK_SKIP_ROWS
@@ -580,13 +593,13 @@
   ;; 3.6.3, 3.6.4, 3.6.5, 3.7, 3.8, 3.10 not implemented
   
   ;; 4.1.2
-  (provide (rename glScissor scissor))
+  (_provide (rename glScissor scissor))
   
   ;; 4.1.3
-  (provide (rename glSampleCoverage sample-coverage))
+  (_provide (rename glSampleCoverage sample-coverage))
   
   ;; 4.1.4
-  (provide alpha-func)
+  (_provide alpha-func)
   (make-enum-table func-table
                    GL_NEVER GL_ALWAYS GL_LESS GL_LEQUAL GL_EQUAL
                    GL_GEQUAL GL_GREATER GL_NOTEQUAL)
@@ -594,7 +607,7 @@
     (glAlphaFunc (func-table func 'alpha-func) ref))
   
   ;; 4.1.5
-  (provide stencil-func stencil-op)
+  (_provide stencil-func stencil-op)
   (define (stencil-func func ref mask)
     (glStencilFunc (func-table func 'stencil-func) ref mask))
 
@@ -607,12 +620,12 @@
                  (stencil-op-table dppass 'stencil-op)))
                  
   ;; 4.1.6
-  (provide depth-func)
+  (_provide depth-func)
   (define (depth-func func)
     (glDepthFunc (func-table func 'depth-func)))
 
   ;; 4.1.7
-  (provide begin-query end-query
+  (_provide begin-query end-query
            (rename glGenQueries gen-queries)
            (rename glDeleteQueries delete-queries))
   (make-enum-table query-table GL_SAMPLES_PASSED)
@@ -624,13 +637,13 @@
   ;; 4.1.8, 4.1.10, 4.2.1 not implemented
 
   ;; 4.2.2
-  (provide (rename glIndexMask index-mask)
+  (_provide (rename glIndexMask index-mask)
            (rename glColorMask color-mask)
            (rename glDepthMask depth-mask)
            (rename glStencilMask stencil-mask))
   
   ;; 4.2.3
-  (provide clear
+  (_provide clear
            (rename glClearColor clear-color)
            (rename glClearIndex clear-index)
            (rename glClearDepth clear-depth)
@@ -646,7 +659,7 @@
                                        x)))))
 
   ;; 4.2.4
-  (provide accum)
+  (_provide accum)
   (make-enum-table accum-table
                    GL_ACCUM GL_MULT GL_RETURN GL_MULT GL_ADD)
   (define (accum op value)
@@ -655,14 +668,14 @@
   ;; 4.3.2 not implemented
 
   ;; 4.3.3
-  (provide copy-pixels)
+  (_provide copy-pixels)
   (make-enum-table copy-pixels-table
                    GL_COLOR GL_STENCIL GL_DEPTH)
   (define (copy-pixels a b c d e)
     (glCopyPixels a b c d (copy-pixels-table e 'copy-pixels)))
 
   ;; 5.1
-  (provide ;map1 map2
+  (_provide ;map1 map2
            eval-coord eval-coord-v map-grid eval-mesh eval-point)
   (multi-arg eval-coord glEvalCoord () (1 2))
   (multi-type-v eval-coord-v glEvalCoord () (1 2) (dv fv) #t)
@@ -681,7 +694,7 @@
       ((x y) (glEvalPoint2 x y))))
 
   ;; 5.2
-  (provide (rename glInitNames init-names)
+  (_provide (rename glInitNames init-names)
            (rename glPopName pop-name)
            (rename glPushName push-name)
            (rename glLoadName load-name)
@@ -692,11 +705,11 @@
     (glRenderMode (render-mode-table x 'render-mode)))
 
   ;; 5.3
-  (provide feedback-buffer->gl-float-vector
+  (_provide feedback-buffer->gl-float-vector
            (rename glPassThrough pass-through))
   
   ;; 5.4
-  (provide new-list
+  (_provide new-list
            (rename glEndList end-list)
            (rename glCallList call-list)
            ;call-lists
@@ -709,11 +722,11 @@
     (glNewList n (new-list-table mode 'new-list)))
 
   ;; 5.5
-  (provide (rename glFlush flush)
+  (_provide (rename glFlush flush)
            (rename glFinish finish))
   
   ;; 5.6
-  (provide hint)
+  (_provide hint)
   (make-enum-table hint-target-table
                    GL_PERSPECTIVE_CORRECTION_HINT GL_POINT_SMOOTH_HINT
                    GL_LINE_SMOOTH_HINT GL_POLYGON_SMOOTH_HINT GL_FOG_HINT
@@ -724,7 +737,7 @@
             (hint-hint-table hint 'hint)))
 
   ;; 6.1.1
-  (provide ;glGetBooleanv glGetIntegerv glGetFloatv glGetDoublev
+  (_provide ;glGetBooleanv glGetIntegerv glGetFloatv glGetDoublev
            is-enabled)
   (define (is-enabled e)
     (glIsEnabled (enable-table e 'is-enabled)))
@@ -732,7 +745,7 @@
   ;; 6.1.3, 6.1.4, 6.1.5, 6.1.7, 6.1.8, 6.1.9, 6.1.10 not implemented
 
   ;; 6.1.11
-  (provide ;get-pointer-v
+  (_provide ;get-pointer-v
            get-string)
   
   (make-enum-table get-string-table
@@ -741,23 +754,23 @@
     (glGetString (get-string-table x 'get-string)))
 
   ;; 6.1.12
-  (provide (rename glIsQuery is-query)
+  (_provide (rename glIsQuery is-query)
            ;get-query get-query-object
            )
   
   ;; 6.1.13
-  (provide (rename glIsBuffer is-buffer)
+  (_provide (rename glIsBuffer is-buffer)
            ; get-buffer-sub-data get-buffer-pointer-v
            )
   
   ;; 6.1.14
-  (provide ;push-attrib push-client-attrib
+  (_provide ;push-attrib push-client-attrib
            (rename glPopAttrib pop-attrib)
            (rename glPopClientAttrib pop-client-attrib))
   
 
   ;; 2
-  (provide u-get-string
+  (_provide u-get-string
            (rename gluCheckExtension check-extension))
   (make-enum-table u-get-string-table GLU_VERSION GLU_EXTENSIONS)
   (define (u-get-string x)
@@ -766,7 +779,7 @@
   ;; 3 not implemented
 
   ;; 4.1
-  (provide (rename gluOrtho2D ortho-2d)
+  (_provide (rename gluOrtho2D ortho-2d)
            (rename gluPerspective perspective)
            (rename gluLookAt look-at)
            pick-matrix)
@@ -779,7 +792,7 @@
     (gluPickMatrix a b c d v))
            
   ;; 4.2
-  (provide project un-project un-project4)
+  (_provide project un-project un-project4)
   (define (project a b c d e f)
     (unless (gl-double-vector? d)
       (raise-type-error 'project
@@ -837,12 +850,12 @@
   ;; 5 not implemented
   
   ;; 6.1
-  (provide (rename gluNewQuadric new-quadric))
+  (_provide (rename gluNewQuadric new-quadric))
   
   ;; 6.2 not implemented
   
   ;; 6.3
-  (provide quadric-normals 
+  (_provide quadric-normals 
            (rename gluQuadricTexture quadric-texture)
            quadric-orientation quadric-draw-style)
   
@@ -860,7 +873,7 @@
     (gluQuadricDrawStyle q (quadric-draw-style-table e 'quadric-draw-style)))
   
   ;; 6.4
-  (provide (rename gluCylinder cylinder)
+  (_provide (rename gluCylinder cylinder)
            (rename gluDisk disk)
            (rename gluSphere sphere)
            (rename gluPartialDisk partial-disk))
@@ -868,12 +881,12 @@
   ;; 7 not implemented
   
   ;; 8
-  (provide ;error-string
+  (_provide ;error-string
            )
   
   ;; Utils
   
-  (provide process-selection (struct selection-record (min-z max-z stack)))
+  (_provide process-selection (struct selection-record (min-z max-z stack)))
   ;; A selection-record is
   ;; (make-selection-record number number (listof positive-int))
   (define-struct selection-record (min-z max-z stack))  

@@ -1,37 +1,3 @@
-glPixelMap
-glDeleteTextures
-glGenTextures
-glAreTexturesResident
-glGenQueries
-glGetBooleanv
-glGetIntegerv
-glGetFloatv
-glGetDoublev
-glGetClipPlane
-glGetLight
-glGetMaterial
-glGetTexEnv
-glGetTexGen
-glGetTexParameter
-glGetTexLevelParameter
-glGetPixelMap
-glGetMap
-glGetBufferParameter
-glGetConvolutionParameter
-glGetHistogramParameter
-glGetMinmaxParameter
-glGetString
-glGetQuery
-glDeleteQueries
-glGetQueryObject
-gluPickMatrix
-gluProject
-gluUnProject
-gluUnProject4
-gluErrorString
-glSelectBuffer
-glFeedbackBuffer
-
 _GL_/_OpenGL_ bindings for PLT Scheme
 
 Sgl provides access to the system's GL library, version 1.3 and
@@ -225,57 +191,63 @@ glSelectBuffer accepts an integer and returns a gl-memory-block that
   The process-selection function in sgl helps interpret the results of
   glSelectBuffer in a Scheme-friendly format.
 
------------------------------  sgl: -------------------------------
-
-
+----------------------------  sgl.ss: ----------------------------
+(struct selection-record (min-z max-z stack))
+accum
 active-texture
-are-textures-resident
+alpha-func
 begin
-bitmap
+begin-query
 call-list
+check-extension
 clear
 clear-accum
 clear-color
 clear-depth
 clear-index
 clear-stencil
-client-active-textures
 clip-plane
 color
 color-mask
 color-material
 color-v
+copy-pixels
 cull-face
 cylinder
 delete-lists
-delete-textures
+delete-queries
+depth-func
 depth-mask
 depth-range
 disable
-disable-client-state
 disk
 edge-flag
-edge-flag-v
 enable
-enable-client-state
 end
 end-list
+end-query
 eval-coord
 eval-coord-v
+eval-mesh
+eval-point
+feedback-buffer->gl-float-vector
 finish
 flush
 front-face
 frustum
 gen-lists
-gen-textures
+gen-queries
 get-error
 get-string
+hint
 index
 index-mask
 index-v
 init-names
+is-buffer
+is-enabled
 is-list
-is-texture
+is-query
 light
 light-model
 light-model-v
@@ -288,31 +260,34 @@ load-matrix
 load-name
 load-transpose-matrix
 look-at
+map-grid
 material
 material-v
 matrix-mode
 mult-matrix
 mult-transpose-matrix
+multi-tex-coord
+multi-tex-coord-v
 new-list
 new-quadric
 normal
 normal-v
 ortho
-ortho-2D
+ortho-2d
 partial-disk
 pass-through
 perspective
 pick-matrix
-pixel-zoom
+pixel-store
 point-size
 polygon-mode
 polygon-offset
-polygon-stipple
 pop-attrib
 pop-client-attrib
 pop-matrix
 pop-name
-prioritize-textures
+process-selection
+project
 push-matrix
 push-name
 quadric-draw-style
@@ -325,30 +300,87 @@ rect
 rect-v
 render-mode
 rotate
+sample-coverage
 scale
 scissor
+secondary-color
+secondary-color-v
+select-buffer->gl-uint-vector
 shade-model
 sphere
+stencil-func
 stencil-mask
+stencil-op
 tex-coord
 tex-coord-v
+tex-gen
+tex-gen-v
 translate
 u-get-string
-un-project *
+un-project
+un-project4
 vertex
 vertex-v
 viewport
+window-pos
+window-pos-v
 
+-----------------------------  gl.ss:  -----------------------------
+1: glPixelMap
+   glDeleteTextures
+   glDeleteQueries
 
-------------------------------  gl:  ------------------------------
-Version 1.1
+2: glGenTextures
+   glGenQueries
+
+3: glAreTexturesResident
+
+4: glGetBooleanv
+   glGetIntegerv
+   glGetFloatv
+   glGetDoublev
+   glGetLight
+   glGetMaterial
+   glGetTexEnv
+   glGetTexGen
+   glGetTexParameter
+   glGetTexLevelParameter
+   glGetPixelMap
+   glGetMap
+   glGetBufferParameter
+   glGetConvolutionParameter
+   glGetHistogramParameter
+   glGetMinmaxParameter
+   glGetQuery
+   glGetQueryObject
+
+5: glGetClipPlane
+   gluPickMatrix
+
+6: glGetString
+   gluCheckExtension
+   gluErrorString
+   gluGetString
+
+7: gluProject
+   gluUnProject
+   gluUnProject4
+
+8: glSelectBuffer
+   glFeedbackBuffer
+
 glAccum
+glActiveTexture
 glAlphaFunc
-glAreTexturesResident
+glAreTexturesResident		*3
 glBegin
+glBeginQuery
 glBindTexture
 glBitmap
+glBlendColor
+glBlendEquation
 glBlendFunc
+glBlendFuncSeparate
 glCallList
 glCallLists
 glClear
@@ -392,27 +424,48 @@ glColor4us
 glColor4usv
 glColorMask
 glColorMaterial
+glColorSubTable
+glColorTable
+glColorTableParameterfv
+glColorTableParameteriv
+glCompressedTexImage1D
+glCompressedTexImage2D
+glCompressedTexImage3D
+glCompressedTexSubImage1D
+glCompressedTexSubImage2D
+glCompressedTexSubImage3D
+glConvolutionFilter1D
+glConvolutionFilter2D
+glConvolutionParameterf
+glConvolutionParameterfv
+glConvolutionParameteri
+glConvolutionParameteriv
+glCopyColorSubTable
+glCopyColorTable
+glCopyConvolutionFilter1D
+glCopyConvolutionFilter2D
 glCopyPixels
 glCopyTexImage1D
 glCopyTexImage2D
 glCopyTexSubImage1D
 glCopyTexSubImage2D
+glCopyTexSubImage3D
 glCullFace
 glDeleteLists
-glDeleteTextures
+glDeleteQueries			*1
+glDeleteTextures		*1
 glDepthFunc
 glDepthMask
 glDepthRange
 glDisable
-glDisableClientState
 glDrawBuffer
 glDrawPixels
 glEdgeFlag
 glEdgeFlagv
 glEnable
-glEnableClientState
 glEnd
 glEndList
+glEndQuery
 glEvalCoord1d
 glEvalCoord1dv
 glEvalCoord1f
@@ -425,9 +478,13 @@ glEvalMesh1
 glEvalMesh2
 glEvalPoint1
 glEvalPoint2
-glFeedbackBuffer
+glFeedbackBuffer		*8
 glFinish
 glFlush
+glFogCoordd
+glFogCoorddv
+glFogCoordf
+glFogCoordfv
 glFogf
 glFogfv
 glFogi
@@ -435,16 +492,54 @@ glFogiv
 glFrontFace
 glFrustum
 glGenLists
-glGenTextures
-glGetClipPlane
+glGenQueries			*2
+glGenTextures			*2
+glGetBooleanv			*4
+glGetBufferParameteriv		*4
+glGetClipPlane			*5
+glGetColorTable
+glGetCompressedTexImage
+glGetConvolutionFilter
+glGetConvolutionParameterfv	*4
+glGetConvolutionParameteriv	*4
+glGetDoublev			*4
 glGetError
-glGetLightfv
-glGetLightiv
-glGetMaterialfv
-glGetMaterialiv
+glGetFloatv			*4
+glGetHistogram
+glGetHistogramParameterfv	*4
+glGetHistogramParameteriv	*4
+glGetIntegerv			*4
+glGetLightfv			*5
+glGetLightiv			*5
+glGetMapdv			*4
+glGetMapfv			*4
+glGetMapiv			*4
+glGetMaterialfv			*4
+glGetMaterialiv			*4
+glGetMinmax
+glGetMinmaxParameterfv		*4
+glGetMinmaxParameteriv		*4
+glGetPixelMapfv			*4
+glGetPixelMapuiv		*4
+glGetPixelMapusv		*4
 glGetPolygonStipple
-glGetString
+glGetQueryObjectiv		*4
+glGetQueryObjectuiv		*4
+glGetQueryiv			*4
+glGetSeparableFilter
+glGetString			*6
+glGetTexEnvfv			*4
+glGetTexEnviv			*4
+glGetTexGendv			*4
+glGetTexGenfv			*4
+glGetTexGeniv			*4
+glGetTexImage
+glGetTexLevelParameterfv	*4
+glGetTexLevelParameteriv	*4
+glGetTexParameterfv		*4
+glGetTexParameteriv		*4
 glHint
+glHistogram
 glIndexMask
 glIndexd
 glIndexdv
@@ -457,8 +552,10 @@ glIndexsv
 glIndexub
 glIndexubv
 glInitNames
+glIsBuffer
 glIsEnabled
 glIsList
+glIsQuery
 glIsTexture
 glLightModelf
 glLightModelfv
@@ -475,6 +572,8 @@ glLoadIdentity
 glLoadMatrixd
 glLoadMatrixf
 glLoadName
+glLoadTransposeMatrixd
+glLoadTransposeMatrixf
 glLogicOp
 glMap1d
 glMap1f
@@ -489,8 +588,43 @@ glMaterialfv
 glMateriali
 glMaterialiv
 glMatrixMode
+glMinmax
 glMultMatrixd
 glMultMatrixf
+glMultTransposeMatrixd
+glMultTransposeMatrixf
+glMultiTexCoord1d
+glMultiTexCoord1dv
+glMultiTexCoord1f
+glMultiTexCoord1fv
+glMultiTexCoord1i
+glMultiTexCoord1iv
+glMultiTexCoord1s
+glMultiTexCoord1sv
+glMultiTexCoord2d
+glMultiTexCoord2dv
+glMultiTexCoord2f
+glMultiTexCoord2fv
+glMultiTexCoord2i
+glMultiTexCoord2iv
+glMultiTexCoord2s
+glMultiTexCoord2sv
+glMultiTexCoord3d
+glMultiTexCoord3dv
+glMultiTexCoord3f
+glMultiTexCoord3fv
+glMultiTexCoord3i
+glMultiTexCoord3iv
+glMultiTexCoord3s
+glMultiTexCoord3sv
+glMultiTexCoord4d
+glMultiTexCoord4dv
+glMultiTexCoord4f
+glMultiTexCoord4fv
+glMultiTexCoord4i
+glMultiTexCoord4iv
+glMultiTexCoord4s
+glMultiTexCoord4sv
 glNewList
 glNormal3b
 glNormal3bv
@@ -504,14 +638,18 @@ glNormal3s
 glNormal3sv
 glOrtho
 glPassThrough
-glPixelMapfv
-glPixelMapuiv
-glPixelMapusv
+glPixelMapfv			*1
+glPixelMapuiv			*1
+glPixelMapusv			*1
 glPixelStoref
 glPixelStorei
 glPixelTransferf
 glPixelTransferi
 glPixelZoom
+glPointParameterf
+glPointParameterfv
+glPointParameteri
+glPointParameteriv
 glPointSize
 glPolygonMode
 glPolygonOffset
@@ -520,7 +658,6 @@ glPopAttrib
 glPopClientAttrib
 glPopMatrix
 glPopName
-glPrioritizeTextures
 glPushAttrib
 glPushClientAttrib
 glPushMatrix
@@ -560,11 +697,32 @@ glRectiv
 glRects
 glRectsv
 glRenderMode
+glResetHistogram
+glResetMinmax
 glRotated
 glRotatef
+glSampleCoverage
 glScaled
 glScalef
 glScissor
+glSecondaryColor3b
+glSecondaryColor3bv
+glSecondaryColor3d
+glSecondaryColor3dv
+glSecondaryColor3f
+glSecondaryColor3fv
+glSecondaryColor3i
+glSecondaryColor3iv
+glSecondaryColor3s
+glSecondaryColor3sv
+glSecondaryColor3ub
+glSecondaryColor3ubv
+glSecondaryColor3ui
+glSecondaryColor3uiv
+glSecondaryColor3us
+glSecondaryColor3usv
+glSelectBuffer			*8
+glSeparableFilter2D
 glShadeModel
 glStencilFunc
 glStencilMask
@@ -613,12 +771,14 @@ glTexGeni
 glTexGeniv
 glTexImage1D
 glTexImage2D
+glTexImage3D
 glTexParameterf
 glTexParameterfv
 glTexParameteri
 glTexParameteriv
 glTexSubImage1D
 glTexSubImage2D
+glTexSubImage3D
 glTranslated
 glTranslatef
 glVertex2d
@@ -646,153 +806,45 @@ glVertex4iv
 glVertex4s
 glVertex4sv
 glViewport
-gluGetString
-gluScaleImage
-gluBuild1DMipmaps
-gluBuild2DMipmaps
+glWindowPos2d
+glWindowPos2dv
+glWindowPos2f
+glWindowPos2fv
+glWindowPos2i
+glWindowPos2iv
+glWindowPos2s
+glWindowPos2sv
+glWindowPos3d
+glWindowPos3dv
+glWindowPos3f
+glWindowPos3fv
+glWindowPos3i
+glWindowPos3iv
+glWindowPos3s
+glWindowPos3sv
 gluBuild1DMipmapLevels
+gluBuild1DMipmaps
 gluBuild2DMipmapLevels
-gluOrtho2D
-gluPerspective
-gluLookAt
-gluPickMatrix
-gluNewQuadric
-gluQuadricNormals
-gluQuadircOrientation
-gluQuadircDrawStyle
-gluQuadricTexture
+gluBuild2DMipmaps
+gluBuild3DMipmapLevels
+gluBuild3DMipmaps
+gluCheckExtension		*6
 gluCylinder
 gluDisk
-gluSphere
+gluErrorString			*6
+gluGetString			*6
+gluLookAt
+gluNewQuadric
+gluOrtho2D
 gluPartialDisk
-gluUnProject *
-
-Version 1.2
-glBlendColor
-glBlendEquation
-glColorSubTable
-glColorTable
-glColorTableParameterfv
-glColorTableParameteriv
-glConvolutionFilter1D
-glConvolutionFilter2D
-glConvolutionParameterf
-glConvolutionParameterfv
-glConvolutionParameteri
-glConvolutionParameteriv
-glCopyColorSubTable
-glCopyColorTable
-glCopyConvolutionFilter1D
-glCopyConvolutionFilter2D
-glCopyTexSubImage3D
-glGetColorTableParameterfv
-glGetColorTableParameteriv
-glGetConvolutionParameterfv
-glGetConvolutionParameteriv
-glGetHistogramParameterfv
-glGetHistogramParameteriv
-glGetMinmaxParameterfv
-glGetMinmaxParameteriv
-glHistogram
-glMinmax
-glResetHistogram
-glResetMinmax
-glSeparableFilter2D
-glTexImage3D
-glTexSubImage3D
-
-Version 1.3
-glActiveTexture
-glClientActiveTexture
-glLoadTransposeMatrixd
-glLoadTransposeMatrixf
-glMultTransposeMatrixd
-glMultTransposeMatrixf
-glMultiTexCoord1d
-glMultiTexCoord1dv
-glMultiTexCoord1f
-glMultiTexCoord1fv
-glMultiTexCoord1i
-glMultiTexCoord1iv
-glMultiTexCoord1s
-glMultiTexCoord1sv
-glMultiTexCoord2d
-glMultiTexCoord2dv
-glMultiTexCoord2f
-glMultiTexCoord2fv
-glMultiTexCoord2i
-glMultiTexCoord2iv
-glMultiTexCoord2s
-glMultiTexCoord2sv
-glMultiTexCoord3d
-glMultiTexCoord3dv
-glMultiTexCoord3f
-glMultiTexCoord3fv
-glMultiTexCoord3i
-glMultiTexCoord3iv
-glMultiTexCoord3s
-glMultiTexCoord3sv
-glMultiTexCoord4d
-glMultiTexCoord4dv
-glMultiTexCoord4f
-glMultiTexCoord4fv
-glMultiTexCoord4i
-glMultiTexCoord4iv
-glMultiTexCoord4s
-glMultiTexCoord4sv
-glSampleCoverage
-gluBuild3DMipmaps
-gluBuild3DMipmapLevels
-gluUnProject4 *
-
-------------------------------  gl-unsafe:  --------------------------
-Version 1.1
-glEdgeFlagPointer
-glTexCoordPointer
-glColorPointer
-glIndexPointer
-glNormalPointer
-glVertexPointer
-glArrayElement
-glDrawArrays
-glDrawElements
-glInterleavedArrays
-glSelectBuffer *
-glGetBooleanv
-glGetDoublev
-glGetFloatv
-glGetIntegerv
-glGetMapdv
-glGetMapfv
-glGetMapiv
-glGetPixelMapfv
-glGetPixelMapuiv
-glGetPixelMapusv
-glGetPointerv
-glGetTexEnvfv
-glGetTexEnviv
-glGetTexGenfv
-glGetTexGeniv
-glGetTexImage
-glGetTexLevelParameterfv
-glGetTexLevelParameteriv
-glGetTexParameterfv
-glGetTexParameteriv
-
-Version 1.2  
-glDrawRangeElements
-glGetColorTable
-glGetConvolutionFilter
-glGetHistogram
-glGetMinmax
-glGetSeparableFilter
-  
-Version 1.3
-glCompressedTexImage1D
-glCompressedTexImage2D
-glCompressedTexImage3D
-glCompressedTexSubImage1D
-glCompressedTexSubImage2D
-glCompressedTexSubImage3D
-glGetCompressedTexImage
- 
+gluPerspective
+gluPickMatrix			*5
+gluProject			*7
+gluQuadricDrawStyle
+gluQuadricNormals
+gluQuadricOrientation
+gluQuadricTexture
+gluScaleImage
+gluSphere
+gluUnProject			*7
+gluUnProject4			*7

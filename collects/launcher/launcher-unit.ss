@@ -332,7 +332,7 @@
       ; make-macosx-launcher : symbol (listof str) pathname ->  
       (define (make-macosx-launcher kind variant flags dest)
 	(if (eq? kind 'mzscheme) 
-	    (make-unix-launcher kind flags dest)
+	    (make-unix-launcher kind variant flags dest)
 	    (begin
 	      (unless plthome
 		      (error 'make-unix-launcher 

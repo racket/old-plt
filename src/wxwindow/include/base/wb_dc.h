@@ -85,12 +85,11 @@ class wxbDC: public wxObject
 
   Bool Colour;
 
-  int current_logical_function;
   int current_bk_mode;
 
   wxPen *current_pen;
   wxBrush *current_brush;
-  wxBrush *current_background_brush;
+  wxColour current_background_color;
   wxColour current_text_foreground;
   wxColour current_text_background;
   wxFont *font;
@@ -158,8 +157,7 @@ class wxbDC: public wxObject
   virtual void SetFont(wxFont *font) = 0;
   virtual void SetPen(wxPen *pen) = 0;
   virtual void SetBrush(wxBrush *brush) = 0;
-  virtual void SetLogicalFunction(int function) = 0;
-  virtual void SetBackground(wxBrush *brush) = 0;
+  virtual void SetBackground(wxColour *c) = 0;
   virtual void SetTextForeground(wxColour *colour);
   virtual void SetTextBackground(wxColour *colour);
   virtual void SetBackgroundMode(int mode); // wxSOLID or wxTRANSPARENT
@@ -187,10 +185,9 @@ class wxbDC: public wxObject
   inline virtual int  GetMapMode(void) {return mapping_mode;};
 
   // The following methods provide a cleaner interface
-  inline virtual wxBrush *GetBackground(void)      { return current_background_brush ;}
+  inline virtual wxColour *GetBackground(void)      { wxColour *c = new wxColour; *c = current_background_color; return c; }
   inline virtual wxBrush *GetBrush(void)           { return current_brush ;}
   inline virtual wxFont  *GetFont(void)            { return font ;}
-  inline virtual int      GetLogicalFunction(void) { return current_logical_function ;}
   inline virtual wxPen   *GetPen(void)             { return current_pen ;}
   inline virtual wxColour&GetTextBackground(void)  { return current_text_background ;}
   /* MATTHEW: [11] */
@@ -219,7 +216,7 @@ class wxbDC: public wxObject
   virtual inline float MinY(void) { return min_y; }
   virtual inline float MaxY(void) { return max_y; }
   virtual Bool Blit(float xdest, float ydest, float width, float height,
-                    wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY) = 0;
+                    wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour* c = NULL) = 0;
 
   // Sometimes we need to override optimization, e.g.
   // if other software is drawing onto our surface and we

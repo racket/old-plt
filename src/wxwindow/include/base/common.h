@@ -248,12 +248,16 @@ enum {
   wxSLANT,
 
 // Pen styles
-  wxSOLID      =   100,
+  wxSOLID      =   97,
   wxDOT,
   wxLONG_DASH,
   wxSHORT_DASH,
   wxDOT_DASH,
   wxUSER_DASH,
+  wxXOR_DOT,
+  wxXOR_LONG_DASH,
+  wxXOR_SHORT_DASH,
+  wxXOR_DOT_DASH,
 
   wxTRANSPARENT,
 

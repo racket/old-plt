@@ -135,8 +135,7 @@ class wxCanvasDC: public wxbCanvasDC
   void SetPen(wxPen *pen);
   void SetBrush(wxBrush *brush);
   void SetColourMap(wxColourMap *cmap);
-  void SetLogicalFunction(int function);
-  void SetBackground(wxBrush *brush);
+  void SetBackground(wxColour *c);
   void SetClippingRegion(float x, float y, float width, float height);
   /* MATTHEW: [8] */
   void GetClippingRegion(float *x, float *y, float *width, float *height);
@@ -164,7 +163,7 @@ class wxCanvasDC: public wxbCanvasDC
   int LogicalToDeviceYRel(float y);
 
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
   inline Bool CanGetTextExtent(void) { return TRUE; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 

@@ -25,6 +25,12 @@ while (<>) {
 		    if ($_ =~ /^extern /) {
 			$_ = substr($_, 7);
 		    }
+		    if ($_ =~ /^volatile /) {
+			$_ = substr($_, 9);
+			$volatile = 'volatile ';
+		    } else {
+			$volatile = '';
+                    }
 
 		    if ($_ =~ /^const /) {
 			$_ = substr($_, 6);
@@ -45,7 +51,7 @@ while (<>) {
 		    if (substr($4, 0, 1) eq '(') {
 			print "$const$1 $2(*$3)$4\n" unless $list;
 		    } else {
-			print "$const$1 $star$2$3;\n" unless $list;
+			print "$const$volatile$1 $star$2$3;\n" unless $list;
 		    }
 		    @exported = (@exported, $3);
 

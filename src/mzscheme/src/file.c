@@ -441,7 +441,7 @@ char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
 	    return ".";
 	  }
 	}
-
+	
 	scheme_raise_exn(MZEXN_I_O, "current-directory: unknown failure (%e)", errno);
       }
 

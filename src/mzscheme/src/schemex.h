@@ -56,10 +56,10 @@ Scheme_Process *(*scheme_get_current_process)();
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
 Scheme_Process *scheme_current_process;
-volatile int;
+volatile int scheme_fuel_counter;
 #else
 Scheme_Process **scheme_current_process_ptr;
-volatile int;
+volatile int *scheme_fuel_counter_ptr;
 #endif
 #endif
 #ifndef NO_SCHEME_THREADS

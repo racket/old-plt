@@ -58,7 +58,7 @@
 			      (vector "-r"
 				      "xform.ss"
 				      "ctok.ss"
-				      (format "cl.exe /E ~a" includes)
+				      (format "cl.exe /MT /E ~a" includes)
 				      src
 				      dest)
 			      void)
@@ -105,7 +105,7 @@
 
 (define exe "mz2k.exe")
 
-(define libs "/MT kernel32.lib user32.lib wsock32.lib")
+(define libs "kernel32.lib user32.lib wsock32.lib")
 
 (let ([objs (list*
 	     "xsrc/main.obj"
@@ -123,7 +123,7 @@
 	     (> (file-or-directory-modify-seconds f)
 		ms))
 	   objs)
-      (unless (system- (format "cl.exe /out:~a ~a ~a"
+      (unless (system- (format "cl.exe /MT /Fe~a ~a ~a"
 			       exe
 			       (let loop ([objs objs])
 				 (if (null? objs)

@@ -5497,6 +5497,40 @@ int scheme_get_external_event_fd(void)
 #endif
 }
 
+#ifdef USE_WIN32_THREAD_TIMER
+
+static HANDLE itimer;
+static OS_SEMAPHORE_TYPE itimer_semaphore;
+static long itimer_delay;
+
+static long ITimer(void)
+{
+  WaitForSingleObject(itimer_semaphore, INFINITY);
+
+  while (1) {
+    if (WaitForSingleObject(itimer_semaphore, itimer_delay / 1000) == WAIT_TIMEOUT) {
+      scheme_fuel_counter = 0;
+      WaitForSingleObject(itimer_semaphore, INFINITY);
+    }
+  }
+}
+
+void scheme_start_itimer_thread(long usec)
+{
+  DWORD id;
+
+  if (!itimer) {
+    itimer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ITimer, NULL, 0, &id);
+    itimer_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+    scheme_remember_thread(itimer);
+  }
+
+  itimer_delay = usec;
+  ReleaseSemaphore(itimer_semaphore, 1, NULL);
+}
+
+#endif
+
 /*========================================================================*/
 /*                       memory debugging help                            */
 /*========================================================================*/

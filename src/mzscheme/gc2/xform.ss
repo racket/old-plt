@@ -324,7 +324,7 @@
        ;; So we can ignore them:
 
        strlen cos sin exp pow log sqrt atan2 isnan isinf
-       floor ceil round fmod fabs __maskrune
+       floor ceil round fmod fabs __maskrune _errno
        isalpha isdigit isspace tolower toupper
        fread fwrite socket fcntl setsockopt connect send recv close
        __builtin_next_arg __error __errno_location __toupper __tolower

@@ -96,6 +96,7 @@ static Scheme_Object *provide_stx;
 static Scheme_Object *set_stx;
 static Scheme_Object *app_stx;
 static Scheme_Object *top_stx;
+static Scheme_Object *quote_stx;
 
 static int num_initial_modules;
 static Scheme_Object **initial_modules;
@@ -312,6 +313,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(set_stx);
   REGISTER_SO(app_stx);
   REGISTER_SO(top_stx);
+  REGISTER_SO(quote_stx);
 
   w = scheme_sys_wraps0;
   begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w, 0, 0);
@@ -323,6 +325,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w, 0, 0);
   app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w, 0, 0);
   top_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%top"), scheme_false, w, 0, 0);
+  quote_stx = scheme_datum_to_syntax(scheme_intern_symbol("quote"), scheme_false, w, 0, 0);
 
   REGISTER_SO(prefix_symbol);
   REGISTER_SO(rename_symbol);
@@ -1620,7 +1623,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
       mb = scheme_datum_to_syntax(module_begin_symbol, form, form, 0, 1);
       mb = scheme_add_rename(mb, rn);
       mb = scheme_add_rename(mb, et_rn);
-      fm = scheme_make_pair(mb, fm);
+      fm = scheme_make_pair(mb, scheme_make_pair(fm, scheme_null));
       fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
       check_mb = 1;
     }
@@ -2255,6 +2258,21 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   scheme_clean_dead_env(env->genv);
 
+  /* If compiling, drop expressions that are constants: */
+  if (rec) {
+    Scheme_Object *prev = NULL, *next;
+    for (p = first; !SCHEME_NULLP(p); p = next) {
+      next = SCHEME_CDR(p);
+      if (scheme_omittable_expr(SCHEME_CAR(p))) {
+	if (prev)
+	  SCHEME_CDR(p) = next;
+	else
+	  first = next;
+      } else
+	prev = p;
+    }
+  }
+
   /* Compute provides for re-provides: */
   {
     int i;
@@ -2308,7 +2326,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	    exns = SCHEME_CDR(ree);
 	    if (SAME_OBJ(modidx, kernel_symbol))
-	      exclude_hint = exns;
+	      if (!SCHEME_STX_NULLP(exns))
+		exclude_hint = exns;
 	    
 	    for (; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
 	      /* Make sure excluded name was required: */
@@ -2334,10 +2353,18 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
+  /* Ad hoc optimization: mzscheme is everything from kernel except
+     #%module_begin */
+  if ((reprovide_kernel == (kernel->num_provides - 1))
+      && SCHEME_FALSEP(exclude_hint)) {
+    exclude_hint = scheme_make_pair(module_begin_symbol, scheme_null);
+    exclude_hint = scheme_datum_to_syntax(exclude_hint, scheme_false, top_stx, 0, 0);
+  }
+
   /* Re-providing all of the kernel without prefixing? */
   if (reprovide_kernel) {
     if ((reprovide_kernel == (kernel->num_provides - 1))
-	&& exclude_hint) {
+	&& SCHEME_TRUEP(exclude_hint)) {
       if (SCHEME_STX_PAIRP(exclude_hint) && SCHEME_NULLP(SCHEME_STX_CDR(exclude_hint))) {
 	Scheme_Object *n;
 
@@ -2483,6 +2510,96 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     }
 
     exicount = count;
+  }
+
+  if (!rec) {
+    /* Add a constant at the start of the body that exposes information
+       about the module:
+         '((export-val-item ...)
+           (export-stx-item ...)
+           kernel-reexport)
+
+      item = name
+           | (def-id . ext-id)
+           | (modidx def-id . ext-id)
+     kernel-reexport = #f
+                     | #t
+                     | exclusion-id
+    */
+    int j;
+    Scheme_Object *e, *a, *result;
+
+    result = scheme_null;
+
+    /* kernel re-export info: */
+    if (reprovide_kernel) {
+      if (exclude_hint)
+	result = scheme_make_pair(exclude_hint, result);
+      else
+	result = scheme_make_pair(scheme_true, result);
+    } else
+      result = scheme_make_pair(scheme_false, result);
+    
+    /* add syntax and value exports: */
+    for (j = 0; j < 2; j++) {
+      int top, i;
+
+      e = scheme_null;
+
+      if (reprovide_kernel) {
+	if (!j) {
+	  i = kernel->num_var_provides;
+	  top = kernel->num_provides;
+	} else {
+	  i = 0;
+	  top = kernel->num_var_provides;
+	}
+
+	for (; i < top; i++) {
+	  if (!SAME_OBJ(kernel->provides[i], exclude_hint)) {
+	    a = scheme_make_pair(kernel->provides[i], kernel->provides[i]);
+	    a = scheme_make_pair(kernel_symbol, a);
+	    e = scheme_make_pair(a, e);
+	  }
+	}
+      }
+
+      if (!j) {
+	i = exvcount;
+	top = excount;
+      } else {
+	i = 0;
+	top = exvcount;
+      }
+      
+      for (; i < top; i++) {
+	if (SCHEME_FALSEP(exss[i])
+	    && SAME_OBJ(exs[i], exsns[i]))
+	  a = exs[i];
+	else {
+	  a = scheme_make_pair(exs[i], exsns[i]);
+	  if (!SCHEME_FALSEP(exss[i])) {
+	    a = scheme_make_pair(exss[i], a);
+	  }
+	}
+	e = scheme_make_pair(a, e);
+      }
+      result = scheme_make_pair(e, result);
+    }
+
+    /* Drop existing quoted constant from start, if one is there: */
+    if (SCHEME_PAIRP(first)) {
+      a = SCHEME_CAR(first);
+      if (SCHEME_STX_PAIRP(a)) {
+	a = SCHEME_STX_CAR(a);
+	if (scheme_stx_module_eq(a, quote_stx, 0))
+	  first = SCHEME_CDR(first);
+      }
+    }
+    
+    first = scheme_make_pair(scheme_make_pair(quote_stx, 
+					      scheme_make_pair(result, scheme_null)),
+			     first);
   }
 
   if (rec) {

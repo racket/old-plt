@@ -77,11 +77,13 @@
      ;; Thess are new:
      (struct quote-syntax-form (expr))               create-quote-syntax-form
      (struct define-syntaxes-form (names expr))      create-define-syntaxes-form
-     (struct module-form (name rt-requires ; lstof stx for module paths
-			       et-requires ; lstof stx for module paths
-			       rt-body     ; lstof zodiac
-			       et-body     ; lstof zodiac
-			       provides))  ; lstof stx names
+     (struct module-form (name rt-requires  ; lstof stx for module paths
+			       et-requires  ; lstof stx for module paths
+			       rt-body      ; lstof zodiac
+			       et-body      ; lstof zodiac
+			       var-provides ; lstof (sym | (def-sym . prvd-sym) | (mod-path def-sym . prvd-sym))
+			       syntax-provides  ;  ditto
+			       kernel-reprovide-hint)) ; #f | #t | exclude-sym
      create-module-form
      (struct require/provide-form ())                create-require/provide-form
 

@@ -3545,7 +3545,7 @@ static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env,
 
 Scheme_Object *scheme_expand(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _expand(obj, env->init, 1, 1, -1);
+  return _expand(obj, env->init, -1, 1, -1);
 }
 
 Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj)

@@ -13,7 +13,7 @@
 				    with-continuation-mark
 				    if #%app
 				    define-values define-syntaxes
-				    module require provide require-for-syntax)
+				    module #%plain-module-begin require provide require-for-syntax)
 			       (if trans? module-transformer-identifier=? module-identifier=?)
 			  clause ...))])))
 

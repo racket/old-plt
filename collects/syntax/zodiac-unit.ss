@@ -7,7 +7,8 @@
 	   (lib "list.ss"))
   (require "kerncase.ss")
 
-  (require "zodiac-sig.ss")
+  (require "zodiac-sig.ss"
+	   "stx.ss")
 
   (provide zodiac@)
 
@@ -266,7 +267,7 @@
 		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #t))]
 		
-		[(module name init-require . body)
+		[(module name init-require (#%plain-module-begin (var-provides syntax-provides kernel-reprovide-hint) . body))
 		 (let* ([body (map (lambda (x)
 				     (loop x env trans?))
 				   (syntax->list (syntax body)))]
@@ -280,9 +281,8 @@
 			       (append
 				(map (lambda (r)
 				       (syntax-case* r (prefix all-except rename)
-					   (lambda (a b) (symbol=? 
-							  (syntax-e a)
-							  (syntax-e b)))
+					   (lambda (a b) (eq? (syntax-e a)
+							      (syntax-e b)))
 					 [mod
 					  (identifier? r)
 					  r]
@@ -315,7 +315,9 @@
 		    rt-body
 		    et-required
 		    et-body
-		    provided)]
+		    (syntax-object->datum (syntax var-provides))
+		    (syntax-object->datum (syntax syntax-provides))
+		    (syntax-object->datum (syntax kernel-reprovide-hint))))]
 		[(require i)
 		 (make-require/provide-form
 		  stx
@@ -653,9 +655,19 @@
       (define (create-define-syntaxes-form z names expr)
 	(make-define-syntaxes-form (zodiac-stx z) (mk-back) names expr))
 
-      (define-struct (module-form struct:parsed) (name init-require rt-requires et-requires body))
-      (define (create-module-form z name init-require body)
-	(make-module-form (zodiac-stx z) (mk-back) name init-require body))
+      (define-struct (module-form struct:parsed) (name rt-requires et-requires 
+						       rt-body et-body 
+						       var-provides syntax-provides 
+						       kernel-reprovide-hint))
+      (define (create-module-form z name rt-requires et-requires 
+				  rt-body et-body 
+				  var-provides syntax-provides 
+				  kernel-hint)
+	(make-module-form (zodiac-stx z) (mk-back) 
+			  name rt-requires et-requires 
+			  rt-body et-body 
+			  var-provides syntax-provides 
+			  kernel-hint))
 
       (define-struct (require/provide-form struct:parsed) ())
       (define (create-require/provide-form z)

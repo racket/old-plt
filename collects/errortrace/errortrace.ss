@@ -263,7 +263,7 @@
 	   (syntax/loc expr (define-syntaxes (name ...) marked)))]
 
 	;; Just wrap body expressions
-	[(module name init-import body ...)
+	[(module name init-import (#%plain-module-begin module-data body ...))
 	 top?
 	 (with-syntax ([bodyl
 			(map (lambda (b)
@@ -272,7 +272,8 @@
 	   (datum->syntax-object
 	    expr
 	    ;; Preserve original #%module-begin:
-	    (list* (syntax module) (syntax name) (syntax init-import) (syntax bodyl))
+	    (list (syntax module) (syntax name) (syntax init-import) 
+		  (cons (syntax #%plain-module-begin) (syntax bodyl)))
 	    expr))]
 
 	;; No way to wrap

@@ -4,7 +4,7 @@
 
   (provide with-module-reading-parameterization)
   (define (with-module-reading-parameterization thunk)
-    (parameterize ((read-case-sensitive #f)
+    (parameterize ((read-case-sensitive #t)
 		   (read-square-bracket-as-paren #t)
 		   (read-curly-brace-as-paren #t)
 		   (read-accept-box #t)

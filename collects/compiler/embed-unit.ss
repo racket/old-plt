@@ -4,7 +4,7 @@
 	   (lib "file.ss")
 	   (lib "list.ss")
 	   (lib "etc.ss")
-	   (lib "thread.ss")
+	   (lib "port.ss")
 	   (lib "moddep.ss" "syntax")
 	   (lib "plist.ss" "xml")
 	   "embed-sig.ss"

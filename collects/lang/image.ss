@@ -20,7 +20,7 @@
 	     (define got-id #f) ...
 	     (define (get-procs!)
 	       (unless tried?
-		 (parameterize ([break-enabled #f])
+		 (parameterize-break #f
 		   (set! tried? #t)
 		   (with-handlers ([exn:fail? (lambda (x) #f)])
 		     (set! got-id (dynamic-require '(lib "image.ss" "lang" "private") 'id))

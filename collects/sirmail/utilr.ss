@@ -158,7 +158,7 @@
 	  ;; If the operation is fast enough, no need to disable then yield then enable,
 	  ;; which makes the screen flash and causes events to get dropped. 1/4 second
 	  ;; seems "fast enough".
-	  (unless (object-wait-multiple 0.25 s)
+	  (unless (sync/timeout 0.25 s)
 	    (let ([v (enable #f #f
 			     (lambda ()
 			       (semaphore-wait adjust-break)

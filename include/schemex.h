@@ -56,6 +56,7 @@ Scheme_Object *(*scheme_get_thread_param)(Scheme_Config *c, Scheme_Thread_Cell_T
 void (*scheme_set_thread_param)(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos, Scheme_Object *o);
 Scheme_Env *(*scheme_get_env)(Scheme_Config *config);
 Scheme_Thread_Cell_Table *(*scheme_inherit_cells)(Scheme_Thread_Cell_Table *cells);
+Scheme_Object *(*scheme_current_break_cell)();
 /*========================================================================*/
 /*                                threads                                 */
 /*========================================================================*/
@@ -71,16 +72,20 @@ Scheme_Object *(*scheme_thread)(Scheme_Object *thunk);
 Scheme_Object *(*scheme_thread_w_details)(Scheme_Object *thunk, 
 						 Scheme_Config *init_config,
 						 Scheme_Thread_Cell_Table *copy_from,
+						 Scheme_Object *break_cell,
 						 Scheme_Custodian *owning_custodian, 
 						 int suspend_to_kill);
 void (*scheme_kill_thread)(Scheme_Thread *p);
 void (*scheme_break_thread)(Scheme_Thread *p);
 void (*scheme_thread_block)(float sleep_time);
+void (*scheme_thread_block_enable_break)(float sleep_time, int enable);
 void (*scheme_swap_thread)(Scheme_Thread *process);
 void (*scheme_making_progress)();
 void (*scheme_weak_suspend_thread)(Scheme_Thread *p);
 void (*scheme_weak_resume_thread)(Scheme_Thread *p);
 int (*scheme_block_until)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
+int (*scheme_block_until_enable_break)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, 
+					      float, int enable);
 int (*scheme_in_main_thread)(void);
 void (*scheme_cancel_sleep)(void);
 Scheme_Object *(*scheme_make_thread_cell)(Scheme_Object *def_val, int inherited);
@@ -117,6 +122,9 @@ Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_O
 int (*scheme_close_should_force_port_closed)();
 void (*scheme_push_kill_action)(Scheme_Kill_Action_Func f, void *d);
 void (*scheme_pop_kill_action)();
+void (*scheme_set_can_break)(int on);
+void (*scheme_push_break_enable)(Scheme_Cont_Frame_Data *cframe, int on, int pre_check);
+void (*scheme_pop_break_enable)(Scheme_Cont_Frame_Data *cframe, int post_check);
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/

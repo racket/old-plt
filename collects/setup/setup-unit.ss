@@ -8,6 +8,7 @@
 	   (lib "file.ss")
 	   (lib "list.ss")
 	   (lib "cm.ss")
+	   (lib "port.ss")
 
 	   "option-sig.ss"
 	   (lib "sig.ss" "compiler")
@@ -187,12 +188,7 @@
 		     [line-accum #""]
 		     [op (if (verbose)
 			     (current-output-port)
-			     (make-custom-output-port 
-			      #f
-			      (lambda (s start end flush?)
-				(- end start))
-			      void
-			      void))]
+			     (open-output-nowhere))] 
 		     [doing-path (lambda (path)
 				   (unless printed?
 				     (set! printed? #t)

@@ -5,7 +5,7 @@
            (lib "process.ss")
 	   (lib "list.ss")
 	   (lib "etc.ss")
-	   (lib "thread.ss")
+	   (lib "port.ss")
 	   (lib "file.ss")
 	   (lib "getinfo.ss" "setup"))
 

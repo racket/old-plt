@@ -36,7 +36,7 @@
            (lib "unitsig.ss")
            (lib "etc.ss")
            (lib "string.ss")
-           (lib "thread.ss"))
+           (lib "port.ss"))
 
   (provide net:mime@)
   (define net:mime@

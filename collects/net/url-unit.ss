@@ -12,7 +12,7 @@
 (module url-unit mzscheme
   (require (lib "file.ss")
            (lib "unitsig.ss")
-	   (lib "thread.ss")
+	   (lib "port.ss")
 	   "uri-codec.ss"
            "url-sig.ss"
            "tcp-sig.ss")

@@ -43,9 +43,8 @@
   
   ;; spelled-correctly? : string -> boolean
   (define (spelled-correctly? word)
-    (object-wait-multiple
-     #f
-     (make-nack-guard-waitable
+    (sync
+     (nack-guard-evt
       (lambda (failed)
         (let ([result (make-channel)])
           (channel-put ask-chan (list result failed word))
@@ -60,13 +59,12 @@
            (let ([computed-dict (if computed?
                                     dict
                                     (fetch-dictionary))])
-             (object-wait-multiple
-              #f
-              (make-wrapped-waitable
-               (make-channel-put-waitable answer-chan (check-word computed-dict bad-dict word))
+             (sync
+              (finish-evt
+               (channel-put-evt answer-chan (check-word computed-dict bad-dict word))
                (lambda (done)
                  (loop #t computed-dict)))
-              (make-wrapped-waitable
+              (finish-evt
                give-up-chan
                (lambda (done)
                  (loop #t computed-dict))))))))))

@@ -80,16 +80,14 @@ struct sslplt {
 #define OBUFFER_SIZE 4096
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   int s;
   Scheme_Custodian_Reference *mref;
   SSL_CTX *ctx;
 } listener_t;
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   SSL_CTX *ctx;
 } mzssl_ctx_t;
 
@@ -353,7 +351,7 @@ static int get_ssl_error_msg(int errid, const char **msg, int status, int has_st
  *****************************************************************************/
 
 /* this is the new subtype we're creating */
-Scheme_Object *ssl_input_port_type = NULL; 
+static Scheme_Object *ssl_input_port_type = NULL; 
 
 /* forward decls: */
 static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds);
@@ -424,7 +422,7 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
 	bytes_read += status;
     }
 
-    if (nonblocking)
+    if (nonblocking > 0)
       break;
 
     /* It might be tempting at this point to block on the fd
@@ -434,9 +432,10 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
        Use the general sll input blocking functions. */
 
     if (!bytes_read)
-      scheme_block_until((Scheme_Ready_Fun)sslin_char_ready, 
-			 (Scheme_Needs_Wakeup_Fun)sslin_need_wakeup,
-			 (void *)port, (float)0.0);
+      scheme_block_until_enable_break((Scheme_Ready_Fun)sslin_char_ready, 
+				      (Scheme_Needs_Wakeup_Fun)sslin_need_wakeup,
+				      (void *)port, (float)0.0,
+				      nonblocking < 0);
   }
   
   return bytes_read;
@@ -542,7 +541,9 @@ Scheme_Input_Port *make_sslin_port(SSL *ssl, struct sslplt *wrapper, const char 
 {
   return scheme_make_input_port(ssl_input_port_type, wrapper, 
 				scheme_make_immutable_sized_utf8_string((char *)name, -1),
+				scheme_get_evt_via_get,
 				ssl_get_string, 
+				scheme_peek_evt_via_peek,
 				NULL, sslin_char_ready, sslin_close, 
 				sslin_need_wakeup, 1);
 }
@@ -555,7 +556,7 @@ Scheme_Input_Port *make_sslin_port(SSL *ssl, struct sslplt *wrapper, const char 
  *****************************************************************************/
 
 /* this is the new subtype we're creating */
-Scheme_Object *ssl_output_port_type = NULL;
+static Scheme_Object *ssl_output_port_type = NULL;
 
 /* forward decls: */
 static int sslout_char_ready(Scheme_Output_Port *port);
@@ -564,7 +565,7 @@ static void sslout_need_wakeup(Scheme_Output_Port *port, void *fds);
 /* write_string: write some bits of data out to the wire, if possible. This
    is made complicated by a host of problems. */
 long write_string(Scheme_Output_Port *port, const char *buffer, long offset, 
-		  long size, int rarely_block) 
+		  long size, int rarely_block, int enable_break) 
 {
   struct sslplt *ssl = (struct sslplt *)SCHEME_OUTPORT_VAL(port);
   const char *errstr = "Unknown error";
@@ -582,9 +583,10 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     if (rarely_block == 2)
       return size ? 0 : -1; /* return -1 if this was a flush request */
     /* Wait until it's writable */
-    scheme_block_until((Scheme_Ready_Fun)sslout_char_ready, 
-		       (Scheme_Needs_Wakeup_Fun)sslout_need_wakeup,
-		       (void *)port, (float)0.0);      
+    scheme_block_until_enable_break((Scheme_Ready_Fun)sslout_char_ready, 
+				    (Scheme_Needs_Wakeup_Fun)sslout_need_wakeup,
+				    (void *)port, (float)0.0,
+				    enable_break);
   }
 
   /* We get here only when !ssl->ob_used. */
@@ -768,10 +770,11 @@ static Scheme_Output_Port *make_sslout_port(SSL *ssl, struct sslplt *data, const
 {
   return scheme_make_output_port(ssl_output_port_type, data, 
 				 scheme_make_immutable_sized_utf8_string((char *)name, -1),
+				 scheme_write_evt_via_write,
 				 write_string, 
 				 sslout_char_ready, sslout_close, 
 				 sslout_need_wakeup, 
-				 NULL, 1);
+				 NULL, NULL, 1);
 }
 
 /*****************************************************************************
@@ -1206,7 +1209,7 @@ ssl_listen(int argc, Scheme_Object *argv[])
 	    listener_t *l;
 
 	    l = (listener_t *)scheme_malloc_tagged(sizeof(listener_t));
-	    l->type = ssl_listener_type;
+	    l->so.type = ssl_listener_type;
 	    l->s = s;
 	    l->ctx = ctx;
 	    {
@@ -1439,7 +1442,7 @@ ssl_mk_ctx(int argc, Scheme_Object *argv[])
   meth = check_encrypt_and_convert("ssl-make-context", argc, argv, 0, 1, 0);
 
   c = (mzssl_ctx_t *)scheme_malloc_tagged(sizeof(mzssl_ctx_t));
-  c->type = ssl_ctx_type;
+  c->so.type = ssl_ctx_type;
 
   ctx = SSL_CTX_new(meth);
   if (!ctx) { 
@@ -1717,10 +1720,10 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 #endif
   ssl_input_port_type = scheme_make_port_type("<ssl-input-port>");
   ssl_output_port_type = scheme_make_port_type("<ssl-output-port>");
-  scheme_register_extension_global(&daemon_attn, 4);
-  scheme_register_extension_global(&ssls, 4);
-  scheme_register_extension_global(&ssl_input_port_type, 4);
-  scheme_register_extension_global(&ssl_output_port_type, 4);
+  scheme_register_extension_global(&daemon_attn, sizeof(daemon_attn));
+  scheme_register_extension_global(&ssls, sizeof(ssls));
+  scheme_register_extension_global(&ssl_input_port_type, sizeof(ssl_input_port_type));
+  scheme_register_extension_global(&ssl_output_port_type, sizeof(ssl_output_port_type));
   
 #ifdef MZ_PRECISE_GC
   GC_register_traversers(ssl_listener_type, listener_SIZE,
@@ -1737,11 +1740,11 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   SSL_load_error_strings();
 
 
-  scheme_add_waitable(ssl_listener_type,
-		      tcp_check_accept, tcp_accept_needs_wakeup,
-		      NULL, 0);
+  scheme_add_evt(ssl_listener_type,
+		 tcp_check_accept, tcp_accept_needs_wakeup,
+		 NULL, 0);
 
-  scheme_thread_w_details(thread, NULL, NULL, newcust, 0);
+  scheme_thread_w_details(thread, NULL, NULL, NULL, newcust, 0);
   return scheme_reload(env);
 }
 

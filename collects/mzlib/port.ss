@@ -18,11 +18,11 @@
        (lambda (s start end non-block? breakable?) (- end start))
        void
        (lambda (special non-block?) #t)
-       (lambda (s start end) (wrap-evt
+       (lambda (s start end) (convert-evt
 			      always-evt
 			      (lambda (x)
 				(- end start))))
-       (lambda (special) (wrap-evt always-evt (lambda (x) #t))))))
+       (lambda (special) (convert-evt always-evt (lambda (x) #t))))))
 
   (define (copy-port src dest . dests)
     (unless (input-port? src)
@@ -80,7 +80,7 @@
     (define special-peeked null)
     (define special-peeked-tail #f)
     (define (try-again)
-      (wrap-evt
+      (convert-evt
        (semaphore-peek-evt lock-semaphore)
        (lambda (x) 0)))
     (define (read-it s)

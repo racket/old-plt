@@ -450,18 +450,16 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 #ifdef wx_mac
 # ifdef WX_CARBON
   struct ColorPickerInfo cpInfo;
-  struct PMColor pmColor;
   
-  pmColor.profile = NULL; // use the default ColorSync profile
+  cpInfo.theColor.profile = NULL; // use the default ColorSync profile
   if (c) {
-    pmColor.color.rgb.red = c->Red() << 8;
-    pmColor.color.rgb.green = c->Green() << 8;
-    pmColor.color.rgb.blue = c->Blue() << 8;
+    cpInfo.theColor.color.rgb.red = c->Red() << 8;
+    cpInfo.theColor.color.rgb.green = c->Green() << 8;
+    cpInfo.theColor.color.rgb.blue = c->Blue() << 8;
   } else {
-    pmColor.color.rgb.red = pmColor.color.rgb.green = pmColor.color.rgb.blue = 0;
+    cpInfo.theColor.color.rgb.red = cpInfo.theColor.color.rgb.green = cpInfo.theColor.color.rgb.blue = 0;
   }
 
-  cpInfo.theColor = pmColor;
   cpInfo.dstProfile = NULL; // default Profile (again!)
   cpInfo.flags = NULL;
   cpInfo.placeWhere = kCenterOnMainScreen;  
@@ -482,7 +480,7 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
     return scheme_false;
   }
   
-  c = new wxColour(pmColor.color.rgb.red >> 8, pmColor.color.rgb.green >> 8, pmColor.color.rgb.blue >> 8);
+  c = new wxColour(cpInfo.theColor.color.rgb.red >> 8, cpInfo.theColor.color.rgb.green >> 8, cpInfo.theColor.color.rgb.blue >> 8);
 
   return objscheme_bundle_wxColour(c);
   

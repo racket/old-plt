@@ -525,11 +525,18 @@ long wxMakePicture(Drawable d, int color)
 #endif
 }
 
-void wxWindowDC::InitPicture() {
+void wxWindowDC::InitPicture() 
+{
   if (!X->picture) {
     unsigned long p;
     p = wxMakePicture(DRAWABLE, Colour);
     X->picture = p;
+    InitPictureClip();
+  }
+}
+
+void wxWindowDC::InitPictureClip()
+{
 # ifdef WX_USE_XFT
     if (CURRENT_REG)
       XftDrawSetClip(XFTDRAW, CURRENT_REG);
@@ -541,7 +548,6 @@ void wxWindowDC::InitPicture() {
     }
 #  endif
 # endif
-  }
 }
 
 void wxFreePicture(long p) {
@@ -3528,6 +3534,7 @@ void wxWindowDC::InitCairoDev()
   cairo_translate(CAIRO_DEV, device_origin_x, device_origin_y);
   cairo_scale(CAIRO_DEV, scale_x, scale_y);
   if (X->reset_cairo_clip) {
+    /* FIXME: need to clip to EXPOSE_REG, too */
     if (clipping)
       clipping->Install(X->cairo_dev);
     else

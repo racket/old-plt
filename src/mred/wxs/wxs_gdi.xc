@@ -327,6 +327,7 @@ static void *RgnBoundingBox(wxRegion *r)
 @ m "get-bounding-box" : void*/bundleAny RgnBoundingBox();
 
 @ "is-empty?" : bool Empty();
+@ "in-region?" : bool IsInRegion(double,double);
 
 @END
 

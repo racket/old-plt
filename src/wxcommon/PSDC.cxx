@@ -130,52 +130,37 @@ wxPrintPaperDatabase *wxThePrintPaperDatabase;
 # define current_text_background current_text_bg
 #endif
 
-class PSStream : public wxObject {
- public:
+/**************************************************/
 
-  Scheme_Object *f;
-  int int_width;
+wxPSStream::wxPSStream(char *file) {
+  f = scheme_open_output_file(file, "post-script-dc%");
+  int_width = 0;
+}
+ 
+wxPSStream::~wxPSStream(void) {
+  if (f) scheme_close_output_port((Scheme_Object *)f);
+}
 
-  PSStream(char *file) {
-    f = scheme_open_output_file(file, "post-script-dc%");
-    int_width = 0;
-  }
-  ~PSStream(void) {
-    if (f) scheme_close_output_port(f);
-  }
+int wxPSStream::good(void) {
+  return !!f;
+}
 
-  int good(void) {
-    return !!f;
-  }
+void wxPSStream::Out(char s) {
+  char s2[2];
+  s2[0] = s;
+  s2[1] = 0;
+  Out(s2);
+}
 
-  void Out(char s) {
-    char s2[2];
-    s2[0] = s;
-    s2[1] = 0;
-    Out(s2);
-  }
-  void Out(const char *s) {
-    scheme_put_byte_string("post-script-dc%", f, s, 0, strlen(s), 0);
-  }
-  void Out(double n);
-  void Out(long l);
-  void Out(int i) {
-    Out((long)i);
-  }
+void wxPSStream::Out(const char *s) {
+  scheme_put_byte_string("post-script-dc%", (Scheme_Object *)f, s, 0, strlen(s), 0);
+}
 
-  long tellp(void) {
-    return scheme_set_file_position(f, -1);
-  }
-  void seekp(long pos) {
-    scheme_set_file_position(f, pos);
-  }
+void wxPSStream::Out(int i) {
+  Out((long)i);
+}
 
-  void width(int w) {
-    int_width = w;
-  }
-};
-
-void PSStream::Out(double n)
+void wxPSStream::Out(double n)
 {
   char buf[64];
 
@@ -187,7 +172,7 @@ void PSStream::Out(double n)
   Out(buf);
 }
 
-void PSStream::Out(long l)
+void wxPSStream::Out(long l)
 {
   char buf[64];
 
@@ -200,6 +185,21 @@ void PSStream::Out(long l)
     sprintf(buf, "%ld", l);
   Out(buf);
 }
+
+long wxPSStream::tellp(void) {
+  return scheme_set_file_position((Scheme_Object *)f, -1);
+}
+ 
+void wxPSStream::seekp(long pos) {
+  scheme_set_file_position((Scheme_Object *)f, pos);
+}
+
+void wxPSStream::width(int w) {
+  int_width = w;
+}
+
+/**************************************************/
+
 
 wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent, Bool usePaperBBox, Bool asEPS)
 {
@@ -447,15 +447,7 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
   }
 
   if (r) {
-    pstream->Out("newpath\n");
-    if (r->ps) { /* => non-empty region */
-      wxPSRgn *rl;
-      char *s;
-      rl = r->ps->Lift();
-      s = rl->GetString();
-      pstream->Out(s);
-    }
-    pstream->Out("clip\n");
+    r->InstallPS(this, pstream);
 
     clipping = r;
     clipping->locked++;
@@ -942,7 +934,7 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   next_font_size = YSCALEREL(size);
 }
 
-static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int rop, wxColour *col)
+static void set_pattern(wxPostScriptDC *dc, wxPSStream *pstream, wxBitmap *bm, int rop, wxColour *col)
 {
   int width, height;
 
@@ -1319,7 +1311,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, double x, double y,
   }
 
   sym_map = current_font->GetFamily() == wxSYMBOL;
-  wxPostScriptDrawText(pstream->f, name, text, dt, combine, use16, current_font_size,
+  wxPostScriptDrawText((Scheme_Object *)pstream->f, name, text, dt, combine, use16, current_font_size,
 		       sym_map);
 
   if (angle != 0.0) {
@@ -1416,8 +1408,8 @@ Bool wxPostScriptDC::StartDoc (char *message)
   char userID[256];
 
   if (device == wxDEVICE_EPS) {
-    PSStream *pss;
-    pss = new PSStream(filename);
+    wxPSStream *pss;
+    pss = new wxPSStream(filename);
     pstream = pss;
 
     if (!pstream || !pstream->good()) {
@@ -1611,7 +1603,7 @@ void wxPostScriptDC::EndPage (void)
 }
 
 
-static void printhex(PSStream *pstream, int v)
+static void printhex(wxPSStream *pstream, int v)
 {
   int h, l;
   char s[3];
@@ -2002,6 +1994,30 @@ double wxPostScriptDC::FLogicalToDeviceY(double y)
 
 double wxPostScriptDC::FLogicalToDeviceYRel(double y)
 {
+  return YSCALEREL(y);
+}
+
+double wxPostScriptDC::FsLogicalToDeviceX(double x, double device_origin_x, double user_scale_x)
+{
+  /* Intentional capture of arguments by macro! */
+  return XSCALE(x);
+}
+
+double wxPostScriptDC::FsLogicalToDeviceXRel(double x, double device_origin_x, double user_scale_x)
+{
+  /* Intentional capture of arguments by macro! */
+  return XSCALEREL(x);
+}
+
+double wxPostScriptDC::FsLogicalToDeviceY(double y, double device_origin_y, double user_scale_y)
+{
+  /* Intentional capture of arguments by macro! */
+  return YSCALE(y);
+}
+
+double wxPostScriptDC::FsLogicalToDeviceYRel(double y, double device_origin_y, double user_scale_y)
+{
+  /* Intentional capture of arguments by macro! */
   return YSCALEREL(y);
 }
 

@@ -4,7 +4,34 @@
 
 #include "wx_dc.h"
 
-class wxPSRgn;
+/************************************************************/
+
+/* We start with wxPSStream, because we need it to output region
+   paths. */
+
+class wxPSStream : public wxObject {
+ public:
+  void *f;
+  int int_width;
+  wxPSStream(char *file);
+  ~wxPSStream(void);
+
+  int good(void);
+  void Out(char s);
+  void Out(const char *s);
+  void Out(double n);
+  void Out(long l);
+  void Out(int i);
+
+  long tellp(void);
+  void seekp(long pos);
+
+  void width(int w);
+};
+
+class wxPostScriptDC;
+
+/************************************************************/
 
 #ifdef UseXtRegions
 typedef Region XtRegion;
@@ -12,14 +39,7 @@ typedef Region XtRegion;
 typedef void *XtRegion;
 #endif
 
-#if defined(WX_USE_CAIRO) || defined(wx_mac) || defined(wx_msw)
-# define WX_USE_PATH_RGN
-#endif
-
-#ifdef WX_USE_PATH_RGN
 class wxPathRgn;
-#endif
-
 class wxPath;
 
 class wxRegion : public wxObject 
@@ -34,20 +54,18 @@ class wxRegion : public wxObject
 #ifdef wx_mac
   RgnHandle rgn;
 #endif
-#ifdef WX_USE_PATH_RGN
   wxPathRgn *prgn;
-  double *geometry;
-# ifdef wx_mac
+#ifdef wx_mac
   int npaths;
   CGMutablePathRef *paths;
-# endif
-# ifdef wx_msw
+  Bool *oes;
+#endif
+#ifdef wx_msw
   int npaths;
   Gdiplus::GraphicsPath **paths;
-# endif
+  Bool *oes;
 #endif
   wxDC *dc;
-  wxPSRgn *ps;
   char is_ps, locked, no_prgn;
 
   wxRegion(wxDC *dc, wxRegion *r = NULL, Bool no_prgn = FALSE);
@@ -73,6 +91,8 @@ class wxRegion : public wxObject
 
   Bool Empty();
   Bool ReallyEmpty();
+
+  Bool IsInRegion(double x, double y);
   
   void Cleanup();
 
@@ -80,92 +100,28 @@ class wxRegion : public wxObject
   void Put(const char *s);
   void Put(double d);
 
-#ifdef WX_USE_PATH_RGN
-  void Install(long target);  
-#endif
+  void Install(long target);
+  void InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
 /************************************************************/
-
-class wxPSRgn : public wxObject
-{
- public:
-  int is_intersect;
-  wxPSRgn() { is_intersect = 0; }
-  virtual char *GetString() = 0;
-  virtual wxPSRgn *Lift() = 0;
-#ifdef RGN_DEBUGGING_PRINTS
-  virtual void DebugPrint() = 0;
-#endif
-};
-
-class wxPSRgn_Atomic : public wxPSRgn
-{
- public:
-  char *s, *debug_name;
-  wxPSRgn_Atomic(char *ps, char *dn) { s = ps; debug_name = dn; }
-  char *GetString() { return s; }
-  wxPSRgn *Lift() { return this; }
-#ifdef RGN_DEBUGGING_PRINTS
-  void DebugPrint() { printf("%s%lx", debug_name, (long)this); }
-#endif
-};
-
-class wxPSRgn_Composite : public wxPSRgn
-{
- public:
-  wxPSRgn *a, *b;
-  char *MakeString(const char *prefix, const char *infix, const char *suffix);
-
-  int FlattenIntersects(wxPSRgn **l, wxPSRgn *r, int i);
-};
-
-class wxPSRgn_Union : public wxPSRgn_Composite
-{
- public:
-  wxPSRgn_Union(wxPSRgn *ra, wxPSRgn *rb) { a = ra; b = rb; }
-  char *GetString();
-  wxPSRgn *Lift();
-#ifdef RGN_DEBUGGING_PRINTS
-  void DebugPrint() { printf("("); a->DebugPrint(); printf(" U "); b->DebugPrint(); printf(")"); }
-#endif
-};
-
-class wxPSRgn_Intersect : public wxPSRgn_Composite
-{
- public:
-  wxPSRgn_Intersect(wxPSRgn *ra, wxPSRgn *rb) { a = ra; b = rb; is_intersect = 1; }
-  char *GetString();
-  wxPSRgn *Lift();
-#ifdef RGN_DEBUGGING_PRINTS
-  void DebugPrint() { printf("("); a->DebugPrint(); printf(" n "); b->DebugPrint(); printf(")"); }
-#endif
-};
-
-class wxPSRgn_Diff : public wxPSRgn_Composite
-{
- public:
-  wxPSRgn_Diff(wxPSRgn *ra, wxPSRgn *rb) { a = ra; b = rb; }
-  char *GetString();
-  wxPSRgn *Lift();
-#ifdef RGN_DEBUGGING_PRINTS
-  void DebugPrint() { printf("("); a->DebugPrint(); printf(" \\ "); b->DebugPrint(); printf(")"); }
-#endif
-};
-
-/************************************************************/
-
-#ifdef WX_USE_PATH_RGN
 
 class wxPathRgn : public wxObject
 {
  public:
-  wxPathRgn();
+  double ox, oy, sx, sy;
+
+  wxPathRgn(wxDC *dc_for_scale);
   ~wxPathRgn();
-  virtual void Install(long target, Bool reverse) = 0;
+  virtual Bool Install(long target, Bool reverse) = 0;
   virtual wxPathRgn *Lift();
   virtual Bool IsIntersect();
   int FlattenIntersects(wxPathRgn **l, wxPathRgn *r, int i);
+
+  long PrepareScale(long target, Bool oe);
+  void RestoreScale(long target, long v);
+
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s) = 0;
 };
 
 class wxRectanglePathRgn : public wxPathRgn
@@ -175,8 +131,9 @@ class wxRectanglePathRgn : public wxPathRgn
   double y;
   double width;
   double height;
-  wxRectanglePathRgn(double x, double y, double width, double height);
-  virtual void Install(long target, Bool reverse);
+  wxRectanglePathRgn(wxDC *dc_for_scale, double x, double y, double width, double height);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
 class wxRoundedRectanglePathRgn : public wxPathRgn
@@ -187,8 +144,9 @@ class wxRoundedRectanglePathRgn : public wxPathRgn
   double width;
   double height;
   double radius;
-  wxRoundedRectanglePathRgn(double x, double y, double width, double height, double radius);
-  virtual void Install(long target, Bool reverse);
+  wxRoundedRectanglePathRgn(wxDC *dc_for_scale, double x, double y, double width, double height, double radius);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
 class wxPolygonPathRgn : public wxPathRgn
@@ -199,8 +157,9 @@ class wxPolygonPathRgn : public wxPathRgn
   double xoffset;
   double yoffset;
   int fillStyle;
-  wxPolygonPathRgn(int n, wxPoint points[], double xoffset, double yoffset, int fillStyle);
-  virtual void Install(long target, Bool reverse);
+  wxPolygonPathRgn(wxDC *dc_for_scale, int n, wxPoint points[], double xoffset, double yoffset, int fillStyle);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
 class wxArcPathRgn : public wxPathRgn
@@ -212,8 +171,9 @@ class wxArcPathRgn : public wxPathRgn
   double h;
   double start;
   double end;
-  wxArcPathRgn(double x, double y, double w, double h, double start, double end);
-  virtual void Install(long target, Bool reverse);
+  wxArcPathRgn(wxDC *dc_for_scale, double x, double y, double w, double h, double start, double end);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
 class wxPathPathRgn : public wxPathRgn
@@ -223,8 +183,9 @@ class wxPathPathRgn : public wxPathRgn
   double xoffset;
   double yoffset;
   int fillStyle;
-  wxPathPathRgn(wxPath *p, double xoffset, double yoffset, int fillStyle);
-  virtual void Install(long target, Bool reverse);
+  wxPathPathRgn(wxDC *dc_for_scale, wxPath *p, double xoffset, double yoffset, int fillStyle);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
 class wxUnionPathRgn : public wxPathRgn
@@ -232,7 +193,8 @@ class wxUnionPathRgn : public wxPathRgn
  public:
   wxPathRgn *a, *b;
   wxUnionPathRgn(wxPathRgn *f, wxPathRgn *s);
-  virtual void Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
   virtual wxPathRgn *Lift();
 };
 
@@ -241,7 +203,8 @@ class wxIntersectPathRgn : public wxPathRgn
  public:
   wxPathRgn *a, *b;
   wxIntersectPathRgn(wxPathRgn *f, wxPathRgn *s);
-  virtual void Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
   virtual wxPathRgn *Lift();
   virtual Bool IsIntersect();
 };
@@ -251,11 +214,10 @@ class wxDiffPathRgn : public wxPathRgn
  public:
   wxPathRgn *a, *b;
   wxDiffPathRgn(wxPathRgn *f, wxPathRgn *s);
-  virtual void Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse);
+  virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
   virtual wxPathRgn *Lift();
 };
-
-#endif
 
 /************************************************************/
 

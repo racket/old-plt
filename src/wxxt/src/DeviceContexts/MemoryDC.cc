@@ -129,6 +129,8 @@ void wxMemoryDC::InitPicture()
   long p;
   p = selected->GetPicture();
   X->picture = p;
+  if (!read_only)
+    InitPictureClip();
 }
 #endif
 

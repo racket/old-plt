@@ -31,6 +31,7 @@
 #define  Uses_XLib
 #define  Uses_wxPenBrush
 #define  Uses_wxBitmap
+#define  Uses_wxPostScriptDC
 #include "wx.h"
 
 #ifdef WX_USE_CAIRO

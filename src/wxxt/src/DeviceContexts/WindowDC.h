@@ -182,6 +182,7 @@ public:
 
 #ifdef WX_USE_XRENDER
     virtual void InitPicture();
+    void InitPictureClip();
 #endif
 
 #ifdef USE_GL

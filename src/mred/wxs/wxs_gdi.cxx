@@ -3825,6 +3825,31 @@ os_wxRegion::~os_wxRegion()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxRegionIsInRegion(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxRegion_class, "in-region? in region%", n, p);
+  double x0;
+  double x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "in-region? in region%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "in-region? in region%"));
+
+  
+  r = WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->IsInRegion(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxRegionEmpty(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4218,8 +4243,9 @@ void objscheme_setup_wxRegion(Scheme_Env *env)
 
   wxREGGLOB(os_wxRegion_class);
 
-  os_wxRegion_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "region%", "object%", (Scheme_Method_Prim *)os_wxRegion_ConstructScheme, 13));
+  os_wxRegion_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "region%", "object%", (Scheme_Method_Prim *)os_wxRegion_ConstructScheme, 14));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "in-region?" " method", (Scheme_Method_Prim *)os_wxRegionIsInRegion, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "is-empty?" " method", (Scheme_Method_Prim *)os_wxRegionEmpty, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box" " method", (Scheme_Method_Prim *)os_wxRegionRgnBoundingBox, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "xor" " method", (Scheme_Method_Prim *)os_wxRegionXor, 1, 1));

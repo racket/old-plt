@@ -45,7 +45,7 @@ typedef       void    *wxPostScriptDC ;
 # define DRAW_TEXT_CONST const
 #endif
 
-class PSStream;
+class wxPSStream;
 
 class wxPostScriptDC: public wxDC
 {
@@ -54,7 +54,7 @@ class wxPostScriptDC: public wxDC
   char *title;
 #endif
   int page_number;
-  PSStream *pstream;    // PostScript output stream
+  wxPSStream *pstream;    // PostScript output stream
   char *filename;
   long boundingboxpos;
   unsigned char currentRed;
@@ -141,6 +141,12 @@ class wxPostScriptDC: public wxDC
   double FLogicalToDeviceY(double y);
   double FLogicalToDeviceXRel(double x);
   double FLogicalToDeviceYRel(double y);
+
+  double FsLogicalToDeviceX(double x, double o, double s);
+  double FsLogicalToDeviceY(double y, double o, double s);
+  double FsLogicalToDeviceXRel(double x, double o, double s);
+  double FsLogicalToDeviceYRel(double y, double o, double s);
+
   Bool Blit(double xdest, double ydest, double width, double height,
             wxBitmap *source, double xsrc, double ysrc, int rop = wxSOLID, wxColour *c = NULL, wxBitmap *mask=NULL);
   Bool Blit(double xdest, double ydest, double width, double height,

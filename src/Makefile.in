@@ -1,17 +1,46 @@
 
 # Builds MzScheme and MrEd
 
-all: mz @MAKE_MRED@
+all:
+	$(MAKE) mz
+	$(MAKE) mred-stub
 
-3m: mz3m @MAKE_MRED3M@
+mred-stub: @MAKE_MRED@
 
-install: @MAKE_COPYTREE@ mzinstall @MAKE_MREDINSTALL@ lib-finish @MAKE_FINISH@
 
-install-3m: install mzinstall3m @MAKE_MREDINSTALL3M@ 
+3m:
+	$(MAKE) mz3m
+	$(MAKE) mred3m-stub
+
+mred3m-stub: @MAKE_MRED3M@
+
+
+install:
+	$(MAKE) copytree-stub
+	$(MAKE) mzinstall
+	$(MAKE) mredinstall-stub
+	$(MAKE) lib-finish
+	$(MAKE) finish-stub
+
+copytree-stub: @MAKE_COPYTREE@
+
+mredinstall-stub: @MAKE_MREDINSTALL@
+
+finish-stub: @MAKE_FINISH@
+
+
+install-3m:
+	$(MAKE) install
+	$(MAKE) mzinstall3m
+	$(MAKE) mredinstall3m-stub
+
+mredinstall3m-stub: @MAKE_MREDINSTALL3M@ 
+
 
 clean:
 	cd mzscheme; $(MAKE) clean
 	if [ -d mred ] ; then cd mred; $(MAKE) clean; fi
+
 
 mz:
 	cd mzscheme; $(MAKE)
@@ -25,6 +54,7 @@ mr:
 mr3m:
 	cd mred; $(MAKE) 3m
 
+
 mzinstall:
 	cd mzscheme; $(MAKE) install
 
@@ -36,6 +66,7 @@ mrinstall:
 
 mrinstall3m:
 	cd mred; $(MAKE) install-3m
+
 
 lib-finish:
 	@LIBFINISH@ @prefix@/lib

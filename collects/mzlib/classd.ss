@@ -18,9 +18,10 @@ Rough BNF
 |#
 
 (require-library "refer.ss")
-(define-values/invoke-unit
- (class/d class/d* class/d*/names)
- (require-library "classdr.ss"))
+(begin-elaboration-time
+ (define-values/invoke-unit
+  (class/d class/d* class/d*/names)
+   (require-library "classdr.ss")))
 
 (define-macro class/d class/d)
 (define-macro class/d* class/d*)

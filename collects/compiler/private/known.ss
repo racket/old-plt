@@ -43,8 +43,7 @@
 	      compiler:const^
 	      compiler:closure^
 	      compiler:rep^
-	      compiler:driver^
-	      (mrspidey : compiler:mrspidey^))
+	      compiler:driver^)
       
       ;; helper functions to create a binding annotation
       (define make-known-binding

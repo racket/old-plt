@@ -21,12 +21,12 @@
       ;; chars : list (char)
       ;; -- gives the suffix which is invalid, not including the `%'
 
-      (define-struct (incomplete-%-suffix struct:cgi-error) (chars))
+      (define-struct (incomplete-%-suffix cgi-error) (chars))
 
       ;; char : char
       ;; -- an invalid character in a hex string
 
-      (define-struct (invalid-%-suffix struct:cgi-error) (char))
+      (define-struct (invalid-%-suffix cgi-error) (char))
 
       ;; --------------------------------------------------------------------
 

@@ -55,7 +55,7 @@
       (define-struct rep:struct (name orig-name fields))
       (define-struct rep:struct-field (name orig-name rep))
 
-      (define-struct (rep:atomic/invoke struct:rep:atomic) (module-invoke))
+      (define-struct (rep:atomic/invoke rep:atomic) (module-invoke))
 
       (define (rep:same-shape? a b)
 	(let ([al (rep:struct-fields a)]

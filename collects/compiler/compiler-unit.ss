@@ -35,13 +35,8 @@
 
       
       (define (make-extension-compiler mode prefix)
-	(let ([u (dynamic-require `(lib 
-				    ,(if (or (use-mrspidey) 
-					     (use-mrspidey-for-units))
-					 "spidey-unit.ss"
-					 "nospidey-unit.ss")
-				    "compiler")
-				 'compiler-linked@)]
+	(let ([u (dynamic-require `(lib "base.ss" "compiler" "private")
+				  'base@)]
 	      [init (unit/sig ()
 		      (import compiler:inner^)
 		      (eval-compile-prefix prefix)

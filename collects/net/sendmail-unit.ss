@@ -10,7 +10,7 @@
     (unit/sig net:sendmail^
       (import)
 
-      (define-struct (no-mail-recipients struct:exn) ())
+      (define-struct (no-mail-recipients exn) ())
 
       (define sendmail-search-path
 	'("/usr/lib" "/usr/sbin"))

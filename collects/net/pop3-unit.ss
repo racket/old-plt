@@ -20,16 +20,16 @@
 
       (define-struct communicator (sender receiver server port state))
 
-      (define-struct (pop3 struct:exn) ())
-      (define-struct (cannot-connect struct:pop3) ())
-      (define-struct (username-rejected struct:pop3) ())
-      (define-struct (password-rejected struct:pop3) ())
-      (define-struct (not-ready-for-transaction struct:pop3) (communicator))
-      (define-struct (not-given-headers struct:pop3) (communicator message))
-      (define-struct (illegal-message-number struct:pop3) (communicator message))
-      (define-struct (cannot-delete-message struct:exn) (communicator message))
-      (define-struct (disconnect-not-quiet struct:pop3) (communicator))
-      (define-struct (malformed-server-response struct:pop3) (communicator))
+      (define-struct (pop3 exn) ())
+      (define-struct (cannot-connect pop3) ())
+      (define-struct (username-rejected pop3) ())
+      (define-struct (password-rejected pop3) ())
+      (define-struct (not-ready-for-transaction pop3) (communicator))
+      (define-struct (not-given-headers pop3) (communicator message))
+      (define-struct (illegal-message-number pop3) (communicator message))
+      (define-struct (cannot-delete-message exn) (communicator message))
+      (define-struct (disconnect-not-quiet pop3) (communicator))
+      (define-struct (malformed-server-response pop3) (communicator))
 
       ;; signal-error :
       ;; (exn-args ... -> exn) x format-string x values ... ->
@@ -69,8 +69,8 @@
       (define default-pop-port-number 110)
 
       (define-struct server-responses ())
-      (define-struct (+ok struct:server-responses) ())
-      (define-struct (-err struct:server-responses) ())
+      (define-struct (+ok server-responses) ())
+      (define-struct (-err server-responses) ())
 
       (define +ok (make-+ok))
       (define -err (make--err))

@@ -31,7 +31,7 @@
 		    (save-history)
 		    (old v))))
   
-  (for-each add-history local-history)
+  (for-each add-history (if (list? local-history) local-history null))
 
   (define (prompt-read-using-readline get-prompt)
     (if (pair? leftovers)

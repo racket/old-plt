@@ -159,13 +159,14 @@
 				  [fields (syntax->list (syntax (field ...)))]
 				  [omissions (syntax->list (syntax (omission ...)))])
 			      (unless (or (identifier? name)
-					  (syntax-case name ()
-					    [(name super)
-					     (and (identifier? (syntax name))
-						  (identifier? (syntax super)))]
-					    [_else #f]))
+					  ;; >>> disabled the `(name super)' case for now <<<
+					  (and #f (syntax-case name ()
+						    [(name super)
+						     (and (identifier? (syntax name))
+							  (identifier? (syntax super)))]
+						    [_else #f])))
 				(syntax-error who expr
-					      "struct name is not an identifier or a parenthesized name--super sequence of identifiers"
+					      "struct name is not an identifier" ;; " or a parenthesized name--super sequence of identifiers"
 					      name))
 			      (for-each
 			       (lambda (fld)
@@ -409,7 +410,7 @@
        (apply
 	append
 	(map (lambda (s)
-	       (make-struct-stx-decls (list s) 
+	       (make-struct-stx-decls s
 				      (if signame
 					  (format "~a~a:"
 						  (or prefix "")

@@ -52,7 +52,7 @@
 		code))))
       
       (define-struct vehicle (total-labels lambdas max-arity))
-      (define-struct (procedure-vehicle struct:vehicle) (max-args))
+      (define-struct (procedure-vehicle vehicle) (max-args))
       
       (define vehicle:procedure 'vehicle:procedure)
 

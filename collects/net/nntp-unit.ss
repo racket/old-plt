@@ -24,15 +24,15 @@
       ;; group : string
       ;; article : number
 
-      (define-struct (nntp struct:exn) ())
-      (define-struct (unexpected-response struct:nntp) (code text))
-      (define-struct (bad-status-line struct:nntp) (line))
-      (define-struct (premature-close struct:nntp) (communicator))
-      (define-struct (bad-newsgroup-line struct:nntp) (line))
-      (define-struct (non-existent-group struct:nntp) (group))
-      (define-struct (article-not-in-group struct:nntp) (article))
-      (define-struct (no-group-selected struct:nntp) ())
-      (define-struct (article-not-found struct:nntp) (article))
+      (define-struct (nntp exn) ())
+      (define-struct (unexpected-response nntp) (code text))
+      (define-struct (bad-status-line nntp) (line))
+      (define-struct (premature-close nntp) (communicator))
+      (define-struct (bad-newsgroup-line nntp) (line))
+      (define-struct (non-existent-group nntp) (group))
+      (define-struct (article-not-in-group nntp) (article))
+      (define-struct (no-group-selected nntp) ())
+      (define-struct (article-not-found nntp) (article))
 
       ;; signal-error :
       ;; (exn-args ... -> exn) x format-string x values ... ->

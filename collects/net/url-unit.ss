@@ -19,7 +19,7 @@
     (unit/sig net:url^
       (import)
       
-      (define-struct (url-exception struct:exn) ())
+      (define-struct (url-exception exn) ())
       
       ;; This is commented out; it's here for debugging.
       ;; It used to be outside the unit.

@@ -10,7 +10,7 @@
     (unit/sig make^
       (import)
 
-      (define-struct (exn:make struct:exn) (target orig-exn))
+      (define-struct (exn:make exn) (target orig-exn))
       
       (define make-print-checking (make-parameter #t))
       (define make-print-dep-no-line (make-parameter #t))

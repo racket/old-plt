@@ -122,8 +122,6 @@
     (static-error
      dynamic-error
      internal-error
-     analysis-error
-     analysis-internal-error
      
      compiler:empty-annotation
      make-empty-box
@@ -255,10 +253,6 @@
   (provide compiler:lift^)
   (define-signature compiler:lift^
     (lift-lambdas!))
-
-  (provide compiler:lightweight^)
-  (define-signature compiler:lightweight^
-    (lightweight-analyze-and-transform))
 
   (provide compiler:closure^)
   (define-signature compiler:closure^
@@ -445,24 +439,6 @@
      vm->c:emit-case-epilogue
      vm->c:emit-function-epilogue
      vm->c-expression))
-
-  (provide compiler:mrspidey^)
-  (define-signature compiler:mrspidey^
-    (copy-annotations!
-     get-annotations
-     analyze-program-sexps
-     binding-mutated
-     constant-value
-     SDL-type
-     parsed-ftype
-     Tvar-objs
-     Tvar?
-     fo-FlowType?
-     FlowType->Tvar
-     prim-av?
-     fo-ftype->AVs
-     ast->AVs
-     AV->AVs))
 
   (provide compiler:basic-link^)
   (define-signature compiler:basic-link^

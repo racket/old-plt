@@ -17,7 +17,6 @@
 ; Infers names for closures and interfaces. (Do this early so
 ;  that elaboration doesn't mangle the names.)
 ; Detects global varrefs to built-in primitives.
-; Drops MrSpidey-specific forms.
 ; Detects known immutability of signature vectors produced by */sig
 ;  forms
 ; Lambdas that are really c-lambdas are converted to quote forms
@@ -53,8 +52,7 @@
 	      compiler:cstructs^
 	      (zodiac : zodiac^)
 	      compiler:zlayer^
-	      compiler:driver^
-	      (mrspidey : compiler:mrspidey^))
+	      compiler:driver^)
 
       (define-struct binding-properties (mutable? unit-i/e? ivar? anchor known-val))
 

@@ -9,20 +9,18 @@
 ;;  each of which is implemented in its own unit:
 ;;
 ;;   1) Reading/parsing - Zodiac collection
-;;   2) SBA analysis (optional) - MrSpidey collection
-;;   3) Prephase - prephase.ss
-;;   4) A-normalization - anorm.ss
-;;   5) Known-value analysis - known.ss
-;;   6) Lexical analysis and inlining - analyze.ss
-;;   7) Static procedure lifting - lift.ss
-;;   8) Lightweight closure conversion - lightweight.ss (optional)
-;;   9) Static procedure lifting after LWCC - lift.ss (optional)
-;;  10) Closure conversion - closure.ss
-;;  11) Closure vehicle assignment - vehicle.ss
-;;  12) Representation choosing - rep.ss
-;;  13) Scheme to virtual machine translation - vmphase.ss
-;;  14) Optimizations on VM code - vmopt.ss
-;;  15) VM to C translation - vm2c.ss
+;;   2) Prephase - prephase.ss
+;;   3) A-normalization - anorm.ss
+;;   4) Known-value analysis - known.ss
+;;   5) Lexical analysis and inlining - analyze.ss
+;;   6) Static procedure lifting - lift.ss
+;;   7) Static procedure lifting after LWCC - lift.ss (optional)
+;;   8) Closure conversion - closure.ss
+;;   9) Closure vehicle assignment - vehicle.ss
+;;  10) Representation choosing - rep.ss
+;;  11) Scheme to virtual machine translation - vmphase.ss
+;;  12) Optimizations on VM code - vmopt.ss
+;;  13) VM to C translation - vm2c.ss
 ;;
 ;; For more information about a phase, see the file
 ;;  implementing that phase.
@@ -91,7 +89,6 @@
 	      compiler:analyze^
 	      compiler:const^
 	      compiler:lift^
-	      compiler:lightweight^
 	      compiler:closure^
 	      compiler:vehicle^
 	      compiler:rep^
@@ -102,8 +99,7 @@
 	      compiler:top-level^
 	      dynext:compile^
 	      dynext:link^
-	      dynext:file^
-	      (mrspidey : compiler:mrspidey^))
+	      dynext:file^)
       (rename (compile-extension* compile-extension))
       
       (define debug:file "dump.txt")
@@ -653,32 +649,6 @@
 			  (syntax-e (zodiac:module-form-name (car (block-source s:file-block))))))
 
 		  ;;-----------------------------------------------------------------------
-		  ;; MrSpidey analyze
-	      
-		  ; -- whole-program analysis? ----------------------------------------
-		  (when (compiler:option:use-mrspidey)
-		    (when (compiler:option:verbose) (printf " MrSpidey: analyzing~n"))
-		    (let ([spidey-thunk
-			   (lambda ()
-			     (set-block-source! 
-			      s:file-block
-			      (with-handlers ([void 
-					       (lambda (x)
-						 (compiler:fatal-error
-						  #f
-						  (format "analysis died: ~a"
-							  (if (exn? x)
-							      (exn-message x)
-							      x))))])
-				(mrspidey:analyze-program-sexps (block-source s:file-block)
-								input-directory))))])
-		      (verbose-time spidey-thunk)
-		      (compiler:report-messages! #t)))
-		  
-		  ; (print-struct #t)
-		  ; (map (lambda(ast)(pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
-	      
-		  ;;-----------------------------------------------------------------------
 		  ;; Run a preprocessing phase on the input
 		  ;;
 	      
@@ -807,33 +777,6 @@
 		(verbose-time lift-thunk))
 	      (compiler:report-messages! #t)
 	      
-	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
-
-	      ;;-----------------------------------------------------------------------
-	      ;; Lightweight closure transformation
-	      ;;
-
-	      (when (compiler:option:lightweight)
-
-		(when (compiler:option:verbose) 
-		  (printf " lightweight closure transformation~n"))
-		
-		(let ([lightweight-thunk
-		       (lambda ()
-			 (lightweight-analyze-and-transform 
-			  (block-source s:file-block)))])
-		  (verbose-time lightweight-thunk)
-		  (compiler:report-messages! #t))
-
-		(when (compiler:option:verbose) 
-		      (printf " finding static procedures again~n"))
-		(when (compiler:option:debug)
-		      (debug " = LIFT =~n"))
-
-		(let ([lift-thunk s:lift])
-		  (verbose-time lift-thunk))
-		(compiler:report-messages! #t))
-
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
 	      ;;-----------------------------------------------------------------------

@@ -62,8 +62,7 @@
 	      compiler:const^
 	      compiler:rep^
 	      compiler:vm2c^
-	      compiler:driver^
-	      (mrspidey : compiler:mrspidey^))
+	      compiler:driver^)
       
       (define-struct mod-glob (cname   ;; a made-up name that encodes module + var
 			       modname
@@ -250,14 +249,12 @@
 	  (cond
 	   [(null? vars)
 	    ;; zero value set!  -- weirdos
-	    (mrspidey:copy-annotations!
-	     (zodiac:make-let-values-form
-	      (zodiac:zodiac-stx ast)
-	      (make-empty-box)
-	      (list null)
-	      (list val)
-	      (zodiac:make-special-constant 'void))
-	     ast)]
+	    (zodiac:make-let-values-form
+	     (zodiac:zodiac-stx ast)
+	     (make-empty-box)
+	     (list null)
+	     (list val)
+	     (zodiac:make-special-constant 'void))]
 	   
 	   [else
 	    ;; single or multiple value set! 
@@ -287,30 +284,28 @@
 		    (set-binding-known?! binding #t)
 		    (set-binding-val! binding val))))
 	      ;; Make the new expession
-	      (mrspidey:copy-annotations!
-	       (zodiac:make-let-values-form
-		(zodiac:zodiac-stx ast)
-		(make-empty-box)
-		(list zbindings)
-		(list val)
-		(let ([set!s (let loop ([zbindings zbindings] [vars vars])
-			       (if (null? zbindings)
-				   null
-				   (cons
-				    (zodiac:make-set!-form
-				     (zodiac:zodiac-stx ast)
-				     (make-empty-box)
-				     (car vars)
-				     (zodiac:binding->lexical-varref
-				      (car zbindings)))
-				    (loop (cdr zbindings) (cdr vars)))))])
-		  (if (= 1 (length set!s))
-		      (car set!s)
-		      (zodiac:make-begin-form
-		       (zodiac:zodiac-stx ast)
-		       (zodiac:parsed-back ast)
-		       set!s))))
-	       ast))])))
+	      (zodiac:make-let-values-form
+	       (zodiac:zodiac-stx ast)
+	       (make-empty-box)
+	       (list zbindings)
+	       (list val)
+	       (let ([set!s (let loop ([zbindings zbindings] [vars vars])
+			      (if (null? zbindings)
+				  null
+				  (cons
+				   (zodiac:make-set!-form
+				    (zodiac:zodiac-stx ast)
+				    (make-empty-box)
+				    (car vars)
+				    (zodiac:binding->lexical-varref
+				     (car zbindings)))
+				   (loop (cdr zbindings) (cdr vars)))))])
+		 (if (= 1 (length set!s))
+		     (car set!s)
+		     (zodiac:make-begin-form
+		      (zodiac:zodiac-stx ast)
+		      (zodiac:parsed-back ast)
+		      set!s)))))])))
 
       ;; turns a 'bad' letrec into let+set!, also returning a procedure
       ;; to set! the body to the correct form, to avoid re-analyzing it
@@ -442,112 +437,101 @@
 		  (zodiac:binding-orig-name ast))]
 	      [a (get-annotation ast)])
 	  (set-annotation! b (copy-binding a))
-	  (mrspidey:copy-annotations! b ast)))
+	  b))
       (define (copy-inlined-body ast binding-map)
-	(mrspidey:copy-annotations!
-	 (cond
-	  [(or (and (zodiac:lexical-varref? ast) 
-		    zodiac:make-lexical-varref))
-	   =>
-	   (lambda (f)
-	     (let* ([binding (let* ([binding (zodiac:bound-varref-binding ast)]
-				    [remapped (assq binding binding-map)])
-			       (if remapped
-				   (cdr remapped)
-				   binding))]
-		    [new-ast (f (zodiac:zodiac-stx ast)
-				(make-empty-box)
-				(zodiac:binding-var binding)
-				binding)])
-	       ;; Copy attribute set:
-	       (set-annotation! new-ast (get-annotation ast))
-	       new-ast))]
-	  [(zodiac:top-level-varref? ast)
-	   (let ([new-ast (zodiac:make-top-level-varref
-			   (zodiac:zodiac-stx ast)
-			   (make-empty-box)
-			   (zodiac:varref-var ast)
-			   (zodiac:top-level-varref-module ast)
-			   (zodiac:top-level-varref-slot ast))])
-	     ;; Copy attribute set:
-	     (set-annotation! new-ast (get-annotation ast))
-	     new-ast)]
-	  [(zodiac:quote-form? ast) ast]
-	  [(zodiac:app? ast)
-	   (let ([new-ast (zodiac:make-app
-			   (zodiac:zodiac-stx ast)
-			   (make-empty-box)
-			   (copy-inlined-body (zodiac:app-fun ast) binding-map)
-			   (map (lambda (x) (copy-inlined-body x binding-map)) (zodiac:app-args ast)))]
-		 [appinfo (get-annotation ast)])
-	     (set-annotation! new-ast
-			      (make-app #f
-					(app-prim? appinfo)
-					(app-prim-name appinfo)))
-	     (mrspidey:copy-annotations! new-ast ast)
-	     new-ast)]
-	  [(zodiac:if-form? ast)
-	   (mrspidey:copy-annotations! 
-	    (zodiac:make-if-form
+	(cond
+	 [(or (and (zodiac:lexical-varref? ast) 
+		   zodiac:make-lexical-varref))
+	  =>
+	  (lambda (f)
+	    (let* ([binding (let* ([binding (zodiac:bound-varref-binding ast)]
+				   [remapped (assq binding binding-map)])
+			      (if remapped
+				  (cdr remapped)
+				  binding))]
+		   [new-ast (f (zodiac:zodiac-stx ast)
+			       (make-empty-box)
+			       (zodiac:binding-var binding)
+			       binding)])
+	      ;; Copy attribute set:
+	      (set-annotation! new-ast (get-annotation ast))
+	      new-ast))]
+	 [(zodiac:top-level-varref? ast)
+	  (let ([new-ast (zodiac:make-top-level-varref
+			  (zodiac:zodiac-stx ast)
+			  (make-empty-box)
+			  (zodiac:varref-var ast)
+			  (zodiac:top-level-varref-module ast)
+			  (zodiac:top-level-varref-slot ast))])
+	    ;; Copy attribute set:
+	    (set-annotation! new-ast (get-annotation ast))
+	    new-ast)]
+	 [(zodiac:quote-form? ast) ast]
+	 [(zodiac:app? ast)
+	  (let ([new-ast (zodiac:make-app
+			  (zodiac:zodiac-stx ast)
+			  (make-empty-box)
+			  (copy-inlined-body (zodiac:app-fun ast) binding-map)
+			  (map (lambda (x) (copy-inlined-body x binding-map)) (zodiac:app-args ast)))]
+		[appinfo (get-annotation ast)])
+	    (set-annotation! new-ast
+			     (make-app #f
+				       (app-prim? appinfo)
+				       (app-prim-name appinfo)))
+	    new-ast)]
+	 [(zodiac:if-form? ast)
+	  (zodiac:make-if-form
+	   (zodiac:zodiac-stx ast)
+	   (make-empty-box)
+	   (copy-inlined-body (zodiac:if-form-test ast) binding-map)
+	   (copy-inlined-body (zodiac:if-form-then ast) binding-map)
+	   (copy-inlined-body (zodiac:if-form-else ast) binding-map))]
+	 [(zodiac:set!-form? ast)
+	  (zodiac:make-set!-form
+	   (zodiac:zodiac-stx ast)
+	   (make-empty-box)
+	   (copy-inlined-body (zodiac:set!-form-var ast) binding-map)
+	   (copy-inlined-body (zodiac:set!-form-val ast) binding-map))]
+	 [(zodiac:let-values-form? ast)
+	  (let* ([vars (car (zodiac:let-values-form-vars ast))]
+		 [val (car (zodiac:let-values-form-vals ast))]
+		 [new-val (copy-inlined-body val binding-map)]
+		 [new-vars (map copy-inlined-binding vars)]
+		 [new-binding-map (append (map cons vars new-vars) binding-map)]
+		 [new-body (copy-inlined-body (zodiac:let-values-form-body ast) new-binding-map)])
+	    
+	    ;; Update known-value information; if it was known to be = to a varref or binding,
+	    ;; we may have replaced it with a new varref or binding.
+	    (when (= 1 (length new-vars))
+	      (let ([binding (get-annotation (car new-vars))])
+		(when (binding-known? binding)
+		  (let ([known (binding-val binding)])
+		    (when (or (zodiac:bound-varref? known)
+			      (zodiac:binding? known))
+		      (let* ([known-zbinding (if (zodiac:binding? known)
+						 known
+						 (zodiac:bound-varref-binding known))]
+			     [found (assq known-zbinding binding-map)])
+			(when found
+			  ;; Yep - that varref/binding was replaced
+			  (set-binding-val! binding (cdr found)))))))))
+	    
+	    (zodiac:make-let-values-form
 	     (zodiac:zodiac-stx ast)
 	     (make-empty-box)
-	     (copy-inlined-body (zodiac:if-form-test ast) binding-map)
-	     (copy-inlined-body (zodiac:if-form-then ast) binding-map)
-	     (copy-inlined-body (zodiac:if-form-else ast) binding-map))
-	    ast)]
-	  [(zodiac:set!-form? ast)
-	   (mrspidey:copy-annotations! 
-	    (zodiac:make-set!-form
-	     (zodiac:zodiac-stx ast)
-	     (make-empty-box)
-	     (copy-inlined-body (zodiac:set!-form-var ast) binding-map)
-	     (copy-inlined-body (zodiac:set!-form-val ast) binding-map))
-	    ast)]
-	  [(zodiac:let-values-form? ast)
-	   (let* ([vars (car (zodiac:let-values-form-vars ast))]
-		  [val (car (zodiac:let-values-form-vals ast))]
-		  [new-val (copy-inlined-body val binding-map)]
-		  [new-vars (map copy-inlined-binding vars)]
-		  [new-binding-map (append (map cons vars new-vars) binding-map)]
-		  [new-body (copy-inlined-body (zodiac:let-values-form-body ast) new-binding-map)])
-	     
-	     ;; Update known-value information; if it was known to be = to a varref or binding,
-	     ;; we may have replaced it with a new varref or binding.
-	     (when (= 1 (length new-vars))
-	       (let ([binding (get-annotation (car new-vars))])
-		 (when (binding-known? binding)
-		   (let ([known (binding-val binding)])
-		     (when (or (zodiac:bound-varref? known)
-			       (zodiac:binding? known))
-		       (let* ([known-zbinding (if (zodiac:binding? known)
-						  known
-						  (zodiac:bound-varref-binding known))]
-			      [found (assq known-zbinding binding-map)])
-			 (when found
-			   ;; Yep - that varref/binding was replaced
-			   (set-binding-val! binding (cdr found)))))))))
-	     
-	     (mrspidey:copy-annotations! 
-	      (zodiac:make-let-values-form
-	       (zodiac:zodiac-stx ast)
-	       (make-empty-box)
-	       (list new-vars)
-	       (list new-val)
-	       new-body)
-	      ast))]
-	  [(zodiac:begin-form? ast)
-	   (mrspidey:copy-annotations! 
-	    (zodiac:make-begin-form
-	     (zodiac:zodiac-stx ast)
-	     (make-empty-box)
-	     (map (lambda (x) (copy-inlined-body x binding-map))
-		  (zodiac:begin-form-bodies ast)))
-	    ast)]
-	  [else (compiler:internal-error
-		 ast
-		 (format "copy-inlined-body: can't copy ~a"
-			 ast))])
-	 ast))
+	     (list new-vars)
+	     (list new-val)
+	     new-body))]
+	 [(zodiac:begin-form? ast)
+	  (zodiac:make-begin-form
+	   (zodiac:zodiac-stx ast)
+	   (make-empty-box)
+	   (map (lambda (x) (copy-inlined-body x binding-map))
+		(zodiac:begin-form-bodies ast)))]
+	 [else (compiler:internal-error
+		ast
+		(format "copy-inlined-body: can't copy ~a"
+			ast))]))
 
       (define (check-for-inlining ast env inlined tail? inline dont-inline)
 	(if (>= inlined (compiler:option:max-inline-size))
@@ -580,16 +564,14 @@
 					 [vals (zodiac:app-args ast)]
 					 [new-body (copy-inlined-body body (map cons orig-vars vars))]
 					 [v (let loop ([vars vars][vals vals])
-					      (mrspidey:copy-annotations!
-					       (if (null? vars)
-						   new-body
-						   (zodiac:make-let-values-form
-						    (zodiac:zodiac-stx ast)
-						    (make-empty-box)
-						    (list (list (car vars)))
-						    (list (car vals))
-						    (loop (cdr vars) (cdr vals))))
-					       ast))])
+					      (if (null? vars)
+						  new-body
+						  (zodiac:make-let-values-form
+						   (zodiac:zodiac-stx ast)
+						   (make-empty-box)
+						   (list (list (car vars)))
+						   (list (car vals))
+						   (loop (cdr vars) (cdr vals)))))])
 				    ;; Unless mutable, the new bindings have known
 				    ;;  value expressions
 				    (for-each
@@ -733,17 +715,6 @@
 			;; Extra checking for debugging:
 			;; (unless (memq zbinding env) (compiler:internal-error ast "unbound variable"))
 			
-			;; While we're at it, make sure MrSpidey and mzc agree on the
-			;; mutability of variables.
-			'(when (compiler:option:use-mrspidey)
-			   (unless (eq? (mrspidey:binding-mutated zbinding)
-					(binding-mutable? binding))
-			     (compiler:internal-error
-			      ast
-			      (format "mutable according to MrSpidey: ~a; mutable according to mzc: ~a"
-				      (mrspidey:binding-mutated zbinding)
-				      (binding-mutable? binding)))))
-			
 			(cond 
 			 [(and (compiler:option:propagate-constants)
 			       known-value 
@@ -773,32 +744,6 @@
 			      (add-global-var! (varref:invoke-module ast)))
 			    
 			    c)]
-			 
-			 [(and #f ; MrSpidey doesn't work.
-			       (compiler:option:propagate-constants)
-			       (not need-varref?)
-			       (let-values ([(const? c) (mrspidey:constant-value ast)])
-				 (and const?
-				      (or (symbol? c) (number? c) (char? c)
-					  (boolean? c))
-				      (list c))))
-			  
-			  ;; A MrSpidey-computed constant
-			  ;; Structurize it and try again
-			  =>
-			  (lambda (sdl-const)
-			    (compiler:warning
-			     ast
-			     (format "Using MrSpidey-determined constant: ~s = ~e" 
-				     (zodiac:binding-orig-name zbinding) 
-				     (car sdl-const)))
-			    (let* ([c (car sdl-const)]
-				   [zc (zodiac:make-quote-form
-					(zodiac:zodiac-stx ast)
-					(make-empty-box)
-					(zodiac:structurize-syntax c ast))])
-			      (analyze-quote! zc #f)))]
-			 
 			 
 			 [else   
 			  ;; otherwise we don't know the value -- therefore just
@@ -909,10 +854,6 @@
 		    (when (compiler:option:debug)
 		      (zodiac:print-start! (debug:get-port) ast)
 		      (newline (debug:get-port)))
-		    
-		    '(let* ([sdltype (mrspidey:SDL-type ast)])
-		       (when sdltype
-			 (printf "Type for ~a: ~a~n" ast sdltype)))
 		    
 		    (cond
 		     

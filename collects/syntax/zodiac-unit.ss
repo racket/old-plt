@@ -585,17 +585,17 @@
       (define eof? eof-object?)
 
       (define-struct zodiac (stx))
-      (define-struct (read struct:zodiac) ())
+      (define-struct (read zodiac) ())
 
-      (define-struct (parsed struct:zodiac) (back))
+      (define-struct (parsed zodiac) (back))
 
-      (define-struct (varref struct:parsed) (var))
+      (define-struct (varref parsed) (var))
 
-      (define-struct (top-level-varref struct:varref) (module slot))
+      (define-struct (top-level-varref varref) (module slot))
       (define (create-top-level-varref z var module slot)
 	(make-top-level-varref (zodiac-stx z) (mk-back) var module slot))
 
-      (define-struct (bound-varref struct:varref) (binding))
+      (define-struct (bound-varref varref) (binding))
       (define (create-bound-varref z var binding)
 	(make-bound-varref (zodiac-stx z) (mk-back) var binding))
 
@@ -603,7 +603,7 @@
       (define make-lexical-varref make-bound-varref)
       (define create-lexical-varref create-bound-varref)
 
-      (define-struct (binding struct:parsed) (var orig-name))
+      (define-struct (binding parsed) (var orig-name))
       (define (create-binding z var orig-name)
 	(make-binding (zodiac-stx z) (mk-back) var orig-name))
 
@@ -612,59 +612,59 @@
       (define create-lexical-binding create-binding)
 
 
-      (define-struct (app struct:parsed) (fun args))
+      (define-struct (app parsed) (fun args))
       (define (create-app z fun args)
 	(make-app (zodiac-stx z) (mk-back) fun args))
 
-      (define-struct (if-form struct:parsed) (test then else))
+      (define-struct (if-form parsed) (test then else))
       (define (create-if-form z test then else)
 	(make-if-form (zodiac-stx z) (mk-back) test then else))
 
-      (define-struct (quote-form struct:parsed) (expr))
+      (define-struct (quote-form parsed) (expr))
       (define (create-quote-form z expr)
 	(make-quote-form (zodiac-stx z) (mk-back) expr))
 
-      (define-struct (begin-form struct:parsed) (bodies))
+      (define-struct (begin-form parsed) (bodies))
       (define (create-begin-form z bodies)
 	(make-begin-form (zodiac-stx z) (mk-back) bodies))
 
-      (define-struct (begin0-form struct:parsed) (bodies))
+      (define-struct (begin0-form parsed) (bodies))
       (define (create-begin0-form z bodies)
 	(make-begin0-form (zodiac-stx z) (mk-back) bodies))
 
-      (define-struct (let-values-form struct:parsed) (vars vals body))
+      (define-struct (let-values-form parsed) (vars vals body))
       (define (create-let-values-form z vars vals body)
 	(make-let-values-form (zodiac-stx z) (mk-back) vars vals body))
 
-      (define-struct (letrec-values-form struct:parsed) (vars vals body))
+      (define-struct (letrec-values-form parsed) (vars vals body))
       (define (create-letrec-values-form z vars vals body)
 	(make-letrec-values-form (zodiac-stx z) (mk-back) vars vals body))
 
-      (define-struct (define-values-form struct:parsed) (vars val))
+      (define-struct (define-values-form parsed) (vars val))
       (define (create-define-values-form z vars val)
 	(make-define-values-form (zodiac-stx z) (mk-back) vars val))
 
-      (define-struct (set!-form struct:parsed) (var val))
+      (define-struct (set!-form parsed) (var val))
       (define (create-set!-form z var val)
 	(make-set!-form (zodiac-stx z) (mk-back) var val))
 
-      (define-struct (case-lambda-form struct:parsed) (args bodies))
+      (define-struct (case-lambda-form parsed) (args bodies))
       (define (create-case-lambda-form z args bodies)
 	(make-case-lambda-form (zodiac-stx z) (mk-back) args bodies))
 
-      (define-struct (with-continuation-mark-form struct:parsed) (key val body))
+      (define-struct (with-continuation-mark-form parsed) (key val body))
       (define (create-with-continuation-mark-form z key val body)
 	(make-with-continuation-mark-form (zodiac-stx z) (mk-back) key val body))
 
-      (define-struct (quote-syntax-form struct:parsed) (expr))
+      (define-struct (quote-syntax-form parsed) (expr))
       (define (create-quote-syntax-form z expr)
 	(make-quote-syntax-form (zodiac-stx z) (mk-back) expr))
 
-      (define-struct (define-syntaxes-form struct:parsed) (names expr))
+      (define-struct (define-syntaxes-form parsed) (names expr))
       (define (create-define-syntaxes-form z names expr)
 	(make-define-syntaxes-form (zodiac-stx z) (mk-back) names expr))
 
-      (define-struct (module-form struct:parsed) (name requires for-syntax-requires 
+      (define-struct (module-form parsed) (name requires for-syntax-requires 
 						       body syntax-body 
 						       provides syntax-provides indirect-provides
 						       kernel-reprovide-hint
@@ -679,11 +679,11 @@
 			  var-provides syntax-provides indirect-provides
 			  kernel-hint self))
 
-      (define-struct (require/provide-form struct:parsed) ())
+      (define-struct (require/provide-form parsed) ())
       (define (create-require/provide-form z)
 	(make-require/provide-form (zodiac-stx z) (mk-back)))
 
       (define-struct arglist (vars))
-      (define-struct (sym-arglist struct:arglist) ())
-      (define-struct (list-arglist struct:arglist) ())
-      (define-struct (ilist-arglist struct:arglist) ()))))
+      (define-struct (sym-arglist arglist) ())
+      (define-struct (list-arglist arglist) ())
+      (define-struct (ilist-arglist arglist) ()))))

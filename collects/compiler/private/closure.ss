@@ -45,7 +45,7 @@
 		(cons l compiler:closure-list))))
       (define (compiler:get-closure-list) compiler:closure-list)
 
-      (define-struct (top-level-varref/bind-from-lift zodiac:struct:top-level-varref) (lambda pls?))
+      (define-struct (top-level-varref/bind-from-lift zodiac:top-level-varref) (lambda pls?))
 
       ;; fully lifted lambdas (i.e., really static, not per-load)
       (define compiler:lifted-lambda-vars null) 

@@ -10,10 +10,7 @@
     (unit/sig compiler:option^
       (import)
       
-      (define use-mrspidey (make-parameter #f))
-      (define use-mrspidey-for-units (make-parameter #f))
       (define propagate-constants (make-parameter #t))
-      (define lightweight (make-parameter #f))
       (define assume-primitives (make-parameter #f))
       (define stupid (make-parameter #f))
       

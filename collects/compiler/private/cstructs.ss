@@ -74,7 +74,7 @@
       ;;  New AST nodes to augment the zodiac set:
       
       ;; AST node for the creation of a closure (replaces, e.g., a lambda expression)
-      (define-struct (compiler:make-closure zodiac:struct:zodiac) (lambda free-vars args name))
+      (define-struct (compiler:make-closure zodiac:zodiac) (lambda free-vars args name))
 
       ;;----------------------------------------------------------------------------
       ;; ANNOTATION STRUCTURES
@@ -172,7 +172,7 @@
       ;;  as lambdas or units. The actual annotation will be
       ;;  an instance of a sub-type of `code', depending on
       ;;  the kind of closure.
-      (define-struct (closure-code struct:code)
+      (define-struct (closure-code code)
 	(; Representation and implementation info
 	 rep 
 	 alloc-rep
@@ -197,7 +197,7 @@
 	 ))
 
       ;; Annotation type for case-lambda closures:
-      (define-struct (procedure-code struct:closure-code) 
+      (define-struct (procedure-code closure-code) 
 	(case-codes 
 	 ;; A list of case-code records
 	 case-arities
@@ -215,7 +215,7 @@
 	 ;;  (triggered by 'method-arity-error property)
 	 ))
 
-      (define-struct (case-code struct:code)
+      (define-struct (case-code code)
 	(; Does the compilation of this case use continue?
 	 ;; If so, output the case body within while(1){...}
 	 has-continue?))
@@ -258,7 +258,7 @@
       ;; error/warning structures
       ;;
       (define-struct compiler:message (ast message))
-      (define-struct (compiler:error struct:compiler:message) ())
-      (define-struct (compiler:fatal-error struct:compiler:message) ())
-      (define-struct (compiler:internal-error struct:compiler:message) ())
-      (define-struct (compiler:warning struct:compiler:message) ()))))
+      (define-struct (compiler:error compiler:message) ())
+      (define-struct (compiler:fatal-error compiler:message) ())
+      (define-struct (compiler:internal-error compiler:message) ())
+      (define-struct (compiler:warning compiler:message) ()))))

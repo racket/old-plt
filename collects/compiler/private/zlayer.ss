@@ -18,8 +18,7 @@
       (import (compiler:option : compiler:option^)
 	      (zodiac : zodiac^)
 	      compiler:cstructs^
-	      compiler:driver^
-	      (mrspidey : compiler:mrspidey^))
+	      compiler:driver^)
 
       ;;----------------------------------------------------------------------------
       ;; ANNOTATIONS
@@ -79,10 +78,6 @@
 	(zodiac-error-template call-compiler:fatal-error "(elaboration) "))
       (define dynamic-error
 	(zodiac-error-template call-compiler:fatal-error "(parser dynamic) "))
-      (define analysis-error
-	(zodiac-error-template call-compiler:fatal-error "(MrSpidey) "))
-      (define analysis-internal-error
-	(zodiac-error-template call-compiler:fatal-error "(MrSpidey internal) "))
       
 
       ;;----------------------------------------------------------------------------
@@ -167,12 +162,7 @@
       ;; Debugging: AST to annotated S-expression
       (define zodiac->sexp/annotate
 	(lambda (ast)
-	  (let ([v (if #f
-		       (mrspidey:get-annotations ast)
-		       (mrspidey:SDL-type ast))])
-	    (if v
-		`(: ,(zodiac->sexp ast) ,v)
-		(zodiac->sexp ast)))))
+	  (zodiac->sexp ast)))
       
       (define zodiac->sexp
 	(lambda (ast)

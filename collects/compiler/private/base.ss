@@ -6,31 +6,30 @@
   (require "sig.ss")
 
   (require (lib "zodiac-sig.ss" "syntax")
-	  (lib "zodiac-unit.ss" "syntax"))
+	   (lib "zodiac-unit.ss" "syntax"))
 
   (require (lib "file-sig.ss" "dynext")
-	  (lib "link-sig.ss" "dynext")
-	  (lib "compile-sig.ss" "dynext"))
+	   (lib "link-sig.ss" "dynext")
+	   (lib "compile-sig.ss" "dynext"))
 
   (require "zlayer.ss"
-	  "library.ss"
-	  "cstructs.ss"
-	  "prephase.ss"
-	  "anorm.ss"
-	  "const.ss"
-	  "known.ss"
-	  "analyze.ss"
-	  "lift.ss"
-	  "closure.ss"
-	  "vehicle.ss"
-	  "rep.ss"
-	  "vmscheme.ss"
-	  "vmphase.ss"
-	  "vmopt.ss"
-	  "vm2c.ss"
-	  "lightweight.ss"
-	  "toplevel.ss"
-	  "driver.ss")
+	   "library.ss"
+	   "cstructs.ss"
+	   "prephase.ss"
+	   "anorm.ss"
+	   "const.ss"
+	   "known.ss"
+	   "analyze.ss"
+	   "lift.ss"
+	   "closure.ss"
+	   "vehicle.ss"
+	   "rep.ss"
+	   "vmscheme.ss"
+	   "vmphase.ss"
+	   "vmopt.ss"
+	   "vm2c.ss"
+	   "toplevel.ss"
+	   "driver.ss")
 
   ;; The core Scheme->C compiler linkage, including everything
   ;;  that's common to MrSpidey and non-MrSpidey compilation.
@@ -42,16 +41,14 @@
      (import (COMPILE : dynext:compile^)
 	     (LINK : dynext:link^)
 	     (DFILE : dynext:file^)
-	     (OPTIONS : compiler:option^)
-	     (SPIDEY : compiler:mrspidey^))
+	     (OPTIONS : compiler:option^))
      (link
       [ZODIAC : zodiac^ (zodiac@)]
       [ZLAYER : compiler:zlayer^ (zlayer@
 				  OPTIONS
 				  ZODIAC
 				  CSTRUCTS
-				  DRIVER
-				  SPIDEY)]
+				  DRIVER)]
       [LIBRARY : compiler:library^ (library@
 				    ZODIAC)]
       [CSTRUCTS : compiler:cstructs^ (cstructs@
@@ -64,16 +61,14 @@
 				      CSTRUCTS
 				      ZODIAC
 				      ZLAYER
-				      DRIVER
-				      SPIDEY)]
+				      DRIVER)]
       [ANORM : compiler:anorm^ (anorm@
 				OPTIONS
 				LIBRARY
 				CSTRUCTS
 				ZODIAC
 				ZLAYER
-				DRIVER
-				SPIDEY)]
+				DRIVER)]
       [CONST : compiler:const^ (const@
 				OPTIONS
 				LIBRARY
@@ -95,17 +90,7 @@
 				CONST
 				CLOSURE
 				REP
-				DRIVER
-				SPIDEY)]
-      [LIGHTWEIGHT : compiler:lightweight^ (lightweight@
-					    OPTIONS
-					    LIBRARY
-					    CSTRUCTS
-					    ZLAYER
-					    CONST
-					    TOP-LEVEL
-					    DRIVER
-					    ZODIAC)]
+				DRIVER)]
       [ANALYZE : compiler:analyze^ (analyze@
 				    OPTIONS
 				    LIBRARY
@@ -118,8 +103,7 @@
 				    CONST
 				    REP
 				    VM2C
-				    DRIVER
-				    SPIDEY)]
+				    DRIVER)]
       [LIFT : compiler:lift^ (lift@
 			      OPTIONS
 			      LIBRARY
@@ -217,7 +201,6 @@
 				  ANALYZE
 				  CONST
 				  LIFT
-				  LIGHTWEIGHT
 				  CLOSURE
 				  VEHICLE
 				  REP
@@ -228,11 +211,7 @@
 				  TOP-LEVEL
 				  COMPILE
 				  LINK
-				  DFILE
-				  SPIDEY)])
-     (export (unit ZODIAC)
-	     (unit ZLAYER)
-	     (unit DRIVER)
-	     (unit LIBRARY)))))
+				  DFILE)])
+     (export (open (DRIVER : compiler:inner^))))))
 
 

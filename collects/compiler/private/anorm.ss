@@ -48,8 +48,7 @@
 	      compiler:cstructs^
 	      (zodiac : zodiac^)
 	      compiler:zlayer^
-	      compiler:driver^
-	      (mrspidey : compiler:mrspidey^))
+	      compiler:driver^)
 
       (define compiler:a-value?
 	(one-of zodiac:quote-form? zodiac:varref? zodiac:quote-syntax-form?))
@@ -75,9 +74,9 @@
 		  (lambda (ast k)
 		    (normalize-name/special-a-values ast k (lambda (x) #f)))]
 		 [normalize-name/special-a-values
-					; The magic goodie that names expressions.  If the expression
-					; handed in is not an immediate a-value, it is named and the
-					; computation continues; syntax correlation exists!
+		  ;; The magic goodie that names expressions.  If the expression
+		  ;; handed in is not an immediate a-value, it is named and the
+		  ;; computation continues; syntax correlation exists!
 		  (lambda (ast k special-a-value?)
 		    (a-normalize
 		     ast
@@ -91,22 +90,18 @@
 					   tname
 					   tname)]
 				  [varref (zodiac:binding->lexical-varref tbound)])
-			     (mrspidey:copy-annotations! tbound exp)
-			     (mrspidey:copy-annotations! varref exp)
-					; hack: #f annotation => not mutable, or anything else
-					; (The hack is resolved by the prephase:is-mutable?, etc.
-					; procedures.)
+			     ;; hack: #f annotation => not mutable, or anything else
+			     ;; (The hack is resolved by the prephase:is-mutable?, etc.
+			     ;; procedures.)
 			     (set-annotation! tbound #f) 
 			     (let ([body (k varref)])
-			       (mrspidey:copy-annotations!
-				(zodiac:make-let-values-form
-				 (zodiac:zodiac-stx exp)
-				 (make-empty-box)
-				 (list (list tbound))
-				 (list exp)
-				 body)
+			       (zodiac:make-let-values-form
+				(zodiac:zodiac-stx exp)
+				(make-empty-box)
+				(list (list tbound))
+				(list exp)
 				body)))))))]
-					; This names a list of expressions (eg argument list)
+		 ;; This names a list of expressions (eg argument list)
 		 [normalize-name*
 		  (lambda (ast* k)
 		    (if (null? ast*)

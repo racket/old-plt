@@ -3,8 +3,7 @@
 (define-signature turtle^ 
   (turtles
 
-   turtles-state 
-   turtles-cache 
+   flip-icons
 
    clear
 
@@ -15,7 +14,7 @@
 
    save-turtle-bitmap
 
-   splitfn split*fn 
+   splitfn split*fn tpromptfn
    turtle-window-size))
 
 

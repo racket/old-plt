@@ -8,7 +8,7 @@
   (define turtle-icon-color "SALMON")
   (define turtle-icon-pen (send mred:the-pen-list find-or-create-pen
 				turtle-icon-color
-				1 'solid))
+				1 'xor))
 
   (define show-turtle-icons? #t)
 
@@ -22,48 +22,39 @@
 	[w-brush (send mred:the-brush-list find-or-create-brush "white" 'solid)]
 	[b-pen (send mred:the-pen-list find-or-create-pen "black" 1 'solid)]
 	[b-brush (send mred:the-brush-list find-or-create-brush "black" 'solid)]
-	[xor-pen (send mred:the-pen-list find-or-create-pen "black" 1 'xor)]
-	[memory-dc (make-object mred:bitmap-dc%)]
-	[flip-icons-dc
-	 (lambda (dc)
-	   (flatten (lambda (x) x))
-	   (send dc set-pen xor-pen)
-	   (for-each (lambda (turtle)
-		       (let ([x (turtle-x turtle)]
-			     [y (turtle-y turtle)]
-			     [theta (turtle-angle turtle)]
-			     [size 2])
-			 (send dc draw-line
-			       x y
-			       (+ x (* size (cos theta)))
-			       (+ y (* size (sin theta))))))
-		     turtles-state)
-	   (send dc set-pen b-pen))])
+	[memory-dc (make-object mred:bitmap-dc%)])
       (public
 	[flip-icons
 	 (lambda ()
-	   (flip-icons-dc
-	    (send canvas get-dc)))]
-	[draw-into-dc
-	 (lambda (dc)
-	   (send dc clear)
-	   (send dc draw-bitmap (send memory-dc get-bitmap) 0 0)
-	   (flip-icons-dc dc))]
+	   (flatten (lambda (x) x))
+	   (let ([dc (send canvas get-dc)])
+	     (send dc set-pen turtle-icon-pen)
+	     (for-each (lambda (turtle)
+			 (let ([x (turtle-x turtle)]
+			       [y (turtle-y turtle)]
+			       [theta (turtle-angle turtle)]
+			       [size 2])
+			   (send dc draw-line
+				 x y
+				 (+ x (* size (cos theta)))
+				 (+ y (* size (sin theta))))))
+		       turtles-state)
+	     (send dc set-pen b-pen)))]
 	[canvas% 
 	 (class mred:canvas% args
 	   (inherit get-dc)
 	   (override
 	    [on-paint
-	      (lambda ()
-		(draw-into-dc (get-dc)))])
-	   (sequence (apply super-init args)))]
+	     (lambda ()
+	       (let ([dc (get-dc)])
+		 (send dc clear)
+		 (send dc draw-bitmap (send memory-dc get-bitmap) 0 0)
+		 (flip-icons)))])
+	    (sequence (apply super-init args)))]
 	[clear
 	 (lambda () 
-	   (send memory-dc set-pen w-pen)
-	   (send memory-dc set-brush w-brush)
-	   (send memory-dc draw-rectangle 0 0 width height)
-	   (send canvas on-paint)
-	   (send memory-dc set-pen b-pen))])
+	   (send memory-dc clear)
+	   (send canvas on-paint))])
       (sequence
 	(send memory-dc set-bitmap bitmap)
 	(send memory-dc clear)
@@ -118,8 +109,9 @@
   
   (define turtle-window-size
     (let-values ([(w h) (mred:get-display-size)]
-		 [(user/client-offset) 65])
-      (min 800
+		 [(user/client-offset) 65]
+		 [(default-size) 800])
+      (min default-size
 	   (- w user/client-offset)
 	   (- h user/client-offset))))
   
@@ -178,9 +170,9 @@
   
   (define clear 
     (lambda ()
-      (clear-window)
       (set! turtles-cache empty-cache)
-      (set! turtles-state (list clear-turtle))))
+      (set! turtles-state (list clear-turtle))
+      (clear-window)))
   
   ;; cache elements:
   (define-struct c-forward (distance))
@@ -296,9 +288,7 @@
   
   (define turn
     (lambda (c)
-      (flip-icons)
-      (turn/radians (* (/ c 360) 2 pi))
-      (flip-icons)))
+      (turn/radians (* (/ c 360) 2 pi))))
   
   (define move-offset
     (lambda (x y)
@@ -325,10 +315,10 @@
   
   (define splitfn
     (lambda (e)
-      (flip-icons)
       (let ([t turtles-state]
 	    [c turtles-cache])
 	(e)
+	(flip-icons)
 	(set! turtles-state
 	      (make-tree (list (make-cached turtles-state turtles-cache)
 			       (make-cached t c))))
@@ -340,17 +330,36 @@
       (let ([t turtles-state]
 	    [c turtles-cache]
 	    [l '()])
-	(flip-icons)
 	(for-each (lambda (x)
 		    (x)
 		    (set! l (cons (make-cached turtles-state turtles-cache) l))
+		    (flip-icons)
 		    (set! turtles-state t)
-		    (set! turtles-cache c))
+		    (set! turtles-cache c)
+		    (flip-icons))
 		  es)
+	(flip-icons)
 	(set! turtles-cache empty-cache)
 	(set! turtles-state (make-tree l))
 	(flip-icons))))
-  
+			
+
+  (define tpromptfn
+    (lambda (thunk)
+      (let ([save-turtles-cache #f]
+	    [save-turtles-state #f])
+	(dynamic-wind
+	    (lambda ()
+	      (set! save-turtles-cache turtles-cache)
+	      (set! save-turtles-state turtles-state))
+	    (lambda ()
+	      (thunk))
+	    (lambda ()
+	      (flip-icons)
+	      (set! turtles-cache save-turtles-cache)
+	      (set! turtles-state save-turtles-state)
+	      (flip-icons))))))
+
   (define pi 3.1415926535)
   
   (lambda ()

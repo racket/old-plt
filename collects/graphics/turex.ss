@@ -1,184 +1,159 @@
-;; MrEd or MrED Debug language levels required
-(require-library "errortrace.ss" "errortrace")
-(require-library "turtle.ss" "graphics")
-(require-library "math.ss")
+;; requires the advanced language level
 
-(define regular-poly
-  (lambda (sides radius)
-    (let* ([theta (/ (* 2 pi) sides)]
-	   [side-len (* 2 radius (sin (/ theta 2)))])
-      (letrec ([draw-sides
-		(lambda (n)
-		  (unless (zero? n)
-		    (draw side-len)
-		    (turn/radians theta)
-		    (draw-sides (sub1 n))))])
-	(tprompt (move radius)
-		 (turn/radians (/ (+ pi theta) 2))
-		 (draw-sides sides))))))
+(define (regular-poly sides radius)
+  (local [(define theta (/ (* 2 pi) sides))
+	  (define side-len (* 2 radius (sin (/ theta 2))))
+	  (define (draw-sides n)
+	    (cond
+	     [(zero? n) (void)]
+	     [else
+	      (draw side-len)
+	      (turn/radians theta)
+	      (draw-sides (sub1 n))]))]
+    (tprompt (move radius)
+	     (turn/radians (/ (+ pi theta) 2))
+	     (draw-sides sides))))
 
-(define regular-polys
-  (lambda (sides s)
-    (letrec ([make-polys
-	      (lambda (n)
-		(unless (zero? n)
-		  (regular-poly sides (* n 5))
-		  (make-polys (sub1 n))))])
-      (make-polys sides))))
+(define (regular-polys sides s)
+  (local [(define (make-polys n)
+	    (unless (zero? n)
+	      (regular-poly sides (* n 5))
+	      (make-polys (sub1 n))))]
+    (make-polys sides)))
 
-(define radial-turtles
-  (lambda (n)
-    (cond
-      [(zero? n) (void)]
-      [else
-       (begin (split (turn/radians (/ pi (expt 2 (sub1 n)))))
-	      (radial-turtles (sub1 n)))])))
+(define (radial-turtles n)
+  (cond
+   [(zero? n) (void)]
+   [else
+    (split (turn/radians (/ pi (expt 2 (sub1 n)))))
+    (radial-turtles (sub1 n))]))
 
-(define spaced-turtles
-  (lambda (n)
-    (cond
-      [(zero? n) (void)]
-      [else (begin (split (move (expt 2 (+ n 1))))
-		   (spaced-turtles (sub1 n)))])))
+(define (spaced-turtles n)
+  (cond
+   [(zero? n) (void)]
+   [else
+    (split (move (expt 2 (+ n 1))))
+    (spaced-turtles (sub1 n))]))
 
-(define spokes
-  (lambda ()
-    (begin
-      (radial-turtles 4)
-      (spaced-turtles 5)
-      (turn/radians (/ pi 2))
-      (draw 10))))
+(define (spokes)
+  (radial-turtles 4)
+  (spaced-turtles 5)
+  (turn/radians (/ pi 2))
+  (draw 10))
 
-(define spyro-gyra
-  (lambda () 
-    (begin
-      (radial-turtles 4)
-      (regular-poly 3 100))))
+(define (spyro-gyra)
+  (radial-turtles 4)
+  (regular-poly 3 100))
 
-(define neato
-  (letrec ([spiral 
-	    (lambda (d t)
-	      (when (<= 1 d)
+(define (neato)
+  (local [(define (spiral d t)
+	    (when (<= 1 d)
+	      (draw d)
+	      (turn/radians t)
+	      (spiral (- d 1) t)))]
+    (radial-turtles 4)
+    (spiral 30 (/ pi 12))))
+
+(define (graphics-bexam)
+  (local [(define (gb d)
+	    (if (<= d 3)
 		(draw d)
-		(turn/radians t)
-		(spiral (- d 1) t)))])
-    (lambda ()
-      (begin
-	(radial-turtles 4)
-	(spiral 30 (/ pi 12))))))
-
-(define graphics-bexam
-  (letrec ([gb (lambda (d)
-		 (if (<= d 1)
-		     (draw d)
-		     (let ([d (/ d 3)])
-		       (begin
-			 (gb d)
-			 (turn/radians (- (/ pi 2)))
-			 (gb d)
-			 (turn/radians (/ pi 2))
-			 (gb d)
-			 (turn/radians (/ pi 2))
-			 (gb d)
-			 (turn/radians (- (/ pi 2)))
-			 (gb d)))))])
-    (lambda ()
-      (let ([square-size (expt 3 5)])
-	(begin
-	  (split (turn/radians (/ pi 2))
-		 (move square-size)
-		 (turn/radians (- (/ pi 2)))
-		 (move square-size)
-		 (turn/radians pi))
-	  (split (move square-size)
-		 (turn/radians (/ pi 2)))
-	  (gb square-size))))))
+		(local [(define new-d (/ d 3))]
+		  (gb new-d)
+		  (turn/radians (- (/ pi 2)))
+		  (gb new-d)
+		  (turn/radians (/ pi 2))
+		  (gb new-d)
+		  (turn/radians (/ pi 2))
+		  (gb new-d)
+		  (turn/radians (- (/ pi 2)))
+		  (gb new-d))))
+	  (define square-size (expt 3 5))]
+    (split (turn/radians (/ pi 2))
+	   (move square-size)
+	   (turn/radians (- (/ pi 2)))
+	   (move square-size)
+	   (turn/radians pi))
+    (split (move square-size)
+	   (turn/radians (/ pi 2)))
+    (gb square-size)))
 
 (define serp-size 120)
 
-(define serp
-  (let ([sqrt3 (sqrt 3)]
-	[-2pi/3 (- 0 (/ (* 2 pi) 3))]
-	[pi/6 (/ pi 6)]
-	[-5pi/6 (- 0 (/ (* 5 pi) 6))]
-	[pi/2 (/ pi 2)])
-    (letrec ([engine
-	      (lambda (distance)
-		(if (< distance .6)
-		    (void)
-		    (let* ([side-half (* distance sqrt3)]
-			   [side (* 2 side-half)])
-		      
-		      (begin
-			(turn/radians -2pi/3)
-			(move distance)
-			(split (move distance)
-			       (turn/radians -5pi/6)
-			       (draw side)
-			       (turn/radians -5pi/6)
-			       (move distance)
-			       (turn/radians pi)
-			       (split (turn/radians -5pi/6)
-				      (move side-half)
-				      (turn/radians pi/6)))
-			(engine (/ distance 2))))))])
-      (lambda (distance)
-	(begin
-	  (move (* 2 distance))
-	  (turn/radians (/ (* 5 pi) 6))
-	  (draw (* distance 2 (sqrt 3)))
-	  (turn/radians (/ (* 2 pi) 3))
-	  (move (* distance 2 (sqrt 3)))
-	  (turn/radians (/ (* 2 pi) 3))
-	  (draw (* distance 2 (sqrt 3)))
-	  (turn/radians (/ (* 2 pi) 3))
-	  (turn/radians (/ pi 6))
-	  (move (* 2 distance))
-	  (turn/radians pi)
-	  (engine distance))))))
+(define (serp distance)
+  (local [(define sqrt3 (sqrt 3))
+	  (define -2pi/3 (- 0 (/ (* 2 pi) 3)))
+	  (define pi/6 (/ pi 6))
+	  (define -5pi/6 (- 0 (/ (* 5 pi) 6)))
+	  (define pi/2 (/ pi 2))
+	  (define (engine distance)
+	    (unless (< distance .6)
+	      (let* ([side-half (* distance sqrt3)]
+		     [side (* 2 side-half)])
+		
+		(begin
+		  (turn/radians -2pi/3)
+		  (move distance)
+		  (split (move distance)
+			 (turn/radians -5pi/6)
+			 (draw side)
+			 (turn/radians -5pi/6)
+			 (move distance)
+			 (turn/radians pi)
+			 (split (turn/radians -5pi/6)
+				(move side-half)
+				(turn/radians pi/6)))
+		  (engine (/ distance 2))))))]
+    (move (* 2 distance))
+    (turn/radians (/ (* 5 pi) 6))
+    (draw (* distance 2 (sqrt 3)))
+    (turn/radians (/ (* 2 pi) 3))
+    (move (* distance 2 (sqrt 3)))
+    (turn/radians (/ (* 2 pi) 3))
+    (draw (* distance 2 (sqrt 3)))
+    (turn/radians (/ (* 2 pi) 3))
+    (turn/radians (/ pi 6))
+    (move (* 2 distance))
+    (turn/radians pi)
+    (engine distance)))
 
-(define serp-nosplit
-  (let ([sqrt3 (sqrt 3)]
-	[-2pi/3 (- 0 (/ (* 2 pi) 3))]
-	[pi/6 (/ pi 6)]
-	[-5pi/6 (- 0 (/ (* 5 pi) 6))]
-	[pi/2 (/ pi 2)])
-    (letrec ([engine
-	      (lambda (distance)
-		(if (< distance .6)
-		    (void)
-		    (let* ([side-half (* distance sqrt3)]
-			   [side (* 2 side-half)])
-		      (begin
-			(turn/radians -2pi/3)
-			(move distance)
-			(engine (/ distance 2))
-			(move distance)
-			(turn/radians -5pi/6)
-			(draw side)
-			(turn/radians -5pi/6)
-			(move distance)
-			(turn/radians pi)
-			(engine (/ distance 2))
-			(turn/radians -5pi/6)
-			(move side-half)
-			(turn/radians pi/6)
-			(engine (/ distance 2))
-			(move (- distance))))))])
-      (lambda (distance)
-	(begin
-	  (move (* 2 distance))
-	  (turn/radians (/ (* 5 pi) 6))
-	  (draw (* distance 2 (sqrt 3)))
-	  (turn/radians (/ (* 2 pi) 3))
-	  (move (* distance 2 (sqrt 3)))
-	  (turn/radians (/ (* 2 pi) 3))
-	  (draw (* distance 2 (sqrt 3)))
-	  (turn/radians (/ (* 2 pi) 3))
-	  (turn/radians (/ pi 6))
-	  (move (* 2 distance))
-	  (turn/radians pi)
-	  (engine distance))))))
+(define (serp-nosplit distance)
+  (local [(define sqrt3 (sqrt 3))
+	  (define -2pi/3 (- 0 (/ (* 2 pi) 3)))
+	  (define pi/6 (/ pi 6))
+	  (define -5pi/6 (- 0 (/ (* 5 pi) 6)))
+	  (define pi/2 (/ pi 2))
+	  (define (engine distance)
+	    (unless (< distance .6)
+	      (local [(define side-half (* distance sqrt3))
+		      (define side (* 2 side-half))]
+		(turn/radians -2pi/3)
+		(move distance)
+		(engine (/ distance 2))
+		(move distance)
+		(turn/radians -5pi/6)
+		(draw side)
+		(turn/radians -5pi/6)
+		(move distance)
+		(turn/radians pi)
+		(engine (/ distance 2))
+		(turn/radians -5pi/6)
+		(move side-half)
+		(turn/radians pi/6)
+		(engine (/ distance 2))
+		(move (- distance)))))]
+    (move (* 2 distance))
+    (turn/radians (/ (* 5 pi) 6))
+    (draw (* distance 2 (sqrt 3)))
+    (turn/radians (/ (* 2 pi) 3))
+    (move (* distance 2 (sqrt 3)))
+    (turn/radians (/ (* 2 pi) 3))
+    (draw (* distance 2 (sqrt 3)))
+    (turn/radians (/ (* 2 pi) 3))
+    (turn/radians (/ pi 6))
+    (move (* 2 distance))
+    (turn/radians pi)
+    (engine distance)))
 
 (define koch-size (expt 3 5))
 
@@ -368,41 +343,3 @@
 		    (turn/radians (sign d))
 		    (fernd (- n 1) sign)))])
 	(fernd n +)))))
-
-(define frame (make-object frame% "Turtle Examples"))
-
-(define options
-  `(("Triangle" ,(lambda () (regular-poly 3 100)))
-    ("Hexagons" ,(lambda () (regular-polys 6 10)))
-    ("Spokes" ,spokes)
-    ("Spyro Gyra" ,spyro-gyra)
-    ("Neato" ,neato)
-    ("Graphics BExam" ,(lambda () 
-			 (turn/radians (/ pi 4))
-			 (move -150)
-			 (turn/radians (- (/ pi 4)))
-			 (graphics-bexam)))
-    ("Serpinski (split)" ,(lambda () (serp serp-size)))
-    ("Serpinski (no split)" ,(lambda () (serp-nosplit serp-size)))
-    ("Koch (split)" ,(lambda () (koch-split koch-size)))
-    ("Koch (no split)" ,(lambda () (koch-draw koch-size)))
-    ("Lorenz Attractor" ,lorenz1)
-    ("Peano" ,(lambda () (peano-position-turtle) (peano1 peano-size)))
-    ("Fern" ,(lambda () (turn pi) (move -100) (fern1 fern-size)))))
-
-(for-each (lambda (test) 
-	    (send
-	     (make-object button% 
-			  (car test)
-			  frame
-			  (lambda x 
-			    (turtles #t)
-			    (clear)
-			    (yield)
-			    ((cadr test))))
-	     stretchable-width #t))
-	  options)
-
-(make-object grow-box-spacer-pane% frame)	  
-
-(send frame show #t)

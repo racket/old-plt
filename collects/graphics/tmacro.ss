@@ -3,11 +3,11 @@
     `(splitfn (lambda () (begin ,e ,@es)))))
 
 (define-macro split* 
-  (lambda es 
-    `(split*fn (list ,@(map (lambda (x) `(lambda () ,x)) es)))))
+  (lambda (e . es)
+    `(split*fn (list ,@(map (lambda (x) `(lambda () ,x)) (cons e es))))))
 
 (define-macro tprompt
   (lambda es
-    `(fluid-let ([turtles-state turtles-state]
-		 [turtles-cache turtles-cache])
-		,@es)))
+    `(tpromptfn
+      (lambda ()
+	,@es))))

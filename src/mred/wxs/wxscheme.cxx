@@ -2260,7 +2260,9 @@ static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
     menu_too = 0;
 
 #ifdef wx_x
-  return menu_too ? scheme_false : scheme_true;
+  return scheme_true;
+  /* but the MrEd layer disables visible menu shortcuts when
+     the default menu key is set to alt instead of ctl */
 #endif
 #ifdef wx_msw
   return scheme_true;

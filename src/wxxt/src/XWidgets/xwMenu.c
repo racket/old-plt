@@ -225,6 +225,26 @@ void FreeTimer(long timer)
   }
 }
 
+static int HasHotKey(char *l, int key)
+{
+  int i;
+
+  if (!l)
+    return 0;
+
+  for (i = 0; l[i]; i++) {
+    if ((l[i] == '&') 
+	&& (((l[i+1] > 0)
+	     && (key > 0)
+	     && (key < 128)
+	     && (tolower(l[i+1]) == tolower(key)))
+	    || (l[i+1] == key)))
+      return 1;
+  }
+
+  return 0;
+}
+
 
 /******************************************************************************
  *
@@ -616,6 +636,27 @@ static void Key(w, event, params, num_params)
     break;
   case XK_Return:
     DoSelect(w, event ? event->xkey.time : 0L, 1);
+    break;
+  default:
+    /* Look for menu to select */
+    {
+      menu_item *item;
+      if (mw->menu.state->prev)
+	item = mw->menu.state->prev->selected->contents;
+      else
+	item = NULL;
+      for (; item; item = item->next) {
+	if (item->enabled && HasHotKey(item->label, keysym)) {
+	  if (mw->menu.state->selected != item) {
+	    UnhighlightItem(mw, mw->menu.state, mw->menu.state->selected);
+	    HighlightItem(mw, mw->menu.state, item);
+	  }
+	  if (!item->contents)
+	    DoSelect(w, event ? event->xkey.time : 0L, 1);
+	  break;
+	}
+      }
+    }
     break;
   }
 }

@@ -1,0 +1,27 @@
+Are you forgetful? Do you often miss important dates in your life? Are
+your loved ones vengeful? If so, this program is for you!
+
+Countdown keeps track of the minute and second of approaching or past
+life events. 
+
+To use, first create a .countdownrc in your homedirectory. All of the
+expressions in that file will be evaluated in the context of a unit,
+with one import: `remember'. remember is a procedure that takes as
+first argument a string naming the event. It's six remaining arguments
+qare all numbers, describing the second, minute, hour, day of the
+month, month and year of the event. Omit the year, and the event will
+repreat annually. Omit the month and the event repeats monthly, etc.
+
+Say, you have trouble remembering Matthew's birthday. Just put this
+line in your .countdownrc and you will never miss it again:
+
+  (remember "Matthew's Birthday November 1st" 59 59 23 1 11)
+
+After creating that file, run Countdown like this:
+
+  mred -x -A countdwn
+
+(note the missing "o" in countdwn... thank you 8.3)
+It will open a window on your screen and your troubles will be over! 
+
+Act now!

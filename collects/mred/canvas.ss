@@ -48,6 +48,7 @@
 	(class super% args
 	  (inherit get-media edit-modified edit-renamed)
 	  (rename
+	    [super-on-size on-size]
 	    [super-set-media set-media]
 	    [super-on-set-focus on-set-focus])
 	  (private
@@ -82,6 +83,21 @@
 	       (super-on-set-focus)
 	       (if frame
 		   (send frame on-frame-active)))]
+	    [on-size
+	     (lambda (width height)
+	       (super-on-size width height)
+	       (let ([edit (get-media)])
+		 (if (and (not (null? edit))
+			  (ivar edit auto-set-wrap?))
+		     (let ([admin (send edit get-admin)]
+			   [w-box (box 0)]
+			   [h-box (box 0)])
+		       (unless (null? admin)
+			 (send admin get-view 
+			       () () w-box h-box #f)
+			 (send edit set-max-width 
+			       (unbox w-box)))))))]
+	       
 	    [set-media
 	     (opt-lambda (m [redraw? #t])
 	       (let ([old-m (get-media)])

@@ -860,19 +860,24 @@ static Scheme_Object *make_channel(int n, Scheme_Object **p)
   return scheme_make_channel();
 }
 
-static Scheme_Object *make_channel_put(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_make_channel_put_evt(Scheme_Object *ch, Scheme_Object *v)
 {
   Scheme_Channel_Put *cp;
 
+  cp = MALLOC_ONE_TAGGED(Scheme_Channel_Put);
+  cp->so.type = scheme_channel_put_type;
+  cp->ch = (Scheme_Channel *)ch;
+  cp->val = v;
+
+  return (Scheme_Object *)cp;
+}
+
+static Scheme_Object *make_channel_put(int argc, Scheme_Object **argv)
+{
   if (!SCHEME_CHANNELP(argv[0]))
     scheme_wrong_type("channel-put-evt", "channel", 0, argc, argv);
 
-  cp = MALLOC_ONE_TAGGED(Scheme_Channel_Put);
-  cp->so.type = scheme_channel_put_type;
-  cp->ch = (Scheme_Channel *)argv[0];
-  cp->val = argv[1];
-
-  return (Scheme_Object *)cp;
+  return scheme_make_channel_put_evt(argv[0], argv[1]);
 }
 
 static Scheme_Object *channel_p(int n, Scheme_Object **p)

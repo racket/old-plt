@@ -1089,15 +1089,32 @@ regexec(const char *who,
 	return 1;
       } else {
 	if (!peek) {
-	  /* Need to consume all chars */
+	  /* Need to consume all chars, up to portend */
 	  char *drain;
 	  long got;
 	  
-	  drain = (char *)scheme_malloc_atomic(4096);
+	  if (portend && SCHEME_INTP(portend) && SCHEME_INT_VAL(portend) < 4096) {
+	    got = SCHEME_INT_VAL(portend);
+	  } else
+	    got = 4096;
 
-	  while ((got = scheme_get_byte_string(who, port, drain, 0, 4096, 0, 0, 0)) != EOF) {
+	  drain = (char *)scheme_malloc_atomic(got);
+
+	  while ((got = scheme_get_byte_string(who, port, drain, 0, got, 0, 0, 0)) != EOF) {
 	    if (discard_oport)
 	      scheme_put_byte_string(who, discard_oport, drain, 0, got, 0);
+
+	    if (portend) {
+	      portend = scheme_bin_minus(portend, scheme_make_integer(got));
+	      if (SCHEME_INTP(portend)) {
+		got = SCHEME_INT_VAL(portend);
+		if (!got)
+		  break;
+		else if (got > 4096)
+		  got = 4096;
+	      }
+	    } else
+	      got = 4096;
 	  }
 	}
 	return 0;

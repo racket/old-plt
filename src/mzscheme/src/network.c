@@ -1496,7 +1496,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
       return n;
     }
 
-  if (!tcp_byte_ready(port)) {
+  while (!tcp_byte_ready(port)) {
     if (nonblock > 0)
       return 0;
 
@@ -1513,11 +1513,13 @@ static long tcp_get_string(Scheme_Input_Port *port,
     scheme_current_thread->ran_some = 1;
 #endif
 
-    if (port->closed) {
-      /* Another thread closed the input port while we were waiting. */
-      /* Call scheme_get_byte to signal the error */
-      scheme_get_byte((Scheme_Object *)port);
-    }
+    scheme_wait_input_allowed(port, nonblock);
+  }
+
+  if (port->closed) {
+    /* Another thread closed the input port while we were waiting. */
+    /* Call scheme_get_byte to signal the error */
+    scheme_get_byte((Scheme_Object *)port);
   }
 
   /* We assume that no other process has access to our sockets, so
@@ -1893,10 +1895,10 @@ make_tcp_input_port(void *data, const char *name)
   ip = scheme_make_input_port(scheme_tcp_input_port_type,
 			      data,
 			      scheme_make_immutable_sized_utf8_string((char *)name, -1),
-			      scheme_get_evt_via_get,
 			      tcp_get_string,
-			      scheme_peek_evt_via_peek,
 			      NULL,
+			      scheme_progress_evt_via_get,
+			      scheme_peeked_read_via_get,
 			      tcp_byte_ready,
 			      tcp_close_input,
 			      tcp_need_wakeup,

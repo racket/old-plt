@@ -802,8 +802,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_poll_evt_type, hash_general);
   PROC(scheme_always_evt_type, hash_general);
   PROC(scheme_never_evt_type, hash_general);
-  PROC(scheme_read_evt_type, hash_general);
-  PROC(scheme_peek_evt_type, hash_general);
+  PROC(scheme_progress_evt_type, hash_general);
   PROC(scheme_write_evt_type, hash_general);
   PROC(scheme_semaphore_repost_type, hash_general);
   PROC(scheme_string_converter_type, hash_general);

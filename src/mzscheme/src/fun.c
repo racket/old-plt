@@ -70,6 +70,7 @@ int scheme_defining_primitives; /* set to 1 during start-up */
 
 Scheme_Object scheme_void[1]; /* the void constant */
 Scheme_Object *scheme_values_func; /* the function bound to `values' */
+Scheme_Object *scheme_void_proc;
 
 Scheme_Object *scheme_tail_call_waiting;
 
@@ -281,10 +282,11 @@ scheme_init_fun (Scheme_Env *env)
 						      1, 1),
 			     env);
 
-  scheme_add_global_constant("void", scheme_make_folding_prim(void_func,
-							      "void",
-							      0, -1, 1),
-			     env);
+  REGISTER_SO(scheme_void_proc);
+  scheme_void_proc = scheme_make_folding_prim(void_func,
+					      "void",
+					      0, -1, 1);
+  scheme_add_global_constant("void", scheme_void_proc, env);
   scheme_add_global_constant("void?",
 			     scheme_make_folding_prim(void_p,
 						      "void?",

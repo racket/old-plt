@@ -476,6 +476,9 @@ input_port {
   gcMARK(ip->special);
   gcMARK(ip->ungotten_special);
   gcMARK(ip->special_width);
+  gcMARK(ip->consumed_evt);
+  gcMARK(ip->input_lock);
+  gcMARK(ip->input_giveup);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -1028,10 +1031,10 @@ mark_user_input {
  mark:
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcMARK(uip->read_evt_proc);
   gcMARK(uip->read_proc);
-  gcMARK(uip->peek_evt_proc);
   gcMARK(uip->peek_proc);
+  gcMARK(uip->consumed_evt_proc);
+  gcMARK(uip->peeked_read_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
   gcMARK(uip->peeked);

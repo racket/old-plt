@@ -1271,6 +1271,9 @@ int input_port_MARK(void *p) {
   gcMARK(ip->special);
   gcMARK(ip->ungotten_special);
   gcMARK(ip->special_width);
+  gcMARK(ip->consumed_evt);
+  gcMARK(ip->input_lock);
+  gcMARK(ip->input_giveup);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -1290,6 +1293,9 @@ int input_port_FIXUP(void *p) {
   gcFIXUP(ip->special);
   gcFIXUP(ip->ungotten_special);
   gcFIXUP(ip->special_width);
+  gcFIXUP(ip->consumed_evt);
+  gcFIXUP(ip->input_lock);
+  gcFIXUP(ip->input_giveup);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -2599,10 +2605,10 @@ int mark_user_input_SIZE(void *p) {
 int mark_user_input_MARK(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcMARK(uip->read_evt_proc);
   gcMARK(uip->read_proc);
-  gcMARK(uip->peek_evt_proc);
   gcMARK(uip->peek_proc);
+  gcMARK(uip->consumed_evt_proc);
+  gcMARK(uip->peeked_read_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
   gcMARK(uip->peeked);
@@ -2613,10 +2619,10 @@ int mark_user_input_MARK(void *p) {
 int mark_user_input_FIXUP(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
-  gcFIXUP(uip->read_evt_proc);
   gcFIXUP(uip->read_proc);
-  gcFIXUP(uip->peek_evt_proc);
   gcFIXUP(uip->peek_proc);
+  gcFIXUP(uip->consumed_evt_proc);
+  gcFIXUP(uip->peeked_read_proc);
   gcFIXUP(uip->close_proc);
   gcFIXUP(uip->reuse_str);
   gcFIXUP(uip->peeked);

@@ -311,6 +311,8 @@ typedef struct Scheme_Read_Write_Evt {
 static int rw_evt_ready(Scheme_Object *rww, Scheme_Schedule_Info *sinfo);
 static void rw_evt_wakeup(Scheme_Object *rww, void *fds);
 
+static int progress_evt_ready(Scheme_Object *rww, Scheme_Schedule_Info *sinfo);
+
 static Scheme_Object *
 _scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile);
 static void default_sleep(float v, void *fds);
@@ -579,8 +581,7 @@ scheme_init_port (Scheme_Env *env)
 
   REGISTER_SO(read_string_byte_buffer);
 
-  scheme_add_evt(scheme_read_evt_type, (Scheme_Ready_Fun)rw_evt_ready, rw_evt_wakeup, NULL, 1);
-  scheme_add_evt(scheme_peek_evt_type, (Scheme_Ready_Fun)rw_evt_ready, rw_evt_wakeup, NULL, 1);
+  scheme_add_evt(scheme_progress_evt_type, (Scheme_Ready_Fun)progress_evt_ready, NULL, NULL, 1);
   scheme_add_evt(scheme_write_evt_type, (Scheme_Ready_Fun)rw_evt_ready, rw_evt_wakeup, NULL, 1);
 }
 
@@ -962,10 +963,10 @@ Scheme_Input_Port *
 scheme_make_input_port(Scheme_Object *subtype,
 		       void *data,
 		       Scheme_Object *name,
-		       Scheme_Get_String_Evt_Fun get_string_evt_fun,
 		       Scheme_Get_String_Fun get_string_fun,
-		       Scheme_Peek_String_Evt_Fun peek_string_evt_fun,
 		       Scheme_Peek_String_Fun peek_string_fun,
+		       Scheme_Progress_Evt_Fun progress_evt_fun,
+		       Scheme_Peeked_Read_Fun peeked_read_fun,
 		       Scheme_In_Ready_Fun byte_ready_fun,
 		       Scheme_Close_Input_Fun close_fun,
 		       Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
@@ -978,10 +979,10 @@ scheme_make_input_port(Scheme_Object *subtype,
   ip->so.type = scheme_input_port_type;
   ip->sub_type = subtype;
   ip->port_data = data;
-  ip->get_string_evt_fun = get_string_evt_fun;
   ip->get_string_fun = get_string_fun;
-  ip->peek_string_evt_fun = peek_string_evt_fun;
   ip->peek_string_fun = peek_string_fun;
+  ip->progress_evt_fun = progress_evt_fun;
+  ip->peeked_read_fun = peeked_read_fun;
   ip->byte_ready_fun = byte_ready_fun;
   ip->need_wakeup_fun = need_wakeup_fun;
   ip->close_fun = close_fun;
@@ -1155,6 +1156,12 @@ static int pipe_char_count(Scheme_Object *p)
 
 /****************************** main input reader ******************************/
 
+static void post_progress(Scheme_Input_Port *ip)
+{
+  scheme_post_sema_all(ip->progress_evt);
+  ip->progress_evt = NULL;
+}
+
 long scheme_get_byte_string(const char *who,
 			    Scheme_Object *port,
 			    char *buffer, long offset, long size,
@@ -1192,6 +1199,9 @@ long scheme_get_byte_string(const char *who,
     SCHEME_USE_FUEL(1);
 
     CHECK_PORT_CLOSED(who, "input", port, ip->closed);
+
+    if (ip->input_lock)
+      scheme_wait_input_allowed(ip, only_avail);
 
     if (only_avail == -1) {
       /* We might need to break. */
@@ -1248,6 +1258,8 @@ long scheme_get_byte_string(const char *who,
 	    size -= l;
 	    got += l;
 	    peek_skip = scheme_make_integer(0);
+	    if (!peek && ip->progress_evt)
+	      post_progress(ip);
 	  }
 	} else
 	  peek_skip = scheme_bin_minus(peek_skip, scheme_make_integer(l));
@@ -1257,8 +1269,11 @@ long scheme_get_byte_string(const char *who,
       check_special = 1;
 
     if (check_special && ip->ungotten_special) {
-      if (!special_ok)
+      if (!special_ok) {
+	if (!peek && ip->progress_evt)
+	  post_progress(ip);
 	scheme_bad_time_for_special(who, port);
+      }
       if (!peek) {
 	ip->special = ip->ungotten_special;
 	ip->ungotten_special = NULL;
@@ -1274,6 +1289,9 @@ long scheme_get_byte_string(const char *who,
 	ip->readpos++;
 	ip->charsSinceNewline++;
       }
+
+      if (!peek && ip->progress_evt)
+	post_progress(ip);
 
       return SCHEME_SPECIAL;
     }
@@ -1346,8 +1364,12 @@ long scheme_get_byte_string(const char *who,
 	gc = EOF;
       } else if (peek && ps)
 	gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2);
-      else
+      else {
 	gc = gs(ip, buffer, offset + got, size, only_avail == 2);
+
+	if (!peek && gc && ip->progress_evt)
+	  post_progress(ip);
+      }
 
       if (gc == SCHEME_SPECIAL) {
 	if (!got && !total_got && special_ok) {
@@ -1358,8 +1380,8 @@ long scheme_get_byte_string(const char *who,
 	    ip->readpos++;
 	    ip->charsSinceNewline++;
 	  }
-
-      	  return SCHEME_SPECIAL;
+	  
+	  return SCHEME_SPECIAL;
 	}
 
 	if ((got || total_got) && only_avail) {
@@ -1547,8 +1569,138 @@ long scheme_get_byte_string(const char *who,
 
     /* Need to try to get more. */
   }
-
+  
   return total_got;
+}
+
+void scheme_wait_input_allowed(Scheme_Input_Port *ip, int nonblock)
+{
+  while (ip->input_lock) {
+    scheme_post_sema(ip->input_giveup);
+    scheme_wait_sema(ip->input_lock, nonblock ? -1 : 0);
+  }
+}
+
+static void release_input_lock(void *_ip)
+{
+  Scheme_Input_Port *ip = (Scheme_Input_Port *)_ip;
+
+  scheme_post_sema_all(ip->input_lock);
+  ip->input_lock = NULL;
+  ip->input_giveup = NULL;
+}
+
+int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
+			       long size,
+			       Scheme_Object *unless_evt,
+			       Scheme_Object *target_evt)
+{
+  Scheme_Object *v, *sema, *a[2];
+
+  /* This sema makes other threads wait before reading: */
+  sema = scheme_make_sema(0);
+  ip->input_lock = sema;
+
+  /* This sema lets other threads try to make progress,
+     if the current target doesn't work out */
+  sema = scheme_make_sema(0);
+  ip->input_giveup = sema;
+  
+  a[0] = target_evt;
+  a[1] = ip->input_giveup;
+  
+  BEGIN_ESCAPEABLE(release_input_lock, ip);
+  v = scheme_sync(2, a);
+  END_ESCAPEABLE();
+
+  release_input_lock((void *)ip);
+  
+  if (!SAME_OBJ(v, a[1])) {
+    /* Read succeeded */
+    Scheme_Get_String_Fun gs;
+    if (ip->peek_string_fun) {
+      /* If the port supplies its own peek, then we don't
+	 have peeked_r, so pass NULL as a buffer to the port's
+	 read proc. The read proc must not block. */
+      gs = ip->get_string_fun;
+    } else {
+      /* Otherwise, peek was implemented through peeked_{w,r}: */
+      if (ip->peeked_read) {
+	Scheme_Input_Port *pip = (Scheme_Input_Port *)ip->peeked_read;
+	gs = pip->get_string_fun;
+      } else
+	gs = NULL;
+    }
+    if (gs) {
+      size = gs(ip, NULL, 0, size, 1);
+      if (gs > 0)
+	post_progress(ip);
+    }
+    return 1;
+  } else
+    return 0;
+}
+
+int scheme_peeked_read(Scheme_Object *port,
+		       long size,
+		       Scheme_Object *unless_evt,
+		       Scheme_Object *target_evt)
+{
+  Scheme_Input_Port *ip;
+  Scheme_Peeked_Read_Fun pr;
+  
+  ip = (Scheme_Input_Port *)port;
+
+  unless_evt = SCHEME_PTR2_VAL(unless_evt);
+
+  pr = ip->peeked_read_fun;
+
+  return pr(ip, size, unless_evt, target_evt);
+}
+
+Scheme_Object *scheme_progress_evt_via_get(Scheme_Input_Port *port)
+{
+  Scheme_Object *sema;
+
+  if (port->progress_evt)
+    return port->progress_evt;
+
+  sema = scheme_make_sema(0);
+
+  port->progress_evt = sema;
+
+  return sema;
+}
+
+Scheme_Object *scheme_progress_evt(Scheme_Object *port)
+{  
+  Scheme_Input_Port *ip;
+  
+  ip = (Scheme_Input_Port *)port;
+  
+  if (ip->progress_evt_fun) {
+    Scheme_Progress_Evt_Fun ce;
+    Scheme_Object *evt, *o;
+
+    ce = ip->progress_evt_fun;
+
+    evt = ce(ip);
+
+    o = scheme_alloc_object();
+    o->type = scheme_progress_evt_type;
+    SCHEME_PTR1_VAL(o) = (Scheme_Object *)port;
+    SCHEME_PTR2_VAL(o) = evt;
+
+    return o;
+  }
+
+  return NULL;
+}
+
+static int progress_evt_ready(Scheme_Object *evt, Scheme_Schedule_Info *sinfo)
+{
+  scheme_set_sync_target(sinfo, SCHEME_PTR2_VAL(evt), evt, NULL, 0, 1);
+  return 0;
 }
 
 long scheme_get_char_string(const char *who,
@@ -1938,6 +2090,7 @@ Scheme_Object *make_read_write_evt(Scheme_Type type,
 static int rw_evt_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Read_Write_Evt *rww = (Scheme_Read_Write_Evt *)_rww;
+  long v;
 
   if (sinfo->false_positive_ok) {
     /* Causes the thread to swap in, which we need in case there's an
@@ -1946,65 +2099,26 @@ static int rw_evt_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
     return 1;
   }
   
-  if (rww->so.type == scheme_write_evt_type) {
-    /* Write */
-    long v;
-    if (rww->v) {
-      Scheme_Write_Special_Fun ws = ((Scheme_Output_Port *)rww->port)->write_special_fun;
-      v = ws((Scheme_Output_Port *)rww->port, rww->v, 1);
-      if (v) {
-	scheme_set_sync_target(sinfo, scheme_true, NULL, NULL, 0, 0);
-	return 1;
-      } else	
-	return 0;
-    } else {
-      v = scheme_put_byte_string("write-evt", rww->port,
-				 rww->str, rww->start, rww->size,
-				 2);
-      if (v < 1)
-	return 0;
-      else if (!v && rww->size)
-	return 0;
-      else {
-	scheme_set_sync_target(sinfo, scheme_make_integer(v), NULL, NULL, 0, 0);
-	return 1;
-      }
-    }
-  } else {
-    /* Read/peek */
-    long v;
-    Scheme_Object *vo;
-    char str[1];
-
-    v = scheme_get_byte_string(((rww->so.type == scheme_peek_evt_type)
-				? "peek-evt"
-				: "read-evt"),
-			       rww->port,
-			       rww->str ? rww->str : str, rww->start, rww->size,
-			       2,
-			       (rww->so.type == scheme_peek_evt_type),
-			       rww->v);
+  if (rww->v) {
+    Scheme_Write_Special_Fun ws = ((Scheme_Output_Port *)rww->port)->write_special_fun;
+    v = ws((Scheme_Output_Port *)rww->port, rww->v, 1);
     if (v) {
-      if (v == SCHEME_SPECIAL) {
-	/* At the time that this was written, no built-in ports
-	   produced specials, so this shouldn't happen. */
-	Scheme_Object *s;
-	s = scheme_get_ready_special(rww->port, NULL,
-				     rww->so.type == scheme_peek_evt_type);
-	vo = s;
-      } else if (v == EOF) {
-	vo = scheme_eof;
-      } else {
-	if (rww->str)
-	  vo = scheme_make_integer(v);
-	else
-	  vo = scheme_make_integer(((unsigned char *)str)[0]);
-      }
-
-      scheme_set_sync_target(sinfo, vo, NULL, NULL, 0, 0);
+      scheme_set_sync_target(sinfo, scheme_true, NULL, NULL, 0, 0);
       return 1;
-    } else
+    } else	
       return 0;
+  } else {
+    v = scheme_put_byte_string("write-evt", rww->port,
+			       rww->str, rww->start, rww->size,
+			       2);
+    if (v < 1)
+      return 0;
+    else if (!v && rww->size)
+      return 0;
+    else {
+      scheme_set_sync_target(sinfo, scheme_make_integer(v), NULL, NULL, 0, 0);
+      return 1;
+    }
   }
 }
 
@@ -2018,52 +2132,6 @@ static void rw_evt_wakeup(Scheme_Object *_rww, void *fds)
     else
       scheme_need_wakeup(rww->port, fds);
   }
-}
-
-Scheme_Object *scheme_get_evt_via_get(Scheme_Input_Port *port,
-					char *buffer, long offset, long size,
-					int byte_or_special)
-{
-  return make_read_write_evt(scheme_read_evt_type,
-			     (Scheme_Object *)port, NULL, 
-			     buffer, offset, size);
-}
-
-Scheme_Object *scheme_peek_evt_via_peek(Scheme_Input_Port *port, 
-					char *buffer, long offset, long size,
-					Scheme_Object *skip,
-					int byte_or_special)
-{
-  return make_read_write_evt(scheme_peek_evt_type,
-			     (Scheme_Object *)port, skip, 
-			     buffer, offset, size);
-}
-
-Scheme_Object *scheme_make_read_evt(const char *who, Scheme_Object *port,
-				    char *str, long start, long size,
-				    int peek, Scheme_Object *peek_skip,
-				    int byte_or_special)
-{
-  Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
-  
-  if (!peek) {
-    if (ip->get_string_evt_fun) {
-      Scheme_Get_String_Evt_Fun gse;
-      gse = ip->get_string_evt_fun;
-      return gse(ip, str, start, size, byte_or_special);
-    }
-  } else {
-    if (ip->peek_string_evt_fun) {
-      Scheme_Peek_String_Evt_Fun pse;
-      pse = ip->peek_string_evt_fun;
-      return pse(ip, str, start, size, peek_skip, byte_or_special);
-    }
-  }
-
-  scheme_arg_mismatch(who,
-		      "port does not support atomic reads: ",
-		      port);
-  return NULL;
 }
 
 Scheme_Object *scheme_write_evt_via_write(Scheme_Output_Port *port,
@@ -2365,6 +2433,11 @@ scheme_close_input_port (Scheme_Object *port)
     if (ip->close_fun) {
       Scheme_Close_Input_Fun f = ip->close_fun;
       f(ip);
+    }
+
+    if (ip->progress_evt) {
+      scheme_post_sema_all(ip->progress_evt);
+      ip->progress_evt = NULL;
     }
 
     if (ip->mref) {
@@ -3661,10 +3734,10 @@ _scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile)
   ip = scheme_make_input_port(file_input_port_type,
 			      fip,
 			      name,
-			      scheme_get_evt_via_get,
 			      file_get_string,
-			      scheme_peek_evt_via_peek,
 			      NULL,
+			      scheme_progress_evt_via_get,
+			      scheme_peeked_read_via_get,
 			      file_byte_ready,
 			      file_close_input,
 			      file_need_wakeup,
@@ -3837,15 +3910,18 @@ static long fd_get_string(Scheme_Input_Port *port,
       char *target;
 
       /* If no chars appear to be ready, go to sleep. */
-      if (!fd_byte_ready(port)) {
+      while (!fd_byte_ready(port)) {
 	if (nonblock > 0) {
 	  return 0;
 	}
 
 	scheme_block_until_enable_break((Scheme_Ready_Fun)fd_byte_ready,
 					(Scheme_Needs_Wakeup_Fun)fd_need_wakeup,
-					(Scheme_Object *)port, 0.0,
+					(Scheme_Object *)port,
+					0.0,
 					nonblock);
+
+	scheme_wait_input_allowed(port, nonblock);
       }
 
       if (port->closed) {
@@ -4159,10 +4235,10 @@ make_fd_input_port(int fd, Scheme_Object *name, int regfile, int win_textmode, i
   ip = scheme_make_input_port(fd_input_port_type,
 			      fip,
 			      name,
-			      scheme_get_evt_via_get,
 			      fd_get_string,
-			      scheme_peek_evt_via_peek,
 			      NULL,
+			      scheme_progress_evt_via_get,
+			      scheme_peeked_read_via_get,
 			      fd_byte_ready,
 			      fd_close_input,
 			      fd_need_wakeup,
@@ -4372,18 +4448,21 @@ osk_byte_ready (Scheme_Input_Port *port)
 
 static int osk_get_string(Scheme_Input_Port *port,
 			  char *buffer, int offset, int size,
-			  int nonblock, int *eof_on_error)
+			  int nonblock, Scheme_Object *unless_evt)
 {
   int c;
   osk_console_input *osk;
 
-  if (!osk_byte_ready(port)) {
+  while (!osk_byte_ready(port)) {
     if (nonblock > 0) {
       return 0;
     }
     
-    scheme_block_until_enable_break(osk_byte_ready, NULL, (Scheme_Object *)port, 0.0,
-				    nonblock);
+    scheme_block_until_unless(osk_byte_ready, NULL, (Scheme_Object *)port, 0.0,
+			      unless_evt,
+			      nonblock);
+
+    scheme_wait_input_allowed(port, nonblock);
   }
 
   if (port->closed) {
@@ -4457,10 +4536,10 @@ make_oskit_console_input_port()
   ip = scheme_make_input_port(oskit_console_input_port_type,
 			      osk,
 			      scheme_intern_symbol("stdin"),
-			      scheme_get_evt_via_get,
 			      osk_get_string,
-			      scheme_peek_evt_via_peek,
 			      NULL,
+			      scheme_progress_evt_via_get,
+			      scheme_get_string_unless_via_get,
 			      osk_byte_ready,
 			      osk_close_input,
 			      osk_need_wakeup,
@@ -6992,8 +7071,7 @@ static void register_traversers(void)
 #endif
 
   GC_REG_TRAV(scheme_subprocess_type, mark_subprocess);
-  GC_REG_TRAV(scheme_read_evt_type, mark_read_write_evt);
-  GC_REG_TRAV(scheme_peek_evt_type, mark_read_write_evt);
+  GC_REG_TRAV(scheme_progress_evt_type, twoptr_obj);
   GC_REG_TRAV(scheme_write_evt_type, mark_read_write_evt);
 }
 

@@ -33,6 +33,7 @@ scheme_weak_suspend_thread
 scheme_weak_resume_thread
 scheme_block_until
 scheme_block_until_enable_break
+scheme_wait_input_allowed
 scheme_in_main_thread
 scheme_cancel_sleep
 scheme_make_thread_cell
@@ -221,6 +222,7 @@ scheme_post_sema_all
 scheme_wait_sema
 scheme_char_constants
 scheme_make_channel
+scheme_make_channel_put_evt
 scheme_get_int_val
 scheme_get_unsigned_int_val
 scheme_real_to_double
@@ -298,6 +300,8 @@ scheme_char_ready
 scheme_peekc_is_ungetc
 scheme_need_wakeup
 scheme_get_byte_string
+scheme_progress_evt
+scheme_peeked_read
 scheme_get_char_string
 scheme_get_bytes
 scheme_get_ready_special
@@ -313,8 +317,8 @@ scheme_make_write_evt
 scheme_make_port_type
 scheme_make_input_port
 scheme_make_output_port
-scheme_get_evt_via_get
-scheme_peek_evt_via_peek
+scheme_progress_evt_via_get
+scheme_peeked_read_via_get
 scheme_write_evt_via_write
 scheme_write_special_evt_via_write_special
 scheme_open_input_file

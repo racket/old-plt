@@ -201,8 +201,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_poll_evt_type, "<evt>");
   set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
   set_name(scheme_alarm_type, "<alarm-evt>");
-  set_name(scheme_read_evt_type, "<read-evt>");
-  set_name(scheme_peek_evt_type, "<peek-evt>");
+  set_name(scheme_progress_evt_type, "<progress-evt>");
   set_name(scheme_write_evt_type, "<write-evt>");
   set_name(scheme_always_evt_type, "<always-evt>");
   set_name(scheme_never_evt_type, "<never-evt>");

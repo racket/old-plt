@@ -6,7 +6,8 @@
 	   (lib "class.ss")
 	   (lib "mred-sig.ss" "mred")
 	   (lib "mred.ss" "mred")
-           (lib "framework.ss" "framework"))
+           (lib "framework.ss" "framework")
+	   (lib "list.ss"))
   
   (require "sirmails.ss"
 	   "pref.ss"
@@ -39,21 +40,26 @@
   ;; exit when the last window is closed.
   
   (define prim-exit (exit-handler))
-  (define exit-count 0)
+  (define exit-eventspaces null)
   (define exit-sema (make-semaphore 1))
   (define (exit-sirmail)
-    ;; Lock is because a separate process might be calling exit
-    (semaphore-wait exit-sema)
-    (set! exit-count (sub1 exit-count))
-    (when (zero? exit-count)
-      (save-prefs)
-      (prim-exit 0))
-    (semaphore-post exit-sema))
+    (let ([evtsp (current-eventspace)])
+      ;; Lock is because a separate process might be calling exit
+      ;;  or starting up
+      (semaphore-wait exit-sema)
+      (set! exit-eventspaces (remq evtsp exit-eventspaces))
+      (when (null? exit-eventspaces)
+	(save-prefs)
+	(prim-exit 0))
+      (semaphore-post exit-sema)))
 
   ;; This function is called to start a new window:
   (define (start-new-window thunk)
-    (parameterize ([current-eventspace (make-eventspace)])
-      (set! exit-count (add1 exit-count))
+    (define evtsp (make-eventspace))
+    (parameterize ([current-eventspace evtsp])
+      (semaphore-wait exit-sema)
+      (set! exit-eventspaces (cons evtsp exit-eventspaces))
+      (semaphore-post exit-sema)
       (queue-callback
        (lambda ()
 	 (exit-handler (lambda (x) (exit-sirmail)))
@@ -151,6 +157,28 @@
      (lambda ()
        (and folders-window
             (send folders-window get-mailbox-name)))))
+
+  ;; Set Quit handler to try closing all windows --------------------
+
+  (application-quit-handler
+   (lambda ()
+     (let ([l (begin
+		(semaphore-wait exit-sema)
+		(begin0
+		 exit-eventspaces
+		 (semaphore-post exit-sema)))])
+       (for-each
+	(lambda (evtsp)
+	  (parameterize ([current-eventspace evtsp])
+	    (queue-callback
+	     (lambda ()
+	       (let ([f (get-top-level-edit-target-window)])
+		 (when (and f (f . is-a? . frame%))
+		   (when (send f can-close?)
+		     (send f on-close)
+		     (send f show #f)))))
+	     #f)))
+	l))))
 
   ;; We start by opening "Inbox" ----------------------------------------
   

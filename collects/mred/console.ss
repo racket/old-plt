@@ -30,7 +30,7 @@
       (string-append
        "MrEd version "
        (mred:version:version)
-       ", Copyright (c) 1995-96 PLT, Rice University."))
+       ", Copyright (c) 1995-1997 PLT, Rice University."))
 
     (define credits-proc
       (lambda (indent-string)

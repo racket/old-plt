@@ -58,6 +58,7 @@ static Scheme_Object *style_wxMCANVAS_AUTO_H_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_AUTO_V_SCROLL_sym = NULL;
 static Scheme_Object *style_wxINVISIBLE_sym = NULL;
 static Scheme_Object *style_wxCONTROL_BORDER_sym = NULL;
+static Scheme_Object *style_wxCOMBO_SIDE_sym = NULL;
 static Scheme_Object *style_wxTRANSPARENT_WIN_sym = NULL;
 static Scheme_Object *style_wxBORDER_sym = NULL;
 static Scheme_Object *style_wxRESIZE_CORNER_sym = NULL;
@@ -80,6 +81,8 @@ static void init_symset_style(void) {
   style_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
   wxREGGLOB(style_wxCONTROL_BORDER_sym);
   style_wxCONTROL_BORDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("control-border"));
+  wxREGGLOB(style_wxCOMBO_SIDE_sym);
+  style_wxCOMBO_SIDE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("combo"));
   wxREGGLOB(style_wxTRANSPARENT_WIN_sym);
   style_wxTRANSPARENT_WIN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
   wxREGGLOB(style_wxBORDER_sym);
@@ -105,6 +108,7 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   else if (i == style_wxMCANVAS_AUTO_V_SCROLL_sym) { result = result | wxMCANVAS_AUTO_V_SCROLL; }
   else if (i == style_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else if (i == style_wxCONTROL_BORDER_sym) { result = result | wxCONTROL_BORDER; }
+  else if (i == style_wxCOMBO_SIDE_sym) { result = result | wxCOMBO_SIDE; }
   else if (i == style_wxTRANSPARENT_WIN_sym) { result = result | wxTRANSPARENT_WIN; }
   else if (i == style_wxBORDER_sym) { result = result | wxBORDER; }
   else if (i == style_wxRESIZE_CORNER_sym) { result = result | wxRESIZE_CORNER; }

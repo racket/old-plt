@@ -45,6 +45,7 @@ static void wxSetResizeCorner(wxCanvas *c, Bool v)
 @BEGINSYMBOLS canvasStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
 @SYM "control-border" : wxCONTROL_BORDER
+@SYM "combo" : wxCOMBO_SIDE
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL
 @SYM "gl" : 0

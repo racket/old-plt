@@ -34,6 +34,7 @@
 #define  Uses_EnforcerWidget
 #define  Uses_ScrollWinWidget
 #define  Uses_CanvasWidget
+#define  Uses_ArrowWidget
 #include "widgets.h"
 
 #include "wxgl.h"
@@ -71,7 +72,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 
     // create frame
     wgt = XtVaCreateWidget
-	(name, xfwfEnforcerWidgetClass, ph->handle,
+	(name, xfwfBoardWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
@@ -82,6 +83,21 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     if (!(style & wxINVISIBLE))
       XtManageChild(wgt);
     X->frame = wgt;
+    // Create combo, if requested
+    if (style & wxCOMBO_SIDE) {
+      XtVaCreateManagedWidget
+	("choice_button", xfwfArrowWidgetClass, X->frame,
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
+	 XtNdirection,   XfwfBottom,
+	 XtNrepeat,      FALSE,
+	 XtNarrowShadow, 0,
+	 XtNframeWidth, 2,
+	 XtNframeType, XfwfRaised,
+	 XtNlocation,    "1.0 - 16 0 16 1.0",
+	 XtNhighlightThickness, 0,
+	 NULL);
+    }
     // create scrolled area
     wgt = XtVaCreateManagedWidget
 	("viewport", xfwfScrolledWindowWidgetClass, X->frame,
@@ -96,6 +112,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNspacing, 0,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
+	 XtNlocation, ((style & wxCOMBO_SIDE) ? "0 0 1.0 - 16 1.0" : "0 0 1.0 1.0"),
 	 NULL);
     X->scroll = wgt;
     // create canvas

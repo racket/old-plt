@@ -207,6 +207,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 	    + (style & wxINVISIBLE ? wxINVISIBLE : 0)
 	    + (style & wxTRANSPARENT_WIN ? wxTRANSPARENT_WIN : 0)
 	    + (style & wxCONTROL_BORDER ? wxCONTROL_BORDER : 0)
+	    + (style & wxCOMBO_SIDE ? wxCOMBO_SIDE : 0)
 	    + (style & wxRESIZE_CORNER ? wxRESIZE_CORNER : 0)), 
 	   name)
 {

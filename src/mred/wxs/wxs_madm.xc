@@ -40,6 +40,7 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @SYM "auto-vscroll" : wxMCANVAS_AUTO_V_SCROLL
 @SYM "deleted" : wxINVISIBLE
 @SYM "control-border" : wxCONTROL_BORDER
+@SYM "combo" : wxCOMBO_SIDE
 @SYM "transparent" : wxTRANSPARENT_WIN
 @SYM "border" : wxBORDER
 @SYM "resize-corner" : wxRESIZE_CORNER

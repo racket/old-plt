@@ -9,6 +9,8 @@
 
 #define sizeray(x) (sizeof(x)/sizeof(*x))
 
+#define MXMAIN "mxmain"
+
 #define MX_PRIM_DECL(f) Scheme_Object *f(int,Scheme_Object **)
 
 #define MX_DEFAULT_WIDTH  (400)

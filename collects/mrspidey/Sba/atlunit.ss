@@ -137,14 +137,14 @@
     (match atlunit
       [(and atlunit ($ atlunit ui))
        (assert (or (eq? ui #f) (atunit? ui)))
-       (when (and ui partial-import-list)
+       #| (when (and ui partial-import-list)
 	 (pretty-debug-unit `(ui ,ui partial-import-list ,partial-import-list))
-	 (mrspidey:error 
+	  (mrspidey:error 
 	  "Annotated lazy unit invoked more than once"
 	  (match atlunit
 	    [($ atlunit-unit _ _ exp) exp]
 	    [($ atlunit-cmpd _ exp) exp]
-	    [($ atlunit-reference _ exp) exp])))
+	    [($ atlunit-reference _ exp) exp]))) |#
        (or ui
 	   (let* ( [fn
 		    (cond

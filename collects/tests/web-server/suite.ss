@@ -215,7 +215,7 @@
 	   [forbidden-headers (append usual-headers (list forbidden-content-length auth-header))]
 	   [okay-headers (append usual-headers (list okay-content-length))]
 ;	   [authorization (list (format "authorization: Basic ~a" (base64-encode "bubba:bbq")))]
-           [authorization (list (bytes-append #"authorization: Basic " (base64-encode #"bubba:bbq")))]
+           [authorization (list (bytes->string/utf-8 (bytes-append #"authorization: Basic " (base64-encode #"bubba:bbq"))))]
            )
       (or (problem-with-url? forbidden-file-path
 			     forbidden-headers
@@ -293,6 +293,9 @@
 	   [servlet-error-path (build-path web-root "conf" "servlet-error.html")]
            [servlet-error-headers (append usual-headers (list (content-length-header servlet-error-path)))])
       (or (problem-with-url? not-found-path
+			     not-found-headers
+			     (local-url port "/conf/some-file-name-that-is-not-there.hmtl"))
+          (problem-with-url? not-found-path
 			     not-found-headers
 			     (local-url port "some-file-name-that-is-not-there.hmtl"))
 	  (problem-with-url? not-found-path

@@ -76,20 +76,21 @@
 			       [no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
 			   (hash-table-put! ht2 constant unknown-word)
 			   (unless (unbox already-printed)
-			     (cond
-			       [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
-				=>
-				(lambda (x)
-				  (let ([ent (car x)])
-				    (set-car! (cdr ent) (+ (cadr ent) 1))))]
-			       [else
-				(set! warning-table (cons (list no-warning-cache-key
-								0
-								(sc-language-name sc1)
-								constant
-								(sc-language-name sc2)
-								unknown-word)
-							  warning-table))]))))))))])
+                             (when (getenv "STRINGCONSTANTS")
+                               (cond
+                                 [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
+                                  =>
+                                  (lambda (x)
+                                    (let ([ent (car x)])
+                                      (set-car! (cdr ent) (+ (cadr ent) 1))))]
+                                 [else
+                                  (set! warning-table (cons (list no-warning-cache-key
+                                                                  0
+                                                                  (sc-language-name sc1)
+                                                                  constant
+                                                                  (sc-language-name sc2)
+                                                                  unknown-word)
+                                                            warning-table))])))))))))])
 
           (for-each (lambda (x) 
                       (check-one-way x first-string-constant-set)

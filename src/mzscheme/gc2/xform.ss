@@ -554,7 +554,7 @@
 
 (define skipping? #f)
 
-(define (top-level e where)
+(define (top-level e where can-drop-vars?)
   (cond
    [(end-skip? e)
     (set! skipping? #f)
@@ -574,7 +574,7 @@
 
    [(access-modifier? e)
     ;; public, private, etc.
-    (list* (car e) (cadr e) (top-level (cddr e) where))]
+    (list* (car e) (cadr e) (top-level (cddr e) where can-drop-vars?))]
    [(friend? e)
     ;; C++ friend annotation
     e]
@@ -591,7 +591,7 @@
 	      (tok-line body-v)
 	      (tok-file body-v)
 	      (seq-close body-v)
-	      (list->seq (process-top-level (seq->list (seq-in body-v)) where))))
+	      (list->seq (process-top-level (seq->list (seq-in body-v)) where can-drop-vars?))))
 	   (cdddr e))]
    
    [(typedef? e)
@@ -608,7 +608,8 @@
     (let ([name (register-proto-information e)])
       (when show-info?
 	(printf "/* PROTO ~a */~n" name))
-      (if (> (hash-table-get used-symbols name) 1)
+      (if (or (> (hash-table-get used-symbols name) 1)
+	      (ormap (lambda (v) (eq? (tok-n v) 'virtual)) e))  ; can't drop virtual methods!
 	  (if palm?
 	      (add-segment-label name e)
 	      e)
@@ -670,7 +671,8 @@
 	  (convert-function e)))]
    [(var-decl? e)
     (when show-info? (printf "/* VAR */~n"))
-    (if (simple-unused-def? e)
+    (if (and can-drop-vars?
+	     (simple-unused-def? e))
 	null
 	(begin
 	  (when pgc?
@@ -1107,7 +1109,7 @@
       (prototyped null)
       (top-vars null)
       (let* ([body-v (list-ref e body-pos)]
-	     [body-e (process-top-level (seq->list (seq-in body-v)) ".h")]
+	     [body-e (process-top-level (seq->list (seq-in body-v)) ".h" #f)]
 	     [methods (prototyped)])
 	;; Save prototype list, but remove constructor and statics:
 	(set-c++-class-prototyped! cl (filter (lambda (x)
@@ -2612,12 +2614,12 @@
 
 ; (print-it e 0 #t) (exit)
 
-(define (process-top-level e init-file)
+(define (process-top-level e init-file can-drop-vars?)
   (foldl-statement
    e
    #f
    (lambda (sube l)
-     (let* ([sube (top-level sube init-file)])
+     (let* ([sube (top-level sube init-file can-drop-vars?)])
        (append l sube)))
    null))
 
@@ -2631,7 +2633,7 @@
    (lambda (sube where)
      (let* ([where (or (tok-file (car sube))
 		       where)]
-	    [sube (top-level sube where)])
+	    [sube (top-level sube where #t)])
        (print-it sube 0 #t)
        where))
    #f))

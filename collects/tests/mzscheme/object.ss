@@ -292,7 +292,91 @@
 (err/rt-test (color-fish-color picky))
 (err/rt-test (color-fish-color 6))
 
-(err/rt-test (class color-fish% (override die) (define die (lambda () 'x))) exn:object?)
+;; ----------------------------------------
+;;  Final and inner
+
+;; Can't actually override `final', but it might call `inner'...
+
+;; color-fish%'s die doesn't call inner:
+(test (void) 
+      'no-override-final
+      (send (new (class color-fish% (override die) (define die (lambda () 'x)) (super-new))) die))
+
+;; Can't use inner without a `final' here or in superclass
+(syntax-test #'(class object% (define/public (f x) x) (inner [inner-f f])))
+(err/rt-test (class object% (inner [inner-f f])) exn:object?)
+(err/rt-test (class (class object% (define/public (f x) x)) (inner [inner-f f])) exn:object?)
+
+(define bfoo-jgoo%
+  (class object%
+    (define/public-final (foo x)
+      (inner-foo (lambda () (list 1 x)) (list 2 x)))
+    (inner [inner-foo foo])
+    (define/public (goo x)
+      (list 3 x))
+    (super-new)))
+
+(define bjfoo-jbgoo% 
+  (class bfoo-jgoo%
+    (define/override (foo x) (list 4 x))
+    (rename [super-goo goo])
+    (inner [inner-goo goo])
+    (define/override-final (goo x) 
+      (let ([y (super-goo x)])
+	(inner-goo (lambda () (list 5 y)) (list 6 y))))
+    (rename [super-foo foo])
+    (define/public (hoo y) (super-foo (list 7 y)))
+    (super-new)))
+
+(define bjjfoo-jbjgoo% 
+  (class bjfoo-jbgoo% 
+    (define/override (foo x)
+      (list 8 x))
+    (define/override (goo x) 
+      (list 9 x))
+    (super-new)))
+
+(define bjjbfoo-jbjjgoo% 
+  (class bjjfoo-jbjgoo% 
+    (rename [super-foo foo])
+    (define/override-final (foo x) 
+      (let ([z (super-foo (list 10 x))])
+	(inner-foo (lambda () (list 11 z)) (list 12 z))))
+    (inner [inner-foo foo])
+    (rename [super-goo goo])
+    (define/override (goo x) 
+      (super-goo (list 13 x)))
+    (super-new)))
+
+(define bjjbjfoo-jbjjbgoo% 
+  (class bjjbfoo-jbjjgoo% 
+    (define/override (foo x) 
+      (list 14 x))
+    (rename [super-goo goo])
+    (define/override-final (goo x) 
+      (super-goo (list 15 x)))
+    (super-new)))
+
+(test '(1 12) 'bjt (send (new bfoo-jgoo%) foo 12))
+(test '(3 13) 'bjt (send (new bfoo-jgoo%) goo 13))
+
+(test '(4 (2 14)) 'bjt (send (new bjfoo-jbgoo%) foo 14))
+(test '(5 (3 15)) 'bjt (send (new bjfoo-jbgoo%) goo 15))
+(test '(4 (2 (7 16))) 'bjt (send (new bjfoo-jbgoo%) hoo 16))
+
+(test '(8 (2 17)) 'bjt (send (new bjjfoo-jbjgoo%) foo 17))
+(test '(9 (6 (3 18))) 'bjt (send (new bjjfoo-jbjgoo%) goo 18))
+(test '(8 (2 (7 19))) 'bjt (send (new bjjfoo-jbjgoo%) hoo 19))
+
+(test '(11 (8 (10 (2 20)))) 'bjt (send (new bjjbfoo-jbjjgoo%) foo 20))
+(test '(9 (13 (6 (3 21)))) 'bjt (send (new bjjbfoo-jbjjgoo%) goo 21))
+(test '(11 (8 (10 (2 (7 22))))) 'bjt (send (new bjjbfoo-jbjjgoo%) hoo 22))
+
+(test '(14 (12 (8 (10 (2 23))))) 'bjt (send (new bjjbjfoo-jbjjbgoo%) foo 23))
+(test '(9 (13 (15 (6 (3 24))))) 'bjt (send (new bjjbjfoo-jbjjbgoo%) goo 24))
+(test '(14 (12 (8 (10 (2 (7 25)))))) 'bjt (send (new bjjbjfoo-jbjjbgoo%) hoo 25))
+
+;; ----------------------------------------
 
 (define rest-arg-fish%
   (class fish%

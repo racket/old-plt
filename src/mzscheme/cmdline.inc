@@ -256,8 +256,8 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 	  Scheme_Object *a[1], *m, *fn;
 	  
 	  m = scheme_eval_string("main", fa->global_env);
-	  fn = scheme_make_string(fa->evals_and_loads[i]);
-	  SCHEME_SET_STRING_IMMUTABLE(fn);
+	  fn = scheme_make_byte_string(fa->evals_and_loads[i]);
+	  SCHEME_SET_BYTE_STRING_IMMUTABLE(fn);
 	  a[0] = scheme_make_pair(fn, scheme_vector_to_list(fa->main_args));
 	  (void)scheme_apply(m, 1, a);
 	} else {
@@ -867,8 +867,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
   sch_argv = scheme_make_vector(argc, scheme_null);
   for (i = 0; i < argc; i++) {
     Scheme_Object *so;
-    so = scheme_make_string(argv[i]);
-    SCHEME_SET_STRING_IMMUTABLE(so);
+    so = scheme_make_byte_string(argv[i]);
+    SCHEME_SET_BYTE_STRING_IMMUTABLE(so);
     SCHEME_VEC_ELS(sch_argv)[i] = so;
   }
   if (argc)

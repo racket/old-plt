@@ -208,8 +208,6 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_string_converter_type, "<string-converter>");
 
-  set_name(scheme_reserved3_type, "<reserved3>");
-
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
 }

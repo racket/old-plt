@@ -157,33 +157,44 @@ MK_SCH_TRIG(SCH_COS, cos)
 /*                           number parsing                               */
 /*========================================================================*/
 
-static Scheme_Object *read_special_number(const char *str, int pos)
+static int u_strcmp(mzchar *s, char *t)
 {
-  if ((str[pos] == '-' || str[pos] == '+') && isalpha((unsigned char)str[pos + 1])) {
-    char s[7];
+  int i;
+
+  for (i = 0; s[i] && (s[i] == t[i]); i++) {
+  }
+  if (s[i] || t[i])
+    return 1;
+  return 0;
+}
+
+static Scheme_Object *read_special_number(const mzchar *str, int pos)
+{
+  if ((str[pos] == '-' || str[pos] == '+') && scheme_isalpha(str[pos + 1])) {
+    mzchar s[7];
     int i;
 
     for (i = 0; i < 6; i++) {
-      s[i] = scheme_tolower((unsigned char)str[i + pos]);
+      s[i] = scheme_tolower(str[i + pos]);
     }
     s[i] = 0;
 
-    if (!strcmp(s, infinity_str)) {
+    if (!u_strcmp(s, infinity_str)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
       return scheme_single_inf_object;
 #else
       return scheme_inf_object;
 #endif
     }
-    else if (!strcmp(s, minus_infinity_str)) {
+    else if (!u_strcmp(s, minus_infinity_str)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
       return scheme_single_minus_inf_object;
 #else
       return scheme_minus_inf_object;
 #endif
     }
-    else if (!strcmp(s, not_a_number_str)
-	     || !strcmp(s, other_not_a_number_str)) {
+    else if (!u_strcmp(s, not_a_number_str)
+	     || !u_strcmp(s, other_not_a_number_str)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
       return scheme_single_nan_object;
 #else      
@@ -202,6 +213,7 @@ static Scheme_Object *read_special_number(const char *str, int pos)
 /* We'd like to use strtod() for the common case, but we don't trust
    it entirely. */
 #define MAX_FAST_FLOATREAD_LEN 50
+static char ffl_buf[MAX_FAST_FLOATREAD_LEN + 1];
 
 /* Exponent threshold for obvious infinity. Must be at least
    max(MAX_FAST_FLOATREAD_LEN, MAX_FLOATREAD_PRECISION_DIGITS) more
@@ -321,7 +333,7 @@ static Scheme_Object *CHECK_SINGLE(Scheme_Object *v, int s)
 # define CHECK_SINGLE(v, s) v
 #endif
 
-Scheme_Object *scheme_read_number(const char *str, long len,
+Scheme_Object *scheme_read_number(const mzchar *str, long len,
 				  int is_float, 
 				  int is_not_float,
 				  int decimal_means_float,
@@ -343,7 +355,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 #endif
 
   if (len < 0)
-    len = strlen(str);
+    len = scheme_char_strlen(str);
 
   delta = 0;
 
@@ -427,21 +439,29 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   /* Look for <special>+...i and ...<special>i */
   if ((len-delta > 7) && str[len-1] == 'i') {
     Scheme_Object *special;
-    char *s2;
+    mzchar *s2;
     
     /* Try <special>+...i */
     special = read_special_number(str, delta);
     if (special) {
-      s2 = scheme_malloc_atomic(len - delta - 6 + 4 + 1);
-      memcpy(s2, "+0.0", 4);
-      memcpy(s2 + 4, str + delta + 6, len - delta - 5);
+      s2 = (mzchar *)scheme_malloc_atomic((len - delta - 6 + 4 + 1) * sizeof(mzchar));
+      s2[0] = '+';
+      s2[1] = '0';
+      s2[2] = '.';
+      s2[3] = '0';
+      memcpy(s2 + 4, str + delta + 6, (len - delta - 5) * sizeof(mzchar));
     } else {
       /* Try ...<special>i: */
       special = read_special_number(str, len - 7);
       if (special) {
-	s2 = scheme_malloc_atomic(len - delta - 6 + 4 + 1);
-	memcpy(s2, str + delta, len - delta - 7);
-	memcpy(s2 + len - delta - 7, "+0.0i", 6);
+	s2 = (mzchar *)scheme_malloc_atomic((len - delta - 6 + 4 + 1) * sizeof(mzchar));
+	memcpy(s2, str + delta, (len - delta - 7) * sizeof(mzchar));
+	s2[len - delta - 7] = '+';
+	s2[len - delta - 7 + 1] = '0';
+	s2[len - delta - 7 + 2] = '.';
+	s2[len - delta - 7 + 3] = '0';
+	s2[len - delta - 7 + 4] = 'i';
+	s2[len - delta - 7 + 5] = 0;
 	special = scheme_bin_mult(special, scheme_plus_i);
       } else
 	s2 = NULL;
@@ -479,7 +499,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   /* Look for <special>@... and ...@<special> */
   if ((len - delta > 7) && ((str[delta+6] == '@') || (str[len - 7] == '@'))) {
     Scheme_Object *special;
-    char *s2;
+    mzchar *s2;
     int spec_mag = 0;
 
     /* Try <special>@... */
@@ -488,8 +508,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     else
       special = NULL;
     if (special) {
-      s2 = scheme_malloc_atomic(len - delta - 6);
-      memcpy(s2, str + delta + 7, len - delta - 6);
+      s2 = (mzchar *)scheme_malloc_atomic((len - delta - 6) * sizeof(mzchar));
+      memcpy(s2, str + delta + 7, (len - delta - 6) * sizeof(mzchar));
       spec_mag = 1;
     } else {
       if (str[len - 7] == '@')
@@ -498,8 +518,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	special = NULL;
       
       if (special) {
-	s2 = scheme_malloc_atomic(len - delta - 6);
-	memcpy(s2, str + delta, len - delta - 7);
+	s2 = (mzchar *)scheme_malloc_atomic((len - delta - 6) * sizeof(mzchar));
+	memcpy(s2, str + delta, (len - delta - 7) * sizeof(mzchar));
 	s2[len - delta - 7] = 0;
       } else
 	s2 = NULL;
@@ -561,6 +581,9 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			   || (ch == 'f') || (ch == 'F') \
 			   || (ch == 'd') || (ch == 'D') \
 			   || (ch == 'l') || (ch == 'L'))
+
+#define isAdigit(ch) ((ch >= '0') && (ch <= '9'))
+
 
 #define isbaseNdigit(N, ch) (((ch >= 'a') && (ch <= ('a' + N - 11))) \
                              || ((ch >= 'A') && (ch <= ('A' + N - 11))))
@@ -628,19 +651,19 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
   if (has_i) {
     Scheme_Object *n1, *n2;
-    char *first, *second;
+    mzchar *first, *second;
     int fdbz = 0, sdbz = 0;
 
     if (has_sign != delta) {
-      first = (char *)scheme_malloc_atomic(has_sign - delta + 1);
-      memcpy(first, str + delta, has_sign - delta);
+      first = (mzchar *)scheme_malloc_atomic((has_sign - delta + 1) * sizeof(mzchar));
+      memcpy(first, str + delta, (has_sign - delta) * sizeof(mzchar));
       first[has_sign - delta] = 0;
     } else
       first = NULL;
 
     if (has_i - has_sign > 1) {
-      second = (char *)scheme_malloc_atomic(has_i - has_sign + 1);
-      memcpy(second, str + has_sign, has_i - has_sign);
+      second = (mzchar *)scheme_malloc_atomic((has_i - has_sign + 1) * sizeof(mzchar));
+      memcpy(second, str + has_sign, (has_i - has_sign) * sizeof(mzchar));
       second[has_i - has_sign] = 0;
     } else
       second = NULL;
@@ -711,20 +734,20 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   if (has_at) {
     Scheme_Object *n1, *n2;
     double d1, d2, r1, r2;
-    char *first;
-    const char *second;
+    mzchar *first;
+    const mzchar *second;
     int fdbz = 0, sdbz = 0;
 
-    first = (char *)scheme_malloc_atomic(has_at - delta + 1);
-    memcpy(first, str + delta, has_at - delta);
+    first = (mzchar *)scheme_malloc_atomic((has_at - delta + 1) * sizeof(mzchar));
+    memcpy(first, str + delta, (has_at - delta) * sizeof(mzchar));
     first[has_at - delta] = 0;
 
 #ifdef MZ_PRECISE_GC
     {
       /* Can't pass mis-aligned pointer to scheme_read_number. */
       int slen = len - (has_at + 1) + 1;
-      second = (char *)scheme_malloc_atomic(slen);
-      memcpy((char *)second, str + has_at + 1, slen);
+      second = (mzchar *)scheme_malloc_atomic(slen * sizeof(mzchar));
+      memcpy((mzchar *)second, str + has_at + 1, slen * sizeof(mzchar));
     }
 #else
     second = str + has_at + 1;
@@ -886,7 +909,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
       has_hash = 1;
       has_hash_since_slash = 1;
-    } else if (!isdigit(ch) && !((radix > 10) && isbaseNdigit(radix, ch))) {
+    } else if (!isAdigit(ch) && !((radix > 10) && isbaseNdigit(radix, ch))) {
       if (has_decimal) {
 	if (report)
 	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
@@ -941,8 +964,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       && (has_decimal || has_expt)
       && (len <= MAX_FAST_FLOATREAD_LEN)) {
     double d;
-    const char *cpy;
-    char *ptr;
+    GC_CAN_IGNORE char *ptr;
 
     if (has_expt && !(str[has_expt + 1])) {
       if (report)
@@ -952,24 +974,29 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       return scheme_false;
     }
 
+    {
+      int k;
+      for (k = 0; k < len; k++) {
+	if (str[k + delta] > 127)
+	  ffl_buf[k] = '?';
+	else
+	  ffl_buf[k] = str[k + delta];
+      }
+      ffl_buf[len] = 0;
+    }
+
     if (has_expt && (str[has_expt] != 'e' && str[has_expt] != 'E')) {
-      char *str2;
-      str2 = (char *)scheme_malloc_atomic(len + 1);
-      memcpy(str2, str, len + 1);
-      str2[has_expt] = 'e';
-      cpy = str2;
-    } else
-      cpy = str;
-    d = STRTOD(cpy XFORM_OK_PLUS delta, &ptr);
-    if ((ptr XFORM_OK_MINUS cpy) < len) {
-      ptr = NULL; /* because not precise-gc aligned */
+      ffl_buf[has_expt - delta] = 'e';
+    }
+    d = STRTOD(ffl_buf, &ptr);
+
+    if ((ptr XFORM_OK_MINUS ffl_buf) < len) {
       if (report)
 	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			"read-number: bad decimal number %t",
 			str, len);
       return scheme_false;
     } 
-    ptr = NULL; /* because not precise-gc aligned */
 
     if (!saw_nonzero_digit) {
       /* Assert: d = 0.0 or -0.0 */
@@ -1005,7 +1032,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     int result_is_float= (is_float || (!is_not_float && decimal_means_float));
 
     if (has_expt) {
-      char *substr;
+      mzchar *substr;
 
       if (!str[has_expt + 1]) {
 	if (report)
@@ -1019,11 +1046,11 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       {
 	/* Can't pass misaligned pointer to scheme_read_bignum: */
 	int slen = len - (has_expt + 1) + 1;
-	substr = (char *)scheme_malloc_atomic(slen);
-	memcpy(substr, str + has_expt + 1, slen);
+	substr = (mzchar *)scheme_malloc_atomic(slen * sizeof(mzchar));
+	memcpy(substr, str + has_expt + 1, slen * sizeof(mzchar));
       }
 #else
-      substr = (char *)str + has_expt + 1;
+      substr = (mzchar *)str + has_expt + 1;
 #endif
 
       exponent = scheme_read_bignum(substr, 0, radix);
@@ -1042,11 +1069,11 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     if (has_slash) {
       /* Mantissa is a fraction. */
-      char *s;
+      mzchar *s;
       int dbz;
       
-      s = (char *)scheme_malloc_atomic(has_expt - delta + 1);
-      memcpy(s, str + delta, has_expt - delta);
+      s = (mzchar *)scheme_malloc_atomic((has_expt - delta + 1) * sizeof(mzchar));
+      memcpy(s, str + delta, (has_expt - delta) * sizeof(mzchar));
       s[has_expt - delta] = 0;
       
       mantissa = scheme_read_number(s, has_expt - delta, 
@@ -1074,16 +1101,16 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
     } else {
       /* Mantissa is not a fraction. */
-      char *digits;
+      mzchar *digits;
       int extra_power = 0, dcp = 0, num_ok;
 
-      digits = (char *)scheme_malloc_atomic(has_expt - delta + 1);
+      digits = (mzchar *)scheme_malloc_atomic((has_expt - delta + 1) * sizeof(mzchar));
 
       i = delta;
       if (str[i] == '+' || str[i] == '-')
 	digits[dcp++] = str[i++];
 
-      for (; isdigit((unsigned char)str[i]) || ((radix > 10) && isbaseNdigit(radix, str[i])); i++) {
+      for (; isAdigit(str[i]) || ((radix > 10) && isbaseNdigit(radix, str[i])); i++) {
 	digits[dcp++] = str[i];
       }
 
@@ -1098,7 +1125,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '.') {
 	i++;
 	if (num_ok)
-	  for (; isdigit((unsigned char)str[i]) || ((radix > 10) && isbaseNdigit(radix, str[i])); i++) {
+	  for (; isAdigit(str[i]) || ((radix > 10) && isbaseNdigit(radix, str[i])); i++) {
 	    digits[dcp++] = str[i];
 	    extra_power++;
 	  }
@@ -1110,7 +1137,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
 
       if ((str[i] && (!has_expt || i != has_expt))
-	  || !dcp || (dcp == 1 && !(isdigit((unsigned char)digits[0])
+	  || !dcp || (dcp == 1 && !(isAdigit(digits[0])
 				    || ((radix > 10) && isbaseNdigit(radix, digits[0]))))) {
 	if (report)
 	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
@@ -1190,10 +1217,10 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   
   if (has_slash) {
     Scheme_Object *n1, *n2;
-    char *first;
+    mzchar *first;
 
-    first = (char *)scheme_malloc_atomic(has_slash - delta + 1);
-    memcpy(first, str + delta, has_slash - delta);
+    first = (mzchar *)scheme_malloc_atomic((has_slash - delta + 1) * sizeof(mzchar));
+    memcpy(first, str + delta, (has_slash - delta) * sizeof(mzchar));
     first[has_slash - delta] = 0;
 
     n1 = scheme_read_number(first, has_slash - delta,
@@ -1207,17 +1234,17 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       return scheme_false;
 
     {
-      char *substr;
+      mzchar *substr;
 
 #ifdef MZ_PRECISE_GC
       {
 	/* Can't pass misaligned pointer to scheme_read_bignum: */
 	int slen = len - (has_slash + 1) + 1;
-	substr = (char *)scheme_malloc_atomic(slen);
-	memcpy(substr, str + has_slash + 1, slen);
+	substr = (mzchar *)scheme_malloc_atomic(slen * sizeof(mzchar));
+	memcpy(substr, str + has_slash + 1, slen * sizeof(mzchar));
       }
 #else
-      substr = (char *)str + has_slash + 1;
+      substr = (mzchar *)str + has_slash + 1;
 #endif
 
       n2 = scheme_read_number(substr, len - has_slash - 1,
@@ -1312,8 +1339,7 @@ static Scheme_Object *
 string_to_number (int argc, Scheme_Object *argv[])
 {
   long radix;
-  long len, blen;
-  char *str, buf[24];
+  long len;
   mzchar *mzstr;
   int decimal_inexact, div_by_zero = 0;
   Scheme_Object *v, *dbz_result;
@@ -1343,14 +1369,8 @@ string_to_number (int argc, Scheme_Object *argv[])
 
   mzstr = SCHEME_CHAR_STR_VAL(argv[0]);
   len = SCHEME_CHAR_STRTAG_VAL(argv[0]);
-  blen = scheme_utf8_encode_all(mzstr, len, NULL);
-  if (blen <= 24)
-    str = buf;
-  else
-    str = (char *)scheme_malloc_atomic(blen);
-  scheme_utf8_encode_all(mzstr, len, str);
 
-  v = scheme_read_number(str, blen, 
+  v = scheme_read_number(mzstr, len, 
 			 0, 0, decimal_inexact,
 			 radix, 0, NULL, &div_by_zero,
 			 0, NULL, 0, 0, 0, 0,
@@ -1387,7 +1407,7 @@ static char *double_to_string (double d, int alloc)
     digits = 14;
     while (digits < 30) {
       double check;
-      char *ptr;
+      GC_CAN_IGNORE char *ptr;
 
       sprintf(buffer, "%.*g", digits, d);
 

@@ -4935,7 +4935,7 @@ static Scheme_Config *make_initial_config(void)
 
   {
     Scheme_Object *s;
-    s = scheme_make_immutable_sized_string("", 0, 0);
+    s = scheme_make_immutable_sized_utf8_string("", 0);
     scheme_set_param(config, MZCONFIG_LOCALE, s);
   }
 
@@ -4962,7 +4962,7 @@ static Scheme_Config *make_initial_config(void)
 
   {
     Scheme_Object *s;
-    s = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+    s = scheme_make_byte_string(scheme_os_getcwd(NULL, 0, NULL, 1));
     scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, s);
   }
 
@@ -5351,7 +5351,7 @@ void scheme_security_check_file(const char *who, const char *filename, int guard
       l = scheme_make_immutable_pair(read_symbol, l);
 
     a[0] = scheme_intern_symbol(who);
-    a[1] = (filename ? scheme_make_immutable_sized_string((char *)filename, -1, 1) : scheme_false);
+    a[1] = (filename ? scheme_make_immutable_sized_byte_string((char *)filename, -1, 1) : scheme_false);
     a[2] = l;
 
     while (sg->parent) {
@@ -5379,7 +5379,7 @@ void scheme_security_check_network(const char *who, const char *host, int port, 
     }
 
     a[0] = scheme_intern_symbol(who);
-    a[1] = (host ? scheme_make_immutable_sized_string((char *)host, -1, 1) : scheme_false);
+    a[1] = (host ? scheme_make_immutable_sized_byte_string((char *)host, -1, 1) : scheme_false);
     a[2] = ((port < 1) ? scheme_false : scheme_make_integer(port));
     a[3] = (client ? client_symbol : server_symbol);
 

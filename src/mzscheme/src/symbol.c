@@ -313,6 +313,15 @@ scheme_make_exact_symbol(const char *name, unsigned int len)
 }
 
 Scheme_Object *
+scheme_make_exact_char_symbol(const mzchar *name, unsigned int len)
+{
+  char buf[64], *bs;
+  long blen;
+  bs = scheme_utf8_encode_to_buffer_len(name, len, buf, 64, &blen);
+  return make_a_symbol(bs, blen, 0x1);
+}
+
+Scheme_Object *
 scheme_intern_exact_symbol_in_table(Scheme_Bucket_Table *symbol_table, int kind, const char *name, unsigned int len)
 {
   Scheme_Object *sym;
@@ -339,6 +348,15 @@ scheme_intern_exact_parallel_symbol(const char *name, unsigned int len)
   return scheme_intern_exact_symbol_in_table(scheme_parallel_symbol_table, 0x2, name, len);
 }
 
+Scheme_Object *
+scheme_intern_exact_char_symbol(const mzchar *name, unsigned int len)
+{
+  char buf[64], *bs;
+  long blen;
+  bs = scheme_utf8_encode_to_buffer_len(name, len, buf, 64, &blen);
+  return scheme_intern_exact_symbol_in_table(scheme_symbol_table, 0, bs, blen);
+}
+
 #define MAX_SYMBOL_SIZE 256
 
 Scheme_Object *
@@ -356,9 +374,9 @@ scheme_intern_symbol(const char *name)
       naya = on_stack;
 
     for (i = 0; i < len; i++) {
-      int c = name[i];
+      int c = ((unsigned char *)name)[i];
 
-      c = mz_portable_tolower(c);
+      c = scheme_tolower(c);
 
       naya[i] = c;
     }
@@ -393,6 +411,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, unsigned int *length
     memcpy(buf, SCHEME_SYM_VAL(sym), len + 1);
   } else
     s = scheme_symbol_val(sym);
+  
 
 #define isSpecial(ch) ((ch == '(') || (ch == '[') || (ch == '{')       \
 		       || (ch == ')') || (ch == ']') || (ch == '}')    \
@@ -437,10 +456,14 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, unsigned int *length
   total_length = 0;
 
   if (!has_space && !has_special && (!pipe_quote || !has_pipe) && !has_upper) {
+    mzchar cbuf[100], *cs;
+    long clen;
     dz = 0;
-    if (digit_start
+    cs = scheme_utf8_decode_to_buffer_len(s, len, cbuf, 100, &clen);
+    if (cs
+	&& digit_start
 	&& !(flags & SCHEME_SNF_FOR_TS)
-	&& (SCHEME_TRUEP(scheme_read_number(s, len, 0, 0, 1, 10, 0, NULL, &dz, 1, NULL, 0, 0, 0, 0, NULL))
+	&& (SCHEME_TRUEP(scheme_read_number(cs, clen, 0, 0, 1, 10, 0, NULL, &dz, 1, NULL, 0, 0, 0, 0, NULL))
 	    || dz)) {
       /* Need quoting: */
       if (pipe_quote)
@@ -519,19 +542,19 @@ symbol_p_prim (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 string_to_symbol_prim (int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_STRINGP(argv[0]))
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
     scheme_wrong_type("string->symbol", "string", 0, argc, argv);
-  return scheme_intern_exact_symbol(SCHEME_STR_VAL(argv[0]),
-				    SCHEME_STRTAG_VAL(argv[0]));
+  return scheme_intern_exact_char_symbol(SCHEME_CHAR_STR_VAL(argv[0]),
+					 SCHEME_CHAR_STRTAG_VAL(argv[0]));
 }
 
 static Scheme_Object *
 string_to_uninterned_symbol_prim (int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_STRINGP(argv[0]))
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
     scheme_wrong_type("string->uninterned-symbol", "string", 0, argc, argv);
-  return scheme_make_exact_symbol(SCHEME_STR_VAL(argv[0]),
-				  SCHEME_STRTAG_VAL(argv[0]));
+  return scheme_make_exact_char_symbol(SCHEME_CHAR_STR_VAL(argv[0]),
+				       SCHEME_CHAR_STRTAG_VAL(argv[0]));
 }
 
 static Scheme_Object *
@@ -542,8 +565,7 @@ symbol_to_string_prim (int argc, Scheme_Object *argv[])
 
   return scheme_make_sized_offset_utf8_string((char *)(argv[0]),
 					      SCHEME_SYMSTR_OFFSET(argv[0]),
-					      SCHEME_SYM_LEN(argv[0]),
-					      1);
+					      SCHEME_SYM_LEN(argv[0]));
 }
 
 static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
@@ -560,9 +582,11 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
     scheme_wrong_type("gensym", "symbol or string", 0, argc, argv);
 
   if (r) {
-    if (SCHEME_STRINGP(r)) {
-      r = scheme_char_string_to_byte_string(r);
-      str = SCHEME_STR_VAL(r);
+    char buf[64];
+    if (SCHEME_CHAR_STRINGP(r)) {
+      str = scheme_utf8_encode_to_buffer(SCHEME_CHAR_STR_VAL(r),
+					 SCHEME_CHAR_STRTAG_VAL(r),
+					 buf, 64);
     } else
       str = SCHEME_SYM_VAL(r);
     sprintf(buffer, "%.80s%d", str, gensym_counter++);

@@ -45,6 +45,7 @@ static Scheme_Object *char_alphabetic (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_numeric (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_whitespace (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_symbolic (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_graphic (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_blank (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_control (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_punctuation (int argc, Scheme_Object *argv[]);
@@ -57,11 +58,14 @@ static Scheme_Object *char_upcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_downcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_titlecase (int argc, Scheme_Object *argv[]);
 
+void scheme_init_portable_case(void)
+{
+  init_uchar_table();
+}
+
 void scheme_init_char (Scheme_Env *env)
 {
   int i;
-
-  init_uchar_table();
 
   REGISTER_SO(scheme_char_constants);
 
@@ -145,6 +149,11 @@ void scheme_init_char (Scheme_Env *env)
   scheme_add_global_constant("char-symbolic?", 
 			     scheme_make_folding_prim(char_symbolic, 
 						      "char-symbolic?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("char-graphic?", 
+			     scheme_make_folding_prim(char_graphic, 
+						      "char-graphic?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-whitespace?", 
@@ -285,6 +294,7 @@ GEN_CHAR_TEST(char_blank, "char-blank?", scheme_isblank)
 GEN_CHAR_TEST(char_control, "char-iso-control?", scheme_isspace)
 GEN_CHAR_TEST(char_punctuation, "char-punctuation?", scheme_ispunc)
 GEN_CHAR_TEST(char_symbolic, "char-symbolic?", scheme_issymbol)
+GEN_CHAR_TEST(char_graphic, "char-graphic?", scheme_isgraphic)
 GEN_CHAR_TEST(char_upper_case, "char-upper-case?", scheme_isupper)
 GEN_CHAR_TEST(char_lower_case, "char-lower-case?", scheme_islower)
 GEN_CHAR_TEST(char_title_case, "char-title-case?", scheme_istitle)

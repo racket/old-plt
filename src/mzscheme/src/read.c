@@ -793,14 +793,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  }
 	case 'r':
 	  {
-	    int cnt = 0, is_byte = 1;
+	    int cnt = 0, is_byte = 0;
 
 	    ch = scheme_getc_special_ok(port);
 	    if (ch == 'x') {
 	      ch = scheme_getc_special_ok(port);
 	      cnt++;
-	      if (ch == 'u') {
-		is_byte = 0;
+	      if (ch == '#') {
+		is_byte = 1;
 		cnt++;
 		ch = scheme_getc_special_ok(port);
 	      }
@@ -808,7 +808,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 		Scheme_Object *str;
 		int is_err;
 
-		/* Skip #rx[u]: */
+		/* Skip #rx[#]: */
 		col = scheme_tell_column(port);
 		pos = scheme_tell(port);
 
@@ -836,7 +836,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      mzchar a[1], b[1], c[1];
 
 	      a[0] = 'x';
-	      b[0] = 'u';
+	      b[0] = '#';
 	      c[0] = ch;
 		
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
@@ -902,15 +902,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      return NULL;
 	    }
 	  }
-	case '$':
-	  ch = scheme_getc_special_ok(port);
-	  if (ch != '"') {
-	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
-			    ch, indentation, 
-			    "read: bad syntax `#$%c'",
-			    ch);
-	    return NULL;
-	  }
+	case '"':
 	  return read_string(1, port, stxsrc, line, col, pos,indentation);
 	  break;
 	default:
@@ -1700,7 +1692,19 @@ read_string(int is_byte, Scheme_Object *port,
   }
   buf[i] = '\0';
 
-  result = scheme_make_immutable_sized_char_string(buf, i, i <= 31);
+  if (!is_byte)
+    result = scheme_make_immutable_sized_char_string(buf, i, i <= 31);
+  else {
+    /* buf is not UTF-8 encoded; all of the chars are less than 256.
+       We just need to change to bytes.. */
+    char *s;
+    s = (char *)scheme_malloc_atomic(i + 1);
+    for (j = 0; j < i; j++) {
+      ((unsigned char *)s)[j] = buf[j];
+    }
+    s[i] = 0;
+    result = scheme_make_immutable_sized_byte_string(s, i, 0);
+  }
   if (stxsrc)
     result =  scheme_make_stx_w_offset(result, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return result;
@@ -1835,7 +1839,6 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 		      Scheme_Object *indentation)
 {
   mzchar *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
-  char b_onstack[MAX_QUICK_SYMBOL_SIZE], *b_buf;
   int size, oldsize;
   int i, ch, quoted, quoted_ever = 0, running_quote = 0;
   int rq_pos = 0, rq_col = 0, rq_line = 0;
@@ -1964,47 +1967,16 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   if ((is_symbol || quoted_ever) && !is_float && !is_not_float && !radix_set)
     o = scheme_false;
   else {
-    int j;
-    for (j = 0 ; j < i; j++) {
-      if (buf[j] > 127)
-	break;
-    }
-    if (j < i) {
-      if (radix_set || is_float || is_not_float) {
-	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos),
-			0, indentation,
-			"read: illegal character in number: %u", 
-			buf, i);
-      }
-      o = scheme_false;
-    } else {
-      /* Fast string -> byte string */
-      if (i < MAX_QUICK_SYMBOL_SIZE - 1)
-	b_buf = b_onstack;
-      else
-	b_buf = (char *)scheme_malloc_atomic(i + 1);
-      for (j = 0 ; j < i; j++) {
-	b_buf[j] = buf[j];
-      }
-      b_buf[i] = 0;
-
-      o = scheme_read_number(b_buf, i, 
-			     is_float, is_not_float, decimal_inexact, 
-			     radix, radix_set,
-			     port, NULL, 0,
-			     stxsrc, line, col, pos, SPAN(port, pos),
-			     indentation);
-    }
+    o = scheme_read_number(buf, i, 
+			   is_float, is_not_float, decimal_inexact, 
+			   radix, radix_set,
+			   port, NULL, 0,
+			   stxsrc, line, col, pos, SPAN(port, pos),
+			   indentation);
   }
 
   if (SAME_OBJ(o, scheme_false)) {
-    size = scheme_utf8_encode_all(buf, i, NULL);
-    if (size < MAX_QUICK_SYMBOL_SIZE)
-      b_buf = b_onstack;
-    else
-      b_buf = (char *)scheme_malloc_atomic(size);
-    scheme_utf8_encode_all(buf, i, b_buf);
-    o = scheme_intern_exact_symbol(b_buf, size);
+    o = scheme_intern_exact_char_symbol(buf, i);
   }
 
   if (stxsrc)

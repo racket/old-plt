@@ -1612,6 +1612,13 @@ int scheme_peek_byte(Scheme_Object *port)
   return scheme_peek_byte_skip(port, NULL);
 }
 
+int
+scheme_peek_byte_special_ok_skip(Scheme_Object *port, Scheme_Object *skip)
+{
+  special_is_ok = 1;
+  return scheme_peek_byte_skip(port, skip);
+}
+
 static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip, 
 			 int only_avail, int *unavail)
 {
@@ -2178,13 +2185,29 @@ void scheme_write_byte_string(const char *str, long len, Scheme_Object *port)
 void scheme_write_char_string(const mzchar *str, long len, Scheme_Object *port)
 {
   long blen;
-  char *bstr;
+  char *bstr, buf[64];
 
-  blen = scheme_utf8_encode_all(str, len, NULL);
-  bstr = (char *)scheme_malloc_atomic(len);
-  scheme_utf8_encode_all(str, len, bstr);  
+  bstr = scheme_utf8_encode_to_buffer_len(str, len, buf, 64, &blen);
   
   scheme_write_byte_string(bstr, blen, port);
+}
+
+long
+scheme_put_char_string(const char *who, Scheme_Object *port,
+		       const mzchar *str, long d, long len,
+		       int rarely_block)
+{
+  long blen;
+  char *bstr, buf[64];
+
+  blen = scheme_utf8_encode(str, d, d + len, NULL, 0, 0);
+  if (blen < 64)
+    bstr = buf;
+  else
+    bstr = (char *)scheme_malloc_atomic(blen);
+  scheme_utf8_encode(str, d, d + len, bstr, 0, 0);
+
+  return scheme_put_byte_string(who, port, bstr, 0, blen, rarely_block);
 }
 
 long

@@ -352,8 +352,8 @@ const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error);
 /*========================================================================*/
 /*                               strings                                  */
 /*========================================================================*/
-int (*scheme_utf8_decode)(const unsigned char *s, int start, int len, 
-				 unsigned int *us, int dstart, int dlen,
+int (*scheme_utf8_decode)(const unsigned char *s, int start, int end, 
+				 unsigned int *us, int dstart, int dend,
 				 long *ipos, char utf16, int permissive);
 int (*scheme_utf8_decode_all)(const unsigned char *s, int len, unsigned int *us, 
 				     int permissive);
@@ -363,11 +363,10 @@ mzchar *(*scheme_utf8_decode_to_buffer)(const unsigned char *s, int len,
 					       mzchar *buf, int blen);
 mzchar *(*scheme_utf8_decode_to_buffer_len)(const unsigned char *s, int len, 
 						   mzchar *buf, int blen, long *rlen);
-int (*scheme_utf8_encode)(const unsigned int *us, int start, int len, 
+int (*scheme_utf8_encode)(const unsigned int *us, int start, int end, 
 				 unsigned char *s, int dstart,
 				 char utf16);
 int (*scheme_utf8_encode_all)(const unsigned int *us, int len, unsigned char *s);
-char *(*scheme_utf8_encode_malloc)(const unsigned int *us, int len, long *olen);
 char *(*scheme_utf8_encode_to_buffer)(const mzchar *s, int len, 
 					     char *buf, int blen);
 char *(*scheme_utf8_encode_to_buffer_len)(const mzchar *s, int len, 
@@ -375,7 +374,7 @@ char *(*scheme_utf8_encode_to_buffer_len)(const mzchar *s, int len,
 unsigned short;
 					       unsigned short *buf, int bufsize,
 					       long *ulen, int term_size);
-mzchar *(*scheme_utf16_to_ucs4)(const unsigned short *text, int len, 
+mzchar *(*scheme_utf16_to_ucs4)(const unsigned short *text, int start, int end, 
 				       mzchar *buf, int bufsize,
 				       long *ulen, int term_size);
 /*========================================================================*/
@@ -394,7 +393,7 @@ Scheme_Object *(*scheme_bignum_from_float)(float d);
 #endif
 char *(*scheme_bignum_to_string)(const Scheme_Object *n, int radix);
 char *(*scheme_bignum_to_allocated_string)(const Scheme_Object *n, int radix, int alloc);
-Scheme_Object *(*scheme_read_bignum)(const char *str, int offset, int radix);
+Scheme_Object *(*scheme_read_bignum)(const mzchar *str, int offset, int radix);
 Scheme_Object *(*scheme_bignum_normalize)(const Scheme_Object *n);
 /*========================================================================*/
 /*                              rationals                                 */
@@ -569,8 +568,10 @@ Scheme_Object *(*scheme_declare_module)(Scheme_Object *shape, Scheme_Invoke_Proc
 /*========================================================================*/
 Scheme_Object *(*scheme_intern_symbol)(const char *name);
 Scheme_Object *(*scheme_intern_exact_symbol)(const char *name, unsigned int len);
+Scheme_Object *(*scheme_intern_exact_char_symbol)(const mzchar *name, unsigned int len);
 Scheme_Object *(*scheme_make_symbol)(const char *name); /* Make uninterned */
 Scheme_Object *(*scheme_make_exact_symbol)(const char *name, unsigned int len); /* Exact case */
+Scheme_Object *(*scheme_make_exact_char_symbol)(const mzchar *name, unsigned int len); /* Exact case */
 const char *(*scheme_symbol_name)(Scheme_Object *sym);
 const char *(*scheme_symbol_name_and_size)(Scheme_Object *sym, unsigned int *l, int flags);
 char *(*scheme_symbol_val)(Scheme_Object *sym);

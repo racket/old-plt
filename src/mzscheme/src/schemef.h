@@ -433,8 +433,8 @@ MZ_EXTERN const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_e
 /*                               strings                                  */
 /*========================================================================*/
 
-MZ_EXTERN int scheme_utf8_decode(const unsigned char *s, int start, int len, 
-				 unsigned int *us, int dstart, int dlen,
+MZ_EXTERN int scheme_utf8_decode(const unsigned char *s, int start, int end, 
+				 unsigned int *us, int dstart, int dend,
 				 long *ipos, char utf16, int permissive);
 MZ_EXTERN int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, 
 				     int permissive);
@@ -445,21 +445,20 @@ MZ_EXTERN mzchar *scheme_utf8_decode_to_buffer(const unsigned char *s, int len,
 MZ_EXTERN mzchar *scheme_utf8_decode_to_buffer_len(const unsigned char *s, int len, 
 						   mzchar *buf, int blen, long *rlen);
 
-MZ_EXTERN int scheme_utf8_encode(const unsigned int *us, int start, int len, 
+MZ_EXTERN int scheme_utf8_encode(const unsigned int *us, int start, int end, 
 				 unsigned char *s, int dstart,
 				 char utf16);
 MZ_EXTERN int scheme_utf8_encode_all(const unsigned int *us, int len, unsigned char *s);
 
-MZ_EXTERN char *scheme_utf8_encode_malloc(const unsigned int *us, int len, long *olen);
 MZ_EXTERN char *scheme_utf8_encode_to_buffer(const mzchar *s, int len, 
 					     char *buf, int blen);
 MZ_EXTERN char *scheme_utf8_encode_to_buffer_len(const mzchar *s, int len, 
 						 char *buf, int blen, long *rlen);
 
-MZ_EXTERN unsigned short *scheme_ucs4_to_utf16(const mzchar *text, int len, 
+MZ_EXTERN unsigned short *scheme_ucs4_to_utf16(const mzchar *text, int start, int end, 
 					       unsigned short *buf, int bufsize,
 					       long *ulen, int term_size);
-MZ_EXTERN mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int len, 
+MZ_EXTERN mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, int end, 
 				       mzchar *buf, int bufsize,
 				       long *ulen, int term_size);
 
@@ -480,7 +479,7 @@ MZ_EXTERN Scheme_Object *scheme_bignum_from_float(float d);
 #endif
 MZ_EXTERN char *scheme_bignum_to_string(const Scheme_Object *n, int radix);
 MZ_EXTERN char *scheme_bignum_to_allocated_string(const Scheme_Object *n, int radix, int alloc);
-MZ_EXTERN Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix);
+MZ_EXTERN Scheme_Object *scheme_read_bignum(const mzchar *str, int offset, int radix);
 MZ_EXTERN Scheme_Object *scheme_bignum_normalize(const Scheme_Object *n);
 
 /*========================================================================*/
@@ -696,8 +695,10 @@ MZ_EXTERN Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invo
 
 MZ_EXTERN Scheme_Object *scheme_intern_symbol(const char *name);
 MZ_EXTERN Scheme_Object *scheme_intern_exact_symbol(const char *name, unsigned int len);
+MZ_EXTERN Scheme_Object *scheme_intern_exact_char_symbol(const mzchar *name, unsigned int len);
 MZ_EXTERN Scheme_Object *scheme_make_symbol(const char *name); /* Make uninterned */
 MZ_EXTERN Scheme_Object *scheme_make_exact_symbol(const char *name, unsigned int len); /* Exact case */
+MZ_EXTERN Scheme_Object *scheme_make_exact_char_symbol(const mzchar *name, unsigned int len); /* Exact case */
 MZ_EXTERN const char *scheme_symbol_name(Scheme_Object *sym);
 MZ_EXTERN const char *scheme_symbol_name_and_size(Scheme_Object *sym, unsigned int *l, int flags);
 MZ_EXTERN char *scheme_symbol_val(Scheme_Object *sym);

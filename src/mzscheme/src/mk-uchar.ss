@@ -4,6 +4,18 @@
 
 (require (lib "list.ss"))
 
+(define mark-cats '("Mn" "Mc" "Me"))
+(define letter-cats '("Lu" "Ll" "Lt" "Lm" "Lo"))
+(define digit-cats '("Nd" "Nl" "No"))
+(define space-cats '("Zl" "Zs" "Zp"))
+(define punc-cats '("Pc" "Pd" "Ps" "Pe" "Pi" "Pf" "Po"))
+(define sym-cats '("Sm" "Sc" "Sk" "So"))
+(define graphic-cats (append mark-cats
+			     letter-cats
+			     digit-cats
+			     punc-cats
+			     sym-cats))
+
 (define ups (cons (make-hash-table 'equal) (box 0)))
 (define downs (cons (make-hash-table 'equal) (box 0)))
 (define titles (cons (make-hash-table 'equal) (box 0)))
@@ -20,9 +32,9 @@
 
 (define (combine up down title . l)  
   (bitwise-ior
-   (arithmetic-shift (indirect ups up) 11)
-   (arithmetic-shift (indirect downs down) 17)
-   (arithmetic-shift (indirect titles title) 23)
+   (arithmetic-shift (indirect ups up) 12)
+   (arithmetic-shift (indirect downs down) 18)
+   (arithmetic-shift (indirect titles title) 24)
    (let loop ([l l][v 0])
      (if (null? l)
 	 v
@@ -70,6 +82,8 @@
 		    (if down (- down code) 0)
 		    (if title (- title code) 0)
 
+		    ;; graphic
+		    (member cat graphic-cats)
 		    ;; lowercase:
 		    (and (not (<= #x2000 code #x2FFF))
 			 (not down)
@@ -85,21 +99,21 @@
 		    ;; titlecase:
 		    (string=? cat "Lt")
 		    ;; letter
-		    (member cat '("Lu" "Ll" "Lt" "Lm" "Lo"))
+		    (member cat letter-cats)
 		    ;; digit
-		    (string=? cat "Ld")
+		    (member cat digit-cats)
 		    ;; hex digit
 		    (member code hexes)
 		    ;; whitespace
-		    (or (member cat '("Zl" "Zs" "Zp"))
+		    (or (member cat space-cats)
 			(member code '(#x9 #xa #xb #xc #xd)))
 		    ;; control
 		    (or (<= #x0000 code #x001F)
 			(<= #x007F code #x009F))
 		    ;; punctuation
-		    (member cat '("Pc" "Pd" "Ps" "Pe" "Pi" "Pf" "Po"))
+		    (member cat punc-cats)
 		    ;; symbol
-		    (member cat '("Sm" "Sc" "Sk" "So"))
+		    (member cat sym-cats)
 		    ;; blank
 		    (or (string=? cat "Zs")
 			(= code #x9))))))

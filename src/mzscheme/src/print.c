@@ -1032,7 +1032,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_this_string(p, SCHEME_BYTE_STR_VAL(obj), 0, l);
       } else {
 	if (notdisplay)
-	  print_this_string(p, "#$", 0, 2);
+	  print_this_string(p, "#", 0, 1);
 	print_byte_string(SCHEME_BYTE_STR_VAL(obj), 
 			  SCHEME_BYTE_STRLEN_VAL(obj), 
 			  notdisplay, p);
@@ -1345,17 +1345,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	 src = scheme_regexp_source(obj);
 	 if (src) {
 	   if (!scheme_regexp_is_byte(obj))
-	     print_this_string(p, "#rxu", 0, 4);
+	     print_this_string(p, "#rx", 0, 4);
 	   else
-	     print_this_string(p, "#rx", 0, 3);
+	     print_this_string(p, "#rx#", 0, 3);
 	   
-	   if (SCHEME_CHAR_STRINGP(src)) {
-	     print(src, 1, 0, ht,symtab, rnht, p);
-	   } else {
-	     print_byte_string(SCHEME_BYTE_STR_VAL(src),
-			       SCHEME_BYTE_STRTAG_VAL(src),
-			       1, p);
-	   }
+	   print(src, 1, 0, ht,symtab, rnht, p);
 	 } else if (compact)
 	   cannot_print(p, notdisplay, obj, ht);
 	 else
@@ -1753,7 +1747,7 @@ print_byte_string(char *str, int len, int notdisplay, Scheme_Thread *p)
 	  } else {
 	    /* Well-formed UTF-8 ? */
 	    long ipos;
-	    scheme_utf8_decode(str, i, len, 
+	    scheme_utf8_decode(str, i, i + len, 
 			       NULL, 0, -1,
 			       &ipos, 0, 0);
 	    if (ipos == i) {

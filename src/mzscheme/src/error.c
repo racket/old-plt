@@ -371,7 +371,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    } else {
 	      tlen = scheme_char_strlen(u);
 	    }
-	    t = scheme_utf8_encode_malloc(u, tlen, (long *)&tlen);
+	    t = scheme_utf8_encode_to_buffer_len(u, tlen, NULL, 0, (long *)&tlen);
 	  }
 	default:
 	  {
@@ -569,7 +569,7 @@ call_error(char *buffer, int len, Scheme_Object *exn)
     scheme_longjmp(scheme_error_buf, 1);
   } else {
     scheme_current_thread->error_invoked = 1;
-    p[0] = scheme_make_immutable_sized_byte_string(buffer, len, 1);
+    p[0] = scheme_make_immutable_sized_utf8_string(buffer, len);
     p[1] = exn;
     memcpy((void *)&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(scheme_error_buf)) {
@@ -1897,6 +1897,7 @@ def_error_value_string_proc(int argc, Scheme_Object *argv[])
     s = scheme_get_sized_byte_string_output(a[1], &l);
 
     if (l > origl) {
+      /* FIXME: might hit the middle of a UTF-8 encoding. */
       l = origl;
       if (origl >= 1) {
 	s[origl - 1] = '.';

@@ -240,7 +240,6 @@
   scheme_extension_table->scheme_utf8_decode_to_buffer_len = scheme_utf8_decode_to_buffer_len;
   scheme_extension_table->scheme_utf8_encode = scheme_utf8_encode;
   scheme_extension_table->scheme_utf8_encode_all = scheme_utf8_encode_all;
-  scheme_extension_table->scheme_utf8_encode_malloc = scheme_utf8_encode_malloc;
   scheme_extension_table->scheme_utf8_encode_to_buffer = scheme_utf8_encode_to_buffer;
   scheme_extension_table->scheme_utf8_encode_to_buffer_len = scheme_utf8_encode_to_buffer_len;
   scheme_extension_table->short = short;
@@ -389,8 +388,10 @@
   scheme_extension_table->scheme_declare_module = scheme_declare_module;
   scheme_extension_table->scheme_intern_symbol = scheme_intern_symbol;
   scheme_extension_table->scheme_intern_exact_symbol = scheme_intern_exact_symbol;
+  scheme_extension_table->scheme_intern_exact_char_symbol = scheme_intern_exact_char_symbol;
   scheme_extension_table->scheme_make_symbol = scheme_make_symbol;
   scheme_extension_table->scheme_make_exact_symbol = scheme_make_exact_symbol;
+  scheme_extension_table->scheme_make_exact_char_symbol = scheme_make_exact_char_symbol;
   scheme_extension_table->scheme_symbol_name = scheme_symbol_name;
   scheme_extension_table->scheme_symbol_name_and_size = scheme_symbol_name_and_size;
   scheme_extension_table->scheme_symbol_val = scheme_symbol_val;

@@ -1055,7 +1055,7 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   return scheme_bignum_to_allocated_string(b, radix, 0);
 }
 
-Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
+Scheme_Object *scheme_read_bignum(const mzchar *str, int offset, int radix)
 {
   int len, negate, stri, alloc, i, test;
   Scheme_Object* o;
@@ -1073,7 +1073,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
       negate = !negate;
     stri++;
   }
-  len = strlen(str XFORM_OK_PLUS stri);
+  len = scheme_char_strlen(str XFORM_OK_PLUS stri);
 
   if (radix == 10 && (len < SMALL_NUM_STR_LEN)) {
     /* try simple fixnum read first */

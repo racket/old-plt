@@ -490,10 +490,11 @@ typedef struct Scheme_Vector {
 #define scheme_istitle(x) ((scheme_uchar_find(x)) & 0x100)
 #define scheme_isupper(x) ((scheme_uchar_find(x)) & 0x200)
 #define scheme_islower(x) ((scheme_uchar_find(x)) & 0x400)
+#define scheme_isgraphic(x) ((scheme_uchar_find(x)) & 0x800)
 
-#define scheme_toupper(x) (x + scheme_uchar_ups[(((scheme_uchar_find(x)) & 0xfa00) >> 11)])
-#define scheme_tolower(x) (x + scheme_uchar_downs[(((scheme_uchar_find(x)) & 0x3F0000) >> 17)])
-#define scheme_totitle(x) (x + scheme_uchar_titles[(((scheme_uchar_find(x)) & 0xfa00000) >> 23)])
+#define scheme_toupper(x) (x + scheme_uchar_ups[(((scheme_uchar_find(x)) & 0x3F000) >> 12)])
+#define scheme_tolower(x) (x + scheme_uchar_downs[(((scheme_uchar_find(x)) & 0xFA0000) >> 18)])
+#define scheme_totitle(x) (x + scheme_uchar_titles[(((scheme_uchar_find(x)) & 0x3F000000) >> 24)])
 
 /*========================================================================*/
 /*                          procedure values                              */

@@ -1159,7 +1159,7 @@ Scheme_Object *scheme_single_inf_object, *scheme_single_minus_inf_object, *schem
 
 /****** General numeric ******/
 
-Scheme_Object *scheme_read_number(const char *str, long len,
+Scheme_Object *scheme_read_number(const mzchar *str, long len,
 				  int is_float,
 				  int is_not_float,
 				  int decimal_means_float,
@@ -1862,7 +1862,9 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
 #define IMPROPER_LIST_FORM "illegal use of `.'"
 
 int scheme_byte_string_has_null(Scheme_Object *o);
+int scheme_any_string_has_null(Scheme_Object *o);
 #define BYTE_STRING_W_NO_NULLS "byte-string (with no null characters)"
+#define STRING_OR_BYTE_STRING_W_NO_NULLS "string or byte-string (with no null characters)"
 
 Scheme_Object *scheme_do_exit(int argc, Scheme_Object *argv[]);
 

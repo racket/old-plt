@@ -6,6 +6,12 @@
  (are-you-sure-you-want-to-switch-languages
   "Ceci va changer le language utilisé par l'interface graphique, ce qui va nécessiter un redémarrage de DrScheme. Etes-vous certain de vouloir continuer ?")
  
+ ;; these two should probably be the same in all languages excepet English.
+ ;; they are the button labels (under macos and windows, respectively)
+ ;; that go the with the string above.
+ (accept-and-quit "Accepter et Quitter")
+ (accept-and-exit "Accepter et Quitter")
+ 
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
  (drscheme "DrScheme")
  (ok "OK")
@@ -490,7 +496,9 @@
  (sharing-printing-label "Montrer le partage entre valeurs.")
  (use-pretty-printer-label "Insérer des retours-chariots lors de l'impression des résultats.")
  (input-syntax "Syntaxe d'entrée")
+ (dynamic-properties "Propriétés dynamiques")
  (output-syntax "Syntaxe de sortie")
+ (debugging "Débogage")
  (whole/fractional-exact-numbers-label "Imprimer les nombres sous forme de fractions.")
  (booleans-as-true/false-label "Imprimer les booléens sous forme true et false.")
  (show-details-button-label "Montrer les détails")
@@ -510,6 +518,9 @@
  (r5rs-lang-name "R5RS sans débogage")
  (unknown-debug-frame "[inconnu]")
  
+ (bad-module-language-specs
+  "Les spécifications de drscheme-language-position et drscheme-language-modules sont incorrectes. Espérait (listof (cons string (listof string))) et (listof (listof string)) respectivement, avec les listes drscheme-language-position et drscheme-language-module ayant la même longueur. Trouvé ~e et ~e.")
+
  ;;; debug language
  (backtrace-window-title "Trace - DrScheme")
  (files-interactions "les interactions de ~a") ;; filled with a filename

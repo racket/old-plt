@@ -3,10 +3,10 @@
 ;  Copyright (C) 1991, 1992, 1993 Aubrey Jaffer.
 
 ; Compatibility file for MzScheme --
-;   http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
+;   http://www.plt-scheme.org/software/mzscheme/
 ; -- and DrScheme --
-;   http://www.cs.rice.edu/CS/PLT/packages/drscheme/
-; -- produced by Shriram Krishnamurthi <shriram@cs.rice.edu>,
+;   http://www.plt-scheme.org/software/drscheme/
+; -- produced by Shriram Krishnamurthi <sk@cs.brown.edu>,
 ; Mon Feb 10 12:03:53 CST 1997
 
 (require (lib "pretty.ss"))

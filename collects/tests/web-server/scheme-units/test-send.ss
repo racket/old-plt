@@ -199,7 +199,7 @@
  (define (resume-servlet prev-url input)
    (let ((u (string->url prev-url)))
      (cond
-       ((embedded-ids? u)
+       ((continuation-url? u)
         => (lambda (res)
              (let ((k (hash-table-get (servlet-instance-k-table the-instance)
                                       (cadr res)))

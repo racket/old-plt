@@ -372,11 +372,16 @@ Additional info.ss fields trigger additional setup actions:
  * `mzscheme-launcher-libraries' - a list of library names in
    parallel to `mzscheme-launcher-names'.
 
- * `mred-launcher-name' - an executable to be installed in plt
-   (or plt/bin) to run a MrEd program implemented by the collection.
-   The executable is installed using the launcher collection's
-   `install-mred-program-launcher'. If the executable already
+ * `mred-launcher-names' - a list of executable names to be installed
+   in plt (or plt/bin) to run MrEd programs implemented by the
+   collection.  A parallel list of library names must be provided by
+   `mred-launcher-libraries'. For each name, a launching executable is
+   set up using the launcher collection's
+   `install-mzscheme-program-launcher'. If the executable already
    exists, no action is taken.
+
+ * `mred-launcher-libraries' - a list of library names in
+   parallel to `mred-launcher-names'.
 
  * `install-collection' - a procedure that accepts a directory path
    argument and performs collection-specific installation work.

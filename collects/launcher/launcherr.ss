@@ -73,14 +73,8 @@
 			   (xm "+rv") 
 			   (xn "-synchronous")))
 
-  (define (skip-pre-x-flags flags)
-    (let ([flags (if (and (pair? flags)
-			  (string=? (car flags) "--pre"))
-		     (if (null? (cdr flags))
-			 null
-			 (cddr flags))
-		     flags)]
-	  [xfmem (lambda (flag) (lambda (xf) (member flag (cdr xf))))])
+  (define (skip-x-flags flags)
+    (let ([xfmem (lambda (flag) (lambda (xf) (member flag (cdr xf))))])
       (let loop ([f flags])
 	(if (null? f)
 	    null
@@ -152,7 +146,7 @@
     (install-template dest kind "sh" "sh") ; just for something that's executable
     (let* ([newline (string #\newline)]
 	   [post-flags (if (eq? kind 'mred)
-			   (skip-pre-x-flags flags)
+			   (skip-x-flags flags)
 			   null)]
 	   [pre-flags (if (null? post-flags)
 			  flags
@@ -264,8 +258,8 @@
   (define (make-mzscheme-launcher flags dest)
     ((get-maker) 'mzscheme flags dest))
   
-  (define (make-mred-program-launcher collection dest)
-    (make-mred-launcher (list "-A" collection "--") dest))
+  (define (make-mred-program-launcher file collection dest)
+    (make-mred-launcher (list "-mqvL" file collection "--") dest))
   
   (define (make-mzscheme-program-launcher file collection dest)
     (make-mzscheme-launcher (list "-mqvL" file collection "--") dest))
@@ -290,8 +284,8 @@
   (define (mzscheme-program-launcher-path name)
     (mred-program-launcher-path name))
 
-  (define (install-mred-program-launcher collection name)
-    (make-mred-program-launcher collection (mred-program-launcher-path name)))
+  (define (install-mred-program-launcher file collection name)
+    (make-mred-program-launcher file collection (mred-program-launcher-path name)))
   
   (define (install-mzscheme-program-launcher file collection name)
     (make-mzscheme-program-launcher file collection (mzscheme-program-launcher-path name))))

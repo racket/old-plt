@@ -463,34 +463,34 @@
   (for-each (lambda (cc)
 	      (when (= 1 (length (cc-collection cc)))
 		  (let ([info (cc-info cc)])
-		    (let ([mzlls (call-info info 'mzscheme-launcher-libraries null
-					    name-list)]
-			  [mzlns (call-info info 'mzscheme-launcher-names null
-					    name-list)]
-			  [mrln  (call-info info 'mred-launcher-name #f
-					    (lambda (s)
-					      (unless (or (not s) (and (string? s) (relative-path? s)))
-						      (error "result is not a relative path string:" s))))])
-		      (if (= (length mzlls) (length mzlns))
-			  (map
-			   (lambda (mzll mzln)
-			     (let ([p (mzscheme-program-launcher-path mzln)])
+		    (map
+		     (lambda (kind
+			      mzscheme-launcher-libraries
+			      mzscheme-launcher-names
+			      mzscheme-program-launcher-path
+			      install-mzscheme-program-launcher)
+		       (let ([mzlls (call-info info mzscheme-launcher-libraries null
+					       name-list)]
+			     [mzlns (call-info info mzscheme-launcher-names null
+					       name-list)])
+			 (if (= (length mzlls) (length mzlns))
+			     (map
+			      (lambda (mzll mzln)
+				(let ([p (mzscheme-program-launcher-path mzln)])
 			       (unless (file-exists? p)
-				 (printf "Installing MzScheme launcher ~a~n" p)
+				 (printf "Installing ~a launcher ~a~n" kind p)
 				 (install-mzscheme-program-launcher 
 				  mzll
 				  (car (cc-collection cc))
 				  mzln))))
-			   mzlls mzlns)
-			  (printf "Warning: MzScheme launcher library list ~s doesn't match name list ~s~n"
-				  mzlls mzlns))
-		      (when mrln
-			 (let ([p (mred-program-launcher-path mrln)])
-			   (unless (file-exists? p)
-			     (printf "Installing MrEd launcher ~a~n" p)
-			     (install-mred-program-launcher 
-			      (car (cc-collection cc))
-			      mrln))))))))
+			      mzlls mzlns)
+			     (printf "Warning: ~a launcher library list ~s doesn't match name list ~s~n"
+				     kind mzlls mzlns))))
+		     '("MzScheme" "MrEd")
+		     '(mzscheme-launcher-libraries mred-launcher-libraries)
+		     '(mzscheme-launcher-names mred-launcher-names)
+		     (list mzscheme-program-launcher-path mred-program-launcher-path)
+		     (list install-mzscheme-program-launcher install-mred-program-launcher)))))
 	    collections-to-compile))
 
 (when (call-install)

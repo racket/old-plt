@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_ps.cc,v 1.5 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_ps.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1636,7 +1636,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   static int lastStyle= INT_MIN;
   static int lastWeight= INT_MIN;
   static int lastDescender = INT_MIN;
-  static int lastWidths[256]; // widths of the characters
+  static far int lastWidths[256]; // widths of the characters
 
   // get actual parameters
   const int Family = fontToUse->GetFamily();

@@ -275,9 +275,9 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     
     if (get_ext_file_spec( &spec, filename ) && load_ext_file_spec( &spec, &connID ) )
       {
+	OSErr err;
 	handle = (void *)connID;
 	
-	OSErr err;
 	err = FindSymbol( connID, "\pscheme_initialize_internal", ( Ptr * )&f, 0 );
 	if ( err != noErr )
 	  scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_OPEN,

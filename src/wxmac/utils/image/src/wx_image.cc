@@ -72,7 +72,7 @@ static int    rootPattern = 0;  /* pattern used for root border */
 static char   initpath[500];
 #endif
 
-byte           r[256],g[256],b[256];  /* colormap */
+far byte r[256], g[256], b[256];
 
 #ifdef wx_x
 /* used in XResource reading... */

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_utils.cc,v 1.5 1994/08/15 21:53:50 edz Exp edz $
+ * RCS_ID:      $Id: wb_utils.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -223,6 +223,7 @@ StringToDouble (char *s, double *number)
     *number = strtod (s, NULL);
 }
 
+#if 0
 char *
 FloatToString (float number)
 {
@@ -240,6 +241,7 @@ DoubleToString (double number)
   sprintf (buf, "%.2f", number);
   return buf;
 }
+#endif
 
 void 
 StringToInt (char *s, int *number)
@@ -255,6 +257,7 @@ StringToLong (char *s, long *number)
     *number = strtol (s, NULL, 10);
 }
 
+#if 0
 char *
 IntToString (int number)
 {
@@ -272,7 +275,7 @@ LongToString (long number)
   sprintf (buf, "%ld", number);
   return buf;
 }
-
+#endif
 
 // Match a string INDEPENDENT OF CASE
 Bool 
@@ -757,7 +760,7 @@ char *wxExpandPath(char *buf, const char *name)
     return wxRealPath(buf);
 }
 
-
+#if 0
 /* Contract Paths to be build upon an environment variable
    component:
 
@@ -816,6 +819,7 @@ wxContractPath (const char *filename, const char *envname, const char *user)
 
   return dest;
 }
+#endif
 
 // Return just the filename, not the path
 // (basename)
@@ -859,7 +863,9 @@ wxPathOnly (char *path)
 {
   if (path && *path)
     {
-      static char buf[_MAXPATHLEN];
+      static char *buf = NULL;
+
+	  if (!buf) buf = new char[_MAXPATHLEN];
 
       // Local copy
       strcpy (buf, path);

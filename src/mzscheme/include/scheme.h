@@ -13,6 +13,12 @@
 #ifndef SCHEME_H
 #define SCHEME_H
 
+#if defined(__MWERKS__)
+# ifdef MZSCHEME_USES_NEAR_GLOBALS
+#  pragma far_data off
+# endif
+#endif
+
 /* The next line is used and set during installation: */
 /*III*/
 
@@ -1057,6 +1063,12 @@ extern Scheme_Extension_Table *scheme_extension_table;
 
 #ifdef __cplusplus
 };
+#endif
+
+#if defined(__MWERKS__)
+# ifdef MZSCHEME_USES_NEAR_GLOBALS
+#  pragma far_data reset
+# endif
 #endif
 
 #endif /* ! SCHEME_H */

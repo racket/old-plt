@@ -53,7 +53,7 @@ typedef struct {
 #define myRGB(r,g,b)	RGB(r,g,b)	/* MSW has this macro */
 #endif
 
-static rgbRecord theRGBRecords[] =
+static far rgbRecord theRGBRecords[] =
 {
     {"AliceBlue", myRGB(240, 248, 255)},
     {"AntiqueWhite", myRGB(250, 235, 215)},

@@ -1,7 +1,7 @@
 /*
  * Global Data
  *
- * RCS_ID:      $Id: wb_data.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_data.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  */
 
 /* static const char sccsid[] = "@(#)wb_data.cc	1.2 5/9/94"; */
@@ -40,7 +40,7 @@ wxList wxTopLevelWindows;
 char **wx_msg_str = (char**)NULL;
 
 // Some global printer parameters
-char wx_printer_file[_MAXPATHLEN];
+/* char wx_printer_file[_MAXPATHLEN]; */
 float wx_printer_scale_x = 1.0;
 float wx_printer_scale_y = 1.0;
 float wx_printer_translate_x = 0.0;

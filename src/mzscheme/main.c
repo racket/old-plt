@@ -256,10 +256,21 @@ int actual_main(int argc, char *argv[])
 #endif
 
 #ifdef MACINTOSH_SIOUX
-  if (argc == 1) {
-    char *pname = argv[0];
-    argc = ccommand(&argv);
-    argv[0] = pname;
+  {
+  	int argc2;
+    char **argv2;
+    argc2 = ccommand(&argv2);
+    if (argc2 > 1) {
+      int i, j;
+      char **both = (char **)malloc(sizeof(char *) * (argc + argc2 - 1));
+      for (i = 0; i < argc; i++)
+        both[i] = argv[i];
+      for (j = 1; j < argc2; j++, i++)
+        both[i] = argv2[j];
+        
+      argv = both;
+      argc += argc2 - 1;
+    }
   }
   
   /* When not using far globals under 68k, CW may not be able to link this.

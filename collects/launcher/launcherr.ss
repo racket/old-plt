@@ -1,5 +1,5 @@
 
-(unit/sig 
+(unit/sig
  launcher-maker^
  (import)
 
@@ -9,7 +9,7 @@
 	 (and dir
 	      (let-values ([(base name dir?) (split-path dir)])
 			  (and (string? base)
-			       (let-values ([(base name dir?) (split-path dir)])
+			       (let-values ([(base name dir?) (split-path base)])
 					   (and (string? base)
 						(complete-path? base)
 						base))))))))
@@ -97,7 +97,7 @@
 		   (loop (sub1 c))))))))
 
  (define (make-macos-launcher kind str dest)
-   (install-template dest kind "MzStart" "MrStart")
+   (install-template dest kind "MzStarter" "MrStarter")
    (let ([p (open-output-file dest 'truncate)])
      (display str p)
      (close-output-port p)))
@@ -118,14 +118,14 @@
    (make-mred-launcher (format "-A ~a --" collection) dest))
 
  (define (make-mzscheme-program-launcher file collection dest)
-   (make-mzscheme-launcher (format "-L ~a ~a --" file collection) dest))
+   (make-mzscheme-launcher (format "-qmL ~a ~a -e '(exit)' --" file collection) dest))
 
  (define l-home (if (eq? (system-type) 'unix)
 		    (build-path plthome "bin")
 		    plthome))
  
- (define (install-mred-program-launcher collection)
-   (make-mred-program-launcher collection l-home))
+ (define (install-mred-program-launcher collection name)
+   (make-mred-program-launcher collection (build-path l-home name)))
 
- (define (install-mzscheme-program-launcher file collection)
-   (make-mzscheme-program-launcher file collection l-home)))
+ (define (install-mzscheme-program-launcher file collection name)
+   (make-mzscheme-program-launcher file collection (build-path l-home name))))

@@ -551,7 +551,7 @@ typedef struct {
 /*=============================================================================+
 |                             Global Variables                                 |
 +=============================================================================*/
-static  char    gCurrentSelectedFolder [256];
+static  far char    gCurrentSelectedFolder [256];
 
 /*******************************************************************************
 * MyCustomGetDirectoryFileFilter                                               *

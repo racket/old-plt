@@ -87,6 +87,11 @@ static void TransferQueue(int all)
 {
   EventRecord e;
   short mask;
+  
+  /* Don't call WaitNextEvent too often. */
+  static long lastTime;
+  if (TickCount() <= lastTime + 5)
+    return;
 
 #ifdef USE_OS_QUEUE
    if (all)
@@ -175,6 +180,8 @@ static void TransferQueue(int all)
       }
     }
   }
+  
+  lastTime = TickCount();
 }
 
 #ifdef USE_OS_QUEUE

@@ -328,7 +328,7 @@ typedef struct {
   int entries[MAX_CMAP_SIZE][2];
 } CCELL;
 
-extern byte           r[],g[],b[];  /* colormap */
+extern far byte           r[],g[],b[];  /* colormap */
 extern byte           gamcr[];   /* gamma correction curve */
 extern byte           fsgamcr[]; /* gamma correction curve (for FS dither) */
 #ifdef wx_x

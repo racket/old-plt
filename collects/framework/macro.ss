@@ -17,7 +17,8 @@
 	     (error 'mixin "argument ~a does not match ~a~n" ,super-g ,from-g))
 
 	   (let ([interface-has? (lambda (x)
-				   (printf "checking ~a in ~a~n" x ,from-g))])
+				   (printf "checking ~a in ~a~n" x ,from-g)
+				   (ivar-in-interface? x ,from-g))])
 	     (begin ,@(map (lambda (clause)
 			     (let ([names 
 				    (cond
@@ -43,7 +44,7 @@
 				  (void)
 				  ,@(map (lambda (id)
 					   `(unless (interface-has? ',id)
-					      (error 'mixin "~a not in ~a interface~n") ,id ,from-g))
+					      (error 'mixin "ivar ~a not in ~a interface but was referenced in class~n") ,id ,from-g))
 					 names))))
 			   clauses)))
 

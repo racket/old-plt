@@ -20,9 +20,9 @@
      ((+ white)
       (values lexeme 'white-space #f (position-offset start-pos) (position-offset end-pos)))
      (paren
-      (values lexeme 'no-color (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))
+      (values lexeme 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))
      ((+ (^ (: letter white paren)))
-      (values lexeme 'no-color #f (position-offset start-pos) (position-offset end-pos)))
+      (values lexeme 'other #f (position-offset start-pos) (position-offset end-pos)))
      ((+ letter)
       (let ((ok (spelled-correctly? lexeme)))
         (values lexeme (if ok 'other 'error) #f (position-offset start-pos) (position-offset end-pos))))

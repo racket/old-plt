@@ -10,6 +10,7 @@
 #include "wxscheme.h"
 #include "wx_main.h"
 #include "wx_dcps.h"
+#include "wx_clipb.h"
 #include "wxsmred.h"
 
 #include "wxs_obj.h"
@@ -1546,6 +1547,80 @@ static Scheme_Object *wxInAtomicRegion(int, Scheme_Object **argv)
     scheme_end_atomic();
 
   return scheme_void;
+}
+
+/***********************************************************************/
+/*                             clipboard                               */
+/***********************************************************************/
+
+class wxGetData {
+public:
+  char *result;
+  wxClipboardClient *clipOwner;
+  char *format;
+  long *length;
+  Scheme_Object *sema;
+};
+
+Scheme_Object *get_data_from_client(void *_gd, int, Scheme_Object **)
+{
+  wxGetData *gd = (wxGetData *)_gd;
+  char *result;
+
+  result = gd->clipOwner->GetData(gd->format, gd->length);
+
+  gd->result = result;
+  scheme_post_sema(gd->sema);
+
+  return scheme_void;
+}
+
+char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *length)
+{
+  if (clipOwner->context && (clipOwner->context != wxGetContextForFrame())) {
+    Scheme_Object *cb, *sema;
+    wxGetData *gd;
+    
+    sema = scheme_make_sema(0);
+
+    gd = new wxGetData;
+    gd->clipOwner = clipOwner;
+    gd->format = format;
+    gd->length = length;
+    gd->sema = sema;
+
+    cb = scheme_make_closed_prim(get_data_from_client, gd);
+
+    MrEdQueueInEventspace(clipOwner->context, cb);
+
+    if (!scheme_wait_sema(sema, 1)) {
+      scheme_thread_block(0);
+      scheme_making_progress();
+      if (!scheme_wait_sema(sema, 1)) {
+	scheme_thread_block(0.001);
+	scheme_making_progress();
+	if (!scheme_wait_sema(sema, 1)) {
+	  scheme_thread_block(0.1);
+	  scheme_making_progress();
+	  if (!scheme_wait_sema(sema, 1)) {
+	    scheme_thread_block(0.5);
+	    scheme_making_progress();
+	    if (!scheme_wait_sema(sema, 1)) {
+	      scheme_thread_block(0.5);
+	      scheme_making_progress();
+	      if (!scheme_wait_sema(sema, 1)) {
+		/* timeout */
+		return NULL;
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    
+    return gd->result;
+  } else
+    return clipOwner->GetData(format, length);
 }
 
 /***********************************************************************/

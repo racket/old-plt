@@ -49,6 +49,8 @@ class wxClipboardClient : public wxObject
      Format names should be 4 characters long, so things will work
      out on the Macintosh */
 
+  void *context; /* eventspace */
+
   wxClipboardClient();
 
   virtual void BeingReplaced(void) = 0;
@@ -103,6 +105,8 @@ void wxInitClipboard(void);
 
 extern wxClipboard *wxTheClipboard;
 /* The clipboard */
+
+char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *length);
 
 #endif // IN_CPROTO
 #endif // USE_CLIPBOARD

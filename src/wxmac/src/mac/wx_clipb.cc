@@ -28,6 +28,8 @@ static const char sccsid[] = "%W% %G%";
 # include <TextEdit.h>
 #endif
 
+extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
+
 static wxList *ClipboardFormats = NULL;
 
 #define CUSTOM_ID_START 100
@@ -278,8 +280,6 @@ wxClipboard::wxClipboard()
 
 wxClipboard::~wxClipboard()
 {
-  if (clipOwner)
-    clipOwner->BeingReplaced();
 }
 
 static int FormatStringToID(char *str)
@@ -296,11 +296,11 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
   Bool got_selection;
 
   if (clipOwner)
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
   clipOwner = client;
-  if (cbString) {
+  client->context = wxGetContextForFrame();
+  if (cbString)
     cbString = NULL;
-  }
 
   if (wxOpenClipboard()) {
     char **formats, *data;
@@ -328,7 +328,7 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
   got_selection = FALSE; // Assume another process takes over
 
   if (!got_selection) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
   }
 }
@@ -343,7 +343,7 @@ void wxClipboard::SetClipboardString(char *str, long time)
   Bool got_selection;
 
   if (clipOwner) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
   }
 
@@ -382,7 +382,7 @@ char *wxClipboard::GetClipboardString(long time)
 void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
 {
   if (clipOwner) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
   }
   cbString = NULL;
@@ -397,7 +397,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 {
   if (clipOwner)  {
     if (clipOwner->formats->Member(format))
-      return clipOwner->GetData(format, length);
+      return wxsGetDataInEventspace(clipOwner, format, length);
     else
       return NULL;
   } else if (cbString) {

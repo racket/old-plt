@@ -27,6 +27,7 @@
 #include "wx_cmdlg.h"
 #include "wx_menu.h"
 #include "wx_dcps.h"
+#include "wx_clipb.h"
 #ifdef USE_SENORA_GC
 # include "wx_types.h"
 #endif
@@ -527,6 +528,13 @@ static void kill_eventspace(Scheme_Object *ec, void *)
 
   if (!c)
     return; /* must not have had any frames or timers */
+
+  {
+    wxClipboardClient *clipOwner;
+    clipOwner = wxTheClipboard->GetClipboardClient();
+    if (clipOwner && (clipOwner->context == c))
+      wxTheClipboard->SetClipboardString("", 0);
+  }
 
   c->killed = 1;
 
@@ -1719,6 +1727,43 @@ void MrEdQueuePaint(wxWindow *wx_window)
 }
 
 #endif
+
+static Scheme_Object *call_being_replaced(void *d, int, Scheme_Object **argv)
+{
+  wxClipboardClient *clipOwner = (wxClipboardClient *)d;
+  clipOwner->BeingReplaced();
+  return scheme_void;
+}
+
+void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner)
+{
+  Scheme_Object *p;
+  MrEdContext *c = (MrEdContext *)clipOwner->context;
+  Q_Callback *cb;
+
+  if (c) {
+    clipOwner->context = NULL;
+
+    p = scheme_make_closed_prim(call_being_replaced, clipOwner);
+    
+    cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
+    cb->context = c;
+    cb->callback = p;
+    
+    insert_q_callback(q_callbacks + 1, cb);
+  }
+}
+
+void MrEdQueueInEventspace(void *context, Scheme_Object *thunk)
+{
+  Q_Callback *cb;
+
+  cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
+  cb->context = (MrEdContext *)context;
+  cb->callback = thunk;
+  
+  insert_q_callback(q_callbacks + 1, cb);
+}
 
 /****************************************************************************/
 /*                        Redirected Standard I/O                           */

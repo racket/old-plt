@@ -141,18 +141,21 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
   const char *meas = NULL;
   int i;
 
-  if (theStrlen < 0)
-    theStrlen = strlen(text+d);
-  
-  /* Check whether we need to go into Unicode mode to get Latin-1 *x output: */
-  for (i = 0; i < theStrlen; i++) {
-    if (((unsigned char *)text)[i + d] > 127)
-      break;
-  }
+  if (text) {
+    if (theStrlen < 0)
+      theStrlen = strlen(text+d);
+    
+    /* Check whether we need to go into Unicode mode to get Latin-1 *x output: */
+    for (i = 0; i < theStrlen; i++) {
+      if (((unsigned char *)text)[i + d] > 127)
+	break;
+    }
 
-  if (i >= theStrlen) {
-    meas = text;
-  }
+    if (i >= theStrlen) {
+      meas = text;
+    }
+  } else
+    theStrlen = 0;
   
   *x = wxTextFontInfo(txFont,
 		      (int)floor(txSize * scale),
@@ -162,7 +165,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
   if (meas) {
     /* it's all ASCII, where MacRoman == Latin-1 */
     /* so *x is right */
-  } else {
+  } else if (text) {
     *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
 			    1, 1, 
 			    txFont, (int)floor(txSize * scale), txFace);

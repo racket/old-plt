@@ -20,6 +20,7 @@ extern Scheme_Object *wxsBundlePSSetup(wxPrintSetupData *d);
 extern wxPrintSetupData *wxsUnbundlePSSetup(Scheme_Object *s);
 
 extern void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv);
+void MrEdQueueInEventspace(void *context, Scheme_Object *thunk);
 extern Scheme_Object *MrEd_mid_queue_key;
 
 extern Scheme_Object *wxs_app_file_proc;

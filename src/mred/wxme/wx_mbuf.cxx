@@ -1993,10 +1993,13 @@ char *wxMediaXClipboardClient::GetData(char *format, long *size)
 void wxMediaXClipboardClient::BeingReplaced(void)
 {
   if (wxMediaXSelectionOwner) {
-    wxMediaBuffer *b = wxMediaXSelectionOwner;
-    wxMediaXSelectionOwner= NULL;
-    xSelectionCopied = FALSE;
-    b->OwnXSelection(FALSE, TRUE, FALSE);
+    /* In case this client replaced itself somewhere along the way: */
+    if (this != wxTheClipboard->GetClipboardClient()) {
+      wxMediaBuffer *b = wxMediaXSelectionOwner;
+      wxMediaXSelectionOwner= NULL;
+      xSelectionCopied = FALSE;
+      b->OwnXSelection(FALSE, TRUE, FALSE);
+    }
   } else
     xSelectionCopied = FALSE;
 }

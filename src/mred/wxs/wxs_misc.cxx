@@ -341,6 +341,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 
 
+// @ "get-clipboard-client" : wxClipboardClient^ GetClipboardClient();
 
 
 class os_wxClipboard : public wxClipboard {
@@ -465,26 +466,6 @@ static Scheme_Object *os_wxClipboardGetClipboardString(int n,  Scheme_Object *p[
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-static Scheme_Object *os_wxClipboardGetClipboardClient(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  class wxClipboardClient* r;
-  objscheme_check_valid(os_wxClipboard_class, "get-clipboard-client in clipboard<%>", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)p[0])->primdata)->GetClipboardClient());
-
-  
-  
-  return WITH_REMEMBERED_STACK(objscheme_bundle_wxClipboardClient(r));
-}
-
 static Scheme_Object *os_wxClipboardSetClipboardString(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -541,13 +522,12 @@ void objscheme_setup_wxClipboard(Scheme_Env *env)
   wxREGGLOB(os_wxClipboard_class);
   wxREGGLOB(os_wxClipboard_interface);
 
-  os_wxClipboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 7));
+  os_wxClipboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 6));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bitmap" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardBitmap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bitmap" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardBitmap, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardData, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-client" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardClient, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-string" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardString, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-client" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardClient, 2, 2));
 

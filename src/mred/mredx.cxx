@@ -12,6 +12,7 @@
 
 #include "wx_main.h"
 #include "wx_media.h"
+#include "wx_clipb.h"
 #include "scheme.h"
 
 #include "mred.h"
@@ -30,6 +31,8 @@ static int breaking_code_set = 0;
 static Widget *grab_stack, grabber;
 static int grab_stack_pos = 0, grab_stack_size = 0;
 #define WSTACK_INC 3
+
+extern Widget wx_clipWindow;
 
 wxWindow *wxLocationToWindow(int x, int y);
 
@@ -204,8 +207,21 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
   }
 
   if (widget) {
-    Widget parent;
-    for (parent = widget; XtParent(parent); parent = XtParent(parent)) {
+    Widget parent = 0;
+
+    if (widget == wx_clipWindow) {
+      wxClipboardClient *clipOwner;
+      clipOwner = wxTheClipboard->GetClipboardClient();
+      if (clipOwner) {
+	MrEdContext *cc = (MrEdContext *)clipOwner->context;
+	if (cc)
+	  parent = cc->finalized->toplevel;
+      }
+    }
+
+    if (!parent) {
+      for (parent = widget; XtParent(parent); parent = XtParent(parent)) {
+      }
     }
     
 #if 0

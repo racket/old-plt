@@ -1313,16 +1313,6 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     if (isnip->IsOwned())
       goto give_up;
 
-
-    if (!isnip->snipclass)
-      goto give_up;
-    {
-      wxSnipClassList *scl;
-      scl = wxGetTheSnipClassList();
-      if (scl->FindPosition(isnip->snipclass) < 0)
-	goto give_up;
-    }
-
     if ((isnip->flags & wxSNIP_NEWLINE)&&!(isnip->flags & wxSNIP_HARD_NEWLINE))
       isnip->flags -= wxSNIP_NEWLINE;
     

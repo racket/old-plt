@@ -76,7 +76,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 @ "set-clipboard-client" : void SetClipboardClient(wxClipboardClient!,ExactLong);
 @ "set-clipboard-string" : void SetClipboardString(string,ExactLong);
-@ "get-clipboard-client" : wxClipboardClient^ GetClipboardClient();
+// @ "get-clipboard-client" : wxClipboardClient^ GetClipboardClient();
 @ "get-clipboard-string" : nstring GetClipboardString(ExactLong);
 @ "get-clipboard-data" : nstring/makeSizedString[1] GetClipboardData(string,-long*,ExactLong);
 

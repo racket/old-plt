@@ -1773,12 +1773,13 @@ static unsigned int *convert_to_drawable_format(const char *s, int ds, long *_ul
   return us;
 }
 
-#define WX_CVT_BUF_SIZE 64
+#define WX_CVT_BUF_SIZE 1024
 #ifdef WX_USE_XFT
 # define WX_XFT_ONLY(x) x
 #else
 # define WX_XFT_ONLY(x) 1
 #endif
+static unsigned int cvt_buf[WX_CVT_BUF_SIZE];
 
 void wxWindowDC::DrawText(char *orig_text, float x, float y, 
 			  Bool combine, Bool isUnicode, int dt,
@@ -1795,7 +1796,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
   long        textlen;
   float       e_scale_x, e_scale_y;
   float       ca, sa;
-  unsigned int cvt_buf[WX_CVT_BUF_SIZE], *text;
+  unsigned int *text;
   
 
   if (!DRAWABLE) // ensure that a drawable has been associated
@@ -2062,7 +2063,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
   wxFontStruct *xfontinfo;
 #endif
   float w, h;
-  unsigned int cvt_buf[WX_CVT_BUF_SIZE], *s;
+  unsigned *s;
 
   font_to_use = _font ? _font : current_font;
   if (!font_to_use) {

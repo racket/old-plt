@@ -996,14 +996,73 @@ void wxDC::SetBrush(wxBrush *brush)
     brush->ChangeBrush();
 }
 
-static int wstrlen(const char *c)
+static int ucs4_strlen(const unsigned int *c)
 {
   int i;
   
-  for (i = 0; c[i] || c[i+1]; i++) {
+  for (i = 0; c[i]; i++) {
   }
 
-  return i / 2;
+  return i;
+}
+
+#define QUICK_UBUF_SIZE 1024
+static wchar_t u_buf[QUICK_UBUF_SIZE];
+
+wchar_t *convert_to_drawable_format(char *text, int d, int ucs4, long *_ulen)
+{
+  int ulen;
+  wchar_t *unicode;
+  int theStrLen;
+
+  if (ucs4) {
+    len = ucs4_strlen(text XFORM_OK_PLUS d);
+  } else {
+    len = strlen(text XFORM_OK_PLUS d);
+  }
+
+  if (ucs4) {
+    int i, extra;
+    unsigned int v;
+
+    /* Count characters that fall outside UCS-2: */
+    for (i = 0, extra = 0; i < theStrlen; i++) {
+      if (((unsigned int *)text)[d+i] > 0xFFFF)
+	extra++;
+    }
+
+    ulen = theStrlen + extra;
+    if (ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC wchar_t[ulen];
+    else
+      unicode = u_buf;
+    
+    /* UCS-4 -> UTF-16 conversion */
+    for (i = 0, extra = 0; i < theStrlen; i++) {
+      v = ((unsigned int *)text)[d+i];
+      if (v > 0xFFFF) {
+	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
+	extra++;
+	unicode[i+extra] = 0xDC000000 | (v & 0x3FF);
+      } else
+	unicode[i+extra] = v;
+    }
+  } else {
+    /* UTF-8 -> UTF-16 conversion */
+    ulen = scheme_utf8_decode((unsigned char *)text, d, 
+			      theStrlen, NULL, 0, -1, 
+			      NULL, 1 /*UTF-16*/, '?');
+    if (ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC wchar_t[ulen];
+    else
+      unicode = u_buf;
+    ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
+			      (unsigned int *)unicode, 0, -1, 
+			      NULL, 1 /*UTF-16*/, '?');
+  }
+  
+  *_ulen = ulen;
+  return unicode;
 }
 
 void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool use16bit, int d, float angle)
@@ -1012,6 +1071,8 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool use16
   HDC dc;
   DWORD old_background;
   float w, h;
+  wchar_t *ustring;
+  long len;
 
   dc = ThisDC();
 
@@ -1044,13 +1105,9 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool use16
   
   SetRop(dc, wxSOLID);
 
-  if (use16bit) {
-    (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), 
-		   (wchar_t *)(text + d), wstrlen(text + d));
-  } else {
-    (void)TextOut(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), 
-		  text + d, strlen(text + d));
-  }
+  ustring = convert_to_drawable_format(text, d, ucs4, &len);
+
+  (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), ustring, len);
 
   if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
@@ -1282,13 +1339,14 @@ float wxDC::GetCharWidth(void)
 
 void wxDC::GetTextExtent(const char *string, float *x, float *y,
                          float *descent, float *topSpace, 
-			 wxFont *theFont, Bool combine, Bool use16bit, int d)
+			 wxFont *theFont, Bool combine, Bool ucs4, int d)
 {
   wxFont *oldFont = NULL;
   HDC dc;
   SIZE sizeRect;
   TEXTMETRIC tm;
-  int len;
+  long len;
+  wchar_t *ustring;
 
   if (theFont) {
     oldFont = font;
@@ -1305,18 +1363,10 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
     if (topSpace) *topSpace= 0;
     return;
   }
-  
-  if (use16bit) {
-    len = wstrlen(string + d);
-  } else {
-    len = strlen(string + d);
-  }
 
-  if (use16bit && len) {
-    GetTextExtentPointW(dc, (wchar_t *)(string + d), len, &sizeRect);
-  } else {
-    GetTextExtentPoint(dc, len ? string + d : " ", len ? len : 1, &sizeRect);
-  }
+  ustring = convert_to_drawable_format(text, d, ucs4, &len);
+
+  GetTextExtentPointW(dc, ustring, len, &sizeRect);
   if (descent || topSpace)
     GetTextMetrics(dc, &tm);
 

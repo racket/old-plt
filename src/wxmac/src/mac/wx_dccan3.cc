@@ -468,11 +468,12 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   style = (qd_spacing ? theATSUqdstyle : theATSUstyle);
 
   if (ucs4) {
-    int i, extra, v;
+    int i, extra;
+    unsigned int v;
 
     /* Count characters that fall outside UCS-2: */
     for (i = 0, extra = 0; i < theStrlen; i++) {
-      if (((int *)text)[d+i] > 0xFFFF)
+      if (((unsigned int *)text)[d+i] > 0xFFFF)
 	extra++;
     }
 
@@ -484,7 +485,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     
     /* UCS-4 -> UTF-16 conversion */
     for (i = 0, extra = 0; i < theStrlen; i++) {
-      v = ((int *)text)[d+i];
+      v = ((unsigned int *)text)[d+i];
       if (v > 0xFFFF) {
 	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
 	extra++;

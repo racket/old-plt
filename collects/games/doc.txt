@@ -1,0 +1,66 @@
+_Games_
+=======
+
+The "Games" (Unix: plt/bin/games) executable is created by "Setup PLT"
+(Unix: plt/bin/setup-plt). 
+
+Run Games and select a game by clicking one of the buttons:
+
+ * _Same_ - The object is to score points by removing dots from the
+   board. To remove a dot, click on it. As long as there is another
+   dot of the same color next to the clicked dot, it will disappear
+   along with all adjacent dots of the same color. After the dots
+   disappear, dots in the rows above the deleted dots will fall into
+   the vacated spaces. If an entire column is wiped out, all of the
+   dots from the right will slide left to take up the empty column's
+   space.
+
+   Your score increases for each ball removed from the board. The
+   score for each click is a function of the number of balls that
+   disappeared. The "This Click" label shows how many points you would
+   score for clicking the dots underneath the mouse pointer. The score
+   varies quadratically with the number of balls, so eliminating many
+   balls with one click is advantageous.
+
+                                              - by Robby
+
+ * _Go Fish_ (against two computer players) - The children's card game
+   where you try to get rid of all you cards by forming pairs. The
+   status line at the bottom of the window provides instructions as
+   you go. [The computer players are not smart.]
+
+                                              - by Matthew
+
+ * _Blackjack_ - Standard rules, plus the following specifics:
+
+      - 1 player (not counting the dealer)
+      - 4 decks, reshuffled after 3/4 of the cards are used
+      - Dealer stands on soft 17s
+      - Splitting is allowed only on the first two cards, and only if they
+        are equal; 10 and the face cards are all considered equal for
+        splitting
+      - Doubling is allowed on all unsplit hands, not on split hands
+      - No blackjacks after splitting
+      - No surrender
+      - No insurance
+      - No maximum under-21 hand size
+      - Dealer's second card is not revealed if the player busts (or
+        both halves of a split hand bust)
+
+                                              - by Matthew
+
+ * _Gin Rummy_ (against the computer) - Put all cards in your hand
+   into straight and 3- or 4-of-a-kind sets to win. On each turn, you
+   can either draw from the deck or from the discard pile, then you
+   must discard one of your own cards. [The computer players is
+   smart.]
+
+                                              - by Matthew
+
+ * _Minesweeper_ - A simple version of the classic tile-removing game.
+
+                                              - by Matthew
+
+You can also implement your own card games by using the "cards"
+sub-collection of the "games" collection.
+

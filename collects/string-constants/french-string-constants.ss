@@ -454,6 +454,8 @@
  (windows-menu-label "Fe&nêtres")
  (bring-frame-to-front "Amener une fenêtre au premier plan")       ;;; title of dialog
  (bring-frame-to-front... "Amener une fenêtre au premier plan...") ;;; corresponding title of menu item
+ (next-window "Fenêtre suivante")
+ (previous-window "Fenêtre précédente")
  
  (show-menu-label "&Montrer")
  (show-overview "Montrer le contour") 
@@ -507,6 +509,7 @@
  (sort-by-name "Trier par nom")
  (sort-by-position "Trier par position dans le fichier")
  (no-definitions-found "<< aucune définition trouvée >>")
+ (jump-to-defn "Aller à la définition de ~a")
  
  (recent-items-sort-by-age "Trier par age")
  (recent-items-sort-by-name "Trier par nom")

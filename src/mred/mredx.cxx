@@ -335,6 +335,11 @@ Display *MrEdGetXDisplay(void)
     return XtDisplay(orig_top_level);
 }
 
+int MrEdGetDoubleTime(void)
+{
+  return XtGetMultiClickTime(MrEdGetXDisplay());
+}
+
 #ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;
 #endif

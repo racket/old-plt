@@ -149,6 +149,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     wxColor *saveBack;
     int scaled_width;
     int scaled_height;
+    wxBitmap *tmp = NULL;
 
     if (!DRAWABLE) // ensure that a drawable has been associated
       return FALSE;
@@ -156,9 +157,112 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     if (!src->Ok())
       return FALSE;
 
+    /* Handle scaling by creating a new, tmeporary bitmap: */
+    if ((scale_x != 1) || (scale_y != 1)) {
+      int sw, sh, tw, th, i, j, ti, tj, xs, ys;
+      unsigned long pixel;
+
+      xs = (int)xsrc;
+      ys = (int)ysrc;
+
+      sw = src->GetWidth();
+      sh = src->GetHeight();
+
+      if (xs > sw)
+	return TRUE;
+      if (ys > sh)
+	return TRUE;
+
+      if (sw > w)
+	sw = (int)w;
+      if (sh > h)
+	sh = (int)h;
+      sw -= xs;
+      sh -= ys;
+
+      tw = (int)(sw * scale_x);
+      th = (int)(sh * scale_y);
+      tmp = new wxBitmap(tw, th, (src->GetDepth() == 1));
+      
+      if (tmp->Ok()) {
+	XImage *simg, *timg;
+	XGCValues values;
+	GC agc;
+	
+	if (src->selectedTo)
+	  src->selectedTo->EndSetPixel();
+	
+	simg = XGetImage(DPY, GETPIXMAP(src), xs, ys, sw, sh, AllPlanes, ZPixmap);
+	timg = XGetImage(DPY, GETPIXMAP(tmp), 0, 0, tw, th, AllPlanes, ZPixmap);
+	
+	if (tw > sw) {
+	  for (ti = 0; ti < tw; ti++) {
+	    i = (int)(ti / scale_x);
+	    if (th > h) {
+	      for (tj = 0; tj < th; tj++) {
+		j = (int)(tj / scale_y);
+		pixel = XGetPixel(simg, i + xs, j + ys);
+		XPutPixel(timg, ti, tj, pixel);
+	      }
+	    } else {
+	      for (j = 0; j < sh; j++) {
+		tj = (int)(j * scale_y);
+		pixel = XGetPixel(simg, i + xs, j + ys);
+		XPutPixel(timg, ti, tj, pixel);
+	      }
+	    }
+	  }
+	} else {
+	  for (i = 0; i < sw; i++) {
+	    ti = (int)(i * scale_x);
+	    if (th > h) {
+	      for (tj = 0; tj < th; tj++) {
+		j = (int)(tj / scale_y);
+		pixel = XGetPixel(simg, i + xs, j + ys);
+		XPutPixel(timg, ti, tj, pixel);
+	      }
+	    } else {
+	      for (j = 0; j < sh; j++) {
+		tj = (int)(j * scale_y);
+		pixel = XGetPixel(simg, i + xs, j + ys);
+		XPutPixel(timg, ti, tj, pixel);
+	      }
+	    }
+	  }
+	}
+
+	agc = XCreateGC(DPY, GETPIXMAP(tmp), 0, &values);
+	if (agc) {
+	  XPutImage(DPY, GETPIXMAP(tmp), agc, timg, 0, 0, 0, 0, tw, th);
+	  XFreeGC(DPY, agc);
+	  retval = 1;
+	} else
+	  retval = 0;
+
+	XDestroyImage(simg);
+	XDestroyImage(timg);
+
+	xsrc = ysrc = 0;
+	src = tmp;
+
+	if (!retval) {
+	  DELETE_OBJ tmp;
+	  return retval;
+	}
+      } else {
+	DELETE_OBJ tmp;
+	return FALSE;
+      }
+    }
+
     if (src->GetDepth() > 1) {
       /* Neither rop nor dcolor matter. Use GCBlit. */
-      return GCBlit(xdest, ydest, w, h, src, xsrc, ysrc);
+      retval = GCBlit(xdest, ydest, w, h, src, xsrc, ysrc);
+
+      if (tmp)
+	DELETE_OBJ tmp;
+
+      return retval;
     }
 
     /* This is mono to mono/color */
@@ -209,6 +313,10 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     SetPen(savePen);
     SetBackground(saveBack);
 
+    if (tmp) {
+      DELETE_OBJ tmp;
+    }
+      
     return retval; // someting wrong with the drawables
 }
 

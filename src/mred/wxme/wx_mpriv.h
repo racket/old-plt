@@ -5,7 +5,8 @@
 
 enum {
   wxSTREAK_EXCEPT_DELAYED = 1,
-  wxSTREAK_KEY_SEQUENCE
+  wxSTREAK_EXCEPT_KEY_SEQUENCE = 2,
+  wxSTREAK_EXCEPT_CURSOR = 4
   };
 
 class wxClickback : public wxObject

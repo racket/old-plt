@@ -1566,6 +1566,12 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 
   width = (long)floor(fwidth);
   height = (long)floor(fheight);
+
+  if (rop >= 0) {
+    fwidth = XSCALEREL(fwidth);
+    fheight = YSCALEREL(fheight);
+  }
+
   x = (long)floor(xsrc);
   y = (long)floor(ysrc);
 

@@ -386,19 +386,21 @@ void wxMediaEdit::InitNewAdmin(void)
 
 void wxMediaEdit::EndStreaks(int exception)
 {
-  if (map && (exception != wxSTREAK_KEY_SEQUENCE))
+  if (map && !(exception & wxSTREAK_EXCEPT_KEY_SEQUENCE))
     map->BreakSequence();
   if (flash && flashautoreset && !flashdirectoff)
     FlashOff();
 
   typingStreak = FALSE;
   deletionStreak = FALSE;
-  vcursorStreak = FALSE;
-  extendStreak = FALSE;
+  if (!(exception & wxSTREAK_EXCEPT_CURSOR)) {
+    vcursorStreak = FALSE;
+    extendStreak = FALSE;
+  }
   if (anchorStreak && !keepAnchorStreak)
     SetAnchor(FALSE);
 
-  if (exception != wxSTREAK_EXCEPT_DELAYED)
+  if (!(exception & wxSTREAK_EXCEPT_DELAYED))
     delayedStreak = FALSE;
 
   killStreak = FALSE;

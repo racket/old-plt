@@ -77,14 +77,21 @@ static int doubleClickThreshold = -1;
 
 #ifndef wx_x
 # define wxAPP_CLASS wxTheApp->wx_class
+#else
+extern int MrEdGetDoubleTime(void);
 #endif
 
 int wxmeGetDoubleClickThreshold()
 {
   if (doubleClickThreshold < 0) {
     if (!wxGetResource(wxAPP_CLASS, "doubleClickTime", 
-		       &doubleClickThreshold))
+		       &doubleClickThreshold)) {
+#ifdef wx_xt
+      doubleClickThreshold = MrEdGetDoubleTime();
+#else      
       doubleClickThreshold = DOUBLE_CLICK_THRESHOLD;
+#endif
+    }
   }
 
   return doubleClickThreshold;

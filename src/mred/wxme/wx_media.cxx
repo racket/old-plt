@@ -368,7 +368,7 @@ void wxMediaEdit::OnEvent(wxMouseEvent *event)
     return;
 
   if (!event->Moving())
-    EndStreaks(wxSTREAK_KEY_SEQUENCE);
+    EndStreaks(wxSTREAK_EXCEPT_KEY_SEQUENCE | wxSTREAK_EXCEPT_CURSOR);
 
   if (event->ButtonDown() || caretSnip) {
     /* First, find clicked-on snip: */

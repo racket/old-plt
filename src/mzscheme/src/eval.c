@@ -147,12 +147,10 @@ scheme_init_eval (Scheme_Env *env)
     register_traversers();
 #endif
 
-    REGISTER_SO(scheme_eval_waiting);
-    REGISTER_SO(scheme_multiple_values);
-
 #ifdef MZ_EVAL_WAITING_CONSTANT
     scheme_eval_waiting = MZ_EVAL_WAITING_CONSTANT;
 #else
+    REGISTER_SO(scheme_eval_waiting);
     scheme_eval_waiting = scheme_alloc_eternal_object();
     scheme_eval_waiting->type = scheme_eval_waiting_type;
 #endif
@@ -160,6 +158,7 @@ scheme_init_eval (Scheme_Env *env)
 #ifdef MZ_EVAL_WAITING_CONSTANT
     scheme_multiple_values = MZ_MULTIPLE_VALUES_CONSTANT;
 #else
+    REGISTER_SO(scheme_multiple_values);
     scheme_multiple_values = scheme_alloc_eternal_object();
     scheme_multiple_values->type = scheme_multiple_values_type;
 #endif

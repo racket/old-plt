@@ -423,7 +423,7 @@ static void *mark(void *p)
 #endif
 	
       size = tag_table[tag](p, NULL);
-      if (!(size & 0x4)) {
+      if (!(size & 0x1)) {
 	if ((long)new_tagged_high & 0x4) {
 	  ((Scheme_Type *)new_tagged_high)[0] = SKIP;
 	  new_tagged_high += 1;

@@ -137,7 +137,6 @@ scheme_init_fun (Scheme_Env *env)
 #endif
 
     REGISTER_SO(scheme_void_func);
-    REGISTER_SO(scheme_tail_call_waiting);
 
 #ifdef USE_DIFFTIME
     base_time = time(NULL);
@@ -148,6 +147,7 @@ scheme_init_fun (Scheme_Env *env)
 #ifdef MZ_APPLY_WAITING_CONSTANT
     scheme_tail_call_waiting = MZ_APPLY_WAITING_CONSTANT;
 #else
+    REGISTER_SO(scheme_tail_call_waiting);
     scheme_tail_call_waiting = scheme_alloc_eternal_object();
     scheme_tail_call_waiting->type = scheme_tail_call_waiting_type;
 #endif

@@ -37,7 +37,7 @@
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 #define VSLOP 0
 #define HSLOP 4
-#define PAD_Y 4
+#define PAD_Y 5
 #define PAD_X 2
 #define MSPACEY 1
 
@@ -146,8 +146,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     h = maxdflth + lblh + MSPACEY + padTop + padBottom;
     padTop += lblh;
   } else {
-    h = max(lblh, maxdflth) + padLeft + padRight;
-    w = maxdfltw + lblw + padTop + padBottom;
+    h = max(lblh, maxdflth) + padTop + padBottom;
+    w = maxdfltw + lblw + padLeft + padRight;
     padLeft += lblw;
   }
 
@@ -168,7 +168,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     cTitle = new wxLabelArea(this, Title, labelFont,
 			     ((labelPosition == wxVERTICAL) ? wxTop : wxLeft),
 			     0,
-			     ((labelPosition == wxVERTICAL) ? 0 : ((maxdflth - lblh) / 2) + PAD_Y));
+			     ((labelPosition == wxVERTICAL) ? 0 : ((maxdflth - lblh) / 2) + PAD_Y + 1));
   } else
     cTitle = NULL;
 

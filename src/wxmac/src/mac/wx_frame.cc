@@ -207,6 +207,7 @@ wxFrame::wxFrame // Constructor (for frame window)
     SetControlData(ctl, kControlEntireControl, kControlUserPaneDrawProcTag, 
 		   sizeof(userPaneDrawFunctionUPP), (Ptr)&userPaneDrawFunctionUPP);
     ::EmbedControl(ctl, cMacControl);
+    bgControl = ctl;    
   }
 
   EnforceSize(-1, -1, -1, -1, 1, 1);
@@ -245,6 +246,11 @@ wxFrame::~wxFrame(void)
   if (cDialogPanel)
     cDialogPanel = NULL;
   DestroyChildren();
+
+  if (bgControl) { 
+    ::DisposeControl(bgControl);
+    bgControl = NULL;
+  }
 
   theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   ::DisposeWindow(theMacWindow);

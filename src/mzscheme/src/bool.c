@@ -132,39 +132,31 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
     return 0;
 #ifdef MZ_USE_SINGLE_FLOATS
   else if (t1 == scheme_float_type) {
-    int i;
-    char *a = (char *)&((Scheme_Float *)obj1)->float_val;
-    char *b = (char *)&((Scheme_Float *)obj2)->float_val;
-    for (i = sizeof(float); i--; ) {
-      if (a[i] != b[i]) {
-	/* Double-check for NANs with different signs: */
-	float f = SCHEME_FLT_VAL(obj1);
-	if (MZ_IS_NAN(f)) {
-	  f = SCHEME_FLT_VAL(obj2);
-	  if (MZ_IS_NAN(f))
-	    return 1;
-	}
-	return 0;
+    float a, b;
+    a = SCHEME_FLT_VAL(obj1);
+    b = SCHEME_FLT_VAL(obj2);
+    if (a != b) {
+      /* Double-check for NANs: */
+      if (MZ_IS_NAN(a)) {
+	if (MZ_IS_NAN(b))
+	  return 1;
       }
+      return 0;
     }
     return 1;
   }
 #endif
   else if (t1 == scheme_double_type) {
-    int i;
-    char *a = (char *)&((Scheme_Double *)obj1)->double_val;
-    char *b = (char *)&((Scheme_Double *)obj2)->double_val;
-    for (i = sizeof(double); i--; ) {
-      if (a[i] != b[i]) {
-	/* Double-check for NANs with different signs: */
-	double d = SCHEME_DBL_VAL(obj1);
-	if (MZ_IS_NAN(d)) {
-	  d = SCHEME_DBL_VAL(obj2);
-	  if (MZ_IS_NAN(d))
-	    return 1;
-	}
-	return 0;
+    double a, b;
+    a = SCHEME_DBL_VAL(obj1);
+    b = SCHEME_DBL_VAL(obj2);
+    if (a != b) {
+      /* Double-check for NANs: */
+      if (MZ_IS_NAN(a)) {
+	if (MZ_IS_NAN(b))
+	  return 1;
       }
+      return 0;
     }
     return 1;
   } else if (t1 == scheme_bignum_type)

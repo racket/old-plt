@@ -432,8 +432,15 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
   if (len -delta == 6) {
     Scheme_Object *special;
     special = read_special_number(str, delta);
-    if (special)
-      return special;
+    if (special) {
+      if (!is_not_float)
+	return special;
+      if (report)
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
+			"read-number: no exact representation for %V",
+			special);
+      return scheme_false;
+    }
   }
 
   /* Look for <special>+...i and ...<special>i */
@@ -470,6 +477,14 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
     if (special) {
       Scheme_Object *other;
       int dbz = 0;
+
+      if (is_not_float) {
+	if (report)
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
+			  "read-number: no exact representation for %V",
+			  special);
+	return scheme_false;
+      }
 
       other = scheme_read_number(s2, len - delta - 6 + 4,
 				 is_float, is_not_float, 1,
@@ -1077,7 +1092,7 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
       s[has_expt - delta] = 0;
       
       mantissa = scheme_read_number(s, has_expt - delta, 
-				    0, 0, 1,
+				    is_float, is_not_float, 1,
 				    radix, 1, next_complain,
 				    &dbz,
 				    test_only,
@@ -1274,9 +1289,18 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
 
     n1 = scheme_bin_div(n1, n2);
 
-    if (is_not_float)
+    if (is_not_float) {
+      if (SCHEME_FLOATP(n1)) {
+	if (!scheme_check_double(NULL, SCHEME_FLOAT_VAL(n1), NULL)) {
+	  if (complain)
+	    scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
+			    "read-number: no exact representation for %V", 
+			    n1);
+	  return scheme_false;
+	}
+      }
       n1 = scheme_inexact_to_exact(1, &n1);
-    else if (is_float)
+    } else if (is_float)
       n1 = TO_DOUBLE(n1);
 
     return CHECK_SINGLE(n1, single);

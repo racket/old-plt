@@ -3162,9 +3162,7 @@
 		   ;; Non-string result represents an error
 		   (cond
 		    [(string? s)
-		     (let ([s (cond
-			       [(path? s) (path->bytes s)]
-			       [(string? s) (string->bytes/utf-8 s)])])
+		     (let ([s (string->bytes/utf-8 s)])
 		       (if (regexp-match -re:ok-relpath s)
 			   ;; Parse Unix-style relative path string
 			   (let loop ([path (get-dir)][s s])

@@ -66,7 +66,7 @@ Scheme_Object *SCHEME_RATIONAL_FROM_FLOAT(FP_TYPE d)
     negate = 0;
 #endif
 
-  SCHEME_CHECK_FLOAT("inexact->exact", d, "rational");
+  SCHEME_CHECK_FLOAT("inexact->exact", d, "exact");
 
   is_neg = (d < 0);
 

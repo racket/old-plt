@@ -1700,9 +1700,27 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent = new wxMouseEvent;
 	
 	switch (xev->xbutton.button) {
-	case Button1: wxevent->eventType = wxEVENT_TYPE_LEFT;   break;
-	case Button2: wxevent->eventType = wxEVENT_TYPE_MIDDLE; break;
-	case Button3: wxevent->eventType = wxEVENT_TYPE_RIGHT;  break;
+	case Button1: 
+	  wxevent->eventType = wxEVENT_TYPE_LEFT;
+	  if (Press)
+	    win->current_state |= Button1Mask;
+	  else
+	    win->current_state -= Button1Mask;
+	  break;
+	case Button2: 
+	  wxevent->eventType = wxEVENT_TYPE_MIDDLE; 
+	  if (Press)
+	    win->current_state |= Button2Mask;
+	  else
+	    win->current_state -= Button2Mask;
+	  break;
+	case Button3: 
+	  wxevent->eventType = wxEVENT_TYPE_RIGHT;
+	  if (Press)
+	    win->current_state |= Button3Mask;
+	  else
+	    win->current_state -= Button3Mask;
+	  break;
 	}
 	if (Press) {
 	  // button is down

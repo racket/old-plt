@@ -509,6 +509,7 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect);
       ::EraseRect(&oldWindowRect);
     }
+    ReleaseCurrentDC();
   }
 
   if (xIsChanged) cWindowX = x;
@@ -526,6 +527,7 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
       ::EraseRect(&newWindowRect);
     }
+    ReleaseCurrentDC();
   }
 }
 
@@ -541,6 +543,7 @@ void wxWindow::Refresh(void)
     OffsetRect(&theClipRect,SetOriginX,SetOriginY);
     ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&theClipRect); // force redraw of window
   }
+  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -743,6 +746,24 @@ int wxWindow::SetCurrentDC(void) // mac platform only
   }
 
   return vis;
+}
+
+void wxWindow::ReleaseCurrentDC(int really)
+{
+  /* This method is here for windows that use a white background, so
+     that the background color can be reset.  Currently, that means
+     wxListBox only. */
+  if (really) {
+    if (cMacDC->currentUser() == this) {
+      CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+      ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+      cMacDC->setCurrentUser(NULL);
+
+      int depth;
+      depth = wxDisplayDepth();
+      SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);
+    }
+  }
 }
 
 RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
@@ -1554,6 +1575,7 @@ void wxWindow::DoShow(Bool v)
     
     ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
   }
+  ReleaseCurrentDC();
 
   cHidden = v;
 
@@ -1636,6 +1658,8 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   Point pos = {(short)y + SetOriginY, (short)x + SetOriginX};
   LocalToGlobal(&pos);
   long sel = ::PopUpMenuSelect(m, pos.v, pos.h, 0);
+
+  ReleaseCurrentDC();
 
   int itemId;
 

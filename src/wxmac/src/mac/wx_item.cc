@@ -116,6 +116,8 @@ void wxItem::ChangeToGray(Bool gray)
       HiliteControl(cMacControl, 0);
 #endif
     }
+  } else {
+    Refresh(); /* to paint custom control */
   }
   
   wxWindow::ChangeToGray(gray);

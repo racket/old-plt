@@ -135,6 +135,8 @@ class wxListBox: public wxbListBox
 
   virtual Bool WantsFocus(void); // mflatt
   virtual void InternalGray(Bool gray);
+  virtual void ReleaseCurrentDC(int really = 0);
+  virtual void Activate(Bool gray);
 protected:
 
   virtual void ChangeToGray(Bool gray);

@@ -169,12 +169,12 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   OSErr result;
   
-  unsigned long flags = alDoVertScroll
-    | alDoDynamicScroll
-      | alDoDrawFocus
-	| alDoDrawRect
-	  | alDoDrawOffscreen
-	    | alDoRowsOnly;
+  unsigned long flags = (alDoVertScroll
+			 | alDoDynamicScroll
+			 | alDoDrawFocus
+			 | alDoDrawRect
+			 | alDoDrawOffscreen
+			 | alDoRowsOnly);
   
   if (!(multiple & (wxMULTIPLE | wxEXTENDED))) {
     flags = flags | alDoSelOnlyOne;
@@ -230,6 +230,9 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (GetParent()->IsHidden())
     DoShow(FALSE);
   
+
+  ReleaseCurrentDC();
+
   return TRUE;
 }
 
@@ -256,12 +259,15 @@ void wxListBox::Paint(void)
     ::ALUpdate(visibleRgn, cListReference);
     DisposeRgn(visibleRgn);
   }
+  ReleaseCurrentDC();
   
   wxWindow::Paint();
 }
 
 void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
+  if (cHidden) return;
+
   SetCurrentDC();
   Rect viewRect;
   
@@ -296,6 +302,8 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
     }
   
+  ReleaseCurrentDC();
+
   wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }
 
@@ -349,11 +357,12 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 
 void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 {
-  SetCurrentDC();
   if (event->leftDown || event->rightDown) {
     int startH;
     int startV;
     event->Position(&startH,&startV); // client c.s.
+
+    SetCurrentDC();
     
     Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
     int modifiers = 0;
@@ -405,6 +414,8 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
       
       //		ALLastClick(&cell,cListReference);
 
+      ReleaseCurrentDC();
+
       if (doubleclick) {
 	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
 	ProcessCommand(commandEvent);
@@ -438,8 +449,6 @@ void wxListBox::OnChar(wxKeyEvent *event)
 {
   int move = 0;
 
-  SetCurrentDC();
-
   switch (event->KeyCode()) {
   case WXK_UP:
   case WXK_LEFT:
@@ -459,6 +468,9 @@ void wxListBox::OnChar(wxKeyEvent *event)
   if (move) {
     ALCell now, next, save;
     now.h = now.v = 0;
+
+    SetCurrentDC();
+
     if (ALGetSelect(TRUE, &now, cListReference)) {
       if (!(ALFeatureFlag(alFSelOnlyOne,alBitTest,cListReference)) && (move > 0)) {
 	// moving forward for multiple selections: find last selected
@@ -510,7 +522,6 @@ void wxListBox::OnChar(wxKeyEvent *event)
       ALAutoScroll(midpoint,&next,cListReference);
     }
 
-
     /*	Rect rect;
 	LRect(&rect, next, cListHandle);
 	if (rect.top < 0) {
@@ -526,6 +537,9 @@ void wxListBox::OnChar(wxKeyEvent *event)
 	LScroll(0, amt, cListHandle);
 	}
 	*/
+
+    ReleaseCurrentDC();
+
     wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
     ProcessCommand(commandEvent);
   }
@@ -551,6 +565,7 @@ void wxListBox::Delete(int N)
     }
   SetCurrentDC();
   ALDelRow(1, N, cListReference);
+  ReleaseCurrentDC();
   no_items --;
   cKeycnt--;
 }
@@ -573,7 +588,7 @@ void wxListBox::Append(char *Item, char *Client_data)
   no_items ++;
   if (Client_data) cKeycnt++;
   
-  // Paint();  // ALSetCell claims to redraw needed cell automatically 
+  ReleaseCurrentDC();
 }
 
 void wxListBox::Append(char *Item)
@@ -598,8 +613,7 @@ void wxListBox::Set(int n, char *choices[])
     ALSetCell(stringHandle ,&cell, cListReference);
   }
   no_items = cell.v;
-  // LSetDrawingMode(TRUE, cListHandle);
-  // Paint();
+  ReleaseCurrentDC();
 }
 
 Boolean MyStringCompare(Handle, ConstStr255Param);
@@ -632,6 +646,7 @@ void wxListBox::Clear(void)
   cDataList->Clear ();
   SetCurrentDC();
   ALDelRow(ALGetNumberRows(cListReference), 0, cListReference);
+  ReleaseCurrentDC();
   no_items = 0;
   cKeycnt = 0;
 }
@@ -666,6 +681,7 @@ void wxListBox::SetString(int N, char *s)
   StringHandle newHandle = NewString(temp);
   ALSetCell(newHandle, &cell, cListReference);
   DisposeHandle((Handle)oldHandle);
+  ReleaseCurrentDC();
 }
 
 char *wxListBox::GetClientData(int N)
@@ -718,6 +734,8 @@ void wxListBox::SetFirstItem(int N)
   Point dest = {0,0};
   
   ALAutoScroll(dest,&desired,cListReference);
+
+  ReleaseCurrentDC();
 
   /*   LRect(&rect, Nc, cListHandle);
        if (rect.top != 0) {
@@ -796,20 +814,22 @@ void wxListBox::SetSelection(int N, Bool select, Bool just_one)
 
   Boolean onlyOne = ALFeatureFlag(alFSelOnlyOne,alBitTest,cListReference);
   
+  SetCurrentDC();
+
   if (select && (just_one || onlyOne)) {
     int s = GetSelection();
     if (s == N)
       return;
     if (s >= 0) {
       LongPt cell = {s, 0};
-      SetCurrentDC();
       ALSetSelect(FALSE, &cell, cListReference);
     }
   }
   
   LongPt cell = {N, 0};
-  SetCurrentDC();
   ALSetSelect(select, &cell, cListReference);
+
+  ReleaseCurrentDC();
 }
 
 void wxListBox::SetOneSelection(int N)
@@ -828,6 +848,7 @@ void wxListBox::Deselect(int N)
   LongPt cell = {N, 0};
   SetCurrentDC();
   ALSetSelect(FALSE, &cell, cListReference);
+  ReleaseCurrentDC();
 }
 
 // Return number of selections and an array of selected integers
@@ -892,11 +913,8 @@ void wxListBox::OnSetFocus()
 {
   SetCurrentDC();
   ALSetFocus(kControlListBoxPart,cListReference);
-  
-  /*	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxBLACK_BRUSH);
-	if (!cHidden)
-	((wxBorderArea *)cBorderArea)->cBorder->Paint();
-	*/
+  ReleaseCurrentDC();
+
   wxWindow::OnSetFocus();
 }
 
@@ -905,11 +923,8 @@ void wxListBox::OnKillFocus()
 {
   SetCurrentDC();  
   ALSetFocus(kControlFocusNoPart,cListReference);
-  
-  /*	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);
-	if (!cHidden)
-	((wxBorderArea *)cBorderArea)->cBorder->Paint();
-	*/
+  ReleaseCurrentDC();
+
   wxWindow::OnKillFocus();
 }
 
@@ -920,10 +935,13 @@ void wxListBox::DoShow(Bool on)
   if (!CanShow(on))
     return;
   
-  //((wxBorderArea *)cBorderArea)->cBorder->DoShow(on);
-  //((wxBorderArea *)cThinBorderArea)->cBorder->DoShow(on);
-  
   wxWindow::DoShow(on);
+
+  if (on) {
+    /* May need to do some things we skipped while hidden: */
+    OnClientAreaDSize(1, 1, 1, 1);
+    ALActivate(cActive && OS_Active(), cListReference);
+  }
 }
 
 void wxListBox::InternalGray(Bool gray)
@@ -938,6 +956,25 @@ void wxListBox::ChangeToGray(Bool gray)
   if (cHidden) return;
   
   SetCurrentDC();
-  ALActivate(!gray, cListReference);
+  ALActivate(!gray && cActive, cListReference);
+  ReleaseCurrentDC();
+
   wxWindow::ChangeToGray(gray);
 }
+
+void wxListBox::Activate(Bool on)
+{
+  if (!cHidden) {
+    SetCurrentDC();
+    ALActivate(on && OS_Active(), cListReference);
+    ReleaseCurrentDC();
+  }
+
+  wxItem::Activate(on);
+}
+
+void wxListBox::ReleaseCurrentDC(int really)
+{
+  wxWindow::ReleaseCurrentDC(1);
+}
+

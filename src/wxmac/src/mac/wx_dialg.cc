@@ -255,35 +255,7 @@ extern "C" {
 
 //= T.P. ==============================================================================
 
-#ifdef USE_NAVIGATION
-
 static int navinited = 0;
-
-#ifndef WX_CARBON
-extern void QueueMrEdEvent(EventRecord *e);
-#endif
-
-static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
-                               NavCBRecPtr callBackParms, 
-                               void *callBackUD)
-{
-#ifndef WX_CARBON
-  /* Essentially copied from Inside Macintosh: */
-  switch (callBackSelector)
-    {
-      // never happens in nav services 3.0?:
-    case kNavCBEvent:
-      switch (((callBackParms->eventData).eventDataParms.event)->what) {
-      case updateEvt:
-	QueueMrEdEvent(callBackParms->eventData.eventDataParms.event);
-	break;
-      }
-      break;
-    }
-#endif            
-}
-
-#endif
 
 int log_base_10(int i);
 
@@ -301,7 +273,6 @@ char *wxFileSelector(char *message, char *default_path,
                      char *wildcard, int flags,
                      wxWindow *parent, int x, int y)
 {
-#ifdef USE_NAVIGATION
   if ((navinited >= 0) && (navinited || NavServicesAvailable())) {
     if (!navinited) {
       if (!NavLoad()) {
@@ -314,27 +285,24 @@ char *wxFileSelector(char *message, char *default_path,
       } 
     }
 
-    NavEventUPP   eventProc = NewNavEventUPP(EventFilter);
-    
-#ifdef WX_CARBON // Use Navigation Services 3.0
     static CFStringRef clientName = CFSTR("MrEd");
 
     NavDialogCreationOptions dialogOptions;
     NavGetDefaultDialogCreationOptions(&dialogOptions);
-    
     if (default_filename) 
       dialogOptions.saveFileName = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
     if (message)
       dialogOptions.message = CFStringCreateWithCString(NULL,message,CFStringGetSystemEncoding());
     dialogOptions.modality = kWindowModalityAppModal;
-    
     NavDialogRef outDialog;
     
+    NavTypeListHandle openListH = NULL;
+
     // looks like there's no way to specify a default directory to start in...
     
     // create the dialog:
     if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN)) {
-      if (NavCreateGetFileDialog(&dialogOptions,NULL,eventProc,NULL,NULL,NULL,&outDialog) != noErr) {
+      if (NavCreateGetFileDialog(&dialogOptions, NULL, NULL, NULL, NULL, NULL, &outDialog) != noErr) {
         if (default_filename) 
           CFRelease(dialogOptions.saveFileName);
         if (message)
@@ -342,7 +310,7 @@ char *wxFileSelector(char *message, char *default_path,
         return NULL;
       }
     } else {
-      if (NavCreatePutFileDialog(&dialogOptions,'TEXT','MrEd',eventProc,NULL,&outDialog) != noErr) {
+      if (NavCreatePutFileDialog(&dialogOptions,'TEXT','MrEd',NULL,NULL,&outDialog) != noErr) {
         if (default_filename)
           CFRelease(dialogOptions.saveFileName);
         if (message)
@@ -365,7 +333,6 @@ char *wxFileSelector(char *message, char *default_path,
       CFRelease(dialogOptions.saveFileName);
     if (message)
       CFRelease(dialogOptions.message);
-    DisposeNavEventUPP(eventProc);
     
     // did the user cancel?:
     NavUserAction action = NavDialogGetUserAction(outDialog);
@@ -460,178 +427,6 @@ char *wxFileSelector(char *message, char *default_path,
       
       return wholepath;
     }
-    
-#else    
-    NavDialogOptions *dialogOptions = new NavDialogOptions;
-    NavGetDefaultDialogOptions(dialogOptions);
-    
-    dialogOptions->dialogOptionFlags ^= kNavAllowPreviews;
-
-    if (default_filename) {
-      int len = strlen(default_filename);
-      if (len > 64) len = 64;     
-      dialogOptions->savedFileName[0] = len;
-      memcpy(dialogOptions->savedFileName + 1, default_filename, len);
-    }
-    
-    if (message) {
-      int len = strlen(message);
-      if (len > 255) len = 255;
-      dialogOptions->message[0] = len;
-      memcpy(dialogOptions->message + 1, message, len);
-    }
-    
-    NavReplyRecord *reply = new NavReplyRecord;
-    AEDesc *startp = NULL;
-    OSErr err;
-    FSSpec fsspec;
-    
-    if (default_path && *default_path) {
-      int len = strlen(default_path);
-      char *s = new char[len + 3];
-      memcpy(s, default_path, len);
-      if (s[len - 1] != ':')
-        s[len++] = ':';
-      s[len] = 0;
-      if (scheme_mac_path_to_spec(s, &fsspec)) {
-        startp = new AEDesc;
-        if (AECreateDesc(typeFSS, &fsspec, sizeof(fsspec),  startp)) {
-          startp = NULL;
-        }
-      }
-    }
-    
-    if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
-      err = NavChooseFile(startp, reply, dialogOptions,
-			  eventProc,
-			  NULL, NULL, NULL, NULL);
-    else {
-      err = NavPutFile(startp, reply, dialogOptions,
-                       eventProc,
-                       'TEXT',
-                       'MrEd',
-                       NULL);
-      if (!err && reply->validRecord)
-        NavCompleteSave(reply, kNavTranslateInPlace);
-    }
-    
-    DisposeNavEventUPP(eventProc);
-    
-    if (!reply->validRecord) {
-      err = 1;
-      NavDisposeReply(reply);
-    }
-    
-    if (startp)
-      AEDisposeDesc(startp);
-    
-    if (!err) {
-      AEKeyword   theKeyword;
-      DescType    actualType;
-      Size        actualSize;
-
-      if (flags & wxMULTIOPEN) {
-	long count, index;
-	char *aggregate = "";
-	char *newpath, *temp;
-	
-	AECountItems(&(reply->selection),&count);
-	
-	for (index=1; index<=count; index++) {
-	  AEGetNthPtr(&(reply->selection),index,
-		      typeFSS, &theKeyword,
-		      &actualType, &fsspec,
-		      sizeof(fsspec),
-		      &actualSize);
-	  temp = scheme_mac_spec_to_path(&fsspec);
-	  newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
-					 strlen(temp) +
-					 log_base_10(strlen(temp)) + 3];
-	  sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
-	  aggregate = newpath;
-	}
-	
-	NavDisposeReply(reply);
-	
-	return aggregate;
-      } else {
-	AEGetNthPtr(&(reply->selection), 1,
-		    typeFSS, &theKeyword,
-		    &actualType, &fsspec,
-		    sizeof(fsspec),
-		    &actualSize);
-	
-	NavDisposeReply(reply);
-	return scheme_mac_spec_to_path(&fsspec);
-      }
-    } else 
-      return NULL;
-#endif       
-  } else {
-#endif
-#ifdef WX_CARBON
-    wxFatalError("Navigation Services Unavailable.","");
+  } else
     return NULL;
-#else
-    StandardFileReply	rep;
-    SFTypeList typeList = { 'TEXT' };
-    char * name;
-    short numTypes = -1; // all types
-    Str255	p_prompt,p_defname;
-
-
-    if (default_path) {
-      FSSpec sp;
-      CInfoPBRec pb;
-      if (scheme_mac_path_to_spec(default_path, &sp)) {
-	pb.dirInfo.ioNamePtr = sp.name;
-	pb.dirInfo.ioVRefNum = sp.parID; // sounds crazy, I know
-	pb.dirInfo.ioFDirIndex = 0;
-	if (PBGetCatInfo(&pb, 0) == noErr) {
-	  LMSetCurDirStore(pb.dirInfo.ioDrDirID);
-	}
-	LMSetSFSaveDisk(-sp.vRefNum);
-      }
-    }
-    
-    
-    if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
-      {	// get file
-	::StandardGetFile( NULL, numTypes, typeList, &rep);	
-      } else
-	{	// put file
-	  if (message)
-	    {	
-	      CopyCStringToPascal(message,p_prompt);
-	    } else 
-	      {
-		CopyCStringToPascal("Save File Name",p_prompt);
-	      }
-	  if (default_filename)
-	    {	
-	      CopyCStringToPascal(default_filename,p_defname);
-	    } else 
-	      {
-		CopyCStringToPascal("",p_defname);
-	      }
-	  ::StandardPutFile( p_prompt, p_defname, &rep);
-	}
-    
-    if (!rep.sfGood)
-      return NULL;
-    
-    name = scheme_mac_spec_to_path(&rep.sfFile);
-    
-    if (flags & wxMULTIOPEN) {
-      char *aggregate = new char[strlen(name) + log_base_10(strlen(name)) + 2];
-      sprintf(aggregate,"%d %s",strlen(name),name);
-      
-      return aggregate;
-    } else {
-      return name;
-    }
-#endif
-#ifdef USE_NAVIGATION
-  }
-#endif
 }

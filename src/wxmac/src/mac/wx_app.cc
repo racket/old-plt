@@ -758,8 +758,24 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
       DoDefaultAboutItem();
       HiliteMenu(0); // unhilite the hilited menu
     } else {
-      if (theMacWxFrame->OnClose())
-	theMacWxFrame->Show(FALSE);
+      if (theMacWxFrame->IsModal()) {
+	/* this is really a dialog */
+	wxChildNode *node2;
+	wxChildList *cl;
+	cl = theMacWxFrame->GetChildren();
+	node2 = cl->First();
+	if (node2) {
+	  wxDialogBox *d;
+	  d = (wxDialogBox *)node2->Data();
+	  if (d) {
+	    if (d->OnClose())
+	      d->Show(FALSE);
+	  }
+	}
+      } else {
+	if (theMacWxFrame->OnClose())
+	  theMacWxFrame->Show(FALSE);
+      }
     }
     return TRUE;
     // wxFatalError("No wxMenuBar for wxFrame.");

@@ -150,11 +150,25 @@ static Window GetEventWindow(XEvent *e)
 }
 
 static unsigned long lastUngrabTime;
+static unsigned long lastUnhideTime;
 
 static Bool CheckPred(Display *display, XEvent *e, char *args)
 {
   Window window;
   Widget widget;
+
+  switch (e->type) {
+  case ButtonPress:
+  case ButtonRelease:
+  case MotionNotify:
+    if (e->xbutton.time > lastUnhideTime) {
+      lastUnhideTime = e->xbutton.time;
+      wxUnhideAllCursors();
+    }
+    break;
+  default:
+    break;
+  }
 
   if (short_circuit)
     return FALSE;

@@ -828,6 +828,33 @@ static void UnchainContextsList()
   }
 }
 
+#ifdef wx_xt
+void wxUnhideAllCursors()
+{
+  MrEdContextFrames *f;
+  MrEdContextFramesRef fr = mred_frames;
+  wxChildNode *first;
+  int v;
+
+  if (wxCheckHiddenCursors()) {
+    while (fr) {
+      f = FRAMES_REF(fr);
+      first = f->list->First();
+      
+      if (first) {
+	wxObject *o;
+	MrEdContext *c;
+	o = first->Data();
+	c = MrEdGetContext(o);
+	v = wxUnhideCursorInFrame(o, c->busyState);
+	c->busyState = v;
+      }
+      fr = f->next;
+    }
+  }
+}
+#endif
+
 Scheme_Object *MrEdMakeEventspace()
 {
   MrEdContext *c;

@@ -221,3 +221,6 @@ MRED_EXTERN void Drop_Runtime(char **argv, int argc);
 extern void WakeUpMrEd();
 #endif
 
+#if defined(wx_xt)
+extern void wxUnhideAllCursors();
+#endif

@@ -101,13 +101,13 @@ void wxXSetBusyCursor(wxWindow *win, wxCursor *cursor)
   }
 }
 
-static void set_all_cursors(wxCursor *cursor)
+static void set_all_cursors(wxObject *o, wxCursor *cursor)
 {
   wxChildList *cl;
   wxWindow *win;
   wxChildNode *node;
 
-  cl = wxTopLevelFrames(NULL);
+  cl = wxTopLevelFrames(o);
   for (node = cl->First(); node; node = node->Next()) {
     win = (wxWindow *)node->Data();
     if (win)
@@ -140,7 +140,7 @@ void wxBeginBusyCursor(wxCursor * cursor)
   }
 
   if (busy == 1) {
-    set_all_cursors(cursor);
+    set_all_cursors(NULL, cursor);
   }
 }
 
@@ -164,7 +164,7 @@ wxEndBusyCursor (void)
   }
 
   if (busy == 0) {
-    set_all_cursors(NULL);
+    set_all_cursors(NULL, NULL);
   }
 }
 
@@ -175,6 +175,8 @@ Bool wxIsBusy (void)
   return ((busy > 0) || (busy < -1));
 }
 
+static int some_hidden = 0;
+
 void 
 wxHideCursor (void)
 {
@@ -182,22 +184,46 @@ wxHideCursor (void)
   busy = wxGetBusyState();
 
   if (busy >= 0) {
+    some_hidden++;
     busy = -(busy + 1);
     wxSetBusyState(busy);
-    set_all_cursors(wxBLANK_CURSOR);
+    set_all_cursors(NULL, wxBLANK_CURSOR);
   }
 }
 
 void
 wxUnhideCursor(void)
+     /* Not currently used. MrEd calls wxUnhideCursorInFrame, instead */
 {
   int busy;
   busy = wxGetBusyState();
 
   if (busy < 0) {
+    if (some_hidden)
+      --some_hidden;
     busy = -(busy + 1);
     wxSetBusyState(busy);
-    set_all_cursors((busy > 0) ? wxHOURGLASS_CURSOR : NULL);
+    set_all_cursors(NULL, (busy > 0) ? wxHOURGLASS_CURSOR : NULL);
   }  
 }
 
+int wxCheckHiddenCursors()
+     /* Called by MrEd to check whether cursors need to be unhidden in
+	some context. */
+{
+  if (some_hidden) {
+    some_hidden = 0;
+    return 1;
+  }
+  return 0;
+}
+
+int wxUnhideCursorInFrame(wxObject *o, int busy)
+     /* Called by MrEd to try to unhide cursors in each context. */
+{
+  if (busy < 0) {
+    busy = -(busy + 1);
+    set_all_cursors(o, (busy > 0) ? wxHOURGLASS_CURSOR : NULL);
+  }
+  return busy;
+}

@@ -82,8 +82,11 @@ class wxCursor;
 void wxBeginBusyCursor(wxCursor *cursor = wxHOURGLASS_CURSOR);
 void wxEndBusyCursor(void);
 Bool wxIsBusy(void);
+
 void wxHideCursor(void);
 void wxUnhideCursor(void);
+int wxCheckHiddenCursors();
+int wxUnhideCursorInFrame(wxObject *o, int busy);
 
 // Miscellaneous
 void wxDebugMsg(const char *fmt, ...);

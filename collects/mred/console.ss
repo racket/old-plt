@@ -185,7 +185,7 @@
 	    [orig-stdout (current-output-port)]
 	    [orig-stderr (current-error-port)])
 	  (public
-	    [CACHE-TIME 10] 
+	    [CACHE-TIME 3]
 	    [CACHE-WRITE-COUNT 300]
 	    
 	    [normal-font wx:const-modern]
@@ -442,14 +442,17 @@
 		  (lambda ()
 		    (let ([handle-insertion
 			   (lambda ()
-			     (let ((start (last-position)))
+			     (let ([start (last-position)]
+				   [c-locked? locked?])
 			       (begin-edit-sequence)
+			       (lock #f)
 			       (insert (if (is-a? s wx:snip%)
 					   (send s copy)
 					   s))
 			       (let ((end (last-position)))
 				 (change-style () start end)
 				 (style-func start end)
+				 (lock c-locked?)
 				 (end-edit-sequence))))])
 		      (if first-time?
 			  (begin
@@ -540,7 +543,8 @@
 		    (generic-write s
 				   (lambda (start end)
 				     (change-style error-delta 
-						   start end)))))))])
+						   start end)))
+		    (flush-console-output)))))])
 	  
 	  (public
 	    [transparent-edit #f]
@@ -926,12 +930,11 @@
 	    [this-in (make-this-in)]
 	    [takeover
 	     (lambda ()
-	       '(error-display-handler
+	       (error-display-handler
 		 (let ([old (error-display-handler)])
 		   (lambda (x)
-		     (print-struct #t)
-		     (mred:gui-utils:message-box (format "~a" x) "Uncaught Exception")
-		     (old x))))
+		     (old x)
+		     (flush-console-output))))
 	       (mred:debug:unless 'no-takeover
 				  (let ([doit
 					 (lambda ()

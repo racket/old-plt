@@ -19,7 +19,9 @@ Pcdata, Entity, and Attribute are defined in the XML documentation.
 > Html-content = Html-element | Pcdata | Entity
 
 > Html-element = any of the structures below which all inherit from
-  (define-struct html-element (attributes content))
+  (define-struct html-element (attributes)).  Any html tag that may
+  include content also inherits from
+  (define-struct (html-full struct:html-element) (content))
   without adding any additional fields.
 
 A Html is
@@ -72,40 +74,40 @@ A Script is
 (make-script (listof Attribute) Cdata)
 
 A Basefont is
-(make-basefont (listof Attribute) empty)
+(make-basefont (listof Attribute))
 
 A Br is
-(make-br (listof Attribute) empty)
+(make-br (listof Attribute))
 
 An Area is
-(make-area (listof Attribute) empty)
+(make-area (listof Attribute))
 
 A Link is
-(make-link (listof Attribute) empty)
+(make-link (listof Attribute))
 
 An Img is
-(make-img (listof Attribute) empty)
+(make-img (listof Attribute))
 
 A Param is
-(make-param (listof Attribute) empty)
+(make-param (listof Attribute))
 
 A Hr is
-(make-hr (listof Attribute) empty)
+(make-hr (listof Attribute))
 
 An Input is
-(make-input (listof Attribute) empty)
+(make-input (listof Attribute))
 
 A Col is
-(make-col (listof Attribute) empty)
+(make-col (listof Attribute))
 
 An Isindex is
-(make-isindex (listof Attribute) empty)
+(make-isindex (listof Attribute))
 
 A Base is
-(make-base (listof Attribute) empty)
+(make-base (listof Attribute))
 
 A Meta is
-(make-meta (listof Attribute) empty)
+(make-meta (listof Attribute))
 
 An Option is
 (make-option (listof Attribute) Pcdata)

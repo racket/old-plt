@@ -1,6 +1,6 @@
 
   (unit/sig mred:connections^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mzlib:function : mzlib:function^])
 

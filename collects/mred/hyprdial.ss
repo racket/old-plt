@@ -1,7 +1,7 @@
 ; Dialog box for picking a tag.
 
   (unit/sig mred:hyper-dialog^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:hyper-edit : mred:hyper-edit^]
 	    [mzlib:file : mzlib:file^])

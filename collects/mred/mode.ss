@@ -1,7 +1,7 @@
 ; Modes
 
   (unit/sig mred:mode^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:keymap : mred:keymap^])
     

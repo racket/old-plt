@@ -1,6 +1,6 @@
 
   (unit/sig mred:console^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:container : mred:container^]
 	    [mred:preferences : mred:preferences^]
@@ -384,11 +384,12 @@
 		 (dynamic-wind
 		  (lambda () (begin-edit-sequence #f))
 		  (lambda ()		  
+		    (send transparent-edit set-auto-set-wrap #t)
 		    (let ([snip (make-object wx:media-snip% transparent-edit)])
-		      (for-each (lambda (c) (send c add-wide-snip snip))
-				canvases)
 		      (insert snip)
-		      (insert #\newline))
+		      (insert #\newline)
+		      (for-each (lambda (c) (send c add-wide-snip snip))
+				canvases))
 		    (let ([a (send transparent-edit get-admin)])
 		      (unless (null? a)
 			(send a grab-caret))))
@@ -781,10 +782,10 @@
 
     (define make-transparent-io-edit%
       (lambda (super%)
-	(class-asi super%
+	(class super% args
 	  (inherit change-style prompt-position set-prompt-position resetting? set-resetting lock get-text
 		   flush-console-output set-position last-position get-character
-		   clear-undos
+		   clear-undos set-auto-set-wrap
 		   do-pre-eval do-post-eval)
 	  (rename [super-on-insert on-insert]
 		  [super-on-local-char on-local-char]
@@ -799,6 +800,7 @@
 	      (send add set 0 150 0)))
 	  (private [shutdown? #f])
 	  (public
+	    [auto-set-wrap #t]
 	    [on-local-char
 	     (lambda (key)
 	       (flush-console-output)
@@ -880,10 +882,11 @@
 				   (loop next-sexp)))]
 			  [else null]))])
 	       (set! potential-sexps (append potential-sexps new-sexps))
-	       (do-post-eval)))]))))
+	       (do-post-eval)))])
+	  (sequence
+	    (apply super-init args)))))
       
-      (define transparent-io-edit% 
-	(make-transparent-io-edit% console-edit%))
+      (define transparent-io-edit% (make-transparent-io-edit% console-edit%))
 
 
     (define make-console-frame%

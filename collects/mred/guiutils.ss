@@ -1,6 +1,6 @@
 
   (unit/sig mred:gui-utils^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:frame : mred:frame^]
 	    [mred:container : mred:container^]

@@ -4,7 +4,7 @@
 ; Scheme mode for MrEd.
 
   (unit/sig mred:scheme-mode^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:preferences : mred:preferences^]
 	    [mred:application : mred:application^]

@@ -4,7 +4,7 @@
 
 
   (unit/sig mred:hyper-frame^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:hyper-edit : mred:hyper-edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]

@@ -2,7 +2,7 @@
 ; Scheme parenthesis wrappers around the general routines
 
   (unit/sig mred:scheme-paren^
-    (import [wx : mred:wx^]
+    (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:paren : mred:paren^])
 	    

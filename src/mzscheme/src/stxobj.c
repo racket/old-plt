@@ -246,6 +246,30 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
   return (Scheme_Object *)stx;
 }
 
+Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val, 
+					long line, long col, 
+					Scheme_Object *src,
+					Scheme_Object *props)
+{
+  if (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type)) {
+    Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
+
+    if (line == -1) {
+      /* Given location is a position. */
+      col += o->pos;
+    } else {
+      /* Given location is a line and column. */
+      if (!line)
+	col += o->col;
+      line += o->line;
+    }
+
+    src = o->src;
+  }
+   
+  return scheme_make_stx(val, line, col, src, props);
+}
+
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
 /* Sets the "is graph" flag */
 {

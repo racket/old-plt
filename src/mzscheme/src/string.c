@@ -1337,9 +1337,56 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
 #endif
 }
 
+static void machine_details(char *s);
+
+static Scheme_Object *system_type(int argc, Scheme_Object *argv[])
+{
+  if (!argc || SCHEME_FALSEP(argv[0]))
+    return sys_symbol;
+  else {
+    char buff[1024];
+
+    machine_details(buff);
+
+    return scheme_make_string(buff);
+  }
+}
+
+static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[])
+{
+  return platform_path;
+}
+
+const char *scheme_system_library_subpath()
+{
+  return SCHEME_PLATFORM_LIBRARY_SUBPATH;
+}
+
+/* Our own strncpy - which would be really stupid, except the one for
+   the implementation in Solaris 2.6 is broken (it doesn't always stop
+   at the null terminator). */
+int scheme_strncmp(const char *a, const char *b, int len)
+{
+  while (len-- && (*a == *b) && *a) {
+    a++;
+    b++;
+  }
+
+  if (len < 0)
+    return 0;
+  else
+    return *a - *b;
+}
+
+/**********************************************************************/
+/*                     machine type details                           */
+/**********************************************************************/
+
+/**************************** MacOS ***********************************/
+
 #ifdef MACINTOSH_EVENTS
 # include <Gestalt.h>
-void machine_details(char *s)
+static void machine_details(char *s)
 {
    OSErr err;
    long lng;
@@ -1370,13 +1417,14 @@ void machine_details(char *s)
 }
 #endif
 
+/*************************** Windows **********************************/
+
 #ifdef DOS_FILE_SYSTEM
 # include <windows.h>
 void machine_details(char *buff)
 {
   OSVERSIONINFO info;
   BOOL hasInfo;
-  char buff[1024]; 
   char *p;
 
   info.dwOSVersionInfoSize = sizeof(info);
@@ -1408,6 +1456,9 @@ void machine_details(char *buff)
 	  hasInfo ? " " : "",hasInfo ? info.szCSDVersion : "");
 }
 #endif
+
+/***************************** Unix ***********************************/
+
 
 #if !defined(MACINTOSH_EVENTS) && !defined(DOS_FILE_SYSTEM)
 static char *uname_locations[] = { "/bin/uname",
@@ -1480,41 +1531,3 @@ void machine_details(char *buff)
 }
 #endif
 
-static Scheme_Object *system_type(int argc, Scheme_Object *argv[])
-{
-  if (!argc || SCHEME_FALSEP(argv[0]))
-    return sys_symbol;
-  else {
-    char buff[1024];
-
-    machine_details(buff);
-
-    return scheme_make_string(buff);
-  }
-}
-
-static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[])
-{
-  return platform_path;
-}
-
-const char *scheme_system_library_subpath()
-{
-  return SCHEME_PLATFORM_LIBRARY_SUBPATH;
-}
-
-/* Our own strncpy - which would be really stupid, except the one for
-   the implementation in Solaris 2.6 is broken (it doesn't always stop
-   at the null terminator). */
-int scheme_strncmp(const char *a, const char *b, int len)
-{
-  while (len-- && (*a == *b) && *a) {
-    a++;
-    b++;
-  }
-
-  if (len < 0)
-    return 0;
-  else
-    return *a - *b;
-}

@@ -63,7 +63,7 @@ enum {
   scheme_box_type,
   scheme_thread_type,     /* 50 */
   scheme_structure_type,
-  scheme_reserved_1_type, 
+  scheme_stx_offset_type, 
   scheme_cont_mark_set_type, 
   scheme_sema_type,
   scheme_hash_table_type,

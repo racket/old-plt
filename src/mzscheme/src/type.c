@@ -156,6 +156,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_inspector_type, "<inspector>");
   
   set_name(scheme_stx_type, "<syntax>");
+  set_name(scheme_stx_offset_type, "<internal-syntax-offset>");
   set_name(scheme_id_macro_type, "<id-macro>");
 
   set_name(scheme_module_type, "<module-code>");
@@ -163,7 +164,6 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_subprocess_type, "<subprocess>");
 
-  set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_2_type, "<reserved2>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -411,6 +411,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_id_macro_type, small_object);
 
   GC_REG_TRAV(scheme_stx_type, stx_val);
+  GC_REG_TRAV(scheme_stx_offset_type, stx_off_val);
   GC_REG_TRAV(scheme_module_type, module_val);
   GC_REG_TRAV(scheme_module_index_type, modidx_val);
 }

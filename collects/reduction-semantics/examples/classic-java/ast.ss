@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; ast.ss
-;; $Id: ast.ss,v 1.7 2004/08/24 20:34:21 cobbe Exp $
+;; $Id: ast.ss,v 1.8 2004/12/31 18:05:04 cobbe Exp $
 ;;
 ;; Defines the AST types used for the ClassicJava system.
 ;;
@@ -29,11 +29,7 @@
   (define BINARY-PRIMS '(+ - * == and or))
   (define UNARY-PRIMS '(zero? null? not))
   (define RESERVED-WORDS '(class Object new ref set send super this cast let
-                            int bool null true false addr))
-  ;; addr doesn't show up in surface syntax, but it does show up as a keyword
-  ;; in the reductions, so forbid it here.
-  ;; FIXME: addr currently doesn't show up in reductions, though we may need to
-  ;; add it later to prevent ambiguous parses.  We'll have to see.
+                            int bool null true false))
 
   ;; reserved? :: x -> Boolean
   ;; recognizes ClassicJava reserved words

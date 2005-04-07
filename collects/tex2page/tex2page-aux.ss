@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-14")
+(define *tex2page-version* "2005-03-30")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -4131,62 +4131,43 @@
       (source-img-file img-file-stem alt))))
 
 (define do-display-math
-  (lambda ()
+  (lambda (tex-string)
     (do-end-para)
     (emit "<div align=")
     (emit *display-justification*)
     (emit ">")
-    (let* ((alt-tex-string
-             (let ((o (open-output-string)))
-               (dump-till-char #\$ o)
-               (let ((c (get-actual-char)))
-                 (cond
-                  ((eof-object? c) (terror 'do-display-math))
-                  ((char=? c #\$) #t)
-                  (else (terror 'do-display-math))))
-               (get-output-string o)))
-           (alt-thunk
+    (let* ((alt-thunk
              (lambda ()
                (fluid-let
                  ((*math-mode?* #t)
                   (*in-display-math?* #t)
                   (*tabular-stack* '()))
                  (emit "<table><tr><td>")
-                 (tex2page-string alt-tex-string)
+                 (tex2page-string tex-string)
                  (emit "</td></tr></table>")))))
       (if *use-image-for-displayed-math?*
         (call-with-html-image-port
-          (lambda (o)
-            (display "$$" o)
-            (display alt-tex-string o)
-            (display "$$" o))
-          alt-tex-string)
+          (lambda (o) (display "$$" o) (display tex-string o) (display "$$" o))
+          tex-string)
         (alt-thunk)))
     (emit "</div>")
     (do-para)))
 
 (define do-intext-math
-  (lambda ()
-    (let* ((alt-tex-string
-             (let ((o (open-output-string)))
-               (dump-till-char #\$ o)
-               (get-output-string o)))
-           (alt-thunk
+  (lambda (tex-string)
+    (let* ((alt-thunk
              (lambda ()
                (fluid-let
                  ((*math-mode?* #t)
                   (*in-display-math?* #f)
                   (*tabular-stack* '()))
                  (bgroup)
-                 (tex2page-string alt-tex-string)
+                 (tex2page-string tex-string)
                  (egroup)))))
       (if *use-image-for-intext-math?*
         (call-with-html-image-port
-          (lambda (o)
-            (display #\$ o)
-            (display alt-tex-string o)
-            (display #\$ o))
-          alt-tex-string)
+          (lambda (o) (display #\$ o) (display tex-string o) (display #\$ o))
+          tex-string)
         (alt-thunk)))))
 
 (define do-mathp
@@ -4214,7 +4195,14 @@
       (when (eqv? (snoop-actual-char) #\$)
         (set! display? #t)
         (get-actual-char))
-      ((if display? do-display-math do-intext-math)))))
+      (let ((o (open-output-string)))
+        (dump-till-char #\$ o)
+        (when display?
+          (let ((c (get-actual-char)))
+            (when (or (eof-object? c) (not (char=? c #\$)))
+              (terror 'do-math))))
+        ((if display? do-display-math do-intext-math)
+         (get-output-string o))))))
 
 (define dump-till-char
   (lambda (d o)

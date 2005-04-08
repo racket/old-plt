@@ -798,7 +798,7 @@
 			     (stx-car (car body)))]
 		   [field-names (stx->list (cadr body))]
 		   [inspector (if (null? (cddr body))
-				  #f
+				  (quote-syntax (current-inspector))
 				  (caddr body))]
 		   [super-id (if (identifier? (car body))
 				 #f

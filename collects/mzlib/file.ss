@@ -293,10 +293,12 @@
 		   (read-decimal-as-inexact #t)
 		   (read-accept-dot #t)
 		   (read-accept-quasiquote #t)
+		   (read-accept-reader #f)
 		   (print-struct #f)
 		   (print-graph #t)
 		   (print-box #t)
-		   (print-vector-length #t))
+		   (print-vector-length #t)
+		   (current-readtable #f))
       (thunk)))
 
 

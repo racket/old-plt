@@ -4,6 +4,7 @@
 (SECTION 'READTABLE)
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Basic readtable tests
 
 (arity-test make-readtable 1 -1)
 (arity-test readtable? 1 1)
@@ -132,9 +133,30 @@
 					       (list 'a (string->symbol (string ch)) 'b))))))])
 	  (for-each try-as-plain (string->list "()[]{}|\\ \r\n\t\v',\"#")))
 
+	;; Check /recursive functions with pre char and initial readtable
+	(for-each
+	 (lambda (base-readtable swap?)
+	   (for-each
+	    (lambda (read/recursive)
+	      (let ([t (make-readtable #f 
+				       #\~ 'terminating-macro (lambda (ch port src line col pos)
+								(if (eq? (char=? #\! (peek-char port)) (not swap?))
+								    (read/recursive port #\( base-readtable)
+								    (read/recursive port #\{ base-readtable))))])
+		(parameterize ([current-readtable t])
+		  (test-read "~!a (b))" `((!a (b))))
+		  (test-read "~?a (b)}" `((?a (b)))))))
+	    (list read/recursive (lambda (port char readtable)
+				   (read-syntax/recursive 'ok port (list 0 0 0) char readtable)))))
+	 (list #f (make-readtable #f
+				  #\! 'terminating-macro (lambda (ch port src line col pos) (error 'ack))
+				  #\? 'terminating-macro (lambda (ch port src line col pos) (error 'ack))
+				  #\( #\{ #f
+				  #\{ #\( #f))
+	 (list #f #t))
+	
 	(void)))))
 
-      
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)

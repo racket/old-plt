@@ -4411,7 +4411,7 @@ Scheme_Object *scheme_load_compiled_stx_string(const char *str, long len)
 
   port = scheme_make_sized_byte_string_input_port(str, -len);
 
-  expr = scheme_internal_read(port, NULL, 1, 0, 0, 0);
+  expr = scheme_internal_read(port, NULL, 1, 0, 0, 0, -1, NULL);
 
   expr = _scheme_eval_compiled(expr, scheme_get_env(NULL));
 

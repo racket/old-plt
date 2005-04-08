@@ -164,13 +164,15 @@ static Scheme_Object *read_number(int init_ch,
 				  int, int, int, int,
 				  Scheme_Hash_Table **ht,
 				  Scheme_Object *indentation,
-				  ReadParams *params);
+				  ReadParams *params,
+				  Readtable *table);
 static Scheme_Object *read_symbol(int init_ch,
 				  Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				  Scheme_Hash_Table **ht,
 				  Scheme_Object *indentation,
-				  ReadParams *params);
+				  ReadParams *params,
+				  Readtable *table);
 static Scheme_Object *read_character(Scheme_Object *port, Scheme_Object *stcsrc,
 				     long line, long col, long pos,
 				     Scheme_Hash_Table **ht,
@@ -662,14 +664,22 @@ print_honu(int argc, Scheme_Object *argv[])
 
 #ifdef DO_STACK_CHECK
 
-static Scheme_Object *read_inner(Scheme_Object *port,
-				 Scheme_Object *stxsrc,
+static Scheme_Object *read_inner_inner(Scheme_Object *port,
+				       Scheme_Object *stxsrc,
+				       Scheme_Hash_Table **ht,
+				       Scheme_Object *indentation,
+				       ReadParams *params,
+				       int comment_mode,
+				       int pre_char,
+				       Readtable *init_readtable);
+static Scheme_Object *read_inner(Scheme_Object *port, 
+				 Scheme_Object *stxsrc, 
 				 Scheme_Hash_Table **ht,
-				 Scheme_Object *indentation,
+				 Scheme_Object *indentation, 
 				 ReadParams *params,
 				 int comment_mode);
 
-static Scheme_Object *read_k(void)
+static Scheme_Object *read_inner_inner_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
@@ -677,22 +687,24 @@ static Scheme_Object *read_k(void)
   Scheme_Object *stxsrc = (Scheme_Object *)p->ku.k.p3;
   Scheme_Object *indentation = SCHEME_CAR((Scheme_Object *)p->ku.k.p4);
   ReadParams *params = (ReadParams *)SCHEME_CDR((Scheme_Object *)p->ku.k.p4);
+  Readtable *table = (Readtable *)p->ku.k.p5;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
   p->ku.k.p4 = NULL;
+  p->ku.k.p5 = NULL;
 
-  return read_inner(o, stxsrc, ht, indentation, params, p->ku.k.i1);
+  return read_inner_inner(o, stxsrc, ht, indentation, params, p->ku.k.i1, p->ku.k.i2, table);
 }
 #endif
 
 #define MAX_GRAPH_ID_DIGITS 8
 
 static Scheme_Object *
-read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
-	   Scheme_Object *indentation, ReadParams *params,
-	   int comment_mode)
+read_inner_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
+		 Scheme_Object *indentation, ReadParams *params,
+		 int comment_mode, int pre_char, Readtable *table)
 {
   int ch, ch2, depth, dispatch_ch;
   long line = 0, col = 0, pos = 0;
@@ -720,8 +732,11 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
       pr = scheme_make_pair(indentation, (Scheme_Object *)params2);
       p->ku.k.p4 = (void *)pr;
 
+      p->ku.k.p5 = (void *)table;
+
       p->ku.k.i1 = comment_mode;
-      return scheme_handle_stack_overflow(read_k);
+      p->ku.k.i2 = pre_char;
+      return scheme_handle_stack_overflow(read_inner_inner_k);
     }
   }
 #endif
@@ -731,10 +746,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
   SCHEME_USE_FUEL(1);
 
   while (1) {
-    ch = scheme_getc_special_ok(port);
+    if (pre_char >= 0) {
+      ch = pre_char;
+      pre_char = -1;
+    } else
+      ch = scheme_getc_special_ok(port);
     if (NOT_EOF_OR_SPECIAL(ch)) {
-      if (params->table) {
-	if (!(readtable_kind(params->table, ch, params) & READTABLE_WHITESPACE))
+      if (table) {
+	if (!(readtable_kind(table, ch, params) & READTABLE_WHITESPACE))
 	  break;
       } else if (!scheme_isspace(ch))
 	break;
@@ -761,10 +780,10 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
   }
 
   special_value = NULL;
-  if (params->table && NOT_EOF_OR_SPECIAL(ch)) {
+  if (table && NOT_EOF_OR_SPECIAL(ch)) {
     Scheme_Object *v;
     int use_default, ch2 = ch;
-    v = readtable_handle(params->table, &ch2, &use_default, params,
+    v = readtable_handle(table, &ch2, &use_default, params,
 			 port, stxsrc, line, col, pos, ht);
     if (!use_default) {
       dispatch_ch = SCHEME_SPECIAL;
@@ -835,7 +854,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
       } else
 	return read_list(port, stxsrc, line, col, pos, '}', mz_shape_cons, 0, ht, indentation, params);
     case '|':
-      return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
+      return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params, table);
     case '"':
       return read_string(0, 0, port, stxsrc, line, col, pos, ht, indentation, params);
     case '\'':
@@ -847,7 +866,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     case '`':
       if (params->honu_mode) {
 	/* Raises illegal-char error: */
-	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params, table);
       } else if (!params->can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, "read: illegal use of backquote");
 	return NULL;
@@ -882,14 +901,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  if (ch == SCHEME_SPECIAL)
 	    scheme_get_ready_read_special(port, stxsrc, ht);
 	}
-	if (params->table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+	if (table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
 	  return NULL;
 	goto start_over;
       }
     case '+':
     case '-':
       if (params->honu_mode) {
-	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params, table);
       }
     case '.': /* ^^^ fallthrough ^^^ */
       ch2 = scheme_peekc_special_ok(port);
@@ -897,17 +916,17 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  || (!params->honu_mode
 	      && ((ch2 == 'i') || (ch2 == 'I') /* Maybe inf */
 		  || (ch2 == 'n') || (ch2 == 'N') /* Maybe nan*/ ))) {
-	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, ht, indentation, params);
+	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, ht, indentation, params, table);
       } else {
-	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params, table);
       }
     case '#':
       ch = scheme_getc_special_ok(port);
 
-      if (params->table) {
+      if (table) {
 	Scheme_Object *v;
 	int use_default;
-	v = readtable_handle_hash(params->table, ch, &use_default, params,
+	v = readtable_handle_hash(table, ch, &use_default, params,
 				  port, stxsrc, line, col, pos, ht);
 	if (!use_default) {
 	  if (v)
@@ -943,7 +962,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 
 	    if (comment_mode & RETURN_FOR_HASH_COMMENT)
 	      return NULL;
-	    if (params->table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+	    if (table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
 	      return NULL;
 
 	    goto start_over;
@@ -952,7 +971,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case '%':
 	  if (!params->honu_mode) {
 	    scheme_ungetc('%', port);
-	    return read_symbol('#', port, stxsrc, line, col, pos, ht, indentation, params);
+	    return read_symbol('#', port, stxsrc, line, col, pos, ht, indentation, params, table);
 	  }
 	  break;
 	case '(':
@@ -1069,37 +1088,37 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case 'X':
 	case 'x': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 16, 1, ht, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 16, 1, ht, indentation, params, table);
 	  }
 	  break;
 	case 'B':
 	case 'b': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 2, 1, ht, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 2, 1, ht, indentation, params, table);
 	  }
 	  break;
 	case 'O':
 	case 'o': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 8, 1, ht, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 8, 1, ht, indentation, params, table);
 	  }
 	  break;
 	case 'D':
 	case 'd': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 10, 1, ht, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 10, 1, ht, indentation, params, table);
 	  }
 	  break;
 	case 'E':
 	case 'e': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 1, 10, 0, ht, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 1, 10, 0, ht, indentation, params, table);
 	  }
 	  break;
 	case 'I':
 	case 'i': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 1, 0, 10, 0, ht, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 1, 0, 10, 0, ht, indentation, params, table);
 	  }
 	  break;
 	case '\'':
@@ -1152,7 +1171,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 
 	      if ((ch2 == '|') && (ch == '#')) {
 		if (!(depth--)) {
-		  if (params->table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+		  if (table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
 		    return NULL;
 		  goto start_over;
 		}
@@ -1567,14 +1586,22 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  goto start_over_with_ch;
 	}
       }
-      return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
+      return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params, table);
       break;
     default:
       if (isdigit_ascii(ch))
-	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, ht, indentation, params);
+	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, ht, indentation, params, table);
       else
-	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params, table);
     }
+}
+
+static Scheme_Object *
+read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
+	   Scheme_Object *indentation, ReadParams *params,
+	   int comment_mode)
+{
+  return read_inner_inner(port, stxsrc, ht, indentation, params, comment_mode, -1, params->table);
 }
 
 #ifdef DO_STACK_CHECK
@@ -1713,7 +1740,8 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 }
 
 Scheme_Object *
-_scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int honu_mode, int recur)
+_scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int honu_mode, 
+		      int recur, int extra_char, Scheme_Object *init_readtable)
 {
   Scheme_Object *v, *v2;
   Scheme_Config *config;
@@ -1766,7 +1794,15 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int h
   }
 
   do {
-    v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
+    v = read_inner_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT, 
+			 extra_char, 
+			 (init_readtable 
+			  ? (SCHEME_FALSEP(init_readtable)
+			     ? NULL
+			     : (Readtable *)init_readtable)
+			  : params.table));
+
+    extra_char = -1;
 
     if (*ht && !recur) {
       /* Resolve placeholders: */
@@ -1814,15 +1850,19 @@ static void *scheme_internal_read_k(void)
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port = (Scheme_Object *)p->ku.k.p1;
   Scheme_Object *stxsrc = (Scheme_Object *)p->ku.k.p2;
+  Scheme_Object *init_readtable = (Scheme_Object *)p->ku.k.p3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
 
-  return (void *)_scheme_internal_read(port, stxsrc, p->ku.k.i1, p->ku.k.i2, p->ku.k.i3);
+  return (void *)_scheme_internal_read(port, stxsrc, p->ku.k.i1, p->ku.k.i2, 
+				       p->ku.k.i3, p->ku.k.i4, init_readtable);
 }
 
 Scheme_Object *
-scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int cantfail, int honu_mode, int recur)
+scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int cantfail, int honu_mode, 
+		     int recur, int pre_char, Scheme_Object *init_readtable)
 {
   Scheme_Thread *p = scheme_current_thread;
 
@@ -1834,13 +1874,15 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int ca
     scheme_alloc_list_stack(p);
 
   if (cantfail) {
-    return _scheme_internal_read(port, stxsrc, crc, honu_mode, recur);
+    return _scheme_internal_read(port, stxsrc, crc, honu_mode, recur, -1, NULL);
   } else {
     p->ku.k.p1 = (void *)port;
     p->ku.k.p2 = (void *)stxsrc;
     p->ku.k.i1 = crc;
     p->ku.k.i2 = honu_mode;
     p->ku.k.i3 = recur;
+    p->ku.k.i4 = pre_char;
+    p->ku.k.p3 = (void *)init_readtable;
 
     return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
   }
@@ -1848,12 +1890,12 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int ca
 
 Scheme_Object *scheme_read(Scheme_Object *port)
 {
-  return scheme_internal_read(port, NULL, -1, 0, 0, 0);
+  return scheme_internal_read(port, NULL, -1, 0, 0, 0, -1, NULL);
 }
 
 Scheme_Object *scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 {
-  return scheme_internal_read(port, stxsrc, -1, 0, 0, 0);
+  return scheme_internal_read(port, stxsrc, -1, 0, 0, 0, -1, NULL);
 }
 
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)
@@ -2639,7 +2681,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 		      int radix, int radix_set,
 		      int is_symbol, int pipe_quote,
 		      Scheme_Hash_Table **ht,
-		      Scheme_Object *indentation, ReadParams *params)
+		      Scheme_Object *indentation, ReadParams *params, Readtable *table)
 {
   mzchar *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
   int size, oldsize;
@@ -2655,7 +2697,6 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   int far_char_ok;
   int single_escape, multiple_escape;
   Getc_Fun_r getc_special_ok_fun;
-  Readtable *table;
 
   ungetc_ok = scheme_peekc_is_ungetc(port);
 
@@ -2681,7 +2722,6 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   else
     honu_mode = params->honu_mode;
 
-  table = params->table;
   if (table) {
     far_char_ok = 0;
     delim_ok = 0;
@@ -2881,14 +2921,14 @@ read_number(int init_ch,
 	    int is_float, int is_not_float,
 	    int radix, int radix_set,
 	    Scheme_Hash_Table **ht,
-	    Scheme_Object *indentation, ReadParams *params)
+	    Scheme_Object *indentation, ReadParams *params, Readtable *table)
 {
   return read_number_or_symbol(init_ch,
 			       port, stxsrc, line, col, pos,
 			       is_float, is_not_float,
 			       radix, radix_set, 0,
 			       params->can_read_pipe_quote,
-			       ht, indentation, params);
+			       ht, indentation, params, table);
 }
 
 static Scheme_Object  *
@@ -2896,13 +2936,13 @@ read_symbol(int init_ch,
 	    Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
 	    Scheme_Hash_Table **ht,
-	    Scheme_Object *indentation, ReadParams *params)
+	    Scheme_Object *indentation, ReadParams *params, Readtable *table)
 {
   return read_number_or_symbol(init_ch,
 			       port, stxsrc, line, col, pos,
 			       0, 0, 10, 0, 1,
 			       params->can_read_pipe_quote,
-			       ht, indentation, params);
+			       ht, indentation, params, table);
 }
 
 static int check_honu_num(mzchar *buf, int i)

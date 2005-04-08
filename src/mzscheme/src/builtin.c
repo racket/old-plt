@@ -44,7 +44,7 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
   if (!env)
     env = scheme_get_env(NULL);
     
-  expr = scheme_internal_read(port, NULL, 1, 1, 0, 0);
+  expr = scheme_internal_read(port, NULL, 1, 1, 0, 0, -1, NULL);
 
   return _scheme_eval_compiled(expr, env);
 }

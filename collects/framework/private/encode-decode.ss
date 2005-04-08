@@ -32,8 +32,8 @@
         string-append
         (map
          (λ (x) 
-           (to-hex (char->integer x)))
-         (string->list string)))))
+           (to-hex x))
+         (bytes->list string)))))
     
     (define (to-hex n)
       (let ([digit->hex
@@ -48,9 +48,9 @@
                         (digit->hex (modulo n 16)))])))
     
     (let ([in (open-input-string (format "~s" sexp))]
-          [out (open-output-string)])
+          [out (open-output-bytes)])
       (deflate in out)
-      (str->sym (get-output-string out))))
+      (str->sym (get-output-bytes out))))
   
   (define-syntax (decode stx)
     (syntax-case stx ()

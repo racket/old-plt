@@ -474,3 +474,18 @@ void wxCommonInit(void)
     wxREGGLOB(wxBLANK_CURSOR);
     wxBLANK_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_BLANK);
 }
+
+static int hilite_border = -1;
+
+extern "C" int wxUseMenuHiliteBorder()
+{
+  if (hilite_border < 0) {
+    int on;
+    hilite_border = 0;
+    if (wxGetBoolPreference("hiliteMenuBorder", &on)) {
+      if (on)
+	hilite_border = 1;
+    }
+  }
+  return hilite_border;
+}

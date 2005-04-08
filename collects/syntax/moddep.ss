@@ -19,7 +19,9 @@
 		   (read-accept-graph #t)
 		   (read-decimal-as-inexact #t)
 		   (read-accept-dot #t)
-		   (read-accept-quasiquote #t))
+		   (read-accept-quasiquote #t)
+		   (read-accept-reader #t)
+		   (current-readtable #f))
       (thunk)))
 
   (define (raise-wrong-module-name filename expected-name name)

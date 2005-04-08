@@ -292,7 +292,7 @@
       
       'done))
 
-  (try-proc-structs 0 0 null (lambda (x) 'cons) (lambda (x) "cons:") '(1 . 2) #f)
+  (try-proc-structs 0 0 null (lambda (x) 'cons) (lambda (x) "cons:") '(1 . 2) (current-inspector))
   (try-proc-structs 0 0 null (lambda (x) 'cons) (lambda (x) "cons:") '(1 . 2) t-insp)
   (try-proc-structs (lambda (s a b) 
 		      (when (and (struct? s) (not (arity-at-least? s)))
@@ -302,7 +302,7 @@
 		      (when (struct? s)
 			(error "should be opaque"))
 		      (cons b a))
-		    2 values values '(2 . 1) #f)
+		    2 values values '(2 . 1) (current-inspector))
   (try-proc-structs (lambda (s a b) 
 		      (unless (struct? s) (error "should be transparent"))
 		      (unless ((vector-ref (struct->vector s) 3) s) (error "should be instance"))
@@ -319,7 +319,7 @@
 	       (make-struct-type 'b s:s 1 1 #f null (current-inspector) 0))
 	     exn:application:mismatch?)
 
-(let-values ([(type make pred sel set) (make-struct-type 'p #f 1 0 #f null #f (lambda () 5))])
+(let-values ([(type make pred sel set) (make-struct-type 'p #f 1 0 #f null (current-inspector) (lambda () 5))])
   (let ([useless (make 7)])
     (test #t pred useless)
     (test #t procedure? useless)
@@ -329,10 +329,11 @@
     (err/rt-test (useless 1) exn:application:arity?)
     (err/rt-test (useless 1 2) exn:application:arity?)))
 
-(let-values ([(type make pred sel set) (make-struct-type 'p #f 1 0 #f null #f (case-lambda 
-									       [(x) 7]
-									       [() 5]
-									       [(x y z) 8]))]) 
+(let-values ([(type make pred sel set) (make-struct-type 'p #f 1 0 #f null (current-inspector)
+							 (case-lambda 
+							  [(x) 7]
+							  [() 5]
+							  [(x y z) 8]))]) 
   (let ([useless (make 7)])
     (test #t pred useless)
     (test #t procedure? useless)
@@ -407,6 +408,7 @@
 (test #t a? ai)
 (test #f a? 1)
 (test #f aa? ai)
+(test #f struct? ai)
 (test 1 a-b ai)
 (test 2 a-c ai)
 (define ai2 (make-a 1 2))

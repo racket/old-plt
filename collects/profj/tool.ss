@@ -521,7 +521,8 @@
                    (namespace-require obj-path)
                    (namespace-require '(lib "tool.ss" "profj"))
                    (namespace-require class-path)
-                   (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
+                   (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))
+                   (namespace-require '(prefix c: (lib "contract.ss"))))))))
           
           (define/public (render-value value settings port); port-write)
             (let ((print-full? (profj-settings-print-full? settings))

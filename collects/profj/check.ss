@@ -1871,6 +1871,7 @@
     (let* ((this (unless static? (lookup-this type-recs env)))
            (src (expr-src call))
            (name (call-method-name call))
+           (name-string (when (id? name) (id-string name)))
            (expr (call-expr call))
            (exp-type #f)
            (handle-call-error 
@@ -1890,27 +1891,15 @@
                                                                      (car (class-record-name record))
                                                                      (lambda () null))
                                                                (cdr (class-record-name record))))))
-                       (get-method-records (id-string name) record))
+                       (get-method-records name-string record))
                       ((scheme-record? record)
-                       (let ((result 
-                              (lookup-scheme record (id-string name) 
-                                             (lambda () (no-method-error 'class 'not-found
-                                                                         (string->symbol (id-string name))
-                                                                         (make-ref-type (if (pair? name) (car name) name) 
-                                                                                        (list "scheme"))
-                                                                         src)))))
-                         (if (dynamic-val-type result)
-                             (if (method-contract? (dynamic-val-type result))
-                                 (list (dynamic-val-type result))
-                                 (no-method-error 'class 'field (string->symbol (id-string name))
-                                                  (make-ref-type (if (pair? name) (car name) name) 
-                                                                 (list "scheme"))
-                                                  src))
-                             (let ((m-c 
-                                    (make-method-contract (id-string name) 
-                                                          (make-dynamic-val 'dynamic) 'dynamic)))
-                               (set-dynamic-val-type! result m-c)
-                               (list m-c)))))))
+                       (module-has-binding? record  name-string 
+                                            (lambda () (no-method-error 'class 'not-found
+                                                                        (string->symbol name-string)
+                                                                        (make-ref-type name (list "scheme"))
+                                                                        src)))
+                       (list (make-method-contract name-string #f #f)))))
+                  ;Teaching languages
                   (if (and (= (length (access-name expr)) 1)
                            (with-handlers ((exn:fail:syntax? (lambda (exn) #f)))
                              (type-exists? (id-string (car (access-name expr)))
@@ -1926,7 +1915,7 @@
                                                                (send type-recs lookup-path 
                                                                      (car (class-record-name record))
                                                                      (lambda () null)))))
-                           (let ((methods (get-method-records (id-string name) record)))
+                           (let ((methods (get-method-records name-string record)))
                              (unless (andmap (lambda (x) x) 
                                              (map (lambda (mrec) (memq 'static (method-record-modifiers mrec)))
                                                   methods))
@@ -1946,13 +1935,13 @@
                      (get-method-records (car (class-record-name this)) this))))
               (else
                (cond
-                 ((special-name? expr)
-                  (if (equal? (special-name-name expr) "super")
-                      (let ((parent (car (class-record-parents this))))
-                        (set! exp-type 'super)
-                        (get-method-records (id-string name)
-                                            (send type-recs get-class-record parent)))
-                      (get-method-records (id-string name) this)))
+                 ((and (special-name? expr) (equal? (special-name-name expr) "super"))
+                  (when static?
+                    (super-special-error (expr-src expr) interact?))
+                  (let ((parent (car (class-record-parents this))))
+                    (set! exp-type 'super)
+                    (get-method-records name-string
+                                        (send type-recs get-class-record parent))))
                  (expr
                   (let* ((call-exp/env 
                           (with-handlers ((exn:fail:syntax? handle-call-error))
@@ -1967,21 +1956,16 @@
                       ((list? call-exp) call-exp)
                       ((array-type? call-exp)
                        (set! exp-type call-exp)
-                       (get-method-records (id-string name)
+                       (get-method-records name-string
                                            (send type-recs get-class-record object-type)))
-                      ((and (dynamic-val? call-exp) (dynamic-val-type call-exp) 
-                            (unknown-ref? (dynamic-val-type call-exp)))
-                       (set! exp-type call-exp)
-                       (get-method-contracts (id-string name) (dynamic-val-type call-exp)))
-                      ((and (dynamic-val? call-exp) (not (dynamic-val-type call-exp)))
-                       (let ((m-contract (make-method-contract (id-string name) 
-                                                               (make-dynamic-val 'method-return #t #f #f) #f)))
+                      ((dynamic-val? call-exp) 
+                       (let ((m-contract (make-method-contract name-string #f #f)))
+                         (set-dynamic-val-type! call-exp (make-unknown-ref m-contract))
                          (set! exp-type call-exp)
-                         (set-dynamic-val-type! call-exp (make-unknown-ref (list m-contract) null))
-                         (list m-contract)))                           
+                         (list m-contract)))
                       ((reference-type? call-exp)
                        (set! exp-type call-exp)
-                       (get-method-records (id-string name)
+                       (get-method-records name-string
                                            (get-record 
                                             (send type-recs get-class-record call-exp #f
                                                   ((get-importer type-recs) 
@@ -1994,7 +1978,7 @@
                       (beginner-method-access-error name (id-src name))
                       (let ((rec (if static? (send type-recs get-class-record c-class) this)))
                         (if (null? rec) null
-                            (get-method-records (id-string name) rec))))))))))
+                            (get-method-records name-string rec))))))))))
       
       (when (null? methods)
         (let* ((rec (if exp-type 
@@ -2003,17 +1987,17 @@
                (class? (member (id-string name) (send type-recs get-class-env)))
                (field? (cond
                          ((array-type? exp-type) (equal? (id-string name) "length"))
-                         ((null? rec) 
-                          (member (id-string name) 
+                         ((null? rec)
+                          (member name-string 
                                   (map field-record-name (send type-recs get-interactions-fields))))
-                         (else (member (id-string name) (map field-record-name (get-field-records rec))))))
+                         (else (member name-string (map field-record-name (get-field-records rec))))))
                (sub-kind (if class? 'class-name (if field? 'field-name 'not-found))))
         (cond 
           ((eq? exp-type 'super) (no-method-error 'super sub-kind exp-type name src))
           (exp-type (no-method-error 'class sub-kind exp-type name src))
           (else 
            (cond
-             ((close-to-keyword? (id-string name))
+             ((close-to-keyword? name-string)
               (close-to-keyword-error 'method name src))
              (interact? (interaction-call-error name src level))
              (else
@@ -2023,13 +2007,13 @@
                  (eq? (method-record-rtype (car methods)) 'ctor))
         (ctor-called-error exp-type name src))
       
-      (let* ((args/env (check-args arg-exps check-sub 
-                                   env))
+      (let* ((args/env (check-args arg-exps check-sub env))
              (args (car args/env))
-             (method-record 
+             (method-record
               (cond
                 ((method-contract? (car methods))
                  (set-method-contract-args! (car methods) args)
+                 (set-method-contract-return! (car methods) (make-dynamic-val #f))
                  (car methods))
                 ((memq level '(full advanced))
                  (resolve-overloading methods 
@@ -2042,7 +2026,7 @@
                  (let ((teaching-error
                         (lambda (kind)
                           (if (error-file-exists? (method-record-class (car methods)) type-recs)
-                              (call-provided-error (id-string name) args kind)
+                              (call-provided-error name-string args kind)
                               (teaching-call-error kind #f name args exp-type src methods)))))
                    (resolve-overloading methods
                                         args
@@ -2087,7 +2071,7 @@
                       (eq? 'void (method-record-rtype method-record)))
              (beginner-call-error name src))
            (unless (eq? level 'full)
-             (when (and (id? name) (is-method-restricted? (id-string name) (method-record-class method-record)))
+             (when (and (id? name) (is-method-restricted? name-string (method-record-class method-record)))
                (restricted-method-call name (method-record-class method-record) src)))
            (set-call-method-record! call method-record)
            (make-type/env (method-record-rtype method-record) (cadr args/env)))
@@ -2318,6 +2302,9 @@
              (cond
                ((and (dynamic-val-type else-t) (eq? 'boolean (dynamic-val-type else-t))) 'boolean)
                (else (set-dynamic-val-type! else-t 'boolean) 'boolean)))))
+         ((and (dynamic-val? then) (dynamic-val? else-t)
+               (not (dynamic-val-type then)) (not (dynamic-val-type else-t)))
+          (make-dynamic-val #f))
          ((and (eq? 'boolean then) (eq? 'boolean else-t)) 'boolean)
          ((and (prim-numeric-type? then) (prim-numeric-type? else-t))
           ;; This is not entirely correct, but close enough due to using scheme ints
@@ -2400,6 +2387,8 @@
           (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
       (make-type/env
        (cond
+         ((dynamic-val? exp-type) type)
+         ((eq? 'dynamic type) (make-dynamic-val #f))
          ((and (reference-type? exp-type) (reference-type? type)) type)
          ((and (not (reference-type? exp-type)) (not (reference-type? type))) type)
          ((reference-type? exp-type) (cast-error 'from-prim exp-type type src))
@@ -2427,7 +2416,7 @@
           (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
       (make-type/env 
        (cond 
-         ((and (ref-type? exp-type) (ref-type? type) 
+         ((and (ref-type? exp-type) (ref-type? type)
                (or (is-eq-subclass? exp-type type type-recs)
                    (is-eq-subclass? type exp-type type-recs))) 'boolean)
          ((and (ref-type? exp-type) (ref-type? type))
@@ -2440,6 +2429,7 @@
             ((and (array-type? exp-type) (array-type? type)
                   (= (array-type-dim exp-type) (array-type-dim type))
                   (or (assignment-conversion exp-type type type-recs))) 'boolean)
+            ((dynamic-val? exp-type) 'boolean)
             ((and (array-type? exp-type) (array-type? type))
              (instanceof-error 'not-related-array type exp-type src))
             ((array-type? exp-type)
@@ -2686,6 +2676,13 @@
                  (format "use of 'this' is not allowed in ~a"
                          (if interactions? "the interactions window" "static code"))
                  'this src))
+  
+  ;super-special-error: src bool -> void
+  (define (super-special-error src interact?)
+    (raise-error 'super
+                 (format "use of 'super' is not allowed in ~a"
+                         (if interact? "the interactions window" "static code"))
+                 'super src))
   
   ;;Call errors
 
@@ -3169,8 +3166,7 @@
                      ((static) (format "final field ~a may only be set in the containing class's static initialization" n))
                      ((field) (format "final field ~a may only be set in the containing class's constructor" n)))
                    n (id-src name))))
-
-  
+   
   ;implicit import error
   ;class-lookup-error: string src -> void
   (define (class-lookup-error class src)

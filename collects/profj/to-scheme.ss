@@ -1808,8 +1808,14 @@
   (define (translate-access name type src)
     (cond
       ((local-access? name)
-       (translate-id (build-var-name (id-string (local-access-name name)))
-                     (id-src (local-access-name name))))
+       (let ((var (translate-id (build-var-name (id-string (local-access-name name)))
+                     (id-src (local-access-name name)))))
+         (if (dynamic-val? type)
+             (make-syntax #f
+                          `(c:contract ,(type->contract (dynamic-val-type type))
+                                       ,var 'scheme 'java)
+                          (build-src (id-src (local-access-name name))))
+             var)))
       ((field-access? name)
        (let* ((field-string (id-string (field-access-field name)))
               (field-src (id-src (field-access-field name)))

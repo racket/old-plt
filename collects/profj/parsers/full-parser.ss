@@ -844,6 +844,8 @@
 		       $5)]
        [(O_PAREN PrimitiveType C_PAREN UnaryExpression)
 	(make-cast #f (build-src 4) $2 $4)]
+       [(O_PAREN dynamic C_PAREN UnaryExpression)
+        (make-cast #f (build-src 4) (make-type-spec 'dynamic 0 (build-src 2 2)) $4)]
        [(O_PAREN Expression C_PAREN UnaryExpressionNotPlusMinus)
         (if (access? $2)
             (make-cast #f (build-src 4) 

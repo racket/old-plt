@@ -879,3 +879,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)
+
+(load-relative "readtable.ss")

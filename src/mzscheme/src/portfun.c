@@ -2729,11 +2729,7 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_recur_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
-  v = do_read_f("read/recusrive", argc, argv, 0, 1);
-  if (!v)
-    scheme_raise_exn(MZEXN_FAIL, "read/recursive: no read in progress");
-  return v;
+  return do_read_f("read/recusrive", argc, argv, 0, 1);
 }
 
 static Scheme_Object *read_honu_f(int argc, Scheme_Object *argv[])
@@ -2743,11 +2739,7 @@ static Scheme_Object *read_honu_f(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_honu_recur_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
-  v = do_read_f("read-honu/recursive", argc, argv, 1, 1);
-  if (!v)
-    scheme_raise_exn(MZEXN_FAIL, "read-honu/recursive: no read in progress");
-  return v;
+  return do_read_f("read-honu/recursive", argc, argv, 1, 1);
 }
 
 static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode, int recur)
@@ -2813,11 +2805,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_syntax_recur_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
-  v = do_read_syntax_f("read-syntax/recursive", argc, argv, 0, 1);
-  if (!v)
-    scheme_raise_exn(MZEXN_FAIL, "read-syntax/recursive: no syntax read in progress");
-  return v;
+  return do_read_syntax_f("read-syntax/recursive", argc, argv, 0, 1);
 }
 
 static Scheme_Object *read_honu_syntax_f(int argc, Scheme_Object *argv[])
@@ -2827,11 +2815,7 @@ static Scheme_Object *read_honu_syntax_f(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_honu_syntax_recur_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
-  v = do_read_syntax_f("read-honu-syntax/recursive", argc, argv, 1, 1);
-  if (!v)
-    scheme_raise_exn(MZEXN_FAIL, "read-honu-syntax/recursive: no syntax read in progress");
-  return v;
+  return do_read_syntax_f("read-honu-syntax/recursive", argc, argv, 1, 1);
 }
 
 static Scheme_Object *
@@ -4163,6 +4147,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   config = scheme_extend_config(config, MZCONFIG_CAN_READ_PIPE_QUOTE, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_CAN_READ_DOT, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_CAN_READ_QUASI, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_READER, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_READ_DECIMAL_INEXACT, scheme_true);
 
   lhd = MALLOC_ONE_RT(LoadHandlerData);

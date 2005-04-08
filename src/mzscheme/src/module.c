@@ -34,7 +34,6 @@ Scheme_Object *(*scheme_module_demand_hook)(int, Scheme_Object **);
 /* locals */
 static Scheme_Object *current_module_name_resolver(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_module_name_prefix(int argc, Scheme_Object *argv[]);
-static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
@@ -256,7 +255,7 @@ void scheme_init_module(Scheme_Env *env)
 			     env);
 
   scheme_add_global_constant("dynamic-require", 
-			     scheme_make_prim_w_arity(dynamic_require,
+			     scheme_make_prim_w_arity(scheme_dynamic_require,
 						      "dynamic-require",
 						      2, 2),
 			     env);
@@ -881,7 +880,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     return scheme_void;
 }
 
-static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_dynamic_require(int argc, Scheme_Object *argv[])
 {
   if (scheme_module_demand_hook) {
     Scheme_Object *r;

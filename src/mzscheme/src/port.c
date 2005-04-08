@@ -2597,11 +2597,12 @@ scheme_char_ready (Scheme_Object *port)
 
 Scheme_Object *scheme_get_special(Scheme_Object *port,
 				  Scheme_Object *src, long line, long col, long pos,
-				  int peek)
+				  int peek, Scheme_Hash_Table **for_read)
 {
   int cnt;
   Scheme_Object *a[4], *special;
   Scheme_Input_Port *ip;
+  Scheme_Cont_Frame_Data cframe;
 
   SCHEME_USE_FUEL(1);
 
@@ -2660,13 +2661,21 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
     a[2] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
     a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
   }
-  
-  return _scheme_apply(special, cnt, a);
+
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_in_read_mark(src, for_read);
+
+  special = scheme_apply(special, cnt, a);
+
+  scheme_pop_continuation_frame(&cframe);
+
+  return special;
 }
 
-Scheme_Object *scheme_get_ready_special(Scheme_Object *port, 
-					Scheme_Object *stxsrc,
-					int peek)
+static Scheme_Object *do_get_ready_special(Scheme_Object *port, 
+					   Scheme_Object *stxsrc,
+					   int peek,
+					   Scheme_Hash_Table **ht)
 {
   long line, col, pos;
 
@@ -2680,7 +2689,19 @@ Scheme_Object *scheme_get_ready_special(Scheme_Object *port,
   col = scheme_tell_column(port);
   pos = scheme_tell(port);
 
-  return scheme_get_special(port, stxsrc, line, col, pos, peek);
+  return scheme_get_special(port, stxsrc, line, col, pos, peek, ht);
+}
+
+Scheme_Object *scheme_get_ready_read_special(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
+{
+  return do_get_ready_special(port, stxsrc, 0, ht);
+}
+
+Scheme_Object *scheme_get_ready_special(Scheme_Object *port, 
+					Scheme_Object *stxsrc,
+					int peek)
+{
+  return do_get_ready_special(port, stxsrc, peek, NULL);
 }
 
 void scheme_bad_time_for_special(const char *who, Scheme_Object *port)
@@ -2691,6 +2712,7 @@ void scheme_bad_time_for_special(const char *who, Scheme_Object *port)
 static Scheme_Object *check_special_args(void *sbox, int argc, Scheme_Object **argv)
 {
   Scheme_Object *special;
+  Scheme_Cont_Frame_Data cframe;
 
   if (SCHEME_TRUEP(argv[1]))
     if (!scheme_nonneg_exact_p(argv[1]) || (SAME_OBJ(argv[1], scheme_make_integer(0))))
@@ -2707,8 +2729,15 @@ static Scheme_Object *check_special_args(void *sbox, int argc, Scheme_Object **a
     scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "read-special: cannot be called a second time");
   *(Scheme_Object **)sbox = NULL;
-  
-  return _scheme_apply(special, 4, argv);
+
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_in_read_mark(NULL, NULL);
+
+  special = _scheme_apply(special, 4, argv);
+
+  scheme_pop_continuation_frame(&cframe);
+
+  return special;
 }
 
 Scheme_Object *scheme_get_special_proc(Scheme_Object *inport)

@@ -99,8 +99,12 @@
 		   (when old-caret?
 		     (test-read "a&b" '(a dollar b)))
 		   (test-read "a #$ b" '(a (dollar . b)))
+		   (test-read "(#1=a #$ #1#)" '((a (dollar . a))))
+		   (test-read "(#1=a #$ (#1#))" '((a (dollar a))))
 		   (test-read "a%b" '(a%b))
 		   (test-read "a % b" '(a (percent b)))
+		   (test-read "(#1=a % #1#)" '((a (percent a))))
+		   (test-read "(#1=a % (#1#))" '((a (percent (a)))))
 		   (test-read "a _xxx b" '(a b))
 		   (test-read "(a _xxx b)" '((a b)))
 		   (test-read "(a _xxx . b)" '((a . b)))

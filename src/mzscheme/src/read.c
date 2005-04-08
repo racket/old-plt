@@ -111,6 +111,7 @@ typedef struct ReadParams {
   int can_read_pipe_quote;
   int can_read_box;
   int can_read_graph;
+  int can_read_reader;
   int case_sensitive;
   int square_brackets_are_parens;
   int curly_braces_are_parens;
@@ -137,6 +138,7 @@ static Scheme_Object *read_list(Scheme_Object *port, Scheme_Object *stxsrc,
 static Scheme_Object *read_string(int is_byte, int is_honu_char,
 				  Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
+				  Scheme_Hash_Table **ht,
 				  Scheme_Object *indentation,
 				  ReadParams *params);
 static Scheme_Object *read_here_string(Scheme_Object *port, Scheme_Object *stxsrc,
@@ -160,15 +162,18 @@ static Scheme_Object *read_number(int init_ch,
 				  Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				  int, int, int, int,
+				  Scheme_Hash_Table **ht,
 				  Scheme_Object *indentation,
 				  ReadParams *params);
 static Scheme_Object *read_symbol(int init_ch,
 				  Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
+				  Scheme_Hash_Table **ht,
 				  Scheme_Object *indentation,
 				  ReadParams *params);
 static Scheme_Object *read_character(Scheme_Object *port, Scheme_Object *stcsrc,
 				     long line, long col, long pos,
+				     Scheme_Hash_Table **ht,
 				     Scheme_Object *indentation,
 				     ReadParams *params);
 static Scheme_Object *read_box(Scheme_Object *port, Scheme_Object *stxsrc,
@@ -182,6 +187,11 @@ static Scheme_Object *read_hash(Scheme_Object *port, Scheme_Object *stxsrc,
 				Scheme_Hash_Table **ht,
 				Scheme_Object *indentation,
 				ReadParams *params);
+static Scheme_Object *read_reader(Scheme_Object *port, Scheme_Object *stxsrc,
+				  long line, long col, long pos,
+				  Scheme_Hash_Table **ht,
+				  Scheme_Object *indentation,
+				  ReadParams *params);
 static Scheme_Object *read_compiled(Scheme_Object *port,
 				    Scheme_Hash_Table **ht);
 static void unexpected_closer(int ch,
@@ -201,7 +211,7 @@ static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 #define READTABLE_SINGLE_ESCAPE 0x8
 #define READTABLE_MULTIPLE_ESCAPE 0x10
 #define READTABLE_MAPPED 0x20
-static int readtable_kind(Readtable *t, int ch);
+static int readtable_kind(Readtable *t, int ch, ReadParams *params);
 static Scheme_Object *readtable_handle(Readtable *t, int *_ch, int *_use_default, ReadParams *params,
 				       Scheme_Object *port, Scheme_Object *src, long line, long col, long pos,
 				       Scheme_Hash_Table **ht);
@@ -724,7 +734,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     ch = scheme_getc_special_ok(port);
     if (NOT_EOF_OR_SPECIAL(ch)) {
       if (params->table) {
-	if (!(readtable_kind(params->table, ch) & READTABLE_WHITESPACE))
+	if (!(readtable_kind(params->table, ch, params) & READTABLE_WHITESPACE))
 	  break;
       } else if (!scheme_isspace(ch))
 	break;
@@ -774,7 +784,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	if (special_value)
 	  v = special_value;
 	else
-	  v = scheme_get_special(port, stxsrc, line, col, pos, 0);
+	  v = scheme_get_special(port, stxsrc, line, col, pos, 0, ht);
 	if (scheme_special_comment_value(v)) {
 	  /* a "comment" */
 	  if (comment_mode & RETURN_FOR_SPECIAL_COMMENT)
@@ -825,19 +835,19 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
       } else
 	return read_list(port, stxsrc, line, col, pos, '}', mz_shape_cons, 0, ht, indentation, params);
     case '|':
-      return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+      return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
     case '"':
-      return read_string(0, 0, port, stxsrc, line, col, pos,indentation, params);
+      return read_string(0, 0, port, stxsrc, line, col, pos, ht, indentation, params);
     case '\'':
       if (params->honu_mode) {
-	return read_string(0, 1, port, stxsrc, line, col, pos, indentation, params);
+	return read_string(0, 1, port, stxsrc, line, col, pos, ht, indentation, params);
       } else {
 	return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht, indentation, params);
       }
     case '`':
       if (params->honu_mode) {
 	/* Raises illegal-char error: */
-	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
       } else if (!params->can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, "read: illegal use of backquote");
 	return NULL;
@@ -870,7 +880,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  if (ch == EOF)
 	    return scheme_eof;
 	  if (ch == SCHEME_SPECIAL)
-	    scheme_get_ready_special(port, stxsrc, 0);
+	    scheme_get_ready_read_special(port, stxsrc, ht);
 	}
 	if (params->table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
 	  return NULL;
@@ -879,7 +889,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     case '+':
     case '-':
       if (params->honu_mode) {
-	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
       }
     case '.': /* ^^^ fallthrough ^^^ */
       ch2 = scheme_peekc_special_ok(port);
@@ -887,9 +897,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  || (!params->honu_mode
 	      && ((ch2 == 'i') || (ch2 == 'I') /* Maybe inf */
 		  || (ch2 == 'n') || (ch2 == 'N') /* Maybe nan*/ ))) {
-	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, indentation, params);
+	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, ht, indentation, params);
       } else {
-	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
       }
     case '#':
       ch = scheme_getc_special_ok(port);
@@ -942,7 +952,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case '%':
 	  if (!params->honu_mode) {
 	    scheme_ungetc('%', port);
-	    return read_symbol('#', port, stxsrc, line, col, pos, indentation, params);
+	    return read_symbol('#', port, stxsrc, line, col, pos, ht, indentation, params);
 	  }
 	  break;
 	case '(':
@@ -971,7 +981,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case '\\':
 	  if (!params->honu_mode) {
 	    Scheme_Object *chr;
-	    chr = read_character(port, stxsrc, line, col, pos, indentation, params);
+	    chr = read_character(port, stxsrc, line, col, pos, ht, indentation, params);
 	    if (stxsrc)
 	      chr = scheme_make_stx_w_offset(chr, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	    return chr;
@@ -1059,37 +1069,37 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case 'X':
 	case 'x': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 16, 1, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 16, 1, ht, indentation, params);
 	  }
 	  break;
 	case 'B':
 	case 'b': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 2, 1, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 2, 1, ht, indentation, params);
 	  }
 	  break;
 	case 'O':
 	case 'o': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 8, 1, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 8, 1, ht, indentation, params);
 	  }
 	  break;
 	case 'D':
 	case 'd': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 10, 1, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 10, 1, ht, indentation, params);
 	  }
 	  break;
 	case 'E':
 	case 'e': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 0, 1, 10, 0, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 1, 10, 0, ht, indentation, params);
 	  }
 	  break;
 	case 'I':
 	case 'i': 
 	  if (!params->honu_mode) {
-	    return read_number(-1, port, stxsrc, line, col, pos, 1, 0, 10, 0, indentation, params);
+	    return read_number(-1, port, stxsrc, line, col, pos, 1, 0, 10, 0, ht, indentation, params);
 	  }
 	  break;
 	case '\'':
@@ -1138,7 +1148,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 				"read: end of file in #| comment");
 	      else if (ch == SCHEME_SPECIAL)
-		scheme_get_ready_special(port, stxsrc, 0);
+		scheme_get_ready_read_special(port, stxsrc, ht);
 
 	      if ((ch2 == '|') && (ch == '#')) {
 		if (!(depth--)) {
@@ -1168,9 +1178,11 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case 'r':
 	  if (!params->honu_mode) {
 	    int cnt = 0, is_byte = 0;
+	    char *expect;
 
 	    ch = scheme_getc_special_ok(port);
 	    if (ch == 'x') {
+	      expect = "x#";
 	      ch = scheme_getc_special_ok(port);
 	      cnt++;
 	      if (ch == '#') {
@@ -1185,7 +1197,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		/* Skip #rx[#]: */
 		scheme_tell_all(port, &line, &col, &pos);
 
-		str = read_string(is_byte, 0, port, stxsrc, line, col, pos, indentation, params);
+		str = read_string(is_byte, 0, port, stxsrc, line, col, pos, ht, indentation, params);
 
 		if (stxsrc)
 		  str = SCHEME_STX_VAL(str);
@@ -1203,21 +1215,50 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 
 		return str;
 	      }
+	    } else if (ch == 'e') {
+	      expect = "eader";
+	      cnt++;
+	      while (expect[cnt]) {
+		ch = scheme_getc_special_ok(port);
+		if (ch != expect[cnt])
+		  break;
+		cnt++;
+	      }
+	      if (!expect[cnt]) {
+		/* Found #reader. Read an S-exp. */
+		Scheme_Object *v;
+
+		if (!params->can_read_reader) {
+		  scheme_read_err(port, stxsrc, line, col, pos, 7, 0, indentation,
+				  "read: #reader expressions not currently enabled");
+		  return NULL;
+		}
+
+		v = read_reader(port, stxsrc, line, col, pos, ht, indentation, params);
+		if (!v) {
+		  if (comment_mode & RETURN_FOR_SPECIAL_COMMENT)
+		    return NULL;
+		  goto start_over;
+		}
+		return v;
+	      }
 	    }
 
 	    {
-	      mzchar a[1], b[1], c[1];
+	      mzchar a[6];
+	      int i;
 
-	      a[0] = 'x';
-	      b[0] = '#';
-	      c[0] = ch;
+	      for (i = 0; i < cnt; i++) {
+		a[i] = expect[i];
+	      }
+	      if (NOT_EOF_OR_SPECIAL(ch)) {
+		a[cnt++] = ch;
+	      }
 
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos),
 			      ch, indentation,
-			      "read: bad syntax `#r%u%u%u'",
-			      a, cnt ? 1 : 0,
-			      b, (cnt > 1) ? 1 : 0,
-			      c, (NOT_EOF_OR_SPECIAL(ch) ? 1 : 0));
+			      "read: bad syntax `#r%u'",
+			      a, cnt);
 	      return NULL;
 	    }
 	  }
@@ -1343,7 +1384,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  break;
 	case '"':
 	  if (!params->honu_mode) {
-	    return read_string(1, 0, port, stxsrc, line, col, pos,indentation, params);
+	    return read_string(1, 0, port, stxsrc, line, col, pos, ht, indentation, params);
 	  }
 	  break;
 	case '<':
@@ -1526,13 +1567,13 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  goto start_over_with_ch;
 	}
       }
-      return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+      return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
       break;
     default:
       if (isdigit_ascii(ch))
-	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, indentation, params);
+	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, ht, indentation, params);
       else
-	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+	return read_symbol(ch, port, stxsrc, line, col, pos, ht, indentation, params);
     }
 }
 
@@ -1576,21 +1617,35 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
   SCHEME_USE_FUEL(1);
 
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
-    obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
-    while (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
-      if (SAME_OBJ(start, obj)) {
-	scheme_read_err(port, NULL, -1, -1, -1, -1, 0, NULL,
-			"read: illegal cycle");
-	return NULL;
-      }
+    /* For placeholders generated by recusrive read: */
+    if (SCHEME_IMMUTABLEP(obj)) {
+      obj = (Scheme_Object *)SCHEME_PTR_VAL(obj); 
+    } else {
       obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
+      while (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
+	if (SAME_OBJ(start, obj)) {
+	  scheme_read_err(port, NULL, -1, -1, -1, -1, 0, NULL,
+			  "read: illegal cycle");
+	  return NULL;
+	}
+	obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
+      }
+      return obj;
     }
-    return obj;
   }
 
   result = obj;
-  if (mkstx && SCHEME_STXP(obj))
+  if (mkstx && SCHEME_STXP(obj)) {
     obj = SCHEME_STX_VAL(obj);
+
+    /* This check is needed because recusrive read-syntax produces
+       a placeholder value, and it might be embedded into a larger
+       syntax object. */
+    if (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
+      /* Assert: SCHEME_IMMUTABLEP(ph) */
+      return resolve_references(obj, port, mkstx);
+    }
+  }
 
   if (SCHEME_PAIRP(obj)) {
     Scheme_Object *rr;
@@ -1679,6 +1734,8 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int h
   params.can_read_box = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CAN_READ_GRAPH);
   params.can_read_graph = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CAN_READ_READER);
+  params.can_read_reader = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CASE_SENS);
   params.case_sensitive = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS);
@@ -1695,15 +1752,18 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int h
   if (honu_mode)
     params.table = NULL;
 
+  ht = NULL;
   if (recur) {
     v = scheme_extract_one_cc_mark(NULL, an_uninterned_symbol);
-    ht = (Scheme_Hash_Table **)SCHEME_CAR(v);
-    if (!ht)
-      return NULL;
-    if (SCHEME_FALSEP(SCHEME_CDR(v)) != !stxsrc)
-      return NULL;
-  } else
+    if (v && SCHEME_PAIRP(v)) {
+      if (SCHEME_FALSEP(SCHEME_CDR(v)) == !stxsrc)
+	ht = (Scheme_Hash_Table **)SCHEME_CAR(v);
+    }
+  }
+  if (!ht) {
     ht = MALLOC_N(Scheme_Hash_Table *, 1);
+    recur = 0;
+  }
 
   do {
     v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
@@ -1722,6 +1782,29 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int h
 	*ht = NULL;
     }
   } while (!v);
+
+  if (recur) {
+    /* For a recursive read, make sure that the result is a placeholder. */
+    Scheme_Object *ph;
+
+    if (!SAME_TYPE(SCHEME_TYPE(v), scheme_placeholder_type)) {
+      if (!*ht) {
+	/* Create hash table to indicate that this placeholder
+	   will need to be resolved, maybe: */
+	Scheme_Hash_Table *tht;
+	tht = scheme_make_hash_table(SCHEME_hash_ptr);
+	*ht = tht;
+      }
+
+      ph = scheme_alloc_small_object();
+      ph->type = scheme_placeholder_type;
+      SCHEME_PTR_VAL(ph) = v;
+
+      SCHEME_SET_IMMUTABLE(ph); /* Indicates that it's not a real reference */
+      
+      v = ph;
+    }
+  }
 
   return v;
 }
@@ -2000,7 +2083,7 @@ read_list(Scheme_Object *port,
 			    || ((next == ']') && brackets)
 			    || ((next == '}') && braces)))
 		    || (params->table 
-			&& (readtable_kind(params->table, next) 
+			&& (readtable_kind(params->table, next, params) 
 			    & (READTABLE_WHITESPACE | READTABLE_TERMINATING)))))) {
       scheme_tell_all(port, &dotline, &dotcol, &dotpos);
 
@@ -2145,6 +2228,7 @@ honu_add_module_wrapper(Scheme_Object *list, Scheme_Object *stxsrc, Scheme_Objec
 static Scheme_Object *
 read_string(int is_byte, int is_honu_char, Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
+	    Scheme_Hash_Table **ht,
 	    Scheme_Object *indentation, ReadParams *params)
 {
   mzchar *buf, *oldbuf, onstack[32];
@@ -2162,7 +2246,7 @@ read_string(int is_byte, int is_honu_char, Scheme_Object *port,
 		      (ch == EOF) ? "" : " after one character");
       return NULL;
     } else if (ch == SCHEME_SPECIAL) {
-      scheme_get_ready_special(port, stxsrc, 0);
+      scheme_get_ready_read_special(port, stxsrc, ht);
       scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 		      "read: found non-character while reading a %s",
 		      is_honu_char ? "character constant" : "string");
@@ -2178,7 +2262,7 @@ read_string(int is_byte, int is_honu_char, Scheme_Object *port,
 			is_honu_char ? "'" : "'\"'");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
-	scheme_get_ready_special(port, stxsrc, 0);
+	scheme_get_ready_read_special(port, stxsrc, ht);
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 			"read: found non-character while reading a %s",
 			is_honu_char ? "character constant" : "string");
@@ -2212,7 +2296,7 @@ read_string(int is_byte, int is_honu_char, Scheme_Object *port,
 	  ch = n;
 	} else {
 	  if (ch == SCHEME_SPECIAL)
-	    scheme_get_ready_special(port, stxsrc, 0);
+	    scheme_get_ready_read_special(port, stxsrc, ht);
 	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
 			  "read: no hex digit following \\x in %s",
 			  is_honu_char ? "character constant" : "string");
@@ -2245,7 +2329,7 @@ read_string(int is_byte, int is_honu_char, Scheme_Object *port,
 	    }
 	  } else {
 	    if (ch == SCHEME_SPECIAL)
-	      scheme_get_ready_special(port, stxsrc, 0);
+	      scheme_get_ready_read_special(port, stxsrc, ht);
 	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
 			    "read: no hex digit following \\%c in %s",
 			    ((maxc == 4) ? 'u' : 'U'),
@@ -2554,6 +2638,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 		      int is_float, int is_not_float,
 		      int radix, int radix_set,
 		      int is_symbol, int pipe_quote,
+		      Scheme_Hash_Table **ht,
 		      Scheme_Object *indentation, ReadParams *params)
 {
   mzchar *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
@@ -2627,7 +2712,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 	     || table)) {
     if (table) {
       int v;
-      v = readtable_kind(table, ch);
+      v = readtable_kind(table, ch, params);
       if (!running_quote && (v & (READTABLE_TERMINATING | READTABLE_WHITESPACE)))
 	break;
       single_escape = (v & READTABLE_SINGLE_ESCAPE);
@@ -2650,7 +2735,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 			"read: EOF following `%c' in symbol", esc_ch);
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
-	scheme_get_ready_special(port, stxsrc, 0);
+	scheme_get_ready_read_special(port, stxsrc, ht);
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 			"read: non-character following `%c' in symbol", esc_ch);
 	return NULL;
@@ -2696,7 +2781,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   }
 
   if (running_quote && (ch == SCHEME_SPECIAL)) {
-    scheme_get_ready_special(port, stxsrc, 0);
+    scheme_get_ready_read_special(port, stxsrc, ht);
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 		    "read: non-character following `%c' in symbol", running_quote_ch);
   }
@@ -2795,6 +2880,7 @@ read_number(int init_ch,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
 	    int is_float, int is_not_float,
 	    int radix, int radix_set,
+	    Scheme_Hash_Table **ht,
 	    Scheme_Object *indentation, ReadParams *params)
 {
   return read_number_or_symbol(init_ch,
@@ -2802,20 +2888,21 @@ read_number(int init_ch,
 			       is_float, is_not_float,
 			       radix, radix_set, 0,
 			       params->can_read_pipe_quote,
-			       indentation, params);
+			       ht, indentation, params);
 }
 
 static Scheme_Object  *
 read_symbol(int init_ch,
 	    Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
+	    Scheme_Hash_Table **ht,
 	    Scheme_Object *indentation, ReadParams *params)
 {
   return read_number_or_symbol(init_ch,
 			       port, stxsrc, line, col, pos,
 			       0, 0, 10, 0, 1,
 			       params->can_read_pipe_quote,
-			       indentation, params);
+			       ht, indentation, params);
 }
 
 static int check_honu_num(mzchar *buf, int i)
@@ -2897,6 +2984,7 @@ static int u_strcmp(mzchar *s, const char *_t)
 static Scheme_Object *
 read_character(Scheme_Object *port,
 	       Scheme_Object *stxsrc, long line, long col, long pos,
+	       Scheme_Hash_Table **ht,
 	       Scheme_Object *indentation, ReadParams *params)
 {
   int ch, next;
@@ -2904,7 +2992,7 @@ read_character(Scheme_Object *port,
   ch = scheme_getc_special_ok(port);
 
   if (ch == SCHEME_SPECIAL) {
-    scheme_get_ready_special(port, stxsrc, 0);
+    scheme_get_ready_read_special(port, stxsrc, ht);
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 		    "read: found non-character after #\\");
     return NULL;
@@ -3147,7 +3235,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 
   if (params->table) {
     while ((ch = scheme_getc_special_ok(port), NOT_EOF_OR_SPECIAL(ch))) {
-      if (!(readtable_kind(params->table, ch) & READTABLE_WHITESPACE))
+      if (!(readtable_kind(params->table, ch, params) & READTABLE_WHITESPACE))
 	break;
     }
     return ch;
@@ -3161,7 +3249,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
     do {
       ch = scheme_getc_special_ok(port);
       if (ch == SCHEME_SPECIAL)
-	scheme_get_ready_special(port, stxsrc, 0);
+	scheme_get_ready_read_special(port, stxsrc, ht);
     } while (ch != '\n' && ch != '\r' && ch != EOF);
     goto start_over;
   }
@@ -3181,7 +3269,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 			"read: end of file in #| comment");
       else if (ch == SCHEME_SPECIAL)
-	scheme_get_ready_special(port, stxsrc, 0);
+	scheme_get_ready_read_special(port, stxsrc, ht);
 
       if ((ch2 == blockc_2) && (ch == blockc_1)) {
 	if (!(depth--))
@@ -4271,7 +4359,7 @@ Scheme_Object *scheme_make_default_readtable()
   return scheme_false;
 }
 
-static int readtable_kind(Readtable *t, int ch)
+static int readtable_kind(Readtable *t, int ch, ReadParams *params)
 {
   int k;
   Scheme_Object *v;
@@ -4301,10 +4389,16 @@ static int readtable_kind(Readtable *t, int ch)
       k = READTABLE_CONTINUING;
   }
 
+  if (k == READTABLE_MULTIPLE_ESCAPE) {
+    /* This is the only one sensitive to params. */
+    if (!params->can_read_pipe_quote)
+      return READTABLE_CONTINUING;
+  }
+
   return k;
 }
 
-static Scheme_Object *readtable_call(int ch, Scheme_Object *proc, ReadParams *params,
+static Scheme_Object *readtable_call(int w_char, int ch, Scheme_Object *proc, ReadParams *params,
 				     Scheme_Object *port, Scheme_Object *src, long line, long col, long pos,
 				     Scheme_Hash_Table **ht)
 {
@@ -4312,27 +4406,43 @@ static Scheme_Object *readtable_call(int ch, Scheme_Object *proc, ReadParams *pa
   Scheme_Object *a[6], *v;
   Scheme_Cont_Frame_Data cframe;
 
-  a[0] = scheme_make_character(ch);
-  a[1] = port;
-  a[2] = proc;
-  if (!src && scheme_check_proc_arity(NULL, 2, 2, 3, a)) {
-    cnt = 2;
+  if (w_char) {
+    a[0] = scheme_make_character(ch);
+    a[1] = port;
+    a[2] = proc;
+    if (!src && scheme_check_proc_arity(NULL, 2, 2, 3, a)) {
+      cnt = 2;
+    } else {
+      cnt = 6;
+      a[2] = (src ? src : scheme_false);
+      a[3] = (line > 0) ? scheme_make_integer(line) : scheme_false;
+      a[4] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
+      a[5] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
+    }
   } else {
-    cnt = 6;
-    a[2] = (src ? src : scheme_false);
-    a[3] = (line > 0) ? scheme_make_integer(line) : scheme_false;
-    a[4] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
-    a[5] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
+    if (src) {
+      cnt = 3;
+      a[0] = src;
+      a[1] = port;
+      v = scheme_make_pair((pos > 0) ? scheme_make_integer(pos) : scheme_false, scheme_null);
+      v = scheme_make_pair((col > 0) ? scheme_make_integer(col-1) : scheme_false, v);
+      v = scheme_make_pair((line > 0) ? scheme_make_integer(line-1) : scheme_false, v);
+      a[2] = v;
+    } else {
+      cnt = 1;
+      a[0] = port;
+    }
   }
 
   scheme_push_continuation_frame(&cframe);
-  scheme_set_cont_mark(an_uninterned_symbol, scheme_make_pair((Scheme_Object *)ht,
-							      (src ? scheme_true : scheme_false)));
+  scheme_set_in_read_mark(src, ht);
+
   v = scheme_apply(proc, cnt, a);
 
   scheme_pop_continuation_frame(&cframe);
 
-  if (!scheme_special_comment_value(v)) {
+  if (!scheme_special_comment_value(v)
+      && !SAME_TYPE(scheme_placeholder_type, SCHEME_TYPE(v))) {
     if (SCHEME_STXP(v)) {
       if (!src)
 	v = scheme_syntax_to_datum(v, 0, NULL);
@@ -4344,6 +4454,18 @@ static Scheme_Object *readtable_call(int ch, Scheme_Object *proc, ReadParams *pa
   }
   
   return v;
+}
+
+void scheme_set_in_read_mark(Scheme_Object *src, Scheme_Hash_Table **ht)
+{
+  Scheme_Object *v;
+
+  if (ht)
+    v = scheme_make_pair((Scheme_Object *)ht, 
+			 (src ? scheme_true : scheme_false));
+  else
+    v = scheme_false;
+  scheme_set_cont_mark(an_uninterned_symbol, v);
 }
 
 static Scheme_Object *readtable_handle(Readtable *t, int *_ch, int *_use_default, ReadParams *params,
@@ -4370,7 +4492,7 @@ static Scheme_Object *readtable_handle(Readtable *t, int *_ch, int *_use_default
 
   v = SCHEME_CDR(v);
 
-  v = readtable_call(ch, v, params, port, src, line, col, pos, ht);
+  v = readtable_call(1, ch, v, params, port, src, line, col, pos, ht);
   
   return v;
 }
@@ -4390,7 +4512,7 @@ static Scheme_Object *readtable_handle_hash(Readtable *t, int ch, int *_use_defa
 
   *_use_default = 0;
 
-  v = readtable_call(ch, v, params, port, src, line, col, pos, ht);
+  v = readtable_call(1, ch, v, params, port, src, line, col, pos, ht);
 
   if (scheme_special_comment_value(v))
     return NULL;
@@ -4546,11 +4668,11 @@ static Scheme_Object *readtable_mapping(int argc, Scheme_Object **argv)
   int ch;
 
   if (!SAME_TYPE(scheme_readtable_type, SCHEME_TYPE(argv[0]))) {
-    scheme_wrong_type("make-readtable", "readtable", 0, argc, argv);
+    scheme_wrong_type("readtable-mapping", "readtable", 0, argc, argv);
     return NULL;
   }
   if (!SCHEME_CHARP(argv[1])) {
-    scheme_wrong_type("make-readtable", "character", 1, argc, argv);
+    scheme_wrong_type("readtable-mapping", "character", 1, argc, argv);
     return NULL;
   }
   
@@ -4613,6 +4735,54 @@ static Scheme_Object *current_reader_guard(int argc, Scheme_Object **argv)
 			     scheme_make_integer(MZCONFIG_READER_GUARD),
 			     argc, argv,
 			     1, NULL, NULL, 0);
+}
+
+/* "#reader" has been read */
+static Scheme_Object *read_reader(Scheme_Object *port,
+				  Scheme_Object *stxsrc, long line, long col, long pos,
+				  Scheme_Hash_Table **ht,
+				  Scheme_Object *indentation, ReadParams *params)
+{
+  Scheme_Object *modpath, *name, *a[2], *proc, *v;
+
+  modpath = scheme_read(port);
+
+  if (SCHEME_EOFP(modpath)) {
+    scheme_read_err(port, stxsrc, line, col, pos, 1, EOF, indentation, 
+		    "read: expected a datum after #reader, found end-of-file");
+    return NULL;
+  }
+
+  proc = scheme_get_param(scheme_current_config(), MZCONFIG_READER_GUARD);
+
+  a[0] = modpath;
+  modpath = scheme_apply(proc, 1, a);
+  
+  a[0] = modpath;
+  if (stxsrc)
+    name = scheme_intern_symbol("read-syntax");
+  else
+    name = scheme_intern_symbol("read");
+  a[1] = name;
+
+  proc = scheme_dynamic_require(2, a);
+
+  a[0] = proc;
+  if (!scheme_check_proc_arity(NULL, stxsrc ? 3 : 1, 0, 1, a)) {
+    scheme_wrong_type("#reader",
+		      (stxsrc ? "procedure (arity 3)" : "procedure (arity 1)"),
+		      -1, -1, a);
+    return NULL;
+  }
+
+  v = readtable_call(0, 0, proc, params,
+		     port, stxsrc, line, col, pos,
+		     ht);
+
+  if (scheme_special_comment_value(v))
+    return NULL;
+  else
+    return v;
 }
 
 /*========================================================================*/

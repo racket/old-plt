@@ -3290,6 +3290,9 @@
 
   (define (load/use-compiled f) ((current-load/use-compiled) f #f))
 
+  (current-reader-guard (let ([default-reader-guard (lambda (path) path)])
+			  default-reader-guard))
+
   (define -re:dir (byte-regexp #"(.+?)/+(.*)"))
   (define -re:auto (byte-regexp #"^,"))
   (define -re:ok-relpath (byte-regexp #"^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$"))

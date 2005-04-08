@@ -2168,7 +2168,10 @@ long scheme_get_byte_string_or_ch_put(const char *who,
 				      Scheme_Object *unless_evt,
 				      Scheme_Object *target_ch);
 
-Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos, int peek);
+Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos, int peek, 
+				  Scheme_Hash_Table **for_read);
+Scheme_Object *scheme_get_ready_read_special(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht);
+void scheme_set_in_read_mark(Scheme_Object *stxsrc, Scheme_Hash_Table **ht);
 Scheme_Object *scheme_get_special_proc(Scheme_Object *inport);
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;

@@ -820,6 +820,8 @@ MZ_EXTERN Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invo
 
 MZ_EXTERN Scheme_Object *scheme_apply_for_syntax_in_env(Scheme_Object *proc, Scheme_Env *env);
 
+MZ_EXTERN Scheme_Object *scheme_dynamic_require(int argc, Scheme_Object *argv[]);
+
 /*========================================================================*/
 /*                                symbols                                 */
 /*========================================================================*/

@@ -3760,6 +3760,8 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   Scheme_Object *port;
   Scheme_Object *inport;
   Scheme_Object *name;
+  Scheme_Object *stx;
+  Scheme_Cont_Frame_Data cframe;
 
   config = scheme_current_config();
   port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
@@ -3773,7 +3775,16 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   if (inport == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
-  return scheme_read_syntax(inport, name);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_READER, scheme_true);
+
+  scheme_push_continuation_frame(&cframe);
+  scheme_install_config(config);
+
+  stx = scheme_read_syntax(inport, name);
+
+  scheme_pop_continuation_frame(&cframe);
+
+  return stx;
 }
 
 /*========================================================================*/

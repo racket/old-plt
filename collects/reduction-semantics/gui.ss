@@ -33,12 +33,22 @@
                            any)])
                
    
-  (provide reduction-steps-cutoff initial-font-size initial-char-width)
+  (provide reduction-steps-cutoff initial-font-size initial-char-width
+           dark-pen-color light-pen-color dark-brush-color light-brush-color)
 
+  
+  
   (preferences:set-default 'plt-reducer:show-bottom #t boolean?)
+  
+  (define dark-pen-color (make-parameter "blue"))
+  (define light-pen-color (make-parameter "lightblue"))
+  (define dark-brush-color (make-parameter "lightblue"))
+  (define light-brush-color (make-parameter "white"))
   
   ;; after (about) this many steps, stop automatic, initial reductions
   (define reduction-steps-cutoff (make-parameter 20))
+  
+  
   
   (define initial-font-size
     (make-parameter
@@ -448,7 +458,11 @@
                           (k new-snip #t))))
                      #f))])
       (when parent-snip
-        (add-links parent-snip snip))
+        (add-links parent-snip snip
+                   (send the-pen-list find-or-create-pen (dark-pen-color) 0 'solid)
+                   (send the-pen-list find-or-create-pen (light-pen-color) 0 'solid)
+                   (send the-brush-list find-or-create-brush (dark-brush-color) 'solid)
+                   (send the-brush-list find-or-create-brush (light-brush-color) 'solid)))
       (and new? snip)))
   
   ;; make-snip : (union #f (is-a?/c graph-snip<%>)) 

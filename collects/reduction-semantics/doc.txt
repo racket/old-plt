@@ -463,6 +463,20 @@ in the GUI window.
 A parameter that determines the initial width of the boxes
 where terms are displayed (measured in characters)
 
+> (dark-pen-color color-or-string)
+> (dark-pen-color) => color-or-string
+
+> (dark-brush-color color-or-string)
+> (dark-brush-color) => color-or-string
+
+> (light-pen-color color-or-string)
+> (light-pen-color) => color-or-string
+
+> (light-brush-color color-or-string)
+> (light-brush-color) => color-or-string
+
+These four parameters control the color of the edges in the graph.
+
 ======================================================================
 
 The _subst.ss_ library provides these names:

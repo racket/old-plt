@@ -1,3 +1,11 @@
+#|
+
+incompatible changes to be done:
+
+  - make contexts be bound to just the context to avoid a separate `hole' thingy
+
+|#
+
 (module reduction-semantics mzscheme
   (require "private/matcher.ss"
            "private/term.ss"
@@ -75,7 +83,7 @@
 	     (raise-syntax-error #f "missing result expression" stx))
            (with-syntax ([(names ...) names]
                          [(names/ellipses ...) names/ellipses]
-                         [holeg (datum->syntax-object stx (gensym 'hole))]
+                         [holeg (datum->syntax-object stx (car (generate-temporaries '(hole))))]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
               (build-red lang-exp

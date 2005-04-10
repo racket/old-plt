@@ -500,7 +500,7 @@ abstract out the `hole and `(hole name) patterns.
           (lambda (exp hole-paths)
             (and (eq? pattern exp)
                  (list (make-bindings null))))
-          #f)]))  
+          #f)]))
     
     (compile-pattern/cache pattern))
   
@@ -846,32 +846,34 @@ abstract out the `hole and `(hole name) patterns.
   ;; moves the ellipses out of the list and produces repeat structures
   (define (rewrite-ellipses pattern compile)
     (let loop ([exp-eles pattern]
-               [fst #f])
+               [fst dummy])
       (cond
         [(null? exp-eles)
-         (if fst
+         (if (eq? fst dummy)
+             (values empty #f)
              (let-values ([(compiled has-hole?) (compile fst)])
-               (values (list compiled) has-hole?))
-             (values empty #f))]
+               (values (list compiled) has-hole?)))]
         [else
          (let ([exp-ele (car exp-eles)])
            (cond
              [(eq? '... exp-ele)
-              (unless fst
+              (when (eq? fst dummy)
                 (error 'match-pattern "bad ellipses placement: ~s" pattern))
               (let-values ([(compiled has-hole?) (compile fst)]
-                           [(rest rest-has-hole?) (loop (cdr exp-eles) #f)])
+                           [(rest rest-has-hole?) (loop (cdr exp-eles) dummy)])
                 (values
                  (cons (make-repeat compiled (extract-empty-bindings fst)) rest)
                  (or has-hole? rest-has-hole?)))]
-             [fst
+             [(eq? fst dummy)
+              (loop (cdr exp-eles) exp-ele)]
+             [else
               (let-values ([(compiled has-hole?) (compile fst)]
                            [(rest rest-has-hole?) (loop (cdr exp-eles) exp-ele)])
                 (values
                  (cons compiled rest)
-                 (or has-hole? rest-has-hole?)))]
-             [(not fst)
-              (loop (cdr exp-eles) exp-ele)]))])))
+                 (or has-hole? rest-has-hole?)))]))])))
+  
+  (define dummy (box 0))
   
   ;; extract-empty-bindings : pattern -> (listof rib)
   (define (extract-empty-bindings pattern)
@@ -991,6 +993,8 @@ abstract out the `hole and `(hole name) patterns.
     (test-empty 'number_x 1 (list (make-bindings (list (make-rib 'number_x 1)))))
     (test-empty 'string_y "b" (list (make-bindings (list (make-rib 'string_y "b")))))
     (test-empty 'any_z '(a b) (list (make-bindings (list (make-rib 'any_z '(a b))))))
+    (test-empty '(#f x) '(#f x) (list (make-bindings null)))
+    (test-empty '(#f (name y any)) '(#f) #f)
     
     (test-ellipses '(a) '(a))
     (test-ellipses '(a ...) `(,(make-repeat 'a '())))

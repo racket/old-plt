@@ -5,7 +5,7 @@
   (define-syntax (term orig-stx)
     (define (rewrite stx)
       (let loop ([stx stx])
-        (syntax-case stx (unquote unquote-splicing in-hole)
+        (syntax-case stx (unquote unquote-splicing in-hole*)
           [(unquote x)
            (with-syntax ([x-rewrite (loop (syntax x))])
              (syntax (unsyntax x-rewrite)))]
@@ -16,11 +16,11 @@
              (syntax (unsyntax-splicing x-rewrite)))]
           [(unquote-splicing . x)
            (raise-syntax-error 'term "malformed unquote splicing" orig-stx stx)]
-          [(in-hole id hole body)
+          [(in-hole* hole id body)
            (and (identifier? (syntax id))
                 (identifier? (syntax hole)))
            (syntax (unsyntax (replace (term id) (term hole) (term body))))]
-          [(in-hole . x)
+          [(in-hole* . x)
            (raise-syntax-error 'term "malformed in-hole" orig-stx stx)]
           [(x ...)
            (with-syntax ([(x-rewrite ...) (map loop (syntax->list (syntax (x ...))))])

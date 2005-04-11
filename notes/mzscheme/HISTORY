@@ -1,6 +1,15 @@
 
-Version 299.100, March 2005
+Version 299.102
+Fixed all-from provides to include redundant imports from the
+ indicated require
+When { or [ is disabled, it is treated as an illegal character
+ instead of a symbol character by the reader
+Added module-provide-protected?
+Added readtables
+Added #reader
+Struct custodian can be #f to make it fully transparent
 
+Version 299.100, March 2005
 >> See MzScheme_300.txt for information on major changes since
    version 209. Relatively minor changes are listed here.
 Unicode and Strings:

@@ -54,7 +54,8 @@
 		  (let ([p (open-input-string (string-append s "\n"))])
 		    (port-count-lines! p)
 		    (let ([rs (let loop ()
-				(let ([r (read-syntax (string->path (format "repl-~a" counter)) p)])
+				(let ([r (parameterize ([read-accept-reader #t])
+					   (read-syntax (string->path (format "repl-~a" counter)) p))])
 				  (if (eof-object? r)
 				      null
 				      (cons r (loop)))))])

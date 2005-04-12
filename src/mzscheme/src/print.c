@@ -603,7 +603,8 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     {
 # include "mzstkchk.h"
       {
-	pp = copy_print_params(pp);
+	if (pp)
+	  pp = copy_print_params(pp);
 	scheme_current_thread->ku.k.p1 = (void *)obj;
 	scheme_current_thread->ku.k.p2 = (void *)ht;
 	scheme_current_thread->ku.k.p3 = (void *)counter;

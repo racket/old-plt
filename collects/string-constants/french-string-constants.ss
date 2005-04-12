@@ -2,7 +2,7 @@
 ; do not remove all these blank lines, I use them to make sure a translation 
 ; in this file appears on the same line as in english-string-constants.ss
 
-
+; "aâàbcçdeéêèëfghiîïjklmnoôpqrstuûùüvwxyz"
 
 ; Note: http://www.linux-france.org/prj/jargonf/ peut etre utile... Les dictionnaires online
 ; anglais->francais sont tres pauvres en ce qui concerne le jargon technique, et l'academie
@@ -11,8 +11,8 @@
 ; http://www.dicofr.com/ permet les recherches a partir du mot anglais.
 ; http://www.francophonie.hachette-livre.fr/ est un dico standard de base
 ; http://zeus.inalf.fr/academie9.htm est le dico de l'academie (A-M pour l'instant seulement)
-
-
+; http://www.google.com/language_tools?hl=en peut servir...
+; http://www.lexilogos.com/francais_langue_dictionnaires.htm a beaucoup de liens
 
 
 
@@ -187,6 +187,7 @@
   (cs-rename-id "Renommer l'identificateur")
   (cs-rename-var-to "Renommer ~a en :")
   (cs-name-duplication-error "Le nouveau nom que vous avez choisi, ~s, est en conflit avec un autre nom préexistant dans le même contexte.")
+  (cs-rename-anyway "Renommer quand même")
   (cs-status-init "Vérificateur de syntaxe : initialisation de l'environnement pour le code de l'utilisateur")
   (cs-status-coloring-program "Vérificateur de syntaxe : coloriage d'une expression")
   (cs-status-eval-compile-time "Vérificateur de syntaxe : évaluation pour l'expansion") ; peut mieux faire?
@@ -276,7 +277,7 @@
   (plt:hd:stop "Stop")
   (plt:hd:options "Options")
   (plt:hd:configure "Configurer")
-  (plt:hd:home "Page principale de l'Aide")
+  (plt:hd:home "Page d'accueil de l'Aide")
   (plt:hd:show-manuals "Liste des manuels")
   (plt:hd:send-bug-report "Signaler un bogue") ; Envoyer un rapport de bogue
   (plt:hd:query-bug-reports "Bogues connus")
@@ -1099,6 +1100,7 @@
   (module-browser-name-short "courts")
   (module-browser-name-medium "moyens")
   (module-browser-name-long "longs")
+  (module-browser-open-all "Ouvrir tous les fichiers montrés ici")
   
   (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
   (happy-birthday-matthew "Joyeux anniversaire, Matthew !")
@@ -1154,6 +1156,17 @@
   (stepper-program-has-changed "Avertissement : le programme a été modifié.")
   (stepper-program-window-closed "Avertissement : la fenêtre du programme a disparu.")
   
+  (stepper-home "Début") ; Accueil?
+  (stepper-name "Stepper")
+  (stepper-language-level-message
+   "Le langage actuellement utilisé est \"~a\". Le Stepper ne fonctionne pour l'instant que pour les langages de \"~a\" à \"~a\"")
+  (stepper-button-label "Pas")
+  (stepper-previous-application "|< Application")
+  (stepper-previous "< Pas")
+  (stepper-next "Pas >")
+  (stepper-next-application "Application >|")
+  
+  
   (wizard-next "Suivant")
   (wizard-back "Précédent")
   (wizard-finish "Fin")
@@ -1200,12 +1213,15 @@
   (profj-java-mode-color-error "erreur")
   (profj-java-mode-color-identifier "identificateur") ; l'académie française ne reconnaît pas ce mot
   (profj-java-mode-color-default "valeur par défaut")
+
+  (profj-insert-java-comment-box "Insérer une boite à commentaires Java")
+  (profj-insert-java-interactions-box "Insérer une boite à interactions Java")
   
   ;; The Test Suite Tool
   ;; Errors
   (test-case-empty-error "Test vide")
   (test-case-too-many-expressions-error "Expressions trop nombreuses dans un test.")
-  (test-case-not-at-top-level "Test n'est pas au premier niveau")
+  (test-case-not-at-top-level "Test n'est pas à la racine") ; au premier niveau?
   ;; Dr. Scheme window menu items
   (test-case-insert "Insérer un test")
   (test-case-disable-all "Invalider tous les tests")
@@ -1247,5 +1263,23 @@
   ;; The Java identifier of an example of data
   (profjBoxes-name "Nom")
   (profjBoxes-value "Valeur")
-  
-  )
+  (profjBoxes-insert-java-examples "Insérer des examples Java")
+  (profjBoxes-insert-java-interactions "Insérer des interactions Java")
+
+  ;; Slideshow
+  (slideshow-show-slideshow-panel "Montrer la sous-fenêtre Slideshow")
+  (slideshow-hide-slideshow-panel "Cacher la sous-fenêtre Slideshow")
+  (slideshow-freeze-picts "Geler ces images")
+  (slideshow-thaw-picts "Montrer les images sous la souris")
+  (slideshow-hide-picts "Montrer les boîtes nichées")
+  (slideshow-show-picts "Montrer les images")
+  (slideshow-cannot-show-picts "Il est impossible de montrer les images; exécutez d'abord le programme pour calculer les dimensions")
+  (slideshow-insert-pict-box "Insérer une boîte à image") ; vu a la tele!
+
+  ;; GUI Tool
+  (gui-tool-heading "Outil GUI") ; IGU is seldom used, "interface graphique" is too long
+  (gui-tool-before-clicking-message "Avant d'utiliser cet outil vous devez d'abord soit employer \"Insérer une GUI\" dans le menu \"Spécial\" pour insérer une GUI à la racine,soit sélectionner une GUI existante")
+  (gui-tool-show-gui-toolbar "Montrer la barre d'outils GUI")
+  (gui-tool-hide-gui-toolbar "Cacher la barre d'outils GUI")
+  (gui-tool-insert-gui "Insérer une GUI")  
+  ); "aâàbcçdeéêèëfghiîïjklmnoôpqrstuûùüvwxyz"

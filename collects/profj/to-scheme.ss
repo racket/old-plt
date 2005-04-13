@@ -1603,6 +1603,7 @@
   ;type->contract: type -> sexp
   (define (type->contract type)
     (cond
+      ((dynamic-val? type) (type->contract (dynamic-val-type type)))
       ((symbol? type)
        (case type
          ((int short long byte) 'integer?)
@@ -1620,16 +1621,16 @@
                                         (ref-type-class/iface type))
                                 (ref-type-class/iface type))))))
       ((unknown-ref? type)
-       `(c:object-contract ,@(map (lambda (m) 
-                                    `(,(string->symbol (java-name->scheme (method-contract-name m)))
-                                       ,(type->contract m)))
-                                  (unknown-ref-access type))
-                           ,@(map (lambda (f) `(field ,(string->symbol (java-name->scheme (dynamic-val-type f)))
-                                                      ,(type->contract (dynamic-val-type f))))
-                                  (unknown-ref-access type))))
+       (cond
+         ((method-contract? (unknown-ref-access type))
+          `(c:object-contract (,(string->symbol (java-name->scheme (method-contract-name (unknown-ref-access type))))
+                                ,(type->contract (unknown-ref-access type)))))
+         ((field-contract? (unknown-ref-access type))
+          `(c:object-contract (field ,(build-identifier (string-append (field-contract-name (unknown-ref-access type)) "~f"))
+                                     ,(type->contract (field-contract-type (unknown-ref-access type))))))))
       ((method-contract? type)
-       `(c:-> ,@(map type->contract (map dynamic-val-type (method-contract-args type)))
-              ,(type->contract (dynamic-val-type (method-contract-return type)))))
+       `(c:-> ,@(map type->contract (method-contract-args type))
+              ,(type->contract (method-contract-return type))))
       ((not type) 'c:any/c)
       ))
   
@@ -1910,25 +1911,22 @@
           
         ;Normal case
         ((id? method-name)
-         (let* ((static? (unless (method-contract? method-record)
-                           (memq 'static (method-record-modifiers method-record))))
+         (let* ((static? (and (not (method-contract? method-record))
+                              (memq 'static (method-record-modifiers method-record))))
                 (temp (unless (method-contract? method-record)
                         (mangle-method-name (method-record-name method-record)
                                             (method-record-atypes method-record))))
-                (m-name (unless (method-contract? method-record)
-                          (if static?
-                              (build-static-name temp (car (method-record-class method-record)))
-                              temp)))
+                (m-name (cond
+                          ((method-contract? method-record) (java-name->scheme (method-contract-name method-record)))
+                          (static?
+                           (build-static-name temp (car (method-record-class method-record))))
+                          (else temp)))
                 (generic-name (unless (method-contract? method-record)
                                 (build-generic-name (car (method-record-class method-record)) m-name))))
            (cond 
              ((special-name? expr)
               (let* ((over? (overridden? (string->symbol m-name)))
-                     (name (translate-id m-name 
-                                         #;(if (and (equal? (special-name-name expr) "super") over?)
-                                               (format "super.~a" m-name)
-                                               m-name)
-                                           (id-src method-name))))
+                     (name (translate-id m-name (id-src method-name))))
                 (cond
                   (static? (create-syntax #f `(,name ,@args) (build-src src)))
                   (over? (create-syntax #f `(super ,name ,@args) (build-src src)))
@@ -1946,7 +1944,7 @@
              (else
               (let ((name (translate-id m-name (id-src method-name))))
                 (cond
-                  ((and cant-be-null? (not static?))          
+                  ((and cant-be-null? (not static?))
                    (create-syntax #f `(send ,expression ,name ,@args) (build-src src)))
                   (static? (create-syntax #f `(,name ,@args) (build-src src)))
                   (else

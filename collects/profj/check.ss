@@ -1479,9 +1479,12 @@
          ((and (eq? 'boolean l) (eq? 'boolean r)) 'boolean)
          (else (bin-op-bitwise-error op l r src))))
       ((&& oror)      ;; 15.23, 15.24
-       (prim-check (lambda (b) (eq? b 'boolean)) 
-                   (lambda (l r) 'boolean) 'bool l r op src))))
-
+       (prim-check (lambda (b) (or (dynamic-val? b) (eq? b 'boolean)))
+                   (lambda (l r) 
+                     (when (dynamic-val? l) (set-dynamic-val-type! l 'boolean))
+                     (when (dynamic-val? r) (set-dynamic-val-type! r 'boolean))
+                     'boolean)
+                   'bool l r op src))))
   
   ;prim-check: (type -> bool) (type type -> type) type type src -> type
   (define (prim-check ok? return expt l r op src)
@@ -2002,10 +2005,11 @@
              (interact? (interaction-call-error name src level))
              (else
               (no-method-error 'this sub-kind exp-type name src)))))))
-                  
-      (when (and (not ctor?)
-                 (eq? (method-record-rtype (car methods)) 'ctor))
-        (ctor-called-error exp-type name src))
+      
+      (unless (method-contract? (car methods))
+        (when (and (not ctor?)
+                   (eq? (method-record-rtype (car methods)) 'ctor))
+          (ctor-called-error exp-type name src)))
       
       (let* ((args/env (check-args arg-exps check-sub env))
              (args (car args/env))

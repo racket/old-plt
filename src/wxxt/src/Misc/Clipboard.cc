@@ -172,8 +172,13 @@ static Boolean doConvertClipboard(wxClipboard *cb,
 
     *value_return = (VALUE_TYPE)cb->receivedTargets;
     *type_return = XA_ATOM;
-    *format_return = 8 * sizeof(Atom);
-    *length_return = count + extra;
+    if (sizeof(Atom) > 4) {
+      *format_return = 32;
+      *length_return = (count + extra) * (sizeof(Atom) / 4);
+    } else {
+      *format_return = 8 * sizeof(Atom);
+      *length_return = count + extra;
+    }
 
     cb->sentString = NULL;
 

@@ -135,7 +135,7 @@
              (if (directory-exists? p)
                  (loop p (append dpath (list f)) #f)
                  (let ([len (file-size p)])
-                   ; (printf "MzTarring ~a~n" p)
+                   ;; (printf "MzTarring ~a~n" p)
                    (fprintf output "~s~n~s~n~s~n*"
                             (case filter-val
                               [(file) 'file]
@@ -149,14 +149,16 @@
        (or files (directory-list dir)))))
   
   (define (std-filter path)
-    (let ([path (path->string path)])
-      (not (or (regexp-match #rx"CVS$" path)
-               (regexp-match #rx"[.]svn$" path)
-	       (regexp-match #rx"compiled$" path)
-	       (regexp-match #rx"~$" path)
-	       (regexp-match #rx"^#.*#$" path)
-	       (regexp-match #rx"[.]plt$" path)
-	       (regexp-match #rx"^[.]#" path)))))
+    (let-values ([(base name dir?) (split-path path)])
+      (let ([name (path->bytes name)])
+	(not (or (regexp-match #rx#"^CVS$" name)
+		 (regexp-match #rx#"^[.]svn$" name)
+		 (regexp-match #rx#"^[.]cvsignore$" name)
+		 (regexp-match #rx#"^compiled$" name)
+		 (regexp-match #rx#"~$" name)
+		 (regexp-match #rx#"^#.*#$" name)
+		 (regexp-match #rx#"[.]plt$" name)
+		 (regexp-match #rx#"^[.]#" name))))))
 
   (define pack-collections
     (opt-lambda (output name collections replace? extra-setup-collections [file-filter std-filter] [plt-home-relative? #f])

@@ -524,9 +524,10 @@ general functions to help make .plt archives:
   If `at-plt-home?' and `plt-relative?', the archive is to be unpacked
   relative to the plt installation directory. The default is #f.
 
-> (std-filter p) - returns #t unless `p' matches one of the following
-  regular expressions: "CVS$", "[.]svn$", "compiled$", "~$", "^#.*#$",
-  "^[.]#", or "[.]plt$".
+> (std-filter p) - returns #t unless `p', after stripping its
+  directory path and converting to a byte string, matches one of the
+  following regular expressions: "^CVS$", "^[.]svn$", "^[.]cvsignore",
+  "^compiled$", "~$", "^#.*#$", "^[.]#", or "[.]plt$".
 
 > (mztar path output filter file-mode) - called by `pack' to write one
    directory/file `path' to the output port `output' using the filter

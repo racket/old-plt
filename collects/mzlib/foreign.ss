@@ -464,6 +464,11 @@
 ;; `-> expr'               specify different output, can use previous names
 ;; Also, see below for custom function types.
 
+(provide ->) ; to signal better errors when trying to use this with contracts
+(define-syntax ->
+  (syntax-id-rules ()
+    [_ (raise-syntax-error '-> "should be used only in a _fun context")]))
+
 (provide _fun)
 (define-syntax (_fun stx)
   (define (err msg . sub) (apply raise-syntax-error '_fun msg stx sub))

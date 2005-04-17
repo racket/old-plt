@@ -450,10 +450,7 @@
    (syntax-case stx ()
      [(_)
       (let* ([source (syntax-source stx)]
-             [source (cond [(path?   source) source]
-                           [(bytes?  source) (bytes->path  source)]
-                           [(string? source) (string->path source)]
-                           [else #f])]
+             [source (and (path? source) source)]
              [local (or (current-load-relative-directory) (current-directory))]
 	     [dir (plthome-ify
                    (or (and source (file-exists? source)
@@ -463,17 +460,19 @@
                        local))])
         (if (and (pair? dir) (eq? 'plthome (car dir)))
           (with-syntax ([d dir])
-            (syntax (un-plthome-ify 'd)))
+            #'(un-plthome-ify 'd))
           (with-syntax ([d (if (bytes? dir) dir (path->bytes dir))])
-            (syntax (bytes->path d)))))]))
+            #'(bytes->path d))))]))
 
  (define-syntax (this-expression-file-name stx)
    (syntax-case stx ()
      [(_)
       (let* ([f (syntax-source stx)]
-             [f (and f (or (path? f) (string? f)) (file-exists? f)
+             [f (and f (path? f) (file-exists? f)
                      (let-values ([(base file dir?) (split-path f)]) file))])
-        (datum->syntax-object (quote-syntax here) f stx))]))
+        (if f
+          (with-syntax ([f (path->bytes f)]) #'(bytes->path f))
+          #'#f))]))
 
  ;; This is a macro-generating macro that wants to expand
  ;; expressions used in the generated macro. So it's weird,

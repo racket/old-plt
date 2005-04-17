@@ -471,7 +471,7 @@
    (syntax-case stx ()
      [(_)
       (let* ([f (syntax-source stx)]
-             [f (and f (string? f) (file-exists? f)
+             [f (and f (or (path? f) (string? f)) (file-exists? f)
                      (let-values ([(base file dir?) (split-path f)]) file))])
         (datum->syntax-object (quote-syntax here) f stx))]))
 

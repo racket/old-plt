@@ -10983,8 +10983,7 @@ makefiles="Makefile
            mzscheme/Makefile
              mzscheme/src/Makefile mzscheme/dynsrc/Makefile
              mzscheme/gc/Makefile mzscheme/sgc/Makefile
-             mzscheme/gc2/Makefile mzscheme/guile/Makefile
-             mzscheme/palm/Makefile"
+             mzscheme/gc2/Makefile"
 
 # Make sure the --enable-shared default is propagated:
 if test "${enable_shared}" = "yes" ; then

@@ -19,19 +19,19 @@
       
       (define tzoffset (date-time-zone-offset (seconds->date (current-seconds))))
       
-      (define re:multi-response-start (regexp "^[0-9][0-9][0-9]-"))
-      (define re:response-end (regexp "^[0-9][0-9][0-9] "))
+      (define re:multi-response-start #rx#"^[0-9][0-9][0-9]-")
+      (define re:response-end #rx#"^[0-9][0-9][0-9] ")
 
       (define (check-expected-result line expected)
 	(when expected
 	  (unless (ormap (lambda (expected)
-			   (string=? expected (substring line 0 3)))
-			 (if (string? expected)
+			   (bytes=? expected (subbytes line 0 3)))
+			 (if (bytes? expected)
 			     (list expected)
 			     expected))
 	    (error 'ftp "exected result code ~a, got ~a" expected line))))
       
-      ;; ftp-check-response : input-port string-or-stringlist-or-#f (string any -> any) any -> any
+      ;; ftp-check-response : input-port bytes-or-byteslist-or-#f (bytes any -> any) any -> any
       ;;
       ;;  Checks a standard-format response, checking for the given
       ;;  expected 3-digit result code if expected is not #f. 
@@ -45,15 +45,15 @@
       ;; If an unexpected result is found, an exception is raised, and the
       ;; stream is left in an undefined state.
       (define (ftp-check-response tcpin expected diagnostic-accum accum-start)
-	(let ([line (read-line tcpin 'any)])
+	(let ([line (read-bytes-line tcpin 'any)])
 	  (cond
 	   [(eof-object? line)
 	    (error 'ftp "unexpected EOF")]
 	   [(regexp-match re:multi-response-start line)
 	    (check-expected-result line expected)
-	    (let ([re:done (regexp (format "^~a " (substring line 0 3)))])
+	    (let ([re:done (regexp (format "^~a " (subbytes line 0 3)))])
 	      (let loop ([accum (diagnostic-accum line accum-start)])
-		(let ([line (read-line tcpin 'any)])
+		(let ([line (read-bytes-line tcpin 'any)])
 		  (cond
 		   [(eof-object? line)
 		    (error 'ftp "unexpected EOF")]
@@ -67,52 +67,55 @@
 	   [else
 	    (error 'ftp "unexpected result: ~e" line)])))
 
-      (define (get-month month-string)
+      (define (get-month month-bytes)
 	(cond
-	 [(equal? "Jan" month-string) 1]
-	 [(equal? "Feb" month-string) 2]
-	 [(equal? "Mar" month-string) 3]
-	 [(equal? "Apr" month-string) 4]
-	 [(equal? "May" month-string) 5]
-	 [(equal? "Jun" month-string) 6]
-	 [(equal? "Jul" month-string) 7]
-	 [(equal? "Aug" month-string) 8]
-	 [(equal? "Sep" month-string) 9]
-	 [(equal? "Oct" month-string) 10]
-	 [(equal? "Nov" month-string) 11]
-	 [(equal? "Dec" month-string) 12]))
-      
-      (define re:date (regexp "(...) *(.*) (..):(..)|(...) *([0-9]*) +(....)"))
+	 [(equal? #"Jan" month-bytes) 1]
+	 [(equal? #"Feb" month-bytes) 2]
+	 [(equal? #"Mar" month-bytes) 3]
+	 [(equal? #"Apr" month-bytes) 4]
+	 [(equal? #"May" month-bytes) 5]
+	 [(equal? #"Jun" month-bytes) 6]
+	 [(equal? #"Jul" month-bytes) 7]
+	 [(equal? #"Aug" month-bytes) 8]
+	 [(equal? #"Sep" month-bytes) 9]
+	 [(equal? #"Oct" month-bytes) 10]
+	 [(equal? #"Nov" month-bytes) 11]
+	 [(equal? #"Dec" month-bytes) 12]))
 
-      (define (ftp-make-file-seconds ftp-date-string)
-	(let ([date-list (regexp-match re:date ftp-date-string)])
+      (define (bytes->number bytes)
+	(string->number (bytes->string/latin-1 bytes)))
+      
+      (define re:date #rx#"(...) *(.*) (..):(..)|(...) *([0-9]*) +(....)")
+
+      (define (ftp-make-file-seconds ftp-date-str)
+	(let ([date-list (regexp-match re:date (string->bytes/locale ftp-date-str))])
 	  (if (not (list-ref date-list 4))
 	      (find-seconds 0 
 			    0
 			    2 
-			    (string->number (list-ref date-list 6)) 
+			    (bytes->number (list-ref date-list 6))
 			    (get-month (list-ref date-list 5))
-			    (string->number (list-ref date-list 7)))
+			    (bytes->number (list-ref date-list 7)))
 	      (+ (find-seconds 0 
-			       (string->number (list-ref date-list 4))
-			       (string->number (list-ref date-list 3))
-			       (string->number (list-ref date-list 2))
+			       (bytes->number (list-ref date-list 4))
+			       (bytes->number (list-ref date-list 3))
+			       (bytes->number (list-ref date-list 2))
 			       (get-month (list-ref date-list 1)) 
 			       2002) 
 		 tzoffset))))
       
-      (define re:passive (regexp "\\((.*),(.*),(.*),(.*),(.*),(.*)\\)"))
+      (define re:passive #rx#"\\((.*),(.*),(.*),(.*),(.*),(.*)\\)")
 
       (define (establish-data-connection tcp-ports)
 	(fprintf (tcp-connection-out tcp-ports) "PASV~n")
 	(let ([response (ftp-check-response (tcp-connection-in tcp-ports)
-					    "227"
+					    #"227"
 					    (lambda (s ignore) s) ;; should be the only response
 					    (void))])
 	  (let* ([reg-list (regexp-match re:passive response)]
 		 [pn1 (and reg-list
-			   (string->number (list-ref reg-list 5)))]
-		 [pn2 (string->number (list-ref reg-list 6))])
+			   (bytes->number (list-ref reg-list 5)))]
+		 [pn2 (bytes->number (list-ref reg-list 6))])
 	    (unless (and reg-list pn1 pn2)
 	      (error 'ftp "can't understand PASV response: ~e" response))
 	    (let-values ([(tcp-data tcp-data-out) (tcp-connect (format "~a.~a.~a.~a"
@@ -122,7 +125,7 @@
 								       (list-ref reg-list 4)) 
 							       (+ (* 256 pn1) pn2))])
 	      (fprintf (tcp-connection-out tcp-ports) "TYPE I~n")
-	      (ftp-check-response (tcp-connection-in tcp-ports) "200" void (void))
+	      (ftp-check-response (tcp-connection-in tcp-ports) #"200" void (void))
 	      (close-output-port tcp-data-out)
 	      tcp-data))))
 
@@ -132,15 +135,15 @@
 	(void))
 
       (define (ftp-establish-connection* in out username password)
-	(ftp-check-response in "220" print-msg (void))
-	(fprintf out (string-append "USER " username "~n"))
-	(let ([no-password? (ftp-check-response in (list "331" "230") 
+	(ftp-check-response in #"220" print-msg (void))
+	(display (bytes-append #"USER " (string->bytes/locale username) #"\n") out)
+	(let ([no-password? (ftp-check-response in (list #"331" #"230") 
 			      (lambda (line 230?)
-				(or 230? (regexp-match "^230" line)))
+				(or 230? (regexp-match #rx#"^230" line)))
 			      #f)])
 	  (unless no-password?
-	    (fprintf out (string-append "PASS " password "~n"))
-	    (ftp-check-response in "230" void (void))))
+	    (display (bytes-append #"PASS " (string->bytes/locale password) #"\n") out)
+	    (ftp-check-response in #"230" void (void))))
 	(make-tcp-connection in out))
       
       (define (ftp-establish-connection server-address server-port username password)
@@ -149,16 +152,16 @@
 
       (define (ftp-close-connection tcp-ports)
 	(fprintf (tcp-connection-out tcp-ports) "QUIT~n")
-	(ftp-check-response (tcp-connection-in tcp-ports) "221" void (void))
+	(ftp-check-response (tcp-connection-in tcp-ports) #"221" void (void))
 	(close-input-port (tcp-connection-in tcp-ports))
 	(close-output-port (tcp-connection-out tcp-ports)))
 
       (define (filter-tcp-data tcp-data-port regular-exp)
 	(let loop ()
-	  (let ([theline (read-line tcp-data-port 'any)])
+	  (let ([theline (read-bytes-line tcp-data-port 'any)])
 	    (cond
 	     [(or (eof-object? theline)
-		  (< (string-length theline) 3)) 
+		  (< (bytes-length theline) 3)) 
 	      null]
 	     [(regexp-match regular-exp theline)
 	      => (lambda (m)
@@ -168,34 +171,39 @@
 	      (loop)]))))
 
       (define (ftp-cd ftp-ports new-dir)
-	(fprintf (tcp-connection-out ftp-ports) "CWD ~a~n" new-dir)
-	(ftp-check-response (tcp-connection-in ftp-ports) "250" void (void)))
+	(display (bytes-append #"CWD " (string->bytes/locale new-dir) #"\n")
+		 (tcp-connection-out ftp-ports))
+	(ftp-check-response (tcp-connection-in ftp-ports) #"250" void (void)))
 
-      (define re:dir-line (regexp "^(.)......... .* ([A-Z].* .* [0-9][0-9]:?[0-9][0-9]) (.*)$"))
+      (define re:dir-line #rx#"^(.)......... .* ([A-Z].* .* [0-9][0-9]:?[0-9][0-9]) (.*)$")
 
       (define (ftp-directory-list tcp-ports)
 	(let ([tcp-data (establish-data-connection tcp-ports)])
 	  (fprintf (tcp-connection-out tcp-ports) "LIST~n")
-	  (ftp-check-response (tcp-connection-in tcp-ports) "150" void (void))
+	  (ftp-check-response (tcp-connection-in tcp-ports) #"150" void (void))
 	  (let ([dir-list (filter-tcp-data tcp-data re:dir-line)])
 	    (close-input-port tcp-data)
-	    (ftp-check-response (tcp-connection-in tcp-ports) "226" print-msg (void))
-	    dir-list)))
+	    (ftp-check-response (tcp-connection-in tcp-ports) #"226" print-msg (void))
+	    (map (lambda (l) (map bytes->string/locale l)) dir-list))))
 
       (define (ftp-download-file tcp-ports folder filename)
 	;; Save the file under the name tmp.file,
 	;; rename it once download is complete
 	;; this assures we don't over write any existing file without having a good file down
-	(let* ([tmpfile (make-temporary-file (build-path folder "ftptmp~a"))]
+	(let* ([tmpfile (make-temporary-file (string-append
+					      (regexp-replace #rx"~"
+							      (path->string (build-path folder "ftptmp"))
+							      "~~")
+					      "~a"))]
 	       [new-file (open-output-file tmpfile 'replace)] 
-	       [tcpstring (string-append "RETR " filename "~n")] 
+	       [tcpstring (bytes-append #"RETR " (string->bytes/locale filename) #"\n")] 
 	       [tcp-data (establish-data-connection tcp-ports)])
-	  (fprintf (tcp-connection-out tcp-ports) tcpstring)
-	  (ftp-check-response (tcp-connection-in tcp-ports) "150" print-msg (void))
+	  (display tcpstring (tcp-connection-out tcp-ports))
+	  (ftp-check-response (tcp-connection-in tcp-ports) #"150" print-msg (void))
 	  (copy-port tcp-data new-file)
 	  (close-output-port new-file)
 	  (close-input-port tcp-data)
-	  (ftp-check-response (tcp-connection-in tcp-ports) "226" print-msg (void))
+	  (ftp-check-response (tcp-connection-in tcp-ports) #"226" print-msg (void))
 	  (rename-file-or-directory tmpfile (build-path folder filename) #t)))
 
       ;; (printf "FTP Client Installed...~n")

@@ -1871,6 +1871,9 @@ PROCEDURES -----------------------------------------------------------
   supplied username and password. The result is an opaque `ftp-conn'
   structure reprsenting the connection.
 
+  The username and password strings are encoded to bytes using the
+  current locale's encoding.
+
 > (ftp-close-connection ftp-conn)
 
   Closes an FTP connection.
@@ -1879,21 +1882,25 @@ PROCEDURES -----------------------------------------------------------
 
   Changes the current directory on the FTP server to `new-dir-string'.
   The `new-dir-string' is not interpreted at all, but simply passed on
-  to the server. It must not contain a newline.
+  to the server (encoded using the current locale's encoding). It must
+  not contain a newline.
 
 > (ftp-directory-list ftp-conn)
 
-   Returns a list of files and directories in the current directory of
-   the server, assuming that the server provides directory information
-   in the quasi-standard Unix format.
+  Returns a list of files and directories in the current directory of
+  the server, assuming that the server provides directory information
+  in the quasi-standard Unix format.
 
-   Each file or directory is represented by a list of three
-   strings. The first string is either "-", "d", or "l", depending on
-   whether the items is a file, directory, or link, respectively.  The
-   second item is the file's date; to convert this value to seconds
-   consistent with `file-seconds', pass the date string to
-   `ftp-make-file-seconds', below.  The third string is the name of
-   the file or directory.
+  Each file or directory is represented by a list of three
+  strings. The first string is either "-", "d", or "l", depending on
+  whether the items is a file, directory, or link, respectively.  The
+  second item is the file's date; to convert this value to seconds
+  consistent with `file-seconds', pass the date string to
+  `ftp-make-file-seconds', below.  The third string is the name of the
+  file or directory.
+
+  All strings are decoded frombytes using the current locale's
+  encoding.
 
 > (ftp-make-file-seconds ftp-date-string)
 

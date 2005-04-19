@@ -1,9 +1,6 @@
 (module os mzscheme
   (require (lib "foreign.ss")) (unsafe!)
   
-  (provide gethostname
-	   getpid)
-
   (define BUFFER-SIZE 1024)
   (define (extract-terminated-string proc)
     (let ([s (make-bytes BUFFER-SIZE)])
@@ -47,6 +44,8 @@
 		       (bytes-set! s sz 0))
 		     #t))))))]
       [else #f]))
+
+  (provide gethostname)
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; getpid
@@ -62,4 +61,6 @@
   (define (getpid)
     (case (system-type)
       [(macosx unix) ((force unix-getpid))]
-      [(windows) ((force windows-getpid))])))
+      [(windows) ((force windows-getpid))]))
+
+  (provide getpid))

@@ -11,7 +11,6 @@ reflects the (broken) spec).
 
 (module beginner mzscheme
   (require "../reduction-semantics.ss"
-	   "../gui.ss"
            "../subst.ss"
            (lib "match.ss"))
 

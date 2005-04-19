@@ -14,22 +14,19 @@
     (delay (and (eq? 'windows (system-type))
 		(ffi-lib "kernel32"))))
 
-  (define (delay-ffi-obj name lib type default-result)
-    (delay (get-ffi-obj name lib type (lambda () 
-					(lambda () default-result)))))
+  (define (delay-ffi-obj name lib type)
+    (delay (get-ffi-obj name lib type)))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; gethostbyname
   
   (define unix-gethostname
     (delay-ffi-obj "gethostname"  #f
-		   (_fun _bytes _int -> _int)
-		   -1))
+		   (_fun _bytes _int -> _int)))
   
   (define windows-getcomputername
     (delay-ffi-obj "GetComputerNameExA" (force kernel32)
-		   (_fun _int _bytes _cvector -> _int)
-		   0))
+		   (_fun _int _bytes _cvector -> _int)))
 
   (define (gethostname)
     (case (system-type)
@@ -56,13 +53,11 @@
 
   (define unix-getpid
     (delay-ffi-obj "getpid" #f 
-		   (_fun -> _int)
-		   #f))
+		   (_fun -> _int)))
 
   (define windows-getpid
     (delay-ffi-obj "GetCurrentProcessId" (force kernel32) 
-		   (_fun -> _int)
-		   #f))
+		   (_fun -> _int)))
 
   (define (getpid)
     (case (system-type)

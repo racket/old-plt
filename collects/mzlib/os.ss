@@ -1,12 +1,6 @@
 (module os mzscheme
   (require (lib "foreign.ss")) (unsafe!)
   
-  (define BUFFER-SIZE 1024)
-  (define (extract-terminated-string proc)
-    (let ([s (make-bytes BUFFER-SIZE)])
-      (and (proc s BUFFER-SIZE)
-	   (bytes->string/utf-8 (car (regexp-match #rx#"^[^\0]*" s))))))
-
   (define kernel32 
     (delay (and (eq? 'windows (system-type))
 		(ffi-lib "kernel32"))))
@@ -17,6 +11,14 @@
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; gethostbyname
   
+  (define BUFFER-SIZE 1024)
+  (define (extract-terminated-string proc)
+    (let ([s (make-bytes BUFFER-SIZE)])
+      (if (proc s BUFFER-SIZE)
+	  (bytes->string/utf-8 (car (regexp-match #rx#"^[^\0]*" s)))
+	  (error 'gethostname
+		 "could not get hostname"))))
+
   (define unix-gethostname
     (delay-ffi-obj "gethostname"  #f
 		   (_fun _bytes _int -> _int)))

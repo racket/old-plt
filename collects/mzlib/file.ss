@@ -421,23 +421,32 @@
 				    "TMPPREF~a"
 				    (and (file-exists? pref-file) pref-file)
 				    pref-dir)])
-		    (with-output-to-file tmp-file
-		      (lambda ()
-			(with-pref-params
-			 (lambda ()
-			   ;; Poor man's pretty-print: one line per entry
-			   (printf "(~n")
-			   (for-each (lambda (a)
-				       (if (list? (cadr a))
-					   (begin
-					     (printf " (~s~n  (~n" (car a))
-					     (for-each (lambda (i) (printf "  ~s~n" i)) (cadr a))
-					     (printf "  ))~n"))
-					   (printf " ~s~n" a)))
-				     f)
-			   (printf ")~n"))))
-		      'truncate/replace)
-		    (rename-file-or-directory tmp-file pref-file #t))))
+		    ;; If something goes wrong, try to delete the temp file.
+		    (with-handlers ([exn:fail? (lambda (exn)
+						 (with-handlers ([exn:fail:filesystem? void])
+						   (delete-file tmp-file))
+						 (raise exn))])
+		      ;; Write to temp file...
+		      (with-output-to-file tmp-file
+			(lambda ()
+			  (with-pref-params
+			   (lambda ()
+			     ;; If a pref value turns out to be unreadable, raise
+			     ;;  an exception instead of creating a bad pref file.
+			     (parameterize ([print-unreadable #f])
+			       ;; Poor man's pretty-print: one line per entry.
+			       (printf "(~n")
+			       (for-each (lambda (a)
+					   (if (list? (cadr a))
+					       (begin
+						 (printf " (~s~n  (~n" (car a))
+						 (for-each (lambda (i) (printf "  ~s~n" i)) (cadr a))
+						 (printf "  ))~n"))
+					       (printf " ~s~n" a)))
+					 f)
+			       (printf ")~n")))))
+			'truncate/replace)
+		      (rename-file-or-directory tmp-file pref-file #t)))))
 	      (lambda ()
 		;; Release lock:
 		(delete-file lock-file)))))]

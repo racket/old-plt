@@ -7,6 +7,7 @@
   (provide open-output-nowhere
 	   make-pipe-with-specials
 	   make-input-port/read-to-peek
+	   peeking-input-port
 	   merge-input
 	   copy-port
 	   input-port-append
@@ -448,6 +449,22 @@
        (set! progress-requested? #t)
        (port-progress-evt peeked-r))
      commit-it))
+
+  (define peeking-input-port
+    (opt-lambda (orig-in [name (object-name orig-in)] [delta 0])
+      (make-input-port/read-to-peek
+       name
+       (lambda (s)
+	 (let ([r (peek-bytes-avail!* s delta #f orig-in)])
+	   (set! delta (+ delta (cond
+				 [(number? r) r]
+				 [else 1])))
+	   (if (eq? r 0)
+	       (handle-evt orig-in (lambda (v) 0))
+	       r)))
+       (lambda (s skip default)
+	 (peek-bytes-avail!* s (+ delta skip) #f orig-in))
+       void)))
 
   ;; Not kill-safe.
   (define make-pipe-with-specials

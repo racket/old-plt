@@ -111,6 +111,7 @@ static Scheme_Hash_Table *global_constants_ht;
     || (qk(pp->print_struct  \
 	   && SCHEME_STRUCTP(obj) \
 	   && PRINTABLE_STRUCT(obj, pp), 0)) \
+    || (qk(SCHEME_STRUCTP(obj) && scheme_is_writable_struct(obj), 0)) \
     || (qk(pp->print_hash_table, 1) && SCHEME_HASHTP(obj)))
 #define ssQUICK(x, isbox) x
 #define ssQUICKp(x, isbox) (pp ? x : isbox)
@@ -428,10 +429,11 @@ static int check_cycles(Scheme_Object *obj, Scheme_Hash_Table *ht, PrintParams *
   if (SCHEME_PAIRP(obj)
       || (pp->print_box && SCHEME_BOXP(obj))
       || SCHEME_VECTORP(obj)
-      || (pp->print_struct 
-	  && (SAME_TYPE(t, scheme_structure_type)
-	      || SAME_TYPE(t, scheme_proc_struct_type))
-	  && PRINTABLE_STRUCT(obj, pp))
+      || ((SAME_TYPE(t, scheme_structure_type)
+	   || SAME_TYPE(t, scheme_proc_struct_type))
+          && ((pp->print_struct 
+	       && PRINTABLE_STRUCT(obj, pp))
+	      || scheme_is_writable_struct(obj)))
       || (pp->print_hash_table
 	  && SAME_TYPE(t, scheme_hash_table_type))) {
     if (scheme_hash_get(ht, obj))
@@ -460,13 +462,18 @@ static int check_cycles(Scheme_Object *obj, Scheme_Hash_Table *ht, PrintParams *
     }
   } else if (SAME_TYPE(t, scheme_structure_type)
 	     || SAME_TYPE(t, scheme_proc_struct_type)) {
-    /* got here => printable */
-    int i = SCHEME_STRUCT_NUM_SLOTS(obj);
+    if (scheme_is_writable_struct(obj)) {
+      if (check_cycles(scheme_writable_struct_subs(obj), ht, pp))
+	return 1;
+    } else {
+      /* got here => printable */
+      int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
-    while (i--) {
-      if (scheme_inspector_sees_part(obj, pp->inspector, i)) {
-	if (check_cycles(((Scheme_Structure *)obj)->slots[i], ht, pp)) {
-	  return 1;
+      while (i--) {
+	if (scheme_inspector_sees_part(obj, pp->inspector, i)) {
+	  if (check_cycles(((Scheme_Structure *)obj)->slots[i], ht, pp)) {
+	    return 1;
+	  }
 	}
       }
     }
@@ -539,21 +546,25 @@ static int check_cycles_fast(Scheme_Object *obj, PrintParams *pp)
 	break;
     }
     obj->type = t;
-  } else if (pp->print_struct 
-	     && (SAME_TYPE(t, scheme_structure_type)
-		 || SAME_TYPE(t, scheme_proc_struct_type))
-	     && PRINTABLE_STRUCT(obj, pp)) {
-    int i = SCHEME_STRUCT_NUM_SLOTS(obj);
-
-    obj->type = -t;
-    while (i--) {
-      if (scheme_inspector_sees_part(obj, pp->inspector, i)) {
-	cycle = check_cycles_fast(((Scheme_Structure *)obj)->slots[i], pp);
-	if (cycle)
-	  break;
+  } else if (SAME_TYPE(t, scheme_structure_type)
+	     || SAME_TYPE(t, scheme_proc_struct_type)) {
+    if (scheme_is_writable_struct(obj)) {
+      /* don't bother with fast checks for writeable structs */
+      cycle = -1;
+    } else if (pp->print_struct && PRINTABLE_STRUCT(obj, pp)) {
+      int i = SCHEME_STRUCT_NUM_SLOTS(obj);
+      
+      obj->type = -t;
+      while (i--) {
+	if (scheme_inspector_sees_part(obj, pp->inspector, i)) {
+	  cycle = check_cycles_fast(((Scheme_Structure *)obj)->slots[i], pp);
+	  if (cycle)
+	    break;
+	}
       }
-    }
-    obj->type = t;
+      obj->type = t;
+    } else
+      cycle = 0;
   } else if (pp->print_hash_table
 	     && SCHEME_HASHTP(obj)) {
     if (!((Scheme_Hash_Table *)obj)->count)
@@ -644,11 +655,16 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
       setup_graph_table(SCHEME_VEC_ELS(obj)[i], ht, counter, pp);
     }
   } else if (pp && SCHEME_STRUCTP(obj)) { /* got here => printable */
-    int i = SCHEME_STRUCT_NUM_SLOTS(obj);
+    if (scheme_is_writable_struct(obj)) {
+      obj = scheme_writable_struct_subs(obj);
+      setup_graph_table(obj, ht, counter, pp);
+    } else {
+      int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
-    while (i--) {
-      if (scheme_inspector_sees_part(obj, pp->inspector, i))
-	setup_graph_table(((Scheme_Structure *)obj)->slots[i], ht, counter, pp);
+      while (i--) {
+	if (scheme_inspector_sees_part(obj, pp->inspector, i))
+	  setup_graph_table(((Scheme_Structure *)obj)->slots[i], ht, counter, pp);
+      }
     }
   } else if (pp && SCHEME_HASHTP(obj)) { /* got here => printable */
     Scheme_Hash_Table *t;
@@ -1456,7 +1472,25 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     {
       if (compact || !pp->print_unreadable)
 	cannot_print(pp, notdisplay, obj, ht, compact);
-      else {
+      else if (scheme_is_writable_struct(obj)) {
+	Scheme_Object *a, *b;
+	obj = scheme_writable_struct_parts(obj, notdisplay);
+	while (SCHEME_PAIRP(obj)) {
+	  a = SCHEME_CAR(obj);
+	  if (SCHEME_CHAR_STRINGP(a)) {
+	    do_print_string(0, 0, pp, SCHEME_CHAR_STR_VAL(a), 0, SCHEME_CHAR_STRTAG_VAL(a));
+	  } else {
+	    while (SCHEME_PAIRP(a)) {
+	      b = SCHEME_CAR(a);
+	      print(SCHEME_CDR(b), SCHEME_TRUEP(SCHEME_CAR(b)), compact, ht, symtab, rnht, pp);
+	      a = SCHEME_CDR(a);
+	      if (!SCHEME_NULLP(a))
+		print_utf8_string(pp, " ", 0, 1);
+	    }
+	  }
+	  obj = SCHEME_CDR(obj);
+	}
+      } else {
 	int pb;
 
 	pb = pp->print_struct && PRINTABLE_STRUCT(obj, pp);

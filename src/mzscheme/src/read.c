@@ -1261,7 +1261,8 @@ read_inner_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table *
 		}
 		return v;
 	      }
-	    }
+	    } else
+	      expect = "";
 
 	    {
 	      mzchar a[6];
@@ -4445,6 +4446,21 @@ static Scheme_Object *readtable_call(int w_char, int ch, Scheme_Object *proc, Re
   int cnt;
   Scheme_Object *a[6], *v;
   Scheme_Cont_Frame_Data cframe;
+  
+  if (src && (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type))) {
+    Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
+
+    if (pos >= 0)
+      pos += o->pos;
+    if (col >= 0) {
+      if (line == 1)
+	col += o->col;
+    }
+    if (line >= 0)
+      line += o->line;
+
+    src = o->src;
+  }
 
   if (w_char) {
     a[0] = scheme_make_character(ch);

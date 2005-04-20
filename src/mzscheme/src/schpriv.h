@@ -477,6 +477,10 @@ Scheme_Object *scheme_extract_struct_procedure(Scheme_Object *obj, int num_rands
 
 Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a);
 
+int scheme_is_writable_struct(Scheme_Object *s);
+Scheme_Object *scheme_writable_struct_subs(Scheme_Object *s);
+Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, int notdisplay);
+
 #define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
 
 extern Scheme_Object *scheme_source_property;

@@ -65,6 +65,7 @@ static Scheme_Object *current_code_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *check_evt_property_value_ok(int argc, Scheme_Object *argv[]);
+static Scheme_Object *check_write_property_value_ok(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_type(int argc, Scheme_Object *argv[]);
 
@@ -94,6 +95,8 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const 
 				const char *fn, int fnl, const char *post2, int sym);
 
 static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object **a, int always);
+
+static Scheme_Object *write_property;
 
 static Scheme_Object *evt_property;
 static int evt_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
@@ -238,6 +241,17 @@ scheme_init_struct (Scheme_Env *env)
 		   (Scheme_Ready_Fun)evt_struct_is_ready,
 		   NULL,
 		   is_evt_struct, 1);
+  }
+
+  REGISTER_SO(write_property);
+  {
+    Scheme_Object *guard;
+    guard = scheme_make_prim_w_arity(check_write_property_value_ok,
+				     "check-write-property-value-ok",
+				     2, 2);
+    write_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("write"),
+							      guard);
+    scheme_add_global_constant("prop:write", write_property, env);
   }
 
   scheme_add_evt(scheme_wrap_evt_type,
@@ -479,7 +493,7 @@ static Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
   return scheme_make_inspector(superior);
 }
 
-Scheme_Object *inspector_p(int argc, Scheme_Object **argv)
+static Scheme_Object *inspector_p(int argc, Scheme_Object **argv)
 {
   return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_inspector_type)
 	  ? scheme_true
@@ -680,7 +694,7 @@ static Scheme_Object *guard_property(Scheme_Object *prop, Scheme_Object *v, Sche
 }
 
 /*========================================================================*/
-/*                            evt structs                            */
+/*                            evt structs                                 */
 /*========================================================================*/
 
 static Scheme_Object *check_evt_property_value_ok(int argc, Scheme_Object *argv[])
@@ -781,6 +795,93 @@ static int evt_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 static int is_evt_struct(Scheme_Object *o)
 {
   return !!scheme_struct_type_property_ref(evt_property, o);
+}
+
+/*========================================================================*/
+/*                          writeable structs                             */
+/*========================================================================*/
+
+static Scheme_Object *check_write_property_value_ok(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v, *proc;
+
+  v = argv[0];
+
+  if (!SCHEME_PAIRP(v)) {
+    scheme_arg_mismatch("write-property-guard",
+			"not a pair: ",
+			v);  
+  }
+
+  proc = SCHEME_CAR(v);
+  if (!scheme_check_proc_arity(NULL, 1, 0, 1, &proc)) {
+    scheme_arg_mismatch("write-property-guard",
+			"car of pair is not a procedure of arity 1: ",
+			v); 
+  }
+  proc = SCHEME_CDR(v);
+  if (!scheme_check_proc_arity(NULL, 2, 0, 1, &proc)) {
+    scheme_arg_mismatch("write-property-guard",
+			"cdr of pair is not a procedure of arity 2: ",
+			v); 
+  }
+
+  if (SCHEME_IMMUTABLEP(v))
+    return v;
+
+  return scheme_make_immutable_pair(SCHEME_CAR(v), SCHEME_CDR(v));
+}
+
+int scheme_is_writable_struct(Scheme_Object *s)
+{
+  return !!scheme_struct_type_property_ref(write_property, s);
+}
+
+Scheme_Object *scheme_writable_struct_subs(Scheme_Object *s)
+{
+  Scheme_Object *v, *a[1];
+  v = scheme_struct_type_property_ref(write_property, s);
+  v = SCHEME_CAR(v);
+  a[0]= s;
+  return scheme_apply(v, 1, a);
+}
+
+Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, int notdisplay)
+{
+  Scheme_Object *v, *a[2], *result, *va;
+  
+  v = scheme_struct_type_property_ref(write_property, s);
+  v = SCHEME_CDR(v);
+
+  a[0]= s;
+  a[1] = (notdisplay ? scheme_true : scheme_false);
+  result = scheme_apply(v, 2, a);
+
+  /* Check that result is list, and check that it contains
+     only strings and pair-lists. */
+  for (v = result; SCHEME_PAIRP(v); v = SCHEME_CDR(v)) {
+    va = SCHEME_CAR(v);
+    if (!SCHEME_CHAR_STRINGP(va)) {
+      if (SCHEME_PAIRP(va) || SCHEME_NULLP(va)) {
+	for (; SCHEME_PAIRP(va); va = SCHEME_CDR(va)) {
+	  if (!SCHEME_PAIRP(SCHEME_CAR(va)))
+	    break;
+	}
+	if (!SCHEME_NULLP(va))
+	  va = NULL;
+      } else
+	va = NULL;
+    }
+    if (!va)
+      break;
+  }
+
+  if (!SCHEME_NULLP(v)) {
+    a[0] = result;
+    scheme_wrong_type("struct writer", "proper list of strings and pair lists", -1, -1, a);
+  }
+
+  return result;
 }
 
 /*========================================================================*/

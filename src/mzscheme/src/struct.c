@@ -879,7 +879,7 @@ scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **arg
       if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES))
 	memcpy(guard_argv, scheme_multiple_array, gcount * sizeof(Scheme_Object *));
       else
-	guard_argv[0] = 0;
+	guard_argv[0] = v;
       guard_argv[gcount] = guard_argv[argc];
     }
   }

@@ -348,6 +348,12 @@
 (let ()
   (define got null)
   (define mode 'normal)
+  (define-values (s:o make-o o? o-ref o-set!)
+    (make-struct-type 'o #f 1 0 'odefault
+		      null
+		      (make-inspector) #f
+		      null (lambda (o n) 
+			     (+ o 1))))
   (define-values (s:a make-a a? a-ref a-set!)
     (make-struct-type 'a #f 2 1 'adefault
 		      null
@@ -367,6 +373,8 @@
 			     (case mode
 			       [(normal) (values 10 20 30)]
 			       [(reject) ((let/ec k k))]))))
+  (let ([o1 (make-o 10)])
+    (test 11 o-ref o1 0))
   (let ([a1 (make-a 'x 'y)])
     (test 1 a-ref a1 0)
     (test 2 a-ref a1 1)

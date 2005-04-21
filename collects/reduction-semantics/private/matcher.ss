@@ -1,5 +1,9 @@
 #|
 
+todo:
+      in match-in-hole, should old-info or new-info be used? (find test case to tell the difference!)
+      trim info collection for hole-info
+
 changes:
   replace => plug / in-hole (in term)
   in-hole+ gone
@@ -7,7 +11,6 @@ changes:
   in-named-hole+ gone
   in-named-hole has one fewer argument
 
-      trim info collection for hole-info
 
 Note: the patterns described in the doc.txt file are
 slightly different than the patterns processed here.
@@ -592,7 +595,7 @@ before the pattern compiler is invoked.
                   (let* ([mtch (car mtches)]
                          [bindings (mtch-bindings mtch)]
                          [hole-exp (mtch-hole mtch)]
-                         [contractum-mtches (match-contractum hole-exp hole-info)])
+                         [contractum-mtches (match-contractum hole-exp old-hole-info)])
                     (if contractum-mtches
                         (let i-loop ([contractum-mtches contractum-mtches]
                                      [acc acc])
@@ -972,6 +975,12 @@ before the pattern compiler is invoked.
     
     (test-empty '(in-named-hole h1 (z (hole h1)) a) '(z a) (list (make-mtch (make-bindings (list)) '(z a) none)))
     (test-empty '(in-named-hole c (any (hole c)) y)
+                '(x y)
+                (list (make-mtch (make-bindings (list)) '(x y) none)))
+    (test-empty '(in-named-hole a (in-named-hole b (x (hole b)) (hole a)) y)
+                '(x y)
+                (list (make-mtch (make-bindings (list)) '(x y) none)))
+    (test-empty '(in-hole (in-hole (x hole) hole) y)
                 '(x y)
                 (list (make-mtch (make-bindings (list)) '(x y) none)))
     

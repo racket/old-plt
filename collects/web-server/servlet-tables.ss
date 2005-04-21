@@ -32,7 +32,7 @@
   ;;   simultaneously.
 
   (provide/contract
-   [continuation-url? (url? . -> . (union boolean? (list/c symbol? number?)))]
+   [continuation-url? (url? . -> . (union boolean? (list/c symbol? number? number?)))]
    [store-continuation! (procedure? url? servlet-instance? . -> . string?)]
    [create-new-instance! (hash-table? custodian? execution-context? semaphore?
                                       . -> . servlet-instance?)]
@@ -68,9 +68,10 @@
   ;; store a continuation in a k-table for the provided servlet-instance
   (define (store-continuation! k uri inst)
     (let ([k-table (servlet-instance-k-table inst)])
-      (let ([next-k-id (get-k-id! k-table)])
-        (hash-table-put! k-table next-k-id k)
-        (embed-ids (servlet-instance-id inst) next-k-id uri))))
+      (let ([next-k-id (get-k-id! k-table)]
+            [salt      (random 100000000)])
+        (hash-table-put! k-table next-k-id (list k salt))
+        (embed-ids (servlet-instance-id inst) next-k-id salt uri))))
 
   ;; clear-continuations!: servlet-instance -> void
   ;; replace the k-table for the given servlet-instance
@@ -95,18 +96,18 @@
   ;; ********************************************************************************
   ;; Parameter Embedding
 
-  (define URL-PARAMS:REGEXP (regexp "([^\\*]*)\\*(.*)"))
+  (define URL-PARAMS:REGEXP (regexp "([^\\*]*)\\*([^\\*]*)\\*([^\\*]*)"))
 
   (define (match-url-params x) (regexp-match URL-PARAMS:REGEXP x))
 
-  ;; embed-ids: number number url -> string
+  ;; embed-ids: number number number url -> string
   ;; embedd the two numbers in a url
-  (define (embed-ids inst-id k-id in-url)
+  (define (embed-ids inst-id k-id salt in-url)
     (insert-param
      in-url
-     (format "~a*~a" inst-id k-id)))
+     (format "~a*~a*~a" inst-id k-id salt)))
 
-  ;; continuation-url?: url -> (union (list number number) #f)
+  ;; continuation-url?: url -> (union (list number number number) #f)
   ;; determine if this url encodes a continuation and extract the instance id and
   ;; continuation id.
   (define (continuation-url? a-url)
@@ -114,7 +115,8 @@
       (and str
            (let ([param-match (cdr (match-url-params str))])
              (list (string->symbol (car param-match))
-                   (string->number (cadr param-match)))))))
+                   (string->number (cadr param-match))
+                   (string->number (caddr param-match)))))))
 
   ;; url->param: url -> (union string #f)
   (define (url->param a-url)

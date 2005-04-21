@@ -670,6 +670,10 @@
       (define (apply-style i delta)
         (let ([e (send i get-editor)])
           (send e change-style delta 0 (send e last-position))))
+
+      (define (set-standard-style t s e)
+	(send t change-style (send (send t get-style-list) find-named-style "Standard")
+	      s e))
       
       (define current-selected #f)
       
@@ -1361,10 +1365,8 @@
 	  (define/private (push-selected uid)
 	    (unless (and (pair? past-selected)
 			 (equal? uid (car past-selected)))
-	      (when (and (pair? future-selected)
-			 (equal? uid (car future-selected)))
-		(set! future-selected (cdr future-selected)))
-	      (set! past-selected (cons uid past-selected))))
+	      (set! future-selected (remove uid future-selected))
+	      (set! past-selected (cons uid (remove uid past-selected)))))
 
 	  (define/public (rewind-selected)
 	    (when (pair? past-selected)
@@ -2402,26 +2404,19 @@
 						    #f #f)
 					      (send t change-style url-delta s e)))
 				    (when (eq? (system-type) 'macosx)
-				      (insert " " (lambda (t s e) 
-						    (send t change-style
-							  (make-object style-delta% 'change-normal)
-							  s
-							  e)))
                                       (when fn
-                                        (let ([fn (normalize-path (build-path "~/Desktop" fn))])
-                                          (insert (format "[save as ~a & open]" (path->string fn))
+                                        (let ([full-fn (normalize-path (build-path "~/Desktop" fn))])
+					  (insert " " set-standard-style)
+                                          (insert "[save & open]"
                                                   (lambda (t s e)
                                                     (send t set-clickback s e
                                                           (lambda (a b c)
-                                                            (to-file fn)
-                                                            (system* "/usr/bin/open" (path->string fn)))
+                                                            (to-file full-fn)
+							    (parameterize ([current-input-port (open-input-string "")])
+							      (system* "/usr/bin/open" (path->string full-fn))))
                                                           #f #f)
                                                     (send t change-style url-delta s e)))))))
-                                  (insert "\n" (lambda (t s e) 
-                                                 (send t change-style
-                                                       (make-object style-delta% 'change-normal)
-                                                       s
-                                                       e)))
+                                  (insert "\n" set-standard-style)
 				  (lambda ()
 				    (unless content
 				      (set! content (slurp ent)))

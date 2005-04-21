@@ -28,9 +28,8 @@
      ; sum
      (reduction threads
                 (in-hole pc_1 (+ number_1 number_2))
-                (replace (term pc_1) 
-                         (term hole)
-                         (+ (term number_1) (term number_2))))
+                (plug (term pc_1) 
+                      (+ (term number_1) (term number_2))))
      
      ; deref
      (reduction threads
@@ -44,7 +43,7 @@
                    befores ... 
                    (x_i v_i)
                    afters ...)
-                  ,(replace (term tc_1) (term hole) (term v_i)))))
+                  ,(plug (term tc_1) (term v_i)))))
      ; set!
      (reduction threads
                 ((store (name befores (variable v)) ...
@@ -56,15 +55,13 @@
                    befores ... 
                    (x_i v_new)
                    afters ...)
-                  ,(replace (term tc_1)
-                            (term hole)
-                            (term v_new)))))
+                  ,(plug (term tc_1)
+                         (term v_new)))))
      ; beta
      (reduction threads
                 (in-hole pc_1 ((lambda (x_1) e_1) v_1))
-                (replace (term pc_1) 
-                         (term hole)
-                         (substitute (term x_1) (term v_1) (term e_1))))
+                (plug (term pc_1) 
+                      (substitute (term x_1) (term v_1) (term e_1))))
      
      ; let
      (reduction threads
@@ -73,9 +70,8 @@
                 (let ((new-x (variable-not-in (term (the-store ...)) (term x_1))))
                   (term 
                    ((store the-store ... (,new-x v_1))
-                    ,(replace (term tc_1) 
-                              (term hole)
-                              (substitute (term x_1) new-x (term e_1)))))))))
+                    ,(plug (term tc_1) 
+                           (substitute (term x_1) new-x (term e_1)))))))))
   
   (define substitute
     (plt-subst

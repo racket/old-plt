@@ -52,23 +52,21 @@ semaphores make things much more predictable...
     (list
      (reduction lang
                 (in-hole (name c p-ctxt) (begin v e_1 e_2 e_rest ...))
-                (replace 
+                (plug 
                  (term c)
-                 (term hole)
                  (term (begin e_1 e_2 e_rest ...))))
      (reduction lang
                 (in-hole (name c p-ctxt) 
                          (cons v_1 (list v_2s ...)))
-                (replace 
+                (plug 
                  (term c)
-                 (term hole)
                  (term (list v_1 v_2s ...))))
      (reduction lang
                 (in-hole (name c p-ctxt) (begin v e_1))
-                (replace (term c) (term hole) (term e_1)))
+                (plug (term c) (term e_1)))
      (reduction lang
                 (in-hole (name c p-ctxt) (begin v_1))
-                (replace (term c) (term hole) (term v_1)))
+                (plug (term c) (term v_1)))
      (reduction lang
                 ((store
                   (name befores (variable v)) ...
@@ -87,7 +85,7 @@ semaphores make things much more predictable...
                   semas
                   (threads
                    e-before ...
-                   ,(replace (term c) (term hole) (term v))
+                   (in-hole c v)
                    e-after ...))))
      (reduction lang
                 ((store
@@ -107,7 +105,7 @@ semaphores make things much more predictable...
                   semas
                   (threads
                    e-before ...
-                   ,(replace (term c) (term hole) (term (void)))
+                   (in-hole c (void))
                    e-after ...))))
      (reduction lang
                 ((name store any)
@@ -129,7 +127,7 @@ semaphores make things much more predictable...
                    afters ...)
                    (threads
                     e-before ...
-                    ,(replace (term c) (term hole) (term (void)))
+                    (in-hole c (void))
                     e-after ...))))
      (reduction lang
                 ((name store any)
@@ -149,7 +147,7 @@ semaphores make things much more predictable...
                    afters ...)
                   (threads
                    e-before ...
-                   ,(replace (term c) (term hole) (term (void)))
+                   (in-hole c (void))
                    e-after ...))))
      
      (reduction lang
@@ -170,7 +168,7 @@ semaphores make things much more predictable...
                    afters ...)
                   (threads
                    e-before ...
-                   ,(replace (term c) (term hole) (term (void)))
+                   (in-hole c (void))
                    e-after ...))))))
   
   (traces lang

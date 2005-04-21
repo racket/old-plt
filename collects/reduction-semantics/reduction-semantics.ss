@@ -16,7 +16,7 @@ incompatible changes to be done:
   (provide reduction
            reduction/context
            language
-           replace
+           plug
 	   compiled-lang?
            red?
            term
@@ -68,9 +68,8 @@ incompatible changes to be done:
                            ,(red-contractum red)))
                 (lambda (bindings)
                   (let ([context (lookup-binding bindings new-name)]
-                        [hole (lookup-binding bindings 'hole)]
                         [res ((red-reduct red) bindings)])
-                    (replace context hole res))))))
+                    (plug context res))))))
   
   (define-syntax-set (reduction/context reduction language)
     
@@ -83,18 +82,15 @@ incompatible changes to be done:
 	     (raise-syntax-error #f "missing result expression" stx))
            (with-syntax ([(names ...) names]
                          [(names/ellipses ...) names/ellipses]
-                         [holeg (datum->syntax-object stx (car (generate-temporaries '(hole))))]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
               (build-red lang-exp
-                         `(in-hole* holeg (name context ctxt) side-condition-rewritten)
+                         `(in-hole (name context ctxt) side-condition-rewritten)
                          (lambda (bindings)
-                           (term-let ([holeg (lookup-binding bindings 'holeg)]
-                                      [context (lookup-binding bindings 'context)]
+                           (term-let ([context (lookup-binding bindings 'context)]
                                       [names/ellipses (lookup-binding bindings 'names)] ...)
-                                     (replace
+                                     (plug
                                       (term context)
-                                      (term holeg)
                                       (begin
                                         (void)
                                         bodies ...))))))))]))
@@ -108,7 +104,6 @@ incompatible changes to be done:
 	     (raise-syntax-error #f "missing result expression" stx))
            (with-syntax ([(name-ellipses ...) names/ellipses]
                          [(name ...) names]
-                         [hole (datum->syntax-object stx 'hole)]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
               (build-red lang-exp
@@ -166,32 +161,20 @@ incompatible changes to be done:
               (let loop ([stx orig-stx]
                          [names null]
                          [depth 0])
-                (syntax-case stx (name in-hole* in-hole in-named-hole side-condition)
+                (syntax-case stx (name in-hole in-named-hole side-condition)
                   [(name sym pat)
                    (identifier? (syntax sym))
                    (loop (syntax pat) 
                          (cons (make-id/depth (syntax sym) depth) names)
                          depth)]
-                  [(in-hole* sym pat1 pat2)
-                   (identifier? (syntax sym))
-                   (loop (syntax pat1)
-                         (loop (syntax pat2)
-                               (cons (make-id/depth (syntax sym) depth) names)
-                               depth)
-                         depth)]
                   [(in-named-hole hlnm sym pat1 pat2)
                    (identifier? (syntax sym))
                    (loop (syntax pat1)
-                         (loop (syntax pat2)
-                               (cons (make-id/depth (syntax sym) depth) names)
-                               depth)
+                         (loop (syntax pat2) names depth)
                          depth)]
                   [(in-hole pat1 pat2)
                    (loop (syntax pat1)
-                         (loop (syntax pat2)
-                               (cons (make-id/depth (datum->syntax-object stx 'hole) depth)
-                                     names)
-                               depth)
+                         (loop (syntax pat2) names depth)
                          depth)]
                   [(side-condition pat e)
                    (loop (syntax pat) names depth)]
@@ -262,12 +245,12 @@ incompatible changes to be done:
       (cond
         [(null? reductions) acc]
         [else (let ([red (car reductions)])
-                (let ([bindingss (match-pattern (red-contractum red) exp)])
-                  (if bindingss
+                (let ([mtchs (match-pattern (red-contractum red) exp)])
+                  (if mtchs
                       (loop (cdr reductions)
                             (map/mt
-                             (lambda (bindings) ((red-reduct red) bindings))
-                             bindingss
+                             (lambda (mtch) ((red-reduct red) (mtch-bindings mtch)))
+                             mtchs
                              acc))
                       (loop (cdr reductions) acc))))])))
   

@@ -169,9 +169,7 @@
 			(in-hole E_1 ("letcc" X_1 M_1))
 			(plug (term E_1) 
                               (iswim-subst (term M_1) (term X_1) `("[" 
-                                                                   ,(replace (term E_1)
-                                                                             (term hole)
-                                                                             '||) 
+                                                                   ,(plug (term E_1) '||) 
                                                                    "]"))))
 
 		       ;; cc rule:

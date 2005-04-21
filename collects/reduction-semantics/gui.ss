@@ -27,8 +27,7 @@
                        any)]
    [traces/multiple (opt-> (compiled-lang?
                             (listof red?)
-                            (listof any/c)
-                            (-> any/c boolean?))
+                            (listof any/c))
                            (procedure?)
                            any)])
                

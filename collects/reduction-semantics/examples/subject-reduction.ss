@@ -26,11 +26,10 @@
      (reduction lang
                 (in-hole c_1 (call/cc v_arg))
                 (let ([v (variable-not-in (term c_1) 'x)])
-                  (replace 
-                   (term c_1)
-                   (term hole) 
+                  (plug 
+                   (term c_1) 
                    (term (v_arg (lambda (,v) 
-                                  (abort ,(replace (term c_1) (term hole) v))))))))
+                                  (abort ,(plug (term c_1) v))))))))
      (reduction lang
                 (in-hole c (abort e_1))
                 (term e_1))

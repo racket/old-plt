@@ -1494,7 +1494,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	    a[1] = pp->print_port;
 	    scheme_write_special(2, a);
 	  } else {
-	    print(SCHEME_CDR(b), SAME_OBJ(SCHEME_CAR(b), scheme_write_symbol),
+	    print(SCHEME_CDR(b), 
+		  (SAME_OBJ(SCHEME_CAR(b), scheme_recur_symbol) ? notdisplay : 0),
 		  compact, ht, symtab, rnht, pp);
 	  }
 	  obj = SCHEME_CDR(obj);

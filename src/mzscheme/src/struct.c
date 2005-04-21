@@ -97,7 +97,7 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const 
 static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object **a, int always);
 
 static Scheme_Object *write_property;
-Scheme_Object *scheme_write_symbol, *scheme_display_symbol, *scheme_write_special_symbol;
+Scheme_Object *scheme_recur_symbol, *scheme_display_symbol, *scheme_write_special_symbol;
 
 static Scheme_Object *evt_property;
 static int evt_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
@@ -227,12 +227,29 @@ scheme_init_struct (Scheme_Env *env)
   loc_et = scheme_make_struct_exptime(loc_names, loc_count, NULL, NULL, LOC_STRUCT_FLAGS);
   scheme_add_global_keyword_symbol(loc_names[loc_count - 1], loc_et, env);
 
+  REGISTER_SO(write_property);
+  {
+    Scheme_Object *guard, *a[2], *pred, *access;
+    guard = scheme_make_prim_w_arity(check_write_property_value_ok,
+				     "prop:custom-write-guard",
+				     2, 2);
 
+    a[0] = scheme_intern_symbol("custom-write");
+    a[1] = guard;
+    make_struct_type_property(2, a);
+    write_property = scheme_current_thread->ku.multiple.array[0];
+    pred = scheme_current_thread->ku.multiple.array[1];
+    access = scheme_current_thread->ku.multiple.array[2];
+    scheme_add_global_constant("prop:custom-write", write_property, env);
+    scheme_add_global_constant("custom-write?", pred, env);
+    scheme_add_global_constant("custom-write-accessor", access, env);
+  }
+  
   REGISTER_SO(evt_property);
   {
     Scheme_Object *guard;
     guard = scheme_make_prim_w_arity(check_evt_property_value_ok,
-				     "check-evt-property-value-ok",
+				     "prop:evt-guard",
 				     2, 2);
     evt_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("evt"),
 								 guard);
@@ -244,21 +261,10 @@ scheme_init_struct (Scheme_Env *env)
 		   is_evt_struct, 1);
   }
 
-  REGISTER_SO(write_property);
-  {
-    Scheme_Object *guard;
-    guard = scheme_make_prim_w_arity(check_write_property_value_ok,
-				     "check-write-property-value-ok",
-				     2, 2);
-    write_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("write"),
-							      guard);
-    scheme_add_global_constant("prop:write", write_property, env);
-  }
-  
-  REGISTER_SO(scheme_write_symbol);
+  REGISTER_SO(scheme_recur_symbol);
   REGISTER_SO(scheme_display_symbol);
   REGISTER_SO(scheme_write_special_symbol);
-  scheme_write_symbol = scheme_intern_symbol("write");
+  scheme_recur_symbol = scheme_intern_symbol("recur");
   scheme_display_symbol = scheme_intern_symbol("display");
   scheme_write_special_symbol = scheme_intern_symbol("write-special");
 
@@ -437,7 +443,7 @@ scheme_init_struct (Scheme_Env *env)
   {
     Scheme_Object *guard;
     guard = scheme_make_prim_w_arity(check_exn_source_property_value_ok,
-				     "check-exn-source-property-value-ok",
+				     "prop:exn:srclocs-guard",
 				     2, 2);
     scheme_source_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("prop:exn:srclocs"),
 								      guard);
@@ -816,20 +822,20 @@ static Scheme_Object *check_write_property_value_ok(int argc, Scheme_Object *arg
   v = argv[0];
 
   if (!SCHEME_PAIRP(v)) {
-    scheme_arg_mismatch("write-property-guard",
+    scheme_arg_mismatch("prop:custom-write-guard",
 			"not a pair: ",
 			v);
   }
 
   proc = SCHEME_CAR(v);
   if (!scheme_check_proc_arity(NULL, 1, 0, 1, &proc)) {
-    scheme_arg_mismatch("write-property-guard",
+    scheme_arg_mismatch("prop:custom-write-guard",
 			"car of pair is not a procedure of arity 1: ",
 			v); 
   }
   proc = SCHEME_CDR(v);
   if (!scheme_check_proc_arity(NULL, 3, 0, 1, &proc)) {
-    scheme_arg_mismatch("write-property-guard",
+    scheme_arg_mismatch("prop:custom-write-guard",
 			"cdr of pair is not a procedure of arity 3: ",
 			v); 
   }
@@ -891,7 +897,7 @@ Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, int notdisplay, in
     va = SCHEME_CAR(v);
     if (SCHEME_PAIRP(va)) {
       vaa = SCHEME_CAR(va);
-      if (!SAME_OBJ(vaa, scheme_write_symbol)
+      if (!SAME_OBJ(vaa, scheme_recur_symbol)
 	  && !SAME_OBJ(vaa, scheme_display_symbol)
 	  && !SAME_OBJ(vaa, scheme_write_special_symbol))
 	break;
@@ -904,7 +910,7 @@ Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, int notdisplay, in
   if (!SCHEME_NULLP(v)) {
     scheme_wrong_type("struct writer", 
 		      "list of pairs, where the first element of"
-		      " each pair is 'write, 'display, or 'write-special", 
+		      " each pair is 'recur, 'display, or 'write-special", 
 		      1, -3, a);
   }
 

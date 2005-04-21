@@ -237,7 +237,7 @@ extern Scheme_Object *scheme_begin_stx;
 extern Scheme_Object *scheme_define_values_stx;
 extern Scheme_Object *scheme_define_syntaxes_stx;
 
-extern Scheme_Object *scheme_write_symbol, *scheme_display_symbol, *scheme_write_special_symbol;
+extern Scheme_Object *scheme_recur_symbol, *scheme_display_symbol, *scheme_write_special_symbol;
 
 /*========================================================================*/
 /*                    thread state and maintenance                        */

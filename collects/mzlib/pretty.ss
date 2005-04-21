@@ -1,25 +1,13 @@
-; Originally:
- ;"genwrite.scm" generic write used by pp.scm
- ;;copyright (c) 1991, marc feeley
+;; Originally:
+;; "genwrite.scm" generic write used by pp.scm
+;; copyright (c) 1991, marc feeley
 
-; Pretty-printer for MzScheme
-;  Handles structures, cycles, and graphs
+;; Pretty-printer for MzScheme
+;;  Handles structures, cycles, and graphs
 
-; TO INSTALL this pretty-printer into a MzScheme's read-eval-print loop,
-;  load this file and evaluate:
-;      (current-print pretty-print-handler)
-
-;; Matthew's changes:
-;; Modified original for MrEd Spring/95
-;; Added check for cyclic structures 11/9/95
-;; Better (correct) graph printing, support boxes and structures 11/26/95
-;; Support for print depth 2/28/96
-;; functor 4/22/96
-;; unit/s 6/13/96
-;; size- and print-hook 8/22/96
-;; real parameters 9/27/96
-;; print-line parameter 8/18/97
-;; Added pretty-print-style 12/1/01
+;; TO INSTALL this pretty-printer into a MzScheme's read-eval-print loop,
+;; require this module and evaluate:
+;;      (current-print pretty-print-handler)
 
 (module pretty mzscheme
    (require)
@@ -151,7 +139,7 @@
 
    (define pretty-print-display-string-handler
      (make-parameter (let ([dh (port-display-handler (open-output-string))])
-		       ; dh is primitive port display handler
+		       ;; dh is primitive port display handler
 		       dh)
 		     (lambda (x)
 		       (unless (can-accept-n? 2 x)
@@ -216,6 +204,8 @@
 				      #t)
 				    (print-graph) (print-struct) (print-hash-table)
 				    (and (not display?) (print-vector-length))
+				    (and (port-writes-special? port)
+					 (lambda (v) (write-special v port)))
 				    (pretty-print-depth)
 				    (lambda (o display?)
 				      (size-hook o display? port))
@@ -237,9 +227,10 @@
 
    (define pre-sym (gensym 'pre))
    (define post-sym (gensym 'post))
+   (define spec-sym (gensym 'spec))
 
    (define (generic-write obj display? width output output-hooked 
-			  print-graph? print-struct? print-hash-table? print-vec-length?
+			  print-graph? print-struct? print-hash-table? print-vec-length? out-special
 			  depth size-hook print-line
 			  pre-print post-print)
 
@@ -275,6 +266,7 @@
 	     (and (or (vector? obj)
 		      (pair? obj)
 		      (box? obj)
+		      (custom-write? obj)
 		      (and (struct? obj) print-struct?)
 		      (and (hash-table? obj) print-hash-table?))
 		  (or (hash-table-get table obj (lambda () #f))
@@ -293,6 +285,8 @@
 				 (or (loop (car obj))
 				     (loop (cdr obj)))]
 				[(box? obj) (loop (unbox obj))]
+				[(custom-write? obj)
+				 (loop ((car (custom-write-accessor obj)) obj))]
 				[(struct? obj)
 				 (ormap loop 
 					(vector->list (struct->vector obj)))]
@@ -308,43 +302,46 @@
 			  (hash-table-remove! table obj)
 			  cycle)))))))
 
-     (define :::dummy:::
-       (if found-cycle
-	   (let loop ([obj obj])
-	     (if (or (vector? obj)
-		     (pair? obj)
-		     (box? obj)
-		     (and (struct? obj) print-struct?)
-		     (and (hash-table? obj) print-hash-table?))
-		 ; A little confusing: use #t for not-found
-		 (let ([p (hash-table-get table obj (lambda () #t))])
-		   (when (not (mark? p))
-			 (if p
-			     (begin
-			       (hash-table-put! table obj #f)
-			       (cond
-				[(vector? obj)
-				 (let ([len (vector-length obj)])
-				   (let vloop ([i 0])
-				     (unless (= i len)
-				        (loop (vector-ref obj i))
-					(vloop (add1 i)))))]
-				[(pair? obj)
-				 (loop (car obj))
-				 (loop (cdr obj))]
-				[(box? obj) (loop (unbox obj))]
-				[(struct? obj)
-				 (for-each loop 
-					   (vector->list (struct->vector obj)))]
-				[(hash-table? obj)
-				 (hash-table-for-each
-				  obj
-				  (lambda (k v)
-				    (loop k)
-				    (loop v)))]))
-			     (begin
-			       (hash-table-put! table obj 
-						(make-mark #f (box #f)))))))))))
+     (define ::dummy::
+       (when found-cycle
+	 (let loop ([obj obj])
+	   (if (or (vector? obj)
+		   (pair? obj)
+		   (box? obj)
+		   (custom-write? obj)
+		   (and (struct? obj) print-struct?)
+		   (and (hash-table? obj) print-hash-table?))
+	       ;; A little confusing: use #t for not-found
+	       (let ([p (hash-table-get table obj (lambda () #t))])
+		 (when (not (mark? p))
+		   (if p
+		       (begin
+			 (hash-table-put! table obj #f)
+			 (cond
+			  [(vector? obj)
+			   (let ([len (vector-length obj)])
+			     (let vloop ([i 0])
+			       (unless (= i len)
+				 (loop (vector-ref obj i))
+				 (vloop (add1 i)))))]
+			  [(pair? obj)
+			   (loop (car obj))
+			   (loop (cdr obj))]
+			  [(box? obj) (loop (unbox obj))]
+			  [(custom-write? obj)
+			   (loop ((car (custom-write-accessor obj)) obj))]
+			  [(struct? obj)
+			   (for-each loop 
+				     (vector->list (struct->vector obj)))]
+			  [(hash-table? obj)
+			   (hash-table-for-each
+			    obj
+			    (lambda (k v)
+			      (loop k)
+			      (loop v)))]))
+		       (begin
+			 (hash-table-put! table obj 
+					  (make-mark #f (box #f)))))))))))
 
      (define cycle-counter 0)
 
@@ -357,11 +354,16 @@
 			 (sub1 d)
 			 #f)))
 
+     (define (display-out out v col)
+       (let ([s (open-output-string)])
+	 (display v s)
+	 (out (get-output-string s) col)))
+
      (print-line
       #f
       (let generic-write ([obj obj] [display? display?] 
 				    [width width] 
-				    [output output] [output-hooked output-hooked]
+				    [output output] [out-special out-special] [output-hooked output-hooked]
 				    [depth depth] [def-box (box #t)]
 				    [startpos (print-line 0 0)]
 				    [pre-print pre-print] [post-print post-print])
@@ -419,6 +421,7 @@
 				    col)])
 		       (n-k col)))))))
 
+       ;; wr: write on a single line
        (define (wr obj col depth)
 
 	 (define (wr-expr expr col depth)
@@ -483,6 +486,24 @@
 					 (lambda (col)
 					   (wr (unbox obj) (out "#&" col) 
 					       (dsub1 depth)))))
+		    ((custom-write? obj) (check-expr-found
+					  obj #t col
+					  #f #f
+					  (lambda (col)
+					    (let-values ([(pre vals post) ((cdr (custom-write-accessor obj))
+									   obj (not display?)
+									   (and out-special #t))])
+					      (let loop ([col (out pre col)][vals vals])
+						(if (null? vals)
+						    (out post col)
+						    (let ([col
+							   (case (caar vals)
+							     [(recur) (wr (cdar vals) col (and depth (sub1 depth)))]
+							     [(display) (display-out out (cdar vals) col)]
+							     [(write-special) (out-special (cdar vals)) (add1 col)])])
+						      (if (null? (cdr vals))
+							  (loop col null)
+							  (loop (out " " col) (cdr vals))))))))))
 		    ((struct? obj)      (if (and print-struct?
 						 (not (and depth
 							   (zero? depth))))
@@ -564,6 +585,7 @@
 			       col))))
 	 (post-print obj)))
 
+       ;; pp: write on (potentially) multiple lines
        (define (pp obj col depth)
 
 	 (define (spaces n col)
@@ -584,9 +606,10 @@
 		    (spaces (- to col) col))))
 
 	 (define (pr obj col extra pp-pair depth)
-	   ; may have to split on multiple lines
+	   ;; may have to split on multiple lines
 	   (let* ([can-multi (or (pair? obj) (vector? obj) 
 				 (box? obj) 
+				 (custom-write? obj)
 				 (and (struct? obj) print-struct?)
 				 (and (hash-table? obj) print-hash-table?))]
 		  [ref (if can-multi
@@ -594,6 +617,7 @@
 			   #f)])
 	     (if (and can-multi
 		      (or (not ref) (not (unbox (mark-def ref)))))
+		 ;; It might be possible to split obj across lines
 		 (let* ((result '())
 			(result-tail #f)
 			(new-def-box (box #t))
@@ -606,9 +630,13 @@
 				  (set! result-tail v))
 				(set! left (- left len))
 				(> left 0))))
+		   ;; Try writing the obj, but accumulate the text that goes out
 		   (generic-write obj display? #f
 				  (lambda (s)
 				    (snoc s (string-length s)))
+				  (and out-special
+				       (lambda (spec)
+					 (snoc (cons spec-sym spec) 1)))
 				  (lambda (s l)
 				    (snoc (cons s l) l))
 				  depth
@@ -618,7 +646,9 @@
 				    (snoc (cons pre-sym obj) 0))
 				  (lambda (obj)
 				    (snoc (cons post-sym obj) 0)))
-		   (if (> left 0) ; all can be printed on one line
+		   (if (> left 0)
+		       ;; All can be printed on one line, so just dump the
+		       ;;  accumulated text
 		       (let loop ([result result][col col])
 			 (if (null? result) 
 			     col
@@ -632,10 +662,14 @@
 					     [(eq? (car v) post-sym)
 					      (post-print (cdr v))
 					      col]
+					     [(eq? (car v) spec-sym)
+					      (out-special (cdr v))
+					      (add1 col)]
 					     [else
 					      (output-hooked (car v) (cdr v))
 					      (+ col (cdr v))])
 					    (out (car result) col)))))))
+		       ;; Doesn't fit on one line, so start over
 		       (begin
 			 (set-box! new-def-box #f)
 			 (let ([col
@@ -653,6 +687,18 @@
 					     (out (number->string (vector-length obj)) col)
 					     col))
 				       extra pp-expr #f depth)]
+			     [(custom-write? obj)
+			      (let-values ([(pre vals post) ((cdr (custom-write-accessor obj))
+							     obj (not display?)
+							     (and out-special #t))])
+				(pp-list/se pre post 
+					    vals
+					    col extra pp-expr #f depth
+					    (lambda (v col default)
+					      (case (car v)
+						[(recur) (default (cdr v) col)]
+						[(display) (display-out out (cdr v) col)]
+						[(write-special) (out-special (cdr v)) (add1 col)]))))]
 			     [(struct? obj)
 			      (pp-list (vector->list (struct->vector obj))
 				       (out "#" col) extra pp-expr #f depth)]
@@ -662,6 +708,7 @@
 			     [(box? obj)
 			      (pr (unbox obj) (out "#&" col) extra pp-pair depth)])
 			    (post-print obj))))))
+		 ;; Not possible to split obj across lines; so just write directly
 		 (wr obj col depth))))
 
 	 (define (pp-expr expr col extra depth)
@@ -683,66 +730,79 @@
 			       (pp-list expr col extra pp-expr #t depth))))
 		     (pp-list expr col extra pp-expr #t depth)))))
 
-	 ; (head item1
-	 ;       item2
-	 ;       item3)
+	 ;; (head item1
+	 ;;       item2
+	 ;;       item3)
 	 (define (pp-call expr col extra pp-item depth)
 	   (let ((col* (wr (car expr) (out "(" col) (dsub1 depth))))
 	     (and col
-		  (pp-down (cdr expr) col* (+ col* 1) extra pp-item #t #t depth))))
+		  (pp-down ")" (cdr expr) col* (+ col* 1) extra pp-item #t #t depth normal-print-one))))
 
-	 ; (head item1 item2
-	 ;   item3
-	 ;   item4)
+	 ;; (head item1 item2
+	 ;;   item3
+	 ;;   item4)
 	 (define (pp-two-up expr col extra pp-item depth)
 	   (let ((col* (wr (car expr) (out "(" col) (dsub1 depth)))
 		 (col*2 (wr (cadr expr) (out " " col) (dsub1 depth))))
 	     (and col
-		  (pp-down (cddr expr) (+ col 1) (+ col 2) extra pp-item #t #t depth))))
+		  (pp-down ")" (cddr expr) (+ col 1) (+ col 2) extra pp-item #t #t depth normal-print-one))))
 
-	 ; (head item1
-	 ;   item2
-	 ;   item3)
+	 ;; (head item1
+	 ;;   item2
+	 ;;   item3)
 	 (define (pp-one-up expr col extra pp-item depth)
 	   (let ((col* (wr (car expr) (out "(" col) (dsub1 depth))))
 	     (and col
-		  (pp-down (cdr expr) (+ col 1) (+ col 2) extra pp-item #t #t depth))))
+		  (pp-down ")" (cdr expr) (+ col 1) (+ col 2) extra pp-item #t #t depth normal-print-one))))
 
-	 ; (item1
-	 ;  item2
-	 ;  item3)
+	 ;; (item1
+	 ;;  item2
+	 ;;  item3)
 	 (define (pp-list l col extra pp-item check? depth)
-	   (let ((col (out "(" col)))
-	     (pp-down l col col extra pp-item #f check? depth)))
+	   (pp-list/se "(" ")" l col extra pp-item check? depth normal-print-one))
 
-	 (define (pp-down l col1 col2 extra pp-item check-first? check-rest? depth)
+	 ;; PREitem1
+	 ;;    item2
+	 ;;    item3POST
+	 (define (pp-list/se pre post l col extra pp-item check? depth print-one)
+	   (let ((col (out pre col)))
+	     (pp-down post l col col extra pp-item #f check? depth print-one)))
+
+	 (define (pp-down closer l col1 col2 extra pp-item check-first? check-rest? depth print-one)
 	   (let loop ((l l) (col col1) (check? check-first?))
 	     (and col
 		  (check-expr-found
 		   l (and check? (pair? l)) col
 		   (lambda (s col) 
-		     (out ")" (out s (indent col2 (out "." (indent col2 col))))))
+		     (out closer (out s (indent col2 (out "." (indent col2 col))))))
 		   (lambda (col)
-		     (out ")" (pr l (indent col2 (out "." (indent col2 col)))
-				  extra pp-item depth)))
+		     (out closer (pr l (indent col2 (out "." (indent col2 col)))
+				     extra pp-item depth)))
 		   (lambda (col)
 		     (cond ((pair? l)
 			    (let ((rest (cdr l)))
 			      (let ((extra (if (null? rest) (+ extra 1) 0)))
 				(loop rest
-				      (pr (car l) (indent col2 col)
-					  extra pp-item
-					  (dsub1 depth))
+				      (print-one
+				       (car l)
+				       (indent col2 col)
+				       (lambda (v col)
+					 (pr v col
+					     extra pp-item
+					     (dsub1 depth))))
 				      check-rest?))))
 			   ((null? l)
-			    (out ")" col))
+			    (out closer col))
 			   (else
-			    (out ")"
+			    (out closer
 				 (pr l
 				     (indent col2 (out "." (indent col2 col)))
 				     (+ extra 1)
 				     pp-item
 				     (dsub1 depth))))))))))
+
+	 (define (normal-print-one v col default)
+	   (default v col))
 
 	 (define (pp-general expr col extra named? pp-1 pp-2 pp-3 depth)
 
@@ -763,7 +823,7 @@
 		 (tail3 rest col1 col2)))
 
 	   (define (tail3 rest col1 col2)
-	     (pp-down rest col2 col1 extra pp-3 #f #t depth))
+	     (pp-down ")" rest col2 col1 extra pp-3 #f #t depth normal-print-one))
 
 	   (let* ((head (car expr))
 		  (rest (cdr expr))
@@ -810,7 +870,7 @@
 	 (define (pp-do expr col extra depth)
 	   (pp-general expr col extra #f pp-expr-list pp-expr-list pp-expr depth))
 
-	 ; define formatting style (change these to suit your style)
+	 ;; define formatting style (change these to suit your style)
 
 	 (define indent-general 2)
 

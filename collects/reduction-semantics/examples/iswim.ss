@@ -167,19 +167,18 @@
 		       (reduction
 			iswim-grammar
 			(in-hole E_1 ("letcc" X_1 M_1))
-			(replace (term E_1) 
-                                 (term hole)
-                                 (iswim-subst (term M_1) (term X_1) `("[" 
-                                                                      ,(replace (term E_1)
-                                                                                (term hole)
-                                                                                '||) 
-                                                                      "]"))))
+			(plug (term E_1) 
+                              (iswim-subst (term M_1) (term X_1) `("[" 
+                                                                   ,(replace (term E_1)
+                                                                             (term hole)
+                                                                             '||) 
+                                                                   "]"))))
 
 		       ;; cc rule:
 		       (reduction
 			iswim-grammar
-			(in-hole E ("cc" ("[" (in-hole* inner-hole E_2 ||) "]") V_1))
-			(replace (term E_2) (term inner-hole) (term V_1))))))
+			(in-hole E ("cc" ("[" (in-hole E_2 ||) "]") V_1))
+			(plug (term E_2) (term V_1))))))
 			
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

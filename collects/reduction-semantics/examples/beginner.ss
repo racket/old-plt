@@ -275,9 +275,8 @@ reflects the (broken) spec).
        (before ...
         defn
         middle ...
-        ,(replace (term d/e-ctxt_1) 
-                  (term hole)
-                  (multi-subst (term (x_var ...)) (term (v_arg ...)) (term e_body)))
+        (in-hole d/e-ctxt_1
+                 ,(multi-subst (term (x_var ...)) (term (v_arg ...)) (term e_body)))
         after ...)))
      
      ;; define-style procedure application
@@ -292,9 +291,8 @@ reflects the (broken) spec).
        (before ...
         defn
         middle ...
-        ,(replace (term ctxt) 
-                  (term hole)
-                  (multi-subst (term (x_var ...))
+        (in-hole ctxt
+                 ,(multi-subst (term (x_var ...))
                                (term (arg ...))
                                (term e_body)))
         after ...)))
@@ -311,7 +309,7 @@ reflects the (broken) spec).
        (before ...
         defn
         middle ...
-        ,(replace (term ctxt) (term hole) (term val))
+        (in-hole ctxt val)
         after ...)))
      
      ;; unbound reference to top-level id in hole:
@@ -363,7 +361,7 @@ reflects the (broken) spec).
        (before ...
         (define-struct struct (field ...))
         middle ...
-        ,(replace (term ctxt) (term hole) 'true)
+        (in-hole ctxt true)
         after ...)))
      
      ;; struct predicate fail to another struct
@@ -381,7 +379,7 @@ reflects the (broken) spec).
        (before ...
         (define-struct struct (field ...))
         middle ...
-        ,(replace (term ctxt) (term hole) 'false)
+        (in-hole ctxt false)
         after ...)))
      
      ;; struct predicate fail to another value
@@ -398,7 +396,7 @@ reflects the (broken) spec).
        (before ...
         (define-struct struct (field ...))
         middle ...
-        ,(replace (term ctxt) (term hole) 'false)
+        (in-hole ctxt false)
         after ...)))
      
      ;; misapplied selector 1
@@ -443,9 +441,8 @@ reflects the (broken) spec).
        (before ...
         (define-struct struct (field ...))
         middle ...
-        ,(replace (term ctxt) 
-                  (term hole) 
-                  (list-ref (term (arg ...)) 
+        (in-hole ctxt
+                 ,(list-ref (term (arg ...)) 
                             (struct-index (term struct) 
                                           (term (field ...))
                                           (term selector))))

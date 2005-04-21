@@ -65,7 +65,6 @@
   (define (make-w b c c*) `(,c ((,c ((,b ,c) ((,c ((,b j) ,c*)) ,c*))) ,c*)))
   (define (make-s b c w) `((,b ((,b (,b ,w)) ,c)) (,b ,b)))
 
-  ;; output is saved in ij-basis.ps
   (traces/multiple lang
                 reductions
                 (list 

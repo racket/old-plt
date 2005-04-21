@@ -139,92 +139,91 @@
                 (in-hole (name p p-ctxt) (/ number_n number_m)) 
                 (if (= (term number_m) 0)
                     (term (error /))
-                    (replace (term p) (term hole) (/ (term number_n) (term number_m)))))
+                    (plug (term p) (/ (term number_n) (term number_m)))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (* number_n number_m))
-                (replace (term p) (term hole) (* (term number_n) (term number_m))))
+                (plug (term p) (* (term number_n) (term number_m))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (+ number_n number_m))
-                (replace (term p) (term hole) (+ (term number_n) (term number_m))))
+                (plug (term p) (+ (term number_n) (term number_m))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (- number_n number_m))
-                (replace (term p) (term hole) (- (term number_n) (term number_m))))
+                (plug (term p) (- (term number_n) (term number_m))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (>= number_n number_m))
-                (replace (term p) (term hole) (if (>= (term number_n) (term number_m)) 'true 'false)))
+                (plug (term p) (if (>= (term number_n) (term number_m)) 'true 'false)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (= number_n number_m))
-                (replace (term p) (term hole) (if (= (term number_n) (term number_m)) 'true 'false)))
+                (plug (term p) (if (= (term number_n) (term number_m)) 'true 'false)))
      (reduction lang  
                 (in-hole (name p p-ctxt) ((lambda (variable_x) e_body) v_arg))
-                (replace (term p) (term hole) (ho-contracts-subst (term variable_x) 
-                                                                  (term v_arg) 
-                                                                  (term e_body))))
+                (plug (term p) (ho-contracts-subst (term variable_x) 
+                                                   (term v_arg) 
+                                                   (term e_body))))
      (reduction lang  
                 (in-hole (name p p-ctxt) 
                          (let ((variable_i v_i) ...) e_body))
-                (replace (term p) 
-                         (term hole)
-                         (foldl
-                          ho-contracts-subst
-                          (term e_body)
-                          (term (variable_i ...))
-                          (term (v_i ...)))))
+                (plug (term p) 
+                      (foldl
+                       ho-contracts-subst
+                       (term e_body)
+                       (term (variable_i ...))
+                       (term (v_i ...)))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (name tot (fix (name x variable) (name body e))))
-                (replace (term p) (term hole) (ho-contracts-subst (term x) (term tot) (term body))))
+                (plug (term p) (ho-contracts-subst (term x) (term tot) (term body))))
      (reduction lang  
                 ((name defns
                        ((valrec (name bvar variable) : (name bctc value) = (name brhs value)) ...
                         (valrec (name var variable) : value = (name rhs value))
                         (valrec variable : value = value) ...))
                  (in-hole (name p e-ctxt) (name var variable)))
-                (term (defns ,(replace (term p) (term hole) (term rhs)))))
+                (term (defns ,(plug (term p) (term rhs)))))
      (reduction lang
                 (in-hole (name p p-ctxt) (if true e_then e))
-                (replace (term p) (term hole) (term e_then)))
+                (plug (term p) (term e_then)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (if false e e_else))
-                (replace (term p) (term hole) (term e_else)))
+                (plug (term p) (term e_else)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (hd (cons v_fst v)))
-                (replace (term p) (term hole) (term v_fst)))
+                (plug (term p) (term v_fst)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (hd empty))
                 (term (error hd)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (tl (cons v v_rst)))
-                (replace (term p) (term hole) (term v_rst)))
+                (plug (term p) (term v_rst)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (tl empty))
                 (term (error tl)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (mt empty))
-                (replace (term p) (term hole) 'true))
+                (plug (term p) 'true))
      (reduction lang  
                 (in-hole (name p p-ctxt) (mt (cons v v)))
-                (replace (term p) (term hole) 'false))
+                (plug (term p) 'false))
      (reduction lang  
                 (in-hole (name p p-ctxt) (flatp (contract v)))
-                (replace (term p) (term hole) 'true))
+                (plug (term p) 'true))
      (reduction lang  
                 (in-hole (name p p-ctxt) (flatp (--> v v)))
-                (replace (term p) (term hole) 'false))
+                (plug (term p) 'false))
      (reduction lang  
                 (in-hole (name p p-ctxt) (pred (contract v_pred)))
-                (replace (term p) (term hole) (term v_pred)))
+                (plug (term p) (term v_pred)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (pred (--> v v)))
                 (term (error pred)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (dom (--> v_dm v)))
-                (replace (term p) (term hole) (term v_dm)))
+                (plug (term p) (term v_dm)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (dom (contract v)))
                 (term (error dom)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (rng (--> v v_rg)))
-                (replace (term p) (term hole) (term v_rg)))
+                (plug (term p) (term v_rg)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (rng (contract v)))
                 (term (error rng)))
@@ -564,5 +563,5 @@
   
   
   (traces lang reductions flat-case pp)
-  ;(traces lang reductions ho-case pp)
+  (traces lang reductions ho-case pp)
   )

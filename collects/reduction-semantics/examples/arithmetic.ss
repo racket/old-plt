@@ -23,7 +23,7 @@
      (reduction lang
                 (in-hole e-ctxt_1
                          (+ number_1 number_2))
-                (replace (term e-ctxt_1) (term hole) (+ (term number_1) (term number_2))))
+                (plug (term e-ctxt_1) (+ (term number_1) (term number_2))))
      (reduction/context lang
                         e-ctxt
                         (- number_1 number_2)

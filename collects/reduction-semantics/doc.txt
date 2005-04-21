@@ -63,10 +63,7 @@ language, used in various ways:
           | <symbol>
           | (name <symbol> <pattern>)
           | (in-hole <pattern> <pattern>)
-          | (in-hole* <symbol> <pattern> <pattern>)
-          | (in-hole+ <pattern> <pattern>)
           | (in-named-hole <symbol> <symbol> <pattern> <pattern>)
-          | (in-named-hole+ <symbol> <pattern> <pattern>)
           | (side-condition <pattern> <guard>)
           | (cross <symbol>>)
           | (pattern ...)
@@ -87,11 +84,9 @@ keywords in the language are not accidentally captured by
 variables.
 
 The _hole_ pattern matches anything when inside a matching
-in-hole pattern and colludes with that in-hole patterns to
-provide the path into the term from in-hole to the hole. The
-(hole <symbol>) variation on that pattern is used in
-conjuction with in-named-hole to support languages that
-require multiple patterns in a hole. 
+in-hole pattern. The (hole <symbol>) variation on that
+pattern is used in conjuction with in-named-hole to support
+languages that require multiple patterns in a hole.
 
 The _<symbol>_ pattern stands for a literal symbol that must
 match exactly, unless it is the name of a non-terminal in a
@@ -116,41 +111,20 @@ _in-hole_: The (in-hole <pattern> <pattern>) matches the first
 pattern. This match must include exactly one match against the `hole'
 pattern. The `hole' pattern matches any sexpression. Then, the
 sexpression that matched the hole pattern is used to match against the
-second pattern. The in-hole pattern also binds `hole' using `term-let' 
-in the right-hand side of a reduction.
-
-_in-hole*_: The (in-hole* <symbol> <pattern> <pattern>) is just like
-the in-hole pattern, except that you can specify the name to be
-implicitly bound. This is important to write reductions with nested
-contexts; if you were to use in-hole twice, you would get two bindings
-of `hole' and the pattern matcher would require them to be equal,
-according to the semantics of repeated variables.
-
-_in-hole+_: The pattern (in-hole+ <pattern> <pattern>) is
-just like the in-hole pattern, except that it does not bind
-anything in the result, making it suitable for use in the
-definition of a non-terminal.
+second pattern.
 
 _in-named-hole_: The pattern:
 
-   (in-named-hole <symbol> <symbol> <pattern> <pattern>) 
+   (in-named-hole <symbol> <pattern> <pattern>) 
 
-is similar in spirit to in-hole*, except that it supports
+is similar in spirit to in-hole, except that it supports
 languages with multiple holes in a context. The first
 argument identifies which hole, using the (hole <symbol>)
 pattern that this expression requires and the rest of the
-arguments are just like in-hole*. That is, if there are
+arguments are just like in-hole. That is, if there are
 multiple holes in a term, each matching a different (hole
 <name>) pattern, this one selects only the holes that are
 named by the first argument to in-named-hole.
-
-_in-named-hole+_: The pattern:
-
-   (in-named-hole+ <symbol> <pattern> <pattern>) 
-
-is similar in spirit to in-hole+, except that it supports
-languages with multiple holes in a context, like
-in-named-hole does.
 
 _side-condition_: The (side-condition pattern guard) pattern matches
 what the embedded pattern matches, and then the guard expression is
@@ -269,7 +243,8 @@ would be written like this:
                 (in-hole (name c c)
                          ((lambda (variable_i ...) e_body)
                           v_i ...))
-                (replace (term c) (term hole) 
+                (plug 
+                 (term c) 
                  (foldl lc-subst (term e_body) 
                                  (term (v_i ...)) 
                                  (term (variable_i ...)))))
@@ -283,14 +258,14 @@ we used, c, hole, variable_i, e_body, and v_i
 are bound with `term-let' in the right hand side of the 
 reduction. Then, when the reduction matches, the result is 
 the result of evaluating the last argument to reduction. 
-See `replace' below and lc-subst is defined by using the 
+See `plug' below and lc-subst is defined by using the 
 subst.ss library below.
 
 > (reduction/context language context pattern bodies ...)   SYNTAX
 
 reduction/context is a short-hand form of reduction. It
 automatically adds the `in-hole' pattern and the call to
-`replace'. The equivalent reduction/context to the above
+`plug'. The equivalent reduction/context to the above
 example is this:
 
      (reduction/context 
@@ -328,13 +303,11 @@ argument to `in-hole'; often just a non-terminal) in the
 language and returns the closure of the reduction
 in that context.
 
-> replace : (any? hole-binding? any? . -> . any)
+> plug : (any? any? . -> . any)
 
 The first argument to this function is an sexpression to
-replace into. The second argument is the binding in the hole
-(it contains the information about where to replace) and the
-last argument is the sexpression to replace in the first
-argument. It returns the replaced term.
+plug into. The second argument is the sexpression to replace
+in the first argument. It returns the replaced term.
 
 > reduce : ((listof red?) any? . -> . (listof any?))
 

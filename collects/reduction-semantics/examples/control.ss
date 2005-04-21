@@ -31,15 +31,15 @@
   (define reductions
     (list
      (reduction lang
-                (in-hole c_1 (\# (in-hole* hole# c#_1 (f v_1))))
-                (let ([x (variable-not-in (term c#) 'x)])
-                  (replace (term c_1) 
-                           (term hole) 
-                           (term (v_1 (lambda (,x) ,(replace (term c#_1) (term hole#) x)))))))
+                (in-hole c_1 (\# (in-hole c#_1 (f v_1))))
+                (term-let ([x (variable-not-in (term c#) 'x)])
+                  (term
+                   (in-hole c_1
+                            (v_1 (lambda (x) (in-hole c#_1 x)))))))
      (reduction lang
                 (in-hole c#_1 (f v_1))
-                (let ([x (variable-not-in (term c#_1) 'x)])
-                  (term (v_1 (lambda (,x) ,(replace (term c#_1) (term hole) x))))))
+                (term-let ([x (variable-not-in (term c#_1) 'x)])
+                  (term (v_1 (lambda (x) (in-hole c#_1 x))))))
      (reduction/context lang
                         c
                         ((lambda (variable_x) e_body) v_arg)

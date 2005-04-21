@@ -41,41 +41,40 @@ there are multiple decompositions for each term.
                 (in-hole (name e e-state)
                          (let (variable_1 v_val)
                            m_exp))
-                (replace (term e)
-                         (term hole) 
-                         (future-subst (term variable_1) (term v_val) (term m_exp))))
+                (plug (term e)
+                      (future-subst (term variable_1) (term v_val) (term m_exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let (variable_1 (car (cons v_val v)))
                            m_exp))
-                (replace (term e) (term hole) (future-subst (term variable_1)
-                                                            (term v_val) 
-                                                            (term m_exp))))
+                (plug (term e) (future-subst (term variable_1)
+                                             (term v_val) 
+                                             (term m_exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let (variable_1 (cdr (cons v v_val)))
                            m_exp))
-                (replace (term e) (term hole) (future-subst (term variable_1)
-                                                            (term v_val)
-                                                            (term m_exp))))
+                (plug (term e) (future-subst (term variable_1)
+                                             (term v_val)
+                                             (term m_exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let (variable_1 (if true m_then m))
                            m_exp))
-                (replace (term e) (term hole) (term (let (variable_1 m_then) m_exp))))
+                (plug (term e) (term (let (variable_1 m_then) m_exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let (variable_1 (if false m m_else))
                            m_exp))
-                (replace (term e) (term hole) (term (let (variable_1 m_else) m_exp))))
+                (plug (term e) (term (let (variable_1 m_else) m_exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let (variable_1 
                                (apply (lambda (variable_formal) m_body)
                                       v_actual))
                            m_exp))
-                (replace 
-                 (term e) (term hole)
+                (plug 
+                 (term e)
                  (term (let (variable_1 ,(future-subst (term variable_formal) (term v_actual) (term m_body)))
                          m_exp))))
      (reduction lang

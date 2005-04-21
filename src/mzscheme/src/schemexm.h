@@ -377,6 +377,7 @@
 #define scheme_count_lines (scheme_extension_table->scheme_count_lines)
 #define scheme_close_input_port (scheme_extension_table->scheme_close_input_port)
 #define scheme_close_output_port (scheme_extension_table->scheme_close_output_port)
+#define scheme_write_special (scheme_extension_table->scheme_write_special)
 #define scheme_make_read_evt (scheme_extension_table->scheme_make_read_evt)
 #define scheme_make_write_evt (scheme_extension_table->scheme_make_write_evt)
 #define scheme_make_port_type (scheme_extension_table->scheme_make_port_type)

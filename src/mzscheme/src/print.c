@@ -801,12 +801,16 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
 }
 
 static void print_this_string(PrintParams *pp, const char *str, int offset, int autolen)
+     /* If str is NULL and autolen is 0, flush print buffer */
 {
   long len;
   char *oldstr;
 
   if (!autolen) {
-    return;
+    if (str)
+      len = 0;
+    else
+      return;
   } else if (autolen > 0)
     len = autolen;
   else
@@ -817,7 +821,6 @@ static void print_this_string(PrintParams *pp, const char *str, int offset, int 
     pp->print_position += len;
     return;
   }
-
 
   if (len + pp->print_position + 1 > pp->print_allocated) {
     if (len + 1 >= pp->print_allocated)
@@ -843,7 +846,7 @@ static void print_this_string(PrintParams *pp, const char *str, int offset, int 
 
   SCHEME_USE_FUEL(len);
   
-  if (pp->print_maxlen > PRINT_MAXLEN_MIN)  {
+  if ((pp->print_maxlen > PRINT_MAXLEN_MIN) || !str) {
     if (pp->print_position > pp->print_maxlen) {
       long l = pp->print_maxlen;
 
@@ -1473,23 +1476,34 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact || !pp->print_unreadable)
 	cannot_print(pp, notdisplay, obj, ht, compact);
       else if (scheme_is_writable_struct(obj)) {
-	Scheme_Object *a, *b;
-	obj = scheme_writable_struct_parts(obj, notdisplay);
+	Scheme_Object *b, *pre, *post, *a[2];
+	obj = scheme_writable_struct_parts(obj, notdisplay, 
+					   (pp->print_port 
+					    && ((Scheme_Output_Port *)pp->print_port)->write_special_fun),
+					   &pre, &post);
+
+	do_print_string(compact, 0, pp, 
+			SCHEME_CHAR_STR_VAL(pre), 0, SCHEME_CHAR_STRTAG_VAL(pre));
+
 	while (SCHEME_PAIRP(obj)) {
-	  a = SCHEME_CAR(obj);
-	  if (SCHEME_CHAR_STRINGP(a)) {
-	    do_print_string(0, 0, pp, SCHEME_CHAR_STR_VAL(a), 0, SCHEME_CHAR_STRTAG_VAL(a));
+	  b = SCHEME_CAR(obj);
+	  if (SAME_OBJ(SCHEME_CAR(b), scheme_write_special_symbol)) {
+	    /* First, flush print cache: */
+	    print_this_string(pp, NULL, 0, 0);
+	    a[0] = SCHEME_CDR(b);
+	    a[1] = pp->print_port;
+	    scheme_write_special(2, a);
 	  } else {
-	    while (SCHEME_PAIRP(a)) {
-	      b = SCHEME_CAR(a);
-	      print(SCHEME_CDR(b), SCHEME_TRUEP(SCHEME_CAR(b)), compact, ht, symtab, rnht, pp);
-	      a = SCHEME_CDR(a);
-	      if (!SCHEME_NULLP(a))
-		print_utf8_string(pp, " ", 0, 1);
-	    }
+	    print(SCHEME_CDR(b), SAME_OBJ(SCHEME_CAR(b), scheme_write_symbol),
+		  compact, ht, symtab, rnht, pp);
 	  }
 	  obj = SCHEME_CDR(obj);
+	  if (!SCHEME_NULLP(obj))
+	    print_utf8_string(pp, " ", 0, 1);
 	}
+
+	do_print_string(compact, 0, pp, 
+			SCHEME_CHAR_STR_VAL(post), 0, SCHEME_CHAR_STRTAG_VAL(post));
       } else {
 	int pb;
 

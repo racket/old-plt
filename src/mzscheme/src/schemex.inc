@@ -377,6 +377,7 @@
   scheme_extension_table->scheme_count_lines = scheme_count_lines;
   scheme_extension_table->scheme_close_input_port = scheme_close_input_port;
   scheme_extension_table->scheme_close_output_port = scheme_close_output_port;
+  scheme_extension_table->scheme_write_special = scheme_write_special;
   scheme_extension_table->scheme_make_read_evt = scheme_make_read_evt;
   scheme_extension_table->scheme_make_write_evt = scheme_make_write_evt;
   scheme_extension_table->scheme_make_port_type = scheme_make_port_type;

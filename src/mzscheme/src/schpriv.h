@@ -237,6 +237,8 @@ extern Scheme_Object *scheme_begin_stx;
 extern Scheme_Object *scheme_define_values_stx;
 extern Scheme_Object *scheme_define_syntaxes_stx;
 
+extern Scheme_Object *scheme_write_symbol, *scheme_display_symbol, *scheme_write_special_symbol;
+
 /*========================================================================*/
 /*                    thread state and maintenance                        */
 /*========================================================================*/
@@ -479,7 +481,9 @@ Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a);
 
 int scheme_is_writable_struct(Scheme_Object *s);
 Scheme_Object *scheme_writable_struct_subs(Scheme_Object *s);
-Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, int notdisplay);
+Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, 
+					    int notdisplay, int can_write_special,
+					    Scheme_Object **_pre, Scheme_Object **_post);
 
 #define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
 

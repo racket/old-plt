@@ -97,6 +97,7 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const 
 static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object **a, int always);
 
 static Scheme_Object *write_property;
+Scheme_Object *scheme_write_symbol, *scheme_display_symbol, *scheme_write_special_symbol;
 
 static Scheme_Object *evt_property;
 static int evt_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
@@ -128,7 +129,7 @@ static void register_traversers(void);
 #define BUILTIN_STRUCT_FLAGS SCHEME_STRUCT_EXPTIME
 #define LOC_STRUCT_FLAGS BUILTIN_STRUCT_FLAGS | SCHEME_STRUCT_NO_SET
 
-Scheme_Object *ellipses_symbol;
+static Scheme_Object *ellipses_symbol;
 
 #define TYPE_NAME(base, blen) make_name("struct:", base, blen, "", NULL, 0, "", 1)
 #define CSTR_NAME(base, blen) make_name("make-", base, blen, "", NULL, 0, "", 1)
@@ -253,6 +254,13 @@ scheme_init_struct (Scheme_Env *env)
 							      guard);
     scheme_add_global_constant("prop:write", write_property, env);
   }
+  
+  REGISTER_SO(scheme_write_symbol);
+  REGISTER_SO(scheme_display_symbol);
+  REGISTER_SO(scheme_write_special_symbol);
+  scheme_write_symbol = scheme_intern_symbol("write");
+  scheme_display_symbol = scheme_intern_symbol("display");
+  scheme_write_special_symbol = scheme_intern_symbol("write-special");
 
   scheme_add_evt(scheme_wrap_evt_type,
 		 (Scheme_Ready_Fun)wrapped_evt_is_ready,
@@ -810,7 +818,7 @@ static Scheme_Object *check_write_property_value_ok(int argc, Scheme_Object *arg
   if (!SCHEME_PAIRP(v)) {
     scheme_arg_mismatch("write-property-guard",
 			"not a pair: ",
-			v);  
+			v);
   }
 
   proc = SCHEME_CAR(v);
@@ -820,9 +828,9 @@ static Scheme_Object *check_write_property_value_ok(int argc, Scheme_Object *arg
 			v); 
   }
   proc = SCHEME_CDR(v);
-  if (!scheme_check_proc_arity(NULL, 2, 0, 1, &proc)) {
+  if (!scheme_check_proc_arity(NULL, 3, 0, 1, &proc)) {
     scheme_arg_mismatch("write-property-guard",
-			"cdr of pair is not a procedure of arity 2: ",
+			"cdr of pair is not a procedure of arity 3: ",
 			v); 
   }
 
@@ -846,42 +854,76 @@ Scheme_Object *scheme_writable_struct_subs(Scheme_Object *s)
   return scheme_apply(v, 1, a);
 }
 
-Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, int notdisplay)
+Scheme_Object *scheme_writable_struct_parts(Scheme_Object *s, int notdisplay, int can_write_special,
+					    Scheme_Object **_pre, Scheme_Object **_post)
 {
-  Scheme_Object *v, *a[2], *result, *va;
+  Scheme_Object *v, *a[3], *va, *vaa;
+  int got, uses_special = 0;
   
   v = scheme_struct_type_property_ref(write_property, s);
   v = SCHEME_CDR(v);
 
   a[0]= s;
   a[1] = (notdisplay ? scheme_true : scheme_false);
-  result = scheme_apply(v, 2, a);
+  a[2] = (can_write_special ? scheme_true : scheme_false);
+  v = scheme_apply_multi(v, 3, a);
 
-  /* Check that result is list, and check that it contains
-     only strings and pair-lists. */
-  for (v = result; SCHEME_PAIRP(v); v = SCHEME_CDR(v)) {
+  got = (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES) ? scheme_multiple_count : 1);
+
+  if (got != 3) {
+    scheme_wrong_return_arity("struct writer",
+			      3, got, scheme_multiple_array,
+			      "calling prop:write second procedure");
+    return NULL;
+  }
+
+  a[0] = scheme_multiple_array[0];
+  a[1] = scheme_multiple_array[1];
+  a[2] = scheme_multiple_array[2];
+
+  if (!SCHEME_CHAR_STRINGP(a[0])) {
+    scheme_wrong_type("struct writer", "string", 0, -3, a);
+    return NULL;
+  }
+
+  /* Check that result is list if pairs. */
+  for (v = a[1]; SCHEME_PAIRP(v); v = SCHEME_CDR(v)) {
     va = SCHEME_CAR(v);
-    if (!SCHEME_CHAR_STRINGP(va)) {
-      if (SCHEME_PAIRP(va) || SCHEME_NULLP(va)) {
-	for (; SCHEME_PAIRP(va); va = SCHEME_CDR(va)) {
-	  if (!SCHEME_PAIRP(SCHEME_CAR(va)))
-	    break;
-	}
-	if (!SCHEME_NULLP(va))
-	  va = NULL;
-      } else
-	va = NULL;
-    }
-    if (!va)
+    if (SCHEME_PAIRP(va)) {
+      vaa = SCHEME_CAR(va);
+      if (!SAME_OBJ(vaa, scheme_write_symbol)
+	  && !SAME_OBJ(vaa, scheme_display_symbol)
+	  && !SAME_OBJ(vaa, scheme_write_special_symbol))
+	break;
+      if (SAME_OBJ(vaa, scheme_write_special_symbol))
+	uses_special = 1;
+    } else
       break;
   }
 
   if (!SCHEME_NULLP(v)) {
-    a[0] = result;
-    scheme_wrong_type("struct writer", "proper list of strings and pair lists", -1, -1, a);
+    scheme_wrong_type("struct writer", 
+		      "list of pairs, where the first element of"
+		      " each pair is 'write, 'display, or 'write-special", 
+		      1, -3, a);
   }
 
-  return result;
+  if (uses_special && !can_write_special) {
+    scheme_arg_mismatch("struct writer",
+			"result includes 'write-special, but specials are"
+			" not supported in the current context",
+			a[1]);
+  }
+
+  if (!SCHEME_CHAR_STRINGP(a[2])) {
+    scheme_wrong_type("struct writer", "string", 2, -3, a);
+    return NULL;
+  }
+
+  *_pre = a[0];
+  *_post = a[2];
+
+  return a[1];
 }
 
 /*========================================================================*/

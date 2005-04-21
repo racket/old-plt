@@ -79,7 +79,6 @@ static Scheme_Object *write_bytes_avail_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *can_write_atomic(int argc, Scheme_Object *argv[]);
 static Scheme_Object *can_provide_progress_evt(int argc, Scheme_Object *argv[]);
 static Scheme_Object *can_write_special(int argc, Scheme_Object *argv[]);
-static Scheme_Object *write_special(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_special_nonblock(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *peek_char_spec (int, Scheme_Object *[]);
@@ -535,7 +534,7 @@ scheme_init_port_fun(Scheme_Env *env)
 						      1, 1),
 			     env);
   scheme_add_global_constant("write-special",
-			     scheme_make_prim_w_arity(write_special,
+			     scheme_make_prim_w_arity(scheme_write_special,
 						      "write-special",
 						      1, 2),
 			     env);
@@ -3541,8 +3540,8 @@ can_write_special(int argc, Scheme_Object *argv[])
     return scheme_false;
 }
 
-static Scheme_Object *
-write_special(int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_write_special(int argc, Scheme_Object *argv[])
 {
   return do_write_special("write-special", argc, argv, 0, 0);
 }

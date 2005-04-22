@@ -1,17 +1,5 @@
 #|
 
-todo:
-      in match-in-hole, should old-info or new-info be used? (find test case to tell the difference!)
-      trim info collection for hole-info
-
-changes:
-  replace => plug / in-hole (in term)
-  in-hole+ gone
-  in-hole* gone
-  in-named-hole+ gone
-  in-named-hole has one fewer argument
-
-
 Note: the patterns described in the doc.txt file are
 slightly different than the patterns processed here.
 The difference is in the form of the side-condition
@@ -39,9 +27,13 @@ before the pattern compiler is invoked.
            compiled-pattern
            
            make-bindings bindings-table bindings?
-           mtch-bindings
            (struct rib (name exp))
            plug
+           none?
+           mtch?
+           mtch-bindings
+           mtch-context
+           mtch-hole
            print-stats)
   
   ;; lang = (listof nt)
@@ -109,7 +101,7 @@ before the pattern compiler is invoked.
   ;;               #f means we're not in a `in-hole' context
   ;;               none means we're looking for a normal hole
   ;;               symbol means we're looking for a named hole named by the symbol
-  (define compiled-pattern (any/c (union false/c none? symbol?) . -> . (union false/c (listof bindings?))))
+  (define compiled-pattern (any/c (union false/c none? symbol?) . -> . (union false/c (listof mtch?))))
   
   (define-struct compiled-lang (lang ht across-ht has-hole-ht cache))
   

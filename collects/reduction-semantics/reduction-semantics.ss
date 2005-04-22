@@ -21,12 +21,11 @@ incompatible changes to be done:
            red?
            term
            term-let
-           
-           )
+           none?)
   
   (provide/contract
    (language->predicate (compiled-lang? symbol? . -> . (any/c . -> . boolean?)))
-   (match-pattern (compiled-pattern any/c . -> . (union false/c (listof bindings?))))
+   (match-pattern (compiled-pattern any/c . -> . (union false/c (listof mtch?))))
    (compile-pattern (compiled-lang? any/c . -> . compiled-pattern))
    (reduce ((listof (lambda (x) (red? x))) any/c . -> . (listof any/c)))
    (variable-not-in (any/c symbol? . -> . symbol?))
@@ -44,6 +43,11 @@ incompatible changes to be done:
    (make-bindings ((listof rib?) . -> . bindings?))
    (bindings-table (bindings? . -> . (listof rib?)))
    (bindings? (any/c . -> . boolean?))
+   
+   (mtch? (any/c . -> . boolean?))
+   (mtch-bindings (mtch? . -> . bindings?))
+   (mtch-context (mtch? . -> . any/c))
+   (mtch-hole (mtch? . -> . (union none? any/c)))
    
    (make-rib (symbol? any/c . -> . rib?))
    (rib? (any/c . -> . boolean?))

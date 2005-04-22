@@ -323,22 +323,40 @@ Takes a language and a non-terminal name and produces
 a predicate that matches instances of the non-terminal.
 
 > match-pattern : (compiled-pattern 
-                   any?
+                   any/c
                    . -> .
-                   (union false? (listof bindings?)))
+                   (union false? (listof mtch?)))
 
 This is mostly used to explore a particular pattern to
 determine what is going wrong. It accepts a compiled pattern
 and a and returns #f if the pattern doesn't match the term,
-and returns bindings (an association list) if the terms do
-match. The association maps from the `name' variables in the
-pattern to the subterms they match.
+and returns a mtch structure if the terms do match.
 
 > compile-pattern : (compiled-lang? any? . -> . compiled-pattern)
 
 This is mostly used in conjunction with match-pattern to
 explore particular patterns and terms when debugging. It
 compiles a sexpression pattern to a pattern.
+
+> mtch? : (any/c . -> . boolean?)
+
+Determines if a value is a mtch structure.
+
+> mtch-bindings : (mtch? -> bindings?)
+
+This returns a bindings structure (an association list) that
+binds the pattern variables in this match.
+
+> mtch-context : (mtch? . -> . any/c)
+
+Returns the current context being built up for a
+match. Usually, this is the same as the original term being
+matched.
+
+> mtch-hole : (mtch? . -> . (union none? any/c))
+
+Returns the current contents of the hole for this match (if
+there was a decomposition). Usually returns none.
 
 > variable-not-in : (any? symbol? . -> . symbol?)
 

@@ -330,7 +330,7 @@ a predicate that matches instances of the non-terminal.
 This is mostly used to explore a particular pattern to
 determine what is going wrong. It accepts a compiled pattern
 and a and returns #f if the pattern doesn't match the term,
-and returns a mtch structure if the terms do match.
+and returns a list of mtch structure if the terms do match.
 
 > compile-pattern : (compiled-lang? any? . -> . compiled-pattern)
 
@@ -344,7 +344,7 @@ Determines if a value is a mtch structure.
 
 > mtch-bindings : (mtch? -> bindings?)
 
-This returns a bindings structure (an association list) that
+This returns a bindings structure (see below) that
 binds the pattern variables in this match.
 
 > mtch-context : (mtch? . -> . any/c)

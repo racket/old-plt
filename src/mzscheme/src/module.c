@@ -2128,7 +2128,7 @@ static void templstart_module(Scheme_Env *menv, Scheme_Env *env,
 
   np = scheme_null;
   for (l = menv->module->tt_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    midx = scheme_modidx_shift(SCHEME_CAR(l), menv->module->src_modidx, env->link_midx);
+    midx = scheme_modidx_shift(SCHEME_CAR(l), menv->module->src_modidx, menv->link_midx);
 
     scheme_prepare_template_env(env);
     

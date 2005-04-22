@@ -185,16 +185,16 @@
     (ptr-set! ffi-obj type new)))
 
 ;; This is better handled with `make-c-parameter'
-;; (provide* ffi-obj-ref)
-;; (define ffi-obj-ref
-;;   (case-lambda
-;;    [(name lib) (ffi-obj-ref name lib #f)]
-;;    [(name lib failure)
-;;     (let ([name (get-ffi-obj-name 'ffi-obj-ref name)]
-;;           [lib  (get-ffi-lib lib)])
-;;       (with-handlers ([exn:fail:filesystem?
-;;                        (lambda (e) (if failure (failure) (raise e)))])
-;;         (ffi-obj name lib)))]))
+(provide* ffi-obj-ref)
+(define ffi-obj-ref
+  (case-lambda
+   [(name lib) (ffi-obj-ref name lib #f)]
+   [(name lib failure)
+    (let ([name (get-ffi-obj-name 'ffi-obj-ref name)]
+          [lib  (get-ffi-lib lib)])
+      (with-handlers ([exn:fail:filesystem?
+                       (lambda (e) (if failure (failure) (raise e)))])
+        (ffi-obj name lib)))]))
 
 ;; get-ffi-obj is implemented as a syntax only to be able to propagate the
 ;; foreign name into the type syntax, which allows generated wrappers to have a

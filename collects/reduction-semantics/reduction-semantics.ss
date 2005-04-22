@@ -23,10 +23,15 @@ incompatible changes to be done:
            term-let
            none?)
   
+  (provide match-pattern
+           compile-pattern
+           make-bindings bindings-table bindings?
+           mtch? mtch-bindings mtch-context  mtch-hole
+           make-rib rib? rib-name rib-exp)
+
+  
   (provide/contract
    (language->predicate (compiled-lang? symbol? . -> . (any/c . -> . boolean?)))
-   (match-pattern (compiled-pattern any/c . -> . (union false/c (listof mtch?))))
-   (compile-pattern (compiled-lang? any/c . -> . compiled-pattern))
    (reduce ((listof (lambda (x) (red? x))) any/c . -> . (listof any/c)))
    (variable-not-in (any/c symbol? . -> . symbol?))
    (compatible-closure ((lambda (x) (red? x))
@@ -38,21 +43,8 @@ incompatible changes to be done:
                      compiled-lang?
                      any/c
                      . -> .
-                     (lambda (x) (red? x))))
+                     (lambda (x) (red? x)))))
 
-   (make-bindings ((listof rib?) . -> . bindings?))
-   (bindings-table (bindings? . -> . (listof rib?)))
-   (bindings? (any/c . -> . boolean?))
-   
-   (mtch? (any/c . -> . boolean?))
-   (mtch-bindings (mtch? . -> . bindings?))
-   (mtch-context (mtch? . -> . any/c))
-   (mtch-hole (mtch? . -> . (union none? any/c)))
-   
-   (make-rib (symbol? any/c . -> . rib?))
-   (rib? (any/c . -> . boolean?))
-   (rib-name (rib? . -> . symbol?))
-   (rib-exp (rib? . -> . any/c)))
   
   ;; type red = (make-red compiled-pat ((listof (cons sym tst)) -> any)
   (define-struct red (contractum reduct))

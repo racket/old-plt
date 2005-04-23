@@ -520,7 +520,7 @@ TYPES ----------------------------------------------------------------
 
 EXCEPTIONS -----------------------------------------------------------
 
-  Communication errors are signalled via exn:user structure instances.
+  Communication errors are signalled via exn:fail structure instances.
 
 PROCEDURES -----------------------------------------------------------
 

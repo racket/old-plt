@@ -3204,7 +3204,8 @@ void wxWindowDC::GetPixelFast(int i, int j, int *r, int *g, int *b)
 
   pixel = XGetPixel(X->get_pixel_image_cache, i, j);
 
-  if (wx_alloc_color_is_fast == 2) {
+  if ((wx_alloc_color_is_fast == 2) 
+      && (X->get_pixel_image_cache->depth != 1)) {
     *r = ((pixel >> wx_simple_r_start) & 0xFF);
     *g = ((pixel >> wx_simple_g_start) & 0xFF);
     *b = ((pixel >> wx_simple_b_start) & 0xFF);

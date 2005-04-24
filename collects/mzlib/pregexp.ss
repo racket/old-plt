@@ -2,8 +2,6 @@
 ;Portable regular expressions for Scheme
 ;Dorai Sitaram
 ;http://www.ccs.neu.edu/~dorai/pregexp/pregexp.html
-;Oct 2, 1999
-;Last mod: Nov 30, 2002
 
 (module pregexp mzscheme
         (provide pregexp
@@ -15,9 +13,11 @@
                  pregexp-quote
                  *pregexp-comment-char*)
 
-;Configured for Scheme dialect plt by scmxlate, v 2003-08-24,
+;Configured for Scheme dialect plt by scmxlate, v 2004-09-08,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
+
+(define *pregexp-version* 20050424)
 
 (define *pregexp-comment-char* #\;)
 
@@ -78,7 +78,7 @@
             ((pregexp-read-escaped-char s i n)
              =>
              (lambda (char-i) (list (car char-i) (cadr char-i))))
-            (else (error 'pregexp-read-piece "backslash")))
+            (else (error 'pregexp-read-piece 'backslash)))
            s
            n))
         (else
@@ -229,7 +229,7 @@
                         (if (not pq)
                           (error
                            'pregexp-wrap-quantifier-if-any
-                           "left bracket must be followed by number"))
+                           'left-brace-must-be-followed-by-number))
                         (set-car! (cddr new-re) (car pq))
                         (set-car! (cdddr new-re) (cadr pq))
                         (set! i (caddr pq)))))
@@ -281,7 +281,7 @@
   (lambda (s i n)
     (let loop ((r '()) (i i))
       (if (>= i n)
-        (error 'pregexp-read-char-list "character class ended too soon")
+        (error 'pregexp-read-char-list 'character-class-ended-too-soon)
         (let ((c (string-ref s i)))
           (case c
             ((#\])
@@ -292,16 +292,20 @@
              (let ((char-i (pregexp-read-escaped-char s i n)))
                (if char-i
                  (loop (cons (car char-i) r) (cadr char-i))
-                 (error 'pregexp-read-char-list "backslash"))))
+                 (error 'pregexp-read-char-list 'backslash))))
             ((#\-)
-             (let ((c-prev (car r)))
-               (if (char? c-prev)
-                 (loop
-                  (cons
-                   (list ':char-range c-prev (string-ref s (+ i 1)))
-                   (cdr r))
-                  (+ i 2))
-                 (loop (cons c r) (+ i 1)))))
+             (if (or (null? r)
+                     (let ((i+1 (+ i 1)))
+                       (and (< i+1 n) (char=? (string-ref s i+1) #\]))))
+               (loop (cons c r) (+ i 1))
+               (let ((c-prev (car r)))
+                 (if (char? c-prev)
+                   (loop
+                    (cons
+                     (list ':char-range c-prev (string-ref s (+ i 1)))
+                     (cdr r))
+                    (+ i 2))
+                   (loop (cons c r) (+ i 1))))))
             ((#\[)
              (if (char=? (string-ref s (+ i 1)) #\:)
                (let ((posix-char-class-i
@@ -372,31 +376,42 @@
     (let loop ((s s) (k 0))
       (cond ((null? s) #f) ((= k i) (car s)) (else (loop (cdr s) (+ k 1)))))))
 
+(define pregexp-make-backref-list
+  (lambda (re)
+    (let sub ((re re))
+      (if (pair? re)
+        (let ((car-re (car re)) (sub-cdr-re (sub (cdr re))))
+          (if (eqv? car-re ':sub)
+            (cons (cons re #f) sub-cdr-re)
+            (append (sub car-re) sub-cdr-re)))
+        '()))))
+
 (define pregexp-match-positions-aux
   (lambda (re s sn start n i)
-    (let ((case-sensitive? #t))
-      (let sub ((re re) (i i) (backrefs '()) (sk list) (fk (lambda () #f)))
+    (let ((identity (lambda (x) x))
+          (backrefs (pregexp-make-backref-list re))
+          (case-sensitive? #t))
+      (let sub ((re re) (i i) (sk identity) (fk (lambda () #f)))
         (cond
-         ((eqv? re ':bos) (if (= i 0) (sk i backrefs) (fk)))
-         ((eqv? re ':eos) (if (>= i sn) (sk i backrefs) (fk)))
-         ((eqv? re ':empty) (sk i backrefs))
-         ((eqv? re ':wbdry)
-          (if (pregexp-at-word-boundary? s i n) (sk i backrefs) (fk)))
+         ((eqv? re ':bos) (if (= i 0) (sk i) (fk)))
+         ((eqv? re ':eos) (if (>= i sn) (sk i) (fk)))
+         ((eqv? re ':empty) (sk i))
+         ((eqv? re ':wbdry) (if (pregexp-at-word-boundary? s i n) (sk i) (fk)))
          ((eqv? re ':not-wbdry)
-          (if (pregexp-at-word-boundary? s i n) (fk) (sk i backrefs)))
+          (if (pregexp-at-word-boundary? s i n) (fk) (sk i)))
          ((and (char? re) (< i n))
           (if ((if case-sensitive? char=? char-ci=?) (string-ref s i) re)
-            (sk (+ i 1) backrefs)
+            (sk (+ i 1))
             (fk)))
          ((and (not (pair? re)) (< i n))
           (if (pregexp-check-if-in-char-class? (string-ref s i) re)
-            (sk (+ i 1) backrefs)
+            (sk (+ i 1))
             (fk)))
          ((and (pair? re) (eqv? (car re) ':char-range) (< i n))
           (let ((c (string-ref s i)))
             (if (let ((c< (if case-sensitive? char<=? char-ci<=?)))
                   (and (c< (cadr re) c) (c< c (caddr re))))
-              (sk (+ i 1) backrefs)
+              (sk (+ i 1))
               (fk))))
          ((pair? re)
           (case (car re)
@@ -411,28 +426,17 @@
                    (sub
                     (car chars)
                     i
-                    backrefs
                     sk
                     (lambda () (loup-one-of-chars (cdr chars))))))))
             ((:neg-char)
              (if (>= i n)
                (fk)
-               (sub
-                (cadr re)
-                i
-                backrefs
-                (lambda (i1 backrefs1) (fk))
-                (lambda () (sk (+ i 1) backrefs)))))
+               (sub (cadr re) i (lambda (i1) (fk)) (lambda () (sk (+ i 1))))))
             ((:seq)
-             (let loup-seq ((res (cdr re)) (i i) (backrefs backrefs))
+             (let loup-seq ((res (cdr re)) (i i))
                (if (null? res)
-                 (sk i backrefs)
-                 (sub
-                  (car res)
-                  i
-                  backrefs
-                  (lambda (i1 backrefs1) (loup-seq (cdr res) i1 backrefs1))
-                  fk))))
+                 (sk i)
+                 (sub (car res) i (lambda (i1) (loup-seq (cdr res) i1)) fk))))
             ((:or)
              (let loup-or ((res (cdr re)))
                (if (null? res)
@@ -440,38 +444,31 @@
                  (sub
                   (car res)
                   i
-                  backrefs
-                  (lambda (i1 backrefs1)
-                    (or (sk i1 backrefs1) (loup-or (cdr res))))
+                  (lambda (i1) (or (sk i1) (loup-or (cdr res))))
                   (lambda () (loup-or (cdr res)))))))
             ((:backref)
-             (let ((backref (pregexp-list-ref backrefs (cadr re))))
+             (let ((backref (cdr (pregexp-list-ref backrefs (cadr re)))))
                (if backref
                  (pregexp-string-match
                    (substring s (car backref) (cdr backref))
                    s
                    i
                    n
-                   (lambda (i) (sk i backrefs))
+                   (lambda (i) (sk i))
                    fk)
-                 (sk i backrefs))))
+                 (sk i))))
             ((:sub)
-             (let* ((sub-backref (cons i i))
-                    (backrefs (append backrefs (list sub-backref))))
-               (sub
-                (cadr re)
-                i
-                backrefs
-                (lambda (i1 backrefs1)
-                  (set-cdr! sub-backref i1)
-                  (sk i1 backrefs1))
-                fk)))
+             (sub
+              (cadr re)
+              i
+              (lambda (i1) (set-cdr! (assv re backrefs) (cons i i1)) (sk i1))
+              fk))
             ((:lookahead)
-             (let ((found-it? (sub (cadr re) i backrefs list (lambda () #f))))
-               (if found-it? (sk i backrefs) (fk))))
+             (let ((found-it? (sub (cadr re) i identity (lambda () #f))))
+               (if found-it? (sk i) (fk))))
             ((:neg-lookahead)
-             (let ((found-it? (sub (cadr re) i backrefs list (lambda () #f))))
-               (if found-it? (fk) (sk i backrefs))))
+             (let ((found-it? (sub (cadr re) i identity (lambda () #f))))
+               (if found-it? (fk) (sk i))))
             ((:lookbehind)
              (let ((n-actual n) (sn-actual sn))
                (set! n i)
@@ -480,12 +477,11 @@
                        (sub
                         (list ':seq '(:between #f 0 #f :any) (cadr re) ':eos)
                         0
-                        backrefs
-                        list
+                        identity
                         (lambda () #f))))
                  (set! n n-actual)
                  (set! sn sn-actual)
-                 (if found-it? (sk i backrefs) (fk)))))
+                 (if found-it? (sk i) (fk)))))
             ((:neg-lookbehind)
              (let ((n-actual n) (sn-actual sn))
                (set! n i)
@@ -494,72 +490,51 @@
                        (sub
                         (list ':seq '(:between #f 0 #f :any) (cadr re) ':eos)
                         0
-                        backrefs
-                        list
+                        identity
                         (lambda () #f))))
                  (set! n n-actual)
                  (set! sn sn-actual)
-                 (if found-it? (fk) (sk i backrefs)))))
+                 (if found-it? (fk) (sk i)))))
             ((:no-backtrack)
-             (let ((found-it? (sub (cadr re) i backrefs list (lambda () #f))))
-               (if found-it? (sk (car found-it?) (cadr found-it?)) (fk))))
+             (let ((found-it? (sub (cadr re) i identity (lambda () #f))))
+               (if found-it? (sk found-it?) (fk))))
             ((:case-sensitive :case-insensitive)
              (let ((old case-sensitive?))
                (set! case-sensitive? (eqv? (car re) ':case-sensitive))
                (sub
                 (cadr re)
                 i
-                backrefs
-                (lambda (i1 backrefs1)
-                  (set! case-sensitive? old)
-                  (sk i1 backrefs1))
+                (lambda (i1) (set! case-sensitive? old) (sk i1))
                 (lambda () (set! case-sensitive? old) (fk)))))
             ((:between)
              (let* ((maximal? (not (cadr re)))
                     (p (caddr re))
                     (q (cadddr re))
-                    (re (car (cddddr re)))
-                    (subpat? (and (pair? re) (eqv? (car re) ':sub))))
-               (let loup-p ((k 0) (i i) (cbackrefs 'no-match-yet))
+                    (re (car (cddddr re))))
+               (let loup-p ((k 0) (i i))
                  (if (< k p)
-                   (sub
-                    re
-                    i
-                    backrefs
-                    (lambda (i1 backrefs1) (loup-p (+ k 1) i1 backrefs1))
-                    fk)
+                   (sub re i (lambda (i1) (loup-p (+ k 1) i1)) fk)
                    (let ((q (and q (- q p))))
-                     (let loup-q ((k 0) (i i) (cbackrefs cbackrefs))
-                       (let ((fk
-                              (lambda ()
-                                (sk
-                                 i
-                                 (if (eqv? cbackrefs 'no-match-yet)
-                                   (if subpat?
-                                     (append backrefs (list #f))
-                                     backrefs)
-                                   cbackrefs)))))
+                     (let loup-q ((k 0) (i i))
+                       (let ((fk (lambda () (sk i))))
                          (if (and q (>= k q))
                            (fk)
                            (if maximal?
                              (sub
                               re
                               i
-                              backrefs
-                              (lambda (i1 backrefs1)
-                                (or (loup-q (+ k 1) i1 backrefs1) (fk)))
+                              (lambda (i1) (or (loup-q (+ k 1) i1) (fk)))
                               fk)
                              (or (fk)
                                  (sub
                                   re
                                   i
-                                  backrefs
-                                  (lambda (i1 backrefs1)
-                                    (loup-q (+ k 1) i1 backrefs1))
+                                  (lambda (i1) (loup-q (+ k 1) i1))
                                   fk)))))))))))
             (else (error 'pregexp-match-positions-aux))))
          ((>= i n) (fk))
-         (else (error 'pregexp-match-positions-aux)))))))
+         (else (error 'pregexp-match-positions-aux))))
+      (let ((backrefs (map cdr backrefs))) (and (car backrefs) backrefs)))))
 
 (define pregexp-replace-aux
   (lambda (str ins n backrefs)
@@ -596,8 +571,15 @@
 
 (define pregexp-match-positions
   (lambda (pat str . opt-args)
-    (let* ((pat (if (string? pat) (pregexp pat) pat))
-           (str-len (string-length str))
+    (cond
+     ((string? pat) (set! pat (pregexp pat)))
+     ((pair? pat) #t)
+     (else
+      (error
+       'pregexp-match-positions
+       'pattern-must-be-compiled-or-string-regexp
+       pat)))
+    (let* ((str-len (string-length str))
            (start
             (if (null? opt-args)
               0
@@ -607,9 +589,8 @@
            (end (if (null? opt-args) str-len (car opt-args))))
       (let loop ((i start))
         (and (<= i end)
-             (let ((vv
-                    (pregexp-match-positions-aux pat str str-len start end i)))
-               (if vv (cadr vv) (loop (+ i 1)))))))))
+             (or (pregexp-match-positions-aux pat str str-len start end i)
+                 (loop (+ i 1))))))))
 
 (define pregexp-match
   (lambda (pat str . opt-args)

@@ -520,10 +520,20 @@
              (let* ((maximal? (not (cadr re)))
                     (p (caddr re))
                     (q (cadddr re))
+                    (could-loop-infinitely? (and maximal? (not q)))
                     (re (car (cddddr re))))
                (let loup-p ((k 0) (i i))
                  (if (< k p)
-                   (sub re i (lambda (i1) (loup-p (+ k 1) i1)) fk)
+                   (sub
+                    re
+                    i
+                    (lambda (i1)
+                      (if (and could-loop-infinitely? (= i1 i))
+                        (error
+                         'pregexp-match-positions-aux
+                         'greedy-quantifier-operand-could-be-empty))
+                      (loup-p (+ k 1) i1))
+                    fk)
                    (let ((q (and q (- q p))))
                      (let loup-q ((k 0) (i i))
                        (let ((fk (lambda () (sk i))))
@@ -533,7 +543,12 @@
                              (sub
                               re
                               i
-                              (lambda (i1) (or (loup-q (+ k 1) i1) (fk)))
+                              (lambda (i1)
+                                (if (and could-loop-infinitely? (= i1 i))
+                                  (error
+                                   'pregexp-match-positions-aux
+                                   'greedy-quantifier-operand-could-be-empty))
+                                (or (loup-q (+ k 1) i1) (fk)))
                               fk)
                              (or (fk)
                                  (sub

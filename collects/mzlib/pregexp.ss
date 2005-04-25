@@ -448,7 +448,16 @@
                   (lambda (i1) (or (sk i1) (loup-or (cdr res))))
                   (lambda () (loup-or (cdr res)))))))
             ((:backref)
-             (let ((backref (cdr (pregexp-list-ref backrefs (cadr re)))))
+             (let* ((c (pregexp-list-ref backrefs (cadr re)))
+                    (backref
+                      (cond
+                       (c => cdr)
+                       (else
+                        (error
+                         'pregexp-match-positions-aux
+                         'non-existent-backref
+                         re)
+                        #f))))
                (if backref
                  (pregexp-string-match
                    (substring s (car backref) (cdr backref))
@@ -664,4 +673,3 @@
 
 
 )
-

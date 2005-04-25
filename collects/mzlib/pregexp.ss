@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *pregexp-version* 20050424)
+(define *pregexp-version* 20050425)
 
 (define *pregexp-comment-char* #\;)
 
@@ -56,14 +56,15 @@
         ((#\$) (list ':eos (+ i 1)))
         ((#\.) (pregexp-wrap-quantifier-if-any (list ':any (+ i 1)) s n))
         ((#\[)
-         (pregexp-wrap-quantifier-if-any
-           (case (string-ref s (+ i 1))
-             ((#\^)
-              (let ((vv (pregexp-read-char-list s (+ i 2) n)))
-                (list (list ':neg-char (car vv)) (cadr vv))))
-             (else (pregexp-read-char-list s (+ i 1) n)))
-           s
-           n))
+         (let ((i+1 (+ i 1)))
+           (pregexp-wrap-quantifier-if-any
+             (case (and (< i+1 n) (string-ref s i+1))
+               ((#\^)
+                (let ((vv (pregexp-read-char-list s (+ i 2) n)))
+                  (list (list ':neg-char (car vv)) (cadr vv))))
+               (else (pregexp-read-char-list s i+1 n)))
+             s
+             n)))
         ((#\()
          (pregexp-wrap-quantifier-if-any
            (pregexp-read-subpattern s (+ i 1) n)
@@ -663,3 +664,4 @@
 
 
 )
+

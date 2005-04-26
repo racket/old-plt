@@ -3856,8 +3856,6 @@ static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
 
   scheme_count_lines(argv[0]);
 
-  scheme_tell_all(argv[0], NULL, NULL, NULL);
-
   return scheme_void;
 }
 

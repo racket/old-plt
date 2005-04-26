@@ -2767,7 +2767,7 @@ Scheme_Object *make_special_comment(int argc, Scheme_Object **argv)
 
   o = scheme_alloc_small_object();
   o->type = scheme_special_comment_type;
-  ((Scheme_Small_Object *)o)->u.ptr_val = argv[0];
+  SCHEME_PTR_VAL(o) = argv[0];
 
   return o;
 }

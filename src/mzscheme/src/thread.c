@@ -1583,8 +1583,13 @@ static void run_closers(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void
 
 static void run_atexit_closers(void)
 {
+  mz_jmp_buf newbuf;
+
   scheme_start_atomic();
-  scheme_do_close_managed(NULL, run_closers);
+  scheme_current_thread->error_buf = &newbuf;
+  if (!scheme_setjmp(newbuf)) {  
+    scheme_do_close_managed(NULL, run_closers);
+  }
 }
 
 void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f)
@@ -3269,7 +3274,8 @@ static Scheme_Object *raise_user_break(int argc, Scheme_Object ** volatile argv)
     scheme_longjmp(*savebuf, 1);
   }
 
-  return scheme_void;
+  /* Can't get here */
+  return NULL;
 }
 
 static void raise_break(Scheme_Thread *p)

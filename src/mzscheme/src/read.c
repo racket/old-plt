@@ -81,6 +81,7 @@ static Scheme_Object *print_honu(int, Scheme_Object *[]);
 #define RETURN_FOR_SPECIAL_COMMENT  0x1
 #define RETURN_FOR_HASH_COMMENT     0x2
 #define RETURN_FOR_DELIM            0x4
+#define RETURN_FOR_COMMENT          0x8
 
 static
 #ifndef NO_INLINE_KEYWORD
@@ -206,6 +207,8 @@ static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 				    Scheme_Hash_Table **ht,
 				    Scheme_Object *indentation,
 				    ReadParams *params);
+
+static Scheme_Object *copy_to_protect_placeholders(Scheme_Object *v, Scheme_Object *src, Scheme_Hash_Table **ht);
 
 #define READTABLE_WHITESPACE 0x1
 #define READTABLE_CONTINUING 0x2
@@ -818,6 +821,8 @@ read_inner_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table *
 	  s = scheme_make_stx_w_offset(scheme_false, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	  v = scheme_datum_to_syntax(v, s, scheme_false, 1, 0);
 	}
+	if (!special_value)
+	  v = copy_to_protect_placeholders(v, stxsrc, ht);
 	return v;
       }
     case ']':
@@ -901,7 +906,8 @@ read_inner_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table *
 	  if (ch == SCHEME_SPECIAL)
 	    scheme_get_ready_read_special(port, stxsrc, ht);
 	}
-	if (table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+	if ((table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+	    || (comment_mode & RETURN_FOR_COMMENT))
 	  return NULL;
 	goto start_over;
       }
@@ -960,9 +966,9 @@ read_inner_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table *
 	      scheme_hash_set(*ht, an_uninterned_symbol, v);
 	    }
 
-	    if (comment_mode & RETURN_FOR_HASH_COMMENT)
-	      return NULL;
-	    if (table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+	    if ((comment_mode & RETURN_FOR_HASH_COMMENT)
+		|| (table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+		|| (comment_mode & RETURN_FOR_COMMENT))
 	      return NULL;
 
 	    goto start_over;
@@ -1171,7 +1177,8 @@ read_inner_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table *
 
 	      if ((ch2 == '|') && (ch == '#')) {
 		if (!(depth--)) {
-		  if (table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+		  if ((table && (comment_mode & RETURN_FOR_SPECIAL_COMMENT))
+		      || (comment_mode & RETURN_FOR_COMMENT))
 		    return NULL;
 		  goto start_over;
 		}
@@ -1731,9 +1738,6 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 
 	scheme_hash_set(t, key, val);
       }
-    } else {
-      /* Make it immutable: */
-      SCHEME_SET_IMMUTABLE(obj);
     }
   }
 
@@ -1795,7 +1799,9 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int h
   }
 
   do {
-    v = read_inner_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT, 
+    v = read_inner_inner(port, stxsrc, ht, scheme_null, &params, 
+			 (RETURN_FOR_HASH_COMMENT 
+			  | (recur ? (RETURN_FOR_COMMENT | RETURN_FOR_SPECIAL_COMMENT) : 0)),
 			 extra_char, 
 			 (init_readtable 
 			  ? (SCHEME_FALSEP(init_readtable)
@@ -1818,13 +1824,22 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int h
       if (!v)
 	*ht = NULL;
     }
+
+    if (!v && recur) {
+      /* Return to indicate comment: */
+      v = scheme_alloc_small_object();
+      v->type = scheme_special_comment_type;
+      SCHEME_PTR_VAL(v) = scheme_false;
+      return v;
+    }
   } while (!v);
 
   if (recur) {
     /* For a recursive read, make sure that the result is a placeholder. */
     Scheme_Object *ph;
 
-    if (!SAME_TYPE(SCHEME_TYPE(v), scheme_placeholder_type)) {
+    if (!SCHEME_EOFP(v)
+	&& !SAME_TYPE(SCHEME_TYPE(v), scheme_placeholder_type)) {
       if (!*ht) {
 	/* Create hash table to indicate that this placeholder
 	   will need to be resolved, maybe: */
@@ -2658,6 +2673,7 @@ read_vector (Scheme_Object *port,
   }
 
   if (stxsrc) {
+    SCHEME_SET_VECTOR_IMMUTABLE(vec);
     ((Scheme_Stx *)lresult)->val = vec;
     return lresult;
   } else
@@ -3185,8 +3201,11 @@ read_quote(char *who, Scheme_Object *quote_symbol, int len,
 	 ? scheme_make_stx_w_offset(quote_symbol, line, col, pos, len, stxsrc, STX_SRCTAG)
 	 : quote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
-  if (stxsrc)
+  if (stxsrc) {
+    SCHEME_SET_PAIR_IMMUTABLE(ret);
+    SCHEME_SET_PAIR_IMMUTABLE(SCHEME_CDR(ret));
     ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+  }
   return ret;
 }
 
@@ -3206,8 +3225,10 @@ static Scheme_Object *read_box(Scheme_Object *port,
 
   bx = scheme_box(o);
 
-  if (stxsrc)
+  if (stxsrc) {
+    SCHEME_SET_BOX_IMMUTABLE(bx);
     bx = scheme_make_stx_w_offset(bx, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+  }
 
   return bx;
 }
@@ -4447,21 +4468,6 @@ static Scheme_Object *readtable_call(int w_char, int ch, Scheme_Object *proc, Re
   Scheme_Object *a[6], *v;
   Scheme_Cont_Frame_Data cframe;
   
-  if (src && (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type))) {
-    Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
-
-    if (pos >= 0)
-      pos += o->pos;
-    if (col >= 0) {
-      if (line == 1)
-	col += o->col;
-    }
-    if (line >= 0)
-      line += o->line;
-
-    src = o->src;
-  }
-
   if (w_char) {
     a[0] = scheme_make_character(ch);
     a[1] = port;
@@ -4507,6 +4513,8 @@ static Scheme_Object *readtable_call(int w_char, int ch, Scheme_Object *proc, Re
       s = scheme_make_stx_w_offset(scheme_false, line, col, pos, SPAN(port, pos), src, STX_SRCTAG);
       v = scheme_datum_to_syntax(v, s, scheme_false, 1, 0);
     }
+
+    v = copy_to_protect_placeholders(v, src, ht);
   }
   
   return v;
@@ -4839,6 +4847,154 @@ static Scheme_Object *read_reader(Scheme_Object *port,
     return NULL;
   else
     return v;
+}
+
+static int is_placeholder(Scheme_Object *a, Scheme_Object *src)
+{
+  if (src)
+    a = SCHEME_STX_VAL(a);
+  return SAME_TYPE(scheme_placeholder_type, SCHEME_TYPE(a));
+}
+
+#ifdef DO_STACK_CHECK
+static Scheme_Object *copy_to_protect(Scheme_Object *v, Scheme_Object *src, Scheme_Hash_Table *ht, Scheme_Hash_Table **oht);
+
+static Scheme_Object *copy_to_protect_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *v = (Scheme_Object *)p->ku.k.p1;
+  Scheme_Object *src = (Scheme_Object *)p->ku.k.p2;
+  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p3;
+  Scheme_Hash_Table **oht = (Scheme_Hash_Table **)p->ku.k.p4;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
+
+  return copy_to_protect(v, src, ht, oht);
+}
+#endif
+
+static Scheme_Object *copy_to_protect(Scheme_Object *v, Scheme_Object *src, Scheme_Hash_Table *ht, Scheme_Hash_Table **oht)
+{
+  Scheme_Object *o, *ph;
+  int immutable;
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+      Scheme_Thread *p = scheme_current_thread;
+      p->ku.k.p1 = (void *)v;
+      p->ku.k.p2 = (void *)src;
+      p->ku.k.p3 = (void *)ht;
+      p->ku.k.p4 = (void *)oht;
+      return scheme_handle_stack_overflow(copy_to_protect_k);
+    }
+  }
+#endif
+  SCHEME_USE_FUEL(1);
+
+  if (src)
+    o = SCHEME_STX_VAL(v);
+  else
+    o = v;
+
+  if (SCHEME_PAIRP(o)
+      || SCHEME_BOXP(o)
+      || SCHEME_VECTORP(o)) {
+    ph = scheme_hash_get(ht, o);
+    if (ph) {
+      if (src) {
+	if (SCHEME_STXP(SCHEME_PTR_VAL(ph)))
+	  scheme_make_graph_stx(SCHEME_PTR_VAL(ph), -1, -1, -1);
+	else
+	  SCHEME_PTR_VAL(ph) = scheme_true;
+      }
+      if (!*oht) {
+	/* Let outer read know that it needs to resolve placeholders */
+	ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	*oht = ht;
+      }
+      return ph;
+    }
+
+    ph = scheme_alloc_small_object();
+    ph->type = scheme_placeholder_type;
+    SCHEME_PTR_VAL(ph) = scheme_false;
+    scheme_hash_set(ht, o, ph);
+  } else
+    ph = NULL;
+
+  if (SCHEME_PAIRP(o)) {
+    Scheme_Object *a, *d;
+    a = copy_to_protect(SCHEME_CAR(o), src, ht, oht);
+    d = copy_to_protect(SCHEME_CDR(o), src, ht, oht);
+    immutable = SCHEME_IMMUTABLEP(o);
+    if (immutable 
+	&& SAME_OBJ(a, SCHEME_CAR(o))
+	&& SAME_OBJ(d, SCHEME_CDR(o))
+	&& !is_placeholder(a, src)
+	&& !is_placeholder(d, src))
+      /* No copy needed */
+      return v;
+    o = scheme_make_pair(a, d);
+    if (src || immutable)
+      SCHEME_SET_PAIR_IMMUTABLE(o);
+  } else if (SCHEME_BOXP(o)) {
+    Scheme_Object *x;
+    x = copy_to_protect(SCHEME_BOX_VAL(o), src, ht, oht);
+    immutable = SCHEME_IMMUTABLEP(o);
+    if (immutable
+	&& SAME_OBJ(x, SCHEME_BOX_VAL(o))
+	&& !is_placeholder(x, src))
+      /* No copy needed */
+      return v;
+    o = scheme_box(x);
+    if (src || immutable)
+      SCHEME_SET_BOX_IMMUTABLE(o);
+  } else if (SCHEME_VECTORP(o)) {
+    int immutable = SCHEME_IMMUTABLEP(o);
+    int i, len, use_copy = !immutable;
+    Scheme_Object *a, *o2;
+
+    len = SCHEME_VEC_SIZE(o);
+    o2 = scheme_make_vector(len, NULL);
+
+    for (i = 0; i < len; i++) {
+      a = copy_to_protect(SCHEME_VEC_ELS(o)[i], src, ht, oht);
+      if (!SAME_OBJ(a, SCHEME_VEC_ELS(o)[i])
+	  || is_placeholder(a, src))
+	use_copy = 1;
+      SCHEME_VEC_ELS(o2)[i] = a;
+    }
+    if (!use_copy)
+      /* No copy needed */
+      return v;
+    o = o2;
+    if (src || immutable)
+      SCHEME_SET_VECTOR_IMMUTABLE(o);
+  } else
+    return v;
+
+  if (src) {
+    o = scheme_datum_to_syntax(o, v, v, 0, 2);
+    if (ph && SCHEME_TRUEP(SCHEME_PTR_VAL(ph)))
+      scheme_make_graph_stx(o, -1, -1, -1);
+  }
+
+  if (ph)
+    SCHEME_PTR_VAL(ph) = o;
+
+  return o;
+}
+
+static Scheme_Object *copy_to_protect_placeholders(Scheme_Object *v, Scheme_Object *src, Scheme_Hash_Table **oht)
+{
+  Scheme_Hash_Table *ht;
+  ht = scheme_make_hash_table(SCHEME_hash_ptr);
+  return copy_to_protect(v, src, ht, oht);
 }
 
 /*========================================================================*/

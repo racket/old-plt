@@ -144,8 +144,6 @@ Scheme_Object *scheme_default_global_print_handler;
 
 Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
 
-static mzshort drh_cases[4] = { 1, 1, 3, 3};
-
 #define fail_err_symbol scheme_false
 
 /*========================================================================*/
@@ -198,17 +196,7 @@ scheme_init_port_fun(Scheme_Env *env)
   default_read_handler = scheme_make_closed_prim_w_arity(sch_default_read_handler,
 							 NULL,
 							 "default-port-read-handler",
-							 1, 3);
-  /* Fixup arity: */
-  {
-    Scheme_Closed_Case_Primitive_Proc *c;
-    c = MALLOC_ONE_TAGGED(Scheme_Closed_Case_Primitive_Proc);
-    memcpy(c, default_read_handler, sizeof(Scheme_Closed_Primitive_Proc));
-    c->p.mina = -2;
-    c->p.maxa = -2;
-    c->cases = drh_cases;
-    default_read_handler = (Scheme_Object *)c;
-  }
+							 1, 2);
 
 
   default_display_handler = scheme_make_prim_w_arity(sch_default_display_handler,
@@ -345,7 +333,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-input-port",
 			     scheme_make_prim_w_arity(make_input_port,
 						      "make-input-port",
-						      4, 7),
+						      4, 8),
 			     env);
   scheme_add_global_constant("make-output-port",
 			     scheme_make_prim_w_arity(make_output_port,
@@ -366,12 +354,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("read-syntax",
 			     scheme_make_prim_w_arity(read_syntax_f,
 						      "read-syntax",
-						      0, 3),
+						      0, 2),
 			     env);
   scheme_add_global_constant("read-syntax/recursive",
 			     scheme_make_prim_w_arity(read_syntax_recur_f,
 						      "read-syntax/recursive",
-						      0, 5),
+						      0, 4),
 			     env);
   scheme_add_global_constant("read-honu",
 			     scheme_make_prim_w_arity(read_honu_f,
@@ -386,12 +374,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("read-honu-syntax",
 			     scheme_make_prim_w_arity(read_honu_syntax_f,
 						      "read-honu-syntax",
-						      0, 3),
+						      0, 2),
 			     env);
   scheme_add_global_constant("read-honu-syntax/recursive",
 			     scheme_make_prim_w_arity(read_honu_syntax_recur_f,
 						      "read-honu-syntax/recursive",
-						      0, 3),
+						      0, 2),
 			     env);
   scheme_add_global_constant("read-char",
 			     scheme_make_prim_w_arity(read_char,
@@ -2233,6 +2221,11 @@ make_input_port(int argc, Scheme_Object *argv[])
     scheme_check_proc_arity2("make-input-port", 3, 5, argc, argv, 1); /* peeked-read */
   if (argc > 6)
     scheme_check_proc_arity2("make-input-port", 0, 6, argc, argv, 1); /* location */
+  if (argc > 7) {
+    if (!((SCHEME_INTP(argv[7]) && SCHEME_INT_VAL(argv[7]) > 0)
+	  || (SCHEME_BIGNUMP(argv[7]) && SCHEME_BIGPOS(argv[7]))))
+      scheme_wrong_type("make-input-port", "exact, positive integer", 7, argc, argv);
+  }
   name = argv[0];
 
   /* It makes no sense to supply progress-evt without peek: */
@@ -2244,12 +2237,12 @@ make_input_port(int argc, Scheme_Object *argv[])
   /* It makes no sense to supply peeked-read without progress-evt: */
   if ((argc > 5) && SCHEME_FALSEP(argv[4]) && !SCHEME_FALSEP(argv[5]))
     scheme_arg_mismatch("make-input-port",
-			"progress-evt argument is #f, but peeked-read argument is not: ",
+			"progress-evt argument is #f, but commit argument is not: ",
 			argv[6]);
   /* Vice-versa: */
   if ((argc > 4) && !SCHEME_FALSEP(argv[4]) && ((argc < 6) || SCHEME_FALSEP(argv[5])))
     scheme_arg_mismatch("make-input-port",
-			"peeked-read argument is #f, but progress-evt argument is not: ",
+			"commit argument is #f, but progress-evt argument is not: ",
 			argv[6]);
 
   uip = MALLOC_ONE_RT(User_Input_Port);
@@ -2289,6 +2282,13 @@ make_input_port(int argc, Scheme_Object *argv[])
 
   if (!uip->peek_proc)
     ip->pending_eof = 1; /* means that pending EOFs should be tracked */
+
+  if (argc > 7) {
+    if (SCHEME_INTP(argv[7]))
+      ip->position = (SCHEME_INT_VAL(argv[7]) - 1);
+    else
+      ip->position = -1;
+  }
 
   return (Scheme_Object *)ip;
 }
@@ -2612,85 +2612,18 @@ with_input_from_file(int argc, Scheme_Object *argv[])
   return v;
 }
 
-static int check_offset_list(Scheme_Object *l)
-{
-  Scheme_Object *a;
-
-  if (SCHEME_PAIRP(l)) {
-    a = SCHEME_CAR(l);
-    if (SCHEME_FALSEP(a) || scheme_nonneg_exact_p(a)) {
-      l = SCHEME_CDR(l);
-      if (SCHEME_PAIRP(l)) {
-	a = SCHEME_CAR(l);
-	if (SCHEME_FALSEP(a) || scheme_nonneg_exact_p(a)) {
-	  l = SCHEME_CDR(l);
-	  if (SCHEME_PAIRP(l)) {
-	    a = SCHEME_CAR(l);
-	    if (SCHEME_FALSEP(a) || scheme_nonneg_exact_p(a)) {
-	      l = SCHEME_CDR(l);
-	      if (SCHEME_NULLP(l))
-		return 1;
-	    }
-	  }
-	}
-      }
-    }
-  }
-
-  return 0;
-}
-
-static Scheme_Object *make_offset(Scheme_Object *delta, Scheme_Object *src)
-{
-  Scheme_Stx_Offset *o;
-  Scheme_Object *line, *col, *pos;
-
-  line = SCHEME_CAR(delta);
-  delta = SCHEME_CDR(delta);
-  col = SCHEME_CAR(delta);
-  pos = SCHEME_CADR(delta);
-
-  /* Offsets are too large => lost track */
-  if (SCHEME_FALSEP(line) || SCHEME_BIGNUMP(line))
-    line = scheme_make_integer(-1);
-  if (SCHEME_FALSEP(col) || SCHEME_BIGNUMP(col))
-    col = scheme_make_integer(-1);
-  if (SCHEME_FALSEP(pos) || SCHEME_BIGNUMP(pos))
-    pos = scheme_make_integer(-1);
-
-  o = MALLOC_ONE_TAGGED(Scheme_Stx_Offset);
-  o->so.type = scheme_stx_offset_type;
-  o->src = src;
-  o->line = SCHEME_INT_VAL(line);
-  o->col = SCHEME_INT_VAL(col);
-  o->pos = SCHEME_INT_VAL(pos);
-
-  if (!o->line && !o->col && !o->pos)
-    return src;
-
-  return (Scheme_Object *)o;
-}
-
 static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Object *argv[])
 {
   Scheme_Object *src;
 
-  if (!(argc == 1) && !(argc == 3))
-    scheme_case_lambda_wrong_count("default-port-read-handler", argc, argv, 0, 2, 1, 1, 3, 3);
-
   if (!SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("default-port-read-handler", "input-port", 0, argc, argv);
-
-  if (argc == 3) {
-    if (!check_offset_list(argv[2]))
-      scheme_wrong_type("default-port-read-handler", "#f or list of three non-negative exact integers or #fs", 2, argc, argv);
-  }
 
   if ((Scheme_Object *)argv[0] == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
   if (argc > 1)
-    src = make_offset(argv[2], argv[1]);
+    src = argv[1];
   else
     src = NULL;
 
@@ -2756,7 +2689,7 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_recur_f(int argc, Scheme_Object *argv[])
 {
-  return do_read_f("read/recusrive", argc, argv, 0, 1);
+  return do_read_f("read/recursive", argc, argv, 0, 1);
 }
 
 static Scheme_Object *read_honu_f(int argc, Scheme_Object *argv[])
@@ -2772,7 +2705,6 @@ static Scheme_Object *read_honu_recur_f(int argc, Scheme_Object *argv[])
 static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode, int recur)
 {
   Scheme_Object *port, *readtable = NULL;
-  Scheme_Object *delta = scheme_false;
   int pre_char = -1;
 
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
@@ -2783,30 +2715,16 @@ static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object 
   else
     port = CURRENT_INPUT_PORT(scheme_current_config());
 
-  if (argc > 2) {
-    /* Argument should be a list: (list line col pos) */
-    if (!check_offset_list(argv[2]))
-      scheme_wrong_type(who, "#f or list of three non-negative exact integers or #fs", 2, argc, argv);
-
-    delta = argv[2];
-  }
-
   if (recur && !honu_mode) {
-    pre_char = extract_recur_args(who, argc, argv, 2, &readtable);
+    pre_char = extract_recur_args(who, argc, argv, 1, &readtable);
   }
   
   if (((Scheme_Input_Port *)port)->read_handler && !honu_mode && !recur) {
-    Scheme_Object *o[3], *result;
+    Scheme_Object *o[2], *result;
     o[0] = port;
     o[1] = (argc ? argv[0] : ((Scheme_Input_Port *)port)->name);
-    if (SCHEME_FALSEP(delta))
-      delta = scheme_make_pair(scheme_make_integer(0),
-			       scheme_make_pair(scheme_make_integer(0),
-						scheme_make_pair(scheme_make_integer(0),
-								 scheme_null)));
-    o[2] = delta;
 
-    result = _scheme_apply(((Scheme_Input_Port *)port)->read_handler, 3, o);
+    result = _scheme_apply(((Scheme_Input_Port *)port)->read_handler, 2, o);
     if (SCHEME_STXP(result))
       return result;
     else {
@@ -2819,9 +2737,6 @@ static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object 
     Scheme_Object *src;
 
     src = (argc ? argv[0] : ((Scheme_Input_Port *)port)->name);
-
-    if (SCHEME_TRUEP(delta))
-      src = make_offset(delta, src);
 
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
@@ -3824,8 +3739,8 @@ static Scheme_Object *port_read_handler(int argc, Scheme_Object *argv[])
       ip->read_handler = NULL;
     else {
       if (!scheme_check_proc_arity(NULL, 1, 1, argc, argv)
-	  || !scheme_check_proc_arity(NULL, 3, 1, argc, argv)) {
-	scheme_wrong_type("port-read-handler", "procedure (arity 1 and 3)", 1, argc, argv);
+	  || !scheme_check_proc_arity(NULL, 2, 1, argc, argv)) {
+	scheme_wrong_type("port-read-handler", "procedure (arity 1 and 2)", 1, argc, argv);
 	return NULL;
       }
 
@@ -3922,6 +3837,8 @@ static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
     scheme_wrong_type("port-count-lines!", "input port", 0, argc, argv);
 
   scheme_count_lines(argv[0]);
+
+  scheme_tell_all(argv[0], NULL, NULL, NULL);
 
   return scheme_void;
 }

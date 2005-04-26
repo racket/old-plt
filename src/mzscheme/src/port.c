@@ -991,7 +991,7 @@ scheme_make_input_port(Scheme_Object *subtype,
   ip->name = name;
   ip->ungotten_count = 0;
   ip->position = 0;
-  ip->readpos = 0; /* like position, but collapses CRLF */
+  ip->readpos = 0; /* like position, but post UTF-8 decoding, collapses CRLF, etc. */
   ip->lineNumber = 1;
   ip->oldColumn = 0;
   ip->column = 0;
@@ -2619,21 +2619,6 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
   if (!ip->special) {
     scheme_signal_error("no ready special");
     return NULL;
-  }
-
-  if (src && (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type))) {
-    Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
-
-    if (pos >= 0)
-      pos += o->pos;
-    if (col >= 0) {
-      if (line == 1)
-	col += o->col;
-    }
-    if (line >= 0)
-      line += o->line;
-
-    src = o->src;
   }
 
   CHECK_PORT_CLOSED("#<primitive:get-special>", "input", port, ip->closed);

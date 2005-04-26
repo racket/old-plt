@@ -549,7 +549,7 @@ static int check_cycles_fast(Scheme_Object *obj, PrintParams *pp)
   } else if (SAME_TYPE(t, scheme_structure_type)
 	     || SAME_TYPE(t, scheme_proc_struct_type)) {
     if (scheme_is_writable_struct(obj)) {
-      if (pp->print_unreadable)
+      if (!pp->print_unreadable)
 	cycle = 0;
       else
 	/* don't bother with fast checks for writeable structs */
@@ -659,7 +659,7 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     }
   } else if (pp && SCHEME_STRUCTP(obj)) { /* got here => printable */
     if (scheme_is_writable_struct(obj)) {
-      if (!pp->print_unreadable) {
+      if (pp->print_unreadable) {
 	obj = scheme_writable_struct_subs(obj);
 	setup_graph_table(obj, ht, counter, pp);
       }

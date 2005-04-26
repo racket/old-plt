@@ -1,7 +1,14 @@
 (module readerr mzscheme
-  (provide raise-read-error)
+  (provide raise-read-error
+	   raise-read-eof-error)
 
   (define (raise-read-error msg source-name line col pos span)
+    (-raise-read-error make-exn:fail:read msg source-name line col pos span))
+    
+  (define (raise-read-eof-error msg source-name line col pos span)
+    (-raise-read-error make-exn:fail:read:eof msg source-name line col pos span))
+
+  (define (-raise-read-error make-exn:fail:read msg source-name line col pos span)
     (let ([bad-type
            (lambda (which what)
              (raise-type-error 'raise-read-error

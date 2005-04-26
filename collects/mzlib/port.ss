@@ -8,6 +8,7 @@
 	   make-pipe-with-specials
 	   make-input-port/read-to-peek
 	   peeking-input-port
+	   relocate-input-port
 	   merge-input
 	   copy-port
 	   input-port-append
@@ -465,6 +466,41 @@
        (lambda (s skip default)
 	 (peek-bytes-avail!* s (+ delta skip) #f orig-in))
        void)))
+
+  (define relocate-input-port
+    (lambda (p line col pos)
+      (let-values ([(init-l init-c init-p) (port-next-location p)])
+	(make-input-port
+	 (object-name p)
+	 (lambda (s) (let ([v (read-bytes-avail!* s p)])
+		       (if (eq? v 0)
+			   (wrap-evt p (lambda (x) 0))
+			   v)))
+	 (lambda (s skip evt) 
+	   (let ([v (peek-bytes-avail!* s skip evt p)])
+	     (if (eq? v 0)
+		 (choice-evt
+		  (wrap-evt p (lambda (x) 0))
+		  (if evt
+		      (wrap-evt evt (lambda (x) #f))
+		      never-evt))
+		 v)))
+	 (lambda ()
+	   (close-input-port p))
+	 (and (port-provides-progress-evts? p)
+	      (lambda ()
+		(port-progress-evt p)))
+	 (and (port-provides-progress-evts? p)
+	      (lambda (n evt target-evt)
+		(port-commit-peeked n evt target-evt p)))
+	 (lambda ()
+	   (let-values ([(l c p) (port-next-location p)])
+	     (values (and l (+ l (- init-l) line))
+		     (and c (if (eq? l 1)
+				(+ c (- init-c) col)
+				c))
+		     (and p (+ p (- init-p) pos)))))
+	 pos))))
 
   ;; Not kill-safe.
   (define make-pipe-with-specials

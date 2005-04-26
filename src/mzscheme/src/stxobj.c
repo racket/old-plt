@@ -481,32 +481,6 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
 {
   Scheme_Stx_Srcloc *srcloc;
 
-  if (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type)) {
-    Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
-
-    if (pos >= 0) {
-      if (o->pos < 0)
-	pos = -1;
-      else
-	pos += o->pos;
-    }
-    if ((col >= 0) && (o->col >= 0)) {
-      if (line == 1)
-	col += o->col;
-    } else
-      col = -1;
-    if ((line >= 0) && (o->line >= 0))
-      line += o->line;
-    else
-      line = -1;
-
-    if (pos < 0) line = -1;
-    if (line < 0) col = -1;
-    if (col < 0) line = -1;
-
-    src = o->src;
-  }
-
   srcloc = MALLOC_ONE_RT(Scheme_Stx_Srcloc);
 #ifdef MZTAG_REQUIRED
   srcloc->type = scheme_rt_srcloc;

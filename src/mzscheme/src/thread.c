@@ -3329,6 +3329,7 @@ static void exit_or_escape(Scheme_Thread *p)
 }
 
 void scheme_break_thread(Scheme_Thread *p)
+     /* This function can be called from an interrupt handler. */
 {
   if (delay_breaks) {
     delayed_break_ready = 1;
@@ -3873,6 +3874,8 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
 }
 
 void scheme_weak_resume_thread(Scheme_Thread *r)
+     /* This function can be called from an interrupt handler, but
+	only for the main thread, which is never suspended. */
 {
   if (!(r->running & MZTHREAD_USER_SUSPENDED)) {
     if (r->running & MZTHREAD_SUSPENDED) {

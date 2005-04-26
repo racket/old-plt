@@ -2638,6 +2638,7 @@ int mark_user_input_MARK(void *p) {
   gcMARK(uip->progress_evt_proc);
   gcMARK(uip->peeked_read_proc);
   gcMARK(uip->location_proc);
+  gcMARK(uip->count_lines_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
   gcMARK(uip->peeked);
@@ -2653,6 +2654,7 @@ int mark_user_input_FIXUP(void *p) {
   gcFIXUP(uip->progress_evt_proc);
   gcFIXUP(uip->peeked_read_proc);
   gcFIXUP(uip->location_proc);
+  gcFIXUP(uip->count_lines_proc);
   gcFIXUP(uip->close_proc);
   gcFIXUP(uip->reuse_str);
   gcFIXUP(uip->peeked);

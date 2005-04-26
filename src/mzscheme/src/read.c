@@ -2673,7 +2673,8 @@ read_vector (Scheme_Object *port,
   }
 
   if (stxsrc) {
-    SCHEME_SET_VECTOR_IMMUTABLE(vec);
+    if (SCHEME_VEC_SIZE(vec) > 0)
+      SCHEME_SET_VECTOR_IMMUTABLE(vec);
     ((Scheme_Stx *)lresult)->val = vec;
     return lresult;
   } else

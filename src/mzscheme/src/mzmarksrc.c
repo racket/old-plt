@@ -1050,6 +1050,7 @@ mark_user_input {
   gcMARK(uip->progress_evt_proc);
   gcMARK(uip->peeked_read_proc);
   gcMARK(uip->location_proc);
+  gcMARK(uip->count_lines_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
   gcMARK(uip->peeked);

@@ -664,6 +664,16 @@
   (test a-special cadr v)
   (test b-special caddr v))
 
+(require (rename (lib "port.ss") relocate-input-port relocate-input-port))
+(define (shift-port p count-lines? deltas)
+  (let ([p (relocate-input-port p 
+				(add1 (car deltas))
+				(cadr deltas)
+				(add1 (caddr deltas)))])
+    (when count-lines?
+      (port-count-lines! p))
+    p))
+
 ;; Read with src loc:
 (let* ([p (make-p `(#"(list "
 		    ,a-special
@@ -677,7 +687,7 @@
 		    (test p + c 631)
 		    (test #f not (memq p '(707 709)))))]
        [_ (port-count-lines! p)]
-       [v (read-syntax 'dk p '(7 70 700))]
+       [v (read-syntax 'dk (shift-port p #t '(7 70 700)))]
        [l (syntax->list v)]
        [v2 (syntax-object->datum v)])
   (test 'list car v2)
@@ -801,21 +811,21 @@
 ;; Test read-syntax offsets:
 
 (let ([p (open-input-string " a ")])
-  (let ([v (read-syntax 'ok p (list 70 700 7000))])
+  (let ([v (read-syntax 'ok (shift-port p #f (list 70 700 7000)))])
     (test #f syntax-line v)
     (test #f syntax-column v)
     (test 7002 syntax-position v)))
 
 (let ([p (open-input-string " a ")])
   (port-count-lines! p)
-  (let ([v (read-syntax 'ok p (list 70 700 7000))])
+  (let ([v (read-syntax 'ok (shift-port p #t (list 70 700 7000)))])
     (test 71 syntax-line v)
     (test 701 syntax-column v)
     (test 7002 syntax-position v)))
 
 (let ([p (open-input-string " \n a ")])
   (port-count-lines! p)
-  (let ([v (read-syntax 'ok p (list 70 700 7000))])
+  (let ([v (read-syntax 'ok (shift-port p #t (list 70 700 7000)))])
     (test 72 syntax-line v)
     (test 1 syntax-column v)
     (test 7004 syntax-position v)))
@@ -823,7 +833,7 @@
 ;; Check exception record:
 (let ([p (open-input-string " . ")])
   (let ([x (with-handlers ([values values])
-	     (read-syntax 'ok p (list 70 700 7000)))])
+	     (read-syntax 'ok (shift-port p #f (list 70 700 7000))))])
     (test 'ok srcloc-source (car (exn:fail:read-srclocs x)))
     (test #f srcloc-line (car (exn:fail:read-srclocs x)))
     (test #f srcloc-column (car (exn:fail:read-srclocs x)))
@@ -832,7 +842,7 @@
 (let ([p (open-input-string " . ")])
   (port-count-lines! p)
   (let ([x (with-handlers ([values values])
-	     (read-syntax 'ok p (list 70 700 7000)))])
+	     (read-syntax 'ok (shift-port p #t (list 70 700 7000))))])
     (test 'ok srcloc-source (car (exn:fail:read-srclocs x)))
     (test 71 srcloc-line (car (exn:fail:read-srclocs x)))
     (test 701 srcloc-column (car (exn:fail:read-srclocs x)))

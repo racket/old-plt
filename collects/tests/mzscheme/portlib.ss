@@ -92,44 +92,49 @@
 (test-pipe-commit make-pipe)
 (test-pipe-commit (lambda () (make-pipe-with-specials 10000 'special-pipe 'spec-pipe)))
 
-;; pipe-with-specials and limit
-(let-values ([(in out) (make-pipe-with-specials 10)])
-  ;; Check that write events work
-  (test 5 sync (write-bytes-avail-evt #"12345" out))
-  (test #"12345" read-bytes 5 in)
-  (test #f char-ready? in)
-  (test #t sync (write-special-evt 'okay out))
-  (test 11 write-bytes-avail (make-bytes 11 65) out)
-  (test 'okay read-char-or-special in)
-  (test (make-bytes 11 65) read-bytes 11 in)
+;; pipe-with-specials and limit; also used to test peeked-input-port
+(define (test-special-pipe make-pipe-with-specials)
+  (let-values ([(in out) (make-pipe-with-specials 10)])
+    ;; Check that write events work
+    (test 5 sync (write-bytes-avail-evt #"12345" out))
+    (test #"12345" read-bytes 5 in)
+    (test #f char-ready? in)
+    (test #t sync (write-special-evt 'okay out))
+    (test 11 write-bytes-avail (make-bytes 11 65) out)
+    (test 'okay read-char-or-special in)
+    (test (make-bytes 11 65) read-bytes 11 in)
 
-  (let ()
-    (define (bg thunk runs? spec? exn?)
-      ;; Fill the pipe, again:
-      (test 10 write-bytes (make-bytes 10 66) out)
-      (let* ([ex #f]
-	     [th (thread 
-		  (lambda ()
-		    (with-handlers ([exn:fail? (lambda (x) 
-						 (set! ex #t)
-						 (raise x))])
-		      (sync (write-bytes-avail-evt #"x" out)))))])
-	(sleep SLEEP-TIME)
-	(test #t thread-running? th)
-	;; This thunk (and sometimes read) should go through the manager:
-	(thunk)
-	(sleep SLEEP-TIME)
-	(test (not runs?) thread-running? th)
-	(test (make-bytes 10 66) read-bytes 10 in)
-	(thread-wait th)
-	(test ex values exn?))
-      (when spec?
-	(test 'c read-char-or-special in))
-      (test (if exn? eof #"x") read-bytes 1 in))
-    
-    (bg (lambda () (test 0 write-bytes-avail* #"c" out)) #f #f #f)
-    (bg (lambda () (test #t write-special 'c out)) #t #t #f)
-    (bg (lambda () (test (void) close-output-port out)) #t #f #t)))
+    (let ()
+      (define (bg thunk runs? spec? exn?)
+	;; Fill the pipe, again:
+	(test 10 write-bytes (make-bytes 10 66) out)
+	(let* ([ex #f]
+	       [th (thread 
+		    (lambda ()
+		      (with-handlers ([exn:fail? (lambda (x) 
+						   (set! ex #t)
+						   (raise x))])
+			(sync (write-bytes-avail-evt #"x" out)))))])
+	  (sleep SLEEP-TIME)
+	  (test #t thread-running? th)
+	  ;; This thunk (and sometimes read) should go through the manager:
+	  (thunk)
+	  (sleep SLEEP-TIME)
+	  (test (not runs?) thread-running? th)
+	  (test (make-bytes 10 66) read-bytes 10 in)
+	  (thread-wait th)
+	  (test ex values exn?))
+	(when spec?
+	  (test 'c read-char-or-special in))
+	(test (if exn? eof #"x") read-bytes 1 in))
+      
+      (bg (lambda () (test 0 write-bytes-avail* #"c" out)) #f #f #f)
+      (bg (lambda () (test #t write-special 'c out)) #t #t #f)
+      (bg (lambda () (test (void) close-output-port out)) #t #f #t))))
+(test-special-pipe make-pipe-with-specials)
+(test-special-pipe (lambda (limit)
+		     (let-values ([(in out) (make-pipe-with-specials limit)])
+		       (values (peeking-input-port in) out))))
 
 ;; copy-port and make-pipe-with-specials tests
 (let ([s (let loop ([n 10000][l null])

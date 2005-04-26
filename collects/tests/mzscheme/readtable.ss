@@ -3,6 +3,15 @@
 
 (SECTION 'READTABLE)
 
+(require (rename (lib "port.ss") relocate-input-port relocate-input-port))
+(define (shift-rt-port p deltas)
+  (let ([p (relocate-input-port p 
+				(add1 (car deltas))
+				(cadr deltas)
+				(add1 (caddr deltas)))])
+    (port-count-lines! p)
+    p))
+	
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Basic readtable tests
 
@@ -36,6 +45,7 @@
 	 `(percent ,(read/recursive port))]
 	[(ch port src line col pos)
 	 (test #\% values ch)
+	 (test 'string values src)
 	 `(percent ,(read-syntax/recursive src port))])]
       [hash-dollar
        (case-lambda
@@ -77,19 +87,27 @@
       (test-values '(#\space #f #f) (lambda () (readtable-mapping t #\~)))
       (test-values (list 'terminating-macro plain-dollar #f) (lambda () (readtable-mapping t2 #\&)))
 
-      (let ([test-read
-	     (lambda (s l)
-	       (define (go read)
-		 (let* ([o (open-input-string s)])
-		   (let loop ()
-		     (let ([v (read o)])
-		       (if (eof-object? v)
-			   null
-			   (cons v (loop)))))))
-	       (test l (lambda (a b) (go read)) 'read s)
-	       (test l (lambda (a b) (map syntax-object->datum 
-					  (go (lambda (p) (read-syntax 'string p)))))
-		     'read-syntax s))])
+      (letrec ([test-read
+		(case-lambda 
+		 [(s l check-pos?)
+		  (define (go read)
+		    (let* ([o (open-input-string s)])
+		      (port-count-lines! o)
+		      (let loop ()
+			(let ([v (read o)])
+			  (if (eof-object? v)
+			      null
+			      (cons v (loop)))))))
+		  (test l (lambda (a b) (go read)) 'read s)
+		  (test l (lambda (a b) (map syntax-object->datum 
+					     (go (lambda (p) (read-syntax 'string p)))))
+			'read-syntax s)
+		  (when check-pos?
+		    (let ([stx (car (go (lambda (p) (read-syntax 'string (shift-rt-port p (list 1 2 3))))))])
+		      (test 2 syntax-line stx)
+		      (test 2 syntax-column stx)
+		      (test 4 syntax-position stx)))]
+		 [(s l) (test-read s l #t)])])
 	
 	(test-read "a$%_^b" '(a$%_^b))
 
@@ -125,7 +143,7 @@
 				(let ([s1 (format "a~ab" ch)]
 				      [s2 (format "~aab~a" ch ch)])
 				  (test-read s1 (list (string->symbol s1)))
-				  (test-read s2 (list (string->symbol s2)))
+				  (test-read s2 (list (string->symbol s2)) #f)
 				  (let ([blank (if (char=? ch #\space)
 						   #\newline
 						   #\space)])
@@ -140,14 +158,21 @@
 	    (lambda (read/recursive)
 	      (let ([t (make-readtable #f 
 				       #\~ 'terminating-macro (lambda (ch port src line col pos)
+								(define read/rec
+								  (if src
+								      (lambda (port char readtable)
+									(read-syntax/recursive 
+									 src port
+									 char readtable))
+								      read/recursive))
 								(if (eq? (char=? #\! (peek-char port)) (not swap?))
-								    (read/recursive port #\( base-readtable)
-								    (read/recursive port #\{ base-readtable))))])
+								    (read/rec port #\( base-readtable)
+								    (read/rec port #\{ base-readtable))))])
 		(parameterize ([current-readtable t])
 		  (test-read "~!a (b))" `((!a (b))))
 		  (test-read "~?a (b)}" `((?a (b)))))))
 	    (list read/recursive (lambda (port char readtable)
-				   (read-syntax/recursive 'ok port (list 0 0 0) char readtable)))))
+				   (read-syntax/recursive 'ok port char readtable)))))
 	 (list #f (make-readtable #f
 				  #\! 'terminating-macro (lambda (ch port src line col pos) (error 'ack))
 				  #\? 'terminating-macro (lambda (ch port src line col pos) (error 'ack))
@@ -156,6 +181,77 @@
 	 (list #f #t))
 	
 	(void)))))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Make sure we can't expose fixup process for graphs and cycles
+
+(let ([result #f]
+      [mk (lambda (v)
+	    `(,v ,(vector v) ,(box v) ,(let ([ht (make-hash-table)])
+					 (hash-table-put! ht v v)
+					 ht)))])
+  (let ([get-zero
+	 (case-lambda
+	  [(ch port)
+	   (let ([v (read/recursive (open-input-string "#0#"))])
+	     (set! result (mk v))
+	     result)]
+	  [(ch port src line col pos)
+	   (let ([v (read-syntax/recursive src (open-input-string "#0#"))])
+	     (set! result (datum->syntax-object #f (mk v) #f))
+	     result)])])
+    (let ([t (make-readtable #f 
+			     #\$ 'terminating-macro get-zero)])
+      (let ([go
+	     (lambda (read car cadr caddr cadddr unbox vector-ref hash-table-map
+			   list? vector? box? hash-table?)
+	       (let ([v (parameterize ([current-readtable t])
+			  (read (open-input-string "#0=$")))])
+		 (test #t list? v)
+		 (test #t list? (car v))
+		 (test #t vector? (cadr v))
+		 (test #t box? (caddr v))
+		 (test #t hash-table? (cadddr v))
+		 (test #t eq? v (car v))
+		 (test #t eq? v (vector-ref (cadr v) 0))
+		 (test #t eq? v (unbox (caddr v)))
+		 (test #f memq v (hash-table-map (cadddr v) (lambda (k v) k)))
+		 (test #f memq v (hash-table-map (cadddr v) (lambda (k v) v)))
+		 (test #f eq? v result)))])
+	(go read car cadr caddr cadddr unbox vector-ref hash-table-map
+	    list? vector? box? hash-table?)
+	(go (lambda (p) (read-syntax 'string p))
+	    (lambda (stx) (car (syntax->list stx))) 
+	    (lambda (stx) (cadr (syntax->list stx))) 
+	    (lambda (stx) (caddr (syntax->list stx))) 
+	    (lambda (stx) (cadddr (syntax->list stx))) 
+	    (lambda (stx) (unbox (syntax-e stx)))
+	    (lambda (stx p) (vector-ref  (syntax-e stx) p))
+	    (lambda (stx f) (hash-table-map (syntax-e stx) f))
+	    (lambda (stx) (and (syntax->list stx) #t))
+	    (lambda (stx) (vector? (syntax-e stx)))
+	    (lambda (stx) (box? (syntax-e stx)))
+	    (lambda (stx) (hash-table? (syntax-e stx))))))))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Check that sharing is preserved
+	    
+(let ([get-graph
+       (case-lambda
+	[(ch port) '#0=(#0#)]
+	[(ch port src line col pos)
+	 (datum->syntax-object #f '#1=(#1#) #f)])])
+  (let ([t (make-readtable #f 
+			   #\$ 'terminating-macro get-graph)])
+    (let ([go
+	   (lambda (read car)
+	     (let ([v (parameterize ([current-readtable t])
+			(read (open-input-string "$")))])
+	       ;; Check that cycle is preserved by unrolling lots
+	       (test #f boolean? (car (car (car (car v)))))))])
+      (go read car)
+      (go (lambda (p) (read-syntax 'string p))
+	  (lambda (stx) (car (syntax->list stx)))))))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -496,10 +496,11 @@
 	 (lambda ()
 	   (let-values ([(l c p) (port-next-location p)])
 	     (values (and l (+ l (- init-l) line))
-		     (and c (if (eq? l 1)
+		     (and c (if (equal? l init-l)
 				(+ c (- init-c) col)
 				c))
 		     (and p (+ p (- init-p) pos)))))
+	 void
 	 pos))))
 
   ;; Not kill-safe.

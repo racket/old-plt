@@ -1023,6 +1023,12 @@ void scheme_set_input_port_location_fun(Scheme_Input_Port *port,
   port->location_fun = location_fun;
 }
 
+void scheme_set_input_port_count_lines_fun(Scheme_Input_Port *port,
+					   Scheme_Count_Lines_Fun count_lines_fun)
+{
+  port->count_lines_fun = count_lines_fun;
+}
+
 static int evt_input_port_p(Scheme_Object *p)
 {
   return 1;
@@ -2881,7 +2887,15 @@ scheme_tell_all (Scheme_Object *port, long *_line, long *_col, long *_pos)
 void
 scheme_count_lines (Scheme_Object *port)
 {
-  ((Scheme_Input_Port *)port)->count_lines = 1;
+  Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
+
+  if (!ip->count_lines) {
+    ip->count_lines = 1;
+    if (ip->count_lines_fun) {
+      Scheme_Count_Lines_Fun cl = ip->count_lines_fun;
+      cl(ip);
+    }
+  }
 }
 
 void

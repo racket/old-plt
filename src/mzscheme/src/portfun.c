@@ -333,7 +333,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-input-port",
 			     scheme_make_prim_w_arity(make_input_port,
 						      "make-input-port",
-						      4, 8),
+						      4, 9),
 			     env);
   scheme_add_global_constant("make-output-port",
 			     scheme_make_prim_w_arity(make_output_port,
@@ -983,6 +983,7 @@ typedef struct User_Input_Port {
   Scheme_Object *progress_evt_proc;  /* NULL => no support for progress events */
   Scheme_Object *peeked_read_proc;   /* NULL => progress_evt_proc is NULL */
   Scheme_Object *location_proc;
+  Scheme_Object *count_lines_proc;
   Scheme_Object *reuse_str;
   Scheme_Object *peeked;
 } User_Input_Port;
@@ -1353,6 +1354,14 @@ user_location(Scheme_Input_Port *port)
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
   return scheme_apply_multi(uip->location_proc, 0, NULL);
+}
+
+static void
+user_count_lines(Scheme_Input_Port *port)
+{
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
+
+  scheme_apply_multi(uip->count_lines_proc, 0, NULL);
 }
 
 /*========================================================================*/
@@ -2221,10 +2230,12 @@ make_input_port(int argc, Scheme_Object *argv[])
     scheme_check_proc_arity2("make-input-port", 3, 5, argc, argv, 1); /* peeked-read */
   if (argc > 6)
     scheme_check_proc_arity2("make-input-port", 0, 6, argc, argv, 1); /* location */
-  if (argc > 7) {
-    if (!((SCHEME_INTP(argv[7]) && SCHEME_INT_VAL(argv[7]) > 0)
-	  || (SCHEME_BIGNUMP(argv[7]) && SCHEME_BIGPOS(argv[7]))))
-      scheme_wrong_type("make-input-port", "exact, positive integer", 7, argc, argv);
+  if (argc > 7)
+    scheme_check_proc_arity2("make-input-port", 0, 7, argc, argv, 1); /* count-lines! */
+  if (argc > 8) {
+    if (!((SCHEME_INTP(argv[8]) && SCHEME_INT_VAL(argv[8]) > 0)
+	  || (SCHEME_BIGNUMP(argv[8]) && SCHEME_BIGPOS(argv[8]))))
+      scheme_wrong_type("make-input-port", "exact, positive integer", 8, argc, argv);
   }
   name = argv[0];
 
@@ -2264,6 +2275,8 @@ make_input_port(int argc, Scheme_Object *argv[])
   uip->location_proc = ((argc > 6) ? argv[6] : scheme_false);
   if (SCHEME_FALSEP(uip->location_proc))
     uip->location_proc = NULL;
+  if (argc > 7)
+    uip->count_lines_proc = argv[7];
 
   ip = scheme_make_input_port(scheme_user_input_port_type,
 			      uip,
@@ -2279,16 +2292,21 @@ make_input_port(int argc, Scheme_Object *argv[])
 
   if (uip->location_proc)
     scheme_set_input_port_location_fun(ip, user_location);
+  if (uip->count_lines_proc)
+    scheme_set_input_port_count_lines_fun(ip, user_count_lines);
 
   if (!uip->peek_proc)
     ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
-  if (argc > 7) {
-    if (SCHEME_INTP(argv[7]))
-      ip->position = (SCHEME_INT_VAL(argv[7]) - 1);
+  if (argc > 8) {
+    if (SCHEME_INTP(argv[8]))
+      ip->position = (SCHEME_INT_VAL(argv[8]) - 1);
     else
       ip->position = -1;
   }
+
+  if (ip->count_lines && uip->count_lines_proc)
+    scheme_apply_multi(uip->count_lines_proc, 0, NULL);
 
   return (Scheme_Object *)ip;
 }

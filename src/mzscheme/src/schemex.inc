@@ -384,6 +384,7 @@
   scheme_extension_table->scheme_make_input_port = scheme_make_input_port;
   scheme_extension_table->scheme_make_output_port = scheme_make_output_port;
   scheme_extension_table->scheme_set_input_port_location_fun = scheme_set_input_port_location_fun;
+  scheme_extension_table->scheme_set_input_port_count_lines_fun = scheme_set_input_port_count_lines_fun;
   scheme_extension_table->scheme_progress_evt_via_get = scheme_progress_evt_via_get;
   scheme_extension_table->scheme_peeked_read_via_get = scheme_peeked_read_via_get;
   scheme_extension_table->scheme_write_evt_via_write = scheme_write_evt_via_write;

@@ -1044,6 +1044,7 @@ typedef int (*Scheme_In_Ready_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Need_Wakeup_Input_Fun)(Scheme_Input_Port *, void *);
 typedef Scheme_Object *(*Scheme_Location_Fun)(Scheme_Input_Port *);
+typedef void (*Scheme_Count_Lines_Fun)(Scheme_Input_Port *);
 
 typedef Scheme_Object *(*Scheme_Write_String_Evt_Fun)(Scheme_Output_Port *,
 						      const char *str, long offset, long size);
@@ -1072,6 +1073,7 @@ struct Scheme_Input_Port
   Scheme_Close_Input_Fun close_fun;
   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun;
   Scheme_Location_Fun location_fun;
+  Scheme_Count_Lines_Fun count_lines_fun;
   Scheme_Object *read_handler;
   Scheme_Object *name;
   Scheme_Object *peeked_read, *peeked_write;

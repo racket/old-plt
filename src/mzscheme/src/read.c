@@ -4852,7 +4852,7 @@ static Scheme_Object *read_reader(Scheme_Object *port,
 
 static int is_placeholder(Scheme_Object *a, Scheme_Object *src)
 {
-  if (src)
+  if (src && SCHEME_STXP(a))
     a = SCHEME_STX_VAL(a);
   return SAME_TYPE(scheme_placeholder_type, SCHEME_TYPE(a));
 }
@@ -4897,14 +4897,15 @@ static Scheme_Object *copy_to_protect(Scheme_Object *v, Scheme_Object *src, Sche
 #endif
   SCHEME_USE_FUEL(1);
 
-  if (src)
+  if (src && SCHEME_STXP(v))
     o = SCHEME_STX_VAL(v);
   else
     o = v;
 
-  if (SCHEME_PAIRP(o)
-      || SCHEME_BOXP(o)
-      || SCHEME_VECTORP(o)) {
+  if ((SCHEME_PAIRP(o)
+       || SCHEME_BOXP(o)
+       || SCHEME_VECTORP(o))
+      && (!src || SCHEME_STXP(v))) {
     ph = scheme_hash_get(ht, o);
     if (ph) {
       if (src) {
@@ -4979,7 +4980,7 @@ static Scheme_Object *copy_to_protect(Scheme_Object *v, Scheme_Object *src, Sche
   } else
     return v;
 
-  if (src) {
+  if (src && SCHEME_STXP(v)) {
     o = scheme_datum_to_syntax(o, v, v, 0, 2);
     if (ph && SCHEME_TRUEP(SCHEME_PTR_VAL(ph)))
       scheme_make_graph_stx(o, -1, -1, -1);

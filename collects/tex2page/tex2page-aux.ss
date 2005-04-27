@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "20050426")
+(define *tex2page-version* "20050427")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -5209,6 +5209,11 @@
                 (set! f2 f2-save))))
           (initialize-global-texframe))
         (load-aux-file))
+      (when (and
+             f2
+             check-timestamp?
+             (ormap (lambda (vwf) (string=? f2 vwf)) *verb-written-files*))
+        (set! check-timestamp? #f))
       (when (and f2 check-timestamp?) (update-last-modification-time f2))
       f2)))
 

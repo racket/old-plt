@@ -1,4 +1,16 @@
 
+Version 299.103
+Added prop:custom-write, custom-write?, custom-write-accessor
+Changed read-syntax[/recursive] to remove the delta-list
+ argument
+Changed read handler to remove the delta-list argument
+Changed read[-syntax]/recursive to produce a special-comment
+ value when a comment is parsed (instead of reading the
+ next datum)
+Changed make-input-port to take two new arguments: count-lines!
+ procedure (defaults to void) and initial position
+Added relocate-input-port to port.ss
+
 Version 299.102
 Fixed all-from provides to include redundant imports from the
  indicated require
@@ -8,7 +20,8 @@ Added module-provide-protected?
 Added readtables
 Added #reader
 Struct custodian can be #f to make it fully transparent
-
+Changed run-server in thread.ss to use the same parameterization
+ for all connection threads
 
 Version 299.100, March 2005
 >> See MzScheme_300.txt for information on major changes since

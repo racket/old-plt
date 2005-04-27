@@ -519,6 +519,11 @@ scheme_init_port (Scheme_Env *env)
 
 #ifdef MZ_FDS
   scheme_add_atexit_closer(flush_if_output_fds);
+  /* Note: other threads might continue to write even after
+     the flush completes, but that's the threads' problem.
+     All writing by the main thread will get flushed on exit
+     (but not, of course, if the thread is shutdown via a
+     custodian). */
 #endif
 
 #if defined(FILES_HAVE_FDS)
@@ -5983,7 +5988,7 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
   if (SCHEME_OUTPORTP(o)) {
     Scheme_Output_Port *op = (Scheme_Output_Port *)o;
     if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
-      scheme_close_output_port(o);
+      scheme_flush_output(o);
     }
   }
 }

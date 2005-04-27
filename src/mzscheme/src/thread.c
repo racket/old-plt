@@ -1583,13 +1583,20 @@ static void run_closers(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void
 
 static void run_atexit_closers(void)
 {
-  mz_jmp_buf newbuf;
+  mz_jmp_buf newbuf, *savebuf;
 
-  scheme_start_atomic();
+  /* scheme_start_atomic(); */
+  /* Atomic would be needed if this was run to implement
+     a custodian shutdown, but an actual custodian shutdown
+     will have terminated everything else anyway. For a
+     polite exit, other threads can run. */
+
+  savebuf = scheme_current_thread->error_buf;
   scheme_current_thread->error_buf = &newbuf;
   if (!scheme_setjmp(newbuf)) {  
     scheme_do_close_managed(NULL, run_closers);
   }
+  scheme_current_thread->error_buf = savebuf;
 }
 
 void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f)

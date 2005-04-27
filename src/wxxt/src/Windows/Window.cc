@@ -63,6 +63,10 @@ static wxWindow *grabbing_panel;
 static Time grabbing_panel_time;
 static Bool grabbing_panel_regsitered;
 
+#ifndef NO_XMB_LOOKUP_STRING
+static XIM the_im;
+#endif
+
 //-----------------------------------------------------------------------------
 // wxWindow constructor
 //-----------------------------------------------------------------------------
@@ -129,7 +133,6 @@ wxWindow::~wxWindow(void)
 {
 #ifndef NO_XMB_LOOKUP_STRING
     if (X->ic) XDestroyIC(X->ic);
-    if (X->im) XCloseIM(X->im);
 #endif
 
     // destroy children
@@ -1559,6 +1562,15 @@ void wxWindow::WindowEventHandler(Widget w,
     return;
   }
 
+  if (XFilterEvent(xev, None)) {
+    win->ReleaseMouse();
+    *continue_to_dispatch_return = FALSE;
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
+    return;
+  }
+
   subWin = (w != win->X->handle) && (w != win->X->frame);
 
     switch (xev->xany.type) {
@@ -1603,10 +1615,12 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
 
 #ifndef NO_XMB_LOOKUP_STRING
-	if (!win->X->im) {
-	  win->X->im = XOpenIM(wxAPP_DISPLAY, NULL, NULL, NULL);
-	  if (win->X->im) {
-	    win->X->ic = XCreateIC(win->X->im, 
+	if (!the_im) {
+	  the_im = XOpenIM(wxAPP_DISPLAY, NULL, NULL, NULL);
+	}
+	if (!win->X->ic) {
+	  if (the_im) {
+	    win->X->ic = XCreateIC(the_im, 
 				   XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
 				   NULL);
 	  }

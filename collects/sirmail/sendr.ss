@@ -246,7 +246,7 @@
                                  (send inline-check set-value inline?)))]
                     [suffix (let ([m (regexp-match #rx"[.](.*)$" (path->string filename))])
                               (and m (cadr m)))])
-                (case (if suffix (string->symbol suffix) '???)
+                (case (if suffix (string->symbol (string-locale-downcase suffix)) '???)
                   [(txt ss scm) (default "text/plain" "quoted-printable" #f)]
                   [(htm html) (default "text/html" "quoted-printable" #f)]
                   [(ps) (default "application/postscript" "base64" #f)]

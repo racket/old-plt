@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-30")
+(define *tex2page-version* "20050426")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -97,7 +97,7 @@
 
 (define *aux-file-suffix* "-Z-A")
 
-(define *bib-aux-file-suffix* "--h")
+(define *bib-aux-file-suffix* "-Z-B")
 
 (define *css-file-suffix* "-Z-S.css")
 
@@ -111,7 +111,7 @@
 
 (define *imgdef-file-suffix* "D-")
 
-(define *index-file-suffix* "--h")
+(define *index-file-suffix* "-Z-I")
 
 (define *label-file-suffix* "-Z-L")
 
@@ -265,6 +265,8 @@
 (define *eval-file-count* 0)
 
 (define *eval-for-tex-only?* #f)
+
+(define *expand-escape?* #f)
 
 (define *external-label-tables* #f)
 
@@ -1144,7 +1146,26 @@
           (if (eof-object? c) (terror 'get-group "Runaway argument?"))
           (cond
            (escape? (loop (cons c s) nesting #f))
-           ((char=? c *esc-char*) (loop (cons c s) nesting #t))
+           ((char=? c *esc-char*)
+            (if *expand-escape?*
+              (let ((s1
+                     (begin
+                       (toss-back-char c)
+                       (let ((x
+                              (fluid-let
+                                ((*not-processing?* #t))
+                                (get-ctl-seq))))
+                         (cond
+                          ((ormap
+                            (lambda (z) (string=? x z))
+                            '("\\ " "\\{" "\\}"))
+                           (string (string-ref x 1)))
+                          (else
+                           (fluid-let
+                             ((*esc-char* *esc-char-std*))
+                             (tex-string->html-string x))))))))
+                (loop (append! (reverse! (string->list s1)) s) nesting #f))
+              (loop (cons c s) nesting #t)))
            ((char=? c #\{) (loop (cons c s) (+ nesting 1) #f))
            ((char=? c #\})
             (if (= nesting 0) (cons c s) (loop (cons c s) (- nesting 1) #f)))
@@ -6038,7 +6059,9 @@
 (define do-verbatiminput
   (lambda ()
     (ignorespaces)
-    (let ((f (get-filename-possibly-braced)))
+    (let ((f
+           (add-dot-tex-if-no-extension-provided
+             (get-filename-possibly-braced))))
       (cond
        ((file-exists? f)
         (do-end-para)
@@ -6057,13 +6080,12 @@
 
 (define do-verbwritefile
   (lambda ()
-    (let ((f (get-filename-possibly-braced)))
+    (let* ((f (get-filename-possibly-braced)) (e (file-extension f)))
+      (unless e (set! e ".tex") (set! f (string-append f e)))
       (when *verb-port* (close-output-port *verb-port*))
       (ensure-file-deleted f)
       (set! *verb-written-files* (cons f *verb-written-files*))
-      (let ((e (file-extension f)))
-        (when (and e (string-ci=? e ".mp"))
-          (set! *mp-files* (cons f *mp-files*))))
+      (when (string-ci=? e ".mp") (set! *mp-files* (cons f *mp-files*)))
       (set! *verb-port* (open-output-file f)))))
 
 (define verb-ensure-output-port
@@ -6507,7 +6529,9 @@
     (do-end-para)
     (bgroup)
     (emit "<pre class=scheme>")
-    (let ((f (get-filename-possibly-braced)))
+    (let ((f
+           (add-dot-tex-if-no-extension-provided
+             (get-filename-possibly-braced))))
       (call-with-input-file/buffered
         f
         (lambda ()
@@ -7057,7 +7081,11 @@
 
 (define do-eval
   (lambda (fmts)
-    (let ((s (ungroup (get-group))))
+    (let ((s
+           (ungroup
+             (fluid-let
+               ((*esc-char* *esc-char-verb*) (*expand-escape?* #t))
+               (get-group)))))
       (unless (inside-false-world?)
         (when (> *html-only* 0) (set! fmts 'html))
         (case fmts

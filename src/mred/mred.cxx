@@ -3504,7 +3504,19 @@ extern "C" {
    that can call into Scheme are ignored (e.g., WM_ACTIVATE). After
    the OS mode ends (e.g., the scroller returns), any pending
    continuation is finished, but in non-atomic mode, and things are
-   generally back to normal. */
+   generally back to normal.
+
+   The call process is
+    wxHiEventTrampoline(f, data)
+     -> f(data) in ht mode
+         -> ... mred_run_some(g, data2)            \
+             -> Scheme code, may finish or may not  | maybe loop
+         het->in_progress inicates whether done    /
+     -> continue scheme if not finished
+
+   In this process, it's the call stack between f(data)
+   and the call to mred_run_some() that won't be copied
+   in or out until f(data) returns. */
 
 static unsigned long get_deeper_base();
 

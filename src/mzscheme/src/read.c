@@ -4484,13 +4484,9 @@ static Scheme_Object *readtable_call(int w_char, int ch, Scheme_Object *proc, Re
     }
   } else {
     if (src) {
-      cnt = 3;
+      cnt = 2;
       a[0] = src;
       a[1] = port;
-      v = scheme_make_pair((pos > 0) ? scheme_make_integer(pos) : scheme_false, scheme_null);
-      v = scheme_make_pair((col > 0) ? scheme_make_integer(col-1) : scheme_false, v);
-      v = scheme_make_pair((line > 0) ? scheme_make_integer(line-1) : scheme_false, v);
-      a[2] = v;
     } else {
       cnt = 1;
       a[0] = port;
@@ -4833,9 +4829,9 @@ static Scheme_Object *read_reader(Scheme_Object *port,
   proc = scheme_dynamic_require(2, a);
 
   a[0] = proc;
-  if (!scheme_check_proc_arity(NULL, stxsrc ? 3 : 1, 0, 1, a)) {
+  if (!scheme_check_proc_arity(NULL, stxsrc ? 2 : 1, 0, 1, a)) {
     scheme_wrong_type("#reader",
-		      (stxsrc ? "procedure (arity 3)" : "procedure (arity 1)"),
+		      (stxsrc ? "procedure (arity 2)" : "procedure (arity 1)"),
 		      -1, -1, a);
     return NULL;
   }

@@ -30,7 +30,11 @@
 	    pretty-print-current-style-table
 	    pretty-print-extend-style-table
 
-	    pretty-printing)
+	    pretty-printing
+	    pretty-print-newline
+	    make-tentative-pretty-print-output-port
+	    tentative-pretty-print-port-transfer
+	    tentative-pretty-print-port-cancel)
 
    (define-struct pretty-print-style-table (hash))
 
@@ -206,7 +210,7 @@
 
    (define-struct mark (str def))
 
-   (define (make-tentative-port pport width esc)
+   (define (make-tentative-output-port pport width esc)
      (let* ([content null]
 	    [special-ok? (port-writes-special? pport)]
 	    ;; The null device counts for us:
@@ -237,7 +241,8 @@
 		       #t))
 		#f #f
 		(lambda ()
-		  (port-next-location /dev/null)))])
+		  (port-next-location /dev/null)))]
+	    [first-line? #t])
        (port-count-lines! /dev/null)
        (port-count-lines! p)
        (register-printing-port p 
@@ -252,12 +257,20 @@
 				  (display (make-string len #\.) /dev/null)
 				  (set! content (cons (list* 'hooked v len display?)
 						      content)))
-				(lambda (line offset width)
+				(lambda (use-line? offset width)
 				  (when (and (number? width)
-					     (not (eq? 0 line)))
+					     (not first-line?))
 				    (newline p))
+				  (set! first-line? #f)
 				  0)
 				esc))
+       p))
+
+   (define (make-tentative-pretty-print-output-port pport width esc)
+     (let ([p (make-tentative-output-port pport width esc)])
+       (port-write-handler p (port-write-handler pport))
+       (port-display-handler p (port-display-handler pport))
+       (port-print-handler p (port-print-handler pport))
        p))
    
    (define (make-printing-port port pre-print post-print output-hooked print-line)
@@ -265,7 +278,8 @@
        (let* ([orig-counts? (and line col pos)]
 	      [p (if orig-counts?
 		     (relocate-output-port port line col pos #f)
-		     (transplant-output-port port #f 1 #f))])
+		     (transplant-output-port port #f 1 #f))]
+	      [line -1])
 	 (port-count-lines! p)
 	 (register-printing-port p 
 				 (make-print-port-info 
@@ -277,8 +291,9 @@
 				    (post-print v port))
 				  (lambda (v len display?)
 				    (output-hooked v display? p))
-				  (lambda (line offset width)
-				    (print-line line p offset width))
+				  (lambda (use-line? offset width)
+				    (set! line (add1 line))
+				    (print-line (and use-line? line) p offset width))
 				  void))
 	 p)))
 
@@ -316,7 +331,11 @@
    (define (printing-port-esc pport)
      (get pport print-port-info-esc))
    
-   (define (tentative-port-transfer a-pport pport)
+   (define (pretty-print-newline pport width)
+     (let-values ([(l col p) (port-next-location pport)])
+       ((printing-port-print-line pport) #t (or col 0) width)))
+
+   (define (tentative-pretty-print-port-transfer a-pport pport)
      (let ([content ((get a-pport print-port-info-get-content))])
        (for-each (lambda (elem)
 		   (if (bytes? elem)
@@ -329,7 +348,7 @@
 				    (cadr elem) (caddr elem) (cdddr elem))])))
 		 content)))
    
-   (define (tentative-port-cancel pport)
+   (define (tentative-pretty-print-port-cancel pport)
      (set-box! (get pport print-port-info-def-box) #f))
 
    (define (add-spaces n port)
@@ -344,8 +363,6 @@
 			  print-graph? print-struct? print-hash-table? print-vec-length?
 			  depth size-hook)
      
-     (define line-number 0)
-
      (define table (make-hash-table)) ; Hash table for looking for loops
 
      (define show-inexactness? (pretty-print-show-inexactness))
@@ -685,8 +702,7 @@
 	 (let ([col (ccol)])
 	   (if (< to col)
 	       (begin
-		 (set! line-number (add1 line-number))
-		 (let ([col ((printing-port-print-line pport) line-number col width)])
+		 (let ([col ((printing-port-print-line pport) col width)])
 		   (spaces (- to col))))
 	       (spaces (max 0 (- to col))))))
 
@@ -709,9 +725,10 @@
 	       ;;  into a-pport
 	       (let ([a-pport
 		      (let/ec esc
-			(letrec ([a-pport (make-tentative-port pport 
-							       (- width extra)
-							       (lambda () (esc a-pport)))])
+			(letrec ([a-pport (make-tentative-output-port
+					   pport 
+					   (- width extra)
+					   (lambda () (esc a-pport)))])
 			  ;; Here's the attempt to write on one line:
 			  (wr* a-pport obj depth display?)
 			  a-pport))])
@@ -719,10 +736,10 @@
 		   (if (<= c (- width extra))
 		       ;; All can be printed on one line, so just dump the
 		       ;;  accumulated text
-		       (tentative-port-transfer a-pport pport)
+		       (tentative-pretty-print-port-transfer a-pport pport)
 		       ;; Doesn't fit on one line, so start over
 		       (begin
-			 (tentative-port-cancel a-pport)
+			 (tentative-pretty-print-port-cancel a-pport)
 			 (when graph-ref
 			   (expr-found pport graph-ref))
 			 (pre-print pport obj)
@@ -963,7 +980,7 @@
      ;; ------------------------------------------------------------
      ;; This is where generic-write's body expressions start
 
-     ((printing-port-print-line pport) 0 0 width)
+     ((printing-port-print-line pport) #t 0 width)
      (let-values ([(l col p) (port-next-location pport)])
        (if (and width (not (eq? width 'infinity)))
 	   (pp* pport obj depth display?)

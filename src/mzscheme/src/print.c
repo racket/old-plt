@@ -88,6 +88,11 @@ static void print_char(Scheme_Object *chobj, int notdisplay, PrintParams *pp);
 static char *print_to_string(Scheme_Object *obj, long * volatile len, int write,
 			     Scheme_Object *port, long maxl, int check_honu);
 
+static void custom_write_struct(Scheme_Object *s, Scheme_Hash_Table *ht, 
+				Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
+				PrintParams *pp, int notdisplay);
+static Scheme_Object *writable_struct_subs(Scheme_Object *s, PrintParams *pp);
+
 static Scheme_Object *quote_link_symbol = NULL;
 static char *quick_buffer = NULL;
 static char *quick_encode_buffer = NULL;
@@ -463,7 +468,7 @@ static int check_cycles(Scheme_Object *obj, Scheme_Hash_Table *ht, PrintParams *
   } else if (SAME_TYPE(t, scheme_structure_type)
 	     || SAME_TYPE(t, scheme_proc_struct_type)) {
     if (scheme_is_writable_struct(obj)) {
-      if (check_cycles(scheme_writable_struct_subs(obj), ht, pp))
+      if (check_cycles(writable_struct_subs(obj, pp), ht, pp))
 	return 1;
     } else {
       /* got here => printable */
@@ -660,7 +665,7 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
   } else if (pp && SCHEME_STRUCTP(obj)) { /* got here => printable */
     if (scheme_is_writable_struct(obj)) {
       if (pp->print_unreadable) {
-	obj = scheme_writable_struct_subs(obj);
+	obj = writable_struct_subs(obj, pp);
 	setup_graph_table(obj, ht, counter, pp);
       }
     } else {
@@ -773,7 +778,10 @@ print_to_string(Scheme_Object *obj,
   else
     ht = NULL;
 
-  params.print_escape = &escape;
+  if (maxl > 0)
+    params.print_escape = &escape;
+  else
+    params.print_escape = NULL;
 
   if ((maxl <= PRINT_MAXLEN_MIN) 
       || !scheme_setjmp(escape))
@@ -1481,35 +1489,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact || !pp->print_unreadable)
 	cannot_print(pp, notdisplay, obj, ht, compact);
       else if (scheme_is_writable_struct(obj)) {
-	Scheme_Object *b, *pre, *post, *a[2];
-	obj = scheme_writable_struct_parts(obj, notdisplay, 
-					   (pp->print_port 
-					    && ((Scheme_Output_Port *)pp->print_port)->write_special_fun),
-					   &pre, &post);
-
-	do_print_string(compact, 0, pp, 
-			SCHEME_CHAR_STR_VAL(pre), 0, SCHEME_CHAR_STRTAG_VAL(pre));
-
-	while (SCHEME_PAIRP(obj)) {
-	  b = SCHEME_CAR(obj);
-	  if (SAME_OBJ(SCHEME_CAR(b), scheme_write_special_symbol)) {
-	    /* First, flush print cache: */
-	    print_this_string(pp, NULL, 0, 0);
-	    a[0] = SCHEME_CDR(b);
-	    a[1] = pp->print_port;
-	    scheme_write_special(2, a);
-	  } else {
-	    print(SCHEME_CDR(b), 
-		  (SAME_OBJ(SCHEME_CAR(b), scheme_recur_symbol) ? notdisplay : 0),
-		  compact, ht, symtab, rnht, pp);
-	  }
-	  obj = SCHEME_CDR(obj);
-	  if (!SCHEME_NULLP(obj))
-	    print_utf8_string(pp, " ", 0, 1);
-	}
-
-	do_print_string(compact, 0, pp, 
-			SCHEME_CHAR_STR_VAL(post), 0, SCHEME_CHAR_STRTAG_VAL(post));
+	custom_write_struct(obj, ht, symtab, rnht, pp, notdisplay);
       } else {
 	int pb;
 
@@ -2525,6 +2505,184 @@ void scheme_set_type_printer(Scheme_Type stype, Scheme_Type_Printer printer)
   }
 
   printers[stype] = printer;
+}
+
+/*========================================================================*/
+/*                           custom writing                               */
+/*========================================================================*/
+
+static Scheme_Object *accum_write(void *_b, int argc, Scheme_Object **argv)
+{
+  if (SCHEME_BOX_VAL(_b)) {
+    Scheme_Object *v;
+    v = scheme_make_pair(argv[0], SCHEME_BOX_VAL(_b));
+    SCHEME_BOX_VAL(_b) = v;
+  }
+
+  return scheme_void;
+}
+
+static Scheme_Object *writable_struct_subs(Scheme_Object *s, PrintParams *pp)
+{
+  Scheme_Object *v, *o, *a[3], *b, *accum_proc;
+  Scheme_Output_Port *op;
+
+  v = scheme_is_writable_struct(s);
+
+  o = scheme_make_null_output_port(pp->print_port
+				   && ((Scheme_Output_Port *)pp->print_port)->write_special_fun);
+
+  op = (Scheme_Output_Port *)o;
+  
+  b = scheme_box(scheme_null);
+  accum_proc = scheme_make_closed_prim_w_arity(accum_write,
+					       b,
+					       "custom-write-recur-handler",
+					       2, 2);
+
+  op->display_handler = accum_proc;
+  op->write_handler = accum_proc;
+  op->print_handler = accum_proc;
+
+  a[0] = s;
+  a[1] = o;
+  a[2] = scheme_false;
+
+  scheme_apply_multi(v, 3, a);
+
+  scheme_close_output_port(o);
+
+  v = SCHEME_BOX_VAL(b);
+  SCHEME_BOX_VAL(b) = NULL;
+
+  return v;
+}
+
+static void flush_from_byte_port(Scheme_Object *orig_port, PrintParams *pp)
+{
+  char *bytes;
+  long len;
+  bytes = scheme_get_sized_byte_string_output(orig_port, &len);
+  print_this_string(pp, bytes, 0, len);
+}
+
+static Scheme_Object *custom_recur(int notdisplay, void *_vec, int argc, Scheme_Object **argv)
+{
+  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_VEC_ELS(_vec)[0];
+  Scheme_Hash_Table *symtab = (Scheme_Hash_Table *)SCHEME_VEC_ELS(_vec)[1];
+  Scheme_Hash_Table *rnht = (Scheme_Hash_Table *)SCHEME_VEC_ELS(_vec)[2];
+  PrintParams * volatile pp = (PrintParams *)SCHEME_VEC_ELS(_vec)[3];
+  Scheme_Object * volatile save_port;
+  mz_jmp_buf escape, * volatile save;
+
+  if (SCHEME_VEC_ELS(_vec)[4]) {
+    /* If printing to string, flush it and reset first: */
+    Scheme_Object * volatile sp;
+    sp = SCHEME_VEC_ELS(_vec)[5];
+    if (sp) {
+      flush_from_byte_port(sp, pp);
+      sp = scheme_make_byte_string_output_port();
+      ((Scheme_Output_Port *)argv[1])->port_data = sp;
+    }
+
+    /* Recur: */
+    {
+      if (pp->print_escape) {
+	save = pp->print_escape;
+	pp->print_escape = &escape;
+      } else
+	save = NULL;
+
+      save_port = pp->print_port;
+      
+      
+      if (!pp->print_escape
+	  || !scheme_setjmp(escape))
+	print(argv[0], notdisplay, 0, ht, symtab, rnht, pp);
+
+      /* Flush print cache */
+      print_this_string(pp, NULL, 0, 0);
+
+      pp->print_port = save_port;
+      pp->print_escape = save;
+    }
+  }
+
+  return scheme_void;
+}
+
+static Scheme_Object *custom_write_recur(void *_vec, int argc, Scheme_Object **argv)
+{
+  return custom_recur(1, _vec, argc, argv);
+}
+
+static Scheme_Object *custom_display_recur(void *_vec, int argc, Scheme_Object **argv)
+{
+  return custom_recur(0, _vec, argc, argv);
+}
+
+static void custom_write_struct(Scheme_Object *s, Scheme_Hash_Table *ht, 
+				Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
+				PrintParams *orig_pp, int notdisplay)
+{
+  Scheme_Object *v, *a[3], *o, *vec, *orig_port;
+  Scheme_Output_Port *op;
+  Scheme_Object *recur_write, *recur_display;
+  PrintParams *pp;
+
+  v = scheme_is_writable_struct(s);
+
+  /* In case orig_pp is on the stack: */
+  pp = copy_print_params(orig_pp);
+
+  if (pp->print_port)
+    orig_port = pp->print_port;
+  else
+    orig_port = scheme_make_byte_string_output_port();
+
+  o = scheme_make_redirect_output_port(orig_port);
+  
+  op = (Scheme_Output_Port *)o;
+
+  vec = scheme_make_vector(6, NULL);
+  SCHEME_VEC_ELS(vec)[0] = (Scheme_Object *)ht;
+  SCHEME_VEC_ELS(vec)[1] = (Scheme_Object *)symtab;
+  SCHEME_VEC_ELS(vec)[2] = (Scheme_Object *)rnht;
+  SCHEME_VEC_ELS(vec)[3] = (Scheme_Object *)pp;
+  SCHEME_VEC_ELS(vec)[4] = scheme_true;
+  SCHEME_VEC_ELS(vec)[5] = (pp->print_port ? NULL : orig_port);
+
+  recur_write = scheme_make_closed_prim_w_arity(custom_write_recur,
+						vec,
+						"custom-write-recur-handler",
+						2, 2);
+  recur_display = scheme_make_closed_prim_w_arity(custom_display_recur,
+						  vec,
+						  "custom-display-recur-handler",
+						  2, 2);
+
+
+  op->write_handler = recur_write;
+  op->display_handler = recur_display;
+  op->print_handler = recur_write;
+
+  /* First, flush print cache to actual port: */
+  if (pp->print_port)
+    print_this_string(pp, NULL, 0, 0);
+
+  a[0] = s;
+  a[1] = o;
+  a[2] = (notdisplay ? scheme_true : scheme_false);
+  scheme_apply_multi(v, 3, a);
+
+  scheme_close_output_port(o);
+
+  SCHEME_VEC_ELS(vec)[4] = NULL;
+
+  if (!pp->print_port)
+    flush_from_byte_port(orig_port, pp);
+
+  memcpy(orig_pp, pp, sizeof(PrintParams));
 }
 
 /*========================================================================*/

@@ -2679,6 +2679,8 @@ int mark_user_output_MARK(void *p) {
   gcMARK(uop->write_proc);
   gcMARK(uop->write_special_evt_proc);
   gcMARK(uop->write_special_proc);
+  gcMARK(uop->location_proc);
+  gcMARK(uop->count_lines_proc);
   gcMARK(uop->close_proc);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
@@ -2692,6 +2694,8 @@ int mark_user_output_FIXUP(void *p) {
   gcFIXUP(uop->write_proc);
   gcFIXUP(uop->write_special_evt_proc);
   gcFIXUP(uop->write_special_proc);
+  gcFIXUP(uop->location_proc);
+  gcFIXUP(uop->count_lines_proc);
   gcFIXUP(uop->close_proc);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));

@@ -559,6 +559,7 @@ void (*scheme_count_lines)(Scheme_Object *port);
 void (*scheme_close_input_port)(Scheme_Object *port);
 void (*scheme_close_output_port)(Scheme_Object *port);
 Scheme_Object *(*scheme_write_special)(int argc, Scheme_Object *argv[]);
+Scheme_Object *(*scheme_write_special_nonblock)(int argc, Scheme_Object *argv[]);
 Scheme_Object *(*scheme_make_read_evt)(const char *who, Scheme_Object *port,
 					      char *str, long start, long size,
 					      int peek, Scheme_Object *peek_skip,
@@ -586,10 +587,10 @@ Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype, void *dat
 						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
-void (*scheme_set_input_port_location_fun)(Scheme_Input_Port *port,
-						  Scheme_Location_Fun location_fun);
-void (*scheme_set_input_port_count_lines_fun)(Scheme_Input_Port *port,
-						     Scheme_Count_Lines_Fun count_lines_fun);
+void (*scheme_set_port_location_fun)(Scheme_Port *port,
+					    Scheme_Location_Fun location_fun);
+void (*scheme_set_port_count_lines_fun)(Scheme_Port *port,
+					       Scheme_Count_Lines_Fun count_lines_fun);
 Scheme_Object *(*scheme_progress_evt_via_get)(Scheme_Input_Port *port);
 int (*scheme_peeked_read_via_get)(Scheme_Input_Port *port,
 					 long size,
@@ -614,6 +615,8 @@ char *(*scheme_get_byte_string_output)(Scheme_Object *);
 char *(*scheme_get_sized_byte_string_output)(Scheme_Object *, long *len);
 void (*scheme_pipe)(Scheme_Object **read, Scheme_Object **write);
 void (*scheme_pipe_with_limit)(Scheme_Object **write, Scheme_Object **read, int maxsize);
+Scheme_Object *(*scheme_make_null_output_port)(int can_write_special);
+Scheme_Object *(*scheme_make_redirect_output_port)(Scheme_Object *port);
 long (*scheme_set_file_position)(Scheme_Object *port, long pos);
 int (*scheme_file_exists)(char *filename);
 int (*scheme_directory_exists)(char *dirname);

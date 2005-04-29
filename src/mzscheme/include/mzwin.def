@@ -325,13 +325,14 @@ EXPORTS
  scheme_close_input_port
  scheme_close_output_port
  scheme_write_special
+ scheme_write_special_nonblock
  scheme_make_read_evt
  scheme_make_write_evt
  scheme_make_port_type
  scheme_make_input_port
  scheme_make_output_port
- scheme_set_input_port_location_fun
- scheme_set_input_port_count_lines_fun
+ scheme_set_port_location_fun
+ scheme_set_port_count_lines_fun
  scheme_progress_evt_via_get
  scheme_peeked_read_via_get
  scheme_write_evt_via_write
@@ -351,6 +352,8 @@ EXPORTS
  scheme_get_sized_byte_string_output
  scheme_pipe
  scheme_pipe_with_limit
+ scheme_make_null_output_port
+ scheme_make_redirect_output_port
  scheme_set_file_position
  scheme_file_exists
  scheme_directory_exists

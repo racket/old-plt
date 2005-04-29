@@ -1067,6 +1067,8 @@ mark_user_output {
   gcMARK(uop->write_proc);
   gcMARK(uop->write_special_evt_proc);
   gcMARK(uop->write_special_proc);
+  gcMARK(uop->location_proc);
+  gcMARK(uop->count_lines_proc);
   gcMARK(uop->close_proc);
  size:
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));

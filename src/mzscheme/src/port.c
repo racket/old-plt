@@ -276,6 +276,8 @@ Scheme_Object *scheme_user_input_port_type;
 Scheme_Object *scheme_user_output_port_type;
 Scheme_Object *scheme_pipe_read_port_type;
 Scheme_Object *scheme_pipe_write_port_type;
+Scheme_Object *scheme_null_output_port_type;
+Scheme_Object *scheme_redirect_output_port_type;
 
 int scheme_force_port_closed;
 
@@ -414,6 +416,8 @@ scheme_init_port (Scheme_Env *env)
   REGISTER_SO(scheme_user_output_port_type);
   REGISTER_SO(scheme_pipe_read_port_type);
   REGISTER_SO(scheme_pipe_write_port_type);
+  REGISTER_SO(scheme_null_output_port_type);
+  REGISTER_SO(scheme_redirect_output_port_type);
 
 #if defined(UNIX_PROCESSES)
   REGISTER_SO(scheme_system_children);
@@ -454,6 +458,9 @@ scheme_init_port (Scheme_Env *env)
   scheme_tcp_input_port_type = scheme_make_port_type("<tcp-input-port>");
   scheme_tcp_output_port_type = scheme_make_port_type("<tcp-output-port>");
 #endif
+
+  scheme_null_output_port_type = scheme_make_port_type("<null-output-port>");
+  scheme_redirect_output_port_type = scheme_make_port_type("<redirect-output-port>");
 
 #ifdef WIN32_FD_HANDLES
   scheme_break_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
@@ -966,6 +973,20 @@ Scheme_Object *scheme_make_port_type(const char *name)
   return scheme_make_symbol(name);
 }
 
+static void init_port_locations(Scheme_Port *ip)
+{
+  int cl;
+
+  ip->position = 0;
+  ip->readpos = 0; /* like position, but post UTF-8 decoding, collapses CRLF, etc. */
+  ip->lineNumber = 1;
+  ip->oldColumn = 0;
+  ip->column = 0;
+  ip->charsSinceNewline = 1;
+  cl = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_COUNT_LINES));
+  ip->count_lines = cl;
+}
+
 Scheme_Input_Port *
 scheme_make_input_port(Scheme_Object *subtype,
 		       void *data,
@@ -980,10 +1001,9 @@ scheme_make_input_port(Scheme_Object *subtype,
 		       int must_close)
 {
   Scheme_Input_Port *ip;
-  int cl;
 
   ip = MALLOC_ONE_TAGGED(Scheme_Input_Port);
-  ip->so.type = scheme_input_port_type;
+  ip->p.so.type = scheme_input_port_type;
   ip->sub_type = subtype;
   ip->port_data = data;
   ip->get_string_fun = get_string_fun;
@@ -995,16 +1015,9 @@ scheme_make_input_port(Scheme_Object *subtype,
   ip->close_fun = close_fun;
   ip->name = name;
   ip->ungotten_count = 0;
-  ip->position = 0;
-  ip->readpos = 0; /* like position, but post UTF-8 decoding, collapses CRLF, etc. */
-  ip->lineNumber = 1;
-  ip->oldColumn = 0;
-  ip->column = 0;
-  ip->charsSinceNewline = 1;
   ip->closed = 0;
   ip->read_handler = NULL;
-  cl = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_COUNT_LINES));
-  ip->count_lines = cl;
+  init_port_locations((Scheme_Port *)ip);
 
   if (progress_evt_fun == scheme_progress_evt_via_get)
     ip->unless_cache = scheme_false;
@@ -1022,14 +1035,14 @@ scheme_make_input_port(Scheme_Object *subtype,
   return (ip);
 }
 
-void scheme_set_input_port_location_fun(Scheme_Input_Port *port,
-					Scheme_Location_Fun location_fun)
+void scheme_set_port_location_fun(Scheme_Port *port,
+				  Scheme_Location_Fun location_fun)
 {
   port->location_fun = location_fun;
 }
 
-void scheme_set_input_port_count_lines_fun(Scheme_Input_Port *port,
-					   Scheme_Count_Lines_Fun count_lines_fun)
+void scheme_set_port_count_lines_fun(Scheme_Port *port,
+				     Scheme_Count_Lines_Fun count_lines_fun)
 {
   port->count_lines_fun = count_lines_fun;
 }
@@ -1055,7 +1068,7 @@ scheme_make_output_port(Scheme_Object *subtype,
   Scheme_Output_Port *op;
 
   op = MALLOC_ONE_TAGGED(Scheme_Output_Port);
-  op->so.type = scheme_output_port_type;
+  op->p.so.type = scheme_output_port_type;
   op->sub_type = subtype;
   op->port_data = data;
   op->name = name;
@@ -1067,10 +1080,10 @@ scheme_make_output_port(Scheme_Object *subtype,
   op->write_special_evt_fun = write_special_evt_fun;
   op->write_special_fun = write_special_fun;
   op->closed = 0;
-  op->pos = 0;
   op->display_handler = NULL;
   op->write_handler = NULL;
   op->print_handler = NULL;
+  init_port_locations((Scheme_Port *)op);
 
   if (must_close) {
     Scheme_Custodian_Reference *mref;
@@ -1184,7 +1197,7 @@ static void post_progress(Scheme_Input_Port *ip)
   ip->progress_evt = NULL;
 }
 
-static void inc_pos(Scheme_Input_Port *ip, int a)
+static void inc_pos(Scheme_Port *ip, int a)
 {
   ip->column += a;
   ip->readpos += a;
@@ -1214,6 +1227,98 @@ static Scheme_Object *quick_plus(Scheme_Object *s, long v)
 
 #define state_len(state) ((state >> 3) & 0x7)
 
+static void do_count_lines(Scheme_Port *ip, const char *buffer, long offset, long got)
+{
+  long i;
+  int c, degot = 0;
+
+  mzAssert(ip->lineNumber >= 0);
+  mzAssert(ip->column >= 0);
+  mzAssert(ip->position >= 0);
+
+  ip->oldColumn = ip->column; /* works for a single-char read, like `read' */
+
+  ip->readpos += got; /* add for CR LF below */
+
+  /* Find start of last line: */
+  for (i = got, c = 0; i--; c++) {
+    if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
+      break;
+    }
+  }
+
+  /* Count UTF-8-decoded chars, up to last line: */
+  if (i >= 0) {
+    int state = ip->utf8state;
+    int n;
+    degot += state_len(state);
+    n = scheme_utf8_decode_count(buffer, offset, offset + i + 1, &state, 0, '?');
+    degot += (i + 1 - n);
+    ip->utf8state = 0; /* assert: state == 0, because we ended with a newline */
+  }
+	
+  if (i >= 0) {
+    int n = 0;
+    ip->charsSinceNewline = c + 1;
+    i++;
+    /* Continue walking, back over the previous lines, to find
+       out how many there were: */
+    while (i--) {
+      if (buffer[offset + i] == '\n') {
+	if (!(i && (buffer[offset + i - 1] == '\r'))
+	    && !(!i && ip->was_cr)) {
+	  n++;
+	} else
+	  degot++; /* adjust positions for CRLF -> LF conversion */
+      } else if (buffer[offset + i] == '\r') {
+	n++;
+      }
+    }
+	 	  
+    mzAssert(n > 0);
+    ip->lineNumber += n;
+    ip->was_cr = (buffer[offset + got - 1] == '\r');
+    /* Now reset column to 0: */
+    ip->column = 0;
+  } else {
+    ip->charsSinceNewline += c;
+  }
+
+  /* Do the last line to get the column count right and to
+     further adjust positions for UTF-8 decoding: */
+  {
+    int col = ip->column, n;
+    int prev_i = got - c;
+    int state = ip->utf8state;
+    n = state_len(state);
+    degot += n;
+    col -= n;
+    for (i = prev_i; i < got; i++) {
+      if (buffer[offset + i] == '\t') {
+	n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
+	degot += ((i - prev_i) - n);
+	col += n;
+	col = col - (col & 0x7) + 8;
+	prev_i = i + 1;
+      }
+    }
+    if (prev_i < i) {
+      n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 1, '?');
+      n += state_len(state);
+      col += n;
+      degot += ((i - prev_i) - n);
+    }
+    ip->column = col;
+    ip->utf8state = state;
+  }
+
+  ip->readpos -= degot;
+
+  mzAssert(ip->lineNumber >= 0);
+  mzAssert(ip->column >= 0);
+  mzAssert(ip->position >= 0);
+}
+
 long scheme_get_byte_string_unless(const char *who,
 				   Scheme_Object *port,
 				   char *buffer, long offset, long size,
@@ -1222,7 +1327,7 @@ long scheme_get_byte_string_unless(const char *who,
 				   Scheme_Object *unless_evt)
 {
   Scheme_Input_Port *ip;
-  long got = 0, total_got = 0, gc, i;
+  long got = 0, total_got = 0, gc;
   int special_ok = special_is_ok, check_special;
   Scheme_Get_String_Fun gs;
   Scheme_Peek_String_Fun ps;
@@ -1336,10 +1441,10 @@ long scheme_get_byte_string_unless(const char *who,
       }
 
       if (!peek) {
-	if (ip->position >= 0)
-	  ip->position++;
-	if (ip->count_lines)
-	  inc_pos(ip, 1);
+	if (ip->p.position >= 0)
+	  ip->p.position++;
+	if (ip->p.count_lines)
+	  inc_pos((Scheme_Port *)ip, 1);
       }
 
       if (!peek && ip->progress_evt)
@@ -1391,7 +1496,7 @@ long scheme_get_byte_string_unless(const char *who,
       }
 
       if (v == EOF) {
-	ip->utf8state = 0;
+	ip->p.utf8state = 0;
 	return EOF;
       } else if (v == SCHEME_SPECIAL) {
 	ip->special = NULL;
@@ -1490,10 +1595,10 @@ long scheme_get_byte_string_unless(const char *who,
       if (gc == SCHEME_SPECIAL) {
 	if (!got && !total_got && special_ok) {
 	  if (!peek) {
-	    if (ip->position >= 0)
-	      ip->position++;
-	    if (ip->count_lines)
-	      inc_pos(ip, 1);
+	    if (ip->p.position >= 0)
+	      ip->p.position++;
+	    if (ip->p.count_lines)
+	      inc_pos((Scheme_Port *)ip, 1);
 	  }
 	  
 	  return SCHEME_SPECIAL;
@@ -1509,7 +1614,7 @@ long scheme_get_byte_string_unless(const char *who,
 	  return 0;
 	}
       } else if (gc == EOF) {
-	ip->utf8state = 0;
+	ip->p.utf8state = 0;
 	if (!got && !total_got) {
 	  if (peek && ip->pending_eof)
 	    ip->pending_eof = 2;
@@ -1542,97 +1647,10 @@ long scheme_get_byte_string_unless(const char *who,
 	 the positions are updated separately in the two
 	 returning places above. */
 
-      if (ip->position >= 0)
-	ip->position += got;
-      if (ip->count_lines) {
-	int c, degot = 0;
-
-	mzAssert(ip->lineNumber >= 0);
-	mzAssert(ip->column >= 0);
-	mzAssert(ip->position >= 0);
-
-	ip->oldColumn = ip->column; /* works for a single-char read, like `read' */
-
-	ip->readpos += got; /* add for CR LF below */
-
-	/* Find start of last line: */
-	for (i = got, c = 0; i--; c++) {
-	  if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
-	    break;
-	  }
-	}
-
-	/* Count UTF-8-decoded chars, up to last line: */
-	if (i >= 0) {
-	  int state = ip->utf8state;
-	  int n;
-	  degot += state_len(state);
-	  n = scheme_utf8_decode_count(buffer, offset, offset + i + 1, &state, 0, '?');
-	  degot += (i + 1 - n);
-	  ip->utf8state = 0; /* assert: state == 0, because we ended with a newline */
-	}
-	
-	if (i >= 0) {
-	  int n = 0;
-	  ip->charsSinceNewline = c + 1;
-	  i++;
-	  /* Continue walking, back over the previous lines, to find
-	     out how many there were: */
-	  while (i--) {
-	    if (buffer[offset + i] == '\n') {
-	      if (!(i && (buffer[offset + i - 1] == '\r'))
-		  && !(!i && ip->was_cr)) {
-		n++;
-	      } else
-		degot++; /* adjust positions for CRLF -> LF conversion */
-	    } else if (buffer[offset + i] == '\r') {
-	      n++;
-	    }
-	  }
-	 	  
-	  mzAssert(n > 0);
-	  ip->lineNumber += n;
-	  ip->was_cr = (buffer[offset + got - 1] == '\r');
-	  /* Now reset column to 0: */
-	  ip->column = 0;
-	} else {
-	  ip->charsSinceNewline += c;
-	}
-
-	/* Do the last line to get the column count right and to
-	   further adjust positions for UTF-8 decoding: */
-	{
-	  int col = ip->column, n;
-	  int prev_i = got - c;
-	  int state = ip->utf8state;
-	  n = state_len(state);
-	  degot += n;
-	  col -= n;
-	  for (i = prev_i; i < got; i++) {
-	    if (buffer[offset + i] == '\t') {
-	      n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
-	      degot += ((i - prev_i) - n);
-	      col += n;
-	      col = col - (col & 0x7) + 8;
-	      prev_i = i + 1;
-	    }
-	  }
-	  if (prev_i < i) {
-	    n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 1, '?');
-	    n += state_len(state);
-	    col += n;
-	    degot += ((i - prev_i) - n);
-	  }
-	  ip->column = col;
-	  ip->utf8state = state;
-	}
-
-	ip->readpos -= degot;
-
-	mzAssert(ip->lineNumber >= 0);
-	mzAssert(ip->column >= 0);
-	mzAssert(ip->position >= 0);
-      }
+      if (ip->p.position >= 0)
+	ip->p.position += got;
+      if (ip->p.count_lines)
+	do_count_lines((Scheme_Port *)ip, buffer, offset, got);
     } else if (!ps) {
       /***************************************************/
       /* save newly peeked string for future peeks/reads */
@@ -2557,17 +2575,17 @@ scheme_ungetc (int ch, Scheme_Object *port)
     ip->ungotten[ip->ungotten_count++] = ch;
   }
 
-  if (ip->position > 0)
-    --ip->position;
-  if (ip->count_lines) {
-    --ip->column;
-    --ip->readpos;
-    if (!(--ip->charsSinceNewline)) {
-      mzAssert(ip->lineNumber > 0);
-      --ip->lineNumber;
-      ip->column = ip->oldColumn;
+  if (ip->p.position > 0)
+    --ip->p.position;
+  if (ip->p.count_lines) {
+    --ip->p.column;
+    --ip->p.readpos;
+    if (!(--ip->p.charsSinceNewline)) {
+      mzAssert(ip->p.lineNumber > 0);
+      --ip->p.lineNumber;
+      ip->p.column = ip->p.oldColumn;
     } else if (ch == '\t')
-      ip->column = ip->oldColumn;
+      ip->p.column = ip->p.oldColumn;
   }
 }
 
@@ -2765,15 +2783,22 @@ scheme_need_wakeup (Scheme_Object *port, void *fds)
   }
 }
 
+#define CHECK_IOPORT_CLOSED(who, port) \
+        if (SCHEME_INPORTP(port)) { \
+          CHECK_PORT_CLOSED(who, "input", port, ((Scheme_Input_Port *)port)->closed); \
+        } else { \
+          CHECK_PORT_CLOSED(who, "output", port, ((Scheme_Output_Port *)port)->closed); \
+        }
+
 long
 scheme_tell (Scheme_Object *port)
 {
-  Scheme_Input_Port *ip;
+  Scheme_Port *ip;
   long pos;
 
-  ip = (Scheme_Input_Port *)port;
-
-  CHECK_PORT_CLOSED("#<primitive:get-file-position>", "input", port, ip->closed);
+  ip = (Scheme_Port *)port;
+  
+  CHECK_IOPORT_CLOSED("get-file-position", port);
 
   if (!ip->count_lines || (ip->position < 0))
     pos = ip->position;
@@ -2786,15 +2811,15 @@ scheme_tell (Scheme_Object *port)
 long
 scheme_tell_line (Scheme_Object *port)
 {
-  Scheme_Input_Port *ip;
+  Scheme_Port *ip;
   long line;
 
-  ip = (Scheme_Input_Port *)port;
+  ip = (Scheme_Port *)port;
 
   if (!ip->count_lines || (ip->position < 0))
     return -1;
 
-  CHECK_PORT_CLOSED("#<primitive:get-file-line>", "input", port, ip->closed);
+  CHECK_IOPORT_CLOSED("get-file-line", port);
 
   line = ip->lineNumber;
 
@@ -2804,15 +2829,15 @@ scheme_tell_line (Scheme_Object *port)
 long
 scheme_tell_column (Scheme_Object *port)
 {
-  Scheme_Input_Port *ip;
+  Scheme_Port *ip;
   long col;
 
-  ip = (Scheme_Input_Port *)port;
+  ip = (Scheme_Port *)port;
 
   if (!ip->count_lines || (ip->position < 0))
     return -1;
-
-  CHECK_PORT_CLOSED("#<primitive:get-file-column>", "input", port, ip->closed);
+  
+  CHECK_IOPORT_CLOSED("get-file-column", port);
 
   col = ip->column;
 
@@ -2822,7 +2847,7 @@ scheme_tell_column (Scheme_Object *port)
 void
 scheme_tell_all (Scheme_Object *port, long *_line, long *_col, long *_pos)
 {
-  Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
+  Scheme_Port *ip = (Scheme_Port *)port;
   long line = -1, col = -1, pos = -1;
   
   if (ip->count_lines && ip->location_fun) {
@@ -2892,7 +2917,7 @@ scheme_tell_all (Scheme_Object *port, long *_line, long *_col, long *_pos)
 void
 scheme_count_lines (Scheme_Object *port)
 {
-  Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
+  Scheme_Port *ip = (Scheme_Port *)port;
 
   if (!ip->count_lines) {
     ip->count_lines = 1;
@@ -2994,8 +3019,10 @@ scheme_put_byte_string(const char *who, Scheme_Object *port,
     }
     
     if (out > 0) {
-      op->pos += out;
+      op->p.position += out;
       oout += out;
+      if (op->p.count_lines)
+	do_count_lines((Scheme_Port *)op, str, d, out);
     }
 
     if (rarely_block || !len)
@@ -3046,16 +3073,7 @@ scheme_put_char_string(const char *who, Scheme_Object *port,
 long
 scheme_output_tell(Scheme_Object *port)
 {
-  Scheme_Output_Port *op;
-  long pos;
-
-  op = (Scheme_Output_Port *)port;
-
-  CHECK_PORT_CLOSED("#<primitive:get-file-position>", "output", port, op->closed);
-
-  pos = op->pos;
-
-  return pos;
+  return scheme_tell(port);
 }
 
 void
@@ -3888,7 +3906,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       is = (Scheme_Indexed_String *)ip->port_data;
     else if (argc < 2) {
       long pos;
-      pos = ((Scheme_Input_Port *)argv[0])->position;
+      pos = ((Scheme_Input_Port *)argv[0])->p.position;
       if (pos < 0) {
 	scheme_raise_exn(MZEXN_FAIL,
 			 "the port's current position is not known: %v",
@@ -6235,6 +6253,150 @@ static void init_sigchld(void)
 }
 
 #endif
+
+/*========================================================================*/
+/*                           null output ports                            */
+/*========================================================================*/
+
+static long
+null_write_bytes(Scheme_Output_Port *port,
+		 const char *str, long d, long len,
+		 int rarely_block, int enable_break)
+{
+  return len;
+}
+
+static void
+null_close_out (Scheme_Output_Port *port)
+{
+}
+
+static Scheme_Object *
+null_write_evt(Scheme_Output_Port *op, const char *str, long offset, long size)
+{
+  Scheme_Object *a[2];
+  a[0] = scheme_always_ready_evt;
+  a[1] = scheme_make_closed_prim(return_data, scheme_make_integer(size));
+  return scheme_wrap_evt(2, a);
+}
+
+static Scheme_Object *
+null_write_special_evt(Scheme_Output_Port *op, Scheme_Object *v)
+{
+  Scheme_Object *a[2];
+  a[0] = scheme_always_ready_evt;
+  a[1] = scheme_make_closed_prim(return_data, scheme_true);
+  return scheme_wrap_evt(2, a);
+}
+
+static int 
+null_write_special(Scheme_Output_Port *op, Scheme_Object *v, int nonblock)
+{
+  return 1;
+}
+
+Scheme_Object *
+scheme_make_null_output_port(int can_write_special)
+{
+  Scheme_Output_Port *op;
+
+  op = scheme_make_output_port (scheme_null_output_port_type,
+				NULL,
+				scheme_intern_symbol("null"),
+				null_write_evt,
+				null_write_bytes,
+				NULL,
+				null_close_out,
+				NULL,
+				(can_write_special
+				 ? null_write_special_evt
+				 : NULL),
+				(can_write_special
+				 ? null_write_special
+				 : NULL),
+				0);
+
+  return (Scheme_Object *)op;
+}
+
+/*========================================================================*/
+/*                         redirect output ports                          */
+/*========================================================================*/
+
+static long
+redirect_write_bytes(Scheme_Output_Port *op,
+		     const char *str, long d, long len,
+		     int rarely_block, int enable_break)
+{
+  return scheme_put_byte_string("redirect-output",
+				(Scheme_Object *)op->port_data,
+				str, d, len,
+				rarely_block);
+}
+
+static void
+redirect_close_out (Scheme_Output_Port *port)
+{
+}
+
+static Scheme_Object *
+redirect_write_evt(Scheme_Output_Port *op, const char *str, long offset, long size)
+{
+  return scheme_make_write_evt("redirect-write-evt", 
+			       (Scheme_Object *)op->port_data,
+			       NULL, (char *)str, offset, size);
+}
+
+static Scheme_Object *
+redirect_write_special_evt(Scheme_Output_Port *op, Scheme_Object *special)
+{
+  return scheme_make_write_evt("redirect-write-evt", 
+			       (Scheme_Object *)op->port_data,
+			       special, NULL, 0, 0);
+}
+
+static int 
+redirect_write_special(Scheme_Output_Port *op, Scheme_Object *special, int nonblock)
+{
+  Scheme_Object *v, *a[2];
+
+  a[0] = (Scheme_Object *)op->port_data;
+  a[1] = special;
+
+  if (nonblock)
+    v = scheme_write_special(2, a);
+  else
+    v = scheme_write_special(2, a);
+  
+  return SCHEME_TRUEP(v);
+}
+
+Scheme_Object *
+scheme_make_redirect_output_port(Scheme_Object *port)
+{
+  Scheme_Output_Port *op;
+  int can_write_special;
+
+  can_write_special = !!((Scheme_Output_Port *)port)->write_special_fun;
+
+  op = scheme_make_output_port (scheme_redirect_output_port_type,
+				port,
+				scheme_intern_symbol("redirect"),
+				redirect_write_evt,
+				redirect_write_bytes,
+				NULL,
+				redirect_close_out,
+				NULL,
+				(can_write_special
+				 ? redirect_write_special_evt
+				 : NULL),
+				(can_write_special
+				 ? redirect_write_special
+				 : NULL),
+				0);
+
+  return (Scheme_Object *)op;
+}
 
 /*********** Unix/Windows: process status stuff *************/
 

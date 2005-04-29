@@ -378,13 +378,14 @@
   scheme_extension_table->scheme_close_input_port = scheme_close_input_port;
   scheme_extension_table->scheme_close_output_port = scheme_close_output_port;
   scheme_extension_table->scheme_write_special = scheme_write_special;
+  scheme_extension_table->scheme_write_special_nonblock = scheme_write_special_nonblock;
   scheme_extension_table->scheme_make_read_evt = scheme_make_read_evt;
   scheme_extension_table->scheme_make_write_evt = scheme_make_write_evt;
   scheme_extension_table->scheme_make_port_type = scheme_make_port_type;
   scheme_extension_table->scheme_make_input_port = scheme_make_input_port;
   scheme_extension_table->scheme_make_output_port = scheme_make_output_port;
-  scheme_extension_table->scheme_set_input_port_location_fun = scheme_set_input_port_location_fun;
-  scheme_extension_table->scheme_set_input_port_count_lines_fun = scheme_set_input_port_count_lines_fun;
+  scheme_extension_table->scheme_set_port_location_fun = scheme_set_port_location_fun;
+  scheme_extension_table->scheme_set_port_count_lines_fun = scheme_set_port_count_lines_fun;
   scheme_extension_table->scheme_progress_evt_via_get = scheme_progress_evt_via_get;
   scheme_extension_table->scheme_peeked_read_via_get = scheme_peeked_read_via_get;
   scheme_extension_table->scheme_write_evt_via_write = scheme_write_evt_via_write;
@@ -404,6 +405,8 @@
   scheme_extension_table->scheme_get_sized_byte_string_output = scheme_get_sized_byte_string_output;
   scheme_extension_table->scheme_pipe = scheme_pipe;
   scheme_extension_table->scheme_pipe_with_limit = scheme_pipe_with_limit;
+  scheme_extension_table->scheme_make_null_output_port = scheme_make_null_output_port;
+  scheme_extension_table->scheme_make_redirect_output_port = scheme_make_redirect_output_port;
   scheme_extension_table->scheme_set_file_position = scheme_set_file_position;
   scheme_extension_table->scheme_file_exists = scheme_file_exists;
   scheme_extension_table->scheme_directory_exists = scheme_directory_exists;

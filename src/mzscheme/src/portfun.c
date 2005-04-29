@@ -79,7 +79,6 @@ static Scheme_Object *write_bytes_avail_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *can_write_atomic(int argc, Scheme_Object *argv[]);
 static Scheme_Object *can_provide_progress_evt(int argc, Scheme_Object *argv[]);
 static Scheme_Object *can_write_special(int argc, Scheme_Object *argv[]);
-static Scheme_Object *write_special_nonblock(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *peek_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *peek_byte (int, Scheme_Object *[]);
@@ -338,7 +337,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-output-port",
 			     scheme_make_prim_w_arity(make_output_port,
 						      "make-output-port",
-						      4, 7),
+						      4, 10),
 			     env);
 
   scheme_add_global_constant("read",
@@ -527,7 +526,7 @@ scheme_init_port_fun(Scheme_Env *env)
 						      1, 2),
 			     env);
   scheme_add_global_constant("write-special-avail*",
-			     scheme_make_prim_w_arity(write_special_nonblock,
+			     scheme_make_prim_w_arity(scheme_write_special_nonblock,
 						      "write-special-avail*",
 						      1, 2),
 			     env);
@@ -1349,16 +1348,18 @@ user_close_input(Scheme_Input_Port *port)
 }
 
 static Scheme_Object *
-user_location(Scheme_Input_Port *port)
+user_input_location(Scheme_Port *p)
 {
+  Scheme_Input_Port *port = (Scheme_Input_Port *)p;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
   return scheme_apply_multi(uip->location_proc, 0, NULL);
 }
 
 static void
-user_count_lines(Scheme_Input_Port *port)
+user_input_count_lines(Scheme_Port *p)
 {
+  Scheme_Input_Port *port = (Scheme_Input_Port *)p;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
   scheme_apply_multi(uip->count_lines_proc, 0, NULL);
@@ -1377,6 +1378,8 @@ typedef struct User_Output_Port {
   Scheme_Object *close_proc;
   Scheme_Object *write_special_evt_proc;
   Scheme_Object *write_special_proc;
+  Scheme_Object *location_proc;
+  Scheme_Object *count_lines_proc;
 } User_Output_Port;
 
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Schedule_Info *sinfo)
@@ -1543,7 +1546,7 @@ static Scheme_Object *user_write_evt_wrapper(void *d, int argc, struct Scheme_Ob
 
 static Scheme_Object *
 user_write_bytes_evt(Scheme_Output_Port *port,
-			  const char *buffer, long offset, long size)
+		     const char *buffer, long offset, long size)
 {
   Scheme_Object *to_write, *wrapper;
   Scheme_Object *a[3], *val;
@@ -1640,6 +1643,24 @@ user_write_special_evt (Scheme_Output_Port *port, Scheme_Object *v)
   }
 
   return v;
+}
+
+static Scheme_Object *
+user_output_location(Scheme_Port *p)
+{
+  Scheme_Output_Port *port = (Scheme_Output_Port *)p;
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+
+  return scheme_apply_multi(uop->location_proc, 0, NULL);
+}
+
+static void
+user_output_count_lines(Scheme_Port *p)
+{
+  Scheme_Output_Port *port = (Scheme_Output_Port *)p;
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+
+  scheme_apply_multi(uop->count_lines_proc, 0, NULL);
 }
 
 int scheme_is_user_port(Scheme_Object *port)
@@ -2231,7 +2252,7 @@ make_input_port(int argc, Scheme_Object *argv[])
   if (argc > 6)
     scheme_check_proc_arity2("make-input-port", 0, 6, argc, argv, 1); /* location */
   if (argc > 7)
-    scheme_check_proc_arity2("make-input-port", 0, 7, argc, argv, 1); /* count-lines! */
+    scheme_check_proc_arity("make-input-port", 0, 7, argc, argv); /* count-lines! */
   if (argc > 8) {
     if (!((SCHEME_INTP(argv[8]) && SCHEME_INT_VAL(argv[8]) > 0)
 	  || (SCHEME_BIGNUMP(argv[8]) && SCHEME_BIGPOS(argv[8]))))
@@ -2291,21 +2312,21 @@ make_input_port(int argc, Scheme_Object *argv[])
 			      0);
 
   if (uip->location_proc)
-    scheme_set_input_port_location_fun(ip, user_location);
+    scheme_set_port_location_fun((Scheme_Port *)ip, user_input_location);
   if (uip->count_lines_proc)
-    scheme_set_input_port_count_lines_fun(ip, user_count_lines);
+    scheme_set_port_count_lines_fun((Scheme_Port *)ip, user_input_count_lines);
 
   if (!uip->peek_proc)
     ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
   if (argc > 8) {
     if (SCHEME_INTP(argv[8]))
-      ip->position = (SCHEME_INT_VAL(argv[8]) - 1);
+      ip->p.position = (SCHEME_INT_VAL(argv[8]) - 1);
     else
-      ip->position = -1;
+      ip->p.position = -1;
   }
 
-  if (ip->count_lines && uip->count_lines_proc)
+  if (ip->p.count_lines && uip->count_lines_proc)
     scheme_apply_multi(uip->count_lines_proc, 0, NULL);
 
   return (Scheme_Object *)ip;
@@ -2329,6 +2350,16 @@ make_output_port (int argc, Scheme_Object *argv[])
   scheme_check_proc_arity2("make-output-port", 3, 5, argc, argv, 1); /* write-evt */
   if (argc > 6)
     scheme_check_proc_arity2("make-output-port", 1, 6, argc, argv, 1); /* write-special-evt */
+  if (argc > 7)
+    scheme_check_proc_arity2("make-output-port", 0, 7, argc, argv, 1); /* get-location */
+  if (argc > 8)
+    scheme_check_proc_arity("make-output-port", 0, 8, argc, argv); /* count-lines! */
+  if (argc > 9) {
+    if (!((SCHEME_INTP(argv[9]) && SCHEME_INT_VAL(argv[9]) > 0)
+	  || (SCHEME_BIGNUMP(argv[9]) && SCHEME_BIGPOS(argv[9]))))
+      scheme_wrong_type("make-output-port", "exact, positive integer", 9, argc, argv);
+  }
+  
 
   /* It makes no sense to supply write-special-evt without write-special: */
   if ((argc > 6) && SCHEME_FALSEP(argv[4]) && !SCHEME_FALSEP(argv[6]))
@@ -2372,6 +2403,10 @@ make_output_port (int argc, Scheme_Object *argv[])
     if (SCHEME_FALSEP(uop->write_special_evt_proc))
       uop->write_special_evt_proc = NULL;
   }
+  if ((argc > 7) && SCHEME_TRUEP(argv[7]))
+    uop->location_proc = argv[7];
+  if (argc > 8)
+    uop->count_lines_proc = argv[8];
 
   op = scheme_make_output_port(scheme_user_output_port_type,
 			       uop,
@@ -2384,6 +2419,21 @@ make_output_port (int argc, Scheme_Object *argv[])
 			       uop->write_special_evt_proc ? user_write_special_evt : NULL,
 			       uop->write_special_proc ? user_write_special : NULL,
 			       0);
+
+  if (uop->location_proc)
+    scheme_set_port_location_fun((Scheme_Port *)op, user_output_location);
+  if (uop->count_lines_proc)
+    scheme_set_port_count_lines_fun((Scheme_Port *)op, user_output_count_lines);
+
+  if (argc > 9) {
+    if (SCHEME_INTP(argv[9]))
+      op->p.position = (SCHEME_INT_VAL(argv[9]) - 1);
+    else
+      op->p.position = -1;
+  }
+
+  if (op->p.count_lines && uop->count_lines_proc)
+    scheme_apply_multi(uop->count_lines_proc, 0, NULL);
 
   return (Scheme_Object *)op;
 }
@@ -3436,7 +3486,19 @@ do_write_special(const char *name, int argc, Scheme_Object *argv[], int nonblock
     return NULL;
   }
 
-  return ok ? scheme_true : scheme_false;
+  if (ok) {
+    Scheme_Port *ip = (Scheme_Port *)port;
+    if (ip->position >= 0)
+      ip->position += 1;
+    if (ip->count_lines) {
+      ip->column += 1;
+      ip->readpos += 1;
+      ip->charsSinceNewline += 1;
+      ip->utf8state = 0;
+    }
+    return scheme_true;
+  } else
+    return scheme_false;
 }
 
 static Scheme_Object *can_write_atomic(int argc, Scheme_Object *argv[])
@@ -3479,8 +3541,8 @@ scheme_write_special(int argc, Scheme_Object *argv[])
   return do_write_special("write-special", argc, argv, 0, 0);
 }
 
-static Scheme_Object *
-write_special_nonblock(int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_write_special_nonblock(int argc, Scheme_Object *argv[])
 {
   return do_write_special("write-special-avail*", argc, argv, 1, 0);
 }
@@ -3851,8 +3913,8 @@ static Scheme_Object *global_port_print_handler(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("port-count-lines!", "input port", 0, argc, argv);
+  if (!SCHEME_INPORTP(argv[0]) && !SCHEME_OUTPORTP(argv[0]))
+    scheme_wrong_type("port-count-lines!", "port", 0, argc, argv);
 
   scheme_count_lines(argv[0]);
 
@@ -3871,8 +3933,8 @@ static Scheme_Object *port_next_location(int argc, Scheme_Object *argv[])
   Scheme_Object *a[3];
   long line, col, pos;
 
-  if (!SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("port-next-location", "input port", 0, argc, argv);
+  if (!SCHEME_INPORTP(argv[0]) && !SCHEME_OUTPORTP(argv[0]))
+    scheme_wrong_type("port-next-location", "port", 0, argc, argv);
 
   scheme_tell_all(argv[0], &line, &col, &pos);
 

@@ -2,13 +2,17 @@
 (module port mzscheme
   (require (lib "etc.ss")
 	   (lib "contract.ss")
-	   (lib "list.ss"))
+	   (lib "list.ss")
+	   "private/port.ss")
 
   (provide open-output-nowhere
 	   make-pipe-with-specials
 	   make-input-port/read-to-peek
 	   peeking-input-port
 	   relocate-input-port
+	   transplant-input-port
+	   relocate-output-port
+	   transplant-output-port
 	   merge-input
 	   copy-port
 	   input-port-append
@@ -70,22 +74,6 @@
 				    (input-port-with-progress-evts? . -> . evt?)
 				    (input-port-with-progress-evts? line-mode-symbol? . -> . evt?)))
 		    (eof-evt (input-port-with-progress-evts? . -> . evt?)))
-
-  ;; ----------------------------------------
-
-  (define open-output-nowhere
-    (opt-lambda ([name 'nowhere])
-      (make-output-port 
-       name
-       always-evt
-       (lambda (s start end non-block? breakable?) (- end start))
-       void
-       (lambda (special non-block? breakable?) #t)
-       (lambda (s start end) (wrap-evt
-			      always-evt
-			      (lambda (x)
-				(- end start))))
-       (lambda (special) (wrap-evt always-evt (lambda (x) #t))))))
 
   ;; ----------------------------------------
 
@@ -468,40 +456,40 @@
        void)))
 
   (define relocate-input-port
-    (lambda (p line col pos)
-      (let-values ([(init-l init-c init-p) (port-next-location p)])
-	(make-input-port
-	 (object-name p)
-	 (lambda (s) (let ([v (read-bytes-avail!* s p)])
-		       (if (eq? v 0)
-			   (wrap-evt p (lambda (x) 0))
-			   v)))
-	 (lambda (s skip evt) 
-	   (let ([v (peek-bytes-avail!* s skip evt p)])
-	     (if (eq? v 0)
-		 (choice-evt
-		  (wrap-evt p (lambda (x) 0))
-		  (if evt
-		      (wrap-evt evt (lambda (x) #f))
-		      never-evt))
-		 v)))
-	 (lambda ()
-	   (close-input-port p))
-	 (and (port-provides-progress-evts? p)
-	      (lambda ()
-		(port-progress-evt p)))
-	 (and (port-provides-progress-evts? p)
-	      (lambda (n evt target-evt)
-		(port-commit-peeked n evt target-evt p)))
-	 (lambda ()
-	   (let-values ([(l c p) (port-next-location p)])
-	     (values (and l (+ l (- init-l) line))
-		     (and c (if (equal? l init-l)
-				(+ c (- init-c) col)
-				c))
-		     (and p (+ p (- init-p) pos)))))
-	 void
-	 pos))))
+    (opt-lambda (p line col pos [close? #t])
+      (transplant-to-relocate
+       transplant-input-port
+       p line col pos close?)))
+
+  (define transplant-input-port
+    (opt-lambda (p location-proc pos [close? #t] [count-lines!-proc void])
+      (make-input-port
+       (object-name p)
+       (lambda (s) (let ([v (read-bytes-avail!* s p)])
+		     (if (eq? v 0)
+			 (wrap-evt p (lambda (x) 0))
+			 v)))
+       (lambda (s skip evt) 
+	 (let ([v (peek-bytes-avail!* s skip evt p)])
+	   (if (eq? v 0)
+	       (choice-evt
+		(wrap-evt p (lambda (x) 0))
+		(if evt
+		    (wrap-evt evt (lambda (x) #f))
+		    never-evt))
+	       v)))
+       (lambda ()
+	 (when close?
+	   (close-input-port p)))
+       (and (port-provides-progress-evts? p)
+	    (lambda ()
+	      (port-progress-evt p)))
+       (and (port-provides-progress-evts? p)
+	    (lambda (n evt target-evt)
+	      (port-commit-peeked n evt target-evt p)))
+       location-proc
+       count-lines!-proc
+       pos)))
 
   ;; Not kill-safe.
   (define make-pipe-with-specials

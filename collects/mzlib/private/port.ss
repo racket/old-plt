@@ -53,12 +53,15 @@
        (object-name p)
        p
        (lambda (s start end nonblock? breakable?)
-	 ((if nonblock? 
-	      write-bytes-avail*
-	      (if breakable?
-		  write-bytes-avail/enable-break
-		  write-bytes-avail))
-	  s p start end))
+	 (let ([v ((if nonblock? 
+		       write-bytes-avail*
+		       (if breakable?
+			   write-bytes-avail/enable-break
+			   write-bytes-avail))
+		   s p start end)])
+	   (if (and (zero? v) (not (= start end)))
+	       (wrap-evt p (lambda (x) 0))
+	       v)))
        (lambda ()
 	 (when close?
 	   (close-output-port p)))

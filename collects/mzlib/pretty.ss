@@ -310,6 +310,10 @@
    (define (register-printing-port p info)
      (hash-table-put! printing-ports p info))
 
+   (define (register-printing-port-like p pport)
+     (hash-table-put! printing-ports p 
+		      (hash-table-get printing-ports pport)))
+
    (define (get pport selector)
      (selector (hash-table-get printing-ports pport
 			       (lambda ()
@@ -330,6 +334,9 @@
      (get pport print-port-info-print-line))
    (define (printing-port-esc pport)
      (get pport print-port-info-esc))
+
+   (define orig-display (port-display-handler (open-output-string)))
+   (define orig-write (port-write-handler (open-output-string)))
    
    (define (pretty-print-newline pport width)
      (let-values ([(l col p) (port-next-location pport)])
@@ -531,20 +538,20 @@
 		       (expr-found pport ref))
 		     (n-k)))))))
 
-     (define (write-custom recur obj pport depth display?)
+     (define (write-custom recur obj pport depth display? width)
        (let-values ([(l c p) (port-next-location pport)])
 	 (let ([p (relocate-output-port pport l c p)])
 	   (port-count-lines! p)
 	   (let ([writer (lambda (v port)
-			   (recur (if (eq? port p) pport port)
-			          v (dsub1 depth) #f))]
+			   (recur port v (dsub1 depth) #f))]
 		 [displayer (lambda (v port)
-			      (recur (if (eq? port p) pport port)
-				     v (dsub1 depth) #t))])
+			      (recur port v (dsub1 depth) #t))])
 	     (port-write-handler p writer)
 	     (port-display-handler p displayer)
 	     (port-print-handler p writer))
-	   (parameterize ([pretty-printing #t])
+	   (register-printing-port-like p pport)
+	   (parameterize ([pretty-printing #t]
+			  [pretty-print-columns (or width 'infinity)])
 	     ((custom-write-accessor obj) obj p (not display?))))))
 
      ;; ------------------------------------------------------------
@@ -639,7 +646,7 @@
 	      #f #f
 	      (lambda ()
 		(parameterize ([pretty-print-columns 'infinity])
-		  (write-custom wr* obj pport depth display?))))]
+		  (write-custom wr* obj pport depth display? width))))]
 	    [(struct? obj)
 	     (if (and print-struct?
 		      (not (and depth
@@ -651,7 +658,7 @@
 		    (out "#")
 		    (wr-lst (vector->list (struct->vector obj)) #f (sub1 depth))))
 		 (parameterize ([print-struct #f])
-		   ((if display? display write) obj pport)))]
+		   ((if display? orig-display orig-write) obj pport)))]
 	    [(hash-table? obj)  
 	     (if (and print-hash-table?
 		      (not (and depth
@@ -663,7 +670,7 @@
 		    (out "#hash")
 		    (wr-lst (hash-table-map obj cons) #f depth))
 		  (parameterize ([print-hash-table #f])
-		    ((if display? display write) obj pport))))]
+		    ((if display? orig-display orig-write) obj pport))))]
 	    [(boolean? obj)
 	     (out (if obj "#t" "#f"))]
 	    [(number? obj)
@@ -678,7 +685,7 @@
 		  (eq? obj '|.|))
 	     (out ".")]
 	    [else
-	     ((if display? display write) obj pport)]))
+	     ((if display? orig-display orig-write) obj pport)]))
        (post-print pport obj))
 
      ;; ------------------------------------------------------------
@@ -702,7 +709,7 @@
 	 (let ([col (ccol)])
 	   (if (< to col)
 	       (begin
-		 (let ([col ((printing-port-print-line pport) col width)])
+		 (let ([col ((printing-port-print-line pport) #t col width)])
 		   (spaces (- to col))))
 	       (spaces (max 0 (- to col))))))
 
@@ -751,7 +758,7 @@
 			     (out (number->string (vector-length obj))))
 			   (pp-list (vector->repeatless-list obj) extra pp-expr #f depth)]
 			  [(custom-write? obj)
-			   (write-custom pp* obj pport depth display?)]
+			   (write-custom pp* obj pport depth display? width)]
 			  [(struct? obj) ; print-struct is on if we got here
 			   (out "#")
 			   (pp-list (vector->list (struct->vector obj)) extra pp-expr #f depth)]

@@ -21,7 +21,7 @@
 
 <li> <code>{(idx draw-message)} : gui-item[message%] stri -> true</code>
      <br>to display a message in a message item
-     <br>it earses the current message
+     <br>it erases the current message
 
 <li> <code>{(idx make-text)} : str -> gui-item</code>
      <br>to create an item (with label) that allows users to enter text

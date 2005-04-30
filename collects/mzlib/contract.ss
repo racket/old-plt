@@ -10,6 +10,7 @@ add struct contracts for immutable structs?
 (module contract mzscheme
   
   (provide (rename -contract contract)
+           any
            ->
            ->d
            ->*
@@ -745,6 +746,9 @@ add struct contracts for immutable structs?
 ;                                                                                   
 
   
+  (define-syntax (any stx)
+    (raise-syntax-error 'any "Use any out of an arrow contract" stx))
+
   (define-syntax-set (-> ->* ->d ->d* ->r ->pp ->pp-rest case-> object-contract opt-> opt->*)
     
     (define (->/proc stx) (make-/proc #f ->/h stx))

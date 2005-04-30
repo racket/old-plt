@@ -3509,14 +3509,19 @@ extern "C" {
    The call process is
     wxHiEventTrampoline(f, data)
      -> f(data) in ht mode
-         -> ... mred_run_some(g, data2)            \
+         -> ... mred_het_run_some(g, data2)        \
              -> Scheme code, may finish or may not  | maybe loop
          het->in_progress inicates whether done    /
      -> continue scheme if not finished
 
    In this process, it's the call stack between f(data)
-   and the call to mred_run_some() that won't be copied
-   in or out until f(data) returns. */
+   and the call to mred_het_run_some() that won't be copied
+   in or out until f(data) returns. 
+
+   Nesting wxHiEventTrampoline() calls should be safe, but it won't
+   achieve the goal, which is to limit the amount of work done before
+   returning (because the inner wxHiEventTrampoline will have to run
+   to completion). */
 
 static unsigned long get_deeper_base();
 

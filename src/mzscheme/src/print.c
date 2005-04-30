@@ -820,7 +820,7 @@ static void print_this_string(PrintParams *pp, const char *str, int offset, int 
   char *oldstr;
 
   if (!autolen) {
-    if (str)
+    if (!str)
       len = 0;
     else
       return;
@@ -859,7 +859,7 @@ static void print_this_string(PrintParams *pp, const char *str, int offset, int 
 
   SCHEME_USE_FUEL(len);
   
-  if ((pp->print_maxlen > PRINT_MAXLEN_MIN) || !str) {
+  if (pp->print_maxlen > PRINT_MAXLEN_MIN) {
     if (pp->print_position > pp->print_maxlen) {
       long l = pp->print_maxlen;
 
@@ -872,7 +872,7 @@ static void print_this_string(PrintParams *pp, const char *str, int offset, int 
 
       scheme_longjmp(*pp->print_escape, 1);
     }
-  } else if (pp->print_position > MAX_PRINT_BUFFER) {
+  } else if ((pp->print_position > MAX_PRINT_BUFFER) || !str) {
     if (pp->print_port) {
       pp->print_buffer[pp->print_position] = 0;
       scheme_write_byte_string(pp->print_buffer, pp->print_position, pp->print_port);
@@ -2574,17 +2574,15 @@ static Scheme_Object *custom_recur(int notdisplay, void *_vec, int argc, Scheme_
   PrintParams * volatile pp = (PrintParams *)SCHEME_VEC_ELS(_vec)[3];
   Scheme_Object * volatile save_port;
   mz_jmp_buf escape, * volatile save;
+  volatile long save_max;
+
+  if (!SCHEME_OUTPORTP(argv[1])) {
+    scheme_wrong_type(notdisplay ? "write/recusrive" : "display/recursive",
+		      "output port", 1, argc, argv);
+    return NULL;
+  }
 
   if (SCHEME_VEC_ELS(_vec)[4]) {
-    /* If printing to string, flush it and reset first: */
-    Scheme_Object * volatile sp;
-    sp = SCHEME_VEC_ELS(_vec)[5];
-    if (sp) {
-      flush_from_byte_port(sp, pp);
-      sp = scheme_make_byte_string_output_port();
-      ((Scheme_Output_Port *)argv[1])->port_data = sp;
-    }
-
     /* Recur: */
     {
       if (pp->print_escape) {
@@ -2594,17 +2592,43 @@ static Scheme_Object *custom_recur(int notdisplay, void *_vec, int argc, Scheme_
 	save = NULL;
 
       save_port = pp->print_port;
-      
+      save_max = pp->print_maxlen;
       
       if (!pp->print_escape
-	  || !scheme_setjmp(escape))
+	  || !scheme_setjmp(escape)) {
+	/* If printing to string, flush it and reset first: */
+	Scheme_Object *sp;
+	sp = SCHEME_VEC_ELS(_vec)[5];
+	if (sp) {
+	  flush_from_byte_port(sp, pp);
+	  sp = scheme_make_byte_string_output_port();
+	  ((Scheme_Output_Port *)SCHEME_VEC_ELS(_vec)[6])->port_data = sp;
+	  SCHEME_VEC_ELS(_vec)[5] = sp;
+	}
+
+	/* If printing to a different output port, flush print cache,
+	   first. */
+	if (!SAME_OBJ(save_port, argv[1])) {
+	  print_this_string(pp, NULL, 0, 0);
+	  /* Disable maxlen, because it interferes with flushing.
+	     It would be good to improve on this (to avoid work),
+	     but it's unlikey to ever matter. */
+	  pp->print_maxlen = 0;
+	}
+
+	pp->print_port = argv[1];
+
+	/* Recur */
 	print(argv[0], notdisplay, 0, ht, symtab, rnht, pp);
 
-      /* Flush print cache */
-      print_this_string(pp, NULL, 0, 0);
+	/* Flush print cache, to ensure that future writes to the
+	   port go after printed data. */
+	print_this_string(pp, NULL, 0, 0);
+      }
 
       pp->print_port = save_port;
       pp->print_escape = save;
+      pp->print_maxlen = save_max;
     }
   }
 
@@ -2644,13 +2668,14 @@ static void custom_write_struct(Scheme_Object *s, Scheme_Hash_Table *ht,
   
   op = (Scheme_Output_Port *)o;
 
-  vec = scheme_make_vector(6, NULL);
+  vec = scheme_make_vector(7, NULL);
   SCHEME_VEC_ELS(vec)[0] = (Scheme_Object *)ht;
   SCHEME_VEC_ELS(vec)[1] = (Scheme_Object *)symtab;
   SCHEME_VEC_ELS(vec)[2] = (Scheme_Object *)rnht;
   SCHEME_VEC_ELS(vec)[3] = (Scheme_Object *)pp;
   SCHEME_VEC_ELS(vec)[4] = scheme_true;
   SCHEME_VEC_ELS(vec)[5] = (pp->print_port ? NULL : orig_port);
+  SCHEME_VEC_ELS(vec)[6] = o;
 
   recur_write = scheme_make_closed_prim_w_arity(custom_write_recur,
 						vec,
@@ -2666,7 +2691,8 @@ static void custom_write_struct(Scheme_Object *s, Scheme_Hash_Table *ht,
   op->display_handler = recur_display;
   op->print_handler = recur_write;
 
-  /* First, flush print cache to actual port: */
+  /* First, flush print cache to actual port,
+     so further writes go after current writes: */
   if (pp->print_port)
     print_this_string(pp, NULL, 0, 0);
 
@@ -2677,12 +2703,13 @@ static void custom_write_struct(Scheme_Object *s, Scheme_Hash_Table *ht,
 
   scheme_close_output_port(o);
 
+  memcpy(orig_pp, pp, sizeof(PrintParams));
+
   SCHEME_VEC_ELS(vec)[4] = NULL;
 
-  if (!pp->print_port)
-    flush_from_byte_port(orig_port, pp);
-
-  memcpy(orig_pp, pp, sizeof(PrintParams));
+  /* This must go last, because it might escape: */
+  if (!orig_pp->print_port)
+    flush_from_byte_port(SCHEME_VEC_ELS(vec)[5], orig_pp);
 }
 
 /*========================================================================*/

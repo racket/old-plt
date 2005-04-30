@@ -38,7 +38,7 @@
     (let ([target 
 	   (or target
 	       (let-values ([(src-base rel-path)
-			     (let loop ([path path][accum null])
+			     (let loop ([path (simplify-path path)][accum null])
 			       (let-values ([(base name dir?) (split-path path)])
 				 (if (string=? (path->string name) "collects")
 				     (values base (cons "xform-collects" accum))

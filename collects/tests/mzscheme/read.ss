@@ -460,7 +460,7 @@
     (test-write-sym (cadar l) (cadar l) (cadar l))
     (loop (cdr l))]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test mid-stream EOF
 
 (define (test-mid-stream-eof use-peek?)
@@ -807,7 +807,7 @@
   (test #\y read-char-or-special p)
   (test 3 file-position p))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test read-syntax offsets:
 
 (let ([p (open-input-string " a ")])
@@ -848,7 +848,7 @@
     (test 701 srcloc-column (car (exn:fail:read-srclocs x)))
     (test 7002 srcloc-position (car (exn:fail:read-srclocs x)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (let ([p (open-output-bytes)])
   (display void p)
@@ -886,7 +886,32 @@
     (try-good #rx#"ok")
     (try-good #f)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Test #reader
+
+(err/rt-test (parameterize ([read-accept-reader #f])
+	       (read (open-input-string "#reader mzscheme 10")))
+	     exn:fail:read?)
+(test 10 'ten (parameterize ([read-accept-reader #t])
+	       (read (open-input-string "#reader mzscheme 10"))))
+
+(module reader-test-module mzscheme
+  (define (my-read port)
+    `(READ ,(read port)))
+  (define (my-read-syntax name port)
+    `(READ-SYNTAX ,(read-syntax name port)))
+  (provide (rename my-read read)
+	   (rename my-read-syntax read-syntax)))
+
+(test `(READ 10) 'ten 
+      (parameterize ([read-accept-reader #t])
+	(read (open-input-string "#reader reader-test-module 10"))))
+(test `(READ-SYNTAX 10) 'ten 
+      (syntax-object->datum
+       (parameterize ([read-accept-reader #t])
+	 (read-syntax '??? (open-input-string "#reader reader-test-module 10")))))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)
 

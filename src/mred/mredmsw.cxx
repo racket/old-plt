@@ -18,6 +18,8 @@
 
 #include "mred.h"
 
+#pragma optimize("", off)
+
 #define wxLOG_EVENTS 0
 #if wxLOG_EVENTS
 static FILE *log;
@@ -52,7 +54,6 @@ extern void wxDoLeaveEvent(wxWindow *w, int x, int y, int flags);
 extern LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 extern struct MrEdContext *MrEdGetContext(wxObject *w);
 extern void MrEdQueueInEventspace(void *context, Scheme_Object *thunk);
-extern int wxTryClose(void *wnd);
 
 class LeaveEvent {
 public:
@@ -232,6 +233,7 @@ static int HETDispatchMessage(void *_msg)
 {
   MSG *msg = (MSG *)_msg;
   DispatchMessage(msg);
+  return 0;
 }
 
 void MrEdDispatchEvent(MSG *msg)
@@ -280,16 +282,10 @@ void MrEdDispatchEvent(MSG *msg)
 
     TranslateMessage(msg);
 
-    if (msg->message = WM_QUERYENDSESSION) {
-      /* See wxEventTrampoline for info on the special
-	 handling of WM_QUERYENDSESSION */
-      wxHiEventTrampoline(HETDispatchMessage, msg);
-    } else {
-      can_trampoline_win = msg->hwnd;
-      last_msg_time = msg->time;
+    can_trampoline_win = msg->hwnd;
+    last_msg_time = msg->time;
       
-      DispatchMessage(msg);
-    }
+    DispatchMessage(msg);
 
 #if wxLOG_EVENTS
     if (!log)
@@ -401,10 +397,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
      we jump into a special mode started by wxHiEventTrampoline().
      This mode calls into Windows to implement scrolling, but handles
      WM_HSCROLL and WM_VSCROLL messages specially. See mred.cxx for details
-     on wxHiEventTrampoline. 
-
-     WM_QUERYENDSESSION is also handled specially. In that case, the
-     special mode is entered around DispatchMessage. */
+     on wxHiEventTrampoline. */
 {
   int tramp;
 
@@ -428,11 +421,14 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
 
   switch (message) {
-  case WM_QUERYENDSESSION:
   case WM_HSCROLL:
   case WM_VSCROLL:
     /* Special cases */
     tramp = 0;
+    break;
+  case WM_QUERYENDSESSION:
+    tramp = 1;
+    *res = 0;
     break;
   case WM_ENDSESSION:
   case WM_CLOSE:
@@ -615,15 +611,6 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
 #endif
 	}
 	return 0;
-      case WM_QUERYENDSESSION:
-	if (het->in_progress) {
-	  /* Already trying, so give up */
-	  *_retval = 0;
-	  return 0;
-	} else {
-	  return 1;
-	}
-	break;
       default:
 	/* anything else is ok, because it doesn't call Scheme */
 	break;
@@ -633,6 +620,9 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
 
   if (!tramp) {
     switch (message) {
+    case WM_QUERYENDSESSION:
+      *_retval = 0;
+      return 0;
     case WM_NCRBUTTONDOWN:
     case WM_NCRBUTTONUP:
     case WM_NCRBUTTONDBLCLK:
@@ -645,8 +635,7 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
     case WM_NCMOUSEMOVE:
       if ((wParam != HTVSCROLL) && (wParam != HTHSCROLL))
 	break;
-    case WM_QUERYENDSESSION: /* ^^^^ fallthrough &&&& */
-    case WM_CLOSE:
+    case WM_CLOSE: /* ^^^^ fallthrough &&&& */
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
     case WM_RBUTTONDBLCLK:
@@ -780,31 +769,6 @@ static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime
     else
       fprintf(log, " HET_TIMER_DONE)\n");
 #endif
-  }
-}
-
-int wxHiEventTryClose(void *_wnd)
-{
-  HiEventTramp *het;
-  Scheme_Object *v;
-  
-  v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
-  if (SCHEME_FALSEP(v))
-    het = NULL;
-  else
-    het = (HiEventTramp *)SCHEME_CAR(v);
-  
-  if (het) {
-    int v;
-    v = mred_het_run_some(wxTryClose, _wnd);
-    if (het->in_progress) {
-      /* Didn't finish, so disallow endsession */
-      return 0;
-    } else
-      return v;
-  } else {
-    /* Shouldn't have gotten here */
-    return 0;
   }
 }
 

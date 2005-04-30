@@ -27,7 +27,7 @@ BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
     return FALSE;
 }
 
-extern int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+extern LONG wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 			long *r, int tramp);
 
 class wxRBInfo {

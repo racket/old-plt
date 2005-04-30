@@ -794,19 +794,6 @@ static int call_dwp(void *_c) {
   return wnd->DefWindowProc(c->message, c->wParam, c->lParam);  
 }
 
-int wxTryClose(void *_wnd)
-{
-  wxWnd *wnd = (wxWnd *)_wnd;
-
-  if (wnd->OnClose()) {
-    if (wnd->wx_window)
-      wnd->wx_window->Show(FALSE);
-    return 1;
-  }
-  return 0;
-}
-
-extern int wxHiEventTryClose(void *_wnd);
 extern int wxHiEventTrampoline(int (*f)(void *), void *data);
 extern void wxCopyData(LPARAM lparam);
 
@@ -1217,16 +1204,14 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       break;
     }
   case WM_QUERYENDSESSION:
-    {
-      /* If we got here, it's a non-trampoline under het */
-      retval = wxHiEventTryClose(wnd);
-      break;
-    }
   case WM_ENDSESSION:
   case WM_CLOSE:
     {
-      wxTryClose(wnd);
-      retval = 1;
+      retval = (message == WM_QUERYENDSESSION);
+      if (wnd->OnClose()) {
+	if (wnd->wx_window)
+	  wnd->wx_window->Show(FALSE);
+      }
       break;
     }
 #ifndef WM_THEMECHANGED

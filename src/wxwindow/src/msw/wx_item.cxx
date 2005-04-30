@@ -242,15 +242,15 @@ void wxFindMaxSize(HWND wnd, RECT *rect)
 
 static int skip_next_return;
 
-extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int tramp);
+extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int tramp, LONG *_retval);
 extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp);
 
 extern wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease, HWND handle);
 
-int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+LONG wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 		 long *result, int tramp)
 {
-  int retval = 1;
+  LONG retval = 1;
   int nc = 0;
   int skip = 0;
   wxPanel *panel;
@@ -260,7 +260,7 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
   // If not in edit mode (or has been removed from parent), call the default proc.
   panel = (wxPanel *)item->GetParent();
 
-  if (!wx_start_win_event("item", hWnd, message, wParam, lParam, tramp)) {
+  if (!wx_start_win_event("item", hWnd, message, wParam, lParam, tramp, &retval)) {
     /* Something has gone wrong. Give up. */
     return retval;
   }

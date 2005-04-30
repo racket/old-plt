@@ -1210,7 +1210,8 @@
 			(set! buf-end (- buf-end buf-start))
 			(set! buf-start 0))
 		      (let* ([amt (bytes-length s)]
-			     [c (read-bytes-avail!* buf port buf-end (+ buf-end amt))])
+			     [c (read-bytes-avail!* buf port buf-end (min (bytes-length buf) 
+									  (+ buf-end amt)))])
 			(cond
 			 [(or (eof-object? c) 
 			      (procedure? c))

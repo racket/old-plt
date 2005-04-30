@@ -237,7 +237,7 @@
 		     (lambda (special block break?)
 		       (write-special special /dev/null)
 		       (check-esc)
-		       (set! content (cons (box special) content))
+		       (set! content (cons (cons 'special special) content))
 		       #t))
 		#f #f
 		(lambda ()
@@ -774,11 +774,12 @@
 
        (define (pp-expr expr extra depth)
 	 (if (read-macro? expr)
-	     (pr (read-macro-body expr)
-		 (out (read-macro-prefix expr))
-		 extra
-		 pp-expr
-		 depth)
+	     (begin
+	       (out (read-macro-prefix expr))
+	       (pr (read-macro-body expr)
+		   extra
+		   pp-expr
+		   depth))
 	     (let ((head (car expr)))
 	       (if (and (symbol? head)
 			(not (size-hook head display?)))

@@ -174,6 +174,7 @@ extern void wxInitUserResource(char *s);
 static int retValue = 0;
 
 extern void wxCreateApp(void);
+extern void wxStartEndSessionThread();
 extern "C" __declspec(dllimport) void scheme_set_stack_base(void *, int);
 
 int WM_IS_MRED;
@@ -204,6 +205,8 @@ int wxWinMain(int wm_is_mred,
   wxCreateApp();
 
   wxGDIStartup();
+
+  wxStartEndSessionThread();
 
   // Get application name
   {

@@ -3750,7 +3750,7 @@ static unsigned long get_deeper_base()
 /****************************************************************************/
 
 #if defined(wx_mac) || defined(wx_msw)
-void Drop_Runtime(char **argv, int argc)
+void wxDrop_Runtime(char **argv, int argc)
 {
   int i;
   mz_jmp_buf *save, newbuf;
@@ -3773,7 +3773,7 @@ void Drop_Runtime(char **argv, int argc)
 }
 #endif
 
-#ifdef wx_mac
+#if defined(wx_mac) || defined(wx_msw)
 static void wxDo(Scheme_Object *proc)
 {
   mz_jmp_buf *save, newbuf;
@@ -3790,7 +3790,7 @@ static void wxDo(Scheme_Object *proc)
   scheme_current_thread->error_buf = save;
 }
 
-void Drop_Quit()
+void wxDrop_Quit()
 {
   if (ioFrame) {
     if (ioFrame->OnClose())
@@ -3799,7 +3799,9 @@ void Drop_Quit()
 
   wxDo(wxs_app_quit_proc);
 }
+#endif
 
+#ifdef wx_mac
 void wxDo_About()
 {
   wxDo(wxs_app_about_proc);

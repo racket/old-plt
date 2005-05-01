@@ -1204,13 +1204,16 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       break;
     }
   case WM_QUERYENDSESSION:
+    retval = 1;
+    break;
   case WM_ENDSESSION:
   case WM_CLOSE:
     {
-      retval = (message == WM_QUERYENDSESSION);
-      if (wnd->OnClose()) {
-	if (wnd->wx_window)
+      retval = 0;
+      if (wnd->wx_window && wnd->wx_window->IsShown()) {
+	if (wnd->OnClose()) {
 	  wnd->wx_window->Show(FALSE);
+	}
       }
       break;
     }

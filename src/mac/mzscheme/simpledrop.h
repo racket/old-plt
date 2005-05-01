@@ -1,9 +1,9 @@
 /* Call to start: */
-extern void Drop_GetArgs(int *, char ***, int *in_terminal);
+extern void wxDrop_GetArgs(int *, char ***, int *in_terminal);
 
 /* You supply: */
-void Drop_Runtime(char **, int);
-void Drop_Quit(void);
+void wxDrop_Runtime(char **, int);
+void wxDrop_Quit(void);
 
 /* Utility: */
 extern void ParseLine(char *, int *, char ***);

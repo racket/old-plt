@@ -161,3 +161,118 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 
   return result;
 }
+
+static volatile HWND qes_win;
+static volatile HANDLE cancel_sema;
+static volatile int waiting_for_cancel = 0, qes_answer = 0;
+static HANDLE cs_lock;
+extern void wxPostQueryEndSession();
+
+static int ResetCancelSema()
+{
+  int qa;
+  WaitForSingleObject(cs_lock, INFINITE);
+  cancel_sema = CreateSemaphore(NULL, 0, 1000, NULL);
+  qa = qes_answer;
+  waiting_for_cancel = 0;
+  ReleaseMutex(cs_lock);
+  return qa;
+}
+
+LRESULT APIENTRY wxEndSessionWatcherWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+  if (message == WM_QUERYENDSESSION) {
+    /* Send message on to windows in main thread.
+       We expect the main-thread windows to either disallow the
+       end session or exit. */
+    int qa;
+
+	WaitForSingleObject(cs_lock, INFINITE);
+    qa = qes_answer;
+	waiting_for_cancel = 1;
+    ReleaseMutex(cs_lock);
+
+	if (!qa) {
+      wxPostQueryEndSession();
+      WaitForSingleObject(cancel_sema, INFINITE);
+      qa = ResetCancelSema();
+	}
+	return qa;
+  }
+
+  return ::DefWindowProcW(hWnd, message, wParam, lParam);
+}
+
+static long DoEndSessionWin(void *data)
+{
+  HWND win;
+  MSG msg;
+
+  qes_win = CreateWindowW(L"wxEndSessionWatcher", L"EndSession Watcher", WS_POPUP,
+		                  0, 0, 10, 10,
+		                  NULL, NULL, wxhInstance, NULL);
+
+  while (GetMessage(&msg, NULL, 0, 0)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
+
+  return 0;
+}
+
+void wxEndEndSessionThread()
+{
+}
+
+void wxNotifyCancelEndSession()
+{
+  WaitForSingleObject(cs_lock, INFINITE);
+  ReleaseSemaphore(cancel_sema, 1, NULL);
+  ReleaseMutex(cs_lock);
+}
+
+void notify_cancel()
+{
+  int wfc;
+
+  WaitForSingleObject(cs_lock, INFINITE);
+  wfc = waiting_for_cancel;
+  qes_answer = 1;
+  ReleaseMutex(cs_lock);
+	
+  if (wfc) {
+	wxNotifyCancelEndSession();
+	/* Block until the qes window can handle a random message */
+    SendMessage(qes_win,
+		        RegisterWindowMessage("MrEd_Done_B2261834-D535-44dd-8511-A26FC8F97DD0"),
+		        0, 0);
+  }
+}
+
+void wxStartEndSessionThread()
+{
+  DWORD id;
+  WNDCLASSW wndclass;
+    
+  memset(&wndclass, 0, sizeof(WNDCLASSW));
+
+  wndclass.style         = CS_HREDRAW | CS_VREDRAW;
+  wndclass.lpfnWndProc   = (WNDPROC)wxEndSessionWatcherWndProc;
+  wndclass.cbClsExtra    = 0;
+  wndclass.cbWndExtra    = sizeof(DWORD);
+  wndclass.hInstance     = wxhInstance;
+  wndclass.hIcon         = wxSTD_FRAME_ICON;
+  wndclass.hCursor       = NULL;
+  wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
+  wndclass.lpszMenuName  = NULL;
+  wndclass.lpszClassName = L"wxEndSessionWatcher";
+
+  RegisterClassW(&wndclass);
+
+  cs_lock = CreateMutex(NULL, FALSE, NULL);
+  ResetCancelSema();
+
+  CreateThread(NULL, (1 << 15), (LPTHREAD_START_ROUTINE)DoEndSessionWin, NULL, 0, &id);
+
+  atexit(notify_cancel);
+}

@@ -204,7 +204,7 @@ int invoke_application(FSSpec *application, FSSpec *myself)
   }
 		
   /* Get command-line arguments here */
-  Drop_GetArgs(&argc, &argv, &in_terminal);
+  wxDrop_GetArgs(&argc, &argv, &in_terminal);
 
   /* Compute size of args from command-line */
   givenlen = 0;
@@ -317,11 +317,11 @@ int main(int argc, char **argv)
 }
 
 
-void Drop_Runtime(char **, int)
+void wxDrop_Runtime(char **, int)
 {
 }
 
-void Drop_Quit(void)
+void wxDrop_Quit(void)
 {
 }
 

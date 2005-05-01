@@ -47,6 +47,8 @@ extern "C" {
 static int found_nothing;
 static DWORD max_sleep_time;
 
+static volatile int need_quit;
+
 extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
 extern int wxCheckMousePosition();
@@ -211,6 +213,12 @@ int MrEdGetNextEvent(int check_only, int current_only,
   if (which)
     *which = NULL;
 
+  if (need_quit) {
+    /* This function can be called in any thread; it queues as necessary: */
+    need_quit = 0;
+    wxDrop_Quit();
+  }
+
   if (current_only)
     c = MrEdGetContext();
   else
@@ -361,7 +369,7 @@ void wxCopyData(LPARAM lParam)
 	  break;
 	}
       }
-      Drop_Runtime(argv, cnt);
+      wxDrop_Runtime(argv, cnt);
     }
   }
 }
@@ -427,8 +435,9 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     tramp = 0;
     break;
   case WM_QUERYENDSESSION:
+    /* Always allow end-session here; see wx_pdf for the effective guardian */
     tramp = 1;
-    *res = 0;
+    *res = 1;
     break;
   case WM_ENDSESSION:
   case WM_CLOSE:
@@ -621,7 +630,7 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
   if (!tramp) {
     switch (message) {
     case WM_QUERYENDSESSION:
-      *_retval = 0;
+      *_retval = 1;
       return 0;
     case WM_NCRBUTTONDOWN:
     case WM_NCRBUTTONUP:
@@ -770,6 +779,14 @@ static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime
       fprintf(log, " HET_TIMER_DONE)\n");
 #endif
   }
+}
+
+/***************************************************************************/
+
+void wxPostQueryEndSession()
+  /* Called from non-main Windows thread */
+{
+  need_quit = 1;
 }
 
 /***************************************************************************/

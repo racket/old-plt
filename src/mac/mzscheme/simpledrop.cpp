@@ -319,7 +319,7 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
     gone = 1;
     Startup(files, count + j);
   } else {
-    Drop_Runtime(files, count + j);
+    wxDrop_Runtime(files, count + j);
   }
   
   return 0;
@@ -347,7 +347,7 @@ static pascal OSErr CmdLineMessage(const AppleEvent *evt, AppleEvent *b, long c)
 
 static pascal OSErr SetUpQuitMessage(const AppleEvent *a, AppleEvent *b, long c)
 {
-  Drop_Quit();
+  wxDrop_Quit();
   return 0;
 }
 
@@ -361,7 +361,7 @@ static void Install(void)
   err = AEInstallEventHandler('PLT ', 'cmdl', NewAEEventHandlerUPP(CmdLineMessage), 0, 0);
 }
 
-void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
+void wxDrop_GetArgs(int *argc, char ***argv, int *in_terminal)
 {
   *in_terminal = 1;
 

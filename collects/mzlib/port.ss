@@ -1276,7 +1276,11 @@
   ;; --------------------------------------------------
   
   (define reencode-output-port
-    (opt-lambda (port encoding [error-bytes #f] [close? #f] [name (object-name port)] [buffer-mode 'block])
+    (opt-lambda (port encoding [error-bytes #f] [close? #f] [name (object-name port)] 
+		      [buffer-mode (if (and (output-port? port)
+					    (file-stream-port? port))
+				       (file-stream-buffer-mode port)
+				       'block)])
       (let ([c (bytes-open-converter "UTF-8" encoding)]
 	    [ready-bytes (make-bytes 1024)]
 	    [ready-start 0]

@@ -49,6 +49,13 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 #endif
 }
 
+static void wxCancelQuit()
+{
+#ifdef wx_msw
+  
+#endif
+}
+
 #ifndef wxGETDIR
 # define wxGETDIR 0
 #endif
@@ -207,6 +214,26 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 
 
 
+
+
+static Scheme_Object *wxsGlobalwxCancelQuit(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(wxCancelQuit());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
 
 static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
 {
@@ -718,6 +745,8 @@ void objscheme_setup_wxsGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxCancelQuit, "cancel-quit", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("cancel-quit", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxsFillPrivateColor, "fill-private-color", 2, 2));
   WITH_VAR_STACK(scheme_install_xc_global("fill-private-color", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxFlushDisplay, "flush-display", 0, 0));

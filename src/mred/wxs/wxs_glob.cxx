@@ -49,10 +49,13 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 #endif
 }
 
+#ifdef wx_msw
+extern void wxNotifyCancelEndSession();
+#endif
 static void wxCancelQuit()
 {
 #ifdef wx_msw
-  
+  wxNotifyCancelEndSession();
 #endif
 }
 

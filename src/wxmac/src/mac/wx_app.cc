@@ -34,7 +34,7 @@ extern void wxDoEvents();
 extern void wxDoNextEvent();
 extern int wxEventReady();
 
-extern void Drop_Quit();
+extern void wxDrop_Quit();
 extern void wxDo_Pref();
 extern void wxDo_About();
 
@@ -1006,7 +1006,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 
     if (!GetIndMenuItemWithCommandID(NULL, 'quit', 1, &mnu, &idx)) {
       if ((macMenuId == GetMenuID(mnu)) && (macMenuItemNum == idx)) {
-	Drop_Quit();
+	wxDrop_Quit();
 	UnhiliteMenu();
 	return TRUE;
       }

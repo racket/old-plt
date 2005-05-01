@@ -1,4 +1,18 @@
 
+Version 299.104
+Changed prop:custom-write value to a procedure that writes
+ to a port
+Changed port-count-lines! and port-next-location to work
+ on output-ports
+Changed make-output-port to take three new arguments:
+ get-location procedure, count-lines! procedure,
+ and initial position
+Added relocate-output-port, transplant-input-port,
+ and transplant-output-port to MzLib's "port.ss"
+Removed pretty-print-display-string-handler from MzLib's
+ "pretty.ss", and adapted protocol for hook procedures
+ slightly (i.e., they usually must write to a given port)
+                       
 Version 299.103
 Added prop:custom-write, custom-write?, custom-write-accessor
 Changed read-syntax[/recursive] to remove the delta-list

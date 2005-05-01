@@ -1276,8 +1276,8 @@
   ;; --------------------------------------------------
   
   (define reencode-output-port
-    (opt-lambda (port encoding [error-bytes #f] [close? #f] [name (object-name port)])
-      (let ([c (bytes-open-converter encoding "UTF-8")]
+    (opt-lambda (port encoding [error-bytes #f] [close? #f] [name (object-name port)] [buffer-mode 'block])
+      (let ([c (bytes-open-converter "UTF-8" encoding)]
 	    [ready-bytes (make-bytes 1024)]
 	    [ready-start 0]
 	    [ready-end 0]
@@ -1297,7 +1297,7 @@
 		0
 		(write-it s start end no-buffer&block? enable-break?))]
 	   [no-buffer&block?
-	    (case (flush-all)
+	    (case (flush-all #t enable-break?)
 	      [(not-done)
 	       ;; We couldn't flush right away, so give up.
 	       #f]
@@ -1335,6 +1335,10 @@
 		  (begin
 		    (bytes-copy! out-bytes out-end s start (+ start cnt))
 		    (set! out-end (+ cnt out-end))
+		    (case buffer-mode
+		      [(none) (flush-all-now enable-break?)]
+		      [(line) (when (regexp-match-positions #rx#"[\r\n]" s start (+ start cnt))
+				(flush-all-now enable-break?))])
 		    cnt)))]))
 	   
 	(define (non-blocking-write s start end)
@@ -1390,11 +1394,11 @@
 		#f)]))
 	
 	;; flush-all : -> 'done, 'not-done, or 'stuck
-	(define (flush-all)
+	(define (flush-all non-block? enable-break?)
 	  (let ([orig-none-ready? (= ready-start ready-end)]
 		[orig-out-start out-start]
 		[orig-out-end out-end])
-	    (flush-some #t #f)
+	    (flush-some non-block? enable-break?)
 	    (if (buffer-flushed?)
 		'done
 		;; Couldn't flush everything. One possibility is that we need
@@ -1405,6 +1409,10 @@
 			 (= orig-out-end out-end))
 		    'stuck
 		    'not-done))))
+
+	(define (flush-all-now enable-break?)
+	  (case (flush-all #f enable-break?)
+	    [(not-done) (flush-all-now enable-break?)]))
 	
 	(define (buffer-flushed?)
 	  (and (= ready-start ready-end)

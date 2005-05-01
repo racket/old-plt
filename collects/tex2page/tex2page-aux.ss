@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "20050427")
+(define *tex2page-version* "20050501")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -289,6 +289,8 @@
 (define *html-page-count* #f)
 
 (define *ignore-timestamp?* #f)
+
+(define *ignore-active-space?* #f)
 
 (define *img-magnification* 1)
 
@@ -1021,14 +1023,10 @@
 
 (define ignorespaces
   (lambda ()
-    (if (find-chardef #\space)
+    (if (and (find-chardef #\space) (not *ignore-active-space?*))
       (when (= (the-count "\\TIIPobeyspacestrictly") 0)
         (let ((c (snoop-actual-char)))
-          (cond
-           ((eof-object? c) #t)
-           ((char=? c #\newline) #t)
-           ((char-whitespace? c) (get-actual-char))
-           (else #t))))
+          (cond ((eof-object? c) #t) ((char=? c #\newline) #t) (else #t))))
       (let ((newline-active? (find-chardef #\newline))
             (newline-already-read? #f))
         (let loop ()
@@ -1731,8 +1729,7 @@
     (unless frame (set! frame (top-texframe)))
     (let ((d (ensure-cdef char frame)))
       (set!cdef.argpat d argpat)
-      (set!cdef.expansion d expansion)
-      (set!cdef.active d #t))))
+      (set!cdef.expansion d expansion))))
 
 (define ensure-cdef
   (lambda (c f)
@@ -1767,20 +1764,27 @@
 (define do-defcsactive
   (lambda (global?)
     (ignorespaces)
-    (let* ((c (get-ctl-seq))
+    (let* ((cs (get-ctl-seq))
+           (c (string-ref cs 1))
            (argpat (get-def-arguments c))
            (rhs (ungroup (get-group)))
            (f (and global? *global-texframe*)))
-      (tex-def-char (string-ref c 1) argpat rhs f))))
+      (activate-cdef c)
+      (tex-def-char c argpat rhs f))))
 
 (define activate-cdef
   (lambda (c)
-    (cond
-     ((find-chardef-in-top-frame c) => (lambda (y) (set!cdef.active y #t)))
-     (else
-      (let* ((y (find-chardef c)) (d (ensure-cdef c (top-texframe))))
-        (when y (kopy-cdef d y))
-        (set!cdef.active d #t))))))
+    (let ((y
+           (cond
+            ((find-chardef-in-top-frame c)
+             =>
+             (lambda (y) (set!cdef.active y #t) y))
+            (else
+             (let* ((d (find-chardef c)) (y (ensure-cdef c (top-texframe))))
+               (when d (kopy-cdef y d))
+               (set!cdef.active y #t)
+               y)))))
+      (add-postlude-to-top-frame (lambda () (set!cdef.active y #f))))))
 
 (define deactivate-cdef
   (lambda (c)
@@ -2085,7 +2089,7 @@
                 (case seclvl ((-1) "part") ((0) "chap") (else "sec"))
                 "_"
                 (if unnumbered? (gen-temp-string) lbl-val))))
-        (unless unnumbered?
+        (unless #f
           (tex-def-toks "\\TIIPrecentlabelname" lbl #f)
           (tex-def-toks "\\TIIPrecentlabelvalue" lbl-val #f))
         (do-end-para)
@@ -2167,6 +2171,20 @@
         (when *recent-node-name*
           (do-label-aux *recent-node-name*)
           (set! *recent-node-name* #f))))))
+
+(define do-addcontentsline
+  (lambda ()
+    (let* ((toc (get-group))
+           (section-type (string-trim-blanks (ungroup (get-group))))
+           (seclvl (if (string=? section-type "chapter") 0 1))
+           (header (get-group)))
+      (write-aux
+        `(!toc-entry
+           ,(if (= seclvl -1) -1 (if *using-chapters?* seclvl (- seclvl 1)))
+           ,(get-toks "\\TIIPrecentlabelvalue")
+           ,*html-page-count*
+           ,(get-toks "\\TIIPrecentlabelname")
+           ,header)))))
 
 (define do-documentclass
   (lambda ()
@@ -2743,9 +2761,13 @@
 (define do-obeylines
   (lambda ()
     (if (eqv? (snoop-actual-char) #\newline) (get-actual-char))
+    (activate-cdef #\newline)
     (tex-def-char #\newline '() "\\TIIPbr" #f)))
 
-(define do-obeyspaces (lambda () (tex-def-char #\space '() "\\TIIPnbsp" #f)))
+(define do-obeyspaces
+  (lambda ()
+    (activate-cdef #\space)
+    (tex-def-char #\space '() "\\TIIPnbsp" #f)))
 
 (define do-obeywhitespace (lambda () (do-obeylines) (do-obeyspaces)))
 
@@ -2845,6 +2867,8 @@
                ((eat-word "cc") (* 12 1238 (/ 1157)))
                ((eat-word "cm") (* (/ 2.54) 72.27))
                ((eat-word "dd") (/ 1238 1157))
+               ((eat-word "em") 10)
+               ((eat-word "ex") 4.5)
                ((eat-word "in") 72.27)
                ((eat-word "mm") (* 0.1 (/ 2.54) 72.27))
                ((eat-word "pc") 12)
@@ -2860,7 +2884,8 @@
 
 (define do-br
   (lambda ()
-    (if (find-chardef #\space)
+    (if (or (find-chardef #\space)
+            (not (= (the-count "\\TIIPobeylinestrictly") 0)))
       (emit "<br>")
       (unless (eqv? (snoop-actual-char) #\newline) (emit "<br>")))
     (emit-newline)))
@@ -3700,7 +3725,6 @@
 (define output-colophon
   (lambda ()
     (when (or *colophon-mentions-last-mod-time?* *colophon-mentions-tex2page?*)
-      (do-para)
       (do-end-para)
       (emit "<div align=right class=colophon>")
       (when (and
@@ -3891,6 +3915,7 @@
 
 (define output-html-postamble
   (lambda ()
+    (do-end-para)
     (emit "</div>")
     (emit-newline)
     (emit "</body>")
@@ -3910,6 +3935,7 @@
     (do-end-para)
     (output-footnotes)
     (output-navigation-bar 'bottom)
+    (do-para)
     (when (or
            (and *colophon-on-first-page?* (= *html-page-count* 0))
            (and (not *colophon-on-first-page?*)
@@ -4787,9 +4813,9 @@
           (system (string-append "dvips " f ".dvi -o " f ".ps"))
           (ps-to-img (string-append f ".ps") f)
           (write-log f.img)
-          (for-each
-            (lambda (e) (ensure-file-deleted (string-append f e)))
-            '(".aux" ".dvi" ".log" ".ps" ".tex")))
+          '(for-each
+             (lambda (e) (ensure-file-deleted (string-append f e)))
+             '(".aux" ".dvi" ".log" ".ps" ".tex")))
          (else (write-log "failed, try manually")))
         (write-log #\})
         (write-log 'separation-space)))))
@@ -5007,8 +5033,7 @@
 
 (define do-box
   (lambda ()
-    (ignorespaces)
-    (get-to)
+    (fluid-let ((*ignore-active-space?* #t)) (ignorespaces) (get-to))
     (eat-dimen)
     (ignorespaces)
     (let ((c (snoop-actual-char))) (case c ((#\{) #t) ((#\\) (get-ctl-seq))))
@@ -5347,6 +5372,7 @@
     (tex-def-count "\\TIIPtabularborder" 1 #t)
     (tex-def-count "\\TIIPnestedtabularborder" 0 #t)
     (tex-def-count "\\TIIPobeyspacestrictly" 0 #t)
+    (tex-def-count "\\TIIPobeylinestrictly" 0 #t)
     (tex-def-count "\\errorcontextlines" 5 #t)
     (tex-def-toks "\\TIIPrecentlabelname" "" #t)
     (tex-def-toks "\\TIIPrecentlabelvalue" "" #t)
@@ -7587,7 +7613,7 @@
 
 (tex-def-math-prim "\\partial" (lambda () (emit "&eth;")))
 
-(tex-def-math-prim "\\prime" (lambda () (emit "/")))
+(tex-def-math-prim "\\prime" (lambda () (emit "<small>/</small>")))
 
 (tex-def-math-prim "\\emptyset" (lambda () (emit "&Oslash;")))
 
@@ -8856,9 +8882,11 @@
   "\\ProvidesFile"
   (lambda () (get-group) (get-bracketed-text-if-any)))
 
-(tex-def-prim
-  "\\addcontentsline"
-  (lambda () (get-group) (get-group) (get-group)))
+'(tex-def-prim
+   "\\addcontentsline"
+   (lambda () (get-group) (get-group) (get-group)))
+
+(tex-def-prim "\\addcontentsline" do-addcontentsline)
 
 (tex-def-prim
   "\\makebox"

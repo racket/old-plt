@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *pregexp-version* 20050425)
+(define *pregexp-version* 20050502)
 
 (define *pregexp-comment-char* #\;)
 
@@ -401,8 +401,8 @@
           (case-sensitive? #t))
       (let sub ((re re) (i i) (sk identity) (fk (lambda () #f)))
         (cond
-         ((eqv? re ':bos) (if (= i 0) (sk i) (fk)))
-         ((eqv? re ':eos) (if (>= i sn) (sk i) (fk)))
+         ((eqv? re ':bos) (if (= i start) (sk i) (fk)))
+         ((eqv? re ':eos) (if (>= i n) (sk i) (fk)))
          ((eqv? re ':empty) (sk i))
          ((eqv? re ':wbdry) (if (pregexp-at-word-boundary? s i n) (sk i) (fk)))
          ((eqv? re ':not-wbdry)

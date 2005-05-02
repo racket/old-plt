@@ -3776,7 +3776,16 @@ void wxDrop_Runtime(char **argv, int argc)
 #if defined(wx_mac) || defined(wx_msw)
 static void wxDo(Scheme_Object *proc)
 {
-  mz_jmp_buf *save, newbuf;
+  mz_jmp_buf * volatile save, newbuf;
+  volatile int block_descriptor;
+
+  /* wxDo might be called when MrEd is sleeping (i.e.,
+     blocked on WNE in OS X). Since we're hijacking the
+     thread, save an restore block information. */
+  block_descriptor = scheme_current_thread->block_descriptor;
+  scheme_current_thread->block_descriptor = 0;
+
+  scheme_start_atomic();
 
   save = scheme_current_thread->error_buf;
   scheme_current_thread->error_buf = &newbuf;
@@ -3788,6 +3797,9 @@ static void wxDo(Scheme_Object *proc)
   }
 
   scheme_current_thread->error_buf = save;
+  scheme_current_thread->block_descriptor = block_descriptor;
+
+  scheme_end_atomic_no_swap();
 }
 
 void wxDrop_Quit()

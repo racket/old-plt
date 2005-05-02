@@ -1132,8 +1132,18 @@ static CFStringRef sock_copy_desc(const void *info)
 
 #endif
 
+static int going, reported_recursive_sleep;
+
 void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 {
+  if (going) {
+    if (!reported_recursive_sleep) {
+      fprintf(stderr, "recursive sleep!\n");
+      reported_recursive_sleep = 1;
+    }
+    return;
+  }
+
   /* If we're asked to sleep less than 1/60 of a second, then don't
      bother with WaitNextEvent. */
   if ((secs > 0) && (secs < 1.0/60)) {
@@ -1192,6 +1202,8 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
     }
 #endif
 
+    going++;
+
 #ifdef OS_X
     if (need_post) /* useless check in principle, but an optimization
 		      in the case that the select() succeeds before
@@ -1199,6 +1211,8 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 #endif
       if (WNE(&e, secs ? secs : kEventDurationForever))
 	QueueTransferredEvent(&e);
+
+    --going;
 
 #ifdef OS_X
     /* Shut down the watcher thread */

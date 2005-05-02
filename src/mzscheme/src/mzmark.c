@@ -2639,6 +2639,7 @@ int mark_user_input_MARK(void *p) {
   gcMARK(uip->peeked_read_proc);
   gcMARK(uip->location_proc);
   gcMARK(uip->count_lines_proc);
+  gcMARK(uip->buffer_mode_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
   gcMARK(uip->peeked);
@@ -2655,6 +2656,7 @@ int mark_user_input_FIXUP(void *p) {
   gcFIXUP(uip->peeked_read_proc);
   gcFIXUP(uip->location_proc);
   gcFIXUP(uip->count_lines_proc);
+  gcFIXUP(uip->buffer_mode_proc);
   gcFIXUP(uip->close_proc);
   gcFIXUP(uip->reuse_str);
   gcFIXUP(uip->peeked);
@@ -2681,6 +2683,7 @@ int mark_user_output_MARK(void *p) {
   gcMARK(uop->write_special_proc);
   gcMARK(uop->location_proc);
   gcMARK(uop->count_lines_proc);
+  gcMARK(uop->buffer_mode_proc);
   gcMARK(uop->close_proc);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
@@ -2696,6 +2699,7 @@ int mark_user_output_FIXUP(void *p) {
   gcFIXUP(uop->write_special_proc);
   gcFIXUP(uop->location_proc);
   gcFIXUP(uop->count_lines_proc);
+  gcFIXUP(uop->buffer_mode_proc);
   gcFIXUP(uop->close_proc);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
@@ -3042,6 +3046,7 @@ int mark_tcp_MARK(void *p) {
   Scheme_Tcp *tcp = (Scheme_Tcp *)p;
 
   gcMARK(tcp->b.buffer);
+  gcMARK(tcp->b.out_buffer);
 # ifdef USE_MAC_TCP
   gcMARK(tcp->tcp);
   gcMARK(tcp->activeRcv);
@@ -3055,6 +3060,7 @@ int mark_tcp_FIXUP(void *p) {
   Scheme_Tcp *tcp = (Scheme_Tcp *)p;
 
   gcFIXUP(tcp->b.buffer);
+  gcFIXUP(tcp->b.out_buffer);
 # ifdef USE_MAC_TCP
   gcFIXUP(tcp->tcp);
   gcFIXUP(tcp->activeRcv);

@@ -332,12 +332,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-input-port",
 			     scheme_make_prim_w_arity(make_input_port,
 						      "make-input-port",
-						      4, 9),
+						      4, 10),
 			     env);
   scheme_add_global_constant("make-output-port",
 			     scheme_make_prim_w_arity(make_output_port,
 						      "make-output-port",
-						      4, 10),
+						      4, 11),
 			     env);
 
   scheme_add_global_constant("read",
@@ -983,6 +983,7 @@ typedef struct User_Input_Port {
   Scheme_Object *peeked_read_proc;   /* NULL => progress_evt_proc is NULL */
   Scheme_Object *location_proc;
   Scheme_Object *count_lines_proc;
+  Scheme_Object *buffer_mode_proc;
   Scheme_Object *reuse_str;
   Scheme_Object *peeked;
 } User_Input_Port;
@@ -1365,6 +1366,54 @@ user_input_count_lines(Scheme_Port *p)
   scheme_apply_multi(uip->count_lines_proc, 0, NULL);
 }
 
+
+static int
+user_buffer_mode(Scheme_Object *buffer_mode_proc, int mode)
+{
+  Scheme_Object *v, *a[1];
+
+  if (mode < 0) {
+    v = scheme_apply(buffer_mode_proc, 0, NULL);
+    if (SCHEME_TRUEP(v)) {
+      if (SAME_OBJ(v, scheme_block_symbol))
+	mode = 0;
+      else if (SAME_OBJ(v, scheme_line_symbol))
+	mode = 1;
+      else if (SAME_OBJ(v, scheme_none_symbol))
+	mode = 2;
+      else {
+	a[0] = v;
+	scheme_wrong_type("user port buffer-mode", "'block, 'line, 'none, or #f", -1, -1, a);
+	return 0;
+      }
+    }
+  } else {
+    switch (mode) {
+    case 0:
+      a[0] = scheme_block_symbol;
+      break;
+    case 1:
+      a[0] = scheme_line_symbol;
+      break;
+    case 2:
+      a[0] = scheme_none_symbol;
+      break;
+    }
+    scheme_apply_multi(buffer_mode_proc, 1, a);
+  }
+
+  return mode;
+}
+
+static int
+user_input_buffer_mode(Scheme_Port *p, int mode)
+{
+  Scheme_Input_Port *port = (Scheme_Input_Port *)p;
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
+  
+  return user_buffer_mode(uip->buffer_mode_proc, mode);
+}
+
 /*========================================================================*/
 /*                 "user" output ports (created from Scheme)              */
 /*========================================================================*/
@@ -1380,6 +1429,7 @@ typedef struct User_Output_Port {
   Scheme_Object *write_special_proc;
   Scheme_Object *location_proc;
   Scheme_Object *count_lines_proc;
+  Scheme_Object *buffer_mode_proc;
 } User_Output_Port;
 
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Schedule_Info *sinfo)
@@ -1661,6 +1711,15 @@ user_output_count_lines(Scheme_Port *p)
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
 
   scheme_apply_multi(uop->count_lines_proc, 0, NULL);
+}
+
+static int
+user_output_buffer_mode(Scheme_Port *p, int mode)
+{
+  Scheme_Output_Port *port = (Scheme_Output_Port *)p;
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+
+  return user_buffer_mode(uop->buffer_mode_proc, mode);
 }
 
 int scheme_is_user_port(Scheme_Object *port)
@@ -2253,10 +2312,16 @@ make_input_port(int argc, Scheme_Object *argv[])
     scheme_check_proc_arity2("make-input-port", 0, 6, argc, argv, 1); /* location */
   if (argc > 7)
     scheme_check_proc_arity("make-input-port", 0, 7, argc, argv); /* count-lines! */
-  if (argc > 8) {
+  if (argc > 8) { /* buffer-mode */
     if (!((SCHEME_INTP(argv[8]) && SCHEME_INT_VAL(argv[8]) > 0)
 	  || (SCHEME_BIGNUMP(argv[8]) && SCHEME_BIGPOS(argv[8]))))
       scheme_wrong_type("make-input-port", "exact, positive integer", 8, argc, argv);
+  }
+  if (argc > 9) {
+    if (SCHEME_TRUEP(argv[9])
+	&& !scheme_check_proc_arity(NULL, 0, 9, argc, argv)
+	&& !scheme_check_proc_arity(NULL, 1, 9, argc, argv))
+      scheme_wrong_type("make-input-port", "procedure (arities 0 and 1)", 9, argc, argv);
   }
   name = argv[0];
 
@@ -2298,6 +2363,9 @@ make_input_port(int argc, Scheme_Object *argv[])
     uip->location_proc = NULL;
   if (argc > 7)
     uip->count_lines_proc = argv[7];
+  uip->buffer_mode_proc = ((argc > 9) ? argv[9] : scheme_false);
+  if (SCHEME_FALSEP(uip->buffer_mode_proc))
+    uip->buffer_mode_proc = NULL;
 
   ip = scheme_make_input_port(scheme_user_input_port_type,
 			      uip,
@@ -2325,6 +2393,9 @@ make_input_port(int argc, Scheme_Object *argv[])
     else
       ip->p.position = -1;
   }
+
+  if (uip->buffer_mode_proc)
+    ip->p.buffer_mode_fun = user_input_buffer_mode;
 
   if (ip->p.count_lines && uip->count_lines_proc)
     scheme_apply_multi(uip->count_lines_proc, 0, NULL);
@@ -2359,7 +2430,12 @@ make_output_port (int argc, Scheme_Object *argv[])
 	  || (SCHEME_BIGNUMP(argv[9]) && SCHEME_BIGPOS(argv[9]))))
       scheme_wrong_type("make-output-port", "exact, positive integer", 9, argc, argv);
   }
-  
+  if (argc > 10) { /* buffer-mode */
+    if (SCHEME_TRUEP(argv[10])
+	&& !scheme_check_proc_arity(NULL, 0, 10, argc, argv)
+	&& !scheme_check_proc_arity(NULL, 1, 10, argc, argv))
+      scheme_wrong_type("make-output-port", "procedure (arities 0 and 1)", 10, argc, argv);
+  }  
 
   /* It makes no sense to supply write-special-evt without write-special: */
   if ((argc > 6) && SCHEME_FALSEP(argv[4]) && !SCHEME_FALSEP(argv[6]))
@@ -2407,6 +2483,8 @@ make_output_port (int argc, Scheme_Object *argv[])
     uop->location_proc = argv[7];
   if (argc > 8)
     uop->count_lines_proc = argv[8];
+  if ((argc > 10) && SCHEME_TRUEP(argv[10]))
+    uop->buffer_mode_proc = argv[10];
 
   op = scheme_make_output_port(scheme_user_output_port_type,
 			       uop,
@@ -2431,6 +2509,9 @@ make_output_port (int argc, Scheme_Object *argv[])
     else
       op->p.position = -1;
   }
+
+  if (uop->buffer_mode_proc)
+    op->p.buffer_mode_fun = user_output_buffer_mode;
 
   if (op->p.count_lines && uop->count_lines_proc)
     scheme_apply_multi(uop->count_lines_proc, 0, NULL);

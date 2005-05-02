@@ -147,6 +147,16 @@ typedef struct {
 # define htonl(x) x
 #endif
 
+typedef struct Scheme_Tcp_Buf {
+  MZTAG_IF_REQUIRED
+  short refcount;
+  char *buffer, *out_buffer;
+  short bufpos, bufmax;
+  short hiteof, bufmode;
+  short out_bufpos, out_bufmax;
+  short out_bufmode;
+} Scheme_Tcp_Buf;
+
 typedef struct Scheme_Tcp {
   Scheme_Tcp_Buf b;
   tcp_t tcp;
@@ -1406,11 +1416,15 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
 
   bfr = (char *)scheme_malloc_atomic(TCP_BUFFER_SIZE);
   data->b.buffer = bfr;
+  bfr = (char *)scheme_malloc_atomic(TCP_BUFFER_SIZE);
+  data->b.out_buffer = bfr;
 
   data->b.bufpos = 0;
   data->b.bufmax = 0;
   data->b.hiteof = 0;
   data->b.refcount = refcount;
+
+  data->b.out_bufmode = 1;
 
 #ifndef USE_MAC_TCP
 # ifdef USE_WINSOCK_TCP
@@ -1492,6 +1506,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
 			   Scheme_Object *unless)
 {
   int errid;
+  int read_amt;
   Scheme_Tcp *data;
 
   data = (Scheme_Tcp *)port->port_data;
@@ -1554,11 +1569,16 @@ static long tcp_get_string(Scheme_Input_Port *port,
   /* We assume that no other process has access to our sockets, so
      when we unblock, there's definitely something to read. */
 
+  if (!data->b.bufmode || (size > TCP_BUFFER_SIZE))
+    read_amt = TCP_BUFFER_SIZE;
+  else
+    read_amt = size;
+
 #ifdef USE_SOCKETS_TCP
   {
     int rn;
     do {
-      rn = recv(data->tcp, data->b.buffer, TCP_BUFFER_SIZE, 0);
+      rn = recv(data->tcp, data->b.buffer, read_amt, 0);
     } while ((rn == -1) && (NOT_WINSOCK(errno) == EINTR));
     data->b.bufmax = rn;
   }
@@ -1599,7 +1619,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
       pb->ioCompletion = u_tcp_recv_done;
       pb->csParam.receive.commandTimeoutValue = 0; /* seconds, 0 = blocking */
       pb->csParam.receive.rcvBuff = data->b.buffer;
-      pb->csParam.receive.rcvBuffLen = TCP_BUFFER_SIZE;
+      pb->csParam.receive.rcvBuffLen = read_amt;
     
       data->activeRcv = pb;
 
@@ -1706,11 +1726,25 @@ static void tcp_close_input(Scheme_Input_Port *port)
   --scheme_file_open_count;
 }
 
-static long tcp_write_string(Scheme_Output_Port *port, 
-			     const char *s, long offset, long len, 
-			     int rarely_block, int enable_break)
+static int
+tcp_in_buffer_mode(Scheme_Port *p, int mode)
 {
-  /* TCP writes aren't buffered at all right now. */
+  Scheme_Tcp *data;
+
+  data = (Scheme_Tcp *)((Scheme_Input_Port *)p)->port_data;  
+  if (mode < 0)
+    return data->b.bufmode;
+  else {
+    data->b.bufmode = mode;
+    return mode;
+  }
+}
+
+static long tcp_do_write_string(Scheme_Output_Port *port, 
+				const char *s, long offset, long len, 
+				int rarely_block, int enable_break)
+{
+  /* We've already checked for buffering before we got here. */
   /* If rarely_block is 1, it means only write as much as
      can be flushed immediately, blocking only if nothing
      can be written. */
@@ -1720,9 +1754,6 @@ static long tcp_write_string(Scheme_Output_Port *port,
   Scheme_Tcp *data;
   int errid, would_block = 0;
   long sent;
-
-  if (!len) /* a flush request */
-    return 0; 
 
   data = (Scheme_Tcp *)port->port_data;
 
@@ -1749,15 +1780,15 @@ static long tcp_write_string(Scheme_Output_Port *port,
       if (rarely_block)
 	return sent;
       else
-	sent += tcp_write_string(port, s, offset + sent, len - sent, 0, enable_break);
+	sent += tcp_do_write_string(port, s, offset + sent, len - sent, 0, enable_break);
       errid = 0;
     } else if ((len > 1) && SEND_BAD_MSG_SIZE(errid)) {
       /* split the message and try again: */
       int half = (len / 2);
-      sent = tcp_write_string(port, s, offset, half, rarely_block, enable_break);
+      sent = tcp_do_write_string(port, s, offset, half, rarely_block, enable_break);
       if (rarely_block)
 	return sent;
-      sent += tcp_write_string(port, s, offset + half, len - half, 0, enable_break);
+      sent += tcp_do_write_string(port, s, offset + half, len - half, 0, enable_break);
       errid = 0;
     } else if (WAS_EAGAIN(errid)) {
       errid = 0;
@@ -1850,10 +1881,10 @@ static long tcp_write_string(Scheme_Output_Port *port,
     } else if (!errid) {
       if (bytes) {
       	/* Do partial write: */
-        sent = tcp_write_string(port, s, offset, bytes, rarely_block, enable_break);
+        sent = tcp_do_write_string(port, s, offset, bytes, rarely_block, enable_break);
 	if (rarely_block)
 	  return sent;
-        sent = tcp_write_string(port, s, offset + bytes, len - bytes, 0, enable_break);
+        sent = tcp_do_write_string(port, s, offset + bytes, len - bytes, 0, enable_break);
 	sent += bytes;
       } else
         would_block = 1;
@@ -1890,11 +1921,81 @@ static long tcp_write_string(Scheme_Output_Port *port,
   return sent;
 }
 
+static int tcp_flush(Scheme_Output_Port *port,
+		     int rarely_block, int enable_break)
+{
+  Scheme_Tcp *data;
+  int amt, flushed = 0;
+  
+  data = (Scheme_Tcp *)port->port_data;
+
+  while (1) {
+    if (data->b.out_bufpos == data->b.out_bufmax) {
+      data->b.out_bufpos = 0;
+      data->b.out_bufmax = 0;
+      return flushed;
+    }
+    amt = tcp_do_write_string(port, data->b.out_buffer, data->b.out_bufpos, 
+			      data->b.out_bufmax - data->b.out_bufpos,
+			      rarely_block, enable_break);
+    flushed += amt;
+    data->b.out_bufpos += amt;
+    if (rarely_block && (data->b.out_bufpos < data->b.out_bufmax))
+      return flushed;
+  }
+}
+
+static long tcp_write_string(Scheme_Output_Port *port, 
+			     const char *s, long offset, long len, 
+			     int rarely_block, int enable_break)
+{
+  Scheme_Tcp *data;
+
+  data = (Scheme_Tcp *)port->port_data;
+
+  if (!len) {
+    /* Flush */
+    return tcp_flush(port, rarely_block, enable_break);
+  }
+
+  if (rarely_block) {
+    tcp_flush(port, rarely_block, enable_break);
+    if (data->b.out_bufmax)
+      return -1;
+  } else {
+    if (data->b.out_bufmode < 2) {
+      if (data->b.out_bufmax + len < TCP_BUFFER_SIZE) {
+	memcpy(data->b.out_buffer + data->b.out_bufmax, s + offset, len);
+	data->b.out_bufmax += len;
+	if (data->b.out_bufmode == 1) {
+	  /* Check for newline */
+	  int i;
+	  for (i = 0; i < len; i++) {
+	    if ((s[offset + i] == '\r')
+		|| (s[offset + i] == '\n'))
+	      break;
+	  }
+	  if (i < len)
+	    tcp_flush(port, rarely_block, enable_break);
+	}
+	return len;
+      }
+    }
+    tcp_flush(port, rarely_block, enable_break);
+  }
+
+  /* When we get here, the buffer is empty */
+  return tcp_do_write_string(port, s, offset, len, rarely_block, enable_break);
+}
+
 static void tcp_close_output(Scheme_Output_Port *port)
 {
   Scheme_Tcp *data;
 
   data = (Scheme_Tcp *)port->port_data;
+
+  if (data->b.out_bufmax && !scheme_force_port_closed)
+    tcp_flush(port, 0, 0);
 
 #ifdef USE_SOCKETS_TCP
   if (!(data->flags & MZ_TCP_ABANDON_OUTPUT))
@@ -1918,6 +2019,24 @@ static void tcp_close_output(Scheme_Output_Port *port)
   --scheme_file_open_count;
 }
 
+static int
+tcp_out_buffer_mode(Scheme_Port *p, int mode)
+{
+  Scheme_Tcp *data;
+
+  data = (Scheme_Tcp *)((Scheme_Output_Port *)p)->port_data;  
+  if (mode < 0)
+    return data->b.out_bufmode;
+  else {
+    int go;
+    go = (mode > data->b.out_bufmode);
+    data->b.out_bufmode = mode;
+    if (go)
+      tcp_flush((Scheme_Output_Port *)p, 0, 0);
+    return mode;
+  }
+}
+
 static Scheme_Object *
 make_tcp_input_port(void *data, const char *name)
 {
@@ -1935,13 +2054,17 @@ make_tcp_input_port(void *data, const char *name)
 			      tcp_need_wakeup,
 			      1);
 
+  ip->p.buffer_mode_fun = tcp_in_buffer_mode;
+
   return (Scheme_Object *)ip;
 }
 
 static Scheme_Object *
 make_tcp_output_port(void *data, const char *name)
 {
-  return (Scheme_Object *)scheme_make_output_port(scheme_tcp_output_port_type,
+  Scheme_Output_Port *op;
+
+  op = scheme_make_output_port(scheme_tcp_output_port_type,
 						  data,
 						  scheme_make_immutable_sized_utf8_string((char *)name, -1),
 						  scheme_write_evt_via_write,
@@ -1952,6 +2075,10 @@ make_tcp_output_port(void *data, const char *name)
 						  NULL,
 						  NULL,
 						  1);
+
+  op->p.buffer_mode_fun = tcp_out_buffer_mode;
+
+  return (Scheme_Object *)op;
 }
 
 #endif /* USE_TCP */

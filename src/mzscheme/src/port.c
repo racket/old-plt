@@ -342,7 +342,7 @@ static Scheme_Object *text_symbol, *binary_symbol;
 static Scheme_Object *append_symbol, *error_symbol, *update_symbol;
 static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol;
 
-static Scheme_Object *none_symbol, *line_symbol, *block_symbol;
+Scheme_Object *scheme_none_symbol, *scheme_line_symbol, *scheme_block_symbol;
 
 static Scheme_Object *exact_symbol;
 
@@ -382,13 +382,13 @@ scheme_init_port (Scheme_Env *env)
   truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
   update_symbol = scheme_intern_symbol("update");
 
-  REGISTER_SO(none_symbol);
-  REGISTER_SO(line_symbol);
-  REGISTER_SO(block_symbol);
+  REGISTER_SO(scheme_none_symbol);
+  REGISTER_SO(scheme_line_symbol);
+  REGISTER_SO(scheme_block_symbol);
 
-  none_symbol = scheme_intern_symbol("none");
-  line_symbol = scheme_intern_symbol("line");
-  block_symbol = scheme_intern_symbol("block");
+  scheme_none_symbol = scheme_intern_symbol("none");
+  scheme_line_symbol = scheme_intern_symbol("line");
+  scheme_block_symbol = scheme_intern_symbol("block");
 
   REGISTER_SO(exact_symbol);
 
@@ -4105,113 +4105,58 @@ long scheme_set_file_position(Scheme_Object *port, long pos)
 Scheme_Object *
 scheme_file_buffer(int argc, Scheme_Object *argv[])
 {
-  Scheme_Output_Port *op = NULL;
-  Scheme_Input_Port *ip = NULL;
+  Scheme_Port *p = NULL;
 
-  if ((!SCHEME_OUTPORTP(argv[0]) && !SCHEME_INPORTP(argv[0]))
-      || SCHEME_FALSEP(scheme_file_stream_port_p(1, argv)))
-    scheme_wrong_type("file-stream-buffer-mode", "file-stream port", 0, argc, argv);
+  if (!SCHEME_OUTPORTP(argv[0]) && !SCHEME_INPORTP(argv[0]))
+    scheme_wrong_type("file-stream-buffer-mode", "port", 0, argc, argv);
 
-  if (SCHEME_OUTPORTP(argv[0]))
-    op = (Scheme_Output_Port *)argv[0];
-  else
-    ip = (Scheme_Input_Port *)argv[0];
+  p = (Scheme_Port *)argv[0];
 
   if (argc == 1) {
-#ifdef MZ_FDS
-    Scheme_FD *fd;
-    
-    if (op && SAME_OBJ(op->sub_type, fd_output_port_type))
-      fd = (Scheme_FD *)op->port_data;
-    else if (ip && SAME_OBJ(ip->sub_type, fd_input_port_type))
-      fd = (Scheme_FD *)ip->port_data;
-    else
-      fd = NULL;
-    
-    if (fd) {
-      switch (fd->flush) {
+    Scheme_Buffer_Mode_Fun bm;
+
+    bm = p->buffer_mode_fun;
+    if (bm) {
+      switch (bm(p, -1)) {
       case MZ_FLUSH_NEVER:
-	return block_symbol;
+	return scheme_block_symbol;
       case MZ_FLUSH_BY_LINE:
-	return line_symbol;
+	return scheme_line_symbol;
       case MZ_FLUSH_ALWAYS:
-	return none_symbol;
+	return scheme_none_symbol;
       }
     }
-#endif
 
-    scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-		     "file-stream-buffer-mode: cannot determine the current buffer mode");
-    return NULL;
+    return scheme_false;
   } else {
     Scheme_Object *s = argv[1];
+    Scheme_Buffer_Mode_Fun bm;
 
-    if (!SAME_OBJ(s, block_symbol)
-	&& !SAME_OBJ(s, line_symbol)
-	&& !SAME_OBJ(s, none_symbol))
+    if (!SAME_OBJ(s, scheme_block_symbol)
+	&& !SAME_OBJ(s, scheme_line_symbol)
+	&& !SAME_OBJ(s, scheme_none_symbol))
       scheme_wrong_type("file-stream-buffer-mode", "'none, 'line, or 'block", 1, argc, argv);
 
-    if (ip && SAME_OBJ(s, line_symbol))
+    if (SCHEME_INPORTP(argv[0]) && SAME_OBJ(s, scheme_line_symbol))
       scheme_arg_mismatch("file-stream-buffer-mode", 
-			  "'line buffering not supported for an input port",
+			  "'line buffering not supported for an input port: ",
 			  argv[0]);
 
-    {
-      FILE *f;
-      
-      if (op && SAME_OBJ(op->sub_type, file_output_port_type))
-	f = ((Scheme_Output_File *)op->port_data)->f;
-      else if (ip && SAME_OBJ(ip->sub_type, file_input_port_type))
-	f = ((Scheme_Input_File *)ip->port_data)->f;
+    bm = p->buffer_mode_fun;
+    if (bm) {
+      int mode;
+      if (SAME_OBJ(s, scheme_block_symbol))
+	mode = MZ_FLUSH_NEVER;
+      else if (SAME_OBJ(s, scheme_line_symbol))
+	mode = MZ_FLUSH_BY_LINE;
       else
-	f = NULL;
+	mode = MZ_FLUSH_ALWAYS;
 
-      if (f) {
-	int bad;
-
-	if (SAME_OBJ(s, block_symbol))
-	  bad = setvbuf(f, NULL, _IOFBF, 0);
-	else if (op && SAME_OBJ(s, line_symbol))
-	  bad = setvbuf(f, NULL, _IOLBF, 0);
-	else
-	  bad = setvbuf(f, NULL, _IONBF, 0);
-
-	if (bad) {
-	  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-			   "file-stream-buffer-mode: error changing buffering (%e)",
-			   errno);
-	  return NULL;
-	}
-      }
-
-#ifdef MZ_FDS
-      {
-	Scheme_FD *fd;
-   
-	if (op && SAME_OBJ(op->sub_type, fd_output_port_type))
-	  fd = (Scheme_FD *)op->port_data;
-	else if (ip && SAME_OBJ(ip->sub_type, fd_input_port_type))
-	  fd = (Scheme_FD *)ip->port_data;
-	else
-	  fd = NULL;
-	
-	if (fd) {
-	  if (SAME_OBJ(s, block_symbol))
-	    fd->flush = MZ_FLUSH_NEVER;
-	  else if (op && SAME_OBJ(s, line_symbol)) {
-	    int go;
-	    go = (fd->flush == MZ_FLUSH_NEVER);
-	    fd->flush = MZ_FLUSH_BY_LINE;
-	    if (go)
-	      flush_fd(op, NULL, 0, 0, 0, 0);
-	  } else {
-	    fd->flush = MZ_FLUSH_ALWAYS;
-	    if (op)
-	      flush_fd(op, NULL, 0, 0, 0, 0);
-	  }
-	}
-      }
-#endif
+      bm(p, mode);
+    } else {
+      scheme_arg_mismatch("file-stream-buffer-mode", 
+			  "cannot set buffer mode on port: ",
+			  argv[0]);
     }
 
     return scheme_void;
@@ -4274,6 +4219,37 @@ file_need_wakeup(Scheme_Input_Port *port, void *fds)
 {
 }
 
+static int
+file_buffer_mode(Scheme_Port *p, int mode)
+{
+  FILE *f;
+  int bad;
+
+  if (mode < 0)
+    return -1; /* unknown mode */
+
+  if (SCHEME_INPORTP(p))
+    f = ((Scheme_Output_File *)((Scheme_Input_Port *)p)->port_data)->f;
+  else
+    f = ((Scheme_Output_File *)((Scheme_Output_Port *)p)->port_data)->f;
+  
+  if (mode == MZ_FLUSH_NEVER)
+    bad = setvbuf(f, NULL, _IOFBF, 0);
+  else if (mode == MZ_FLUSH_BY_LINE)
+    bad = setvbuf(f, NULL, _IOLBF, 0);
+  else
+    bad = setvbuf(f, NULL, _IONBF, 0);
+  
+  if (bad) {
+    scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
+		     "file-stream-buffer-mode: error changing buffering (%e)",
+		     errno);
+  }
+
+  return mode;
+}
+
+
 static Scheme_Object *
 _scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile)
 {
@@ -4302,6 +4278,7 @@ _scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile)
 			      file_close_input,
 			      file_need_wakeup,
 			      1);
+  ip->p.buffer_mode_fun = file_buffer_mode;
 
   return (Scheme_Object *)ip;
 }
@@ -4785,6 +4762,20 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 #endif
 }
 
+static int fd_input_buffer_mode(Scheme_Port *p, int mode)
+{
+  Scheme_FD *fd;
+    
+  fd = (Scheme_FD *)((Scheme_Input_Port *)p)->port_data;
+
+  if (mode < 0) {
+    return fd->flush;
+  } else {
+    fd->flush = mode;
+    return mode;
+  }
+}
+
 static Scheme_Object *
 make_fd_input_port(int fd, Scheme_Object *name, int regfile, int win_textmode, int *refcount)
 {
@@ -4826,6 +4817,7 @@ make_fd_input_port(int fd, Scheme_Object *name, int regfile, int win_textmode, i
 			      fd_close_input,
 			      fd_need_wakeup,
 			      1);
+  ip->p.buffer_mode_fun = fd_input_buffer_mode;
 
   ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
@@ -5220,6 +5212,7 @@ Scheme_Object *
 scheme_make_file_output_port(FILE *fp)
 {
   Scheme_Output_File *fop;
+  Scheme_Output_Port *op;
 
   if (!fp)
     scheme_signal_error("make-file-out-port(internal): "
@@ -5232,17 +5225,20 @@ scheme_make_file_output_port(FILE *fp)
 
   fop->f = fp;
 
-  return (Scheme_Object *)scheme_make_output_port(file_output_port_type,
-						  fop,
-						  scheme_intern_symbol("file"),
-						  scheme_write_evt_via_write,
-						  file_write_string,
-						  NULL,
-						  file_close_output,
-						  NULL,
-						  NULL,
-						  NULL,
-						  1);
+  op = scheme_make_output_port(file_output_port_type,
+			       fop,
+			       scheme_intern_symbol("file"),
+			       scheme_write_evt_via_write,
+			       file_write_string,
+			       NULL,
+			       file_close_output,
+			       NULL,
+			       NULL,
+			       NULL,
+			       1);
+  op->p.buffer_mode_fun = file_buffer_mode;
+
+  return (Scheme_Object *)op;
 }
 
 /*========================================================================*/
@@ -5938,6 +5934,24 @@ fd_close_output(Scheme_Output_Port *port)
   --scheme_file_open_count;
 }
 
+static int fd_output_buffer_mode(Scheme_Port *p, int mode)
+{
+  Scheme_FD *fd;
+    
+  fd = (Scheme_FD *)((Scheme_Output_Port *)p)->port_data;
+  
+  if (mode < 0) {
+    return fd->flush;
+  } else {
+    int go;
+    go = (mode > fd->flush);
+    fd->flush = mode;
+    if (go)
+      flush_fd((Scheme_Output_Port *)p, NULL, 0, 0, 0, 0);
+    return mode;
+  }
+}
+
 static Scheme_Object *
 make_fd_output_port(int fd, Scheme_Object *name, int regfile, int win_textmode, int and_read)
 {
@@ -5988,6 +6002,8 @@ make_fd_output_port(int fd, Scheme_Object *name, int regfile, int win_textmode, 
 						      NULL,
 						      NULL,
 						      1);
+  ((Scheme_Port *)the_port)->buffer_mode_fun = fd_output_buffer_mode;
+
   if (and_read) {
     int *rc;
     Scheme_Object *a[2];
@@ -6300,21 +6316,21 @@ scheme_make_null_output_port(int can_write_special)
 {
   Scheme_Output_Port *op;
 
-  op = scheme_make_output_port (scheme_null_output_port_type,
-				NULL,
-				scheme_intern_symbol("null"),
-				null_write_evt,
-				null_write_bytes,
-				NULL,
-				null_close_out,
-				NULL,
-				(can_write_special
-				 ? null_write_special_evt
-				 : NULL),
-				(can_write_special
-				 ? null_write_special
-				 : NULL),
-				0);
+  op = scheme_make_output_port(scheme_null_output_port_type,
+			       NULL,
+			       scheme_intern_symbol("null"),
+			       null_write_evt,
+			       null_write_bytes,
+			       NULL,
+			       null_close_out,
+			       NULL,
+			       (can_write_special
+				? null_write_special_evt
+				: NULL),
+			       (can_write_special
+				? null_write_special
+				: NULL),
+			       0);
 
   return (Scheme_Object *)op;
 }
@@ -6379,21 +6395,21 @@ scheme_make_redirect_output_port(Scheme_Object *port)
 
   can_write_special = !!((Scheme_Output_Port *)port)->write_special_fun;
 
-  op = scheme_make_output_port (scheme_redirect_output_port_type,
-				port,
-				scheme_intern_symbol("redirect"),
-				redirect_write_evt,
-				redirect_write_bytes,
-				NULL,
-				redirect_close_out,
-				NULL,
-				(can_write_special
-				 ? redirect_write_special_evt
-				 : NULL),
-				(can_write_special
-				 ? redirect_write_special
-				 : NULL),
-				0);
+  op = scheme_make_output_port(scheme_redirect_output_port_type,
+			       port,
+			       scheme_intern_symbol("redirect"),
+			       redirect_write_evt,
+			       redirect_write_bytes,
+			       NULL,
+			       redirect_close_out,
+			       NULL,
+			       (can_write_special
+				? redirect_write_special_evt
+				: NULL),
+			       (can_write_special
+				? redirect_write_special
+				: NULL),
+			       0);
 
   return (Scheme_Object *)op;
 }
@@ -6830,7 +6846,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #else
     /* 'exact-full only works in windows */
     scheme_arg_mismatch(name,
-			"exact command line not supported on this platform",
+			"exact command line not supported on this platform: ",
 			args[5]);
 #endif
   } else {
@@ -7740,7 +7756,6 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
   } else if (ip->sub_type == scheme_tcp_input_port_type) {
     if (ht && !scheme_hash_get(ht, (Scheme_Object *)ip->port_data)) {
       scheme_hash_set(ht, (Scheme_Object *)ip->port_data, scheme_true);
-      *s += sizeof(Scheme_Tcp_Buf);
     }
   } else if (ip->sub_type == scheme_user_input_port_type) {
     Scheme_Object **d;
@@ -7778,7 +7793,6 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
   } else if (op->sub_type == scheme_tcp_output_port_type) {
     if (!scheme_hash_get(ht, (Scheme_Object *)op->port_data)) {
       scheme_hash_set(ht, (Scheme_Object *)op->port_data, scheme_true);
-      *s += sizeof(Scheme_Tcp_Buf);
     }
   } else if (op->sub_type == scheme_user_output_port_type) {
     Scheme_Object **d;

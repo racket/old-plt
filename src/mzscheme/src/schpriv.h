@@ -239,6 +239,8 @@ extern Scheme_Object *scheme_define_syntaxes_stx;
 
 extern Scheme_Object *scheme_recur_symbol, *scheme_display_symbol, *scheme_write_special_symbol;
 
+extern Scheme_Object *scheme_none_symbol, *scheme_line_symbol, *scheme_block_symbol;
+
 /*========================================================================*/
 /*                    thread state and maintenance                        */
 /*========================================================================*/
@@ -2132,16 +2134,6 @@ typedef struct Scheme_Pipe {
   Scheme_Object *wakeup_on_read;
   Scheme_Object *wakeup_on_write;
 } Scheme_Pipe;
-
-#ifdef USE_TCP
-typedef struct Scheme_Tcp_Buf {
-  MZTAG_IF_REQUIRED
-  short refcount;
-  char *buffer;
-  short bufpos, bufmax;
-  short hiteof;
-} Scheme_Tcp_Buf;
-#endif
 
 extern Scheme_Object *scheme_string_input_port_type;
 extern Scheme_Object *scheme_string_output_port_type;

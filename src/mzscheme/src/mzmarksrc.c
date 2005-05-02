@@ -1051,6 +1051,7 @@ mark_user_input {
   gcMARK(uip->peeked_read_proc);
   gcMARK(uip->location_proc);
   gcMARK(uip->count_lines_proc);
+  gcMARK(uip->buffer_mode_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
   gcMARK(uip->peeked);
@@ -1069,6 +1070,7 @@ mark_user_output {
   gcMARK(uop->write_special_proc);
   gcMARK(uop->location_proc);
   gcMARK(uop->count_lines_proc);
+  gcMARK(uop->buffer_mode_proc);
   gcMARK(uop->close_proc);
  size:
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
@@ -1219,6 +1221,7 @@ mark_tcp {
   Scheme_Tcp *tcp = (Scheme_Tcp *)p;
 
   gcMARK(tcp->b.buffer);
+  gcMARK(tcp->b.out_buffer);
 # ifdef USE_MAC_TCP
   gcMARK(tcp->tcp);
   gcMARK(tcp->activeRcv);

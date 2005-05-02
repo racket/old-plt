@@ -17,9 +17,8 @@
 
 #include "mred.h"
 
-#ifdef OS_X
-# include <fcntl.h>
-#endif
+#include <unistd.h>
+#include <fcntl.h>
 
 static int dispatched = 1;
 

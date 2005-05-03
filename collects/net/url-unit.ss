@@ -137,9 +137,8 @@
                                         strings)))))
             (display "\r\n" client->server)
             (when post-data
-              (display post-data client->server)
-              (flush-output client->server)) ;; technically not needed for TCP ports
-            (tcp-abandon-port client->server)
+              (display post-data client->server))
+	    (tcp-abandon-port client->server) ; flushes
             server->client)))
 
       ;; file://get-pure-port : url -> in-port

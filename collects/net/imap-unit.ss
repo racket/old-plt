@@ -192,6 +192,7 @@
 				     ;; Have to send size, then continue if the
 				     ;;  server consents
 				     (fprintf w "{~a}\r\n" (bytes-length cmd))
+				     (flush-output w)
 				     (get-response r #f void (list (lambda (gloop data) (void))))
 				     ;; Continue by writing the data
 				     (write-bytes cmd w))
@@ -202,6 +203,7 @@
 				 (fprintf w " ")
 				 (loop (cdr cmd)))]))
 	  (fprintf w "\r\n")
+	  (flush-output w)
 	  (get-response r id (wrap-info-handler imap info-handler) continuation-handler)))
 
       (define (check-ok reply)

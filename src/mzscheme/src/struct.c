@@ -924,7 +924,8 @@ scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **arg
       got = (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES) ? scheme_multiple_count : 1);
       if (gcount != got) {
 	scheme_wrong_return_arity("constructor",
-				  gcount, got, scheme_multiple_array,
+				  gcount, got, 
+				  (got == 1) ? (Scheme_Object **)v : scheme_multiple_array,
 				  "calling guard procedure");
 	return NULL;
       }

@@ -2862,7 +2862,8 @@ scheme_tell_all (Scheme_Object *port, long *_line, long *_col, long *_pos)
     got = (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES) ? scheme_multiple_count : 1);
     if (got != 3) {
       scheme_wrong_return_arity("user port next-location",
-				3, got, scheme_multiple_array,
+				3, got, 
+				(got == 1) ? (Scheme_Object **)r : scheme_multiple_array,
 				"calling port-next-location procedure");
       return;
     }

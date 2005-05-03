@@ -99,7 +99,7 @@ extern int scheme_stupid_windows_machine;
 #ifdef USE_MAC_TCP
 # define TCP_BUFFER_SIZE 16384
 #else
-# define TCP_BUFFER_SIZE 512
+# define TCP_BUFFER_SIZE 4096
 #endif
 
 #ifdef USE_UNIX_SOCKETS_TCP
@@ -1423,8 +1423,6 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
   data->b.bufmax = 0;
   data->b.hiteof = 0;
   data->b.refcount = refcount;
-
-  data->b.out_bufmode = 1;
 
 #ifndef USE_MAC_TCP
 # ifdef USE_WINSOCK_TCP

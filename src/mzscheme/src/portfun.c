@@ -1368,7 +1368,7 @@ user_input_count_lines(Scheme_Port *p)
 
 
 static int
-user_buffer_mode(Scheme_Object *buffer_mode_proc, int mode)
+user_buffer_mode(Scheme_Object *buffer_mode_proc, int mode, int line_ok)
 {
   Scheme_Object *v, *a[1];
 
@@ -1377,13 +1377,15 @@ user_buffer_mode(Scheme_Object *buffer_mode_proc, int mode)
     if (SCHEME_TRUEP(v)) {
       if (SAME_OBJ(v, scheme_block_symbol))
 	mode = 0;
-      else if (SAME_OBJ(v, scheme_line_symbol))
+      else if (line_ok && SAME_OBJ(v, scheme_line_symbol))
 	mode = 1;
       else if (SAME_OBJ(v, scheme_none_symbol))
 	mode = 2;
       else {
 	a[0] = v;
-	scheme_wrong_type("user port buffer-mode", "'block, 'line, 'none, or #f", -1, -1, a);
+	scheme_wrong_type("user port buffer-mode", 
+			  line_ok ? "'block, 'line, 'none, or #f" : "'block, 'none, or #f", 
+			  -1, -1, a);
 	return 0;
       }
     }
@@ -1411,7 +1413,7 @@ user_input_buffer_mode(Scheme_Port *p, int mode)
   Scheme_Input_Port *port = (Scheme_Input_Port *)p;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
   
-  return user_buffer_mode(uip->buffer_mode_proc, mode);
+  return user_buffer_mode(uip->buffer_mode_proc, mode, 0);
 }
 
 /*========================================================================*/
@@ -1719,7 +1721,7 @@ user_output_buffer_mode(Scheme_Port *p, int mode)
   Scheme_Output_Port *port = (Scheme_Output_Port *)p;
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
 
-  return user_buffer_mode(uop->buffer_mode_proc, mode);
+  return user_buffer_mode(uop->buffer_mode_proc, mode, 1);
 }
 
 int scheme_is_user_port(Scheme_Object *port)

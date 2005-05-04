@@ -12,9 +12,13 @@ IStack main() {
 
     if curr isa ICharacter {
       println("Got a character");
-    } else if curr isa IInteger {
-      println("Got an integer");
-    } else { println("Got something else"); };
+    } else {
+      if curr isa IInteger {
+        println("Got an integer");
+      } else {
+        println("Got something else");
+      };
+    };
   };
 
   x;

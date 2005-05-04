@@ -2,7 +2,7 @@
 
   (require (lib "struct.ss")
            (lib "contract.ss")
-           (lib "list.ss" "srfi" "1"))
+           (all-except (lib "list.ss" "srfi" "1") any))
   
   (require "../../ast.ss")
   (require "../../utils.ss")

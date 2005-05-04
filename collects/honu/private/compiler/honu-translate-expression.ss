@@ -1,6 +1,6 @@
 (module honu-translate-expression mzscheme
 
-  (require (lib "list.ss" "srfi" "1")
+  (require (all-except (lib "list.ss" "srfi" "1") any)
            (lib "contract.ss")
            (lib "plt-match.ss"))
 

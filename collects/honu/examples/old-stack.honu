@@ -44,9 +44,9 @@ class listStack() : stack impl stack {
        return elt;
     }
     char pop() {
-       if stack.isEmpty()
-       then error("The stack is empty!")
-       else {
+       if stack.isEmpty() {
+         error("The stack is empty!");
+       } else {
          char x = stack.car();
          stack = stack.cdr();
          return x;

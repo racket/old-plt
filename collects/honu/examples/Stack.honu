@@ -14,9 +14,9 @@ class ListStack() : IStack impl IStack {
     }
 
     Any pop() {
-       if stack.empty()
-       then error("The stack is empty!")
-       else {
+       if stack.empty() {
+         error("The stack is empty!");
+       } else {
          Any x = stack.first();
          stack = stack.drop(1);
          return x;

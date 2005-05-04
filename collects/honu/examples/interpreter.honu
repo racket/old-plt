@@ -69,9 +69,11 @@ class EmptyStringList() : StringList impl StringList
 class ConsStringList(String init_first, StringList init_rest) : StringList impl StringList
 {
     String first =
-        if init_first == null then
-        error("ConsStringList.init_first null")
-        else init_first;
+        if(init_first == null) {
+          error("ConsStringList.init_first null")
+        } else {
+          init_first;
+        };
     StringList rest =
         if init_rest == null then
         error("ConsStringList.init_rest null")

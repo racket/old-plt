@@ -1,0 +1,199 @@
+NOTE: Since I want to use parentheses to mean "real" parentheses, I use
+      square brackets for grouping inside of rules.
+
+NOTE: I use the following non-terminals: <fdid>, <mdid>, <cid>, <mxid>
+      but these are really all just <id> -- I just use them to keep
+      things straight.  Alternations that differ only in the choice
+      of the non-terminals above will be merged in the "real" grammar.
+
+<program>  ::= <defn>+
+
+<defn>     ::= <function>
+             | <type>
+             | <class>
+             | <mixin>
+             | <subclass>
+
+<function> ::= <tid> <id> ( <argdecls> ) <block>
+
+<type>     ::= type <id> <extends> { <mfdecl>* }
+
+<tid>      ::= <ifacet>
+             | <primtype>
+             | <funtype>
+
+<funtype>  ::= [ <typetup> ] -> <tid>
+
+NOTE: The above are literal braces as opposed to the meta-braces.
+      This is the only place they occur right now.
+
+<typetup>  ::= <tid> [, <tid>]*
+             |
+
+<ifacet>   ::= id
+             | Any
+
+<primtype> ::= int
+             | float
+             | bool
+             | str
+             | char
+             | void
+
+<extends>  ::= extends <ifacet> [, <ifacet>]*
+             | <: <ifacet> [, <ifacet>]*
+             |
+
+NOTE: I just have <: as a shorthand for the moment, that's not necessarily
+      going to stick around, but if we decide to take it out later it's an
+      easy, easy fix.
+
+<mfdecl>   ::= <tid> <fdid> ;
+             | <tid> <mdid> ( <argdecls>* ) ;
+
+<argdecls> ::= <argdecl> [, <argdecl>]*
+             |
+
+<argdecl>  ::= <tid>
+             | <tid> <varid>
+
+<struct>   ::= struct <id> <initargs> : <ifacet> <sctbody>
+             | final struct <id> <initargs> : <ifacet> <sctbody>
+
+<class>    ::= class <id> <initargs> : <ifacet> <impls> <clsbody>
+             | final class <initargs> <id> : <ifacet> <impls> <clsbody>
+
+<mixin>    ::= mixin <id> <initargs> : <ifacet> <argtype> <impls> <mixbody>
+             | final mixin <id> <initargs> : <ifacet> <argtype> <impls> <mixbody>
+
+<subclass> ::= subclass <id> = <id> ( <id> ) ;
+             | subclass <id> <initargs> : <ifacet> <scexts> <impls> <mixbody>
+             | final subclass <id> <initargs> : <ifacet> <scexts> <impls> <mixbody>
+
+<initargs> ::= ( <tid> <id> [, <tid> <id>]* )
+             | ( )
+
+<scexts>   ::= extends <id> <argtype>
+
+<argtype>  ::= at <ifacet>
+             | @ <ifacet>
+
+<impls>    ::= implements <ifacet> [, <ifacet>]*
+             | impl <ifacet> [, <ifacet>]*
+             |
+
+<sctbody>  ::= { <mfidefn>* }
+
+<clsbody>  ::= { <mfidefn>* <export>* }
+
+<mixbody>  ::= { <mfidefn>* <supernew> <mfidefn>* <export>* }
+
+NOTE: I think I'm switching back to impl as a shorthand for implements
+      instead of imp.  Of course, we can still use imp in the abstract
+      syntax.
+
+<mfidefn>  ::= init <tid> <id> ;
+             | init <tid> <id> = <expr> ;
+             | <tid> <id> = <expr> ;
+             | <tid> <id> ( <argdefns> ) <block>
+
+<supernew> ::= super_new( <newargs> ) ;
+
+<argdefns> ::= <argdefn> [, <argdefn>]* 
+             |
+
+<argdefn>  ::= <tid> <id>
+
+<newargs>  ::= <newarg> [, <newarg>]*
+             |
+
+<newarg>   ::= <id> = <expr>
+
+<export>   ::= export <ifacet> : <renames> ;
+
+NOTE: Forgot to make rename statements comma delimited.  That's done now.
+
+<renames>  ::= <rename> [, <rename>]*
+
+<rename>   ::= <id>
+             | <id> as <id>
+
+NOTE: Here's the primitive operators we have so far:
+      || && == + - * / %
+      Any others we need?
+
+<expr>     ::= <literal>
+             | <lambda>
+             | <id>
+             | <id> = <expr>
+             | <id> ( <exprs-cd> )
+             | this
+             | <expr> : <ifacet>
+             | <expr> isa <ifacet>
+             | if <expr> <block> else <block>
+             | while <expr> <block>
+             | new <id> : <ifacet> ( <newargs> )
+             | ! <expr>
+             | <expr> || <expr>
+             | <expr> && <expr>
+             | <expr> == <expr>
+             | <expr> != <expr>
+             | <expr> ==== <expr>
+             | <expr> < <expr>
+             | <expr> > <expr>
+             | <expr> <= <expr>
+             | <expr> >= <expr>
+             | <expr> + <expr>
+             | <expr> - <expr>
+             | <expr> * <expr>
+             | <expr> / <expr>
+             | <expr> % <expr>
+             | <expr> . <id>
+             | <expr> . <id> = <expr>
+             | <expr> . <id> ( <exprs-cd> )
+             | ( <expr> )
+             | <block>
+
+NOTE: Here's the precedence and associativity of things above.
+      Top is most strongly binding, bottom is least.  Things on
+      the same line have same precedence.  The : below refers to
+      casting, and the = is for assignment.  else requires a
+      precedence to avoid shift/reduce errors, even though we
+      don't have the dangling else problem.
+
+   LEFT   |   RIGHT  |  NONASSOC
+----------+----------+-----------
+    .     |          |
+          |  :  isa  |
+          |          |     !
+   * / %  |          |
+   +  -   |          |
+          |          | < <= > >=
+          |          |   ====
+  ==  !=  |          |
+    &&    |          |
+    ||    |          |
+    =     |          |
+   else   |          |
+
+<lambda>   ::= fun ( <argdecls> ) <block>
+
+<exprs-cd> ::= <expr> [, <expr>]*
+             | <expr>
+
+<literal>  ::= <intlit>
+             | <floatlit>
+             | true
+             | false
+             | <strlit>
+             | <charlit>
+
+<block>    ::= { <vardefn>* <expr-sc>+ }
+
+NOTE: Blocks should definitely not be allowed to be empty -- fixed.
+
+<vardefn>  ::= <tid> <id> = <expr> ;
+
+<expr-sc>  ::= <expr> ;
+             | return ;
+             | return <expr> ;

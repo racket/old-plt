@@ -10,11 +10,11 @@ IStack main() {
   while(!y.empty()) {
     Any curr = y.pop();
 
-    if curr isa ICharacter
-    then println("Got a character")
-    else if curr isa IInteger
-    then println("Got an integer")
-    else println("Got something else");
+    if curr isa ICharacter {
+      println("Got a character");
+    } else if curr isa IInteger {
+      println("Got an integer");
+    } else { println("Got something else"); };
   };
 
   x;

@@ -8,9 +8,8 @@ class FactRec() : IFact impl IFact {
     }
 
     int factA(int n, int a) {
-        if n == 0
-        then a
-        else factA(n - 1, a * n);
+        if n == 0 { a; }
+        else { factA(n - 1, a * n); };
     }
 
     export IFact : fact;

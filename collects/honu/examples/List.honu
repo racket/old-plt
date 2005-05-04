@@ -40,15 +40,19 @@ class MTList() : List impl List {
   }
 
   List drop(int n) {
-    if   n == 0
-    then (this : List)
-    else error("Attempt to drop elements from an empty list!");
+    if n == 0 {
+      this : List;
+    } else {
+      error("Attempt to drop elements from an empty list!");
+    };
   }
 
   List take(int n) {
-    if   n == 0
-    then (this : List)
-    else error("Attempt to take elements from an empty list!");
+    if n == 0 {
+      this : List;
+    } else {
+      error("Attempt to take elements from an empty list!");
+    };
   }
 
   List ret_other(List l) { return l; }
@@ -81,27 +85,35 @@ class ConsList() : List impl List {
   Any first() { return car; }
 
   Any atIndex(int n) {
-    if   n == 0
-    then car
-    else cdr.atIndex(n - 1);
+    if n == 0 {
+      car;
+    } else {
+      cdr.atIndex(n - 1);
+    };
   }
 
   Any last() {
-    if   cdr.empty()
-    then car
-    else cdr.last();
+    if cdr.empty() {
+      car;
+    } else {
+      cdr.last();
+    };
   }
 
   List drop(int n) {
-    if   n == 0
-    then (this : List)
-    else cdr.drop(n - 1);
+    if n == 0 {
+      this : List;
+    } else {
+      cdr.drop(n - 1);
+    };
   }
 
   List take(int n) {
-    if   n == 0
-    then new MTList : List()
-    else new ConsList : List (car = car, cdr = cdr.take(n - 1));
+    if n == 0 {
+      new MTList : List();
+    } else {
+      new ConsList : List (car = car, cdr = cdr.take(n - 1));
+    };
   }
 
   List addToFront(Any x) {
@@ -113,9 +125,11 @@ class ConsList() : List impl List {
   }
 
   List appendToFront(List other) {
-    if   other.empty()
-    then (this : List)
-    else new ConsList : List (car = other.first(), cdr = other.drop(1));
+    if other.empty() {
+      this : List;
+    } else {
+      new ConsList : List (car = other.first(), cdr = other.drop(1));
+    };
   }
 
   List appendToEnd(List other) {
@@ -143,9 +157,11 @@ class ConsList() : List impl List {
   }
 
   List filter([Any] -> bool f) {
-    if   f(car)
-    then new ConsList : List(car = car, cdr = cdr.filter(f))
-    else cdr.filter(f);
+    if f(car) {
+      new ConsList : List(car = car, cdr = cdr.filter(f));
+    } else {
+      cdr.filter(f);
+    };
   }
 
   export List : addToFront, addToEnd, first, atIndex, last, reverse,

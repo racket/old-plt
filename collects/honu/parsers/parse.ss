@@ -51,7 +51,7 @@
           init export as at with
           this my null isa
           int bool str float char Any void
-          if then else true false while fun
+          if else true false while fun
           new super cast return))
   
   (define-tokens separators
@@ -131,7 +131,6 @@
        ["void"       (ttoken void)]
        ["while"      (ttoken while)]
        ["if"         (ttoken if)]
-       ["then"       (ttoken then)]
        ["else"       (ttoken else)]
        ["true"       (token true  #t)]
        ["false"      (token false #f)]
@@ -674,10 +673,10 @@
           (make-honu-isa 
            (create-src-stx 'honu-isa source-name $1-start-pos $3-end-pos)
            $1 $3)]
-         [(if expr then expr else expr)
+         [(if expr block else block)
           (make-honu-if 
-           (create-src-stx 'honu-if source-name $1-start-pos $6-end-pos)
-           $2 $4 $6)]
+           (create-src-stx 'honu-if source-name $1-start-pos $5-end-pos)
+           $2 $3 $5)]
          [(while expr block)
           (make-honu-while
            (create-src-stx 'honu-while source-name $1-start-pos $3-end-pos)

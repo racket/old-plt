@@ -17,6 +17,23 @@
     ;; sure that the appropriate things are bound in honu-compile-context.
     (at-ctxt name))
   
+  (define (field-in-defn? field defn)
+    (or (find (lambda (n)
+                (tenv-key=? n field))
+              (cond
+                [(honu-class? defn) (honu-class-init-names defn)]
+                [(honu-mixin? defn) (honu-mixin-init-names defn)]))
+        (find (match-lambda
+                [(struct honu-field (_ name _ _))
+                 (tenv-key=? name field)]
+                [(struct honu-init-field (_ name _ _))
+                 (tenv-key=? name field)]
+                [_ #f])
+              (cond
+                [(honu-class? defn) (honu-class-defns defn)]
+                [(honu-mixin? defn) (append (honu-mixin-defns-before defn)
+                                            (honu-mixin-defns-after defn))]))))
+
   (provide/contract [honu-translate-expression
                      (tenv?
                       (union false/c
@@ -24,7 +41,7 @@
                       honu-exp?
                       . -> .
 ;                      (syntax/c any/c))])
-                      any/c)])
+                      any)])
   (define (honu-translate-expression tenv defn exp)
     (match exp
       [(struct honu-null (stx))
@@ -139,16 +156,7 @@
       
       [(struct honu-facc (stx obj elab field))
        (if (eqv? obj 'my)
-           (if (find (match-lambda
-                       [(struct honu-field (_ name _ _))
-                        (tenv-key=? name field)]
-                       [(struct honu-init-field (_ name _ _))
-                        (tenv-key=? name field)]
-                       [_ #f])
-                     (cond
-                       [(honu-class? defn) (honu-class-defns defn)]
-                       [(honu-mixin? defn) (append (honu-mixin-defns-before defn)
-                                                   (honu-mixin-defns-after defn))]))
+           (if (field-in-defn? field defn)
                (at stx field)
                (at stx `(super ,(honu-translate-dynamic-field-getter tenv 
                                                                      field
@@ -157,16 +165,7 @@
                           ,(honu-translate-dynamic-field-getter tenv field elab))))]
       [(struct honu-fassn (stx obj elab field rhs))
        (if (eqv? (honu-fassn-obj exp) 'my)
-           (if (find (match-lambda
-                       [(struct honu-field (_ name _ _))
-                        (tenv-key=? name field)]
-                       [(struct honu-init-field (_ name _ _))
-                        (tenv-key=? name field)]
-                       [_ #f])
-                     (cond
-                       [(honu-class? defn) (honu-class-defns defn)]
-                       [(honu-mixin? defn) (append (honu-mixin-defns-before defn)
-                                                   (honu-mixin-defns-after defn))]))
+           (if (field-in-defn? field defn)
                (at stx `(set! ,(at-ctxt field)
                               ,(honu-translate-expression tenv defn rhs)))
                (at stx `(super ,(honu-translate-dynamic-field-setter tenv
@@ -249,7 +248,7 @@
                              (lambda (b) (eq? #t b)))
                       . -> .
 ;                      (syntax/c any/c))])
-                      any/c)])
+                      any)])
   (define (honu-translate-binding tenv defn bnd top-level?)
     (match bnd
       [(struct honu-binding (stx name _ rhs))

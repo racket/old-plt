@@ -112,11 +112,13 @@
            [(clseq)
             (at stx `(,(at op-stx 'equal?) ,left-exp ,right-exp))]
            [(equal) 
-            (if (eqv? 'str (honu-prim-type-name op-type))
+            (if (and (honu-prim-type? op-type)
+                     (eqv? 'str (honu-prim-type-name op-type)))
                 (at stx `(,(at op-stx 'string=?) ,left-exp ,right-exp))
                 (at stx `(,(at op-stx 'eqv?) ,left-exp ,right-exp)))]
            [(neq) 
-            (if (eqv? 'str (honu-prim-type-name op-type))
+            (if (and (honu-prim-type? op-type)
+                     (eqv? 'str (honu-prim-type-name op-type)))
                 (at stx `(,(at op-stx 'not) (,(at op-stx 'string=?) ,left-exp ,right-exp)))
                 (at stx `(,(at op-stx 'not) (,(at op-stx 'eqv?) ,left-exp ,right-exp))))]))]
        

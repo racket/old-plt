@@ -70,13 +70,13 @@ class ConsStringList(String init_first, StringList init_rest) : StringList impl 
 {
     String first =
         if(init_first == null) {
-          error("ConsStringList.init_first null")
+          error("ConsStringList.init_first null");
         } else {
           init_first;
         };
     StringList rest =
         if init_rest == null {
-          error("ConsStringList.init_rest null")
+          error("ConsStringList.init_rest null");
         } else { init_rest; };
 
     bool contains(String s)
@@ -87,7 +87,7 @@ class ConsStringList(String init_first, StringList init_rest) : StringList impl 
     StringList remove(String s)
     {
         if s ==== first {
-          rest
+          rest;
         } else {
           new ConsStringList : StringList
             (init_first = first,
@@ -138,14 +138,14 @@ class StringSetCls() : StringSet impl StringSet
     // but you want an additional check later (hasDuplicates()).
     StringList contents =
         if init_contents.hasDuplicates() {
-          error("StringList.contents must be set")
+          error("StringList.contents must be set");
         } else { init_contents; };
 
     StringSet singleUnion(String elt)
     {
         if contents.contains(elt) {
             this : StringSet;
-        else {
+        } else {
             new StringSetCls : StringSet
                 (init_contents = new ConsStringList : StringList(init_first = elt,
                                                             init_rest = contents));

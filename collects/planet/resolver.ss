@@ -194,14 +194,15 @@ an appropriate subdirectory.
         [(and (eq? (pkg-maj pkg) (pkg-maj orig))
               (eq? (pkg-min pkg) (pkg-min orig)))
          (void)]
-        [else (raise (make-exn:fail (format 
-                                     "Package ~a loaded twice with multiple versions: 
+        [else (raise (make-exn:fail (string->immutable-string
+                                     (format 
+                                      "Package ~a loaded twice with multiple versions: 
 attempted to load version ~a.~a while version ~a.~a was already loaded" 
-                                     (pkg-name pkg) 
-                                     (pkg-maj pkg)
-                                     (pkg-min pkg)
-                                     (pkg-maj orig)
-                                     (pkg-min orig)) 
+                                      (pkg-name pkg) 
+                                      (pkg-maj pkg)
+                                      (pkg-min pkg)
+                                      (pkg-maj orig)
+                                      (pkg-min orig)))
                                     (current-continuation-marks)))])))
     
   ; ==========================================================================================

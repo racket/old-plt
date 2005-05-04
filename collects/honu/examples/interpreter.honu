@@ -75,9 +75,9 @@ class ConsStringList(String init_first, StringList init_rest) : StringList impl 
           init_first;
         };
     StringList rest =
-        if init_rest == null then
-        error("ConsStringList.init_rest null")
-        else init_rest;
+        if init_rest == null {
+          error("ConsStringList.init_rest null")
+        } else { init_rest; };
 
     bool contains(String s)
     {
@@ -86,11 +86,13 @@ class ConsStringList(String init_first, StringList init_rest) : StringList impl 
 
     StringList remove(String s)
     {
-        if s ==== first
-            then rest
-        else new ConsStringList : StringList
+        if s ==== first {
+          rest
+        } else {
+          new ConsStringList : StringList
             (init_first = first,
              init_rest = rest.remove(s));
+        };
     }
 
     StringSet setFold(StringSet initial, StringSetOp op)
@@ -135,18 +137,19 @@ class StringSetCls() : StringSet impl StringSet
     // for contents so it can't go into the init args in the header,
     // but you want an additional check later (hasDuplicates()).
     StringList contents =
-        if init_contents.hasDuplicates() then
-        error("StringList.contents must be set")
-        else init_contents;
+        if init_contents.hasDuplicates() {
+          error("StringList.contents must be set")
+        } else { init_contents; };
 
     StringSet singleUnion(String elt)
     {
-        if contents.contains(elt)
-            then this : StringSet
-        else
+        if contents.contains(elt) {
+            this : StringSet;
+        else {
             new StringSetCls : StringSet
                 (init_contents = new ConsStringList : StringList(init_first = elt,
                                                             init_rest = contents));
+        };
     }
 
     StringSet union(StringSet rhs)
@@ -186,17 +189,17 @@ class IntValue() : Value impl Value // was class Constant, typechecker caught th
 class Closure(String init_argName, Ast init_body, Env init_rho) : Value impl Value
 {
     String argName =
-        if init_argName == null then
-        error("Closure.argName null")
-        else init_argName;
+        if init_argName == null {
+          error("Closure.argName null");
+        } else { init_argName; };
     Ast body =
-        if init_body == null then
-        error("Closure.body null")
-        else init_body;
+        if init_body == null {
+          error("Closure.body null");
+        } else { init_body; };
     Env rho =
-        if init_rho == null then
-        error("Closure.rho null")
-        else init_rho; // was else body, Typechecker caught this
+        if init_rho == null {
+          error("Closure.rho null") ;
+        } else { init_rho; }; // was else body, Typechecker caught this
 
     Value apply(Value arg)
     {
@@ -229,20 +232,19 @@ class IntType() : Type impl Type
 class ArrowType(Type init_dom, Type init_rng) : Type impl Type
 {
     Type dom =
-        if init_dom == null then
-        error("ArrowType.dom null")
-        else init_dom;
+        if init_dom == null {
+          error("ArrowType.dom null");
+        } else { init_dom; };
     Type rng =
-        if init_rng == null then
-        error("ArrowType.rng null")
-        else init_rng;
+        if init_rng == null {
+          error("ArrowType.rng null");
+        } else { init_rng; };
 
     Type getRange(Type domain)
     {
         // extensional equality
-        if domain ==== dom
-        then rng
-        else error("arrowType.getRange: domain mismatch");
+        if domain ==== dom { rng; }
+        else { error("arrowType.getRange: domain mismatch"); };
     }
 
     export Type : getRange;
@@ -278,17 +280,17 @@ class RibEnv(String init_id, Any init_bdg, Env init_rest) : Env impl Env
 {
 
     String id =
-        if init_id == null then
-        error("RibEnv.id null")
-        else init_id;
+        if init_id == null {
+          error("RibEnv.id null");
+        } else { init_id; };
     Any bdg =
-        if init_bdg == null then
-        error("RibEnv.bdg null")
-        else init_bdg;
+        if init_bdg == null {
+          error("RibEnv.bdg null");
+        } else { init_bdg; };
     Env rest =
-        if init_rest == null then
-        error("RibEnv.rest null")
-        else init_rest;
+        if init_rest == null {
+          error("RibEnv.rest null");
+        } else { init_rest; };
 
     Env extend(String var, Any t)
     {
@@ -297,9 +299,8 @@ class RibEnv(String init_id, Any init_bdg, Env init_rest) : Env impl Env
 
     Any lookup(String var)
     {
-        if var ==== id
-        then bdg
-        else rest.lookup(var);
+        if var ==== id { bdg; }
+        else { rest.lookup(var); };
     }
 
     export Env : extend, lookup;
@@ -349,9 +350,9 @@ class Constant() : Ast impl Ast
 class Variable(String init_name) : Ast impl Ast
 {
     String name =
-        if init_name == null then
-        error("Variable.name null")
-        else init_name;
+        if init_name == null {
+          error("Variable.name null");
+        } else { init_name; };
 
     StringSet vars()
     {
@@ -379,17 +380,17 @@ class Variable(String init_name) : Ast impl Ast
 class Lambda(String init_arg, Ast init_body, Type init_argType) : Ast impl Ast
 {
     String argName =
-        if init_arg == null then
-        error("Lambda.argName null")
-        else init_arg;
+        if init_arg == null {
+          error("Lambda.argName null");
+        } else { init_arg; };
     Ast body =
-        if init_body == null then
-        error("Lambda.body null")
-        else init_body;
+        if init_body == null {
+          error("Lambda.body null");
+        } else { init_body; };
     Type argType =
-        if init_argType == null then
-        error("Lambda.argType null")
-        else init_argType;
+        if init_argType == null {
+          error("Lambda.argType null");
+        } else { init_argType; };
 
     StringSet vars()
     {
@@ -422,13 +423,13 @@ class Lambda(String init_arg, Ast init_body, Type init_argType) : Ast impl Ast
 class Application(Ast init_rator, Ast init_rand) : Ast impl Ast
 {
     Ast rator =
-        if init_rator == null then
-        error("Application.rator null")
-        else init_rator;
+        if init_rator == null {
+          error("Application.rator null");
+        } else { init_rator; };
     Ast rand =
-        if init_rand == null then
-        error("Application.rand null")
-        else init_rand;
+        if init_rand == null {
+          error("Application.rand null");
+        } else { init_rand; };
 
     StringSet vars()
     {

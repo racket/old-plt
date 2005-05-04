@@ -62,9 +62,9 @@ class ConsStringList(StringList rest) : StringList impl StringList
     init str first;
 
     StringList rest =
-        if rest == null then
-        error("ConsStringList.rest null")
-        else rest;
+        if rest == null {
+          error("ConsStringList.rest null");
+        } else { rest; };
 
     bool contains(str s)
     {
@@ -73,11 +73,10 @@ class ConsStringList(StringList rest) : StringList impl StringList
 
     StringList remove(str s)
     {
-        if s == first
-            then rest
-        else new ConsStringList : StringList
-            (first = first,
-             rest = rest.remove(s));
+        if s == first { rest; }
+        else { new ConsStringList : StringList
+                (first = first,
+                 rest = rest.remove(s)); };
     }
 
     StringSet setFold(StringSet initial, StringSetOp op)
@@ -122,18 +121,18 @@ class StringSetCls() : StringSet impl StringSet
     // for contents so it can't go into the init args in the header,
     // but you want an additional check later (hasDuplicates()).
     StringList contents =
-        if contents.hasDuplicates() then
-        error("StringList.contents must be set")
-        else contents;
+        if contents.hasDuplicates() {
+          error("StringList.contents must be set");
+        } else { contents; };
 
     StringSet singleUnion(str elt)
     {
-        if contents.contains(elt)
-            then this : StringSet
-        else
+        if contents.contains(elt) { this : StringSet; }
+        else {
             new StringSetCls : StringSet
                 (contents = new ConsStringList : StringList(first = elt,
                                                             rest = contents));
+        };
     }
 
     StringSet union(StringSet rhs)
@@ -174,13 +173,13 @@ class Closure(Ast body, Env rho) : Value impl Value
 {
     init str argName;
     Ast body =
-        if body == null then
-        error("Closure.body null")
-        else body;
+        if body == null {
+          error("Closure.body null");
+        } else { body; };
     Env rho =
-        if rho == null then
-        error("Closure.rho null")
-        else rho; // was else body, Typechecker caught this
+        if rho == null {
+          error("Closure.rho null");
+        } else { rho; }; // was else body, Typechecker caught this
 
     Value apply(Value arg)
     {
@@ -213,20 +212,19 @@ class IntType() : Type impl Type
 class ArrowType(Type dom, Type rng) : Type impl Type
 {
     Type dom =
-        if dom == null then
-        error("ArrowType.dom null")
-        else dom;
+        if dom == null {
+          error("ArrowType.dom null");
+        } else { dom; };
     Type rng =
-        if rng == null then
-        error("ArrowType.rng null")
-        else rng;
+        if rng == null {
+          error("ArrowType.rng null");
+        } else { rng; };
 
     Type getRange(Type domain)
     {
         // extensional equality
-        if domain ==== dom
-        then rng
-        else error("arrowType.getRange: domain mismatch");
+        if domain ==== dom { rng; }
+        else { error("arrowType.getRange: domain mismatch"); };
     }
 
     export Type : getRange;
@@ -262,13 +260,13 @@ class RibEnv(Any bdg, Env rest) : Env impl Env
 {
     init str id;
     Any bdg =
-        if bdg == null then
-        error("RibEnv.bdg null")
-        else bdg;
+        if bdg == null {
+          error("RibEnv.bdg null");
+        } else { bdg; };
     Env rest =
-        if rest == null then
-        error("RibEnv.rest null")
-        else rest;
+        if rest == null {
+          error("RibEnv.rest null");
+        } else { rest; };
 
     Env extend(str var, Any t)
     {
@@ -277,9 +275,7 @@ class RibEnv(Any bdg, Env rest) : Env impl Env
 
     Any lookup(str var)
     {
-        if var == id
-        then bdg
-        else rest.lookup(var);
+        if var == id { bdg; } else { rest.lookup(var); };
     }
 
     export Env : extend, lookup;
@@ -358,13 +354,13 @@ class Lambda(Ast body, Type argType) : Ast impl Ast
     init str argName;
 
     Ast body =
-        if body == null then
-        error("Lambda.body null")
-        else body;
+        if body == null {
+          error("Lambda.body null");
+        } else { body; };
     Type argType =
-        if argType == null then
-        error("Lambda.argType null")
-        else argType;
+        if argType == null {
+          error("Lambda.argType null");
+        } else { argType; };
 
     StringSet vars()
     {
@@ -397,13 +393,13 @@ class Lambda(Ast body, Type argType) : Ast impl Ast
 class Application(Ast rator, Ast rand) : Ast impl Ast
 {
     Ast rator =
-        if rator == null then
-        error("Application.rator null")
-        else rator;
+        if rator == null {
+          error("Application.rator null");
+        } else { rator; };
     Ast rand =
-        if rand == null then
-        error("Application.rand null")
-        else rand;
+        if rand == null {
+          error("Application.rand null");
+        } else { rand; };
 
     StringSet vars()
     {

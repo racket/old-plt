@@ -848,8 +848,11 @@ void wxApp::doMacKeyUpDown(Bool down)
     wxWindow *in_win;
     
     in_win = theMacWxFrame->GetFocusWindow();
+
+    if (!in_win)
+      in_win = theMacWxFrame;
     
-    if (!in_win || !doPreOnChar(in_win, in_win, theKeyEvent))
+    if (!doPreOnChar(in_win, in_win, theKeyEvent))
       if (!theMacWxFrame->IsGray())
 	theMacWxFrame->OnChar(theKeyEvent);
   }

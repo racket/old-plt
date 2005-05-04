@@ -1,0 +1,5 @@
+"List"        ; For IList, MTList, and ConsList
+"Character"   ; For ICharacter and Character
+"Integer-box" ; For IInteger and Integer
+"Stack"       ; For IStack, ListStack, and CountedListStack
+"Stack-main"  ; For the main expression

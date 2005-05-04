@@ -1,0 +1,9 @@
+type ICharacter {
+  char value;
+}
+
+class Character() : ICharacter impl ICharacter {
+  init char value;
+
+  export ICharacter : value;
+}

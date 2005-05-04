@@ -1,0 +1,9 @@
+type IInteger {
+  int value;
+}
+
+class Integer() : IInteger impl IInteger {
+  init int value;
+
+  export IInteger : value;
+}

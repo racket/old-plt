@@ -7,7 +7,7 @@ List iota(int n) {
   return ret;
 }
 
-Any main() {
+int main() {
   List x = iota(100);
   List y = x.map(fun(Any x) {
                    if   x isa IInt

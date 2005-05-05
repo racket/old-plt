@@ -1,6 +1,7 @@
 #cs
 (module if mzscheme
-  (require (lib "mred.ss" "mred")
+  (require "enumeration.scm"
+           (lib "mred.ss" "mred")
            (lib "class.ss")
            (lib "etc.ss"))
 
@@ -184,7 +185,7 @@
     (lambda (x)
       (let ([r (string->number x)])
         (unless (and r (check? r)) 
-          (error 'string->direction "not a number string: ~e" x))
+          (error 'string->x "not a number string: ~e" x))
         r)))
   
   ;; Coordinates
@@ -192,18 +193,11 @@
   (define coordinate->string number->string)
   (define string->coordinate (string->x number?))
   
-  ;; a Direction is one of:
-  (define NORTH   0)
-  (define EAST   90)
-  (define SOUTH 180)
-  (define WEST  270)
-  
-  (define directions (list NORTH EAST SOUTH WEST))
-  (define direction? (is? directions))
-  
-  (define direction->string number->string)
-  (define string->direction (string->x direction?))
-  
+  ;; Direction
+  (enumeration direction = NORTH EAST SOUTH WEST)
+
+  (define (direction-opposite d) (direction-case d SOUTH WEST NORTH EAST))
+
   ;; functions for moving in these cardinal directions 
   ;; x :: the east-west coordinate 
   ;; y :: the north-south coordinate 
@@ -212,16 +206,12 @@
   (define south add1)
   (define west  sub1)
   
-  ;; Orientation is one of: 
-  (define orientations (list NORTH EAST SOUTH WEST))
-  (define orientation? (is? orientations))
-  
-  (define orientation->string number->string)
-  (define string->orientation (string->x number?))
-  
-  ;; a Position is one of:
-  ;; -- Direction
+  ;; Orientation:
+  (enumeration orientation = by-value 0 90 180 270)
+
+  ;; Position:
   (define INNER -100)
+  (enumeration position = by-value NORTH EAST SOUTH WEST INNER)
   
   ;; interpretation: 
   ;; NORTH :: road or castle w/o interior connection 
@@ -229,32 +219,18 @@
   ;; EAST  :: road or castle w/o interior connection 
   ;; WEST  :: road or castle w/o interior connection 
   ;; INNER :: abbey or castle with interior connection
-  
-  (define position?  (is? (cons INNER directions)))
-  (define (position=? x y) (and (position? x) (position? y) (= x y)))
-  (define position->string number->string)
-  (define string->position (string->x position?))
-  
-  ;; a Follower is one of: 
-  (define RED   "red")
-  (define WHITE "yellow")
-  (define BLUE  "cyan")
-  (define BLACK "black")
-  (define GREEN "green")
+
+  ;; Follower:
+  (define RED     "red")
+  (define WHITE   "yellow")
+  (define BLUE    "cyan")
+  (define BLACK   "black")
+  (define GREEN   "green")
   (define MAGENTA "magenta")
   
-  (define followers (list RED WHITE BLUE BLACK GREEN MAGENTA))
+  (enumeration follower = by-value RED WHITE BLUE GREEN MAGENTA)
   (define MAX-FOLLOWERS 7)
   
-  (define follower? (is? followers))
-  (define (all-followers) followers)
-  
-  (define (follower-string x) x)
-  (define follower=? string=?)
-  (define (string->follower s)
-    (unless (and (string? s) (follower? s))
-      (error 'string->follower "expected follower string, given ~e" s))
-    s)
   ;; Follower -> bitmap%
   (define (follower-bm f)
     (make-object bitmap% (build-path "Followers" (format "f_~a.gif" f)) 'gif #f))
@@ -278,45 +254,31 @@
            coordinate? string->coordinate coordinate->string 
            
            ;; Orientation 
-           orientation?
-           orientation->string 
-           string->orientation
+           orientation? orientation->string string->orientation
            
            ;; Position
-           position? INNER position=? position->string string->position
+           position? position->string string->position INNER position=? 
            
            ;; Direction
-           direction? NORTH EAST SOUTH WEST string->direction 
-           
-           ;; Movements 
+           direction? direction=? direction->string string->direction
+           (rename direction-case dir-case)
+           direction-opposite     ;; Direction -> Direction 
+           NORTH EAST SOUTH WEST 
            north east south west 
            
            ;; Followers
            RED WHITE BLUE BLACK GREEN MAGENTA MAX-FOLLOWERS
-           follower? follower-string follower-bm all-followers follower=? string->follower
+           follower? follower->string string->follower follower-bm all-followers follower=? 
            )
   
   ;; --- auxiliary things for directions --- 
   
   (provide 
-   direction-opposite     ;; Direction -> Direction 
-   dir-case               ;; Direction X X X X -> X 
    iterate-over-neighbors ;; Number Number (Number Number -> X) (Listof[X] -> Y) -> Y
    ;; apply f to each of the 8 neighbors 
    ;; and collect the results with combine 
    )
-  
-  ;; Directions
-  
-  (define (direction-opposite d) (dir-case d SOUTH WEST NORTH EAST))
-  
-  (define (dir-case d n e s w)
-    (cond [(eq? d NORTH) n]
-          [(eq? d EAST)  e]
-          [(eq? d SOUTH) s]
-          [(eq? d WEST)  w]
-          [else (error 'direction "expected a direction; given ~e" d)]))
-  
+
   (define (iterate-over-neighbors x y f combine)
     (combine (f x        (north y))
              (f (east x) (north y))
@@ -326,7 +288,6 @@
              (f (west x) (south y))
              (f (west x) y)
              (f (west x) (north y))))
-  
   
   ;; --- quality of service specs --- 
   

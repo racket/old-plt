@@ -254,7 +254,7 @@
           (define ts (potential-locations-for-followers))
           (unless (is-a? t tile<%>)
             (error 'place-follower "expected tile, given ~e" t))
-          (unless (member* t ts (lambda (x y) (and (tile= (car x) t) (= (cadr x) p))))
+          (unless (member* t ts (lambda (x y) (and (tile= (car x) t) (direction=? (cadr x) p))))
             (contract/violation
              (format "expected tile with free position for follower, given: (~s,~s) @ ~s"
                      (send t get-x) (send t get-y) p)))

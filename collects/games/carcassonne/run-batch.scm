@@ -6,7 +6,7 @@
 
   (define names '("Matthias" "Matthew" "Robby" "Shriram"))
 
-  (define th (go (map (lambda (x) (list player% x)) names) #t))
+  (define th (go (map (lambda (x) (list player% x)) names) #f))
   
   (yield th))
 

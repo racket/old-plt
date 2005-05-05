@@ -5,7 +5,7 @@
 
   (require "if.scm" "run-proxy-aux.scm")
   
-  (REG-WAIT 10) ;; seconds
+  (REG-WAIT 1) ;; seconds
   (max-turn-time 24)
   (define names '("Matthias" "Matthew" "Robby" "Shriram"))
   (define stop (go names #f)) ;; #t for view 

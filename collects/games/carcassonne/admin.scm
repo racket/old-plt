@@ -39,13 +39,13 @@
                                            (printf (contract-msg x))  
                                            (newline)
                                            (done (lambda () h)))]
-                              [exn:fail? (lambda (x) 
-                                      (parameterize 
-                                          ([current-output-port (current-error-port)])
-                                        (printf "ERROR: ")
-                                        (printf "~a~n" (exn-message x))
-                                        (newline)
-                                        (done (lambda () h))))])
+                              [(lambda (x) #f) #;exn:fail? (lambda (x) 
+                                           (parameterize 
+                                               ([current-output-port (current-error-port)])
+                                             (printf "ERROR: ")
+                                             (printf "~a~n" (exn-message x))
+                                             (newline)
+                                             (done (lambda () h))))])
                 (send ov m args ...)))
             (lambda () s)))}]))
   
@@ -87,7 +87,7 @@
       
       (field [players   '()]             ;; Listof[Iplayer]
              [obs*      '()]             ;; Listof[observer<%>]
-             [followers (all-followers)] ;; Listof[Follower]
+             [followers all-followers] ;; Listof[Follower]
              [graph     (new graph%)])             
       
       (define/public (get-graph) graph)
@@ -124,7 +124,7 @@
         (set! followers '())
         (run/p (make-random-set-of-tiles ROUNDS) players))
       
-#|
+      #|
       ;; Listof[-> Void]
       ;; the list of observer actions to run after a turn completes w/o error
       (define todo '())
@@ -355,7 +355,7 @@
         (class* object% (turn<%>)
           (super-new)
           (init-field index iplayer places-for-i players)
-
+          
           (define f (iplayer-follower iplayer))
           
           (define turn-base% 

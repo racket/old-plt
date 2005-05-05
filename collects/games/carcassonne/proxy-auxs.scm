@@ -155,10 +155,14 @@
       [(is-a? a tile<%>) `(tile ,(tile-attrs->xexpr a))]
       [(null? a)    `(list ())]
       [(list? a)    `(list () ,@(map (lambda (a) `(li () ,(any->xexpr a))) a))]
+      [(direction? a) `(direction ([value ,(direction->string a)]))]
+      [(orientation? a) `(orientation ([value ,(orientation->string a)]))]
+      [(position? a) `(position ([value ,(position->string a)]))]
       [else (error 'any->xexpr "not implemented yet: ~e" a)]))
   
   ;; Xexpr -> Any 
   (define (xexpr->any a)
+    (define r
     (match a
       [('boolean (['value x])) (string->boolean x)]
       [('number  (['value x])) (string->number x)]
@@ -172,7 +176,12 @@
                 [('li () a) (xexpr->any a)]
                 [else (error 'xexpr->any "bad list item: ~e" a)]))
             rest)]
+      [('direction (['value x])) (string->direction x)]
+      [('position (['value x])) (string->position x)]
+      [('orientation (['value x])) (string->orientation x)]
       [else (error 'xexpr->any "not implemented yet: ~e" a)]))
+    (printf ">>> (x->a ~a) = ~a~n" a r)
+    r)
   
   ;; tile<%> -> Listof[(list Symbol String)]
   (define (tile-attrs->xexpr t)
@@ -186,7 +195,7 @@
     (list (index> (cadr (assq 'index x)))
           (coordinate> (cadr (assq 'x x)))
           (coordinate> (cadr (assq 'y x)))
-          (orientation> (cadr (assq 'orientation x)))))
+          (string->orientation (cadr (assq 'orientation x)))))
   
   ;; conversions and projection 
   (define (coordinate> x)

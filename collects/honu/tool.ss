@@ -1,7 +1,9 @@
 (module tool mzscheme
   (require (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
+           (lib "framework.ss" "framework")
            (lib "unitsig.ss")
+           (lib "etc.ss")
            (lib "class.ss")
            "parsers/parse.ss"
            "ast.ss"
@@ -9,7 +11,6 @@
            "private/typechecker/honu-type-utils.ss"
            "compile.ss"
            "honu-compile-context.ss"
-	   (lib "embed.ss" "compiler")
 	   (lib "string-constant.ss" "string-constants"))
 
   (provide tool@)
@@ -121,4 +122,68 @@
               [(single) "Honu (also not Scheme at all!)"]
               [(group)  "List of Honu files to run together"]))
           
-          (super-instantiate ()))))))
+          (super-instantiate ())))
+      
+      ;; The following copies the Java mode to make one for Honu, but it's better right now than using
+      ;; the Scheme mode.  Ugh.
+      
+      ;; matches-language : (union #f (listof string)) -> boolean
+      (define (matches-language l)
+        (and l (pair? l) (pair? (cdr l)) (equal? (cadr l) "Honu")))
+
+      ;Create the Honu editing mode
+      (define mode-surrogate
+        (new color:text-mode%
+             (matches (list (list '|{| '|}|)
+                            (list '|(| '|)|)
+                            (list '|[| '|]|)))))
+            
+      ;repl-submit: text int -> bool
+      ;Determines if the reple should submit or not
+      (define (repl-submit text prompt-position)
+        (let ((is-if? #f)
+              (is-string? #f)
+              (open-parens 0)
+              (open-braces 0)
+              (open-curlies 0))
+          (let loop ((index 1) (char (send text get-character prompt-position)))
+            (unless (eq? char #\nul)
+              (cond 
+                ;beginning of if statement
+                ((and (= index 1) 
+                      (eq? char #\i) 
+                      (eq? (send text get-character (add1 prompt-position)) #\f)
+                      (eq? (send text get-character (+ 2 prompt-position)) #\space))
+                 (set! is-if? #t)
+                 (loop 3 (send text get-character (+ 3 prompt-position))))
+                ((eq? char #\()
+                 (unless is-string? (set! open-parens (add1 open-parens)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\))
+                 (unless is-string? (set! open-parens (sub1 open-parens)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\{)
+                 (unless is-string? (set! open-curlies (add1 open-curlies)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\})
+                 (unless is-string? (set! open-curlies (sub1 open-curlies)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\[)
+                 (unless is-string? (set! open-braces (add1 open-braces)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\])
+                 (unless is-string? (set! open-braces (sub1 open-braces)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ;beginning of string
+                ((eq? char #\")
+                 (set! is-string? (not is-string?))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                (else
+                 (loop (add1 index) (send text get-character (+ index prompt-position)))))))
+          (not (or (not (= open-parens 0))
+                   (not (= open-braces 0))
+                   (not (= open-curlies 0))
+                   is-if?))))
+      
+      (drscheme:modes:add-mode "Honu mode" mode-surrogate repl-submit matches-language)
+      )))

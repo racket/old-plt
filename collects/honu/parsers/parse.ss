@@ -790,7 +790,7 @@
   (define (parse-group port name)
     (let ([filenames (read-cm port)])
       (if (null? filenames)
-          (error "Must be at least one file in group file.")
+          (make-honu-program '())
           (let loop ((filenames filenames)
                      (defns     '()))
             (let ((parsed (parse-file 
@@ -807,7 +807,7 @@
                          (string-append dirname "/" filename)
                        read-cm)])
       (if (null? filenames)
-          (error "Must be at least one file in group file.")
+          (make-honu-program '())
           (let loop ((filenames filenames)
                      (defns     '()))
             (let ((parsed (parse-file (string-append dirname "/"

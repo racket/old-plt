@@ -5,7 +5,7 @@ _Grammar
 NOTE: Since I want to use parentheses to mean "real" parentheses, I use
       square brackets for grouping inside of rules.
 
-<program>  ::= <defn>+
+<program>  ::= <defn>*
 
 <defn>     ::= <function>
              | <type>

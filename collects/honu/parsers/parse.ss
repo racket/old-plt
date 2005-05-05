@@ -238,17 +238,15 @@
                  stx)))
        (grammar
         (program
-         [(defns+)
+         [(defns)
           (make-honu-program $1)])
-        (defns+
-          [(defn defns+)
+        (defns
+          [(defn defns)
            (if (honu-ast? $1)
                (cons $1 $2)
                (append $1 $2))]
-          [(defn)
-           (if (honu-ast? $1)
-               (list $1)
-               $1)])
+          [()
+           (list)])
         (defn
           [(fun-defn)
            $1]

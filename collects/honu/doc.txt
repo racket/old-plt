@@ -1,10 +1,9 @@
+_Honu_
+
+_Grammar
+
 NOTE: Since I want to use parentheses to mean "real" parentheses, I use
       square brackets for grouping inside of rules.
-
-NOTE: I use the following non-terminals: <fdid>, <mdid>, <cid>, <mxid>
-      but these are really all just <id> -- I just use them to keep
-      things straight.  Alternations that differ only in the choice
-      of the non-terminals above will be merged in the "real" grammar.
 
 <program>  ::= <defn>+
 
@@ -17,6 +16,7 @@ NOTE: I use the following non-terminals: <fdid>, <mdid>, <cid>, <mxid>
 <function> ::= <tid> <id> ( <argdecls> ) <block>
 
 <type>     ::= type <id> <extends> { <mfdecl>* }
+             | interface <id> <extends> { <mfdecl>* }
 
 <tid>      ::= <ifacet>
              | <primtype>
@@ -43,10 +43,6 @@ NOTE: The above are literal braces as opposed to the meta-braces.
 <extends>  ::= extends <ifacet> [, <ifacet>]*
              | <: <ifacet> [, <ifacet>]*
              |
-
-NOTE: I just have <: as a shorthand for the moment, that's not necessarily
-      going to stick around, but if we decide to take it out later it's an
-      easy, easy fix.
 
 <mfdecl>   ::= <tid> <fdid> ;
              | <tid> <mdid> ( <argdecls>* ) ;
@@ -88,10 +84,6 @@ NOTE: I just have <: as a shorthand for the moment, that's not necessarily
 
 <mixbody>  ::= { <mfidefn>* <supernew> <mfidefn>* <export>* }
 
-NOTE: I think I'm switching back to impl as a shorthand for implements
-      instead of imp.  Of course, we can still use imp in the abstract
-      syntax.
-
 <mfidefn>  ::= init <tid> <id> ;
              | init <tid> <id> = <expr> ;
              | <tid> <id> = <expr> ;
@@ -111,16 +103,10 @@ NOTE: I think I'm switching back to impl as a shorthand for implements
 
 <export>   ::= export <ifacet> : <renames> ;
 
-NOTE: Forgot to make rename statements comma delimited.  That's done now.
-
 <renames>  ::= <rename> [, <rename>]*
 
 <rename>   ::= <id>
              | <id> as <id>
-
-NOTE: Here's the primitive operators we have so far:
-      || && == + - * / %
-      Any others we need?
 
 <expr>     ::= <literal>
              | <lambda>
@@ -134,6 +120,7 @@ NOTE: Here's the primitive operators we have so far:
              | while <expr> <block>
              | new <id> : <ifacet> ( <newargs> )
              | ! <expr>
+             | - <expr>
              | <expr> || <expr>
              | <expr> && <expr>
              | <expr> == <expr>
@@ -165,7 +152,7 @@ NOTE: Here's the precedence and associativity of things above.
 ----------+----------+-----------
     .     |          |
           |  :  isa  |
-          |          |     !
+          |          | !, - (un)
    * / %  |          |
    +  -   |          |
           |          | < <= > >=
@@ -189,8 +176,6 @@ NOTE: Here's the precedence and associativity of things above.
              | <charlit>
 
 <block>    ::= { <vardefn>* <expr-sc>+ }
-
-NOTE: Blocks should definitely not be allowed to be empty -- fixed.
 
 <vardefn>  ::= <tid> <id> = <expr> ;
 

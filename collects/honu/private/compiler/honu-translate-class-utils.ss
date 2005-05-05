@@ -22,8 +22,8 @@
            [(struct honu-init-field (stx name type value))
             (if value
                 (at stx `(begin
-                           (init ([,(add-init name) ,name])
-                                 ,(honu-translate-expression tenv outer-defn value))
+                           (init ([,(add-init name) ,name]
+                                  ,(honu-translate-expression tenv outer-defn value)))
                            (define ,name ,(add-init name))))
                 (at stx `(begin
                            (init ([,(add-init name) ,name]))

@@ -74,6 +74,15 @@
             (honu-iface-type? t2))
        (eq? (printable-key (honu-iface-type-name t1))
             (printable-key (honu-iface-type-name t2)))]
+      [(and (honu-func-type? t1)
+            (honu-func-type? t2))
+       (and (honu-type-equal? (honu-func-type-return t1)
+                              (honu-func-type-return t2))
+            (equal? (length (honu-func-type-args t1))
+                    (length (honu-func-type-args t2)))
+            (andmap honu-type-equal?
+                    (honu-func-type-args t1)
+                    (honu-func-type-args t2)))]
       [else #f]))
 
   (define (honu-iface-type-in-tenv? tenv t)
@@ -169,13 +178,15 @@
               (tenv-type-supers t1-def)))]
       [(and (honu-func-type? t1)
             (honu-func-type? t2))
-       (and (andmap (lambda (at bt)
+       (and (<:_P tenv
+                  (honu-func-type-return t1)
+                  (honu-func-type-return t2))
+            (equal? (length (honu-func-type-args t1))
+                    (length (honu-func-type-args t2)))
+            (andmap (lambda (at bt)
                       (<:_P tenv bt at))
                     (honu-func-type-args t1)
-                    (honu-func-type-args t2))
-            (<:_P tenv
-                  (honu-func-type-return t1)
-                  (honu-func-type-return t2)))]
+                    (honu-func-type-args t2)))]
       [else #f]))
   
   (define (Implements_P tenv c t)

@@ -80,7 +80,7 @@
              [(char<=? #\a char #\f) 
               (+ 10 (- (char->integer char)
                        (char->integer #\a)))]))
-         
+
          (datum->syntax-object
           stx
           (decode-sexp 

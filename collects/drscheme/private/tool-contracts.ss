@@ -263,8 +263,12 @@
     . -> . 
     any)
    (msg exn highlight-errors)
-   "Prints the error message to the current-output-port and highlights the text, "
-   "based on \\var{rep}.")
+   "The first two arguments are the same as the arguments to the error-display-handler. "
+   "This function prints the error message to the current-error-port, like the default error-display-handler "
+   "and also calls \\var{highlight-errors} to do error highlighting. It is be passed the stack trace "
+   "for the error message."
+   ""
+   "This function should be called on the same thread/eventspace where the error happened.")
   
   (drscheme:debug:make-debug-error-display-handler
    ((string? (union any/c exn?) . -> . any)
@@ -556,17 +560,6 @@
 ;               ;      
 ;               ;      
 ;               ;      
-  
-  (drscheme:rep:get-error-ranges
-   (-> (union false/c (cons/c (list/c any/c number? number?) (listof (list/c any/c number? number?)))))
-   ()
-   "Returns the currently highlighted error range, or \\scheme|#f|"
-   "if there is none.")
-  
-  (drscheme:rep:reset-error-ranges
-   (-> void?)
-   ()
-   "Clears the current error highlighting.")
   
   (drscheme:rep:get-drs-bindings-keymap
    (-> (is-a?/c keymap%))

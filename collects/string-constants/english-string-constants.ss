@@ -1000,7 +1000,6 @@ please adhere to these guidelines:
  (profiling-square "Square")
  (profiling-number "Number of Calls")
  (profiling-time "Cumulative Time")
- (profiling-clear "Clear Profile")
  (profiling-update "Update Profile")
  (profiling-col-percent-time "% Time")
  (profiling-col-function "Function")

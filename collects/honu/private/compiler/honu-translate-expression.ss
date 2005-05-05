@@ -256,6 +256,6 @@
            (raise-read-error-with-stx
              "Bindings at the REPL are not yet implemented."
              stx)
-           (at stx `[,name ,(honu-translate-expression tenv defn rhs)]))]))
+           (at stx `[,(at-ctxt name) ,(honu-translate-expression tenv defn rhs)]))]))
   )
   

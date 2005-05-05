@@ -13,7 +13,7 @@
   (provide honu-translate-init-slots)
   (define (honu-translate-init-slots slot-names)
     (map (lambda (name)
-           (at name `(init ,name)))
+           (at name `(init ,(at-ctxt name))))
          slot-names))
   
   (provide honu-translate-slotdefns)
@@ -22,21 +22,21 @@
            [(struct honu-init-field (stx name type value))
             (if value
                 (at stx `(begin
-                           (init ([,(add-init name) ,name]
+                           (init ([,(add-init name) ,(at-ctxt name)]
                                   ,(honu-translate-expression tenv outer-defn value)))
-                           (define ,name ,(add-init name))))
+                           (define ,(at-ctxt name) ,(add-init name))))
                 (at stx `(begin
-                           (init ([,(add-init name) ,name]))
-                           (define ,name ,(add-init name)))))]
+                           (init ([,(add-init name) ,(at-ctxt name)]))
+                           (define ,(at-ctxt name) ,(add-init name)))))]
            [(struct honu-field (stx name type value))
-            (at stx `(define ,name
+            (at stx `(define ,(at-ctxt name)
                        ,(honu-translate-expression tenv outer-defn value)))]
            [(struct honu-method (stx name type arg-names arg-types body))
             (if (honu-top-type? type)
-                (at stx `(define (,name ,@arg-names)
+                (at stx `(define (,(at-ctxt name) ,@arg-names)
                            ,(honu-translate-expression tenv outer-defn body)
                            (void)))
-                (at stx `(define (,name ,@arg-names)
+                (at stx `(define (,(at-ctxt name) ,@arg-names)
                            ,(honu-translate-expression tenv outer-defn body))))])
          defns))
   
@@ -76,7 +76,7 @@
                 `(,define-sym (,(honu-translate-dynamic-method-name tenv new-name new-type) . args)
                    (super ,(honu-translate-dynamic-method-name tenv old-name old-type) . args))
                 `(,define-sym (,(honu-translate-dynamic-method-name tenv new-name new-type) . args)
-                   (apply ,old-name args)))
+                   (apply ,(at-ctxt old-name) args)))
             (if old-type
                 `(begin
                    (,define-sym (,(honu-translate-dynamic-field-getter tenv new-name new-type))
@@ -85,9 +85,9 @@
                      (super ,(honu-translate-dynamic-field-setter tenv old-name old-type) val)))
                 `(begin
                    (,define-sym (,(honu-translate-dynamic-field-getter tenv new-name new-type))
-                     ,old-name)
+                     ,(at-ctxt old-name))
                    (,define-sym (,(honu-translate-dynamic-field-setter tenv new-name new-type) val)
-                     (set! ,old-name val)
+                     (set! ,(at-ctxt old-name) val)
                      (void))))))))
   
   (define (process-export tenv defn e)

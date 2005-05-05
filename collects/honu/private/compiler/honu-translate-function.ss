@@ -9,6 +9,6 @@
   (define (honu-translate-function pgm defn)
     (match defn
       [(struct honu-function (stx name _ arg-names _ body))
-       (at stx `(define ,(cons name arg-names)
+       (at stx `(define ,(cons (at-ctxt name) (map at-ctxt arg-names))
                   ,(honu-translate-expression pgm defn body)))]))
   )

@@ -2,7 +2,8 @@
 (module class-internal mzscheme
   (require (lib "list.ss")
            (lib "etc.ss")
-	   (lib "stxparam.ss"))
+	   (lib "stxparam.ss")
+	   "serialize-structs.ss")
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      (lib "name.ss" "syntax")
@@ -11,7 +12,7 @@
 		      (lib "stxparam.ss")
 		      "classidmap.ss")
 
-  (define insp (current-inspector)) ; for all structures
+  (define insp (current-inspector)) ; for all opaque structures
 
   ;;--------------------------------------------------------------------
   ;;  keyword setup
@@ -33,7 +34,8 @@
 			 pubment overment augment
 			 public-final override-final augment-final
 			 field init init-field
-			 rename-super rename-inner inherit)
+			 rename-super rename-inner inherit
+			 inspect)
 
   (define-syntax define/provide-context-keyword
     (syntax-rules ()
@@ -64,7 +66,7 @@
   ;;  class macros
   ;;--------------------------------------------------------------------
 
-  (define-syntaxes (class* :class)
+  (define-syntaxes (class* :class class/derived)
     (let ()
       ;; Start with Helper functions
 
@@ -96,7 +98,8 @@
 		  (quote-syntax this)
 		  (quote-syntax super-instantiate)
 		  (quote-syntax super-make-object)
-		  (quote-syntax super-new)))]
+		  (quote-syntax super-new)
+		  (quote-syntax inspect)))]
 	       [expand-context (generate-class-expand-context)]
 	       [expand
 		(lambda (defn-or-expr)
@@ -306,7 +309,7 @@
       ;; --------------------------------------------------------------------------------
       ;; Start here:
 
-      (define (main stx super-expr interface-exprs defn-and-exprs)
+      (define (main stx super-expr deserialize-id-expr name-id interface-exprs defn-and-exprs)
 	(let-values ([(this-id) #'this-id]
 		     [(the-obj) (datum->syntax-object (quote-syntax here) (gensym 'self))]
 		     [(the-finder) (datum->syntax-object (quote-syntax here) (gensym 'find-self))])
@@ -315,10 +318,12 @@
 	  (let ([defn-and-exprs (expand-all-forms stx defn-and-exprs)]
 		[bad (lambda (msg expr)
 		       (raise-syntax-error #f msg stx expr))]
-		[class-name (let ([s (syntax-local-infer-name stx)])
-			      (if (syntax? s)
-				  (syntax-e s)
-				  s))])
+		[class-name (if name-id
+				(syntax-e name-id)
+				(let ([s (syntax-local-infer-name stx)])
+				  (if (syntax? s)
+				      (syntax-e s)
+				      s)))])
 	    
 	    ;; ------ Basic syntax checks -----
 	    (for-each (lambda (stx)
@@ -326,7 +331,8 @@
 					       private public override augride
 					       public-final override-final augment-final
 					       pubment overment augment
-					       rename-super inherit rename-inner)
+					       rename-super inherit rename-inner
+					       inspect)
 			  [(form idp ...)
 			   (and (identifier? (syntax form))
 				(or (module-identifier=? (syntax form) (quote-syntax init))
@@ -349,6 +355,10 @@
 				     form)
 				    idp)]))
 			      (syntax->list (syntax (idp ...)))))]
+			  [(inspect expr)
+			   'ok]
+			  [(inspect . rest)
+			   (bad "ill-formed inspect clause" stx)]
 			  [(init . rest)
 			   (bad "ill-formed init clause" stx)]
 			  [(init-rest)
@@ -469,6 +479,10 @@
 							     rename-inner)))
 				    defn-and-exprs
 				    cons)]
+			  [(inspect-decls exprs)
+			   (extract (list (quote-syntax inspect))
+				    exprs
+				    cons)]
 			  [(plain-inits)
 			   ;; Normalize after, but keep un-normal for error reporting
 			   (flatten #f (extract* (syntax-e 
@@ -521,6 +535,11 @@
 			   (flatten pair (extract* (list (quote-syntax inherit)) decls))]
 			  [(rename-inners)
 			   (flatten pair (extract* (list (quote-syntax rename-inner)) decls))])
+	      
+	      ;; At most one inspect:
+	      (unless (or (null? inspect-decls)
+			  (null? (cdr inspect-decls)))
+		(bad "multiple inspect clauses" (cadr inspect-decls)))
 	      
 	      ;; At most one init-rest:
 	      (unless (or (null? init-rest-decls)
@@ -981,13 +1000,17 @@
 					  [name class-name]
 					  [(stx-def ...) (map cdr stx-defines)]
 					  [super-expression super-expr]
-					  [(interface-expression ...) interface-exprs])
+					  [(interface-expression ...) interface-exprs]
+					  [inspector (if (pair? inspect-decls)
+							 (stx-car (stx-cdr (car inspect-decls)))
+							 #'(current-inspector))]
+					  [deserialize-id-expr deserialize-id-expr])
 			      
 			      (quasisyntax/loc stx
 				(let ([superclass super-expression]
 				      [interfaces (list interface-expression ...)])
 				  (compose-class 
-				   'name superclass interfaces
+				   'name superclass interfaces inspector deserialize-id-expr
 				   ;; Field count:
 				   num-fields
 				   ;; Field names:
@@ -1139,7 +1162,7 @@
 
       ;; The class* and class entry points:
       (values
-       ;; Class*
+       ;; class*
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(_  super-expression (interface-expr ...)
@@ -1147,9 +1170,10 @@
 		...)
 	    (main stx 
 		  #'super-expression 
+		  #f #f
 		  (syntax->list #'(interface-expr ...))
 		  (syntax->list #'(defn-or-expr ...)))]))
-       ;; Class*
+       ;; class
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(_ super-expression
@@ -1157,8 +1181,72 @@
 	       ...)
 	    (main stx 
 		  #'super-expression 
+		  #f #f
 		  null
+		  (syntax->list #'(defn-or-expr ...)))]))
+       ;; class/derived
+       (lambda (stx)
+	 (syntax-case stx ()
+	   [(_  orig-stx
+		[name-id super-expression (interface-expr ...) deserialize-id-expr]
+		defn-or-expr
+		...)
+	    (main #'orig-stx 
+		  #'super-expression 
+		  #'deserialize-id-expr 
+		  (and (syntax-e #'name-id) #'name-id)
+		  (syntax->list #'(interface-expr ...))
 		  (syntax->list #'(defn-or-expr ...)))])))))
+
+  (define-syntax (-define-serializable-class stx)
+    (syntax-case stx ()
+      [(_ orig-stx name super-expression (interface-expr ...)
+	  defn-or-expr ...)
+       (let ([deserialize-name-info (datum->syntax-object
+				     #'name
+				     (string->symbol
+				      (format "deserialize-info:~a" (syntax-e #'name)))
+				     #'name)])
+	 (unless (memq (syntax-local-context) '(top-level module))
+	   (raise-syntax-error
+	    #f
+	    "allowed only at the top level or within a module top level"
+	    #'orig-stx))
+	 (with-syntax ([deserialize-name-info deserialize-name-info]
+		       [(provision ...) (if (eq? (syntax-local-context) 'module)
+					    #`((provide #,deserialize-name-info))
+					    #'())])
+	   #'(begin
+	       (define-values (name deserialize-name-info)
+		 (class/derived orig-stx [name
+					  super-expression 
+					  (interface-expr ...)
+					  #'deserialize-name-info]
+		   defn-or-expr ...))
+	       provision ...)))]))
+
+  (define-syntax (define-serializable-class* stx)
+    (syntax-case stx ()
+      [(_ name super-expression (interface-expr ...)
+	  defn-or-expr ...)
+       (with-syntax ([orig-stx stx])
+	 #'(-define-serializable-class orig-stx
+				       name
+				       super-expression
+				       (interface-expr ...)
+				       defn-or-expr ...))]))
+
+  (define-syntax (define-serializable-class stx)
+    (syntax-case stx ()
+      [(_ name super-expression
+	  defn-or-expr ...)
+       (with-syntax ([orig-stx stx])
+	 #'(-define-serializable-class orig-stx
+				       name
+				       super-expression
+				       ()
+				       defn-or-expr ...))]))
+  
 
   (define-syntaxes (private* public* pubment* override* overment* augride* augment*
 			     public-final* override-final* augment-final*)
@@ -1311,19 +1399,27 @@
 
                         init           ; initializer
                                        ; :   object
-                                       ;     (object class (box boolean) leftover-args new-by-pos-args new-named-args -> void) // always continue-make-super?
+                                       ;     (object class (box boolean) leftover-args new-by-pos-args new-named-args 
+				       ;      -> void) // always continue-make-super?
                                        ;     class
                                        ;     (box boolean)
                                        ;     leftover-args
                                        ;     named-args
                                        ;  -> void
                         
+			serializer     ; proc => serializer, #f => not serializable
+			fixup          ; for deserialization
+
 			no-super-init?); #t => no super-init needed
                     insp)
   
+  ;; compose-class: produces one result if `deserialize-id' is #f, two
+  ;;                results if `deserialize-id' is not #f
   (define (compose-class name                ; symbol
 			 super               ; class
 			 interfaces          ; list of interfaces
+			 inspector           ; inspector or #f
+			 deserialize-id      ; identifier or #f
 
 			 num-fields          ; total fields (public & private)
 			 public-field-names  ; list of symbols (shorter than num-fields)
@@ -1383,6 +1479,13 @@
 		      intf
 		      (for-class name))))
        interfaces)
+
+      ;; -- Check inspectors ---
+      (when inspector
+	(unless (inspector? inspector)
+	  (obj-error 'class* "inspect class result is not an inspector or #f: ~a~a" 
+		      inspector
+		      (for-class name))))
 
       ;; -- Match method and field names to indices --
       (let ([method-ht (if no-new-methods?
@@ -1489,6 +1592,14 @@
 				 (format " required class: ~a" r)
 				 "")))))
 
+	    ;; -- For serialization, check that the superclass is compatible --
+	    (when deserialize-id
+	      (unless (class-serializer super)
+		(obj-error 'class*
+			   "superclass is not serialiazable, not transparent, and does not implement externalizable<%>: ~e~a"
+			   super
+			   (for-class name))))
+
 	    ;; ---- Make the class and its interface ----
 	    (let* ([class-make (if name
 				   (make-naming-constructor 
@@ -1517,7 +1628,7 @@
 				  (add1 (class-pos super))
 				  (list->vector (append (vector->list (class-supers super)) (list #f)))
 				  i
-				  (let-values ([(struct: make- ? -ref -set) (make-struct-type 'insp #f 0 0)])
+				  (let-values ([(struct: make- ? -ref -set) (make-struct-type 'insp #f 0 0 #f null inspector)])
 				    make-)
 				  method-width method-ht method-names
 				  methods beta-methods meth-flags
@@ -1526,6 +1637,7 @@
 				  init-args
 				  init-mode
 				  'init
+				  #f #f ; serializer is set later
 				  (and make-struct:prim #t))]
 		   [obj-name (if name
 				 (string->symbol (format "object:~a" name))
@@ -1556,7 +1668,23 @@
 						   ;; Fields for new slots:
 						   num-fields undefined
 						   ;; Map object property to class:
-						   (list (cons prop:object c))))])
+						   (append
+						    (list (cons prop:object c))
+						    (if deserialize-id
+							(list
+							 (cons prop:serializable
+							       ;; Serialization:
+							       (make-serialize-info
+								(lambda (obj) 
+								  ((class-serializer c) obj))
+								deserialize-id
+								(and (not inspector)
+								     (not (interface-extension? i externalizable<%>))
+								     (eq? #t (class-serializer super)))
+								(or (current-load-relative-directory) 
+								    (current-directory)))))
+							null))
+						   inspector))])
 		(set-class-struct:object! c struct:object)
 		(set-class-object?! c object?)
 		(set-class-make-object! c object-make)
@@ -1704,11 +1832,70 @@
 				      (vector-set! meth-flags index 'final)))
 				  final-names)
 			
+			;; --- Install serialize info into class --
+			(set-class-serializer!
+			 c
+			 (cond
+			  [(interface-extension? i externalizable<%>)
+			   (let ([index (car (get-indices method-ht "???" '(externalize)))])
+			     (lambda (obj)
+			       (vector ((vector-ref methods index) obj))))]
+			  [(and (or deserialize-id
+				    (not inspector))
+				(class-serializer super))
+			   => (lambda (ss)
+				(lambda (obj)
+				  (vector (cons (ss obj)
+						(let loop ([i 0])
+						  (if (= i num-fields)
+						      null
+						      (cons (object-field-ref obj i)
+							    (loop (add1 i)))))))))]
+			  [else #f]))
+
+			(set-class-fixup!
+			 c
+			 ;; Used only for non-externalizable:
+			 (lambda (o args)
+			   (if (pair? args)
+			       (begin
+				 ((class-fixup super) o (vector-ref (car args) 0))
+				 (let loop ([i 0][args (cdr args)])
+				   (unless (= i num-fields)
+				     (object-field-set! o i (car args))
+				     (loop (add1 i) (cdr args)))))
+			       (begin
+				 ((class-fixup super) o args)
+				 (let loop ([i 0])
+				   (unless (= i num-fields)
+				     (object-field-set! o i (object-field-ref args i))
+				     (loop (add1 i))))))))
+
 			;; --- Install initializer into class ---
 			(set-class-init! c init)
 				    
-			;; -- result is the class ---
-			c)))))))))))
+			;; -- result is the class, and maybe deserialize-info ---
+			(if deserialize-id
+			    (values c (make-deserialize-info
+				       (if (interface-extension? i externalizable<%>)
+					   (lambda (args)
+					     (let ([o (make-object c)])
+					       (send o internalize args)
+					       o))
+					   (lambda (args)
+					     (let ([o (object-make)])
+					       ((class-fixup c) o args)
+					       o)))
+				       (if (interface-extension? i externalizable<%>)
+					   (lambda ()
+					     (error 'deserialize "cannot deserialize instance with cycles~a"
+						    (for-class name)))
+					   (lambda ()
+					     (let ([o (object-make)])
+					       (values o
+						       (lambda (o2)
+							 ((class-fixup c) o o2))))))))
+			    c))))))))))))
 
   (define-values (prop:object object? object-ref) (make-struct-type-property 'object))
 
@@ -1870,11 +2057,14 @@
 		       (unused-args-error this args))
 		     (void))
 
+		   (lambda (obj) #(()))        ; serialize
+		   (lambda (obj args) (void))  ; deserialize-fixup
+
 		   #t)) ; no super-init
 
   (vector-set! (class-supers object%) 0 object%)
   (let*-values ([(struct:obj make-obj obj? -get -set!)
-                 (make-struct-type 'object #f 0 0 #f (list (cons prop:object object%)) (make-inspector))])
+                 (make-struct-type 'object #f 0 0 #f (list (cons prop:object object%)) #f)])
     (set-class-struct:object! object% struct:obj)
     (set-class-make-object! object% make-obj))
   (set-class-object?! object% object?) ; don't use struct pred; it wouldn't work with prim classes
@@ -2583,6 +2773,8 @@
     (compose-class name
 		   (or super object%)
 		   null
+		   #f
+		   #f
 		   
 		   0 null null ; no fields
 
@@ -2692,8 +2884,8 @@
                         1
                         supers
                         'bogus-self-interface
-                        void ;nothing can be inspected
-                        
+                        void  ; nothing can be inspected
+			
                         method-count
                         method-ht
                         (reverse method-ids)
@@ -2716,6 +2908,7 @@
                         'normal ; init-mode - ??
                         
                         #f ; init
+			#f #f ; not serializable
                         #f)])
       (let-values ([(struct:object make-object object? field-ref field-set!)
                     (make-struct-type 'wrapper-object
@@ -2908,17 +3101,21 @@
                        (ensure-interface-has? (quote super-vars)) ...)
                      
                      mixin-expr)))))))]))
+
+  (define externalizable<%>
+    (:interface () externalize internalize))
   
   (provide (protect make-wrapper-class
 		    wrapper-object-wrapped
 		    extract-vtable
 		    extract-method-ht)
            
-           (rename :class class) class*
+           (rename :class class) class* class/derived
+           define-serializable-class define-serializable-class*
            class?
            mixin
 	   (rename :interface interface) interface?
-	   object% object? object=?
+	   object% object? object=? externalizable<%>
            new make-object instantiate
            get-field field-bound? field-names
 	   send send/apply send* class-field-accessor class-field-mutator with-method

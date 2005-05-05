@@ -186,8 +186,8 @@
             (:* (:~ #\newline)))
         (return-without-pos (honu-lexer input-port))]
        [(:: #\/ #\*)
-        (begin (comment-lexer input-port)                     ;; Get the rest of the comment...
-               (return-without-pos (honu-lexer input-port)))] ;; then get the next token.
+        (begin (comment-lexer source-name start-pos input-port) ;; Get the rest of the comment...
+               (return-without-pos (honu-lexer input-port)))]   ;; then get the next token.
        [(:+ lex:whitespace)
         (return-without-pos (honu-lexer input-port))]
        [(eof)
@@ -196,14 +196,20 @@
     honu-lexer)
   
   (define comment-lexer
-    (lexer-src-pos
-     [(:: #\/ #\*)
-      (begin (comment-lexer input-port)                        ;; once for the nested comment
-             (return-without-pos (comment-lexer input-port)))] ;; now finish out the current one
-     [(:: #\* #\/)
-      #f] ;; This will get ignored by the call to comment-lexer (whether nested or no)
-     [(:~)
-      (return-without-pos (comment-lexer input-port))]))
+    (lambda (source-name first-pos port)
+      (letrec ([lxr (lexer-src-pos
+                     [(:: #\/ #\*)
+                      (begin (lxr input-port)                        ;; once for the nested comment
+                             (return-without-pos (lxr input-port)))] ;; now finish out the current one
+                     [(:: #\* #\/)
+                      #f] ;; This will get ignored by the call to comment-lexer (whether nested or no)
+                     [(eof)
+                      (raise-read-error-with-stx
+                       "Unexpected end of file while inside block comment."
+                       (create-src-stx eof source-name first-pos end-pos))]
+                     [(:~)
+                      (return-without-pos (lxr input-port))])])
+        (lxr port))))
   
   (define (generate-honu-parser source-name)
     (define honu-parser

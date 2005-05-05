@@ -3,12 +3,8 @@
   (require (lib "readerr.ss" "syntax"))
   
   (provide raise-read-error raise-read-error-with-stx)
+  ;; Yes, this is misleading for now.  I'll rename it later.
   (define (raise-read-error-with-stx str stx)
-    (raise-read-error str
-                      (syntax-source stx)
-                      (syntax-line stx)
-                      (syntax-column stx)
-                      (syntax-position stx)
-                      (syntax-span stx)))
+    (raise-syntax-error #f str stx))
 
   )

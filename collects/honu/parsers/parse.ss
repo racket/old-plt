@@ -2,7 +2,7 @@
   (require (lib "lex.ss" "parser-tools")
            (prefix : (lib "lex-sre.ss" "parser-tools"))
            (lib "yacc.ss" "parser-tools")
-           "../read-error-with-stx.ss"
+           (lib "readerr.ss" "syntax")
            "../ast.ss")
   
   (define (make-struct-type-decls mfidefns)
@@ -75,6 +75,14 @@
                            (- (position-offset end-pos)
                               (position-offset start-pos)))
                           stx-for-original-property))
+  
+  (define (raise-read-error-with-stx str stx)
+    (raise-read-error str
+                      (syntax-source stx)
+                      (syntax-line stx)
+                      (syntax-column stx)
+                      (syntax-position stx)
+                      (syntax-span stx)))
   
   (define-syntax (token stx)
     (syntax-case stx ()

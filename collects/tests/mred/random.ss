@@ -306,6 +306,9 @@
   real-list
   string
   string-list
+  mutable-string
+  bytes
+  path
   labelstring
   labelstring-list
   boolean
@@ -325,7 +328,7 @@
 
   (area-container-window<%> top-level-window<%> panel%)
 
-  (control<%> message% button% check-box% slider% gauge% text-field% radio-box% list-control<%>)
+  (control<%> message% button% check-box% slider% gauge% text-field% combo-field% radio-box% list-control<%>)
 
   (list-control<%> choice% list-box%)
 
@@ -343,6 +346,7 @@
   slider%
   gauge%
   text-field%
+  combo-field%
   radio-box%
 
   choice%
@@ -356,8 +360,9 @@
   grow-box-spacer-pane%
 
   horizontal-panel%
-  (vertical-panel% tab-panel%)
+  (vertical-panel% tab-panel% group-box-panel%)
   tab-panel%
+  group-box-panel%
 
   frame%
   dialog%
@@ -365,12 +370,15 @@
   point%
 
   ps-setup%
+  gl-config%
+  gl-context<%>
 
   color%
   font%
   brush%
   pen%
   region%
+  dc-path%
 
   font-list%
   pen-list%
@@ -439,11 +447,11 @@
   keymap%
   editor-wordbreak-map%
 
-  (editor-stream-in-base% editor-stream-in-string-base%)
-  (editor-stream-out-base% editor-stream-out-string-base%)
+  (editor-stream-in-base% editor-stream-in-bytes-base%)
+  (editor-stream-out-base% editor-stream-out-bytes-base%)
 
-  editor-stream-in-string-base%
-  editor-stream-out-string-base%
+  editor-stream-in-bytes-base%
+  editor-stream-out-bytes-base%
 
   editor-stream-in%
   editor-stream-out%
@@ -460,7 +468,10 @@
 (send boolean-example-list set-filter boolean?)
 (send char-example-list set-filter char?)
 (send string-example-list set-filter string?)
+(send bytes-example-list set-filter bytes?)
+(send mutable-string-example-list set-filter (lambda (x) (and (string? x) (not (immutable? x)))))
 (send labelstring-example-list set-filter (lambda (x) (and (string? x) ((string-length x) . <= . 200))))
+(send path-example-list set-filter path?)
 (send symbol-example-list set-filter symbol?)
 (send real-example-list set-filter real?)
 (send integer-example-list set-filter (lambda (x) (and (number? x) (exact? x) (integer? x))))
@@ -473,6 +484,9 @@
 
 (send char-example-list add-bad 'not-a-char)
 (send string-example-list add-bad 'not-a-string)
+(send mutable-string-example-list add-bad 'not-a-string)
+(send bytes-example-list add-bad 'not-a-bytes)
+(send path-example-list add-bad 'not-a-path)
 (send labelstring-example-list add-bad 'not-a-string)
 (send labelstring-example-list add-bad (make-string 255 #\x))
 (send symbol-example-list add-bad "not a symbol")
@@ -592,10 +606,29 @@
        (add "mred.gif")
        (add "goodbye adious see you later zai jian seeya bye-bye"))
 
+(send* mutable-string-example-list
+       (add (make-string 10 #\x))
+       (add (make-string 10 #\nul)))
+
+(send* bytes-example-list
+       (add #"")
+       (add #"hello")
+       (add #"random/mred.xbm")
+       (add #"random/mred.bmp")
+       (add #"mred.gif")
+       (add #"goodbye adious see you later zai jian seeya bye-bye"))
+
 (send* labelstring-example-list
        (add "")
        (add "hello")
        (add "goodbye adious see you later zai jian seeya bye-bye"))
+
+(send* path-example-list
+       (add (string->path "hello"))
+       (add (string->path "random/mred.xbm"))
+       (add (string->path "random/mred.bmp"))
+       (add (string->path "mred.gif")))
+
 
 (send procedure-example-list add void)
 
@@ -699,20 +732,10 @@
 (define (apply-bad-args v dest name k bad)
   (fprintf (thread-output-port) "~a: ~s" name v)
   (flush-output (thread-output-port))
-  (with-handlers ([exn:application:type?
+  (with-handlers ([exn:fail:contract?
 		   (lambda (x)
 		     (fprintf (thread-output-port) ": exn: ~a~n"
 			      (exn-message x))
-		     ;; Check for expected bad value in exn record
-		     (unless (eqv? bad (exn:application-value x))
-		       (if (or (and (box? bad) (eqv? (unbox bad) (exn:application-value x)))
-			       (and (pair? bad) (null? (cdr bad)) 
-				    (eqv? (car bad) (exn:application-value x))))
-			   (fprintf (thread-output-port) 
-				    "  BOX/PAIR CONTEXT MISMATCH: ~a~n" bad)
-			   (fprintf (thread-output-port) 
-				    "  EXN CONTENT MISMATCH: ~a != ~a~n"
-				    (exn:application-value x) bad)))
 		     ;; Check that exn is from the right place:
 		     (let ([class (if (list? name) 
 				      (let ([n (car name)])
@@ -731,7 +754,7 @@
 			 (fprintf (thread-output-port) 
 				  "  NO OCCURRENCE of method ~a in the error message~n"
 				  method))))]
-		  [exn:application:arity?
+		  [exn:fail:contract:arity?
 		   (lambda (x)
 		     (fprintf (thread-output-port)
 			      ": UNEXPECTED ARITY MISMATCH: ~a~n"
@@ -860,6 +883,8 @@
 (send horizontal-panel%-example-list add hpl)
 (define vpl (make-object vertical-panel% d))
 (send vertical-panel%-example-list add vpl)
+(define gbpl (make-object group-box-panel% "ok" d))
+(send group-box-panel%-example-list add gbpl)
 (define tpl (make-object tab-panel% '("Apple" "Banana" "Coconut") d void))
 (send tab-panel%-example-list add tpl)
 (define hp (make-object horizontal-pane% d))
@@ -875,6 +900,7 @@
 (send slider%-example-list add (make-object slider% "Slider 1" -10 10 vp void))
 (send gauge%-example-list add (make-object gauge% "Gauge 1" 100 hpl))
 (send text-field%-example-list add (make-object text-field% "Text Field 1" vpl void))
+(send combo-field%-example-list add (make-object combo-field% "Combo Field 1" '("A" "B") vpl void))
 (send radio-box%-example-list add (make-object radio-box% "Radio Box 1" '("Radio Button 1.1" "Radio Button 1.2") hp void))
 (send choice%-example-list add (make-object choice% "Choice 1" '("Choice 1.1" "Choice 1.2" "Choice 1.3") vp void))
 (send list-box%-example-list add (make-object list-box% "List Box 1" '("List Box 1.1" "List Box 1.2" "List Box 1.3") hpl void))
@@ -892,6 +918,9 @@
 (send brush%-example-list add (make-object brush% "GREEN" 'solid))
 (send pen%-example-list add (make-object pen% "BLUE" 1 'solid))
 (send region%-example-list add (make-object region% (send c get-dc)))
+(send dc-path%-example-list add (make-object dc-path%))
+(send gl-config%-example-list add (make-object gl-config%))
+(send gl-context<%>-example-list add (send (send c get-dc) get-gl-context))
 
 (send font-list%-example-list add the-font-list)
 (send pen-list%-example-list add the-pen-list)
@@ -960,10 +989,10 @@
 (send keymap%-example-list add (make-object keymap%))
 (send editor-wordbreak-map%-example-list add the-editor-wordbreak-map)
 
-(define sib (make-object editor-stream-in-string-base% "Hello"))
-(send editor-stream-in-string-base%-example-list add sib)
-(define sob (make-object editor-stream-out-string-base%))
-(send editor-stream-out-string-base%-example-list add sob)
+(define sib (make-object editor-stream-in-bytes-base% #"Hello"))
+(send editor-stream-in-bytes-base%-example-list add sib)
+(define sob (make-object editor-stream-out-bytes-base%))
+(send editor-stream-out-bytes-base%-example-list add sob)
 
 (send editor-stream-in%-example-list add (make-object editor-stream-in% sib))
 (send editor-stream-out%-example-list add (make-object editor-stream-out% sob))

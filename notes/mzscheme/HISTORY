@@ -6,7 +6,7 @@ Changed file-stream-buffer-mode to work on more port types,
 Added extra argument to make-input-port and make-output-port
  to get/set buffer mode
 Added define-serializable-class[*], externalizble<%>,
- and class/derived to MzLib's "class.ss"
+ class/derived, and inspect clause form to MzLib's "class.ss"
 Added define-struct/properties to MzLib's "struct.ss"
 
 Version 299.104

@@ -4,12 +4,12 @@
   ;;  which provides extra (private) functionality to contract.ss.
   (require "private/class-internal.ss")
   
-  (provide class
-	   class*
+  (provide class class* class/derived
+	   define-serializable-class define-serializable-class*
            class?
 	   mixin
            interface interface?
-	   object% object?
+	   object% object? externalizable<%>
            object=?
 	   new make-object instantiate
 	   send send/apply send* class-field-accessor class-field-mutator with-method
@@ -37,4 +37,5 @@
 	   field init init-field
 	   rename-super rename-inner inherit
 	   this super inner
-	   super-make-object super-instantiate super-new))
+	   super-make-object super-instantiate super-new
+	   inspect))

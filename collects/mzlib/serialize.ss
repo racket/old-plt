@@ -2,7 +2,8 @@
   (require-for-syntax (lib "struct.ss" "syntax"))
   (require (lib "moddep.ss" "syntax")
 	   (lib "etc.ss")
-	   (lib "list.ss"))
+	   (lib "list.ss")
+	   "private/serialize-structs.ss")
 
   (provide define-serializable-struct
 	   define-serializable-struct/versions
@@ -18,9 +19,6 @@
 	   ;; The two main routines:
 	   serialize
 	   deserialize)
-
-  (define-struct serialize-info (vectorizer deserialize-id can-cycle? dir))
-  (define-struct deserialize-info (maker cycle-maker))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; define-serializable-struct
@@ -412,9 +410,6 @@
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; serialize
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  (define-values (prop:serializable serializable-struct? serializable-info)
-    (make-struct-type-property 'serializable #f))
 
   (define (serializable? v)
     (or (serializable-struct? v)

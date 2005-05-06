@@ -31,6 +31,6 @@ class StrBox() : String impl String {
     return new CharBox:Character(value = charAt(value, i));
   }
 
-  export String : value, print, printLine, strToInt, strToFloat, strLen,
+  export String : value, printStr, printLine, strToInt, strToFloat, strLen,
                   substr, charAt;
 }

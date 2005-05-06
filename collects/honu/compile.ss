@@ -39,7 +39,7 @@
            (values (honu-translate-binding tenv #f checked #t)
                    new-env)))]
       [(honu-exp? ast)
-       (let-values ([(checked type) ((honu-typecheck-exp tenv env #f) ast)])
+       (let-values ([(checked type) ((honu-typecheck-exp tenv env #f) ast #f)])
          (parameterize ([current-compile-context honu-compile-context])
            (values (honu-translate-expression tenv #f checked)
                    env)))]))

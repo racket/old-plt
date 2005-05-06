@@ -1234,6 +1234,7 @@
 	     (test #t tcp-port? w1)
 	     (test #t tcp-port? w2)
 	     (fprintf w1 "Hello~n")
+	     (flush-output w1)
 	     (test "Hello" read-line r2)
 	     (tcp-abandon-port r1)
 	     (close-output-port w1)

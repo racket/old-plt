@@ -1,6 +1,75 @@
 _Honu_
 
-_Grammar
+_Primitive types_
+
+  int   - integers
+  float - floating point numbers
+  str   - strings    (double quoted)
+  bool  - booleans   (true, false)
+  char  - characters (single quoted)
+
+_Built-in functions_
+
+Error reporting:
+
+> error(str message) => 'a
+    - Raises an error and prints the string as an error message.
+    - Calls to error() do not return.
+
+Input/output:
+
+> printStr(str message) => void
+    - Takes a string and prints it on the standard output.
+
+> printLine(str message) => void
+    - Like printStr, but prints a newline after printing the string.
+
+> readChar() => char
+    - Reads a single character from the standard input.
+
+> readLine() => str
+    - Reads a line of text from the standard input.
+
+Conversions to string:
+
+> intToStr(int val) => str
+    - Converts an integer to a string.
+
+> floatToStr(float val) => str
+    - Converts a floating point number to a string.
+
+> charToStr(char val) => str
+    - Converts a character to a string.
+
+String conversions:
+
+> strToInt(str val) => int
+    - Converts a string to an integer.
+    - Raises an error if the string cannot be converted.
+
+> strToFloat(str val) => float
+    - Converts a string to a floating point number.
+    - Raises an error if the string cannot be converted.
+
+String operations:
+
+> strLen(str s) => int
+    - Takes a string and returns the string length.
+
+> substr(str s, int start, int end) => str
+    - Takes a string, a start index, and an end index and
+      returns the corresponding substring.
+    - The indexes are zero-based.
+    - The start index cannot be negative or greater than the end index.
+    - The end index must be less than or equal to the string length.
+
+> charAt(str s, int i) => char
+    - Takes a string and an index into the string and returns
+      the corresponding character.
+    - The zero-based index cannot be negative and must be less
+      than the string length.
+
+_Grammar_
 
 NOTE: Since I want to use parentheses to mean "real" parentheses, I use
       square brackets for grouping inside of rules.

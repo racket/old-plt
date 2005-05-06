@@ -1,9 +1,13 @@
-type IInteger {
+type Integer {
   int value;
+
+  String toString();
 }
 
-class Integer() : IInteger impl IInteger {
+class IntBox() : Integer impl Integer {
   init int value;
 
-  export IInteger : value;
+  String toString() { return new StrBox : String(value = intToStr(value)); }
+
+  export Integer : value, toString;
 }

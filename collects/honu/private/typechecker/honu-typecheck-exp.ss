@@ -13,7 +13,12 @@
   ;; expects a symbol syntax, returns a type for that builtin
   (define (get-builtin-type stx)
     (case (printable-key stx)
-      [(println)
+      [(printStr)
+       (honu-func-type-from-exp
+        (list (honu-str-type stx))
+        (honu-void-type stx)
+        stx)]
+      [(printLine)
        (honu-func-type-from-exp
         (list (honu-str-type stx))
         (honu-void-type stx)
@@ -22,6 +27,59 @@
        (honu-func-type-from-exp
         (list (honu-str-type stx))
         (honu-error-type stx)
+        stx)]
+      [(readChar)
+       (honu-func-type-from-exp
+        (list)
+        (honu-char-type stx)
+        stx)]
+      [(readLine)
+       (honu-func-type-from-exp
+        (list)
+        (honu-str-type stx)
+        stx)]
+      [(strToInt)
+       (honu-func-type-from-exp
+        (list (honu-str-type stx))
+        (honu-int-type stx)
+        stx)]
+      [(strToFloat)
+       (honu-func-type-from-exp
+        (list (honu-str-type stx))
+        (honu-float-type stx)
+        stx)]
+      [(intToStr)
+       (honu-func-type-from-exp
+        (list (honu-int-type stx))
+        (honu-str-type stx)
+        stx)]
+      [(floatToStr)
+       (honu-func-type-from-exp
+        (list (honu-float-type stx))
+        (honu-str-type stx)
+        stx)]
+      [(charToStr)
+       (honu-func-type-from-exp
+        (list (honu-char-type stx))
+        (honu-str-type stx)
+        stx)]
+      [(strLen)
+       (honu-func-type-from-exp
+        (list (honu-str-type stx))
+        (honu-int-type stx)
+        stx)]
+      [(substr)
+       (honu-func-type-from-exp
+        (list (honu-str-type stx)
+              (honu-int-type stx)
+              (honu-int-type stx))
+        (honu-str-type stx)
+        stx)]
+      [(charAt)
+       (honu-func-type-from-exp
+        (list (honu-str-type stx)
+              (honu-int-type stx))
+        (honu-char-type stx)
         stx)]
       [else #f]))
   

@@ -1,9 +1,12 @@
-type ICharacter {
+type Character {
   char value;
+  String toString();
 }
 
-class Character() : ICharacter impl ICharacter {
+class CharBox() : Character impl Character {
   init char value;
 
-  export ICharacter : value;
+  String toString() { return new StrBox : String(value = charToStr(value)); }
+
+  export Character : value, toString;
 }

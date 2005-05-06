@@ -109,10 +109,14 @@
   (provide get-field-type get-method-type)
 
   (define (get-field-type tenv typ fd)
+    (if (honu-iface-top-type? typ)
+        (raise-read-error-with-stx
+         "The Any type has no fields."
+         fd))
     (if (not (honu-iface-type? typ))
         (raise-read-error-with-stx
          "Attempt to get field of a type that is not an interface type."
-         (honu-ast-src-stx typ)))
+         fd))
     (let* ([type-def (get-type-entry (honu-iface-type-name typ) tenv)]
            [field-decl (find (lambda (d)
                                (and (honu-field-decl? d)
@@ -127,10 +131,14 @@
              (else (loop (cdr supers))))))))
 
   (define (get-method-type tenv typ md)
+    (if (honu-iface-top-type? typ)
+        (raise-read-error-with-stx
+         "The Any type has no methods."
+         md))
     (if (not (honu-iface-type? typ))
         (raise-read-error-with-stx
          "Attempt to get method of a type that is not an interface type."
-         (honu-ast-src-stx typ)))
+         md))
     (let* ([type-def (get-type-entry (honu-iface-type-name typ) tenv)]
            [method-decl (find (lambda (d)
                                 (and (honu-method-decl? d)

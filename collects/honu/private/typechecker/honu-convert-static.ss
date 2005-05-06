@@ -11,7 +11,8 @@
     (filter values (tenv-map tenv p)))
   
   (define (default-bindings tenv)
-    (append '(println error)
+    (append '(printStr printLine error readChar readLine strToInt strToFloat
+              intToStr floatToStr charToStr strLen substr charAt)
             (tenv-filter-map tenv
                (lambda (k v)
                  (if (tenv-func? v) (printable-key k) #f)))))

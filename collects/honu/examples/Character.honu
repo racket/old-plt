@@ -6,7 +6,7 @@ type Character {
 class CharBox() : Character impl Character {
   init char value;
 
-  String toString() { return new StrBox : String(value = charToStr(value)); }
+  String toString() { return new StrBox(value = charToStr(value)); }
 
   export Character : value, toString;
 }

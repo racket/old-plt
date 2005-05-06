@@ -7,7 +7,7 @@ type Integer {
 class IntBox() : Integer impl Integer {
   init int value;
 
-  String toString() { return new StrBox : String(value = intToStr(value)); }
+  String toString() { return new StrBox(value = intToStr(value)); }
 
   export Integer : value, toString;
 }

@@ -17,18 +17,18 @@ class StrBox() : String impl String {
   
   void printLine() { printLine(value); }
 
-  Integer strToInt() { return new IntBox:Integer(value = strToInt(value)); }
+  Integer strToInt() { return new IntBox(value = strToInt(value)); }
 
-  Float strToFloat() { return new FloatBox:Float(value = strToFloat(value)); }
+  Float strToFloat() { return new FloatBox(value = strToFloat(value)); }
 
-  Integer strLen() { return new IntBox:Integer(value = strLen(value)); }
+  Integer strLen() { return new IntBox(value = strLen(value)); }
 
   String substr(int start, int end) {
-    return new StrBox:String(value = substr(value, start, end));
+    return new StrBox(value = substr(value, start, end));
   }
 
   Character charAt(int i) {
-    return new CharBox:Character(value = charAt(value, i));
+    return new CharBox(value = charAt(value, i));
   }
 
   export String : value, printStr, printLine, strToInt, strToFloat, strLen,

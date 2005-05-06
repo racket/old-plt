@@ -28,7 +28,7 @@ type List {
 class MTList() : List impl List {
 
   List add(Any elt) {
-    return new ConsList : List(car = elt, cdr = (this : List));
+    return new ConsList(car = elt, cdr = (this : List));
   }
 
   Any no_elts(int n) {
@@ -110,30 +110,30 @@ class ConsList() : List impl List {
 
   List take(int n) {
     if n == 0 {
-      new MTList : List();
+      new MTList();
     } else {
-      new ConsList : List (car = car, cdr = cdr.take(n - 1));
+      new ConsList(car = car, cdr = cdr.take(n - 1));
     };
   }
 
   List addToFront(Any x) {
-    return new ConsList : List (car = x, cdr = (this : List));
+    return new ConsList(car = x, cdr = (this : List));
   }
 
   List addToEnd(Any x) {
-    return new ConsList : List (car = car, cdr = cdr.addToEnd(x));
+    return new ConsList(car = car, cdr = cdr.addToEnd(x));
   }
 
   List appendToFront(List other) {
     if other.empty() {
       this : List;
     } else {
-      new ConsList : List (car = other.first(), cdr = other.drop(1));
+      new ConsList(car = other.first(), cdr = other.drop(1));
     };
   }
 
   List appendToEnd(List other) {
-    return new ConsList : List (car = car, cdr = cdr.appendToEnd(other));
+    return new ConsList(car = car, cdr = cdr.appendToEnd(other));
   }
 
   List reverse() {
@@ -145,7 +145,7 @@ class ConsList() : List impl List {
   bool empty() { return false; }
 
   List map([Any] -> Any f) {
-    return new ConsList : List(car = f(car), cdr = cdr.map(f));
+    return new ConsList(car = f(car), cdr = cdr.map(f));
   }
 
   Any foldl([Any, Any] -> Any f, Any i) {
@@ -158,7 +158,7 @@ class ConsList() : List impl List {
 
   List filter([Any] -> bool f) {
     if f(car) {
-      new ConsList : List(car = car, cdr = cdr.filter(f));
+      new ConsList(car = car, cdr = cdr.filter(f));
     } else {
       cdr.filter(f);
     };

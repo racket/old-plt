@@ -7,10 +7,10 @@ type IStack
 }
 
 class ListStack() : IStack impl IStack {
-    List stack = new MTList : List();
+    List stack = new MTList();
 
     void push (Any elt) {
-       stack = new ConsList : List(car = elt, cdr = stack);
+       stack = new ConsList(car = elt, cdr = stack);
     }
 
     Any pop() {
@@ -29,7 +29,7 @@ class ListStack() : IStack impl IStack {
 
     IStack copy() {
       List tocopy = stack.reverse();
-      IStack newStack = new ListStack : IStack();
+      IStack newStack = new ListStack();
       while(!tocopy.empty()) {
         newStack.push(tocopy.first());
         tocopy = tocopy.drop(1);

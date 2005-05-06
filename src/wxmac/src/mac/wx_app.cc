@@ -24,9 +24,6 @@
 #include "wxTimeScale.h"
 #include "wx_print.h"
 #include "wx_macevents.h"
-#if (defined(powerc) || defined(__powerc)) && defined(MPW)
-QDGlobals 	qd;
-#endif
 
 #include <stdlib.h>
 

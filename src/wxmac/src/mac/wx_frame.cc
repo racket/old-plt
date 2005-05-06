@@ -125,6 +125,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   } else {
     if (cStyle & wxFLOAT_FRAME) {
       if (cStyle & wxNO_CAPTION) {
+	metal = 0;
 	windowClass = kToolbarWindowClass;
 	windowAttributes = kWindowNoAttributes;
       } else {
@@ -135,6 +136,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 	}
       }
     } else if (cStyle & wxNO_CAPTION) {
+      metal = 0;
       windowClass = kPlainWindowClass;
       if (cStyle & wxNO_RESIZE_BORDER)
 	windowAttributes = kWindowNoAttributes;

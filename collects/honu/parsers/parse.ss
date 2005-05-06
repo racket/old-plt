@@ -677,6 +677,10 @@
           (make-honu-new 
            (create-src-stx 'honu-new source-name $1-start-pos $7-end-pos)
            $2 $4 (car $6) (cdr $6))]
+         [(new class-id O_PAREN newargs C_PAREN)
+          (make-honu-new 
+           (create-src-stx 'honu-new source-name $1-start-pos $5-end-pos)
+           $2 #f (car $4) (cdr $4))]
          [(expr COLON type-id)
           (make-honu-cast 
            (create-src-stx 'honu-cast source-name $1-start-pos $3-end-pos)

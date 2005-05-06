@@ -759,36 +759,65 @@
        ;;            new c : t (id_1 = e_1', ..., id_n = e_n') : t
        ;;
        [(struct honu-new (stx class type arg-names arg-vals))
-        (if (and typ (not (<:_P tenv type typ)))
-            (raise-type-error-with-stx typ type stx))
-        (if (not (get-class-entry class tenv))
-            (raise-read-error-with-stx
-             "Undefined class"
-             class))
-        (if (not (honu-iface-type-in-tenv? tenv type))
-            (raise-read-error-with-stx
-             "Undefined type or non-interface type"
-             (honu-ast-src-stx type)))
-       ;; FIXME: still need to do appropriate things with typ in here
-        (if (Implements_P tenv class type)
-            (let-values ([(new-args new-types)
-                          (map-two-values f arg-vals (map (lambda (_) #f) arg-vals))])
-              (let ((remainder (fold (lambda (n t i)
-                                       (check-init-type-for-name tenv i n t))
-                                     (get-init-names-and-types tenv class)
-                                     (honu-new-arg-names exp)
-                                     new-types)))
-                (if (or (null? remainder)
-                        (not (ormap tenv-init-optional? remainder))) ; checks to see if all optional
-                    (values (copy-struct honu-new exp
-                              (honu-new-arg-vals new-args))
-                            (honu-new-type exp))
-                    (raise-read-error-with-stx
-                     "Too few initialization arguments in new expression."
-                     stx))))
-            (raise-read-error-with-stx
-             "Class for new expression does not implement type in new expression."
-             stx))]
+        (cond
+          [(and typ type (not (<:_P tenv type typ)))
+           (raise-type-error-with-stx typ type stx)]
+          [(not (get-class-entry class tenv))
+           (raise-read-error-with-stx
+            "Undefined class"
+            class)]
+          [(and type (not (honu-iface-type-in-tenv? tenv type)))
+           (raise-read-error-with-stx
+            "Undefined type or non-interface type"
+            (honu-ast-src-stx type))]
+          [(and (not type) (not typ))
+           (raise-read-error-with-stx
+            "Type to create in new statement needs to be explicitly stated."
+            stx)]
+          ;; if there was no explicit type given...
+          [(not type)
+           (if (Implements_P tenv class typ)
+                (let-values ([(new-args new-types)
+                              (map-two-values f arg-vals (map (lambda (_) #f) arg-vals))])
+                  (let ((remainder (fold (lambda (n t i)
+                                           (check-init-type-for-name tenv i n t))
+                                         (get-init-names-and-types tenv class)
+                                         (honu-new-arg-names exp)
+                                         new-types)))
+                    (if (or (null? remainder)
+                            (not (ormap tenv-init-optional? remainder))) ; checks to see if all optional
+                        (values (copy-struct honu-new exp
+                                  (honu-new-type typ)
+                                  (honu-new-arg-vals new-args))
+                                typ)
+                        (raise-read-error-with-stx
+                         "Too few initialization arguments in new expression."
+                         stx))))
+                (raise-read-error-with-stx
+                 (format "Class for new expression does not implement type ~a."
+                         (printable-type typ))
+                 stx))]
+          ;; FIXME: still need to do appropriate things with typ in here
+          [type
+            (if (Implements_P tenv class type)
+                (let-values ([(new-args new-types)
+                              (map-two-values f arg-vals (map (lambda (_) #f) arg-vals))])
+                  (let ((remainder (fold (lambda (n t i)
+                                           (check-init-type-for-name tenv i n t))
+                                         (get-init-names-and-types tenv class)
+                                         (honu-new-arg-names exp)
+                                         new-types)))
+                    (if (or (null? remainder)
+                            (not (ormap tenv-init-optional? remainder))) ; checks to see if all optional
+                        (values (copy-struct honu-new exp
+                                  (honu-new-arg-vals new-args))
+                                (honu-new-type exp))
+                        (raise-read-error-with-stx
+                         "Too few initialization arguments in new expression."
+                         stx))))
+                (raise-read-error-with-stx
+                 "Class for new expression does not implement type in new expression."
+                 stx))])]
        ;; P, G_i, D |- tid_i id_i = rhs_i |=> tid_i id_i = rhs_i', G_(i+1)
        ;; P, G_(m+1), D |- e_i |=> e_i' : t_i
        ;; ----------------------------------------------------------------

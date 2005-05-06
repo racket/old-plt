@@ -188,6 +188,7 @@ NOTE: The above are literal braces as opposed to the meta-braces.
              | if <expr> <block> else <block>
              | while <expr> <block>
              | new <id> : <ifacet> ( <newargs> )
+             | new <id> ( <newargs> )
              | ! <expr>
              | - <expr>
              | <expr> || <expr>

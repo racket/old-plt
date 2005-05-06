@@ -37,6 +37,11 @@ void objscheme_setup_wxDC(Scheme_Env *env);
 int objscheme_istype_wxDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxDC(class wxDC *realobj);
 class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int nullOK);
+extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
+extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
+#endif
+void objscheme_setup_wxDCGlobal(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
 extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);

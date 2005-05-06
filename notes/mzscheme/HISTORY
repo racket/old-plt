@@ -1,10 +1,13 @@
 
 Version 299.105
+TCP output ports are now block-buffered by default
 Changed file-stream-buffer-mode to work on more port types,
  including TCP ports and custom ports
 Added extra argument to make-input-port and make-output-port
  to get/set buffer mode
-TCP output ports are block-buffered by default
+Added define-serializable-class[*], externalizble<%>,
+ and class/derived to MzLib's "class.ss"
+Added define-struct/properties to MzLib's "struct.ss"
 
 Version 299.104
 Changed prop:custom-write value to a procedure that writes

@@ -1094,7 +1094,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-
 class os_wxDC : public wxDC {
  public:
 
@@ -1120,69 +1119,6 @@ static Scheme_Object *os_wxDC_interface;
 os_wxDC::~os_wxDC()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
-}
-
-static Scheme_Object *os_wxDCwxDrawTab(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxDC_class, "draw-tab in dc<%>", n, p);
-  string x0 INIT_NULLED_OUT;
-  double x1;
-  double x2;
-  double x3;
-  double x4;
-  int x5;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "draw-tab in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-tab in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-tab in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-tab in dc<%>"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "draw-tab in dc<%>"));
-  x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+5], "draw-tab in dc<%>"));
-
-  
-  WITH_VAR_STACK(wxDrawTab(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_void;
-}
-
-static Scheme_Object *os_wxDCwxDrawTabBase(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxDC_class, "draw-tab-base in dc<%>", n, p);
-  double x0;
-  double x1;
-  double x2;
-  double x3;
-  int x4;
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-tab-base in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-tab-base in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-tab-base in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-tab-base in dc<%>"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+4], "draw-tab-base in dc<%>"));
-
-  
-  WITH_VAR_STACK(wxDrawTabBase(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_void;
 }
 
 static Scheme_Object *os_wxDCGlyphAvailable(int n,  Scheme_Object *p[])
@@ -2564,10 +2500,8 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   wxREGGLOB(os_wxDC_class);
   wxREGGLOB(os_wxDC_interface);
 
-  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 51));
+  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 49));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-tab" " method", (Scheme_Method_Prim *)os_wxDCwxDrawTab, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-tab-base" " method", (Scheme_Method_Prim *)os_wxDCwxDrawTabBase, 5, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "glyph-exists?" " method", (Scheme_Method_Prim *)os_wxDCGlyphAvailable, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-page" " method", (Scheme_Method_Prim *)os_wxDCEndPage, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-doc" " method", (Scheme_Method_Prim *)os_wxDCEndDoc, 0, 0));
@@ -2683,6 +2617,88 @@ class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int n
     return (os_wxDC *)o->primdata;
   else
     return (wxDC *)o->primdata;
+}
+
+
+
+
+static Scheme_Object *wxDCGlobalwxDrawTab(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxDC* x0 INIT_NULLED_OUT;
+  string x1 INIT_NULLED_OUT;
+  double x2;
+  double x3;
+  double x4;
+  double x5;
+  int x6;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[0+0], "draw-tab in dc%", 0));
+  x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+1], "draw-tab in dc%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+2], "draw-tab in dc%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+3], "draw-tab in dc%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+4], "draw-tab in dc%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+5], "draw-tab in dc%"));
+  x6 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0+6], "draw-tab in dc%"));
+
+  
+  WITH_VAR_STACK(wxDrawTab(x0, x1, x2, x3, x4, x5, x6));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *wxDCGlobalwxDrawTabBase(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxDC* x0 INIT_NULLED_OUT;
+  double x1;
+  double x2;
+  double x3;
+  double x4;
+  int x5;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[0+0], "draw-tab-base in dc%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+1], "draw-tab-base in dc%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+2], "draw-tab-base in dc%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+3], "draw-tab-base in dc%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[0+4], "draw-tab-base in dc%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0+5], "draw-tab-base in dc%"));
+
+  
+  WITH_VAR_STACK(wxDrawTabBase(x0, x1, x2, x3, x4, x5));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+void objscheme_setup_wxDCGlobal(Scheme_Env *env)
+{
+  Scheme_Object *functmp INIT_NULLED_OUT;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxDCGlobalwxDrawTab, "draw-tab", 7, 7));
+  WITH_VAR_STACK(scheme_install_xc_global("draw-tab", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxDCGlobalwxDrawTabBase, "draw-tab-base", 6, 6));
+  WITH_VAR_STACK(scheme_install_xc_global("draw-tab-base", functmp, env));
+  READY_TO_RETURN;
 }
 
 

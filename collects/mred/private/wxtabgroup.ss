@@ -196,20 +196,22 @@
 			     [h tab-height])
 			 (when dc
 			   (when (eq? dark? (= pos selected))
-			     (send dc draw-tab (car l) x 3 w (- tab-height 3)
-				   (+ (if (and (has-focus?)
-					       (= pos current-focus-tab))
-					  ;; Adding 100 means "draw focus ring"
-					  100
-					  ;; No focus
-					  0)
-				      ;; Pick the style: active and front, etc.
-				      (if (and light?
-					       (eq? pos tracking-pos))
-					  1
-					  (if active?
-					      (if dark? 3 0)
-					      (if dark? 4 2)))))))
+			     (wx:draw-tab 
+			      dc
+			      (car l) x 3 w (- tab-height 3)
+			      (+ (if (and (has-focus?)
+					  (= pos current-focus-tab))
+				     ;; Adding 100 means "draw focus ring"
+				     100
+				     ;; No focus
+				     0)
+				 ;; Pick the style: active and front, etc.
+				 (if (and light?
+					  (eq? pos tracking-pos))
+				     1
+				     (if active?
+					 (if dark? 3 0)
+					 (if dark? 4 2)))))))
 			 (list (list x 3) (list (+ x w) 3)
 			       (list (+ x w) (- tab-height 6)) (list x (- tab-height 6))))
 		       ;; ----- X-style drawing -----
@@ -313,7 +315,7 @@
 		 (send dc set-pen light-pen))
 	       (draw-once dc w #t #f 0 active?)
 	       (when mac-tab?
-		 (send dc draw-tab-base 0 (- tab-height 3) w 6 (if active? 1 0)))
+		 (wx:draw-tab-base dc 0 (- tab-height 3) w 6 (if active? 1 0)))
 	       (when border?
 		 (when (> h tab-height)
 		   (send dc draw-line 1 (add1 tab-height) 1 h)

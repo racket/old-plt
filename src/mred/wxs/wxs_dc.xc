@@ -707,8 +707,12 @@ START_XFORM_SKIP;
 
 @ "glyph-exists?" : bool GlyphAvailable(mzchar,wxFont^=NULL)
 
-@ m "draw-tab-base" : void wxDrawTabBase(double, double, double, double, int);
-@ m "draw-tab" : void wxDrawTab(string, double, double, double, double, int);
+@END
+
+@GLOBAL wxDCGlobal
+
+@ "draw-tab-base" : void wxDrawTabBase(wxDC!, double, double, double, double, int);
+@ "draw-tab" : void wxDrawTab(wxDC!, string, double, double, double, double, int);
 
 @END
 

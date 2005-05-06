@@ -34,7 +34,10 @@ in several significant ways:
    port corresponds to a terminal, in which case it is line-buffered
    by default. Also, the initial error port remains unbuffered.
 
-   This change is especially likely to affect stdio-based
+   TCP output ports are block buffered (instead of unbuffered) by
+   default.
+
+   The file-stream changes are especially likely to affect stdio-based
    communication among OS-level processes. For example, when
    communicating with an ispell subprocess, adding a newline at the
    end of a command previously would have been enough to send the
@@ -42,8 +45,9 @@ in several significant ways:
    (using `flush-output') or the buffer mode must be explicitly
    changed to by-line (using `file-stream-buffer-mode').
 
-   TCP ports are not file-stream ports, and TCP output remains
-   unbuffered.
+   The TCP changes affect most TCP-based communication. Explicitly
+   flush output using `flush-output' or change the buffer mode using
+   `file-stream-buffer-mode'.
 
  * The class system has changed slightly. The `rename' keyword has
    been changed to `rename-super', but the new `super' expression form

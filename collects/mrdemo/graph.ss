@@ -36,7 +36,6 @@
       (init-field function-expression)
       (inherit set-snipclass)
       (inherit-field w h)
-      (rename [super-draw draw])
       (field [function (eval function-expression)]
 	     [x-start 0]
 	     [x-end 1]
@@ -47,7 +46,7 @@
       (override*
        [draw
 	(lambda (dc x y . other)
-	  (super-draw dc x y)
+	  (super draw dc x y)
 	  (let* ([bottom (- (+ h y) bmargin)]
 		 [top (+ y tmargin)]
 		 [right (- (+ x w) rmargin)]
@@ -86,9 +85,9 @@
 	  (send stream << (expr->string function-expression)))])
 
       (public*
-       [read-one-special
-	(lambda (index src line col pos)
-	  (values function-expression 1 #t))])
+       [read-special
+	(lambda (src line col pos)
+	  function-expression)])
 
       (super-instantiate (100 100))
       

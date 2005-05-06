@@ -2121,6 +2121,12 @@ static Scheme_Object *locale_string_encoding(int argc, Scheme_Object *argv[])
 
 #ifndef DONT_USE_LOCALE
 
+#ifdef OS_X
+# define ICONV_ARG_CAST (const char **)
+#else
+# define ICONV_ARG_CAST /* empty */
+#endif
+
 static char *do_convert(iconv_t cd,
 			/* if cd == -1 and either from_e or to_e can be NULL, then
 			   reset_locale() must have been called */
@@ -2253,7 +2259,7 @@ static char *do_convert(iconv_t cd,
     } else  {
       ip = in XFORM_OK_PLUS id + dip;
       op = out XFORM_OK_PLUS od + dop;
-      r = iconv(cd, &ip, &il, &op, &ol);
+      r = iconv(cd, ICONV_ARG_CAST &ip, &il, &op, &ol);
       dip = ip - (in XFORM_OK_PLUS id);
       dop = op - (out XFORM_OK_PLUS od);
       ip = op = NULL;

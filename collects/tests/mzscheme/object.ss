@@ -237,6 +237,7 @@
 (class-keyword-test #'super-new)
 (class-keyword-test #'super-make-object)
 (class-keyword-test #'super-instantiate)
+(class-keyword-test #'inspect)
 
 ;; ------------------------------------------------------------
 ;; Test basic functionality

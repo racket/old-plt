@@ -606,12 +606,14 @@
 	  (try-all-blocked)
 
 	  (display #\y sw)
+	  (flush-output sw)
 	  (test cr sync s t l sr cr)
 	  (read-char cr)
 	  (try-all-blocked)
 	  (test sw sync s t l sr cr sw)
 	  
 	  (display #\z cw)
+	  (flush-output cw)
 	  (test sr sync s t l sr cr)
 	  (read-char sr)
 	  (try-all-blocked)

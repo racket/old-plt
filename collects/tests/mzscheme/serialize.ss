@@ -277,5 +277,172 @@
 (test 1 ser-mod-test)
 
 ;; ----------------------------------------
+;; Classes
+
+(require (lib "class.ss"))
+
+(define-serializable-class s:c% object%
+  (init-field [one 0])
+  (define f1 one)
+  (define f2 1)
+  (define/public (get-f1) f1)
+  (define/public (get-f2) f2)
+  (define/public (set-f1 v) (set! f1 v))
+  (define/public (set-f2 v) (set! f2 v))
+  (super-new))
+
+(let ([o (new s:c% [one 17])])
+  (test 17 'o (send (deserialize (serialize o)) get-f1))
+  (test 1 'o (send (deserialize (serialize o)) get-f2)))
+
+(define-serializable-class s:d% s:c% object%
+  (define f3 3)
+  (define/public (get-f3) f3)
+  (define/public (set-f3 v) (set! f3 v))
+  (super-new [one (+ f3 4)]))
+
+(let ([o (new s:d%)])
+  (test 3 'o (send (deserialize (serialize o)) get-f3))
+  (test 7 'o (send (deserialize (serialize o)) get-f1))
+  (test 1 'o (send (deserialize (serialize o)) get-f2)))
+
+(let* ([e% (class s:d% (define goo 12) (super-new))]
+       [o (new e%)])
+  (test #f is-a? (deserialize (serialize o)) e%)
+  (test #t is-a? (deserialize (serialize o)) s:d%))
+
+;; Can't define serializable from non-transparent, non-externalizable<%>:
+(test 'right-error 'dsc
+      (with-handlers ([exn:fail:object? (lambda (x) 'right-error)])
+	(eval #'(define-serializable-class foo% (class s:d% (super-new))))))
+
+(define s:transparent%
+  (class object%
+    (inspect #f)
+    (define f1 12)
+    (define/public (get-f1) f1)
+    (define/public (set-f1 v) (set! f1 v))
+    (super-new)))
+
+(err/rt-test (serialize (new s:transparent%)))
+
+(define-serializable-class s:g% s:transparent%
+  (define f2 18)
+  (define/public (get-f2) f2)
+  (define/public (set-f2 v) (set! f2 v))
+  (super-new))
+
+;; Adding more transperant was ok, and check cycle:
+(let ([o (new s:g%)])
+  (send o set-f1 6)
+  (send o set-f2 16)
+  (test #t is-a? (deserialize (serialize o)) s:g%)
+  (test 6 'o (send (deserialize (serialize o)) get-f1))
+  (test 16 'o (send (deserialize (serialize o)) get-f2))
+  (test #(struct:object:s:g% 6 ...) struct->vector o))
+
+(define-serializable-class s:h% (class s:g%
+				  (inspect #f)
+				  (define hoo 34)
+				  (super-new))
+  (define f3 80)
+  (define/public (get-f3) f3)
+  (define/public (set-f3 v) (set! f3 v))
+  (super-new))
+
+(let ([o (new s:h%)])
+  (send o set-f1 6)
+  (send o set-f2 16)
+  (test #t is-a? (deserialize (serialize o)) s:h%)
+  (test 6 'o (send (deserialize (serialize o)) get-f1))
+  (test 16 'o (send (deserialize (serialize o)) get-f2))
+  (test #(struct:object:s:h% 6 ... 34 ...) struct->vector o)
+  (send o set-f3 o)
+  (let ([o2 (deserialize (serialize o))])
+    (test o2 'cycle (send o2 get-f3))))
+
+(define-serializable-class* s:k% object% (externalizable<%>)
+  (define z 12)
+  (define/public (externalize) '(ok))
+  (define/public (internalize v) (set! z 13))
+  (define/public (get-z) z)
+  (super-new))
+
+(let ([o (new s:k%)])
+  (test 12 'z (send o get-z))
+  (let ([o2 (deserialize (serialize o))])
+    (test #t is-a? o2 s:k%)
+    (test 13 'z (send o2 get-z))))
+
+(define s:m%
+  (class object%
+    (define x 12)
+    (define/public (mm v) (begin0 x (set! x v)))
+    (super-new)))
+
+(define s:n%
+  (class* s:m% (externalizable<%>)
+    (inherit mm)
+    (define x 18)
+    (define/public (nm v) (begin0 x (set! x v)))
+    (define/public (externalize) (list x (let ([v (mm 0)]) (mm v) v)))
+    (define/public (internalize v) 
+      (set! x (car v))
+      (mm (cadr v)))
+    (super-new)))
+
+;; Just implementing externalize<%> isn't enough
+(err/rt-test (serialize (new s:n%)))
+
+;; Derive from externalizable class
+(define-serializable-class s:p% s:n%
+  (define x 0)
+  (define/public (pm v) (begin0 x (set! x v)))
+  (super-new))
+
+(let ([o (new s:p%)])
+  (test 12 'n (send o mm 12))
+  (test 18 'n (send o nm 17))
+  (test 0 'n (send o pm 10))
+  (test 10 'n (send o pm 10))
+  (let ([o2 (deserialize (serialize o))])
+    (test #t is-a? o2 s:p%)
+    (test 12 'n (send o2 mm 14))
+    (test 14 'n (send o2 mm 15))
+    (test 12 'n (send o mm 12))
+    (test 17 'n (send o2 nm 0))
+    (test 17 'n (send o nm 17))
+    (test 0 'n (send o2 pm 0))))
+
+;; Override doesn't matter until it's made serializable again:
+(let ([s:q% (class s:p% 
+	      (define/override (externalize) (error "ack"))
+	      (super-new))])
+  (test #t is-a? (deserialize (serialize (new s:q%))) s:p%)
+  (test #f is-a? (deserialize (serialize (new s:q%))) s:q%))
+
+;; override externalize
+(define-serializable-class s:r% s:n%
+  (inherit nm)
+  (define/override (externalize) 10)
+  (define/override (internalize v) (nm 77))
+  (super-new))
+
+(let ([o (new s:r%)])
+  (send o mm 1)
+  (send o nm 2)
+  (let ([o2 (deserialize (serialize o))])
+    (test #t is-a? o2 s:r%)
+    (test 12 'n (send o2 mm 14))
+    (test 77 'n (send o2 nm 15))))
+
+(define-serializable-class s:bad% s:n%
+  (init foo)
+  (super-new))
+
+(test #t pair? (serialize (new s:bad% [foo 10])))
+(err/rt-test (deserialize (serialize (new s:bad% [foo 10]))) exn:fail:object?)
+
+;; ----------------------------------------
 
 (report-errs)

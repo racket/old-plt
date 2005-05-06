@@ -2130,7 +2130,14 @@ int wxHETYield(wxWindow *win, HiEventTrampProc do_f, void *do_data)
 
 void MrEdAtomicallyPaint(wxCanvas *win)
 {
+  int block_descriptor;
+
+  block_descriptor = scheme_current_thread->block_descriptor;
+  scheme_current_thread->block_descriptor = 0;
+
   scheme_start_atomic();
   win->OnPaint();
   scheme_end_atomic_no_swap();
+
+  scheme_current_thread->block_descriptor = block_descriptor;
 }

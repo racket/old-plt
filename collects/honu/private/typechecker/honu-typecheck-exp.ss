@@ -2,6 +2,7 @@
 
   (require (lib "struct.ss")
            (lib "contract.ss")
+           (lib "plt-match.ss")
            (all-except (lib "list.ss" "srfi" "1") any))
   
   (require "../../ast.ss")
@@ -83,11 +84,20 @@
         stx)]
       [else #f]))
   
-  ;; honu-typecheck-exp : HPgm * Env * CEnv -> HExp -> HExp * Typ
+  (define (check-prim-type exp typ type-func)
+    (let* ([stx (honu-ast-src-stx exp)]
+           [new-typ (type-func stx)])
+      (if (and typ (not (honu-type-equal? typ new-typ)))
+          (raise-type-error-with-stx typ new-typ stx)
+          (values exp new-typ))))
+  
+  ;; honu-typecheck-exp : HPgm * Env * CEnv -> HExp * Typ -> HExp * Typ
   ;;
   ;; honu-typecheck-exp typechecks a honu expression given the honu
   ;; program in which it appears along with the current local
-  ;; environment and class environment.
+  ;; environment and class environment.  Now it also takes an expected
+  ;; type (if one is known), so we can do some minor type inference in
+  ;; the case of new statements, plus give better error messages.
   ;;
   ;; Note that we curry the expression out to the right -- we do this
   ;; because for most expressions, nothing will change except for
@@ -108,12 +118,12 @@
                       any/c
                       any/c
                       . -> .
-                      ((honu-exp?)
+                      ((honu-exp? (union false/c honu-type?))
                        . ->* .
                        (honu-exp? honu-type?)))]) 
   (define (honu-typecheck-exp tenv env cenv)
-    (define (f exp)
-      (cond
+    (define (f exp typ)
+      (match exp
        ;;            P |- t
        ;; ----------------------------
        ;; P, G, D |- null |=> null : t
@@ -121,27 +131,29 @@
        ;; Since there's no easy way to do the above in this style of
        ;; typechecker, we'll create a "null" type that for every
        ;; type t such that P |- t, null <: t.
-       ((honu-null? exp)
-        (values exp (honu-null-type exp)))
+       [(struct honu-null (stx))
+        (if typ
+            (values exp typ)
+            (values exp (honu-null-type stx)))]
        ;; P, G, D |- n |=> n : int
-       ((honu-int? exp)
-        (values exp (honu-int-type exp)))
+       [(struct honu-int (stx n))
+        (check-prim-type exp typ honu-int-type)]
        ;; P, G, D |- f |=> f : float
-       ((honu-float? exp)
-        (values exp (honu-float-type exp)))
+       [(struct honu-float (stx f))
+        (check-prim-type exp typ honu-float-type)]
        ;; P, G, D |- b |=> b : bool
-       ((honu-bool? exp)
-        (values exp (honu-bool-type exp)))
+       [(struct honu-bool (stx b))
+        (check-prim-type exp typ honu-bool-type)]
        ;; P, G, D |- s |=> s : str
-       ((honu-str? exp)
-        (values exp (honu-str-type exp)))
+       [(struct honu-str (stx s))
+        (check-prim-type exp typ honu-str-type)]
        ;; P, G, D |- c |=> c : char
-       ((honu-char? exp)
-        (values exp (honu-char-type exp)))
-       [(honu-uprim? exp)
-        (let-values (((e1 t1) (f (honu-uprim-body exp))))
-          (case (honu-uprim-op exp)
-            [(minus)
+       [(struct honu-char (stx c))
+        (check-prim-type exp typ honu-char-type)]
+       [(struct honu-uprim (stx op op-stx op-type body))
+        (case op
+          [(minus)
+           (let-values (((e1 t1) (f body #f)))
              (cond
                [(honu-type-equal? t1 (honu-int-type (honu-uprim-body exp)))
                 (values (copy-struct honu-uprim exp
@@ -153,49 +165,67 @@
                           (honu-uprim-op-type t1)
                           (honu-uprim-body  e1))
                         (honu-float-type exp))]
-               [else
-                (raise-read-error-with-stx
-                 "Unary minus takes an integer or floating point argument."
-                 (honu-ast-src-stx (honu-uprim-body exp)))])]
-            [(not)
-             (if (honu-type-equal? t1 (honu-bool-type (honu-uprim-body exp)))
-                 (values (copy-struct honu-uprim exp
-                                (honu-uprim-op-type t1)
-                                (honu-uprim-body  e1))
-                              (honu-bool-type exp))
-                 (raise-read-error-with-stx
-                  "Unary not takes a boolean argument."
-                  (honu-ast-src-stx (honu-uprim-body exp))))]
-            [else (raise-read-error-with-stx
-                   "Unknown unary primitive operation."
-                   (honu-uprim-op-stx exp))]))]
-       [(honu-prim? exp)
-        (let-values (((e1 t1) (f (honu-prim-left  exp)))
-                     ((e2 t2) (f (honu-prim-right exp))))
-          (case (honu-prim-op exp)
+             [else
+              (raise-read-error-with-stx
+               "Unary minus takes an integer or floating point argument."
+               (honu-ast-src-stx (honu-uprim-body exp)))]))]
+          [(not)
+           (let-values (((e1 t1) (f body (honu-bool-type body))))
+             (values (copy-struct honu-uprim exp
+                       (honu-uprim-op-type t1)
+                       (honu-uprim-body  e1))
+                     (honu-bool-type exp)))]
+          [else (raise-read-error-with-stx
+                 "Unknown unary primitive operation."
+                 (honu-uprim-op-stx exp))])]
+       [(struct honu-prim (stx op op-stx op-type left right))
+        (case (honu-prim-op exp)
             ;; +, -, *, /, and % are int * int -> int operators.
             ;;
             ;;  P, G, D |- e1 |=> e1' : int  P, G, D |- e2 |=> e2' : int
             ;;  --------------------------------------------------------
             ;;           P, G, D |- e1 op e2 |=> e1' op e2' : int
-            [(plus)
+          [(plus)
+           ;; we can just pass typ to the two sides (if it's an appropriate type)
+           ;; because it's always the case that + returns the same type as its
+           ;; operands.  Similar for minus, times, divide.
+           (if typ
+               (cond
+                 ;; this should work because we should never be passing a
+                 ;; void type as typ (#f should be passed instead).
+                 [(not (honu-prim-type? typ))
+                  (raise-read-error-with-stx
+                   "Cannot use primitive operators in a object context."
+                   stx)]
+                 [(not (member (honu-prim-type-name typ) '(int float str)))
+                  (raise-read-error-with-stx
+                   "The result of + must be used as either an int, float, or str."
+                   stx)]))
+           (let-values (((e1 t1) (f left typ))
+                        ((e2 t2) (f right typ)))
              (cond
-               [(and (honu-type-equal? t1 (honu-int-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-int-type (honu-prim-right exp))))
+               [typ ;; if we knew the correct context, then checking has already been done.
+                (values (copy-struct honu-prim exp
+                          (honu-prim-op-type t1)
+                          (honu-prim-left  e1)
+                          (honu-prim-right e2))
+                        typ)]
+               [(and (honu-type-equal? t1 (honu-int-type left))
+                     (honu-type-equal? t2 (honu-int-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
                                (honu-prim-right e2))
                              (honu-int-type exp))]
-               [(and (honu-type-equal? t1 (honu-float-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-float-type (honu-prim-right exp))))
+               [(and (honu-type-equal? t1 (honu-float-type left))
+                     (honu-type-equal? t2 (honu-float-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
                                (honu-prim-right e2))
                              (honu-float-type exp))]
-               [(and (honu-type-equal? t1 (honu-str-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-str-type (honu-prim-right exp))))
+               [(and (honu-type-equal? t1 (honu-str-type left))
+                     (honu-type-equal? t2 (honu-str-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
@@ -203,19 +233,38 @@
                              (honu-str-type exp))]
                [else
                 (raise-read-error-with-stx
-                 "Types of operands do not match or are not of appropriate types."
-                 (honu-ast-src-stx exp))])]
-            [(minus times div)
+                 "Types of operands do not match."
+                 stx)]))]
+          [(minus times div)
+           (if typ
+               (cond
+                 [(not (honu-prim-type? typ))
+                  (raise-read-error-with-stx
+                   "Cannot use primitive operators in a object context."
+                   stx)]
+                 [(not (member (honu-prim-type-name typ) '(int float)))
+                  (raise-read-error-with-stx
+                   (format "~a must be used in either an int or float context."
+                           (case op [(minus) '-] [(times) '*] [(div) '/]))
+                   stx)]))
+           (let-values (((e1 t1) (f left typ))
+                        ((e2 t2) (f right typ)))
              (cond
-               [(and (honu-type-equal? t1 (honu-int-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-int-type (honu-prim-right exp))))
+               [typ
+                (values (copy-struct honu-prim exp
+                               (honu-prim-op-type t1)
+                               (honu-prim-left  e1)
+                               (honu-prim-right e2))
+                        typ)]
+               [(and (honu-type-equal? t1 (honu-int-type left))
+                     (honu-type-equal? t2 (honu-int-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
                                (honu-prim-right e2))
                              (honu-int-type exp))]
-               [(and (honu-type-equal? t1 (honu-float-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-float-type (honu-prim-right exp))))
+               [(and (honu-type-equal? t1 (honu-float-type left))
+                     (honu-type-equal? t2 (honu-float-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
@@ -223,47 +272,46 @@
                              (honu-float-type exp))]
                [else
                 (raise-read-error-with-stx
-                 "Types of operands do not match or are not of appropriate types."
-                 (honu-ast-src-stx exp))])]
-            [(mod)
-             (if (honu-type-equal? t1 (honu-int-type (honu-prim-left exp)))
-                 (if (honu-type-equal? t2 (honu-int-type (honu-prim-right exp)))
-                     (values (copy-struct honu-prim exp
-                               (honu-prim-op-type t1)
-                               (honu-prim-left  e1)
-                               (honu-prim-right e2))
-                             (honu-int-type exp))
-                     (raise-read-error-with-stx
-                      "Integer operator applied to non-integer operand."
-                      (honu-ast-src-stx (honu-prim-right exp))))
-                 (raise-read-error-with-stx
-                  "Integer operator applied to non-integer operand."
-                  (honu-ast-src-stx (honu-prim-left exp))))]
+                 "Types of operands do not match."
+                 stx)]))]
+          [(mod)
+           ;; mod is only defined on ints, so check left and right side appropriately.
+           (let-values (((e1 t1) (f left (honu-int-type left)))
+                        ((e2 t2) (f right (honu-int-type right))))
+             ;; if we made it here, both must have been ints
+             (values (copy-struct honu-prim exp
+                       (honu-prim-op-type t1)
+                       (honu-prim-left  e1)
+                       (honu-prim-right e2))
+                     (honu-int-type exp)))]
             [(lt le gt ge)
+             ;; relational operators don't tell us about their operands, so must use #f
+             (let-values (((e1 t1) (f left #f))
+                          ((e2 t2) (f right #f)))
              (cond
-               [(and (honu-type-equal? t1 (honu-int-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-int-type (honu-prim-right exp))))
+               [(and (honu-type-equal? t1 (honu-int-type left))
+                     (honu-type-equal? t2 (honu-int-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
                                (honu-prim-right e2))
                              (honu-bool-type exp))]
-               [(and (honu-type-equal? t1 (honu-float-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-float-type (honu-prim-right exp))))
+               [(and (honu-type-equal? t1 (honu-float-type left))
+                     (honu-type-equal? t2 (honu-float-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
                                (honu-prim-right e2))
                              (honu-bool-type exp))]
-               [(and (honu-type-equal? t1 (honu-str-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-str-type (honu-prim-right exp))))
+               [(and (honu-type-equal? t1 (honu-str-type left))
+                     (honu-type-equal? t2 (honu-str-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
                                (honu-prim-right e2))
                              (honu-bool-type exp))]
-               [(and (honu-type-equal? t1 (honu-char-type (honu-prim-left exp)))
-                     (honu-type-equal? t2 (honu-char-type (honu-prim-right exp))))
+               [(and (honu-type-equal? t1 (honu-char-type left))
+                     (honu-type-equal? t2 (honu-char-type right)))
                 (values (copy-struct honu-prim exp
                                (honu-prim-op-type t1)
                                (honu-prim-left  e1)
@@ -272,26 +320,22 @@
                [else
                 (raise-read-error-with-stx
                  "Types of operands do not match or are not of appropriate types."
-                 (honu-ast-src-stx exp))])]
+                 (honu-ast-src-stx exp))]))]
             ;; && and || are bool * bool -> bool operators.
             ;;
             ;;  P, G, D |- e1 |=> e1' : bool  P, G, D |- e2 |=> e2' : bool
             ;;  ----------------------------------------------------------
             ;;           P, G, D |- e1 op e2 |=> e1' op e2' : bool
             [(and or)
-             (if (honu-type-equal? t1 (honu-bool-type (honu-prim-left exp)))
-                 (if (honu-type-equal? t2 (honu-bool-type (honu-prim-right exp)))
-                     (values (copy-struct honu-prim exp
-                               (honu-prim-op-type t1)
-                               (honu-prim-left  e1)
-                               (honu-prim-right e2))
-                             (honu-bool-type exp))
-                     (raise-read-error-with-stx
-                      "Boolean operator applied to non-boolean operand."
-                      (honu-ast-src-stx (honu-prim-right exp))))
-                 (raise-read-error-with-stx
-                  "Boolean operator applied to non-boolean operand."
-                  (honu-ast-src-stx (honu-prim-left exp))))]
+             (if (and typ (not (honu-type-equal? typ (honu-bool-type stx))))
+                 (raise-type-error-with-stx typ (honu-bool-type stx) stx))
+             (let-values (((e1 t1) (f left (honu-bool-type left)))
+                          ((e2 t2) (f right (honu-bool-type right))))
+               (values (copy-struct honu-prim exp
+                         (honu-prim-op-type t1)
+                         (honu-prim-left  e1)
+                         (honu-prim-right e2))
+                       (honu-bool-type exp)))]
             ;; For now we just have that the operands to an equality
             ;; operator can be of any type and that the types of the
             ;; operands do not need to be equal.  Might it be the
@@ -306,12 +350,17 @@
             ;;  P, G, D |- e1 |=> e1' : t1    P, G, D |- e2 |=> e2' : t2
             ;;  --------------------------------------------------------
             ;;          P, G, D |- e1 == e2 |=> e1' == e2' : bool
-            [(neq equal)
+          [(neq equal)
+           (if (and typ (not (honu-type-equal? typ (honu-bool-type stx))))
+               (raise-type-error-with-stx typ (honu-bool-type stx) stx))
+           ;; there's no telling what the operands should be here.
+           (let-values (((e1 t1) (f left #f))
+                        ((e2 t2) (f right #f)))
              (cond
-               [(and (<:_P tenv t1 (honu-any-type (honu-prim-left exp)))
-                     (<:_P tenv t2 (honu-any-type (honu-prim-right exp))))
+               [(and (<:_P tenv t1 (honu-any-type left))
+                     (<:_P tenv t2 (honu-any-type right)))
                 (values (copy-struct honu-prim exp
-                          (honu-prim-op-type (honu-any-type (honu-prim-left exp)))
+                          (honu-prim-op-type (honu-any-type left))
                           (honu-prim-left  e1)
                           (honu-prim-right e2))
                         (honu-bool-type exp))]
@@ -323,119 +372,151 @@
                         (honu-bool-type exp))]
                [else (raise-read-error-with-stx
                       "Attempt to check two unrelated types for (in)equality."
-                      (honu-ast-src-stx exp))])]
-            [(clseq)
-             (cond
-               [(not (<:_P tenv t1 (honu-any-type (honu-prim-left exp))))
-                (raise-read-error-with-stx
-                 "Expresion on left side of class equality is of primitive type."
-                 (honu-ast-src-stx (honu-prim-left exp)))]
-               [(not (<:_P tenv t2 (honu-any-type (honu-prim-right exp))))
-                (raise-read-error-with-stx
-                 "Expresion on right side of class equality is of primitive type."
-                 (honu-ast-src-stx (honu-prim-right exp)))]
-               [else (values (copy-struct honu-prim exp
-                               (honu-prim-op-type (honu-any-type (honu-prim-left exp)))                             
-                               (honu-prim-left e1)
-                               (honu-prim-right e2))
-                             (honu-bool-type exp))])]
-            [else (raise-read-error-with-stx
-                   "Unknown binary primitive operation."
-                   (honu-prim-op-stx exp))]))]
-       [(honu-lambda? exp)
-        (let ((env (fold (lambda (n t e)
+                      stx)]))]
+          [(clseq)
+           (if (and typ (not (honu-type-equal? typ (honu-bool-type stx))))
+               (raise-type-error-with-stx typ (honu-bool-type stx) stx))
+           ;; here at least we know they should be class types.
+           (let-values (((e1 t1) (f left (honu-any-type left)))
+                        ((e2 t2) (f right (honu-any-type right))))
+             (values (copy-struct honu-prim exp
+                       (honu-prim-op-type (honu-any-type left))
+                       (honu-prim-left e1)
+                       (honu-prim-right e2))
+                     (honu-bool-type exp)))]
+          [else (raise-read-error-with-stx
+                 "Unknown binary primitive operation."
+                 op-stx)])]
+       [(struct honu-lambda (stx arg-names arg-types body))
+        (cond
+          [(not typ)
+           (let ([env (fold (lambda (n t e)
+                              (extend-env e n t))
+                            env arg-names arg-types)])
+             (let-values (((e1 t1) ((honu-typecheck-exp tenv env cenv) body #f)))
+               (values (copy-struct honu-lambda exp
+                                    (honu-lambda-body e1))
+                       (honu-func-type-from-exp (honu-lambda-arg-types exp) t1 exp))))]
+            ;; if typ is not #f, then it should be a func type, and the return
+            ;; type of the func should be the same as the lambda body.
+          [else
+           (if (and typ (not (honu-func-type? typ)))
+               (raise-read-error-with-stx
+                "Found lambda in non-function type context."
+                stx))
+           (let ([typ-args (honu-func-type-args typ)]
+                 [typ-ret  (honu-func-type-return typ)])
+             (if (not (= (length typ-args)
+                         (length arg-types)))
+                 (raise-read-error-with-stx
+                  "Number of arguments in lambda do not match number of arguments expected."
+                  stx))
+             ;; for a function to be a subtype, its arguments must be
+             ;; supertypes
+             (for-each (lambda (t1 t2)
+                         (if (not (<:_P tenv t2 t1))
+                             (raise-read-error-with-stx
+                              (format "Type ~a is not a supertype of ~a"
+                                      (printable-type t1)
+                                      (printable-type t2))
+                              (honu-ast-src-stx t1))))
+                       arg-types typ-args)
+             (let ([env (fold (lambda (n t e)
                            (extend-env e n t))
-                         env 
-                         (honu-lambda-arg-names exp)
-                         (honu-lambda-arg-types exp))))
-          (let-values (((e1 t1) ((honu-typecheck-exp tenv env cenv)
-                                 (honu-lambda-body exp))))
-            (values (copy-struct honu-lambda exp
-                      (honu-lambda-body e1))
-                    (honu-func-type-from-exp (honu-lambda-arg-types exp) t1 exp))))]
-       [(honu-facc? exp)
-        (if (eqv? (honu-facc-obj exp) 'my)
+                         env arg-names arg-types)])
+               ;; we'll use typ-ret as the expected type for the body
+               (let-values (((e1 t1) ((honu-typecheck-exp tenv env cenv) body typ-ret)))
+                 (values (copy-struct honu-lambda exp
+                           (honu-lambda-body e1))
+                         (honu-func-type-from-exp arg-types t1 exp)))))])]
+       [(struct honu-facc (stx obj elab field))
+        (if (eqv? obj 'my)
             ;;            D(fd) = t
             ;; ------------------------------
             ;; P, G, D |- my.fd |=> my.fd : t
-            (if (cenv (honu-facc-field exp))
-                (values exp (cenv (honu-facc-field exp)))
-                (if (env 'this)
-                    ;; We're inside a class or mixin, so this is just an invalid name.
-                    ;; We do also have the extra case that if we're inside a method, this
-                    ;; may have been an init field's name (which are not contained in the
-                    ;; class environment passed to honu-typecheck-exp for method bodies).
-                    (raise-read-error-with-stx
-                     "No local field with this name or attempt to use init field in method."
-                     (honu-facc-field exp))
-                    (raise-read-error-with-stx
-                     "Attempt to use static field access outside of class or mixin body."
-                     (honu-ast-src-stx exp))))
-            ;; P, G, D |- e |=> e' : t'  <fd, t> in t'
-            ;; ---------------------------------------
-            ;;     P, G, D |- e.fd |=> e'.fd : t
-            (let-values (((e1 t1) (f (honu-facc-obj exp))))
-              (let ((field-type (get-field-type tenv t1 (honu-facc-field exp))))
-                (if field-type
-                    (values (copy-struct honu-facc exp
-                              ;; Make sure to elaborate the type
-                              (honu-facc-elab t1)
-                              (honu-facc-obj e1))
-                            field-type)
-                    (raise-read-error-with-stx
-                     "Field not found in type of object."
-                     (honu-facc-field exp))))))]
-       [(honu-fassn? exp)
-        ;; We will need this whichever branch we go down, so...
-        (let-values (((e2 t2) (f (honu-fassn-rhs exp))))
-          (if (eqv? (honu-fassn-obj exp) 'my)
-            ;; D(fd) = t  P, G, D |- e |=> e' : t'  t' <: t
-            ;; --------------------------------------------
-            ;;  P, G, D |- my.fd = e |=> my.fd = e' : void
-              (if (cenv (honu-fassn-field exp))
-                  (if (<:_P tenv t2 (cenv (honu-fassn-field exp)))
-                      (values (copy-struct honu-fassn exp
-                                           (honu-fassn-rhs e2))
-                              (honu-void-type exp))
-                      (raise-read-error-with-stx
-                       "Type being assigned to field does not match type of field."
-                       (honu-ast-src-stx exp)))
-                  (if (env 'this)
+            (let ([cenv-typ (cenv field)])
+              (if cenv-typ
+                  (if (and typ (not (<:_P tenv cenv-typ typ)))
+                      (raise-type-error-with-stx typ cenv-typ stx)
+                      (values exp cenv-typ))
+                  (if (env #'this)
                       ;; We're inside a class or mixin, so this is just an invalid name.
                       ;; We do also have the extra case that if we're inside a method, this
                       ;; may have been an init field's name (which are not contained in the
                       ;; class environment passed to honu-typecheck-exp for method bodies).
                       (raise-read-error-with-stx
                        "No local field with this name or attempt to use init field in method."
-                       (honu-fassn-field exp))
+                       field)
+                      (raise-read-error-with-stx
+                       "Attempt to use static field access outside of class or mixin body."
+                       stx))))
+            ;; P, G, D |- e |=> e' : t'  <fd, t> in t'
+            ;; ---------------------------------------
+            ;;     P, G, D |- e.fd |=> e'.fd : t
+            (let-values (((e1 t1) (f obj (honu-any-type obj))))
+              (let ((field-type (get-field-type tenv t1 field)))
+                (if field-type
+                    (if (and typ (not (<:_P tenv field-type typ)))
+                        (raise-type-error-with-stx typ field-type stx)
+                        (values (copy-struct honu-facc exp
+                                  ;; Make sure to elaborate the type
+                                  (honu-facc-elab t1)
+                                  (honu-facc-obj e1))
+                                field-type))
+                    (raise-read-error-with-stx
+                     "Field not found in type of object."
+                     (honu-facc-field exp))))))]
+       [(struct honu-fassn (stx obj elab field rhs))
+        (if (and typ (not (honu-type-equal? typ (honu-void-type stx))))
+            (raise-read-error-with-stx
+             "Assignment used in non-void context."
+             stx))
+        (if (eqv? obj 'my)
+            ;; D(fd) = t  P, G, D |- e |=> e' : t'  t' <: t
+            ;; --------------------------------------------
+            ;;  P, G, D |- my.fd = e |=> my.fd = e' : void
+            (let ([cenv-typ (cenv field)])
+              (if cenv-typ
+                  (let-values (((e2 t2) (f rhs cenv-typ)))
+                    (values (copy-struct honu-fassn exp
+                              (honu-fassn-rhs e2))
+                            (honu-void-type exp)))
+                  (if (env #'this)
+                      ;; We're inside a class or mixin, so this is just an invalid name.
+                      ;; We do also have the extra case that if we're inside a method, this
+                      ;; may have been an init field's name (which are not contained in the
+                      ;; class environment passed to honu-typecheck-exp for method bodies).
+                      (raise-read-error-with-stx
+                       "No local field with this name or attempt to use init field in method."
+                       field)
                       (raise-read-error-with-stx
                        "Attempt to use static field assignment outside of class or mixin body."
-                       (honu-ast-src-stx exp))))
+                       stx))))
             ;; P, G, D |- e1 |=> e1' : t'        <fd, t> in t'
             ;; P, G, D |- e2 |=> e2' : t''            t'' <: t
             ;; -----------------------------------------------
             ;;  P, G, D |- e1.fd = e2 |=> e1'.fd = e2' : void
-              (let-values (((e1 t1) (f (honu-facc-obj exp))))
-                (let ((field-type (get-field-type tenv t1
-                                                  (honu-facc-field exp))))
-                  (if field-type
-                      (if (<:_P tenv t2 field-type)
-                          (values (copy-struct honu-fassn exp
-                                    (honu-fassn-obj e1)
-                                    ;; Make sure to elaborate the type
-                                    (honu-fassn-elab t1)
-                                    (honu-fassn-rhs e2))
-                                  (honu-void-type exp))
-                          (raise-read-error-with-stx
-                           "Type being assigned to field does not match type of field."
-                           (honu-ast-src-stx exp)))
-                      (raise-read-error-with-stx
-                       "Field not found in type of object."
-                       (honu-fassn-field exp)))))))]
-       [(honu-mcall? exp)
+            (let-values (((e1 t1) (f obj (honu-any-type obj))))
+              (let ((field-type (get-field-type tenv t1 field)))
+                (if field-type
+                    (let-values (((e2 t2) (f rhs field-type)))
+                      (values (copy-struct honu-fassn exp
+                                (honu-fassn-obj e1)
+                                ;; Make sure to elaborate the type
+                                (honu-fassn-elab t1)
+                                (honu-fassn-rhs e2))
+                              (honu-void-type exp)))
+                    (raise-read-error-with-stx
+                     "Field not found in type of object."
+                     field)))))]
+       [(struct honu-mcall (stx obj elab method args))
+        ;; FIXME : need to change to use typ appropriately!
+        
         ;; We need the arg elaborations and types no matter what, so...
-        (let-values (((new-args new-types)
-                      (map-two-values f (honu-mcall-args exp))))
+        (let-values ([(new-args new-types)
+                      ;; obviously eventually we'll want to use the
+                      ;; real method arg types instead of the map below.
+                      (map-two-values f args (map (lambda (_) #f) args))])
           (if (eqv? (honu-mcall-obj exp) 'my)
               ;; D(md) = t_1 ... t_n -> t
               ;; P, G, D |- e_i |=> e_i' : t_i'   t_i' <: t_i  (NOT t_i <: t_i')
@@ -491,7 +572,7 @@
               ;; ------------------------------------------------------
               ;; P, G, D |- e.md(e_1, ..., e_n) |=>
               ;;            e'.md(e_1', ..., e_n') : t
-              (let-values (((e0 t0) (f (honu-mcall-obj exp))))
+              (let-values (((e0 t0) (f obj (honu-any-type obj))))
                 (let ((method-type (get-method-type tenv t0
                                                     (honu-mcall-method exp))))
                   (if method-type
@@ -532,65 +613,66 @@
                        "Method not found in type of object."
                        (honu-mcall-method exp)))))))]
        ;; P, G, D |- id |=> id : G(id)
-       [(honu-var? exp)
+       [(struct honu-var (stx name builtin?))
         (cond
-          [(env (honu-var-name exp))
+          [(env name)
            =>
            (lambda (t)
-             (values exp t))]
-          [(get-builtin-type (honu-var-name exp))
+             (if (and typ (not (<:_P tenv t typ)))
+                 (raise-type-error-with-stx typ t stx)
+                 (values exp t)))]
+          [(get-builtin-type name)
            =>
            (lambda (t)
-             (values (copy-struct honu-var exp
-                       (honu-var-builtin? #t))
-                     t))]
+             (if (and typ (not (<:_P tenv t typ)))
+                 (raise-type-error-with-stx typ t stx)
+                 (values (copy-struct honu-var exp
+                           (honu-var-builtin? #t))
+                         t)))]
           [else (raise-read-error-with-stx
                  "Variable not bound in local environment."
-                 (honu-var-name exp))])]
+                 name)])]
        ;; E(id) = t   P, G, D |- e |=> e' : t'   t' <: t
        ;; ----------------------------------------------
        ;;      P, G, D |- id = e |=> id = e' : void
-       [(honu-assn? exp)
-        (let-values (((e1 t1) (f (honu-assn-rhs exp))))
-          (let ((var-type (env (honu-assn-name exp))))
-            (cond 
-              [(not var-type)
-               (raise-read-error-with-stx
-                "Variable not bound in local environment."
-                (honu-assn-name exp))]
-              [(honu-type-equal? t1 var-type)
-               (values (copy-struct honu-assn exp
-                         (honu-assn-rhs e1))
-                       (honu-void-type exp))]
-              [else
-               (raise-read-error-with-stx
-                "RHS of assignment not the same type as the type of the variable."
-                (honu-ast-src-stx (honu-assn-rhs exp)))])))]
-       ;; We do not yet have functions in Honu, so raise an
-       ;; appropriate exception.
-       ;;
-       ;; We need to allow error : str -> 'a and println : string -> void
-       [(honu-call? exp)
+       [(struct honu-assn (stx name rhs))
+        (if (and typ (not (honu-type-equal? typ (honu-void-type stx))))
+            (raise-read-error-with-stx
+             "Assignment found in non-void context."
+             stx))
+        (let ((var-type (env (honu-assn-name exp))))
+          (if (not var-type)
+              (raise-read-error-with-stx
+               "Variable not bound in local environment."
+               name)
+              (let-values (((e1 t1) (f rhs var-type)))
+                (values (copy-struct honu-assn exp
+                          (honu-assn-rhs e1))
+                        (honu-void-type exp)))))]
+       [(struct honu-call (stx name args builtin?))
         (cond
-          [(env (honu-call-name exp))
+          [(env name)
            =>
            (lambda (t)
-             (honu-typecheck-call tenv f exp t #f))]
-          [(get-builtin-type (honu-call-name exp))
+             (honu-typecheck-call tenv f exp t typ #f))]
+          [(get-builtin-type name)
            =>
            (lambda (t)
-             (honu-typecheck-call tenv f exp t #t))]
+             (honu-typecheck-call tenv f exp t typ #t))]
           [else 
            (raise-read-error-with-stx
-            "Function not found!"
-            (honu-call-name exp))])]
+            (format "Function ~a not found" name)
+            name)])]
        ;; P, G, D |- this |=> this : G(this)
-       [(honu-this? exp)
-        (if (env #'this)
-            (values exp (env #'this))
-            (raise-read-error-with-stx
-             "Use of this outside of a class or mixin body."
-             (honu-ast-src-stx exp)))]
+       [(struct honu-this (stx))
+        (let ([this-type (env #'this)])
+          (if this-type
+              (if (and typ (not (<:_P tenv this-type typ)))
+                  (raise-type-error-with-stx typ this-type stx)
+                  (values exp this-type))
+              (raise-read-error-with-stx
+               "Use of this outside of a class or mixin body."
+               stx)))]
        ;; P, G, D |- e1 |=> e1' : t'       P |- t  
        ;; ---------------------------------------
        ;; P, G, D |- cast e1 t |=> cast e1' t : t
@@ -600,15 +682,16 @@
        ;; checking of how t' relates to t -- that's not the point
        ;; of a cast.  At runtime it will be checked that the object
        ;; that e1 results in is of a class that implements t.
-       [(honu-cast? exp)
-        (let-values (((e1 t1) (f (honu-cast-obj exp))))
-          (if (honu-iface-type-in-tenv? tenv (honu-cast-type exp))
+       [(struct honu-cast (stx obj type))
+        ;; since we're casting, object can be of any (interface) type
+        (let-values (((e1 t1) (f obj (honu-any-type obj))))
+          (if (honu-iface-type-in-tenv? tenv type)
               (values (copy-struct honu-cast exp
                         (honu-cast-obj e1))
                       (honu-cast-type exp))
               (raise-read-error-with-stx
                "Attempt to cast to invalid type."
-               (honu-ast-src-stx (honu-cast-type exp)))))]
+               (honu-ast-src-stx type))))]
        ;; P, G, D |- e1 |=> e1' : t'        P |- t
        ;; ----------------------------------------
        ;; P, G, D |- e1 isa t |=> e1' isa t : bool
@@ -618,15 +701,16 @@
        ;; primitive do we want to treat primitives?  Might they stay
        ;; "primitives", or might they eventually be changed into
        ;; classes?
-       [(honu-isa? exp)
-        (let-values (((e1 t1) (f (honu-isa-obj exp))))
-          (if (honu-iface-type-in-tenv? tenv (honu-isa-type exp))
+       [(struct honu-isa (stx obj type))
+        ;; since we're checking isa, the object can be any (interface) stype
+        (let-values (((e1 t1) (f obj (honu-any-type obj))))
+          (if (honu-iface-type-in-tenv? tenv type)
               (values (copy-struct honu-isa exp
                         (honu-isa-obj e1))
                       (honu-bool-type exp))
               (raise-read-error-with-stx
                "Attempt to check isa against invalid type."
-               (honu-ast-src-stx (honu-isa-type exp)))))]
+               (honu-ast-src-stx type))))]
        ;; P, G, D |- e0 |=> e0' : bool  P, G, D |- e1 |=> e1' : t
        ;;               P, G, D |- e2 |=> e2' : t
        ;; -------------------------------------------------------
@@ -639,15 +723,11 @@
        ;; and returning the supertype as the type of the if expression.
        ;; Would this cause any problems (other than complicating the
        ;; type rule/code)?
-       [(honu-if? exp)
-        (let-values (((e0 t0) (f (honu-if-cond  exp)))
-                     ((e1 t1) (f (honu-if-true  exp)))
-                     ((e2 t2) (f (honu-if-false exp))))
+       [(struct honu-if (stx test true false))
+        (let-values (((e0 t0) (f test (honu-bool-type test)))
+                     ((e1 t1) (f true typ))
+                     ((e2 t2) (f false typ)))
           (cond
-            [(not (honu-type-equal? t0 (honu-bool-type (honu-if-cond exp))))
-             (raise-read-error-with-stx
-              "Conditional expression of if must have bool type."
-              (honu-ast-src-stx (honu-if-cond exp)))]
             [(<:_P tenv t1 t2)
              (values (copy-struct honu-if exp
                        (honu-if-cond  e0)
@@ -663,31 +743,39 @@
             [else
              (raise-read-error-with-stx
               "Branches of if expression are of unrelated types."
-              (honu-ast-src-stx exp))]))]
-       [(honu-while? exp)
-        (let-values (((e1 t1) (f (honu-while-cond exp)))
-                     ((e2 t2) (f (honu-while-body exp))))
-          (if (honu-type-equal? t1 (honu-bool-type (honu-while-cond exp)))
-              (values (copy-struct honu-while exp
-                        (honu-while-cond e1)
-                        (honu-while-body e2))
-                      (honu-void-type exp))
-              (raise-read-error-with-stx
-               "Condition of while loop must be of boolean type"
-               (honu-ast-src-stx (honu-while-cond exp)))))]
+              stx)]))]
+       [(struct honu-while (stx cond body))
+        (let-values (((e1 t1) (f cond (honu-bool-type cond)))
+                     ((e2 t2) (f body #f)))
+          (values (copy-struct honu-while exp
+                    (honu-while-cond e1)
+                    (honu-while-body e2))
+                  (honu-void-type exp)))]
        ;; P, G, D |- e_i |=> e_i' : t_i                     c [= t
        ;; each init arg corresponding to id_i has type t_i' where
        ;; t_i <: t_i'
        ;; --------------------------------------------------------
        ;; P, G, D |- new c : t (id_1 = e_1, ..., id_n = e_n) |=>
        ;;            new c : t (id_1 = e_1', ..., id_n = e_n') : t
-       [(honu-new? exp)
-        (if (Implements_P tenv (honu-new-class exp) (honu-new-type exp))
-            (let-values (((new-args new-types)
-                          (map-two-values f (honu-new-arg-vals exp))))
+       ;;
+       [(struct honu-new (stx class type arg-names arg-vals))
+        (if (and typ (not (<:_P tenv type typ)))
+            (raise-type-error-with-stx typ type stx))
+        (if (not (get-class-entry class tenv))
+            (raise-read-error-with-stx
+             "Undefined class"
+             class))
+        (if (not (honu-iface-type-in-tenv? tenv type))
+            (raise-read-error-with-stx
+             "Undefined type or non-interface type"
+             (honu-ast-src-stx type)))
+       ;; FIXME: still need to do appropriate things with typ in here
+        (if (Implements_P tenv class type)
+            (let-values ([(new-args new-types)
+                          (map-two-values f arg-vals (map (lambda (_) #f) arg-vals))])
               (let ((remainder (fold (lambda (n t i)
                                        (check-init-type-for-name tenv i n t))
-                                     (get-init-names-and-types tenv (honu-new-class exp))
+                                     (get-init-names-and-types tenv class)
                                      (honu-new-arg-names exp)
                                      new-types)))
                 (if (or (null? remainder)
@@ -697,10 +785,10 @@
                             (honu-new-type exp))
                     (raise-read-error-with-stx
                      "Too few initialization arguments in new expression."
-                     (honu-ast-src-stx exp)))))
+                     stx))))
             (raise-read-error-with-stx
              "Class for new expression does not implement type in new expression."
-             (honu-ast-src-stx exp)))]
+             stx))]
        ;; P, G_i, D |- tid_i id_i = rhs_i |=> tid_i id_i = rhs_i', G_(i+1)
        ;; P, G_(m+1), D |- e_i |=> e_i' : t_i
        ;; ----------------------------------------------------------------
@@ -708,30 +796,47 @@
        ;;                e_0; ...; e_n; } |=>
        ;;              { tid_0 id_0 = rhs_0'; ...; tid_m id_m = rhs_m';
        ;;                e_0'; ...; e_n'; } : t_n
-       [(honu-block? exp)
-        (let*-values (((new-bind-f) (honu-typecheck-binding tenv cenv))
-                      ((new-binds new-env)
-                       (map-and-fold new-bind-f
-                                     env (honu-block-binds exp)))
-                      ((new-f) (honu-typecheck-exp tenv new-env cenv))
-                      ((new-exps new-types)
-                       (map-two-values new-f (honu-block-exps exp))))
+       [(struct honu-block (stx binds exps))
+        (let*-values ([(new-bind-f) (honu-typecheck-binding tenv cenv)]
+                      [(new-binds new-env)
+                       (map-and-fold new-bind-f env binds)]
+                      [(new-f) (honu-typecheck-exp tenv new-env cenv)]
+                      [(new-exps last-type)
+                       (let loop ([exps exps]
+                                  [new-exps '()]
+                                  [new-types '()])
+                         ;; we know we must have at least one expression,
+                         ;; so here's our base case.
+                         (if (null? (cdr exps))
+                             ;; type of last expression should fit block context.
+                             (let-values ([(e1 t1) (new-f (car exps) typ)])
+                               (values (cons e1 (reverse new-exps))
+                                       ;; just need the last expression's type
+                                       t1))
+                             ;; since we don't care about the types of any but the
+                             ;; last expression in a block, just pass in #f
+                             (let-values ([(e1 t1) (new-f (car exps) #f)])
+                               (loop (cdr exps)
+                                     (cons e1 new-exps)
+                                     (cons t1 new-types)))))])
           (values (copy-struct honu-block exp
                     (honu-block-binds new-binds)
                     (honu-block-exps  new-exps))
-                  ;; Need the last expression's type.
-                  (car (reverse new-types))))]
+                  last-type))]
        ;;       P, G, D |- e |=> e' : t
        ;; -------------------------------------
        ;; P, G, D |- return e |=> return e' : t
-       [(honu-return? exp)
-        (if (honu-return-body exp)
-            (let-values (((e1 t1) (f (honu-return-body exp))))
+       [(struct honu-return (stx body))
+        (if body
+            (let-values ([(e1 t1) (f body typ)])
               (values (copy-struct honu-return exp
                         (honu-return-body e1))
                       t1))
-            (values exp
-                    (honu-void-type exp)))]
+            (if typ
+                (raise-read-error-with-stx
+                 "Found void return in non-void context"
+                 stx)
+                (values exp (honu-void-type exp))))]
        [else
         (raise-read-error-with-stx
          "Unexpected type of Honu expression."
@@ -751,53 +856,42 @@
                        (honu-binding? any/c)))]) 
   (define (honu-typecheck-binding tenv cenv)
     (lambda (bind env)
-      (let-values (((e1 t1) ((honu-typecheck-exp tenv env cenv)
-                             (honu-binding-rhs bind))))
-        (if (<:_P tenv t1 (honu-binding-type bind))
-            (values (copy-struct honu-binding bind
-                      (honu-binding-rhs e1))
-                    (extend-env env
-                                (honu-binding-name bind)
-                                (honu-binding-type bind)))
-            (raise-read-error-with-stx
-             "Type for RHS of binding not subtype of declared type."
-             (honu-ast-src-stx (honu-binding-rhs bind)))))))
+      (match-let ([(struct honu-binding (ast name type rhs)) bind])
+        (let-values (((e1 t1) ((honu-typecheck-exp tenv env cenv) rhs type)))
+          (values (copy-struct honu-binding bind
+                    (honu-binding-rhs e1))
+                  (extend-env env name type))))))
 
-
-  (define (honu-typecheck-call tenv f exp t builtin?)
-    (let-values (((arg-exps arg-types)
-                  (map-two-values (lambda (e) (f e))
-                                  (honu-call-args exp))))
-      (let loop ([formal-types (honu-func-type-args t)]
-                 [actual-types arg-types])
-        (cond
-          [(null? formal-types)
-           (if (not (null? actual-types))
-               (let ([actuals-size (length actual-types)])
-                 (raise-read-error-with-stx
-                  (format "~a function got ~a more argument~a than expected"
-                          (if builtin? "Built-in" "Declared")
-                          actuals-size
-                          (if (= actuals-size 1) "" "s"))
-                  (honu-ast-src-stx exp)))
-               (values (copy-struct honu-call exp
-                          (honu-call-args arg-exps)
-                          (honu-call-builtin? builtin?))
-                       (honu-func-type-return t)))]
-          [(null? actual-types)
-           (let ([formals-size (length formal-types)])
+  (define (honu-typecheck-call tenv f exp t typ builtin?)
+    (match-let ([(struct honu-call (stx name args builtin?)) exp])
+      (if (not (honu-func-type? t))
+          (raise-read-error-with-stx
+           "Expression is not a function."
+           name))
+      (if (and typ (not (<:_P tenv (honu-func-type-return t) typ)))
+          (raise-type-error-with-stx typ (honu-func-type-return t) stx))
+      (let-values ([(arg-exps arg-types)
+                    (map-two-values (lambda (e t) (f e t))
+                                    args (honu-func-type-args t))])
+        (let ([formals-length (length (honu-func-type-args t))]
+              [actuals-length (length arg-types)])
+          (cond
+            [(< formals-length actuals-length)
+             (raise-read-error-with-stx
+              (format "~a function got ~a more argument~a than expected"
+                      (if builtin? "Built-in" "Declared")
+                      (- actuals-length formals-length)
+                      (if (= (- actuals-length formals-length) 1) "" "s"))
+              stx)]
+            [(> formals-length actuals-length)
              (raise-read-error-with-stx
               (format "~a function got ~a fewer argument~a than expected"
                       (if builtin? "Built-in" "Declared")
-                      formals-size
-                      (if (= formals-size 1) "" "s"))
-              (honu-ast-src-stx exp)))]
-          [(<:_P tenv (car actual-types) (car formal-types))
-           (loop (cdr formal-types)
-                 (cdr actual-types))]
-          [else 
-           (raise-read-error-with-stx
-            (format "Types of the arguments do not match the ~a function"
-                    (if builtin? "built-in" "declared"))
-            (honu-ast-src-stx exp))]))))
+                      (- formals-length actuals-length)
+                      (if (= (- formals-length actuals-length) 1) "" "s"))
+              stx)]
+            [else (values (copy-struct honu-call exp
+                            (honu-call-args arg-exps)
+                            (honu-call-builtin? builtin?))
+                          (honu-func-type-return t))])))))
   )

@@ -1,8 +1,9 @@
 (module honu-typecheck-class-utils mzscheme
   
-  (require (lib "struct.ss"))
-  (require (lib "list.ss" "srfi" "1"))
-  (require (prefix list: (lib "list.ss")))
+  (require (lib "struct.ss")
+           (lib "plt-match.ss")
+           (lib "list.ss" "srfi" "1")
+           (prefix list: (lib "list.ss")))
   
   (require "../../ast.ss")
   (require "../../utils.ss")
@@ -44,53 +45,36 @@
              (honu-ast-src-stx (car defns)))]))
   
   (define (honu-typecheck-init-field tenv env cenv init-cenv defn)
-    (if (honu-type-in-tenv? tenv (honu-init-field-type defn))
-        (if (honu-init-field-value defn)
-            (let-values (((e1 t1) ((honu-typecheck-exp tenv env init-cenv)
-                                   (honu-init-field-value defn))))
-              (if (<:_P tenv t1 (honu-init-field-type defn))
-                  (values (copy-struct honu-init-field defn
-                                       (honu-init-field-value e1))
-                          env
-                          (extend-env cenv
-                                      (honu-init-field-name defn)
-                                      (honu-init-field-type defn))
-                          (extend-env init-cenv
-                                      (honu-init-field-name defn)
-                                      (honu-init-field-type defn)))
-                  (raise-read-error-with-stx
-                   "Default expression for init field not subtype of declared type."
-                   (honu-ast-src-stx (honu-init-field-value defn)))))
-            (values defn env
-                    (extend-env cenv
-                                (honu-init-field-name defn)
-                                (honu-init-field-type defn))
-                    (extend-env init-cenv
-                                (honu-init-field-name defn)
-                                (honu-init-field-type defn))))
-        (raise-read-error-with-stx
-         "Type of init field not found in program."
-         (honu-ast-src-stx (honu-init-field-type defn)))))
+    (match-let ([(struct honu-init-field (stx name type value)) defn])
+      (if (honu-type-in-tenv? tenv type)
+          (if value
+              (let-values ([(e1 t1) ((honu-typecheck-exp tenv env init-cenv)
+                                     value type)])
+                (values (copy-struct honu-init-field defn
+                          (honu-init-field-value e1))
+                        env
+                        (extend-env cenv name type)
+                        (extend-env init-cenv name type)))
+              (values defn env
+                      (extend-env cenv name type)
+                      (extend-env init-cenv name type)))
+          (raise-read-error-with-stx
+           "Type of init field not found in program."
+           (honu-ast-src-stx type)))))
   
   (define (honu-typecheck-field tenv env cenv init-cenv defn)
-    (if (honu-type-in-tenv? tenv (honu-field-type defn))
-        (let-values (((e1 t1) ((honu-typecheck-exp tenv env init-cenv)
-                               (honu-field-value defn))))
-          (if (<:_P tenv t1 (honu-field-type defn))
-              (values (copy-struct honu-field defn
-                        (honu-field-value e1)) env
-                      (extend-env cenv
-                                  (honu-field-name defn)
-                                  (honu-field-type defn))
-                      (extend-env init-cenv
-                                  (honu-field-name defn)
-                                  (honu-field-type defn)))
-              (raise-read-error-with-stx
-               "Value for field is not subtype of declared type."
-               (honu-ast-src-stx (honu-field-value defn)))))
-        (raise-read-error-with-stx
-         "Type of field not found in program."
-         (honu-ast-src-stx (honu-field-type defn)))))
+    (match-let ([(struct honu-field (stx name type value)) defn])
+      (if (honu-type-in-tenv? tenv (honu-field-type defn))
+          (let-values ([(e1 t1) ((honu-typecheck-exp tenv env init-cenv)
+                                 value type)])
+            (values (copy-struct honu-field defn
+                      (honu-field-value e1))
+                    env
+                    (extend-env cenv name type)
+                    (extend-env init-cenv name type)))
+          (raise-read-error-with-stx
+           "Type of field not found in program."
+           (honu-ast-src-stx type)))))
 
   (define (honu-typecheck-methods tenv env cenv init-cenv mdefns)
     (let* ((new-cenv (fold (lambda (d i)
@@ -111,22 +95,19 @@
       (values new-mdefns env new-cenv new-init-cenv)))
 
   (define (honu-typecheck-method tenv env cenv defn)
-    (if (or (honu-top-type? (honu-method-type defn)) ;; we allow void only in method return types
-            (honu-type-in-tenv? tenv (honu-method-type defn)))
-        (let ((new-env (fold (lambda (n t env)
-                               (extend-env env n t))
-                             env (honu-method-arg-names defn) (honu-method-arg-types defn))))
-          (check-arg-types tenv (honu-method-arg-types defn)) ;; will raise exception if one fails
-          (let-values (((e1 t1) ((honu-typecheck-exp tenv new-env cenv) (honu-method-body defn))))
-            (if (<:_P tenv t1 (honu-method-type defn))
-                (copy-struct honu-method defn
-                  (honu-method-body e1))
-                (raise-read-error-with-stx
-                 "Body of method does not have declared return type."
-                 (honu-ast-src-stx (honu-method-body defn))))))
-        (raise-read-error-with-stx
-         "Return type of method does not exist in program."
-         (honu-ast-src-stx (honu-method-type defn)))))
+    (match-let ([(struct honu-method (stx name type arg-names arg-types body)) defn])
+      (if (or (honu-top-type? type) ;; we allow void only in method return types
+              (honu-type-in-tenv? tenv type))
+          (let ([new-env (fold (lambda (n t env)
+                                 (extend-env env n t))
+                               env arg-names arg-types)])
+            (check-arg-types tenv arg-types) ;; will raise exception if one fails
+            (let-values (((e1 t1) ((honu-typecheck-exp tenv new-env cenv) body type)))
+              (copy-struct honu-method defn
+                (honu-method-body e1))))
+          (raise-read-error-with-stx
+           "Return type of method does not exist in program."
+           (honu-ast-src-stx type)))))
   
   (define (check-arg-types tenv types)
     (cond

@@ -1,6 +1,8 @@
 (module honu-type-utils mzscheme
   
-  (require (lib "list.ss" "srfi" "1")
+  (require (all-except (lib "list.ss" "srfi" "1") any)
+           (lib "plt-match.ss")
+           (lib "contract.ss")
            "../../ast.ss"
            "../../tenv.ss"
            "../../read-error-with-stx.ss")
@@ -51,6 +53,32 @@
     (if (syntax? exp)
         (make-honu-prim-type exp name)
         (make-honu-prim-type (honu-ast-src-stx exp) name)))
+  
+  (provide printable-type)
+  (define (printable-type typ)
+    (match typ
+      [(struct honu-bottom-type       (stx))          "<any type>"]
+      [(struct honu-top-type          (stx))          "void"]
+      [(struct honu-iface-bottom-type (stx))          "<interface type>"]
+      [(struct honu-iface-top-type    (stx))          "Any"]
+      [(struct honu-iface-type        (stx name))     (symbol->string (printable-key name))]
+      [(struct honu-prim-type         (stx name))     (symbol->string name)]
+      [(struct honu-func-type         (stx args ret)) 
+       (if (null? args)
+           (string-append "[]->" (printable-type ret))
+           (string-append "[" (fold-right (lambda (t s)
+                                            (string-append s ", " (printable-type t)))
+                                          (printable-type (car args))
+                                          (cdr args)) 
+                          "]->" (printable-type ret)))]))
+
+  (provide/contract [raise-type-error-with-stx (honu-type? honu-type? any/c . -> . any)])
+  (define (raise-type-error-with-stx t1 t2 stx)
+    (raise-read-error-with-stx
+     (format "Expected type ~a, got type ~a"
+             (printable-type t1)
+             (printable-type t2))
+     stx))
   
   (provide honu-type-equal? honu-iface-type-in-tenv? honu-type-in-tenv?)
   

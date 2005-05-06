@@ -1138,7 +1138,8 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 {
   if (going) {
     if (!reported_recursive_sleep) {
-      fprintf(stderr, "recursive sleep!\n");
+      fprintf(stderr, "BUG: recursive sleep! Please submit a bug report that explains how\n");
+      fprintf(stderr, "you got this message. (It won't appear again until you restart.)\n");
       reported_recursive_sleep = 1;
     }
     return;

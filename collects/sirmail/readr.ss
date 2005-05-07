@@ -960,7 +960,7 @@
       (define no-mime-inline? #f)
       (define html-mode? #t)
       (define img-mode? #f)
-      (define show-part-separator? #t)
+      (define prefer-text? (get-pref 'sirmail:prefer-text))
       
       (define global-keymap (make-object keymap%))
       (send global-keymap add-function "new-mailer"
@@ -1280,7 +1280,14 @@
                     (if mime-mode?
                         mime
                         raw))
-                check #t)))
+                check #t)
+	  (make-object separator-menu-item% m)
+	  (send (make-object checkable-menu-item% "Prefer &Text" m
+			     (lambda (i e)
+			       (put-pref 'sirmail:prefer-text (send i is-checked?))
+			       (set! prefer-text? (send i is-checked?))
+			       (redisplay-current)))
+		check prefer-text?)))
       (define wrap-lines-item
 	(make-object checkable-menu-item% "&Wrap Lines" msg-menu
 		     (lambda (item e)
@@ -2319,6 +2326,11 @@
 			   (loop (cdr l) small-h)))))))))
 
       (define (parse-and-insert-body header body text-obj insert sep-width img-mode?)
+	(define (insert-separator)
+	  (insert (format "\n~a\n" (make-string sep-width #\-))
+		  (lambda (t s e) 
+		    (send t change-style green-delta (add1 s) (sub1 e)))))
+    
 	(if mime-mode?
 	    (let mime-loop ([msg (with-handlers ([exn:fail? (lambda (x)
 							      (mime:make-message
@@ -2345,7 +2357,8 @@
 				   (mime:mime-analyze (bytes-append (string->bytes/latin-1 
 								     header 
 								     (char->integer #\?))
-								    body)))])
+								    body)))]
+			    [skip-headers? #t])
 	      (let* ([ent (mime:message-entity msg)]
                      [slurp-stream (lambda (ent o)
                                      (with-handlers ([exn:fail? (lambda (x)
@@ -2384,6 +2397,7 @@
 						  (write-bytes content))
 						'truncate/replace))
 					    close-frame))])
+				    (insert-separator)
 				    (insert (format "[~a/~a~a~a]" 
 						    (mime:entity-type ent)
 						    (mime:entity-subtype ent)
@@ -2499,29 +2513,40 @@
 			     (insert (make-object image-snip% bitmap) void)
 			     (insert "\n" void))
 			   (delete-file tmp-file)))))]
-		  [(multipart message)
-		   (map (lambda (msg)
-			  (unless (eq? (mime:entity-type ent) 'message)
-			    (let ([e (mime:message-entity msg)])
-			      (unless (and (eq? 'inline
-						(mime:disposition-type (mime:entity-disposition e)))
-					   (not (memq (mime:entity-type e) '(multipart message))))
-				(insert "\n"void)))
-			    (when show-part-separator?
-			      (insert (format "~a\n" (make-string sep-width #\-))
-				      (lambda (t s e) (send t change-style green-delta s (sub1 e))))))
-			  (unless (null? (mime:message-fields msg))
-			    (insert (string-crlf->lf
-				     (get-viewable-headers
-				      (let loop ([l (mime:message-fields msg)])
-					(if (null? l)
-					    crlf
-					    (string-append (car l)
-							   crlf
-							   (loop (cdr l)))))))
-				    void))
-			  (mime-loop msg))
-		   (mime:entity-parts ent))]
+		  [(message)
+		   (insert-separator)
+		   (unless (or skip-headers?
+			       (null? (mime:message-fields msg)))
+		     (insert (string-crlf->lf
+			      (get-viewable-headers
+			       (let loop ([l (mime:message-fields msg)])
+				 (if (null? l)
+				     crlf
+				     (string-append (car l)
+						    crlf
+						    (loop (cdr l)))))))
+			     void))
+		   (map (lambda (x) (mime-loop x #f)) (mime:entity-parts ent))]
+		  [(multipart)
+		   (cond
+		    [(and (eq? 'alternative (mime:entity-subtype ent))
+			  (= 2 (length (mime:entity-parts ent)))
+			  (andmap (lambda (m)
+				    (eq? 'text (mime:entity-type (mime:message-entity m))))
+				  (mime:entity-parts ent))
+			  (let ([l (map (lambda (m)
+					  (mime:entity-subtype (mime:message-entity m)))
+					(mime:entity-parts ent))])
+			    (and (or (equal? l '(plain html))
+				     (equal? l '(html plain)))
+				 l)))
+		     => (lambda (l)
+			  (let ([pos (if (eq? (car l) 'plain)
+					 (if prefer-text? 0 1)
+					 (if prefer-text? 1 0))])
+			    (mime-loop (list-ref (mime:entity-parts ent) pos) #f)))]
+		    [else
+		     (map (lambda (x) (mime-loop x #f)) (mime:entity-parts ent))])]
 		  [else (generic ent)])))
 	    ;; Non-mime mode:
 	    (insert (bytes->string/latin-1 (crlf->lf body)) void)))

@@ -184,7 +184,6 @@
 			    "7bit"
 			    empty-header)))
 			  body-lines
-			  (list "") ; this line's CRLF is absorbed by boundary
 			  (apply
 			   append
 			   (map

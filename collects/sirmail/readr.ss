@@ -960,6 +960,7 @@
       (define no-mime-inline? #f)
       (define html-mode? #t)
       (define img-mode? #f)
+      (define show-part-separator? #t)
       
       (define global-keymap (make-object keymap%))
       (send global-keymap add-function "new-mailer"
@@ -2501,16 +2502,23 @@
 		  [(multipart message)
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)
-			    (insert (format "~a\n" (make-string sep-width #\-))
-				    (lambda (t s e) (send t change-style green-delta s (sub1 e)))))
+			    (let ([e (mime:message-entity msg)])
+			      (unless (and (eq? 'inline
+						(mime:disposition-type (mime:entity-disposition e)))
+					   (not (memq (mime:entity-type e) '(multipart message))))
+				(insert "\n"void)))
+			    (when show-part-separator?
+			      (insert (format "~a\n" (make-string sep-width #\-))
+				      (lambda (t s e) (send t change-style green-delta s (sub1 e))))))
 			  (unless (null? (mime:message-fields msg))
-			    (insert (get-viewable-headers
-				     (let loop ([l (mime:message-fields msg)])
-				       (if (null? l)
-					   "\n"
-					   (string-append (car l)
-							  "\n"
-							  (loop (cdr l))))))
+			    (insert (string-crlf->lf
+				     (get-viewable-headers
+				      (let loop ([l (mime:message-fields msg)])
+					(if (null? l)
+					    crlf
+					    (string-append (car l)
+							   crlf
+							   (loop (cdr l)))))))
 				    void))
 			  (mime-loop msg))
 		   (mime:entity-parts ent))]

@@ -3933,7 +3933,7 @@ long wxMediaEdit::PositionParagraph(long i, Bool WXUNUSED(eol))
   wxMediaLine *l;
   int delta = 0;
 
-  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
+  if (!CheckRecalc(FALSE, FALSE, TRUE))
     return 0;
 
   if (i < 0)
@@ -3953,7 +3953,7 @@ long wxMediaEdit::ParagraphStartPosition(long i, Bool visibleOnly)
 {
   wxMediaLine *l;
 
-  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
+  if (!CheckRecalc(FALSE, FALSE, TRUE))
     return 0;
 
   if (i < 0)
@@ -3982,7 +3982,7 @@ long wxMediaEdit::ParagraphEndPosition(long i, Bool visibleOnly)
   wxMediaLine *l;
   long p;
 
-  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
+  if (!CheckRecalc(FALSE, FALSE, TRUE))
     return 0;
 
   if (i < 0)

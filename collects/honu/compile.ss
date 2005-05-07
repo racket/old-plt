@@ -11,6 +11,7 @@
   (require "private/compiler/honu-translate-expression.ss")
   (require "private/typechecker/honu-typecheck.ss")
   (require "private/typechecker/honu-typecheck-exp.ss")
+  (require "read-error-with-stx.ss")
   
   (provide/contract [compile/complete-program
                      (tenv? honu-program?
@@ -33,11 +34,15 @@
   (define (compile/interaction tenv env ast)
     (cond
       [(honu-binding? ast)
-       (let-values ([(checked new-env)
-                     ((honu-typecheck-binding tenv #f) ast env)])
-         (parameterize ([current-compile-context honu-compile-context])
-           (values (honu-translate-binding tenv #f checked #t)
-                   new-env)))]
+       (if (env (honu-binding-name ast))
+           (raise-read-error-with-stx
+            (format "~a already bound" (printable-key (honu-binding-name ast)))
+            (honu-binding-name ast))
+           (let-values ([(checked new-env)
+                         ((honu-typecheck-binding tenv #f) ast env)])
+             (parameterize ([current-compile-context honu-compile-context])
+               (values (honu-translate-binding tenv #f checked #t)
+                       new-env))))]
       [(honu-exp? ast)
        (let-values ([(checked type) ((honu-typecheck-exp tenv env #f) ast #f)])
          (parameterize ([current-compile-context honu-compile-context])

@@ -253,17 +253,8 @@
     (match bnd
       [(struct honu-binding (stx name _ rhs))
        (if top-level?
-           (let* ([invoked-failure? #f]
-                  [value (namespace-variable-value (printable-key name) #f 
-                                                   (lambda ()
-                                                     (set! invoked-failure? #t)
-                                                     (at stx `(define ,name 
-                                                                ,(honu-translate-expression tenv defn rhs)))))])
-             (if invoked-failure?
-                 value
-                 (raise-read-error-with-stx
-                  (format "~a is already bound" (printable-key name))
-                  stx)))
+           (at stx `(define ,name 
+                      ,(honu-translate-expression tenv defn rhs)))
            (at stx `[,(at-ctxt name) ,(honu-translate-expression tenv defn rhs)]))]))
   )
   

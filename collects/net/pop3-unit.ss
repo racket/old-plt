@@ -39,7 +39,8 @@
 	(lambda (constructor format-string . args)
 	  (lambda exn-args
 	    (raise (apply constructor
-			  (apply format format-string args)
+			  (string->immutable-string
+			   (apply format format-string args))
 			  (current-continuation-marks)
 			  exn-args)))))
 

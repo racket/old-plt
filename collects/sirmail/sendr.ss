@@ -184,6 +184,7 @@
 			    "7bit"
 			    empty-header)))
 			  body-lines
+			  (list "")
 			  (apply
 			   append
 			   (map

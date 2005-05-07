@@ -52,7 +52,7 @@
 	(split s #rx#"\r\n"))
 
       (define (split-crlf s)
-	(drop-last-if-empty (split-crlf/preserve-last)))
+	(drop-last-if-empty (split-crlf/preserve-last s)))
 
       (define (split-lf s)
 	(drop-last-if-empty (split s #rx#"\n")))

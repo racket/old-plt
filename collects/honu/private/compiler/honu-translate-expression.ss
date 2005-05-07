@@ -253,9 +253,17 @@
     (match bnd
       [(struct honu-binding (stx name _ rhs))
        (if top-level?
-           (raise-read-error-with-stx
-             "Bindings at the REPL are not yet implemented."
-             stx)
+           (let* ([invoked-failure? #f]
+                  [value (namespace-variable-value (printable-key name) #f 
+                                                   (lambda ()
+                                                     (set! invoked-failure? #t)
+                                                     (at stx `(define ,name 
+                                                                ,(honu-translate-expression tenv defn rhs)))))])
+             (if invoked-failure?
+                 value
+                 (raise-read-error-with-stx
+                  (format "~a is already bound" (printable-key name))
+                  stx)))
            (at stx `[,(at-ctxt name) ,(honu-translate-expression tenv defn rhs)]))]))
   )
   

@@ -839,7 +839,7 @@
                          (if (null? (cdr exps))
                              ;; type of last expression should fit block context.
                              (let-values ([(e1 t1) (new-f (car exps) typ)])
-                               (values (cons e1 (reverse new-exps))
+                               (values (reverse (cons e1 new-exps))
                                        ;; just need the last expression's type
                                        t1))
                              ;; since we don't care about the types of any but the

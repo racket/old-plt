@@ -87,7 +87,7 @@
   (preferences:set-default 'sirmail:show-gc-icon #f boolean?)
   (preferences:set-default 'sirmail:always-happy #f boolean?)
   (preferences:set-default 'sirmail:wrap-lines #f boolean?)
-  (preferences:set-default 'sirmail:prefer-text #f boolean?)
+  (preferences:set-default 'sirmail:prefer-text #t boolean?)
 
   (preferences:set-default 'sirmail:aliases-file
                            (build-path (find-system-path 'home-dir) ".sirmail.aliases")

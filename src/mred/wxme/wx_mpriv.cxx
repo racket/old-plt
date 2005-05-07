@@ -1555,8 +1555,11 @@ Bool wxMediaEdit::CheckRecalc(Bool need_graphic, Bool need_write, Bool no_displa
     return FALSE;
 
   if (need_graphic) {
-    if (!admin)
+    if (!admin) {
+      if (no_display_ok)
+	return TRUE;
       return FALSE;
+    }
 
     if (graphicMaybeInvalid) {
       wxDC *dc;

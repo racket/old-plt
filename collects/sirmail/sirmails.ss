@@ -19,8 +19,10 @@
      split
      splice
      split-crlf
+     split-crlf/preserve-last
      split-lf
      crlf->lf
+     crlf->lf/preserve-last
      lf->crlf
      string-crlf->lf
      string-lf->crlf

@@ -48,14 +48,20 @@
 		  (loop (cdr l))))
 	      (get-output-bytes p))))
       
+      (define (split-crlf/preserve-last s)
+	(split s #rx#"\r\n"))
+
       (define (split-crlf s)
-	(drop-last-if-empty (split s #rx#"\r\n")))
+	(drop-last-if-empty (split-crlf/preserve-last)))
 
       (define (split-lf s)
 	(drop-last-if-empty (split s #rx#"\n")))
 
       (define (crlf->lf s)
 	(splice (split-crlf s) #"\n"))
+
+      (define (crlf->lf/preserve-last s)
+	(splice (split-crlf/preserve-last s) #"\n"))
 
       (define (lf->crlf s)
 	(splice (split-lf s) #"\r\n"))

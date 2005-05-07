@@ -2476,7 +2476,7 @@
 				    (dynamic-wind
 					void
 					(lambda ()
-					  (insert (bytes->string (crlf->lf (slurp ent)) #\?)
+					  (insert (bytes->string (crlf->lf/preserve-last (slurp ent)) #\?)
 						  (lambda (t s e)
 						    (when (SHOW-URLS) (hilite-urls t s e))
 						    ;;(handle-formatting e) ; too slow

@@ -195,6 +195,9 @@ wxFrame::wxFrame // Constructor (for frame window)
   platformMargin.SetMargin(theContRect.top - theStrucRect.top, wxTop);
   platformMargin.SetMargin(theStrucRect.right - theContRect.right, wxRight);
   platformMargin.SetMargin(theStrucRect.bottom - theContRect.bottom, wxBottom);
+  printf("(%d, %d, %d, %d) vs. (%d, %d, %d, %d)\n",
+	 theContRect.left, theContRect.top, theContRect.right, theContRect.bottom,
+	 theStrucRect.left, theStrucRect.top, theStrucRect.right, theStrucRect.bottom);	 
   parea = PlatformArea();
   parea->SetMargin(platformMargin);
 

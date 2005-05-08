@@ -233,7 +233,7 @@
                              (honu-str-type exp))]
                [else
                 (raise-read-error-with-stx
-                 "Types of operands do not match."
+                 "Operands are of different types or an incompatible type."
                  stx)]))]
           [(minus times div)
            (if typ
@@ -272,7 +272,7 @@
                              (honu-float-type exp))]
                [else
                 (raise-read-error-with-stx
-                 "Types of operands do not match."
+                 "Operands are of different types or an incompatible type."
                  stx)]))]
           [(mod)
            ;; mod is only defined on ints, so check left and right side appropriately.

@@ -241,12 +241,14 @@ wxFrame::wxFrame // Constructor (for frame window)
 
   {
     /* Handle some events. */
-    EventTypeSpec spec[2];
+    EventTypeSpec spec[3];
     spec[0].eventClass = kEventClassWindow;
     spec[0].eventKind = kEventWindowClose;
     spec[1].eventClass = kEventClassWindow;
     spec[1].eventKind = kEventWindowZoom;
-    InstallEventHandler(GetWindowEventTarget(theMacWindow), window_evt_handler, 2, spec, refcon, NULL);
+    spec[2].eventClass = kEventClassWindow;
+    spec[2].eventKind = kEventWindowBoundsChanging;
+    InstallEventHandler(GetWindowEventTarget(theMacWindow), window_evt_handler, 3, spec, refcon, NULL);
   }
 }
 
@@ -279,6 +281,29 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
     break;
   case kEventWindowZoom:
     MrEdQueueZoom(f);
+    break;
+  case kEventWindowBoundsChanging:
+    {
+      UInt32 a;
+      
+      GetEventParameter(inEvent, kEventParamAttributes, typeUInt32, 
+			NULL, sizeof(a), NULL, &a);
+      if (a & kWindowBoundsChangeUserDrag) {
+	/* DragWindow is somehow broken. It seems to confuse the struct
+	   and content regions, causing current bounds's height to become
+	   different from the original bound's height. To compensate,
+	   10.3 seems to ignore the hieght, but 10.4 doesn't. So we
+	   explicitly request the old size. */
+	Rect o, n;
+	GetEventParameter(inEvent, kEventParamPreviousBounds, typeQDRectangle, 
+			  NULL, sizeof(Rect), NULL, &o);
+	GetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
+			  NULL, sizeof(Rect), NULL, &n);
+	n.bottom = n.top + (o.bottom - o.top);
+	SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
+			  sizeof(Rect), &n);
+      }
+    }
     break;
   }
 
@@ -485,7 +510,6 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       pam = parea->Margin();
       theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
       theMacHeight = cWindowHeight - pam.Offset(wxVertical);
-      printf("Size (%d, %d) -> (%d, %d)\n", cWindowWidth, cWindowHeight, theMacWidth, theMacHeight);
       ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;

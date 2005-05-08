@@ -195,9 +195,6 @@ wxFrame::wxFrame // Constructor (for frame window)
   platformMargin.SetMargin(theContRect.top - theStrucRect.top, wxTop);
   platformMargin.SetMargin(theStrucRect.right - theContRect.right, wxRight);
   platformMargin.SetMargin(theStrucRect.bottom - theContRect.bottom, wxBottom);
-  printf("(%d, %d, %d, %d) vs. (%d, %d, %d, %d)\n",
-	 theContRect.left, theContRect.top, theContRect.right, theContRect.bottom,
-	 theStrucRect.left, theStrucRect.top, theStrucRect.right, theStrucRect.bottom);	 
   parea = PlatformArea();
   parea->SetMargin(platformMargin);
 
@@ -488,6 +485,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       pam = parea->Margin();
       theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
       theMacHeight = cWindowHeight - pam.Offset(wxVertical);
+      printf("Size (%d, %d) -> (%d, %d)\n", cWindowWidth, cWindowHeight, theMacWidth, theMacHeight);
       ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;

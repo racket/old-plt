@@ -439,7 +439,7 @@ case $OS in
     ZLIB_A=""
     ZLIB_INC=""
 
-    gcc_vers_three=`${CC} -v 2>&1 | grep "version 3[.]"`
+[   gcc_vers_three=`${CC} -v 2>&1 | grep "version [3-9][.]"` ]
     if test "$gcc_vers_three" = "" ; then
       # gcc 2.95.2
       if test "${enable_quartz}" = "yes" ; then
@@ -449,7 +449,7 @@ case $OS in
       # gcc 3.x
       CXXFLAGS="$CXXFLAGS -fno-rtti"
       if test "${enable_quartz}" = "yes" ; then
-        gcc_vers_three_one=`${CC} -v 2>&1 | grep "version 3[.]1"`
+[       gcc_vers_three_one=`${CC} -v 2>&1 | grep "version 3[.]1"` ]
         if test "$gcc_vers_three_one" = "" ; then
           # gcc 3.3 and up
           GCC_VERSION_THREE_THREE="yes"

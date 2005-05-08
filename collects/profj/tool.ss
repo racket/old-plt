@@ -111,7 +111,7 @@
       (define (matches-language l)
         (and l (pair? l) (pair? (cdr l)) (equal? (cadr l) "ProfessorJ")))
       
-      (define (phase1) (void))
+      (define (phase1) void)
       ;Add all the ProfessorJ languages into DrScheme
       (define (phase2) 
         (drscheme:language-configuration:add-language
@@ -519,7 +519,7 @@
                    (namespace-attach-module n obj-path)
                    (namespace-attach-module n class-path)
                    (namespace-require obj-path)
-                   (namespace-require '(lib "tool.ss" "profj"))
+                   #;(namespace-require '(lib "tool.ss" "profj"))
                    (namespace-require class-path)
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))
                    (namespace-require '(prefix c: (lib "contract.ss"))))))))

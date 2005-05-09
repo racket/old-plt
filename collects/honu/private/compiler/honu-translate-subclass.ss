@@ -1,6 +1,7 @@
 (module honu-translate-subclass mzscheme
 
-  (require (lib "plt-match.ss"))
+  (require (lib "list.ss" "srfi" "1")
+           (lib "plt-match.ss"))
   
   (require "../../ast.ss")
   (require "../../utils.ss")
@@ -46,7 +47,7 @@
                     (parameterize ([current-inspector (make-inspector (current-inspector))])
                       (define ,(honu-translate-class-name subc-name)
                         (class* ,(honu-translate-class-name base)
-                          ,(map honu-translate-type-name impls)
+                          ,(filter-map honu-translate-type-name impls)
                           ,@(honu-translate-init-slots init-names)
                           ,@(honu-translate-slotdefns tenv mxn defns-before)
                           ,(honu-translate-super-new tenv mxn super-new)

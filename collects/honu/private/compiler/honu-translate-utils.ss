@@ -24,9 +24,10 @@
         
   (provide honu-translate-type-name)
   (define (honu-translate-type-name typ)
-    (at (honu-ast-src-stx typ)
-        (string->symbol 
-         (string-append "honu-" (symbol->string (printable-key (honu-iface-type-name typ))) "<%>"))))
+    (if (honu-iface-top-type? typ) #f
+        (at (honu-ast-src-stx typ)
+            (string->symbol 
+             (string-append "honu-" (symbol->string (printable-key (honu-iface-type-name typ))) "<%>")))))
   
   (provide honu-translate-mixin-name)
   (define (honu-translate-mixin-name mixin)

@@ -22,7 +22,7 @@
                                         [_ #f])
                                       decls)])
          (at stx `(define ,(honu-translate-type-name typ)
-                    (interface ,(map honu-translate-type-name supers)
+                    (interface ,(filter-map honu-translate-type-name supers)
                       ,@(map (lambda (m)
                                (honu-translate-dynamic-method-name tenv m typ))
                              method-names)

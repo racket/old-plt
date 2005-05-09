@@ -202,13 +202,19 @@
                                  args))))]
       
       [(struct honu-cast (stx obj type))
-       (at stx `(let ((cast-obj ,(honu-translate-expression tenv defn obj)))
-                  (if (is-a? cast-obj ,(honu-translate-type-name type))
-                      cast-obj
-                      (error "Cast failed!"))))]
+       (let ([cast-type (honu-translate-type-name type)])
+         (if cast-type
+             (at stx `(let ((cast-obj ,(honu-translate-expression tenv defn obj)))
+                        (if (is-a? cast-obj ,cast-type)
+                            cast-obj
+                            (error "Cast failed!"))))
+             (honu-translate-expression tenv defn obj)))]
       [(struct honu-isa (stx obj type))
-       (at stx `(is-a? ,(honu-translate-expression tenv defn obj)
-                       ,(honu-translate-type-name type)))]
+       (let ([isa-type (honu-translate-type-name type)])
+         (if isa-type
+             (at stx `(is-a? ,(honu-translate-expression tenv defn obj)
+                             ,isa-type))
+             (honu-translate-expression tenv defn (make-honu-bool stx #t))))]
       
       [(struct honu-new (stx class type arg-names arg-vals))
        (at stx `(new ,(honu-translate-class-name class)

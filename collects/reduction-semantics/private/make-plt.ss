@@ -29,7 +29,7 @@
                 #f]
                [(member (car exp) bad-files)
                 #f]
-               [(char=? (string-ref filename (- (string-length filename) 1)) #\~)
+               [(regexp-match #rx"~$" (path->string filename))
                 #f]
                [else
                 (std-filter filename)]))))

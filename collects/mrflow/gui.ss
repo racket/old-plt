@@ -156,16 +156,20 @@
       ; DEFINITION WINDOW MIXIN
       (drscheme:get/extend:extend-definitions-text saa:extend-top-editor-mixin)
       
+      (drscheme:get/extend:extend-tab
+       (mixin (drscheme:rep:context<%> drscheme:unit:tab<%>) ()
+         (inherit get-defs)
+         (define/augment (clear-annotations)
+           (inner (void) clear-annotations)
+           (send (get-defs) remove-all-snips-and-arrows-and-colors))
+         (super-new)))
       
       ; UNIT FRAME MIXIN
       (drscheme:get/extend:extend-unit-frame
        (lambda (super%)
          (class super%
-           (inherit get-definitions-text)
+           (inherit get-definitions-text get-current-tab)
            ; -> void
-           (define/override (clear-annotations)
-             (super clear-annotations)
-             (send (get-definitions-text) remove-all-snips-and-arrows-and-colors))
            
            ; -> void
            (define/augment (enable-evaluation)
@@ -253,7 +257,7 @@
                       ; is not called here, but is called internally inside
                       ; init-snips-and-arrows-gui
                       (disable-evaluation)
-                      (super clear-annotations)
+                      (send (get-current-tab) clear-annotations)
                       
                       ; note: we have to do this each time, because the user might have changed
                       ; the language between analyses.

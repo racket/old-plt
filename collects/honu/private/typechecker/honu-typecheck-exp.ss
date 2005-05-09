@@ -661,7 +661,7 @@
              (honu-typecheck-call tenv f exp t typ #t))]
           [else 
            (raise-read-error-with-stx
-            (format "Function ~a not found" name)
+            (format "Function ~a not found" (printable-key name))
             name)])]
        ;; P, G, D |- this |=> this : G(this)
        [(struct honu-this (stx))

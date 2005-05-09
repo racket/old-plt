@@ -73,11 +73,11 @@
       (cond
         [(not entry)
          (raise-read-error-with-stx
-          (format "No type defined with name ~a~n" (printable-key name))
+          (format "No type defined with name ~a" (printable-key name))
           name)]
         [(not (tenv-type? entry))
          (raise-read-error-with-stx
-          (format "Definition of ~a is not a type~n" (printable-key name))
+          (format "Definition of ~a is not a type" (printable-key name))
           name)]
         [else entry])))
   (define (get-class-entry name tenv)
@@ -85,11 +85,11 @@
       (cond
         [(not entry)
          (raise-read-error-with-stx
-          (format "No class defined with name ~a~n" (printable-key name))
+          (format "No class defined with name ~a" (printable-key name))
           name)]
         [(not (tenv-class? entry))
          (raise-read-error-with-stx
-          (format "Definition of ~a is not a class~n" (printable-key name))
+          (format "Definition of ~a is not a class" (printable-key name))
           name)]
         [else entry])))
   (define (get-mixin-entry name tenv)
@@ -97,11 +97,11 @@
       (cond
         [(not entry)
          (raise-read-error-with-stx
-          (format "No mixin defined with name ~a~n" (printable-key name))
+          (format "No mixin defined with name ~a" (printable-key name))
           name)]
         [(not (tenv-mixin? entry))
          (raise-read-error-with-stx
-          (format "Definition of ~a is not a mixin~n" (printable-key name))
+          (format "Definition of ~a is not a mixin" (printable-key name))
           name)]
         [else entry])))
   (define (get-func-entry name tenv)
@@ -109,11 +109,11 @@
       (cond
         [(not entry)
          (raise-read-error-with-stx
-          (format "No function defined with name ~a~n" (printable-key name))
+          (format "No function defined with name ~a" (printable-key name))
           name)]
         [(not (tenv-func? entry))
          (raise-read-error-with-stx
-          (format "Definition of ~a is not a function~n" (printable-key name))
+          (format "Definition of ~a is not a function" (printable-key name))
           name)]
         [else entry])))
   )

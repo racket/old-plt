@@ -28,6 +28,7 @@
          "Type of this within mixin not subtype of argument class."
          (honu-ast-src-stx (honu-mixin-type mixin))))
     (check-impl-types tenv (honu-mixin-impls mixin))
+    (check-init-slots tenv (honu-mixin-init-names mixin) (honu-mixin-init-types mixin))
     (let*-values (((new-befores new-env new-cenv new-init-cenv)
                    (honu-typecheck-slotdefns tenv
                                              (extend-env (get-initial-env tenv) 'this (honu-mixin-type mixin))

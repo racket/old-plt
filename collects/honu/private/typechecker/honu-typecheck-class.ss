@@ -11,6 +11,7 @@
   (provide honu-typecheck-class)
   (define (honu-typecheck-class tenv cls)
     (check-impl-types tenv (honu-class-impls cls))
+    (check-init-slots tenv (honu-class-init-names cls) (honu-class-init-types cls))
     (let-values (((new-defns new-env new-cenv new-init-cenv)
                   (honu-typecheck-slotdefns tenv
                                             (extend-env (get-initial-env tenv) #'this (honu-class-type cls))

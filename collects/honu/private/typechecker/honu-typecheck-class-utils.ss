@@ -118,6 +118,17 @@
         (honu-ast-src-stx (car types)))]
       [else (check-arg-types tenv (cdr types))]))
 
+  (provide check-init-slots)
+  (define (check-init-slots tenv names types)
+    (cond
+      [(null? types) #t]
+      [(not (honu-iface-type-in-tenv? tenv (car types)))
+       (raise-read-error-with-stx
+        (format "Type for init slot ~a does not exist in program."
+                (printable-key (car names)))
+        (honu-ast-src-stx (car types)))]
+      [else (check-init-slots tenv (cdr names) (cdr types))]))
+
   (provide check-impl-types)
   (define (check-impl-types tenv types)
     (cond

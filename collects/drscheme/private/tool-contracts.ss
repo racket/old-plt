@@ -611,6 +611,19 @@
 ;   ;;;;                                                                 
   
   
+  (drscheme:get/extend:extend-tab
+   (case->
+    ((make-mixin-contract drscheme:unit:tab%) . -> . void?)
+    ((make-mixin-contract drscheme:unit:tab%) boolean? . -> . void?))
+   ((mixin) (mixin before?))
+   
+   "This class implements the tabs in drscheme. One is created for each tab"
+   "in a frame (each frame always has at least one tab, even if the tab bar is not shown)"
+   ""
+   "The argument, \\var{before}, controls if the mixin is applied before or"
+   "after already installed mixins."
+   "If unsupplied, this is the same as supplying \\rawscm{\\#t}.")
+  
   (drscheme:get/extend:extend-interactions-text
    (case->
     ((make-mixin-contract drscheme:rep:text<%>) . -> . void?)

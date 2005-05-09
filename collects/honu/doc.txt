@@ -1,5 +1,11 @@
 _Honu_
 
+_TODO_
+
+  * Fix up honu-mcall and honu-new in honu-typecheck-exp.ss to use
+    type context argument.
+  * Add new statement that uses positional initialization arguments.
+
 _Primitive types_
 
   int   - integers

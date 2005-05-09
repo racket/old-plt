@@ -31,7 +31,7 @@
     (check-init-slots tenv (honu-mixin-init-names mixin) (honu-mixin-init-types mixin))
     (let*-values (((new-befores new-env new-cenv new-init-cenv)
                    (honu-typecheck-slotdefns tenv
-                                             (extend-env (get-initial-env tenv) 'this (honu-mixin-type mixin))
+                                             (extend-env (get-initial-env tenv) #'this (honu-mixin-type mixin))
                                              (empty-env)
                                              (fold (lambda (n t e)
                                                      (extend-env e n t))

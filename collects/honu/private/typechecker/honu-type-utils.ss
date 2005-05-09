@@ -253,7 +253,7 @@
                       ;; This field had to be initialized, so this is a type error.
                       (raise-read-error-with-stx
                        "Type for initialization value does not match declared type."
-                       (honu-ast-src-stx type))
+                       name)
                       ;; It doesn't have to be initialized, so we assume that it was left
                       ;; out and continue with the rest of the list, dropping it.
                       (check-init-type-for-name tenv (cdr inits) name type)))

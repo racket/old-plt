@@ -5,6 +5,10 @@ _TODO_
   * Fix up honu-mcall and honu-new in honu-typecheck-exp.ss to use
     type context argument.
   * Add new statement that uses positional initialization arguments.
+  * Work out details of standard library, including boxed versions of
+    primitive types.
+  * Add autoboxing of primitive types.
+  * Add generics (parametric polymorphism and bounded polymorphism).
 
 _Primitive types_
 

@@ -79,7 +79,7 @@
 
 /* This is the log base 2 of the standard memory page size. 14 means 2^14,
    which is 16k. This seems to be a good size. */
-#define LOG_PAGE_SIZE 14
+#define LOG_APAGE_SIZE 14
 
 /* the number of tags to use for tagged objects */
 #define NUMBER_OF_TAGS 260
@@ -99,11 +99,11 @@
 #define PTR(x) ((void*)(x))
 #define PPTR(x) ((void**)(x))
 #define NUM(x) ((unsigned long)(x))
-#define USEFUL_ADDR_BITS ((8 << LOG_WORD_SIZE) - LOG_PAGE_SIZE)
-#define ADDR_BITS(x) (NUM(x) >> LOG_PAGE_SIZE)
+#define USEFUL_ADDR_BITS ((8 << LOG_WORD_SIZE) - LOG_APAGE_SIZE)
+#define ADDR_BITS(x) (NUM(x) >> LOG_APAGE_SIZE)
 #define WORD_SIZE (1 << LOG_WORD_SIZE)
 #define WORD_BITS (8 * WORD_SIZE)
-#define PAGE_SIZE (1 << LOG_PAGE_SIZE)
+#define APAGE_SIZE (1 << LOG_APAGE_SIZE)
 #define GENERATIONS 2
 
 /* the externals */
@@ -129,7 +129,7 @@ static void garbage_collect(int);
 
 inline static void check_used_against_max(size_t len) 
 {
-  used_pages += (len / PAGE_SIZE) + (((len % PAGE_SIZE) == 0) ? 0 : 1);
+  used_pages += (len / APAGE_SIZE) + (((len % APAGE_SIZE) == 0) ? 0 : 1);
 
   if(in_unsafe_allocation_mode) {
     if(used_pages > pages_in_heap)
@@ -153,7 +153,7 @@ inline static void check_used_against_max(size_t len)
 
 inline static void free_used_pages(size_t len) 
 {
-  used_pages -= (len / PAGE_SIZE) + (((len % PAGE_SIZE) == 0) ? 0 : 1);
+  used_pages -= (len / APAGE_SIZE) + (((len % APAGE_SIZE) == 0) ? 0 : 1);
 }
 
 #define CHECK_USED_AGAINST_MAX(len) check_used_against_max(len)
@@ -209,7 +209,7 @@ int GC_mtrace_union_current_with(int newval)
 /*****************************************************************************/
 
 struct objhead {
-  unsigned int reserved : ((8*WORD_SIZE) - (4+3+LOG_PAGE_SIZE));
+  unsigned int reserved : ((8*WORD_SIZE) - (4+3+LOG_APAGE_SIZE));
   /* the type and size of the object */
   unsigned int type : 3;
   /* these are the various mark bits we use */
@@ -218,7 +218,7 @@ struct objhead {
   /* these are used for compaction et al*/
   unsigned int moved : 1;
   unsigned int dead : 1;
-  unsigned int size : LOG_PAGE_SIZE;
+  unsigned int size : LOG_APAGE_SIZE;
 };
 
 /* For sparcs, this structure must have an odd number of 4 byte words, or
@@ -247,7 +247,7 @@ struct mpage {                      /* BYTES: */
 /* this is the maximum size of an object that will fit on a page, in words.
    the "- 3" is basically used as a fudge/safety factor, and has no real, 
    important meaning. */
-#define MAX_OBJECT_SIZEW (gcBYTES_TO_WORDS(PAGE_SIZE) - HEADER_SIZEW - 3)
+#define MAX_OBJECT_SIZEW (gcBYTES_TO_WORDS(APAGE_SIZE) - HEADER_SIZEW - 3)
 
 /* the page type constants */
 #define PAGE_TAGGED 0
@@ -301,13 +301,13 @@ static unsigned long memory_in_use = 0; /* the amount of memory in use */
 
    During collections, it maps pointers to "from" pages. */
 #define modify_page_map(page, val) {                                  \
-    long size_left = page->big_page ? page->size : PAGE_SIZE;         \
+    long size_left = page->big_page ? page->size : APAGE_SIZE;         \
     void *p = page;                                                   \
                                                                       \
     while(size_left > 0) {                                            \
       page_map[ADDR_BITS(p)] = val;                                   \
-      size_left -= PAGE_SIZE;                                         \
-      p = (char *)p + PAGE_SIZE;                                      \
+      size_left -= APAGE_SIZE;                                         \
+      p = (char *)p + APAGE_SIZE;                                      \
     }                                                                 \
   }
 
@@ -345,7 +345,7 @@ static void *allocate_big(size_t sizeb, int type)
   }
   gen0_current_size += sizeb;
 
-  bpage = malloc_pages(sizeb, PAGE_SIZE);
+  bpage = malloc_pages(sizeb, APAGE_SIZE);
   bpage->size = sizeb;
   bpage->big_page = 1;
   bpage->page_type = type;
@@ -451,7 +451,7 @@ inline static void resize_gen0(unsigned long new_size)
 
   /* if we're short, add more */
   while(alloced_size < new_size) {
-    work = malloc_pages(GEN0_PAGE_SIZE, PAGE_SIZE);
+    work = malloc_pages(GEN0_PAGE_SIZE, APAGE_SIZE);
     work->size = GEN0_PAGE_SIZE;
     work->big_page = 1;
     if(prev)
@@ -1779,7 +1779,7 @@ inline static void run_account_hooks()
 
   while(work) {
     if( ((work->type == MZACCT_REQUIRE) && 
-	 (((max_used_pages - used_pages) * PAGE_SIZE) < work->amount))
+	 (((max_used_pages - used_pages) * APAGE_SIZE) < work->amount))
 	||
 	((work->type == MZACCT_LIMIT) &&
 	 (GC_get_memory_use(work->c1) > work->amount))) {
@@ -1843,7 +1843,7 @@ void GC_init_type_tags(int count, int weakbox)
   if(!initialized) {
     initialized = 1;
     max_heap_size = determine_max_heap_size();
-    pages_in_heap = max_heap_size / PAGE_SIZE;
+    pages_in_heap = max_heap_size / APAGE_SIZE;
     max_used_pages = pages_in_heap / 2;
     
     resize_gen0(INIT_GEN0_SIZE);
@@ -1979,7 +1979,7 @@ void GC_mark(const void *const_p)
 	  size = gcWORDS_TO_BYTES(ohead->size);
 
 	  /* search for a page with the space to spare */
-	  while(work && ((work->size + size) >= PAGE_SIZE))
+	  while(work && ((work->size + size) >= APAGE_SIZE))
 	    work = work->next;
 
 	  /* now either fetch where we're going to put this object or make
@@ -1990,7 +1990,7 @@ void GC_mark(const void *const_p)
 	    newplace = PTR(NUM(work) + work->size);
 	  } else {
 	    /* Allocate and prep the page */
-	    work = (struct mpage *)malloc_dirty_pages(PAGE_SIZE, PAGE_SIZE);
+	    work = (struct mpage *)malloc_dirty_pages(APAGE_SIZE, APAGE_SIZE);
 	    work->generation = 1;
 	    work->page_type = type;
 	    work->size = work->previous_size = HEADER_SIZEB;
@@ -2173,7 +2173,7 @@ static void prepare_pages_for_collection(void)
        we don't accidentally screw up the mark routine */
     for(i = 0; i < PAGE_TYPES; i++)
       for(work = pages[i]; work; work = work->next) {
-	protect_pages(work, work->big_page ? work->size : PAGE_SIZE, 1);
+	protect_pages(work, work->big_page ? work->size : APAGE_SIZE, 1);
 	work->live_size = 0;
 	work->previous_size = HEADER_SIZEB;
       }
@@ -2182,7 +2182,7 @@ static void prepare_pages_for_collection(void)
        pages in pages[] from the page map */
     for(i = 0; i < PAGE_TYPES; i++)
       for(work = pages[i]; work; work = work->next) {
-	protect_pages(work, work->big_page ? work->size : PAGE_SIZE, 1);
+	protect_pages(work, work->big_page ? work->size : APAGE_SIZE, 1);
 	pagemap_remove(work);
       }
   }
@@ -2232,7 +2232,7 @@ static void mark_backpointers(void)
 	  }
 	  work->previous_size = HEADER_SIZEB;
 	} else {
-	  protect_pages(work, work->big_page ? work->size : PAGE_SIZE, 1);
+	  protect_pages(work, work->big_page ? work->size : APAGE_SIZE, 1);
 	  GCDEBUG((DEBUGOUTF,"Setting previous_size on %p to %i\n", work,
 		   work->size));
 	  work->previous_size = work->size;
@@ -2258,7 +2258,7 @@ inline static void do_heap_compact(void)
 	if(should_compact_page(gcWORDS_TO_BYTES(work->live_size),work->size)) {
 	  void **start = PPTR(NUM(work) + HEADER_SIZEB);
 	  void **end = PPTR(NUM(work) + work->size);
-	  struct mpage *npage = malloc_dirty_pages(PAGE_SIZE, PAGE_SIZE);
+	  struct mpage *npage = malloc_dirty_pages(APAGE_SIZE, APAGE_SIZE);
 	  void **newplace;
 
 	  GCDEBUG((DEBUGOUTF, "Compacting page %p: new version at %p\n", 
@@ -2459,13 +2459,13 @@ static void clean_up_heap(void)
 	  if(prev) prev->next = next; else pages[i] = next;
 	  if(work->next) work->next->prev = prev;
 	  pagemap_remove(work);
-	  free_pages(work, work->big_page ? work->size : PAGE_SIZE);
+	  free_pages(work, work->big_page ? work->size : APAGE_SIZE);
 	  work = next;
 	} else {
 	  pagemap_add(work);
 	  if(work->mirror) {
 	    pagemap_remove(work->mirror);
-	    free_pages(work->mirror, PAGE_SIZE);
+	    free_pages(work->mirror, APAGE_SIZE);
 	    work->mirror = NULL;
 	  }
 	  work->back_pointers = work->marked_on = 0;

@@ -3200,7 +3200,7 @@ static void check_variable_stack()
     if (var_stack == limit)
       return;
 
-# ifndef XX_WIN32
+# ifdef XXXXXXXXX
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
       CRASH(33);
 # endif

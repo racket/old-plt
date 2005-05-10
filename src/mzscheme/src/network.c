@@ -502,22 +502,41 @@ static int parse_numerical(const char *address, unsigned long *addr)
   return 0;
 }
 
-#ifdef USE_WINSOCK_TCP
-# ifdef __BORLANDC__
-#  define MZ_LPTHREAD_START_ROUTINE unsigned int (__stdcall*)(void*)
+#ifdef OS_X
+# define PTHREADS_OK_FOR_GHBN
+#endif
+
+#if defined(USE_WINSOCK_TCP) || defined(PTHREADS_OK_FOR_GHBN)
+
+# ifdef USE_WINSOCK_TCP
+#  ifdef __BORLANDC__
+#   define MZ_LPTHREAD_START_ROUTINE unsigned int (__stdcall*)(void*)
+#  else
+#   define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
+#  endif
 # else
-#  define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
+#  include <pthread.h>
+#   define MZ_LPTHREAD_START_ROUTINE void *(*)(void *)
 # endif
 
-static int ghbn_lock;
+static volatile int ghbn_lock;
 
 typedef struct {
+# ifdef USE_WINSOCK_TCP
   HANDLE th;
+# else
+  int pin;
+# endif
   long result;
   int done;
 } GHBN_Rec;
 
 static char ghbn_hostname[256];
+# ifdef USE_WINSOCK_TCP
+HANDLE ready_sema;
+# else
+int ready_fd;
+# endif
 
 #ifdef MZ_XFORM
 START_XFORM_SKIP;
@@ -526,11 +545,33 @@ START_XFORM_SKIP;
 static long gethostbyname_in_thread(void *data)
 {
   struct hostent *host;
-  host = gethostbyname(ghbn_hostname);
+  char hn_copy[256];
+  long v;
+# ifndef USE_WINSOCK_TCP
+  int fd = ready_fd;
+# endif
+  
+  memcpy(hn_copy, ghbn_hostname, 256);
+
+# ifdef USE_WINSOCK_TCP
+  ReleaseSemaphore(ready_sema, 1, NULL);  
+# else
+  write(fd, "?", 1);
+# endif
+
+  host = gethostbyname(hn_copy);
+
   if (host)
-    return *(long *) mzALIAS host->h_addr_list[0];
+    v = *(long *) mzALIAS host->h_addr_list[0];
   else
-    return 0;
+    v = 0;
+
+# ifndef USE_WINSOCK_TCP
+  write(fd, &v, sizeof(v));
+  close(fd);
+# endif
+
+  return v;
 }
 
 #ifdef MZ_XFORM
@@ -540,8 +581,13 @@ END_XFORM_SKIP;
 static void release_ghbn_lock(GHBN_Rec *rec)
 {
   ghbn_lock = 0;
+# ifdef USE_WINSOCK_TCP
   CloseHandle(rec->th);
+# esle
+  close(rec->pin);
+# endif
 }
+
 static int ghbn_lock_avail(Scheme_Object *_ignored)
 {
   return !ghbn_lock;
@@ -554,6 +600,7 @@ static int ghbn_thread_done(Scheme_Object *_rec)
   if (rec->done)
     return 1;
 
+# ifdef USE_WINSOCK_TCP
   if (WaitForSingleObject(rec->th, 0) == WAIT_OBJECT_0) {
     DWORD code;
 
@@ -563,6 +610,16 @@ static int ghbn_thread_done(Scheme_Object *_rec)
 
     return 1;
   }
+# else
+  {
+    long v;
+    if (read(rec->pin, &v, sizeof(long)) > 0) {
+      rec->result = v;
+      rec->done = 1;
+      return 1;
+    }
+  }
+# endif
 
   return 0;
 }
@@ -571,17 +628,27 @@ static void ghbn_thread_need_wakeup(Scheme_Object *_rec, void *fds)
 {
   GHBN_Rec *rec = (GHBN_Rec *)_rec;
 
+# ifdef USE_WINSOCK_TCP
   scheme_add_fd_handle((void *)rec->th, fds, 0);
+# else
+  {
+    void *fds2;
+    
+    fds2 = MZ_GET_FDSET(fds, 2);
+    
+    MZ_FD_SET(rec->pin, (fd_set *)fds);
+    MZ_FD_SET(rec->pin, (fd_set *)fds2);
+  }
+# endif
 }
 
 #define HOST_RESULT_IS_ADDR
 static struct hostent *MZ_GETHOSTBYNAME(const char *name)
 {
   GHBN_Rec *rec;
-  long th;
-  DWORD id;
+  int ok;
 
-  if (strlen(name) > 256)
+  if (strlen(name) > 255)
     return NULL;
 
   rec = MALLOC_ONE_ATOMIC(GHBN_Rec);
@@ -593,17 +660,64 @@ static struct hostent *MZ_GETHOSTBYNAME(const char *name)
 
   strcpy(ghbn_hostname, name);
 
-  th = _beginthreadex(NULL, 5000, 
-		      (MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,
-		      NULL, 0, &id);
+# ifdef USE_WINSOCK_TCP
+  {
+    DWORD id;
+    long th;
+    
+    ready_sema = CreateSemaphore(NULL, 0, 1, NULL);
+    th = _beginthreadex(NULL, 5000, 
+			(MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,
+			NULL, 0, &id);
+    WaitForSingleObject(ready_sema, INFINITE);
+    ReleaseHandle(ready_sema);
+    
+    rec->th = (HANDLE)th;
+    ok = 1;
+  }
+# else
+  {
+    int p[2];
+    if (pipe(p)) {
+      ok = 0;
+    } else {
+      pthread_t t;
+      rec->pin = p[0];
+      ready_fd = p[1];
+      if (pthread_create(&t, NULL, 
+			 (MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,
+			 NULL)) {
+	close(p[0]);
+	close(p[1]);
+	ok = 0;
+      } else {
+	char buf[1];
+	pthread_detach(t);
+	read(rec->pin, buf, 1);
+	fcntl(rec->pin, F_SETFL, MZ_NONBLOCKING);
+	ok = 1;
+      }
+    }
 
-  rec->th = (HANDLE)th;
-  
-  BEGIN_ESCAPEABLE(release_ghbn_lock, rec);
-  scheme_block_until(ghbn_thread_done, ghbn_thread_need_wakeup, (Scheme_Object *)rec, 0);
-  END_ESCAPEABLE();
+    if (!ok) {
+      long r;
+      r = gethostbyname_in_thread(rec);
+      rec->result = r;
+    }
+  }
+# endif
 
-  CloseHandle(rec->th);
+  if (ok) {
+    BEGIN_ESCAPEABLE(release_ghbn_lock, rec);
+    scheme_block_until(ghbn_thread_done, ghbn_thread_need_wakeup, (Scheme_Object *)rec, 0);
+    END_ESCAPEABLE();
+
+# ifdef USE_WINSOCK_TCP
+    CloseHandle(rec->th);
+# else
+    close(rec->pin);
+# endif
+  }
 
   ghbn_lock = 0;
 

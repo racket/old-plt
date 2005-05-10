@@ -70,7 +70,7 @@ typedef struct exc_msg {
 extern boolean_t exc_server(mach_msg_header_t *in, mach_msg_header_t *out);
 
 /* these are the globals everyone needs */
-static size_t page_size = 16384;
+#define page_size vm_page_size
 static mach_port_t task_self = NULL;
 static mach_port_t exc_port = NULL;
 

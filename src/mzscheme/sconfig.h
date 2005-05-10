@@ -624,8 +624,6 @@
 # define USE_CARBON_FP_PREDS
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
 
-# define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
-
 # define USE_DYNAMIC_FDSET_SIZE
 
 # define SIGSET_IS_SIGNAL
@@ -1227,7 +1225,7 @@
      MacOS's Code Fragment Custodian (thanks to William Ng).
     Use only one or none of these. */
 
- /* UNDERSCORE_DYNLOAD_SYMBOL_PREFIX with UNIX_DYNAMIC_LOAD menas that
+ /* UNDERSCORE_DYNLOAD_SYMBOL_PREFIX with UNIX_DYNAMIC_LOAD means that
     an extra underscore ("_") must be placed in front of the name passed 
     to dlopen(). */
 

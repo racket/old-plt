@@ -30,7 +30,7 @@
 #include "schgc.h"
 
 #ifdef UNIX_DYNAMIC_LOAD
-# ifdef OS_X
+# ifdef OS_X_NO_DLFCN
 #  include "dlcompat.inc"
 # else
 #  include <dlfcn.h>

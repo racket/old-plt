@@ -2,13 +2,39 @@ _Honu_
 
 _TODO_
 
+  > Rewrite TODO list in terms of interfaces (not implementations) 
+    The next bullet is a prime example. I have added a second bullet to
+    show what I mean. -- MF
+
   * Fix up honu-mcall and honu-new in honu-typecheck-exp.ss to use
     type context argument.
-  * Add new statement that uses positional initialization arguments.
+  
+  * Admit statements as elements of mixin bodies, i.e., 
+
+     struct ExamplesC() : Examples {
+      IStack s0 = new StackC();
+      int d0 = s0.depth();
+      s0.push(s0);
+     }
+
+    should work. -- MF
+
   * Work out details of standard library, including boxed versions of
     primitive types.
+
+  * Let's use _string_ for _str_. (In principle we should probably use
+    String eventually, if it becomes a class.) 
+
+  * If you do have a standard library, document it please. -- MF 
+
+  * Let's add arrays. 
+
+  * Add new statement that uses positional initialization arguments.
+
   * Add autoboxing of primitive types.
+
   * Add generics (parametric polymorphism and bounded polymorphism).
+    RESEARCH! 
 
 _Primitive types_
 

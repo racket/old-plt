@@ -175,6 +175,12 @@
                     (honu-new-arg-vals (map (lambda (e)
                                      (honu-convert-exp e bound-vars cenv))
                                    (honu-new-arg-vals exp))))]
+      [(honu-lambda? exp)
+       (copy-struct honu-lambda exp
+         (honu-lambda-body (honu-convert-exp (honu-lambda-body exp)
+                                             (append (map printable-key (honu-lambda-arg-names exp))
+                                                     bound-vars)
+                                             cenv)))]
       [(honu-block? exp)
        (let loop ((binds (honu-block-binds exp))
                   (new-binds null)

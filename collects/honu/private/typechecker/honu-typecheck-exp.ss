@@ -133,7 +133,11 @@
        ;; type t such that P |- t, null <: t.
        [(struct honu-null (stx))
         (if typ
-            (values exp typ)
+            (if (<:_P tenv (honu-null-type stx) typ)
+                (values exp typ)
+                (raise-read-error-with-stx
+                 "Attempt to use null in a non-interface type context."
+                 stx))
             (values exp (honu-null-type stx)))]
        ;; P, G, D |- n |=> n : int
        [(struct honu-int (stx n))

@@ -583,7 +583,7 @@ static void release_ghbn_lock(GHBN_Rec *rec)
   ghbn_lock = 0;
 # ifdef USE_WINSOCK_TCP
   CloseHandle(rec->th);
-# esle
+# else
   close(rec->pin);
 # endif
 }
@@ -670,7 +670,7 @@ static struct hostent *MZ_GETHOSTBYNAME(const char *name)
 			(MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,
 			NULL, 0, &id);
     WaitForSingleObject(ready_sema, INFINITE);
-    ReleaseHandle(ready_sema);
+    CloseHandle(ready_sema);
     
     rec->th = (HANDLE)th;
     ok = 1;

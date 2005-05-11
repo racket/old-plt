@@ -344,10 +344,12 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                                    (pkg-spec-path pkg))
                              op))
                   pkgs)
-      (write-line 'end op))
+      (write-line 'end op)
+      (flush-output op))
     
     (define (state:initialize)
       (fprintf op "PLaneT/1.0\n")
+      (flush-output op)
       (match (read ip)
         ['ok                        (state:send-pkg-request)]
         [('invalid (? string? msg)) (state:abort (string-append "protocol version error: " msg))]

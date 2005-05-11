@@ -656,7 +656,7 @@
 		  #f #f
 		  (lambda ()
 		    (out "#")
-		    (wr-lst (vector->list (struct->vector obj)) #f (sub1 depth))))
+		    (wr-lst (vector->list (struct->vector obj)) #f (dsub1 depth))))
 		 (parameterize ([print-struct #f])
 		   ((if display? orig-display orig-write) obj pport)))]
 	    [(hash-table? obj)  

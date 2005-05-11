@@ -103,6 +103,11 @@
   (test "0.333" pp-string #i0.333)
   (test "2.0+1.0i" pp-string #i2+1i))
 
+(parameterize ([print-struct #t])
+  (let ()
+    (define-struct s (x) (make-inspector))
+    (test "#(struct:s 1)" pp-string (make-s 1))))
+
 (err/rt-test (pretty-print-extend-style-table 'ack '(a) '(b)))
 (err/rt-test (pretty-print-extend-style-table (pretty-print-current-style-table) 'a '(b)))
 (err/rt-test (pretty-print-extend-style-table (pretty-print-current-style-table) '(1) '(b)))

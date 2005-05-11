@@ -99,7 +99,10 @@
   (define ispell-err #f)
   (define (ispell-word word)
     (when (eq? has-ispell? 'dontknow)
-      (let ([existing (or (find-executable-path "ispell" #f)
+      (let ([existing (or (find-executable-path (if (eq? (system-type) 'windows)
+						    "ispell.exe"
+						    "ispell")
+						#f)
 			  (ormap (lambda (x) (and (file-exists? x) x))
 				 '("/sw/bin/ispell"
 				   "/usr/bin/ispell"
@@ -138,9 +141,9 @@
          (display to-send ispell-in)
 	 (flush-output ispell-in))
 
-       (let* ([answer-line (read-line ispell-out)]
+       (let* ([answer-line (read-line ispell-out 'any)]
               [_ (debug "< ~s\n" answer-line)]
-              [blank-line (read-line ispell-out)]
+              [blank-line (read-line ispell-out 'any)]
               [_ (debug "< ~s\n" blank-line)])
          (unless (equal? blank-line "")
            (fprintf (current-error-port) "expected blank line from ispell, got (word ~s):\n~a\nrestarting ispell\n\n" 

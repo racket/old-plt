@@ -16,7 +16,7 @@
                        (get-initial-env pgm)
                        arg-names
                        arg-types)))
-        (let-values ([(e1 t1) ((honu-typecheck-exp pgm env (empty-env)) body type)])
+        (let-values ([(e1 t1) ((honu-typecheck-exp pgm env (empty-env)) body (if (honu-top-type? type) #f type))])
           (copy-struct honu-function defn
             (honu-function-body e1))))))
   )

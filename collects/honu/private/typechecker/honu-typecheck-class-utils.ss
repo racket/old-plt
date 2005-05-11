@@ -102,7 +102,7 @@
                                  (extend-env env n t))
                                env arg-names arg-types)])
             (check-arg-types tenv arg-types) ;; will raise exception if one fails
-            (let-values (((e1 t1) ((honu-typecheck-exp tenv new-env cenv) body type)))
+            (let-values (((e1 t1) ((honu-typecheck-exp tenv new-env cenv) body (if (honu-top-type? type) #f type))))
               (copy-struct honu-method defn
                 (honu-method-body e1))))
           (raise-read-error-with-stx

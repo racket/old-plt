@@ -2,6 +2,11 @@ _Honu_
 
 _TODO_
 
+  > semi-colons are apparently not terminators as in C
+    I can't seem to place them at the end of methods or at the end of 
+    class/interface defs. Pls compare with Java. I'd like to be compatible
+    with such details. 
+
   > Rewrite TODO list in terms of interfaces (not implementations) 
     The next bullet is a prime example. I have added a second bullet to
     show what I mean. -- MF

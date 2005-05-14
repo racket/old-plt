@@ -47,8 +47,6 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 
 extern char *scheme_mac_spec_to_path(FSSpec *spec);
 
-static int wx_defeat_resize_confusion;
-
 //=============================================================================
 // Public constructors
 //=============================================================================
@@ -302,9 +300,10 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 	GetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			  NULL, sizeof(Rect), NULL, &n);
 	n.bottom = n.top + (o.bottom - o.top);
+	n.right = n.left + (o.right - o.left);
 	SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			  sizeof(Rect), &n);
-      } else if (!(a &  kWindowBoundsChangeUserResize) && wx_defeat_resize_confusion) {
+      } else if (!(a & kWindowBoundsChangeUserResize)) {
 	Rect n, s, c;
 	WindowRef w;
 
@@ -314,22 +313,28 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 	GetWindowBounds(w, kWindowStructureRgn, &s);
 	GetWindowBounds(w, kWindowContentRgn, &c);
 
-	if ((c.bottom - c.top) == (s.bottom - s.top)) {
+	if (((c.bottom - c.top) == (s.bottom - s.top))
+	    && ((c.right - c.left) == (s.right - s.left))) {
 	  /* Struct size == content size? This is when the window
 	     manager is confused in 10.4. Subtract out the difference
 	     between the real content and structure regions. */
-	  int delta;
+	  int h, w, hdelta, wdelta;
+
+	  w = f->Width();
+	  h = f->Height();
 	  {
 	    wxArea *parea;
 	    wxMargin pam;
 	    parea = f->PlatformArea();
 	    pam = parea->Margin();
-	    delta = pam.Offset(wxVertical);
+	    wdelta = pam.Offset(wxHorizontal);
+	    hdelta = pam.Offset(wxVertical);
 	  }
 
 	  GetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			    NULL, sizeof(Rect), NULL, &n);
-	  n.bottom -= delta;
+	  n.bottom = n.top + h - hdelta;
+	  n.right = n.left + w - wdelta;
 	  SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			    sizeof(Rect), &n);
 	}
@@ -541,9 +546,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       pam = parea->Margin();
       theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
       theMacHeight = cWindowHeight - pam.Offset(wxVertical);
-      wx_defeat_resize_confusion++;
       ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
-      --wx_defeat_resize_confusion;
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;
 

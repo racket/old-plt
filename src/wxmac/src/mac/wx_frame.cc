@@ -302,7 +302,9 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 	n.bottom = n.top + (o.bottom - o.top);
 	SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			  sizeof(Rect), &n);
-      }  else if (!(a &  kWindowBoundsChangeUserResize)) {
+      }
+#if 0
+      else if (!(a &  kWindowBoundsChangeUserResize)) {
 	Rect n, s, c;
 	WindowRef w;
 
@@ -332,6 +334,7 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 			  sizeof(Rect), &n);
 	}
       }
+#endif
     }
     break;
   }
@@ -532,19 +535,25 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 
   if (widthIsChanged || heightIsChanged)
     {
-      int theMacWidth, theMacHeight;
-      wxArea *parea;
-      wxMargin pam;
-      parea = PlatformArea();
-      pam = parea->Margin();
-      theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
-      theMacHeight = cWindowHeight - pam.Offset(wxVertical);
-      ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
+      Rect r;
+      GetWindowBounds(theMacWindow, kWindowStructureRgn, &r);
+      r.right = r.left + cWindowWidth;
+      r.bottom = r.top + cWindowHeight;
+      SetWindowBounds(theMacWindow, kWindowStructureRgn, &r);
+      
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;
-      
+
       if (cStatusPanel) {
 	int w, h;
+	int theMacWidth, theMacHeight;
+	wxArea *parea;
+	wxMargin pam;
+	
+	parea = PlatformArea();
+	pam = parea->Margin();
+	theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
+	theMacHeight = cWindowHeight - pam.Offset(wxVertical);
 
 	cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
 			      theMacWidth, -1);

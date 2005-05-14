@@ -47,6 +47,8 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 
 extern char *scheme_mac_spec_to_path(FSSpec *spec);
 
+static int wx_defeat_resize_confusion;
+
 //=============================================================================
 // Public constructors
 //=============================================================================
@@ -302,9 +304,7 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 	n.bottom = n.top + (o.bottom - o.top);
 	SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			  sizeof(Rect), &n);
-      }
-#if 0
-      else if (!(a &  kWindowBoundsChangeUserResize)) {
+      } else if (!(a &  kWindowBoundsChangeUserResize) && wx_defeat_resize_confusion) {
 	Rect n, s, c;
 	WindowRef w;
 
@@ -331,10 +331,9 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 			    NULL, sizeof(Rect), NULL, &n);
 	  n.bottom -= delta;
 	  SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
-			  sizeof(Rect), &n);
+			    sizeof(Rect), &n);
 	}
       }
-#endif
     }
     break;
   }
@@ -535,25 +534,21 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 
   if (widthIsChanged || heightIsChanged)
     {
-      Rect r;
-      GetWindowBounds(theMacWindow, kWindowStructureRgn, &r);
-      r.right = r.left + cWindowWidth;
-      r.bottom = r.top + cWindowHeight;
-      SetWindowBounds(theMacWindow, kWindowStructureRgn, &r);
-      
+      int theMacWidth, theMacHeight;
+      wxArea *parea;
+      wxMargin pam;
+      parea = PlatformArea();
+      pam = parea->Margin();
+      theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
+      theMacHeight = cWindowHeight - pam.Offset(wxVertical);
+      wx_defeat_resize_confusion++;
+      ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
+      --wx_defeat_resize_confusion;
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;
 
       if (cStatusPanel) {
 	int w, h;
-	int theMacWidth, theMacHeight;
-	wxArea *parea;
-	wxMargin pam;
-	
-	parea = PlatformArea();
-	pam = parea->Margin();
-	theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
-	theMacHeight = cWindowHeight - pam.Offset(wxVertical);
 
 	cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
 			      theMacWidth, -1);

@@ -303,28 +303,34 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 	SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			  sizeof(Rect), &n);
       }  else if (!(a &  kWindowBoundsChangeUserResize)) {
-	Rect o, n, s, c;
+	Rect n, s, c;
 	WindowRef w;
 
 	GetEventParameter(inEvent, kEventParamDirectObject, typeWindowRef,
 			  NULL, sizeof(WindowRef), NULL, &w);
-	
 
 	GetWindowBounds(w, kWindowStructureRgn, &s);
 	GetWindowBounds(w, kWindowContentRgn, &c);
 
-	GetEventParameter(inEvent, kEventParamPreviousBounds, typeQDRectangle, 
-			  NULL, sizeof(Rect), NULL, &o);
-	GetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
-			  NULL, sizeof(Rect), NULL, &n);
+	if ((c.bottom - c.top) == (s.bottom - s.top)) {
+	  /* Struct size == content size? This is when the window
+	     manager is confused in 10.4. Subtract out the difference
+	     between the real content and structure regions. */
+	  int delta;
+	  {
+	    wxArea *parea;
+	    wxMargin pam;
+	    parea = f->PlatformArea();
+	    pam = parea->Margin();
+	    delta = pam.Offset(wxVertical);
+	  }
 
-	printf("About Set Size: (%d vs. %d) %d %d  ->  %d %d\n", 
-	       s.bottom - s.top,
-	       c.bottom - c.top,
-	       o.right - o.left,
-	       o.bottom - o.top,
-	       n.right - n.left,
-	       n.bottom - n.top);
+	  GetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
+			    NULL, sizeof(Rect), NULL, &n);
+	  n.bottom -= delta;
+	  SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
+			  sizeof(Rect), &n);
+	}
       }
     }
     break;
@@ -533,7 +539,6 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       pam = parea->Margin();
       theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
       theMacHeight = cWindowHeight - pam.Offset(wxVertical);
-      printf("Set Size: %d %d\n", cWindowWidth, cWindowHeight);
       ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;

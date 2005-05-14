@@ -303,12 +303,24 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 	SetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			  sizeof(Rect), &n);
       }  else if (!(a &  kWindowBoundsChangeUserResize)) {
-	Rect o, n;
+	Rect o, n, s, c;
+	WindowRef w;
+
+	GetEventParameter(inEvent, kEventParamDirectObject, typeWindowRef,
+			  NULL, sizeof(WindowRef), NULL, &w);
+	
+
+	GetWindowBounds(w, kWindowStructureRgn, &s);
+	GetWindowBounds(w, kWindowContentRgn, &c);
+
 	GetEventParameter(inEvent, kEventParamPreviousBounds, typeQDRectangle, 
 			  NULL, sizeof(Rect), NULL, &o);
 	GetEventParameter(inEvent, kEventParamCurrentBounds, typeQDRectangle, 
 			  NULL, sizeof(Rect), NULL, &n);
-	printf("About Set Size: %d %d  ->  %d %d\n", 
+
+	printf("About Set Size: (%d vs. %d) %d %d  ->  %d %d\n", 
+	       s.bottom - s.top,
+	       c.bottom - c.top,
 	       o.right - o.left,
 	       o.bottom - o.top,
 	       n.right - n.left,

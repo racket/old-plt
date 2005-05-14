@@ -244,7 +244,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   if (!os_x_post_tiger) {
     SInt32 res;
     Gestalt(gestaltSystemVersion, &res);
-    if (res >= ((1 << 12) | (0 << 8) | (4 << 4)))
+    if ((res & 0xFFFF) >= ((1 << 12) | (0 << 8) | (4 << 4)))
       os_x_post_tiger = 1;
     else
       os_x_post_tiger = -1;

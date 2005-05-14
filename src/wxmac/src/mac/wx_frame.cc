@@ -510,6 +510,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       pam = parea->Margin();
       theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
       theMacHeight = cWindowHeight - pam.Offset(wxVertical);
+      printf("Set Size: %d %d\n", cWindowWidth, cWindowHeight);
       ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;

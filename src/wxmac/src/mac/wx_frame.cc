@@ -47,6 +47,8 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
 
 extern char *scheme_mac_spec_to_path(FSSpec *spec);
 
+static int os_x_post_tiger;
+
 //=============================================================================
 // Public constructors
 //=============================================================================
@@ -239,6 +241,16 @@ wxFrame::wxFrame // Constructor (for frame window)
 
   EnforceSize(-1, -1, -1, -1, 1, 1);
 
+  if (!os_x_post_tiger) {
+    SInt32 res;
+    Gestalt(gestaltSystemVersion, &res);
+    if (res >= ((1 << 12) | (0 << 8) | (4 << 4)))
+      os_x_post_tiger = 1;
+    else
+      os_x_post_tiger = -1;
+  }
+
+
   {
     /* Handle some events. */
     EventTypeSpec spec[3];
@@ -283,7 +295,7 @@ static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef,
     MrEdQueueZoom(f);
     break;
   case kEventWindowBoundsChanging:
-    {
+    if (os_x_post_tiger > 0) {
       UInt32 a;
       
       GetEventParameter(inEvent, kEventParamAttributes, typeUInt32, 

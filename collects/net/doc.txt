@@ -1425,7 +1425,7 @@ PROCEDURES -----------------------------------------------------------
 
   Attempts to find the address of a nameserver on the present system.
   Under Unix, this procedure parses /etc/resolv.conf to extract the
-  first nameserver address.
+  first nameserver address. Under Windows, it runs "nslookup.exe".
 
 ==========================================================================
 _MIME support__

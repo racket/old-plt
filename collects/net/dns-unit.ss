@@ -6,6 +6,9 @@
 
   (require "dns-sig.ss")
 
+  ;; UDP retry timeout:
+  (define INIT-TIMEOUT 50)
+
   (provide net:dns@)
   (define net:dns@
     (unit/sig net:dns^
@@ -165,26 +168,29 @@
 	  (raise-type-error 'dns-query "DNS query class" class))
 
 	(let* ([query (make-query (random 256) (string->bytes/latin-1 addr) type class)]
+	       [udp (udp-open-socket)]
 	       [reply
-		(let-values ([(r w) (tcp-connect nameserver 53)])
-		  (dynamic-wind
-		      void
-		      
-		      (lambda ()
-			(display (list->bytes (add-size-tag query)) w)
-			(flush-output w)
-			
-			(let ([a (read-byte r)]
-			      [b (read-byte r)])
-			  (let ([len (octet-pair->number a b)])
-			    (let ([s (read-bytes len r)])
-			      (unless (= len (bytes-length s))
-				(error 'dns-query "unexpected EOF from server"))
-			      (bytes->list s)))))
-		      
-		      (lambda ()
-			(close-input-port r)
-			(close-output-port w))))])
+		(dynamic-wind
+		    void
+		    
+		    (lambda ()
+		      (let ([s (make-bytes 512)])
+			(let retry ([timeout INIT-TIMEOUT])
+			  (udp-send-to udp nameserver 53 (list->bytes query))
+			  
+			  (sync
+			   (handle-evt
+			    (udp-receive!-evt udp s)
+			    (lambda (r)
+			      (bytes->list (subbytes s 0 (car r)))))
+			   (handle-evt
+			    (alarm-evt (+ (current-inexact-milliseconds)
+					  timeout))
+			    (lambda (v)
+			      (retry (* timeout 2))))))))
+		    
+		    (lambda ()
+		      (udp-close udp)))])
 
           ; First two bytes must match sent message id:
 	  (unless (and (= (car reply) (car query))

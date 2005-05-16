@@ -8,13 +8,9 @@
 (module swindle (lib "turbo.ss" "swindle")
   (require (lib "clos.ss" "swindle")
            (lib "extra.ss" "swindle"))
-  ;; (provide (all-from (lib "turbo.ss" "swindle"))
-  ;;          (all-from (lib "clos.ss" "swindle"))
-  ;;          (all-from (lib "extra.ss" "swindle")))
-  ;; use this indead of `provide', so overriding works as expected
-  (namespace-require/copy '(lib "turbo.ss" "swindle"))
-  (namespace-require/copy '(lib "clos.ss" "swindle"))
-  (namespace-require/copy '(lib "extra.ss" "swindle"))
+  (provide (all-from (lib "turbo.ss" "swindle"))
+           (all-from (lib "clos.ss" "swindle"))
+           (all-from (lib "extra.ss" "swindle")))
   (current-prompt-read (lambda () (display "=> ") (read)))
   (install-swindle-printer)
   ;; This comes out ugly in DrScheme.

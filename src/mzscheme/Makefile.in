@@ -235,7 +235,6 @@ clean@NOT_OSX@:
 	cd sgc; $(MAKE) clean
 	cd src; $(MAKE) clean
 	cd dynsrc; $(MAKE) clean
-	cd guile; $(MAKE) clean
 	cd ../foreign ; $(MAKE) clean
 
 clean@OSX@:

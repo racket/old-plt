@@ -1051,6 +1051,16 @@ RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
   return NULL;
 }
 
+long wxWindow::GetWindowHandle()
+{
+  if (cMacControl)
+    return (long)cMacControl;
+  else if (cPaintControl)
+    return (long)cPaintControl;
+  else
+    return 0;
+}
+
 //-----------------------------------------------------------------------------
 void wxWindow::MacSetBackground(void) // mac platform only
 {

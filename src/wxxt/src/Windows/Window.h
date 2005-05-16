@@ -171,6 +171,8 @@ public:
     wxWindow **GetWinSafeRef() { return saferef; }
 
     wxFont *GetFont() { return font; }
+
+    long GetWindowHandle();
     
 protected:
     // create and destroy associated device context

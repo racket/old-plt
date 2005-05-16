@@ -168,6 +168,8 @@ class wxFrame: public wxbFrame
   OSErr OnDrag(DragRef d);
   void AddDragAccept(wxWindow *target, Bool on);
 
+  virtual long GetWindowHandle();
+
   /*============================================================================= */
   /* Protected methods */
   /*============================================================================= */

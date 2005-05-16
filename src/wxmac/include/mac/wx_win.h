@@ -373,6 +373,8 @@ class wxWindow: public wxbWindow
 
   void CreatePaintControl(int inset_extent = -1, Bool opaque = FALSE);
   void GetPaintControlRegion(RgnHandle rgn, Bool opaquePart);
+
+  virtual long GetWindowHandle();
 	
  protected:
   /* ChildrenInternalGray is a local abstraction which calls

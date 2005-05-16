@@ -2102,3 +2102,7 @@ void wxWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
   foreach(this, data);
 }
 
+long wxWindow::GetWindowHandle()
+{
+  return (long)X->handle;
+}

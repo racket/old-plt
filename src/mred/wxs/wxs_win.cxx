@@ -104,6 +104,15 @@ static Bool wxIsShownToRoot(wxWindow *w)
   }
 }
 
+static long wxWindowGetHandle(wxWindow *w)
+{
+#ifdef wx_win
+  return (long)w->GetHWND();
+#else
+  return w->GetWindowHandle();
+#endif
+}
+
 static Scheme_Object *sizeMode_wxSIZE_AUTO_sym = NULL;
 static Scheme_Object *sizeMode_wxSIZE_USE_EXISTING_sym = NULL;
 static Scheme_Object *sizeMode_wxPOS_USE_MINUS_ONE_sym = NULL;
@@ -168,6 +177,7 @@ static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
 
 // @ "get-char-height" : double GetCharHeight();
 // @ "get-char-width" : double GetCharWidth();
+
 
 
 
@@ -593,6 +603,27 @@ static Scheme_Object *os_wxWindowOnKillFocus(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   return scheme_void;
+}
+
+static Scheme_Object *os_wxWindowwxWindowGetHandle(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  ExactLong r;
+  objscheme_check_valid(os_wxWindow_class, "get-handle in window%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxWindowGetHandle(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(scheme_make_integer_value(r));
 }
 
 static Scheme_Object *os_wxWindowwxIsEnabledToRoot(int n,  Scheme_Object *p[])
@@ -1321,7 +1352,7 @@ void objscheme_setup_wxWindow(Scheme_Env *env)
 
   wxREGGLOB(os_wxWindow_class);
 
-  os_wxWindow_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "window%", "object%", NULL, 34));
+  os_wxWindow_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "window%", "object%", NULL, 35));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxWindowOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxWindowPreOnEvent, 2, 2));
@@ -1329,6 +1360,7 @@ void objscheme_setup_wxWindow(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-size" " method", (Scheme_Method_Prim *)os_wxWindowOnSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxWindowOnSetFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxWindowOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-handle" " method", (Scheme_Method_Prim *)os_wxWindowwxWindowGetHandle, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "is-enabled-to-root?" " method", (Scheme_Method_Prim *)os_wxWindowwxIsEnabledToRoot, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "is-shown-to-root?" " method", (Scheme_Method_Prim *)os_wxWindowwxIsShownToRoot, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "set-phantom-size" " method", (Scheme_Method_Prim *)os_wxWindowwxSetPhantomSize, 2, 2));

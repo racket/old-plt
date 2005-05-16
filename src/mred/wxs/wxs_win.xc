@@ -78,6 +78,15 @@ static Bool wxIsShownToRoot(wxWindow *w)
   }
 }
 
+static long wxWindowGetHandle(wxWindow *w)
+{
+#ifdef wx_win
+  return (long)w->GetHWND();
+#else
+  return w->GetWindowHandle();
+#endif
+}
+
 @BEGINSYMBOLS sizeMode > ONE > PRED BUNDLE
 @SYM "auto" : wxSIZE_AUTO
 @SYM "use-exsiting" : wxSIZE_USE_EXISTING
@@ -132,6 +141,8 @@ static Bool wxIsShownToRoot(wxWindow *w)
 
 @ m "is-shown-to-root?" : bool wxIsShownToRoot();
 @ m "is-enabled-to-root?" : bool wxIsEnabledToRoot();
+
+@ m "get-handle" : ExactLong wxWindowGetHandle();
 
 @SETMARK w = V
 @INCLUDE wxs_win.xci

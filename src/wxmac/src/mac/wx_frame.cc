@@ -1422,3 +1422,14 @@ void wxFrame::AddDragAccept(wxWindow *target, Bool on)
     drag_targets->Show(target, FALSE); /* make link weak */
   }
 }
+
+long wxFrame::GetWindowHandle()
+{
+  CGrafPtr graf;
+  WindowRef win;
+  
+  graf = cMacDC->macGrafPort();
+  win = GetWindowFromPort(graf);
+
+  return (long)win;
+}

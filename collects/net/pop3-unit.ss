@@ -296,7 +296,8 @@
 	(lambda (communicator message-template . rest)
 	  (apply fprintf (communicator-sender communicator)
 		 (string-append message-template "\r\n")
-		 rest)))
+		 rest)
+	  (flush-output (communicator-sender communicator))))
 
       ;; get-one-line-from-server :
       ;; iport -> string

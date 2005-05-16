@@ -1678,6 +1678,11 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
        syntax object. */
     if (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
       /* Assert: SCHEME_IMMUTABLEP(ph) */
+      if (mkstx && !SCHEME_STXP(SCHEME_PTR_VAL(obj))) {
+	/* A placeholder from read/recur used in read-syntax/recur.
+	   Treat it as opaque. */
+	return result;
+      }
       return resolve_references(obj, port, mkstx);
     }
   }

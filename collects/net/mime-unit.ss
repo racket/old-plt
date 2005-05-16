@@ -73,6 +73,7 @@
       (define iana-extensions '(;; text
                                 ("plain" . plain)
                                 ("html" . html)
+                                ("enriched"  . enriched) ; added 5/2005 - probably not iana
                                 ("richtext"  . richtext)
                                 ("tab-separated-values" . tab-separated-values)
                                 ;; Multipart

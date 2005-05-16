@@ -96,11 +96,6 @@ void wxInitialize(HINSTANCE hInstance)
 
   wxSTD_FRAME_ICON = LoadIcon(hInstance, "wxSTD_FRAME");
 
-  wxSTATUS_LINE_FONT = CreateFont(16, 0, 0, 0, FW_NORMAL, 0, 0, 0,
-				  ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-				  PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS,
-				  "Arial");
-
   {
     RegisterMyClass(hInstance,
 		    CS_HREDRAW | CS_VREDRAW,

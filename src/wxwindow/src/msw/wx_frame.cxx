@@ -16,17 +16,14 @@
 
 static HMENU emptyMenu;
 
-wxPen *wxStatusGreyPen = NULL;
-wxPen *wxStatusWhitePen = NULL;
-
 // This range gives a maximum of 500
 // MDI children. Should be enough :-)
 #define wxFIRST_MDI_CHILD 4100
 #define wxLAST_MDI_CHILD 4600
 
 // Status border dimensions
-#define         wxTHICK_LINE_BORDER 3
-#define         wxTHICK_LINE_WIDTH  1
+#define         wxTHICK_LINE_BORDER 1
+#define         wxTHICK_LINE_WIDTH  0
 
 extern char wxFrameClassName[];
 extern char wxMDIFrameClassName[];
@@ -583,6 +580,15 @@ void wxFrame::CreateStatusLine(int number, char *WXUNUSED(name))
 
   nb_status = number;
 
+  if (!wxSTATUS_LINE_FONT) {
+	wxFont *f;
+	HDC dc;
+	f = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
+	dc = ::GetDC(NULL);
+    wxSTATUS_LINE_FONT = f->GetInternalFont(dc);
+	::ReleaseDC(NULL, dc);
+  }
+
   dc = GetDC(cframe->handle);
   SelectObject(dc, wxSTATUS_LINE_FONT);
   GetTextMetrics(dc, &tm);
@@ -590,13 +596,6 @@ void wxFrame::CreateStatusLine(int number, char *WXUNUSED(name))
   char_height = tm.tmHeight + tm.tmExternalLeading;
   status_window_height =
     (int)((char_height * 4.0/3.0) + 2*wxTHICK_LINE_BORDER);
-
-  if (!wxStatusGreyPen) {
-    wxREGGLOB(wxStatusGreyPen);
-    wxREGGLOB(wxStatusWhitePen);
-    wxStatusGreyPen = new wxPen("DIM GREY", wxTHICK_LINE_WIDTH, wxSOLID);
-    wxStatusWhitePen = new wxPen("WHITE", wxTHICK_LINE_WIDTH, wxSOLID);
-  }
 
   status_window = new wxStatusWnd(cframe, status_window_height);
   PositionStatusWindow();
@@ -765,6 +764,7 @@ BOOL wxStatusWnd::OnPaint()
 
     old_brush = (HBRUSH)::SelectObject(cdc,brushFace) ;
 
+#if wxTHICK_LINE_WIDTH
     // Draw border
     // Have grey background, plus 3-d border -
     // One black rectangle.
@@ -784,6 +784,7 @@ BOOL wxStatusWnd::OnPaint()
     ::SelectObject(cdc,penShadow) ;
     LineTo(cdc, wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
     LineTo(cdc, width-wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
+#endif
 
     SetTextColor(cdc, GetSysColor(COLOR_BTNTEXT) );
 

@@ -298,10 +298,13 @@ void wxFrame::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlag
   int currentX, currentY;
   int ww,hh ;
 
-  /* Can't set size of an iconized frame. (We could actually play games
-     with SetWindowPlacement, but it doesn't seem worthwhile.) */
+#if 0
+  /* This doesn't seem to be true: */
+  // Can't set size of an iconized frame. (We could actually play games
+  // with SetWindowPlacement, but it doesn't seem worthwhile.)
   if (Iconized())
     Iconize(FALSE);
+#endif
 
   GetPosition(&currentX, &currentY);
   if (x == -1)

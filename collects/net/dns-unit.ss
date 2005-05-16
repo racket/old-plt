@@ -1,7 +1,8 @@
 
 (module dns-unit mzscheme
   (require (lib "unitsig.ss")
-	   (lib "list.ss"))
+	   (lib "list.ss")
+           (lib "process.ss"))
 
   (require "dns-sig.ss")
 
@@ -43,38 +44,38 @@
       
 
       (define (number->octet-pair n)
-	(list (integer->char (arithmetic-shift n -8))
-	      (integer->char (modulo n 256))))
+	(list (arithmetic-shift n -8)
+	      (modulo n 256)))
 
       (define (octet-pair->number a b)
-	(+ (arithmetic-shift (char->integer a) 8)
-	   (char->integer b)))
+	(+ (arithmetic-shift a 8)
+	   b))
 
       (define (octet-quad->number a b c d)
-	(+ (arithmetic-shift (char->integer a) 24)
-	   (arithmetic-shift (char->integer b) 16)
-	   (arithmetic-shift (char->integer c) 8)
-	   (char->integer d)))
+	(+ (arithmetic-shift a 24)
+	   (arithmetic-shift b 16)
+	   (arithmetic-shift c 8)
+	   d))
 
       (define (name->octets s)
 	(let ([do-one (lambda (s)
 			(cons
-			 (integer->char (string-length s))
-			 (string->list s)))])
+			 (bytes-length s)
+			 (bytes->list s)))])
 	  (let loop ([s s])
-	    (let ([m (regexp-match "^([^.]*)[.](.*)" s)])
+	    (let ([m (regexp-match #rx#"^([^.]*)[.](.*)" s)])
 	      (if m
 		  (append
 		   (do-one (cadr m))
 		   (loop (caddr m)))
 		  (append
 		   (do-one s)
-		   (list #\nul)))))))
+		   (list 0)))))))
 
       (define (make-std-query-header id question-count)
 	(append
 	 (number->octet-pair id)
-	 (list #\001 #\nul) ; Opcode & flags (recusive flag set)
+	 (list 1 0) ; Opcode & flags (recusive flag set)
 	 (number->octet-pair question-count)
 	 (number->octet-pair 0)
 	 (number->octet-pair 0)
@@ -100,7 +101,7 @@
 	(car rr))
 
       (define (parse-name start reply)
-	(let ([v (char->integer (car start))])
+	(let ([v (car start)])
 	  (cond
 	   [(zero? v)
 	    ;; End of name
@@ -111,16 +112,16 @@
 	      (cond
 	       [(zero? len) 
 		(let-values ([(s start) (parse-name start reply)])
-		  (let ([s0 (list->string (reverse! accum))])
+		  (let ([s0 (list->bytes (reverse! accum))])
 		    (values (if s
-				(string-append s0 "." s)
+				(bytes-append s0 #"." s)
 				s0)
 			    start)))]
 	       [else (loop (sub1 len) (cdr start) (cons (car start) accum))]))]
 	   [else
 	    ;; Compression offset
 	    (let ([offset (+ (arithmetic-shift (bitwise-and #x3f v) 8)
-			     (char->integer (cadr start)))])
+			     (cadr start))])
 	      (let-values ([(s ignore-start) (parse-name (list-tail reply offset) reply)])
 		(values s (cddr start))))])))
 
@@ -163,37 +164,37 @@
 	(unless (assoc class classes)
 	  (raise-type-error 'dns-query "DNS query class" class))
 
-	(let* ([query (make-query (random 256) addr type class)]
+	(let* ([query (make-query (random 256) (string->bytes/latin-1 addr) type class)]
 	       [reply
 		(let-values ([(r w) (tcp-connect nameserver 53)])
 		  (dynamic-wind
 		      void
 		      
 		      (lambda ()
-			(display (list->string (add-size-tag query)) w)
+			(display (list->bytes (add-size-tag query)) w)
 			(flush-output w)
 			
-			(let ([a (read-char r)]
-			      [b (read-char r)])
+			(let ([a (read-byte r)]
+			      [b (read-byte r)])
 			  (let ([len (octet-pair->number a b)])
-			    (let ([s (read-string len r)])
-			      (unless (= len (string-length s))
+			    (let ([s (read-bytes len r)])
+			      (unless (= len (bytes-length s))
 				(error 'dns-query "unexpected EOF from server"))
-			      (string->list s)))))
+			      (bytes->list s)))))
 		      
 		      (lambda ()
 			(close-input-port r)
 			(close-output-port w))))])
 
-					; First two bytes must match sent message id:
-	  (unless (and (char=? (car reply) (car query))
-		       (char=? (cadr reply) (cadr query)))
+          ; First two bytes must match sent message id:
+	  (unless (and (= (car reply) (car query))
+		       (= (cadr reply) (cadr query)))
 	    (error 'dns-query "bad reply id from server"))
 
 	  (let ([v0 (caddr reply)]
 		[v1 (cadddr reply)])
-					; Check for error code:
-	    (let ([rcode (bitwise-and #xf (char->integer v1))])
+            ; Check for error code:
+	    (let ([rcode (bitwise-and #xf v1)])
 	      (unless (zero? rcode)
 		(error 'dns-query "error from server: ~a"
 		       (case rcode
@@ -215,7 +216,7 @@
 			      [(ars start) (parse-n parse-rr start reply ar-count)])
 		  (unless (null? start)
 		    (error 'dns-query "error parsing server reply"))
-		  (values (positive? (bitwise-and #x4 (char->integer v0)))
+		  (values (positive? (bitwise-and #x4 v0))
 			  qds ans nss ars reply)))))))
 
       (define cache (make-hash-table))
@@ -230,14 +231,14 @@
 
       (define (ip->string s)
 	(format "~a.~a.~a.~a" 
-		(char->integer (list-ref s 0))
-		(char->integer (list-ref s 1))
-		(char->integer (list-ref s 2))
-		(char->integer (list-ref s 3))))
+		(list-ref s 0)
+		(list-ref s 1)
+                (list-ref s 2)
+                (list-ref s 3)))
 
       (define (try-forwarding k nameserver)
 	(let loop ([nameserver nameserver][tried (list nameserver)])
-					; Normally the recusion is done for us, but it's technically optional
+          ; Normally the recusion is done for us, but it's technically optional
 	  (let-values ([(v ars auth?) (k nameserver)])
 	    (or v
 		(and (not auth?)
@@ -274,7 +275,7 @@
                (values (and (positive? (length (get-ptr-list-from-ans ans)))
                             (let ([s (rr-data (car (get-ptr-list-from-ans ans)))])
                               (let-values (((name null) (parse-name s reply)))
-                                name)))
+                                (bytes->string/latin-1 name))))
                        ars auth?)))
            nameserver)
           (error 'dns-get-name "bad ip address"))))
@@ -337,19 +338,26 @@
       [(windows)
        (let ([nslookup (find-executable-path "nslookup.exe" #f)])
          (and nslookup
-              (let-values ([(p pout pin perr)
-                            (subprocess
-                             #f (open-input-file "NUL") (current-error-port)
-                             nslookup)])
-                (let loop ([dns #f])
-                  (let ([line (read-line pout 'any)])
+              (let-values ([(pin pout pid perr proc)
+                            (apply
+                             values
+                             (process/ports
+                              #f (open-input-file "NUL") (current-error-port)
+                              nslookup))])
+                (let loop ([name #f][ip #f][try-ip? #f])
+                  (let ([line (read-line pin 'any)])
                     (cond [(eof-object? line)
-                           (subprocess-wait p)
-                           dns]
-                          [(and (not dns)
+                           (close-input-port pin)
+                           (proc 'wait)
+                           (or ip name)]
+                          [(and (not name)
                                 (regexp-match #rx"^Default Server: +(.*)$"
                                               line))
-                           => (lambda (m) (loop (cadr m)))]
-                          [else (loop dns)]))))))]
+                           => (lambda (m) (loop (cadr m) #f #t))]
+                          [(and try-ip?
+                                (regexp-match #rx"^Address: +(.*)$"
+                                              line))
+                           => (lambda (m) (loop name (cadr m) #f))]
+                          [else (loop name ip #f)]))))))]
       [else #f])))))
 

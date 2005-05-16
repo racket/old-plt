@@ -96,6 +96,8 @@ MA 02111-1307, USA. */
    If any of these macros are left undefined for a particular CPU,
    C macros are used.  */
 
+#ifndef MZ_GMP_NO_ASM
+
 /* The CPUs come in alphabetical order below.
 
    Please add support for more CPUs here, or improve the current support
@@ -1109,7 +1111,6 @@ extern USItype __MPN(udiv_qrnnd) _PROTO ((USItype *, USItype, USItype, USItype))
 
 #endif /* __GNUC__ */
 
-
 #if !defined (umul_ppmm) && defined (__umulsidi3)
 #define umul_ppmm(ph, pl, m0, m1) \
   {									\
@@ -1154,6 +1155,8 @@ extern mp_limb_t mpn_udiv_qrnnd _PROTO ((mp_limb_t *,
     (r) = __udiv_qrnnd__r;                                                    \
   } while (0)
 #endif
+
+#endif /* !MZ_GMP_NO_ASM */
 
 
 /* If this machine has no inline assembler, use C macros.  */

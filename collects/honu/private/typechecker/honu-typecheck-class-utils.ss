@@ -103,8 +103,12 @@
                                env arg-names arg-types)])
             (check-arg-types tenv arg-types) ;; will raise exception if one fails
             (let-values (((e1 t1) ((honu-typecheck-exp tenv new-env cenv) body (if (honu-top-type? type) #f type))))
-              (copy-struct honu-method defn
-                (honu-method-body e1))))
+              (if (<:_P tenv t1 type)
+                  (copy-struct honu-method defn
+                               (honu-method-body e1)))
+              (raise-read-error-with-stx
+               "Body of method's type does not match declared return type"
+               (honu-ast-src-stx body))))
           (raise-read-error-with-stx
            "Return type of method does not exist in program."
            (honu-ast-src-stx type)))))

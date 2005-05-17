@@ -122,7 +122,7 @@
   (define (check-init-slots tenv names types)
     (cond
       [(null? types) #t]
-      [(not (honu-iface-type-in-tenv? tenv (car types)))
+      [(not (honu-type-in-tenv? tenv (car types)))
        (raise-read-error-with-stx
         (format "Type for init slot ~a does not exist in program."
                 (printable-key (car names)))

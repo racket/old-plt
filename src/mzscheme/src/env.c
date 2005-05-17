@@ -1058,7 +1058,7 @@ static void init_compile_data(Scheme_Comp_Env *env)
 }
 
 Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
-					      Scheme_Comp_Env *base)
+					      Scheme_Comp_Env *base, Scheme_Object *certs)
 {
   Scheme_Comp_Env *frame;
   int count;
@@ -1076,6 +1076,7 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
     frame->values = vals;
   }
 
+  frame->certs = certs;
   frame->num_bindings = num_bindings;
   frame->flags = flags | (base->flags & SCHEME_NO_RENAME);
   frame->next = base;
@@ -1208,7 +1209,7 @@ void scheme_set_local_syntax(int pos,
 }
 
 Scheme_Comp_Env *
-scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flags)
+scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flags, Scheme_Object *certs)
 {
   Scheme_Comp_Env *frame;
   int len, i, count;
@@ -1216,7 +1217,7 @@ scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flag
   len = scheme_stx_list_length(vals);
   count = len;
 
-  frame = scheme_new_compilation_frame(count, flags, env);
+  frame = scheme_new_compilation_frame(count, flags, env, certs);
 
   for (i = 0; i < len ; i++) {
     if (SCHEME_STX_SYMBOLP(vals))
@@ -1237,7 +1238,7 @@ scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flag
 Scheme_Comp_Env *scheme_no_defines(Scheme_Comp_Env *env)
 {
   if (scheme_is_toplevel(env))
-    return scheme_new_compilation_frame(0, 0, env);
+    return scheme_new_compilation_frame(0, 0, env, NULL);
   else
     return env;
 }
@@ -1245,7 +1246,7 @@ Scheme_Comp_Env *scheme_no_defines(Scheme_Comp_Env *env)
 Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env)
 {
   if (env->flags & SCHEME_NO_RENAME) {
-    env = scheme_new_compilation_frame(0, 0, env);
+    env = scheme_new_compilation_frame(0, 0, env, NULL);
     env->flags -= SCHEME_NO_RENAME;
   }
 
@@ -1272,7 +1273,7 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
   if (scheme_is_toplevel(env))
     return env;
   else
-    return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env);
+    return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env, NULL);
 }
 
 static Scheme_Object *make_toplevel(mzshort depth, int position, int resolved)
@@ -2061,6 +2062,15 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 		  || ((frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
 		      && scheme_stx_bound_eq(find_id, frame->values[i], phase)))) {
 	    /* Found a lambda- or let-bound variable: */
+	    /* First, check certs (don't bind with fewer certs): */
+	    if (!(frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)) {
+	      if (scheme_stx_has_more_certs(find_id, certs, frame->values[i], frame->certs)) {
+		scheme_wrong_syntax(scheme_compile_stx_string, NULL, find_id,
+				    "reference is more certified than binding");
+		return NULL;
+	      }
+	    }
+	    /* Looks ok; return a lexical reference */
 	    if (flags & SCHEME_DONT_MARK_USE)
 	      return scheme_make_local(scheme_local_type, 0);
 	    else
@@ -2081,6 +2091,14 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 	}
       
 	if (issame) {
+	  if (!(frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)) {
+	    if (scheme_stx_has_more_certs(find_id, certs, COMPILE_DATA(frame)->const_names[i], frame->certs)) {
+	      scheme_wrong_syntax(scheme_compile_stx_string, NULL, find_id,
+				  "reference is more certified than binding");
+	      return NULL;
+	    }
+	  }
+
 	  val = COMPILE_DATA(frame)->const_vals[i];
 	
 	  if (!val) {

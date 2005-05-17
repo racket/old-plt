@@ -878,6 +878,7 @@ mark_comp_env {
   gcMARK(e->base.prefix);
   gcMARK(e->base.next);
   gcMARK(e->base.values);
+  gcMARK(e->base.certs);
   gcMARK(e->base.renames);
   gcMARK(e->base.uid);
   gcMARK(e->base.uids);

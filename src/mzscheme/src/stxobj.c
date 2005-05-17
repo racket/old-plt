@@ -80,6 +80,8 @@ static Scheme_Hash_Table *empty_hash_table;
 
 static Scheme_Object *last_phase_shift;
 
+static Scheme_Hash_Table *id_marks_ht, *than_id_marks_ht;
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -451,6 +453,9 @@ void scheme_init_stx(Scheme_Env *env)
 
   REGISTER_SO(empty_hash_table);
   empty_hash_table = scheme_make_hash_table(SCHEME_hash_ptr);
+
+  REGISTER_SO(id_marks_ht);
+  REGISTER_SO(than_id_marks_ht);
 }
 
 /*========================================================================*/
@@ -2275,6 +2280,115 @@ int scheme_stx_parallel_is_used(Scheme_Object *sym, Scheme_Object *stx)
 }
 
 
+static void hash_marks(Scheme_Hash_Table *ht, Scheme_Object *wraps)
+{
+  WRAP_POS awl;
+  Scheme_Object *acur_mark;
+
+  WRAP_POS_INIT(awl, wraps);
+
+  while (1) {
+    /* Skip over renames and cancelled marks: */
+    acur_mark = NULL;
+    while (1) {
+      if (WRAP_POS_END_P(awl))
+	break;
+      if (SCHEME_NUMBERP(WRAP_POS_FIRST(awl))) {
+	if (acur_mark) {
+	  if (SAME_OBJ(acur_mark, WRAP_POS_FIRST(awl))) {
+	    acur_mark = NULL;
+	    WRAP_POS_INC(awl);
+	  } else
+	    break;
+	} else {
+	  acur_mark = WRAP_POS_FIRST(awl);
+	  WRAP_POS_INC(awl);
+	}
+      } else {
+	WRAP_POS_INC(awl);
+      }
+    }
+
+    if (acur_mark)
+      scheme_hash_set(ht, acur_mark, scheme_true);
+
+    if (WRAP_POS_END_P(awl))
+      return;
+  }
+}
+
+int scheme_stx_has_more_certs(Scheme_Object *id, Scheme_Object *id_certs,
+			      Scheme_Object *than_id, Scheme_Object *than_id_certs)
+  /* There's a good chance that certs is an extension of than_certs. */
+{
+  int i, j;
+  Scheme_Cert *certs, *t_certs;
+  Scheme_Hash_Table *ht, *t_ht = NULL;
+
+  if ((!id_certs || SAME_OBJ(id_certs, than_id_certs))
+      && !((Scheme_Stx *)id)->certs)
+    return 0;
+
+  if (id_marks_ht) {
+    ht = id_marks_ht;
+    id_marks_ht = NULL;
+  } else
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+  hash_marks(ht, ((Scheme_Stx *)id)->wraps);
+
+  for (i = 0; i < 2; i++) {
+    if (i)
+      certs = ((Scheme_Stx *)id)->certs;
+    else
+      certs = (Scheme_Cert *)id_certs;
+    while (certs && !SAME_OBJ(certs, (Scheme_Cert *)than_id_certs)) {
+      if (scheme_hash_get(ht, certs->mark)) {
+	/* Found a relevant certificate in id */
+	if (!t_ht) {
+	  if (than_id_marks_ht) {
+	    t_ht = than_id_marks_ht;
+	    than_id_marks_ht = NULL;
+	  } else
+	    t_ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	  hash_marks(t_ht, ((Scheme_Stx *)than_id)->wraps);
+	}
+	if (scheme_hash_get(t_ht, certs->mark)) {
+	  /* than_id has the same mark */
+	  for (j = 0; j < 2; j++) {
+	    if (j)
+	      t_certs = ((Scheme_Stx *)than_id)->certs;
+	    else
+	      t_certs = (Scheme_Cert *)than_id_certs;
+	    while (t_certs) {
+	      if (SAME_OBJ(t_certs->mark, certs->mark))
+		break;
+	      t_certs = t_certs->next;
+	    }
+	    if (t_certs)
+	      break;
+	  }
+	  if (j == 2) {
+	    scheme_reset_hash_table(ht, NULL);
+	    id_marks_ht = ht;
+	    scheme_reset_hash_table(t_ht, NULL);
+	    than_id_marks_ht = t_ht;
+	    return 1;
+	  }
+	}
+      }
+      certs = certs->next;
+    }
+  }
+
+  scheme_reset_hash_table(ht, NULL);
+  id_marks_ht = ht;
+  if (t_ht) {
+    scheme_reset_hash_table(t_ht, NULL);
+    than_id_marks_ht = t_ht;
+  }
+
+  return 0;
+}
 
 /*========================================================================*/
 /*                           stx and lists                                */

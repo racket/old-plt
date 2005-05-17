@@ -787,7 +787,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   forms = SCHEME_STX_CDR(code);
   forms = SCHEME_STX_CDR(forms);
 
-  frame = scheme_new_compilation_frame(data->num_params, SCHEME_LAMBDA_FRAME, env);
+  frame = scheme_new_compilation_frame(data->num_params, SCHEME_LAMBDA_FRAME, env, rec[drec].certs);
   params = allparams;
   for (i = 0; i < data->num_params; i++) {
     if (!SCHEME_STX_PAIRP(params))

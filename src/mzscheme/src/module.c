@@ -3506,7 +3506,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   xenv = scheme_new_compilation_frame(0, (SCHEME_CAPTURE_WITHOUT_RENAME 
 					  | SCHEME_MODULE_BEGIN_FRAME
 					  | SCHEME_FOR_STOPS), 
-				      env);
+				      env, NULL);
   {
     Scheme_Object *stop;
     stop = scheme_get_stop_expander();

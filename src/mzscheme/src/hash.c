@@ -322,6 +322,29 @@ Scheme_Hash_Table *scheme_clone_hash_table(Scheme_Hash_Table *ht)
   return table;
 }
 
+void scheme_reset_hash_table(Scheme_Hash_Table *table, int *history)
+{
+  if (!table->step
+      || ((table->count * FILL_FACTOR > (scheme_hash_primes[table->step - 1])))) {
+    /* Keep same size */
+    memset(table->vals, NULL, sizeof(Scheme_Object *) * table->size);
+    memset(table->keys, NULL, sizeof(Scheme_Object *) * table->size);
+  } else {
+    /* Shrink by one step */
+    Scheme_Object **ba;
+    --table->step;
+    table->size = scheme_hash_primes[table->step];
+    ba = MALLOC_N(Scheme_Object *, table->size);
+    memcpy(ba, table->vals, sizeof(Scheme_Object *) * table->size);
+    table->vals = ba;
+    ba = MALLOC_N(Scheme_Object *, table->size);
+    memcpy(ba, table->keys, sizeof(Scheme_Object *) * table->size);
+    table->keys = ba;
+  }
+  table->count = 0;
+  table->mcount = 0;
+}
+
 /*========================================================================*/
 /*                  old-style hash table, with buckets                    */
 /*========================================================================*/

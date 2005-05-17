@@ -1886,7 +1886,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 	   an internal-define position, if necessary. */
 	if (!xenv) {
 	  if (internel_def_pos) {
-	    xenv = scheme_new_compilation_frame(0, SCHEME_INTDEF_FRAME, env);
+	    xenv = scheme_new_compilation_frame(0, SCHEME_INTDEF_FRAME, env, NULL);
 	    if (_xenv)
 	      *_xenv = xenv;
 	  } else
@@ -2569,7 +2569,7 @@ static Scheme_Object *pair_lifted(Scheme_Object *_ip, Scheme_Object *id, Scheme_
 {
   Scheme_Comp_Env **ip = (Scheme_Comp_Env **)_ip, *naya;
 
-  naya = scheme_new_compilation_frame(1, SCHEME_CAPTURE_WITHOUT_RENAME, (*ip)->next);
+  naya = scheme_new_compilation_frame(1, SCHEME_CAPTURE_WITHOUT_RENAME, (*ip)->next, NULL);
   (*ip)->next = naya;
   *ip = naya;
 
@@ -2634,7 +2634,7 @@ compile_expand_expr_lift_to_let(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 #endif
 
-  inserted = scheme_new_compilation_frame(0, 0, env);
+  inserted = scheme_new_compilation_frame(0, 0, env, NULL);
 
   ip = MALLOC_N(Scheme_Comp_Env *, 1);
   *ip = inserted;
@@ -4815,7 +4815,7 @@ do_local_expand(const char *name, int for_stx, int catch_lifts, int argc, Scheme
   env = scheme_new_compilation_frame(0, (SCHEME_CAPTURE_WITHOUT_RENAME 
 					 | SCHEME_FOR_STOPS
 					 | kind), 
-				     env);
+				     env, NULL);
   if (kind == SCHEME_INTDEF_FRAME)
     env->intdef_name = argv[1];
   env->in_modidx = scheme_current_thread->current_local_modidx;

@@ -2242,6 +2242,7 @@ int mark_comp_env_MARK(void *p) {
   gcMARK(e->base.prefix);
   gcMARK(e->base.next);
   gcMARK(e->base.values);
+  gcMARK(e->base.certs);
   gcMARK(e->base.renames);
   gcMARK(e->base.uid);
   gcMARK(e->base.uids);
@@ -2269,6 +2270,7 @@ int mark_comp_env_FIXUP(void *p) {
   gcFIXUP(e->base.prefix);
   gcFIXUP(e->base.next);
   gcFIXUP(e->base.values);
+  gcFIXUP(e->base.certs);
   gcFIXUP(e->base.renames);
   gcFIXUP(e->base.uid);
   gcFIXUP(e->base.uids);

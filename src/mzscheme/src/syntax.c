@@ -492,7 +492,7 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *ere
 
   lambda_check_args(args, form, env);
 
-  newenv = scheme_add_compilation_frame(args, env, 0);
+  newenv = scheme_add_compilation_frame(args, env, 0, erec[drec].certs);
 
   body = SCHEME_STX_CDR(form);
   body = SCHEME_STX_CDR(body);
@@ -1597,7 +1597,7 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info
 
     body = scheme_datum_to_syntax(body, line_form, line_form, 0, 0);
     
-    newenv = scheme_add_compilation_frame(args, env, 0);
+    newenv = scheme_add_compilation_frame(args, env, 0, erec[drec].certs);
     
     body = scheme_add_env_renames(body, newenv, env);
     args = scheme_add_env_renames(args, newenv, env);
@@ -2097,7 +2097,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
   if (frame_already)
     frame= frame_already;
   else
-    frame = scheme_new_compilation_frame(num_bindings, 0, origenv);
+    frame = scheme_new_compilation_frame(num_bindings, 0, origenv, rec[drec].certs);
   env = frame;
 
   recs = MALLOC_N_RT(Scheme_Compile_Info, (num_clauses + 1));
@@ -2403,7 +2403,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
   else if (partial)
     env = origenv;
   else
-    env = scheme_add_compilation_frame(vlist, origenv, 0);
+    env = scheme_add_compilation_frame(vlist, origenv, 0, erec[drec].certs);
 
   if (letrec)
     use_env = env;
@@ -3436,7 +3436,7 @@ do_letrec_syntaxes(const char *where, int normal,
 
   scheme_rec_add_certs(rec, drec, forms);
 
-  stx_env = scheme_new_compilation_frame(0, (normal ? 0 : SCHEME_CAPTURE_WITHOUT_RENAME), origenv);
+  stx_env = scheme_new_compilation_frame(0, (normal ? 0 : SCHEME_CAPTURE_WITHOUT_RENAME), origenv, rec[drec].certs);
 
   if (normal)
     rhs_env = stx_env;
@@ -3528,7 +3528,7 @@ do_letrec_syntaxes(const char *where, int normal,
 
   scheme_add_local_syntax(stx_cnt, stx_env);
   if (saw_var)
-    var_env = scheme_new_compilation_frame(var_cnt, 0, stx_env);
+    var_env = scheme_new_compilation_frame(var_cnt, 0, stx_env, rec[drec].certs);
   else
     var_env = NULL;
 

@@ -632,6 +632,9 @@ int scheme_module_protected_wrt(Scheme_Object *home_insp, Scheme_Object *insp);
 Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_certs);
 Scheme_Object *scheme_stx_add_certs(Scheme_Object *o, Scheme_Object *certs);
 
+int scheme_stx_has_more_certs(Scheme_Object *id, Scheme_Object *certs,
+			      Scheme_Object *than_id, Scheme_Object *than_certs);
+
 /*========================================================================*/
 /*                   syntax run-time structures                           */
 /*========================================================================*/
@@ -1386,6 +1389,7 @@ typedef struct Scheme_Comp_Env
   Comp_Prefix *prefix;  /* stack base info: globals and stxes */
 
   struct Scheme_Object **values; /* names bound in this frame */
+  Scheme_Object *certs; /* extra certs from binding context */
 
   Scheme_Object *uid;            /* renaming symbol for syntax, if all the same */
   struct Scheme_Object **uids;   /* renaming symbol for syntax when multiple are needed */
@@ -1524,11 +1528,13 @@ Scheme_Object *scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
 				  Scheme_Comp_Env *env, Scheme_Object *boundname,
 				  Scheme_Object *certs, int for_set);
 
-Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags, Scheme_Comp_Env *env);
+Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags, 
+					      Scheme_Comp_Env *env, Scheme_Object *certs);
 void scheme_add_compilation_binding(int index, Scheme_Object *val,
 				    Scheme_Comp_Env *frame);
 Scheme_Comp_Env *scheme_add_compilation_frame(Scheme_Object *vals,
-					 Scheme_Comp_Env *env, int flags);
+					      Scheme_Comp_Env *env, int flags,
+					      Scheme_Object *certs);
 Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags, 
@@ -2229,6 +2235,8 @@ void scheme_set_root_param(int p, Scheme_Object *v);
 Scheme_Object *scheme_intern_exact_parallel_symbol(const char *name, unsigned int len);
 Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2);
 Scheme_Object *scheme_copy_list(Scheme_Object *l);
+
+void scheme_reset_hash_table(Scheme_Hash_Table *ht, int *history);
 
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
 int scheme_regexp_is_byte(Scheme_Object *re);

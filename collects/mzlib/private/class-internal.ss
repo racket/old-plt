@@ -215,7 +215,7 @@
 			      (lambda (the-obj . vars) 
 				(let-syntax ([the-finder (quote-syntax the-obj)])
 				  body1 body ...)))])
-		     (with-syntax ([l (add-method-property l)])
+		     (with-syntax ([l (recertify (add-method-property l) stx)])
 		       (syntax/loc stx 
 			 (let ([name l]) name)))))
 		 stx)]
@@ -231,7 +231,7 @@
 			       (case-lambda [(the-obj . vars) 
 					     (let-syntax ([the-finder (quote-syntax the-obj)])
 					       body1 body ...)] ...))])
-		     (with-syntax ([cl (add-method-property cl)])
+		     (with-syntax ([cl (recertify (add-method-property cl) stx)])
 		       (syntax/loc stx
 			 (let ([name cl]) name)))))
 		 stx)]
@@ -288,16 +288,18 @@
 				   ids new-ids)
 				  null)]
 			     [body body])
-		 (if xform?
-		     (if letrec?
-			 (syntax/loc stx (letrec-syntax mappings
-					   (let- ([(new-id) proc] ...) 
-						 body)))
-			 (syntax/loc stx (let- ([(new-id) proc] ...) 
-					       (letrec-syntax mappings
-						 body))))
-		     (syntax/loc stx (let- ([(new-id) proc] ...) 
-					   body)))))]
+		 (recertify
+		  (if xform?
+		      (if letrec?
+			  (syntax/loc stx (letrec-syntax mappings
+					    (let- ([(new-id) proc] ...) 
+						  body)))
+			  (syntax/loc stx (let- ([(new-id) proc] ...) 
+						(letrec-syntax mappings
+						  body))))
+		      (syntax/loc stx (let- ([(new-id) proc] ...) 
+					    body)))
+		  stx)))]
 	    [_else 
 	     (if can-expand?
 		 (loop (expand stx locals) #f name locals)
@@ -305,6 +307,11 @@
 
       (define (add-method-property l)
 	(syntax-property l 'method-arity-error #t))
+
+      (define method-insp (current-code-inspector))
+
+      (define (recertify new old)
+	(syntax-recertify new old method-insp #f))
 
       ;; --------------------------------------------------------------------------------
       ;; Start here:

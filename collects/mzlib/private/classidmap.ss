@@ -286,12 +286,12 @@
     (and (pair? ctx)
 	 (class-context? (car ctx))))
 
-  (provide make-this-map make-field-map make-method-map 
-	   make-direct-method-map 
-	   make-rename-super-map make-rename-inner-map
-	   init-error-map super-error-map 
-	   make-with-method-map
-	   flatten-args
-	   make-private-name localize
-	   generate-super-call generate-inner-call
-	   generate-class-expand-context class-top-level-context?))
+  (provide (protect make-this-map make-field-map make-method-map 
+		    make-direct-method-map 
+		    make-rename-super-map make-rename-inner-map
+		    init-error-map super-error-map 
+		    make-with-method-map
+		    flatten-args
+		    make-private-name localize
+		    generate-super-call generate-inner-call
+		    generate-class-expand-context class-top-level-context?)))

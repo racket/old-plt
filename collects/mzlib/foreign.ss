@@ -360,7 +360,8 @@
       (syntax-case* x (=>) id=?
         [(id => body) (identifier? #'id)
          ;; Extract #'body from its context, use a key it needs certification:
-         (list #'id (syntax-recertify #'body orig #f fun-cert-key))]
+         (list (syntax-recertify #'id orig #f fun-cert-key)
+	       (syntax-recertify #'body orig #f fun-cert-key))]
         [_else x]))
    (let ([keys '()])
      (define (setkey! key val . id?)

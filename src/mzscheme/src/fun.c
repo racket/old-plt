@@ -78,7 +78,7 @@ Scheme_Object *scheme_inferred_name_symbol;
 
 int scheme_cont_capture_count;
 
-static Scheme_Object *certify_mode_symbol, *transparent_symbol, *opaque_symbol;
+static Scheme_Object *certify_mode_symbol, *transparent_symbol, *transparent_binding_symbol, *opaque_symbol;
 
 /* locals */
 static Scheme_Object *procedure_p (int argc, Scheme_Object *argv[]);
@@ -1344,16 +1344,19 @@ _scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 
 static Scheme_Object *
 cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv, 
-		   Scheme_Object *orig_code, int phase, int deflt)
+		   Scheme_Object *orig_code, int phase, int deflt, int cadr_deflt)
 {
   Scheme_Object *prop;
+  int next_cadr_deflt = 0;
 
   if (!certify_mode_symbol) {
     REGISTER_SO(certify_mode_symbol);
     REGISTER_SO(transparent_symbol);
+    REGISTER_SO(transparent_binding_symbol);
     REGISTER_SO(opaque_symbol);
     certify_mode_symbol = scheme_intern_symbol("certify-mode");
     transparent_symbol = scheme_intern_symbol("transparent");
+    transparent_binding_symbol = scheme_intern_symbol("transparent-binding");
     opaque_symbol = scheme_intern_symbol("opaque");
   }
 
@@ -1362,6 +1365,11 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
     if (SAME_OBJ(prop, opaque_symbol)) {
       return scheme_stx_cert(code, mark, menv, orig_code, NULL);
     } else if (SAME_OBJ(prop, transparent_symbol)) {
+      cadr_deflt = 0;
+      /* fall through */
+    } else if (SAME_OBJ(prop, transparent_binding_symbol)) {
+      cadr_deflt = 0;
+      next_cadr_deflt = 1;
       /* fall through */
     } else {
       /* Default transparency depends on module-identifier=? comparison
@@ -1371,10 +1379,14 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
 	Scheme_Object *name;
 	name = SCHEME_STX_CAR(code);
 	if (SCHEME_STX_SYMBOLP(name)) {
-	  if (scheme_stx_module_eq(scheme_begin_stx, name, phase)
-	      || scheme_stx_module_eq(scheme_define_values_stx, name, phase)
-	      || scheme_stx_module_eq(scheme_define_syntaxes_stx, name, phase))
+	  if (scheme_stx_module_eq(scheme_begin_stx, name, phase)) {
 	    trans = 1;
+	    next_cadr_deflt = 0;
+	  } else if (scheme_stx_module_eq(scheme_define_values_stx, name, phase)
+		     || scheme_stx_module_eq(scheme_define_syntaxes_stx, name, phase)) {
+	    trans = 1;
+	    next_cadr_deflt = 1;
+	  }
 	}
       }
       
@@ -1387,9 +1399,9 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
     Scheme_Object *a, *d, *v;
     
     a = SCHEME_STX_CAR(code);
-    a = cert_with_specials(a, mark, menv, orig_code, phase, 0);
+    a = cert_with_specials(a, mark, menv, orig_code, phase, cadr_deflt, 0);
     d = SCHEME_STX_CDR(code);
-    d = cert_with_specials(d, mark, menv, orig_code, phase, 1);
+    d = cert_with_specials(d, mark, menv, orig_code, phase, 1, next_cadr_deflt);
 
     v = scheme_make_pair(a, d);
 
@@ -1437,7 +1449,7 @@ scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
      code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
    }
 
-   code = cert_with_specials(code, mark, menv, orig_code, env->genv->phase, 0);
+   code = cert_with_specials(code, mark, menv, orig_code, env->genv->phase, 0, 0);
 
    code = scheme_stx_track(code, orig_code, name);
 
@@ -1468,7 +1480,7 @@ scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
 
    code = scheme_add_remove_mark(code, mark);
 
-   code = cert_with_specials(code, mark, menv, orig_code, env->genv->phase, 0);
+   code = cert_with_specials(code, mark, menv, orig_code, env->genv->phase, 0, 0);
 
    code = scheme_stx_track(code, orig_code, name);
 

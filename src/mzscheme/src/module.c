@@ -101,6 +101,7 @@ static Scheme_Object *module_symbol;
 static Scheme_Object *module_begin_symbol;
 
 static Scheme_Object *prefix_symbol;
+static Scheme_Object *only_symbol;
 static Scheme_Object *rename_symbol;
 static Scheme_Object *all_except_symbol;
 static Scheme_Object *prefix_all_except_symbol;
@@ -482,6 +483,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   fluid_let_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("fluid-let-syntax"), scheme_false, w, 0, 0);
 
   REGISTER_SO(prefix_symbol);
+  REGISTER_SO(only_symbol);
   REGISTER_SO(rename_symbol);
   REGISTER_SO(all_except_symbol);
   REGISTER_SO(prefix_all_except_symbol);
@@ -492,6 +494,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(struct_symbol);
   REGISTER_SO(protect_symbol);
   prefix_symbol = scheme_intern_symbol("prefix");
+  only_symbol = scheme_intern_symbol("only");
   rename_symbol = scheme_intern_symbol("rename");
   all_except_symbol = scheme_intern_symbol("all-except");
   prefix_all_except_symbol = scheme_intern_symbol("prefix-all-except");
@@ -4862,6 +4865,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
   Scheme_Object **exs, **exsns, **exss;
   Scheme_Object *idxstx, *idx, *name, *i, *exns, *one_exn, *prefix, *iname, *ename, *aa;
   Scheme_Object *imods, *nominal_modidx, *mark_src, *prnt_iname;
+  Scheme_Hash_Table *onlys;
 
   imods = scheme_null;
 
@@ -4872,6 +4876,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
   for (ll = SCHEME_STX_CDR(ll); !SCHEME_STX_NULLP(ll); ll = SCHEME_STX_CDR(ll)) {
     i = SCHEME_STX_CAR(ll);
     iname = ename = NULL;
+    onlys = NULL;
     if (SCHEME_STX_PAIRP(i))
       aa = SCHEME_STX_CAR(i);
     else
@@ -4957,6 +4962,43 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 			      "bad syntax (excluded name is not an identifier)");
 	}
       }
+    } else if (aa && SAME_OBJ(only_symbol, SCHEME_STX_VAL(aa))) {
+      /* only */
+      int len;
+      Scheme_Object *rest, *nm;
+
+      if (all_simple)
+	*all_simple = 0;
+
+      len = scheme_stx_proper_list_length(i);
+      if (len < 2) {
+	GC_CAN_IGNORE const char *reason;
+	
+	if (len < 0)
+	  reason = "bad syntax (" IMPROPER_LIST_FORM ")";
+	else
+	  reason = "bad syntax (module name missing)";
+	scheme_wrong_syntax(NULL, i, form, reason);
+	return NULL;
+      }
+
+      onlys = scheme_make_hash_table(SCHEME_hash_ptr);
+
+      rest = SCHEME_STX_CDR(i);
+      idxstx = SCHEME_STX_CAR(rest);
+      rest = SCHEME_STX_CDR(rest);
+      while (SCHEME_STX_PAIRP(rest)) {
+	nm = SCHEME_STX_CAR(rest);
+	if (!SCHEME_STX_SYMBOLP(nm)) {
+	  scheme_wrong_syntax(NULL, nm, form, "bad syntax (name for `only' is not an identifier)");
+	}
+	scheme_hash_set(onlys, SCHEME_STX_VAL(nm), nm);
+	rest = SCHEME_STX_CDR(rest);
+      }
+
+      mark_src = NULL;
+      exns = NULL;
+      prefix = NULL;
     } else if (aa && SAME_OBJ(rename_symbol, SCHEME_STX_VAL(aa))) {
       /* rename */
       int len;
@@ -5021,18 +5063,20 @@ Scheme_Object *parse_requires(Scheme_Object *form,
     else if (expstart)
       expstart_module(m, env, 0, idx, 0, 0, scheme_null);
 
-    {
+    if (mark_src) {
       /* Check whether there's context for this import (which
 	 leads to generated local names). */
       Scheme_Object *l;
       l = scheme_stx_extract_marks(mark_src);
       has_context = !SCHEME_NULLP(l);
-      if (has_context &&all_simple)
+      if (has_context && all_simple)
 	*all_simple = 0;
-    }
+    } else
+      has_context = 0; /* computed later */
 
     is_kern = (SAME_OBJ(idx, kernel_symbol)
 	       && !exns
+	       && !onlys
 	       && !prefix
 	       && !iname
 	       && !unpack_kern
@@ -5073,6 +5117,18 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	if (ename) {
 	  if (!SAME_OBJ(ename, exs[j]))
 	    continue;  /* we don't want this one. */
+	} else if (onlys) {
+	  name = scheme_hash_get(onlys, exs[j]);
+	  if (!name)
+	    continue;  /* we don't want this one. */
+	  mark_src = name;
+	  {
+	    Scheme_Object *l;
+	    l = scheme_stx_extract_marks(mark_src);
+	    has_context = !SCHEME_NULLP(l);
+	  }
+	  /* Remove to indicate that it's been imported: */
+	  scheme_hash_set(onlys, exs[j], NULL);
 	} else {
 	  if (exns) {
 	    Scheme_Object *l;
@@ -5160,6 +5216,15 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	is_kern = !prefix && !unpack_kern && !ename && !has_context;
       } else
 	break;
+    }
+
+    if (onlys && onlys->count) {
+      /* Something required in `only' wasn't provided by the module */
+      int k;
+      for (k = 0; k < onlys->size; k++) {
+	if (onlys->vals[k])
+	  scheme_wrong_syntax(NULL, onlys->vals[k], form, "no such provided variable");
+      }
     }
   }
 

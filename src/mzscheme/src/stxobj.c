@@ -2288,7 +2288,7 @@ static void hash_marks(Scheme_Hash_Table *ht, Scheme_Object *wraps)
   WRAP_POS_INIT(awl, wraps);
 
   while (1) {
-    /* Skip over renames and cancelled marks: */
+    /* Skip over renames, etc., but ignore mark barriers: */
     acur_mark = NULL;
     while (1) {
       if (WRAP_POS_END_P(awl))

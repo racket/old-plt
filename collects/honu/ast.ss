@@ -12,6 +12,7 @@
 
   (define-struct (honu-prim-type honu-type) (name))
   (define-struct (honu-func-type honu-type) (args return))
+  (define-struct (honu-dispatch-type honu-type) (dispatches args return))
   (define-struct (honu-iface-type honu-type) (name))
   (define-struct (honu-iface-bottom-type honu-type) ())
   (define-struct (honu-iface-top-type honu-type) ())

@@ -531,7 +531,7 @@
                   (let ((method-type (cenv (honu-mcall-method exp))))
                     (if method-type
                         (let loop ((n 0)
-                                   (dec-types (honu-func-type-args method-type))
+                                   (dec-types (honu-dispatch-type-args method-type))
                                    (calc-types new-types))
                           (cond
                             ((null? dec-types)
@@ -540,7 +540,7 @@
                                  ;; the new expression and the return type.
                                  (values (copy-struct honu-mcall exp
                                                       (honu-mcall-args new-args))
-                                         (honu-func-type-return method-type))
+                                         (honu-dispatch-type-return method-type))
                                  ;; calc-types isn't null, so too many arguments
                                  ;; were given in the mcall expression.
                                  (raise-read-error-with-stx
@@ -581,7 +581,7 @@
                                                     (honu-mcall-method exp))))
                   (if method-type
                       (let loop ((n 0)
-                                 (dec-types (honu-func-type-args method-type))
+                                 (dec-types (honu-dispatch-type-args method-type))
                                  (calc-types new-types))
                         (cond
                          ((null? dec-types)
@@ -592,7 +592,7 @@
                                         (honu-mcall-obj e0)
                                         (honu-mcall-elab t0)
                                         (honu-mcall-args new-args))
-                                      (honu-func-type-return method-type))
+                                      (honu-dispatch-type-return method-type))
                               ;; calc-types isn't null, so too many arguments
                               ;; were given in the mcall expression.
                               (raise-read-error-with-stx

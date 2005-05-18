@@ -23,6 +23,12 @@
         (make-honu-func-type (honu-ast-src-stx exp)
                              args return)))
   
+  (define (honu-dispatch-type-from-exp dispatches args return exp)
+    (if (syntax? exp)
+        (make-honu-dispatch-type exp dispatches args return)
+        (make-honu-dispatch-type (honu-ast-src-stx exp)
+                               dispatches args return)))
+  
   (define (honu-null-type exp)
     (if (syntax? exp)
         (make-honu-iface-bottom-type exp)
@@ -70,7 +76,18 @@
                                             (string-append s ", " (printable-type t)))
                                           (printable-type (car args))
                                           (cdr args)) 
-                          "]->" (printable-type ret)))]))
+                          "]->" (printable-type ret)))]
+      [(struct honu-dispatch-type         (stx dispatches args ret)) 
+       (string-append "[" (fold-right (lambda (t s)
+                                        (string-append s ", " (printable-type t)))
+                                      (string-append "("
+                                                     (fold-right (lambda (t s)
+                                                                   (string-append s ", " (printable-type t)))
+                                                                 (printable-type (car dispatches))
+                                                                 (cdr dispatches))
+                                                     ")")
+                                      args)
+                      "]->" (printable-type ret))]))
 
   (provide/contract [raise-type-error-with-stx (honu-type? honu-type? any/c . -> . any)])
   (define (raise-type-error-with-stx t1 t2 stx)
@@ -111,6 +128,20 @@
             (andmap honu-type-equal?
                     (honu-func-type-args t1)
                     (honu-func-type-args t2)))]
+      [(and (honu-dispatch-type? t1)
+            (honu-dispatch-type? t2))
+       (and (honu-type-equal? (honu-dispatch-type-return t1)
+                              (honu-dispatch-type-return t2))
+            (equal? (length (honu-dispatch-type-dispatches t1))
+                    (length (honu-dispatch-type-dispatches t2)))
+            (andmap honu-type-equal?
+                    (honu-dispatch-type-dispatches t1)
+                    (honu-dispatch-type-dispatches t2))
+            (equal? (length (honu-dispatch-type-args t1))
+                    (length (honu-dispatch-type-args t2)))
+            (andmap honu-type-equal?
+                    (honu-dispatch-type-args t1)
+                    (honu-dispatch-type-args t2)))]
       [else #f]))
 
   (define (honu-iface-type-in-tenv? tenv t)
@@ -122,17 +153,28 @@
     (member (honu-prim-type-name t) '(int bool str float char)))
   
   (define (honu-func-type-in-tenv? tenv t)
-    (and (andmap (lambda (t)
+    (and (or (honu-top-type? (honu-func-type-return t)) ;; take care of void here
+             (honu-type-in-tenv? tenv (honu-func-type-return t)))
+         (andmap (lambda (t)
                    (honu-type-in-tenv? tenv t))
-                 (honu-func-type-args t))
-         (or (honu-top-type? (honu-func-type-return t)) ;; take care of void here
-             (honu-type-in-tenv? tenv (honu-func-type-return t)))))
-  
+                 (honu-func-type-args t))))
+
+  (define (honu-dispatch-type-in-tenv? tenv t)
+    (and (or (honu-top-type? (honu-dispatch-type-return t)) ;; take care of void here
+             (honu-type-in-tenv? tenv (honu-dispatch-type-return t)))
+         (andmap (lambda (t)
+                   (honu-type-in-tenv? tenv t))
+                 (honu-dispatch-type-dispatches t))
+         (andmap (lambda (t)
+                   (honu-type-in-tenv? tenv t))
+                 (honu-dispatch-type-args t))))
+
   (define (honu-type-in-tenv? tenv t)
     (cond
-      [(honu-func-type? t) (honu-func-type-in-tenv? tenv t)]
-      [(honu-prim-type? t) (honu-prim-type-in-honu? t)]
-      [else                (honu-iface-type-in-tenv? tenv t)]))
+      [(honu-dispatch-type? t) (honu-dispatch-type-in-tenv? tenv t)]
+      [(honu-func-type? t)   (honu-func-type-in-tenv? tenv t)]
+      [(honu-prim-type? t)   (honu-prim-type-in-honu? t)]
+      [else                  (honu-iface-type-in-tenv? tenv t)]))
   
   (provide get-field-type get-method-type)
 
@@ -173,7 +215,8 @@
                                      (tenv-key=? (honu-method-decl-name d) md)))
                               (tenv-type-members type-def))])
       (if method-decl
-          (honu-func-type-from-exp 
+          (honu-dispatch-type-from-exp
+           (list typ)
            (honu-method-decl-arg-types method-decl)
            (honu-method-decl-type method-decl)
            method-decl)
@@ -223,6 +266,23 @@
                       (<:_P tenv bt at))
                     (honu-func-type-args t1)
                     (honu-func-type-args t2)))]
+      [(and (honu-dispatch-type? t1)
+            (honu-dispatch-type? t2))
+       (and (<:_P tenv ;; return covariant
+                  (honu-dispatch-type-return t1)
+                  (honu-dispatch-type-return t2))
+            (equal? (length (honu-dispatch-type-dispatches t1))
+                    (length (honu-dispatch-type-dispatches t2)))
+            (andmap (lambda (at bt) ;; dispatched args covariant
+                      (<:_P tenv at bt))
+                    (honu-dispatch-type-dispatches t1)
+                    (honu-dispatch-type-dispatches t2))
+            (equal? (length (honu-dispatch-type-args t1))
+                    (length (honu-dispatch-type-args t2)))
+            (andmap (lambda (at bt) ;; non-dispatched args contravariant
+                      (<:_P tenv bt at))
+                    (honu-dispatch-type-args t1)
+                    (honu-dispatch-type-args t2)))]
       [else #f]))
   
   (define (Implements_P tenv c t)
@@ -299,7 +359,8 @@
                                             (tenv-type-members type-defn)))
                                (map (lambda (d)
                                       (cons (honu-method-decl-name d)
-                                            (honu-func-type-from-exp
+                                            (honu-dispatch-type-from-exp
+                                             (list t)
                                              (honu-method-decl-arg-types d)
                                              (honu-method-decl-type d)
                                              d)))

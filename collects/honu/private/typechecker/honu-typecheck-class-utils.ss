@@ -79,15 +79,17 @@
   (define (honu-typecheck-methods tenv env cenv init-cenv mdefns)
     (let* ((new-cenv (fold (lambda (d i)
                              (extend-env i (honu-method-name d)
-                                         (make-honu-func-type (honu-ast-src-stx d)
-                                                              (honu-method-arg-types d)
-                                                              (honu-method-type d))))
+                                         (make-honu-dispatch-type (honu-ast-src-stx d)
+                                                                (list (env #'this))
+                                                                (honu-method-arg-types d)
+                                                                (honu-method-type d))))
                            cenv mdefns))
            (new-init-cenv (fold (lambda (d i)
                                   (extend-env i (honu-method-name d)
-                                              (make-honu-func-type (honu-ast-src-stx d)
-                                                                   (honu-method-arg-types d)
-                                                                   (honu-method-type d))))
+                                              (make-honu-dispatch-type (honu-ast-src-stx d)
+                                                                     (list (env #'this))
+                                                                     (honu-method-arg-types d)
+                                                                     (honu-method-type d))))
                                 init-cenv mdefns))
            (new-mdefns (map (lambda (d)
                               (honu-typecheck-method tenv env new-cenv d))
@@ -105,10 +107,10 @@
             (let-values (((e1 t1) ((honu-typecheck-exp tenv new-env cenv) body (if (honu-top-type? type) #f type))))
               (if (<:_P tenv t1 type)
                   (copy-struct honu-method defn
-                               (honu-method-body e1)))
-              (raise-read-error-with-stx
-               "Body of method's type does not match declared return type"
-               (honu-ast-src-stx body))))
+                               (honu-method-body e1))
+                  (raise-read-error-with-stx
+                   "Body of method's type does not match declared return type"
+                   (honu-ast-src-stx body)))))
           (raise-read-error-with-stx
            "Return type of method does not exist in program."
            (honu-ast-src-stx type)))))
@@ -155,6 +157,8 @@
                      [(honu-iface-type? old-type)
                       (get-field-type tenv (honu-export-type expdec) new)]
                      [(honu-func-type? old-type)
+                      (get-field-type tenv (honu-export-type expdec) new)]
+                     [(honu-dispatch-type? old-type)
                       (get-method-type tenv (honu-export-type expdec) new)]
                      [else (raise-read-error-with-stx
                             "Unexpected class of type in check-export-name."
@@ -164,12 +168,12 @@
                  (raise-read-error-with-stx
                   "Public name to be exported to not found in class/mixin type."
                   new)]
-                [(and (honu-func-type? old-type)
+                [(and (honu-dispatch-type? old-type)
                       (not (<:_P tenv old-type new-type)))
                  (raise-read-error-with-stx
                   "Method to be exported is not a subtype of the public type."
                   old)]
-                [(and (not (honu-func-type? old-type))
+                [(and (not (honu-dispatch-type? old-type))
                       (not (honu-type-equal? old-type new-type)))
                  (raise-read-error-with-stx
                   "Field to be exported is not an exact type match for the public type."

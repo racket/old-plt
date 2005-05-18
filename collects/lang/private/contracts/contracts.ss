@@ -27,7 +27,8 @@
                (with-syntax ([parsed-contract (translator (syntax cnt))])
 			    (syntax 
 			     (define-values (name-to-bind) 
-			       ((contract-enforcer parsed-contract) func-to-wrap)))))))))
+			       ((contract-enforcer parsed-contract) func-to-wrap)))))
+              [_ (raise-syntax-error 'contracts.ss "internal error.1")]))))
       
       
       (define beginner-contract/func (contract-template beginner-translate-contract))

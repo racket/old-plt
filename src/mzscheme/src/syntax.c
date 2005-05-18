@@ -420,64 +420,6 @@ Scheme_Object *scheme_check_name_property(Scheme_Object *code, Scheme_Object *cu
 /*                           lambda utils                             */
 /**********************************************************************/
 
-static Scheme_Object *copy_arg_certs(Scheme_Object *new_arg, Scheme_Object *arg)
-{
-  return new_arg;
-  // return scheme_stx_cert(new_arg, NULL, NULL, arg, NULL);
-}
-
-static Scheme_Object *copy_args_certs_k(void);
-
-static Scheme_Object *copy_args_certs(Scheme_Object *new_args, Scheme_Object *args)
-{
-#ifdef DO_STACK_CHECK
-  {
-# include "mzstkchk.h"
-    {
-      Scheme_Thread *p = scheme_current_thread;
-      p->ku.k.p1 = (void *)new_args;
-      p->ku.k.p2 = (void *)args;
-      return scheme_handle_stack_overflow(copy_args_certs_k);
-    }
-  }
-#endif
-  SCHEME_USE_FUEL(1);
-  
-  if (SCHEME_STX_PAIRP(new_args)) {
-    Scheme_Object *a, *d, *na, *nd;
-
-    a = SCHEME_STX_CAR(new_args);
-    d = SCHEME_STX_CDR(new_args);
-
-    na = copy_arg_certs(a, SCHEME_STX_CAR(args));
-    nd = copy_args_certs(d, SCHEME_STX_CDR(args));
-
-    if (SAME_OBJ(a, na) && SAME_OBJ(d, nd))
-      return new_args;
-
-    a = scheme_make_pair(na, nd);
-    if (SCHEME_STXP(args))
-      a = scheme_datum_to_syntax(a, args, args, 0, 2);
-    return a;
-  } else if (SCHEME_STX_NULLP(new_args)) {
-    return new_args;
-  } else {
-    return copy_arg_certs(new_args, args);
-  }
-}
-
-static Scheme_Object *copy_args_certs_k(void)
-{
-  Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *na = (Scheme_Object *)p->ku.k.p1;
-  Scheme_Object *a = (Scheme_Object *)p->ku.k.p2;
-    
-  p->ku.k.p1 = NULL;
-  p->ku.k.p2 = NULL;
-
-  return copy_args_certs(na, a);
-}
-
 static void lambda_check(Scheme_Object *form)
 {
   if (SCHEME_STX_PAIRP(form)
@@ -541,7 +483,7 @@ lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
 static Scheme_Object *
 lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec)
 {
-  Scheme_Object *args, *body, *fn, *new_args;
+  Scheme_Object *args, *body, *fn;
   Scheme_Comp_Env *newenv;
 
   lambda_check(form);
@@ -561,13 +503,12 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *ere
 
   body = scheme_add_env_renames(body, newenv, env);
 
-  new_args = scheme_add_env_renames(args, newenv, env); /* for re-expansion */
-  new_args = copy_args_certs(new_args, args);
+  args = scheme_add_env_renames(args, newenv, env); /* for re-expansion */
 
   fn = SCHEME_STX_CAR(form);
 
   return scheme_datum_to_syntax(icons(fn,
-				      icons(new_args,
+				      icons(args,
 					    scheme_expand_block(body,
 								newenv,
 								erec, 
@@ -1635,7 +1576,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 static Scheme_Object *
 case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec)
 {
-  Scheme_Object *first, *last, *args, *new_args, *body, *c, *new_line, *orig_form = form;
+  Scheme_Object *first, *last, *args, *body, *c, *new_line, *orig_form = form;
 
   first = SCHEME_STX_CAR(form);
   first = icons(first, scheme_null);
@@ -1660,14 +1601,13 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info
     newenv = scheme_add_compilation_frame(args, env, 0, erec[drec].certs);
     
     body = scheme_add_env_renames(body, newenv, env);
-    new_args = scheme_add_env_renames(args, newenv, env);
-    new_args = copy_args_certs(new_args, args);
+    args = scheme_add_env_renames(args, newenv, env);
 
     {
       Scheme_Expand_Info erec1;
       scheme_init_expand_recs(erec, drec, &erec1, 1);
       erec1.value_name = scheme_false;
-      new_line = icons(new_args, scheme_expand_block(body, newenv, &erec1, 0));
+      new_line = icons(args, scheme_expand_block(body, newenv, &erec1, 0));
     }
     new_line = scheme_datum_to_syntax(new_line, line_form, line_form, 0, 1);
 
@@ -2472,23 +2412,19 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
   first = last = NULL;
   vs = vars;
   while (SCHEME_STX_PAIRP(vars)) {
-    Scheme_Object *rhs, *rhs_name, *new_name;
+    Scheme_Object *rhs, *rhs_name;
 
     v = SCHEME_STX_CAR(vars);
 
     /* Make sure names gets their own renames: */
     name = SCHEME_STX_CAR(v);
     if (!multi) {
-      if (!partial) {
-	new_name = scheme_add_env_renames(name, env, origenv);	
-	name = copy_arg_certs(new_name, name);
-      }
+      if (!partial)
+	name = scheme_add_env_renames(name, env, origenv);	
       name = icons(name, scheme_null);
     } else {
-      if (!partial) {
-	new_name = scheme_add_env_renames(name, env, origenv);
-	name = copy_args_certs(new_name, name);
-      }
+      if (!partial)
+	name = scheme_add_env_renames(name, env, origenv);
     }
 
     rhs = SCHEME_STX_CDR(v);

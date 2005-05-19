@@ -363,6 +363,8 @@
          (list (syntax-recertify #'id orig #f fun-cert-key)
 	       (syntax-recertify #'body orig #f fun-cert-key))]
         [_else x]))
+    (define (cert-id id)
+      (syntax-recertify id orig #f fun-cert-key))
    (let ([keys '()])
      (define (setkey! key val . id?)
        (cond
@@ -377,9 +379,9 @@
        (syntax-case* t (type: expr: bind: 1st-arg: prev-arg: pre: post:) id=?
          [(type: t x ...)      (next #'(x ...) 'type #'t)]
          [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
-         [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
-         [(1st-arg:  id x ...) (next #'(x ...) '1st  #'id #t)]
-         [(prev-arg: id x ...) (next #'(x ...) 'prev #'id #t)]
+         [(bind:     id x ...) (next #'(x ...) 'bind (cert-id #'id) #t)]
+         [(1st-arg:  id x ...) (next #'(x ...) '1st  (cert-id #'id) #t)]
+         [(prev-arg: id x ...) (next #'(x ...) 'prev (cert-id #'id) #t)]
          ;; in the following two cases pass along orig for recertifying
          [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
          [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]

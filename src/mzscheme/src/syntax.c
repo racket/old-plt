@@ -87,6 +87,8 @@ static Scheme_Object *define_for_syntaxes_syntax(Scheme_Object *form, Scheme_Com
 static Scheme_Object *define_for_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
 static Scheme_Object *letrec_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *letrec_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
+static Scheme_Object *uncertified_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *uncertified_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
 #if 0
 static Scheme_Object *fluid_let_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *fluid_let_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
@@ -356,6 +358,10 @@ scheme_init_syntax (Scheme_Env *env)
   scheme_add_global_keyword("letrec-syntaxes+values", 
 			    scheme_make_compiled_syntax(letrec_syntaxes_syntax, 
 							letrec_syntaxes_expand), 
+			    env);
+  scheme_add_global_keyword("#%uncertified", 
+			    scheme_make_compiled_syntax(uncertified_syntax, 
+							uncertified_expand), 
 			    env);
 #if 0
   scheme_add_global_keyword("fluid-let-syntax", 
@@ -3052,6 +3058,54 @@ quote_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Inf
   return quote_syntax_syntax(form, env, erec, drec);
 }
 
+
+/**********************************************************************/
+/*                            uncertified                             */
+/**********************************************************************/
+
+static void
+check_uncertified_syntax(Scheme_Object *form)
+{
+  int len;
+  len = check_form(form, form);
+  if (len != 2)
+    bad_form(form, len);
+}
+
+static Scheme_Object *
+uncertified_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+{
+  Scheme_Object *e;
+
+  check_uncertified_syntax(form);
+
+  rec[drec].certs = NULL;
+
+  e = SCHEME_STX_CDR(form);
+  e = SCHEME_STX_CAR(e);
+
+  return scheme_compile_expr(e, env, rec, drec);
+}
+
+static Scheme_Object *
+uncertified_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec)
+{
+  Scheme_Object *e, *k;
+
+  check_uncertified_syntax(form);
+
+  erec[drec].certs = NULL;
+
+  e = SCHEME_STX_CDR(form);
+  e = SCHEME_STX_CAR(e);
+
+  e = scheme_expand_expr(e, env, erec, drec);
+  k = SCHEME_STX_CAR(form);
+  return scheme_datum_to_syntax(icons(k, icons(e, scheme_null)),
+				form,
+				form, 
+				0, 2);
+}
 
 /**********************************************************************/
 /*                          define-syntaxes                           */

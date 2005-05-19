@@ -3059,7 +3059,8 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Perhaps expandable... */
     fm = SCHEME_STX_CAR(fm);
   } else {
-    fm = scheme_make_pair(module_begin_symbol, fm);
+    fm = scheme_make_pair(scheme_datum_to_syntax(module_begin_symbol, form, scheme_false, 0, 2), 
+			  fm);
     check_mb = 1;
   }
 
@@ -3085,7 +3086,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     /* If expansion is not the primitive `#%module-begin', add local one: */
     if (!SAME_OBJ(mbval, modbeg_syntax)) {
       Scheme_Object *mb;
-      mb = scheme_datum_to_syntax(module_begin_symbol, form, form, 0, 0);
+      mb = scheme_datum_to_syntax(module_begin_symbol, form, scheme_false, 0, 0);
       mb = scheme_add_rename(mb, rn);
       mb = scheme_add_rename(mb, et_rn);
       mb = scheme_add_rename(mb, tt_rn);

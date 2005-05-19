@@ -1450,7 +1450,7 @@
 								      dest
 								      'dest
 								      #f)))
-						 ,(apply-to-r l) 
+						 (#%uncertified ,(apply-to-r l))
 						 src)])
 		(if (multiple-ellipsis-vars? proto-r)
 		    `(let ([exnh #f])
@@ -1495,12 +1495,6 @@
   ;; associated with p.
   (-define (apply-cons stx h t p)
     (cond
-     [(syntax? stx)
-      ;; Keep location information
-      (let ([ctx (datum->syntax-object stx 'ctx stx)])
-	`(datum->syntax-object (quote-syntax ,ctx)
-			       ,(apply-cons #f h t p) 
-			       (quote-syntax ,ctx)))]
      [(and (pair? h)
 	   (eq? (car h) 'quote-syntax)
 	   (eq? (cadr h) (stx-car p))
@@ -1510,6 +1504,12 @@
 		(eq? (car t) 'quote-syntax)
 		(eq? (cadr t) (stx-cdr p)))))
       `(quote-syntax ,p)]
+     [(syntax? stx)
+      ;; Keep location information
+      (let ([ctx (datum->syntax-object stx 'ctx stx)])
+	`(datum->syntax-object (quote-syntax ,ctx)
+			       ,(apply-cons #f h t p) 
+			       (quote-syntax ,ctx)))]
      ;; (cons X null) => (list X)
      [(eq? t 'null)
       `(list ,h)]
@@ -1988,19 +1988,27 @@
 			 ;; Simple syntax-id lookup:
 			 (car r)
 			 ;; General case:
-			 (list (datum->syntax-object
-				here-stx
-				build-from-template
-				pattern)
-			       (let ([len (length r)])
-				 (cond
-				  [(zero? len) (quote-syntax ())]
-				  [(= len 1) (car r)]
-				  [else
-				   (cons (quote-syntax list*) r)]))
-			       (list (quote-syntax quote-syntax)
-				     (datum->syntax-object #f 'srctag x))))))))))
+			 (list
+			  (quote-syntax stxcert)
+			  (list (quote-syntax quote-syntax)
+				(datum->syntax-object pattern 'pctx))
+			  (list (datum->syntax-object
+				 here-stx
+				 build-from-template
+				 pattern)
+				(let ([len (length r)])
+				  (cond
+				   [(zero? len) (quote-syntax ())]
+				   [(= len 1) (car r)]
+				   [else
+				    (cons (quote-syntax list*) r)]))
+				(list (quote-syntax quote-syntax)
+				      (datum->syntax-object #f 'srctag x)))))))))))
        x)))
+
+  (-define orig-insp (current-code-inspector))
+  (-define (stxcert pctx result)
+     (syntax-recertify result pctx orig-insp #f))
 
   (provide syntax-case** syntax))
 

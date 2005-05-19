@@ -1,4 +1,9 @@
 
+Version 299.106
+Changed certification so that a reference cannot have more
+ certificates than its binding
+Added sub-form for require: only
+
 Version 299.105
 TCP output ports are now block-buffered by default
 Changed file-stream-buffer-mode to work on more port types,

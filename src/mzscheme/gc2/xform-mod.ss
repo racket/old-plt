@@ -1652,7 +1652,7 @@
   (define (get-vars e comment union-ok?)
     (let* ([e   (if (eq? GC_CAN_IGNORE (tok-n (car e)))
 		    (list (make-tok semi #f #f)) ; drop everything
-		    (filter (lambda (x) (not (memq (tok-n x) '(volatile const)))) e))]
+		    (filter (lambda (x) (not (memq (tok-n x) '(volatile __volatile__ __volatile const)))) e))]
 	   [base (tok-n (car e))]
 	   [base-is-ptr?
 	    (lookup-pointer-type base)]

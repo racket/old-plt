@@ -3,7 +3,9 @@
 (require (lib "foreign.ss")) (unsafe!)
 (provide readline add-history set-completion-function!)
 
-(define libtermcap  (ffi-lib "libtermcap")) ; needed
+; libtermcap maybe needed
+(define libtermcap  (with-handlers ([exn:fail? void])
+		      (ffi-lib "libtermcap")))
 (define libreadline (ffi-lib "libreadline"))
 
 (define readline

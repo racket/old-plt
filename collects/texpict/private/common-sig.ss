@@ -8,6 +8,22 @@
 
      black-and-white
 
+     lt-find
+     lc-find
+     lb-find
+     ltl-find
+     lbl-find
+     ct-find
+     cc-find
+     cb-find
+     ctl-find
+     cbl-find
+     rt-find
+     rc-find
+     rb-find
+     rtl-find
+     rbl-find
+
      find-lt  ; (left & top)  ; pict pict-path -> dx dy
      find-lc  ; (left & vertical center)
      find-lb  ; (left & bottom)
@@ -97,6 +113,8 @@
 
      place-over
      place-under
+     pin-over
+     pin-under
      ))
 
   (provide texpict-common-setup^)

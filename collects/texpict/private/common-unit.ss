@@ -128,6 +128,41 @@
 		  (find rt tline)
 		  (find rt bline))))
 
+      (define-values (lt-find
+		      lc-find
+		      lb-find
+		      ltl-find
+		      lbl-find
+		      ct-find
+		      cc-find
+		      cb-find
+		      ctl-find
+		      cbl-find
+		      rt-find
+		      rc-find
+		      rb-find
+		      rtl-find
+		      rbl-find)
+	(let ([flip (lambda (orig)
+		      (lambda (pict pict-path)
+			(let-values ([(x y) (orig pict pict-path)])
+			  (values x (- (pict-height pict) y)))))])
+	  (values (flip find-lt)
+		  (flip find-lc)
+		  (flip find-lb)
+		  (flip find-ltl)
+		  (flip find-lbl)
+		  (flip find-ct)
+		  (flip find-cc)
+		  (flip find-cb)
+		  (flip find-ctl)
+		  (flip find-cbl)
+		  (flip find-rt)
+		  (flip find-rc)
+		  (flip find-rb)
+		  (flip find-rtl)
+		  (flip find-rbl))))
+
       (define (launder box)
 	(unless (pict-panbox box)
 	  (panorama-box! box))
@@ -774,14 +809,17 @@
 	  `(place 0 0 ,p)
 	  commands)))
 
-      (define (place-it who base dx dy target)
+      (define (place-it who flip? base dx dy target)
 	(let-values ([(dx dy)
 		      (cond
 		       [(and (number? dx) (number? dy))
 			(values dx (- (pict-height base) dy))]
 		       [(and (pict? dx) (procedure? dy)
 			     (procedure-arity-includes? dy 2))
-			(dy base dx)]
+			(if flip?
+			    (let-values ([(dx dy) (dy base dx)])
+			      (values dx (- (pict-height base) dy)))
+			    (dy base dx))]
 		       [else
 			(error who
 			       "expects two numbers or a sub-pict and a find procedure")])])
@@ -790,10 +828,17 @@
 	   `((place ,dx ,(- dy (pict-height target)) ,target)))))
 
       (define (place-over base dx dy target)
-	(place-it 'place-over base dx dy target))
+	(place-it 'place-over #f base dx dy target))
       (define (place-under base dx dy target)
 	(cc-superimpose
-	 (place-it 'place-under (ghost base) dx dy target)
+	 (place-it 'place-under #f (ghost base) dx dy target)
+	 base))
+
+      (define (pin-over base dx dy target)
+	(place-it 'pin-over #t base dx dy target))
+      (define (pin-under base dx dy target)
+	(cc-superimpose
+	 (place-it 'pin-under #t (ghost base) dx dy target)
 	 base))
 
       (define black-and-white

@@ -2581,6 +2581,8 @@ void wxGetTextExtent(Display *dpy, double scale_x, double scale_y,
     ascent = xfontinfo->ascent;
     descent = xfontinfo->descent;
     space = xfontinfo->height - xfontinfo->ascent - xfontinfo->descent;
+    if (space < 0)
+      space = -space; /* This means that we're computing the space wrong! */
   } else
 #endif
     {

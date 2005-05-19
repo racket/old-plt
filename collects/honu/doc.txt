@@ -2,6 +2,12 @@ _Honu_
 
 _TODO_
 
+  * At the moment you can only apply method references or lexically
+    bound variables to arguments in order to invoke a function or
+    method.  The syntax will be reworked in the extremely near future
+    to allow application of arbitrary expressions (assuming they
+    result in a method or function type) to arguments.
+
   > Rewrite TODO list in terms of interfaces (not implementations) 
     The next bullet is a prime example. I have added a second bullet to
     show what I mean. -- MF

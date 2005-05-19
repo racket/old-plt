@@ -53,7 +53,6 @@ flat-contract : contract
   (define ->-contract
     (lambda (domain-contracts-list range-contract stx)
       (letrec ([me (make-contract
-                    
                     (lambda (f)
                       (cond [(not (procedure? f))
                              (error 'contracts (format "~e is not a function" f))]
@@ -62,7 +61,8 @@ flat-contract : contract
                             [else
                              (parameterize ([print-struct true])
                                (error 'contracts (format "~e expects ~e arguments, not ~e" 
-                                                         f (procedure-arity f) 
+                                                         f 
+                                                         (procedure-arity f) 
                                                          (length domain-contracts-list))))]))
                    
                     (let ([dom-hilighter-list (map (lambda (x) (contract-hilighter x)) domain-contracts-list)]) 
@@ -95,10 +95,11 @@ flat-contract : contract
                   
                   (lambda (values)
                     (if (not (andmap flat-contract? cnt-list))
-                        (error 'args-contract (format "not all subcontracts of ~e are flat contracts, so predicate is undefined" ((contract-hilighter me) #f)))
-                        (and (pair? values) (andmap (lambda (c x) ((flat-contract-predicate c) x)) cnt-list values))
-                        ))
-                  )])
+                        (error 'args-contract 
+                               "not all subcontracts of ~e are flat contracts, so predicate is undefined"
+                               ((contract-hilighter me) #f))
+                        (and (list? values) 
+                             (andmap (lambda (c x) ((flat-contract-predicate c) x)) cnt-list values)))))])
       me))
   
   
@@ -108,26 +109,57 @@ flat-contract : contract
   ;; contracts.
   (define (apply-contract function domain-contracts-list range-contract func-cnt stx)
     (let ([dom-list-contract (args-contract domain-contracts-list stx)]
-          [range-composer (lambda (values)
-                            (lambda (error) 
-                              (let ([name (object-name function)])
-                                (if (regexp-match "[0-9]+:[0-9]+" (symbol->string name)) 
-                                    ; cant infer a good name (higher order things)
-                                    (format "function defined on line ~e (called with values: ~e) failed the assertion ~e" name values error)
-                                    ; have func name
-                                    (format "function ~e (called with value(s): ~e) failed the assertion ~e" name values error)))))]
-          [domain-composer (lambda (values)
-                             (lambda (error)
-                               (let ([name (object-name function)])
-                                 (if (regexp-match "[0-9]+:[0-9]+" (symbol->string name)) 
-                                     (format "the arguments to the function defined on line ~e (~e) failed the assertion ~e" name values error)
-                                     (format "function ~e's arguments ~e failed the assertion ~e" name values error)))))])
+          [range-composer 
+           (lambda (values)
+             (lambda (error) 
+               (let ([name (object-name function)])
+                 (if (regexp-match #rx"[0-9]+:[0-9]+" (symbol->string name)) 
+                     ; cant infer a good name (higher order things)
+                     (format "function defined on line ~e (called with: ~a) failed the assertion ~e"
+                             name 
+                             (format-list-with-spaces values)
+                             error)
+                     ; have func name
+                     (format "function ~e (called with: ~a) failed the assertion ~e"
+                             name
+                             (format-list-with-spaces values)
+                             error)))))]
+          [domain-composer
+           (lambda (values)
+             (lambda (error)
+               (let ([name (object-name function)])
+                 (if (regexp-match #rx"[0-9]+:[0-9]+" (symbol->string name)) 
+                     (format "the arguments to the function defined on line ~e (~e) failed the assertion ~e"
+                             name values error)
+                     (format "function ~e's arguments ~a failed the assertion ~e" 
+                             name
+                             (format-list-with-spaces values)
+                             error)))))])
       
       (lambda values
-        (let* ([checked-values (catch-contract-error (domain-composer values) 'car func-cnt ((contract-enforcer dom-list-contract) values))]
+        (let* ([checked-values (catch-contract-error (domain-composer values)
+                                                     'car
+                                                     func-cnt
+                                                     ((contract-enforcer dom-list-contract) values))]
                [return-value (apply function checked-values)]
                [range-enforcer (contract-enforcer range-contract)])
           (catch-contract-error (range-composer values) 'cdr func-cnt (range-enforcer return-value))))))
+  
+  ;; format-list-with-spaces : (listof any) -> string
+  (define (format-list-with-spaces args)
+    (cond
+      [(null? args) ""]
+      [else 
+       (apply
+        string-append
+        (let loop ([fst (car args)]
+                   [rst (cdr args)])
+          (cond
+            [(null? rst) (list (format "~e" fst))]
+            [else (cons (format "~e " fst)
+                        (loop (car rst)
+                              (cdr rst)))])))]))
+              
   
   ; verify-contracts: contract contracts values
   ; contracts and values are two lists of equal length
@@ -135,8 +167,11 @@ flat-contract : contract
   (define (verify-contracts cnt cnt-list values)
     (if (not (eq? (length cnt-list) (length values)))
         (error 'verify-contracts 
-               (format "~e and ~e dont have same length (~e and ~e)" cnt-list values (length cnt-list) (length values))))
-    
+               (format "~e and ~e dont have same length (~e and ~e)" 
+                       cnt-list
+                       values
+                       (length cnt-list)
+                       (length values))))
     (let loop ([path-to-add (cons 'car '())]
                [curr-cnt cnt-list]
                [curr-val values]
@@ -145,7 +180,9 @@ flat-contract : contract
       (if (or (null? curr-val) (null? curr-cnt))
           (reverse ret-val)   
           
-          (let ([curr-ret (catch-contract-error path-to-add cnt ((contract-enforcer (car curr-cnt)) (car curr-val)))])  
+          (let ([curr-ret (catch-contract-error path-to-add
+                                                cnt
+                                                ((contract-enforcer (car curr-cnt)) (car curr-val)))])  
             (loop (cons 'cdr path-to-add)
                   (cdr curr-cnt)
                   (cdr curr-val)
@@ -208,9 +245,10 @@ flat-contract : contract
   ; returns a contract that enforces the contract (make-<blah> cnt cnt cnt ...)
   (define (struct-contract name predicate accessors field-contracts stx)
     (letrec ([hilighter (mk-struct-hilighter name (map contract-hilighter field-contracts))]
-             [not-struct-composer (lambda (value) 
-                                    (lambda (error)
-                                      (format "~e is not a structure of type ~e, so didnt satisfy contract ~e" value name error)))]
+             [not-struct-composer 
+              (lambda (value) 
+                (lambda (error)
+                  (format "~e is not a structure of type ~e, so didnt satisfy contract ~e" value name error)))]
              [me (make-flat-contract
                   (lambda (x) (if (predicate x) 
                                   (let ([field-values (map (lambda (accessor) (accessor x)) accessors)]
@@ -237,7 +275,6 @@ flat-contract : contract
   
   ; define-data-enforcer: contract any listof contracts -> any
   (define (define-data-enforcer me value list-of-cnts)
-    
     (if ((flat-contract-predicate me) value)
         value
         (define-data-error me value list-of-cnts)))
@@ -245,7 +282,6 @@ flat-contract : contract
   ;; define-data-error: define-data-contract any list-of-flat-contracts -> void
   ;; raises the contract exception with a good error message
   (define (define-data-error me value list-of-cnts)
-    
     (let loop ([contract-list list-of-cnts]
                [max-depth 0]
                [best-cnt #f])
@@ -275,7 +311,9 @@ flat-contract : contract
                        (length (exn:contract-violation-trace e)))])
       ((contract-enforcer cnt) value)
       (error 'define-data 
-             (format "major internal error: ~e didnt fail ~e, but define-data-error said it did." value ((contract-hilighter cnt) #f)))))
+             (format "major internal error: ~e didnt fail ~e, but define-data-error said it did."
+                     value
+                     ((contract-hilighter cnt) #f)))))
   
   
   ;; define-data-report: define-data-contract any flat-contract -> void
@@ -303,7 +341,9 @@ flat-contract : contract
       ((contract-enforcer best-cnt) value))
     
     (error 'define-data 
-           (format "major internal error: ~e didnt fail ~e, but define-data-error said it did." value ((contract-hilighter best-cnt) #f))))
+           (format "major internal error: ~e didnt fail ~e, but define-data-error said it did."
+                   value
+                   ((contract-hilighter best-cnt) #f))))
   
   ;;;;;;;;;;;;;;;;;;  ERROR HANDLING
   
@@ -353,9 +393,9 @@ flat-contract : contract
        (let ([cnt-hilighted ((contract-hilighter cnt) path)])
          (raise (make-exn:contract-violation 
                  (string->immutable-string
-		  (if (and (boolean? message-composer) (not message-composer))
-                     (format "contract violation: ~a didnt satisfy the contract ~e" value cnt-hilighted)
-                     (format "contract violation: ~a" (message-composer cnt-hilighted))))
+		  (if message-composer
+                      (format "contract violation: ~a" (message-composer cnt-hilighted))
+                      (format "contract violation: ~e didnt satisfy the contract ~e" value cnt-hilighted)))
                  (current-continuation-marks)
                  value
                  path

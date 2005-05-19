@@ -426,6 +426,4 @@ flat-contract : contract
                                     [(pair? path-to-add) (append path-to-add (exn:contract-violation-path e))]
                                     [else (cons path-to-add (exn:contract-violation-path e))])])
                     (contract-error val cnt new-path e message-composer)))])
-            e1))]
-        
-        ))))
+            e1))]))))

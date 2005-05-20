@@ -1433,11 +1433,11 @@ Scheme_Object *scheme_stx_add_inactive_certs(Scheme_Object *o, Scheme_Object *ce
   /* Also lifts existing inactive certs to the top. */
 {
   if (!INACTIVE_CERTS((Scheme_Stx *)o)) {
-    /* Lift */
-    Scheme_Cert *certs;
-    o = stx_activate_certs(o, &certs);
-    if (certs)
-      o = add_certs(o, certs, NULL, 0);  
+    /* Lift inactive certs*/
+    Scheme_Cert *icerts;
+    o = stx_activate_certs(o, &icerts);
+    if (icerts)
+      o = add_certs(o, icerts, NULL, 0);  
   }
 
   return add_certs(o, (Scheme_Cert *)certs, NULL, 0);

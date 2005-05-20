@@ -509,7 +509,7 @@ typedef struct Scheme_Stx {
     long lazy_prefix; /* # of initial items in wraps to propagate */
     Scheme_Object *modinfo_cache;
   } u;
-  struct Scheme_Cert *certs;
+  Scheme_Object *certs; /* cert chain or pair of cert chains */
   Scheme_Object *props;
 } Scheme_Stx;
 
@@ -628,9 +628,10 @@ Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env
 			       Scheme_Object *mkey);
 int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_Object *modidx, Scheme_Object *home_insp);
 int scheme_module_protected_wrt(Scheme_Object *home_insp, Scheme_Object *insp);
+Scheme_Object *scheme_stx_activate_certs(Scheme_Object *stx);
 
 Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_certs);
-Scheme_Object *scheme_stx_add_certs(Scheme_Object *o, Scheme_Object *certs);
+Scheme_Object *scheme_stx_add_inactive_certs(Scheme_Object *o, Scheme_Object *certs);
 
 int scheme_stx_has_more_certs(Scheme_Object *id, Scheme_Object *certs,
 			      Scheme_Object *than_id, Scheme_Object *than_certs);

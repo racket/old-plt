@@ -1450,7 +1450,7 @@
 								      dest
 								      'dest
 								      #f)))
-						 (#%uncertified ,(apply-to-r l))
+						 ,(apply-to-r l)
 						 src)])
 		(if (multiple-ellipsis-vars? proto-r)
 		    `(let ([exnh #f])
@@ -1988,27 +1988,19 @@
 			 ;; Simple syntax-id lookup:
 			 (car r)
 			 ;; General case:
-			 (list
-			  (quote-syntax stxcert)
-			  (list (quote-syntax quote-syntax)
-				(datum->syntax-object pattern 'pctx))
-			  (list (datum->syntax-object
-				 here-stx
-				 build-from-template
-				 pattern)
-				(let ([len (length r)])
-				  (cond
-				   [(zero? len) (quote-syntax ())]
-				   [(= len 1) (car r)]
-				   [else
-				    (cons (quote-syntax list*) r)]))
-				(list (quote-syntax quote-syntax)
-				      (datum->syntax-object #f 'srctag x)))))))))))
+			 (list (datum->syntax-object
+				here-stx
+				build-from-template
+				pattern)
+			       (let ([len (length r)])
+				 (cond
+				  [(zero? len) (quote-syntax ())]
+				  [(= len 1) (car r)]
+				  [else
+				   (cons (quote-syntax list*) r)]))
+			       (list (quote-syntax quote-syntax)
+				     (datum->syntax-object #f 'srctag x))))))))))
        x)))
-
-  (-define orig-insp (current-code-inspector))
-  (-define (stxcert pctx result)
-     (syntax-recertify result pctx orig-insp #f))
 
   (provide syntax-case** syntax))
 

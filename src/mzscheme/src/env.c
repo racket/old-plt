@@ -2914,6 +2914,8 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   menv = NULL;
 
+  sym = scheme_stx_activate_certs(sym);
+
   while (1) {
     v = scheme_lookup_binding(sym, env,
 			      (SCHEME_NULL_FOR_UNBOUND
@@ -3284,6 +3286,8 @@ local_lift_expr(int argc, Scheme_Object *argv[])
 			 (menv && menv->module) ? menv : NULL,
 			 scheme_current_thread->current_local_certs, 
 			 NULL);
+
+  expr = scheme_stx_activate_certs(expr);
 
   expr = cp(data, id, expr, orig_env);
 

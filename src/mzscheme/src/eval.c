@@ -1877,8 +1877,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
     } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type)) {
 	/* It's a rename. Look up the target name and try again. */
-	name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(val));
-	name = scheme_stx_cert(name, scheme_false, menv, name, NULL);
+	name = scheme_stx_cert(SCHEME_PTR_VAL(SCHEME_PTR_VAL(val)), scheme_false, menv, name, NULL);
 	menv = NULL;
 	SCHEME_USE_FUEL(1);
       } else {
@@ -4854,6 +4853,8 @@ do_local_expand(const char *name, int for_stx, int catch_lifts, int argc, Scheme
        we need to remove the temporary mark... */
     l = scheme_add_remove_mark(l, local_mark);
   }
+
+  l = scheme_stx_activate_certs(l);
 
   /* Expand the expression. depth = -2 means expand all the way, but
      preserve letrec-syntax. */

@@ -10,7 +10,7 @@
            (lib "sig.ss" "web-server")
            (lib "min-servlet.ss" "web-server")
            (lib "string-constant.ss" "string-constants")
-           (lib "util.ss" "web-server"))
+           (all-except (lib "util.ss" "web-server") translate-escapes))
   
   (provide tool@)
   

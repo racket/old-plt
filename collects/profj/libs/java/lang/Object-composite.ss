@@ -41,7 +41,8 @@
   
   (define ObjectI
     (interface () Object-constructor clone equals-java.lang.Object finalize getClass
-      hashCode notify notifyAll toString wait wait-long wait-long-int my-name))
+      hashCode notify notifyAll toString wait wait-long wait-long-int my-name
+      equals hash-code to-string get-class))
   
   (define Object-Mix
     (lambda (parent)
@@ -53,17 +54,20 @@
         (define/public clone (lambda () void))
         
         (define/public (equals-java.lang.Object obj) (eq? this obj))
+        (define/public (equals obj) (send this equals-java.lang.Object obj))
         
         ;Needs to do something
         (define/public (finalize) void)
         
-        (public-final getClass)
+        (public-final getClass get-class)
         (define (getClass)
           (error 'ProfessorJ:getClass 
                  (format "ProfessorJ does not support getClass calls. ~e" 
                          (send this toString))))
+        (define (get-class) (getClass))
         
         (define/public (hashCode) (eq-hash-code this))
+        (define/public (hash-code) (send this hashCode))
         
         ;Needs to do something when Threads more implemented
         (public-final notify |notifyAll|)
@@ -73,6 +77,7 @@
         (define/public (my-name) "Object")
         (define/public (toString)
           (make-java-string (format "~a@~a" (send this my-name) (send this hashCode))))
+        (define/public (to-string) (send this toString))
         
         (public-final wait wait-long wait-long-int)
         (define wait (lambda () void))
@@ -310,6 +315,7 @@
       (define/public (length) (string-length text))
       ; int -> char
       (define/public  (charAt-int index) (string-ref text index))
+      (define/public (char-at i) (charAt-int i))
     
       ;-> void
       (define/public (getChars-int-int-char1-int begin end dest i)
@@ -321,6 +327,7 @@
                           (send dest set index (string-ref text offset))
                           (build-char-array (add1 offset) (add1 index)))))))
           (build-char-array begin i)))
+      (define/public (get-chars b e d i) (getChars-int-int-char1-int b e d i))
     
       ;Does not mess with charset
       (define/public (getBytes)
@@ -348,6 +355,7 @@
 
       (define/public (contentEquals-java.lang.StringBuffer buf)
         (equals-java.lang.Object (send buf toString)))
+      (define/public (content-equals b) (contentEquals-java.lang.StringBuffer b))
     
       ;Object -> boolean
       (define/override (equals-java.lang.Object obj)
@@ -357,6 +365,7 @@
       ;Object -> boolean
       (define/public (equalsIgnoreCase-java.lang.String str)
         (string-ci=? text (send str get-mzscheme-string)))
+      (define/public (equals-ignore-case s) (equalsIgnoreCase-java.lang.String s))
 
       ;find-diff-chars: int int string-> (values int int)
       (define/private (find-diff-chars i stop-length compare-string)
@@ -420,6 +429,7 @@
                  (let-values (((int-text int-str) (find-diff-chars 0)))
                    (- int-text int-str))
                  (- text-l str-l))))))
+      (define/public (compare->ignore-case s) (compareToIgnoreCase-java.lang.String s))
     
       ;int String int int -> boolean
       (define/public (regionMatches-int-java.lang.String-int-int toffset jstr ooffset len)
@@ -458,7 +468,8 @@
         (let ((suffix (send Jsuffix get-mzscheme-string)))
           (and (<= (string-length suffix) (string-length text))
                (string=? suffix (substring text (- (string-length text) (string-length suffix)) (string-length text))))))
-    
+      (define/public (ends-with s) (endsWith-java.lang.String s))
+      
       ; -> int
       (define/override (hashCode)
         (let ((hash 0))
@@ -521,11 +532,13 @@
     
       (define/public (subSequence-int-int begin end)
         (error 'subSequence "Internal Error: subsequence is unimplemented because charSequence is unimplemented"))
-    
+      (define/public (sub-sequence i j) (subSequence-int-int i j))
+      
       ;String -> String
       (define/public (concat-java.lang.String Jstr)
         (let ((str (send Jstr get-mzscheme-string)))
           (make-java-string (string-append text str))))
+      (define/public (concat s) (concat-java.lang.String s))
     
       ; .. -> String
       (define/public (replace-char-char old new)
@@ -536,16 +549,20 @@
                 (string-set! new-text pos new)
                 (loop (add1 index)))))
           (make-java-string new-text)))
+      (define/public (replace c1 c2) (replace-char-char c1 c2))
     
       ;Does not currently work. Needs to replace regex in text with replace and return new string; PROBLEM
       (define/public (replaceAll-java.lang.String-java.lang.String regex replace)
         (error 'replaceAll "Internal error: replaceAll is unimplemented at this time"))
+      (define/public (replace-all s s2) (replaceAll-java.lang.String-java.lang.String s s2))
     
       (define/public (replaceFirst-java.lang.String-java.lang.String regex replace)
         (error 'replaceFirst "Internal error: replaceFirst is unimplemented at this time"))
+      (define/public (replace-first s s2) (replaceFirst-java.lang.String-java.lang.String s s2))
     
       (define/public (matches-java.lang.String regex)
         (error 'matches "Internal error: matches is unimplemented at this time"))
+      (define/public (matches s) (matches-java.lang.String s))
     
       (define/public (split-java.lang.String-int regex limit)
         (error 'split "Internal error: split is unimplemented at this time"))
@@ -571,10 +588,11 @@
       ;... -> String
       (define/public (trim)
         (error 'trim "Internal error: trim is unimplemented at this time."))
-    
+      
       (define/public (toCharArray) (make-java-array 'char 0 (string->list text)))
+      (define/public (to-char-array) (toCharArray))
     
-      ;PROBLEM I am not sure what the side effects of this are supposed to be! PROBLEM!
+      ;PROBLEM I am not sure what the side effects of this should be in context! PROBLEM!
       (define/public intern  
         (lambda () this))
       
@@ -678,11 +696,16 @@
       (define/public (getMessage) message)
       (define/public (getCause) cause)
       (define/public (getLocalizedMessage) (send this getMessage))
+      (define/public (get-message) (send this getMessage))
+      (define/public (get-cause) (send this getCause))
+      (define/public (get-localized-message) (send this getLocalizedMessage))
       
       (define/public (setStackTrace-java.lang.StackTraceElement1 elments)
         (error 'setStackTrace "Internal error: setStackTrace will not be implemented until strack trace element s implemented"))
       (define/public (getStackTrace)
         (error 'getStackTrace "Internal error: getStackTrace will not be implemented until StackTraceElement is implemented"))
+      (define/public (set-stack-trace e) (send this setStackTrace-java.lang.StackTraceElement1 e))
+      (define/public (get-stack-trace) (send this getStackTrace))
       
        ; -> string
       (define/override (toString)
@@ -703,6 +726,7 @@
       
       ;This function does nothing at this time
       (define/public (fillInStackTrace) this)
+      (define/public (fill-in-stack-trace) (send this fillInStackTrace))
       
       ; -> string
       (define/override (my-name) "Throwable")

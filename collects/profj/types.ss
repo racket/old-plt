@@ -580,32 +580,11 @@
             (car (cadr assignable-count))) (method-conflict-fail))
         (else (car assignable)))))
 
-  ;lookup-scheme: scheme-record string ( -> void) -> dynamic-val
-  ;lookup-scheme may raise an exception if variable is not defined in mod-ref
-  (define (lookup-scheme mod-ref variable fail)
-    (let ((var (string->symbol (java-name->scheme variable))))
-      (cond
-        ((variable-member? (scheme-record-provides mod-ref) var) => (lambda (x) x))
-        (else
-         (let ((old-namespace (current-namespace)))
-           (current-namespace (make-namespace))
-           (namespace-require (generate-require-spec (scheme-record-name mod-ref)
-                                                     (scheme-record-path mod-ref)))
-           (begin0
-             (begin
-               (namespace-variable-value var #t  (lambda () 
-                                                   (current-namespace old-namespace)
-                                                   (fail)))
-               (let ((val (make-dynamic-val var #t #f #f)))
-                 (set-scheme-record-provides! mod-ref (cons val (scheme-record-provides mod-ref)))
-                 val))
-             (current-namespace old-namespace)))))))
-
   ;module-has-binding?: scheme-record string (-> void) -> void
   ;module-has-binding raises an exception when variable is not defined in mod-ref
   (define (module-has-binding? mod-ref variable fail)
     (let ((var (string->symbol (java-name->scheme variable))))
-      (or (variable-member? (scheme-record-provides mod-ref) var)
+      (or (memq? var (scheme-record-provides mod-ref))
           (let ((old-namespace (current-namespace)))
            (current-namespace (make-namespace))
            (namespace-require (generate-require-spec (scheme-record-name mod-ref)

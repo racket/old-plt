@@ -1752,57 +1752,78 @@
   ;;is-char? type -> bool
   (define is-char? (make-is-test 'char))
   
-  ;Converted
   ;translate-bin-op: symbol syntax type syntax type src src type-> syntax
   (define (translate-bin-op op left left-type right right-type key src type)
     (let* ((source (build-src src))
-           (op-syntax (create-syntax #f op (build-src key)))
-           (left (if (is-char? left-type)
-                     (make-syntax #f `(char->integer ,left) #f)
-                     left))
-           (right (if (is-char? right-type)
-                      (make-syntax #f `(char->integer ,right) #f)
-                      right))
+           (key-src (build-src key))
+           (op-syntax (create-syntax #f op key-src))
+           (left (cond
+                   ((is-char? left-type)
+                    (make-syntax #f `(char->integer ,left) #f))
+                   ((and (dynamic-val? type) (not (memq op '(== != & ^ or && oror))))
+                    (create-syntax #f `(c:contract number? ,left 'java 'java) left))
+                   (else left)))
+           (right (cond
+                    ((is-char? right-type)
+                     (make-syntax #f `(char->integer ,right) #f))
+                    ((and (dynamic-val? type) (not (memq op '(== != & ^ or && oror))))
+                     (create-syntax #f `(c:contract number? ,right 'java 'java) right))
+                    (else right)))
            (result
             (case op
               ;Mathematical operations
               ;PROBLEM! + and - do not take into account the possibility of overflow
               ((+)
-               (cond 
-                 ((and (is-string-type? type) (is-string-type? left-type))
-                  (make-syntax #f `(send ,left concat-java.lang.String (javaRuntime:convert-to-string ,right)) source))
-                 ((and (is-string-type? type) (is-string-type? right-type))
-                  (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String ,right) source))
-                 ((is-string-type? type)
-                  (make-syntax #f 
-                               `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String 
-                                      (javaRuntime:convert-to-string ,right)) 
-                               source))
-                 (else
-                  (create-syntax #f `(,op-syntax ,left ,right) source))))
-              ((- *) (make-syntax #f `(,op-syntax ,left ,right) source))
-              ((/) (if (is-int? type)
-                       (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-int (build-src key)) ,left ,right) source)
-                       (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-float (build-src key)) ,left ,right) source)))
-              ((%) (make-syntax #f `(,(create-syntax #f 'javaRuntime:mod (build-src key)) ,left ,right) source))
+               (create-syntax #f
+                              (cond 
+                                ((and (is-string-type? type) (is-string-type? left-type))
+                                 `(send ,left concat-java.lang.String (javaRuntime:convert-to-string ,right)))
+                                ((and (is-string-type? type) (is-string-type? right-type))
+                                 `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String ,right))
+                                ((is-string-type? type)
+                                 `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String 
+                                        (javaRuntime:convert-to-string ,right)))
+                                (else
+                                 `(,op-syntax ,left ,right))) source))
+              ((- *)
+               (create-syntax #f `(,op-syntax ,left ,right) source))
+              ((/) 
+               (make-syntax 
+                #f
+                (cond
+                  ((or (is-int? type) (and (dynamic-val? type) (is-int? (dynamic-val-type type))))
+                   `(,(create-syntax #f 'javaRuntime:divide-int key-src) ,left ,right))
+                  (else
+                   `(,(create-syntax #f 'javaRuntime:divide-float key-src) ,left ,right))) source))
+              ((%) (make-syntax #f `(,(create-syntax #f 'javaRuntime:mod key-src) ,left ,right) source))
               ;Shift operations
-              ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) (quote ,op) ,left ,right) source))
+              ((<< >> >>>) 
+               (make-syntax #f 
+                            `(,(create-syntax #f 'javaRuntime:shift key-src) (quote ,op) ,left ,right) source))
               ;comparisons
               ((< > <= >=) (make-syntax #f `(,op-syntax ,left ,right) source))
               ((==) 
-               (if (and (prim-numeric-type? left-type) (prim-numeric-type? right-type))
-                   (make-syntax #f `(,(create-syntax #f '= (build-src key)) ,left ,right) source)
-                   (make-syntax #f `(,(create-syntax #f 'eq? (build-src key)) ,left ,right) source)))
-              ((!=) (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal (build-src key)) ,left ,right) source))
+               (make-syntax #f
+                            (cond
+                              ((or (dynamic-val? left-type) (dynamic-val? right-type))
+                               `(,(create-syntax #f 'eq? key-src) ,left ,right))
+                              ((and (prim-numeric-type? left-type) (prim-numeric-type? right-type))
+                               `(,(create-syntax #f '= key-src) ,left ,right))
+                              (else
+                                `(,(create-syntax #f 'eq? key-src) ,left ,right))) source))
+              ((!=) 
+               (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal key-src) ,left ,right) source))
               ;logicals
-              ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) (quote ,op) ,left ,right) source))
+              ((& ^ or) 
+               (make-syntax #f 
+                            `(,(create-syntax #f 'javaRuntime:bitwise key-src) (quote ,op) ,left ,right) source))
               ;boolean
-              ((&&) (make-syntax #f `(,(create-syntax #f 'javaRuntime:and (build-src key)) ,left ,right) source))
-              ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or (build-src key)) ,left ,right) source))
+              ((&&) (make-syntax #f `(,(create-syntax #f 'javaRuntime:and key-src) ,left ,right) source))
+              ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or key-src) ,left ,right) source))
               (else
                (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
       (if (dynamic-val? type)
-          (make-syntax #f `(contract ,(type->contract (dynamic-val-type type)) ,result 'scheme 'java) source)
+          (make-syntax #f `(contract ,(type->contract (dynamic-val-type type)) ,result 'java 'java) source)
           result)))
 
   ;translate-access: (U field-access local-access) type src -> syntax

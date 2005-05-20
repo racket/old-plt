@@ -327,8 +327,8 @@ void scheme_reset_hash_table(Scheme_Hash_Table *table, int *history)
   if (!table->step
       || ((table->count * FILL_FACTOR > (scheme_hash_primes[table->step - 1])))) {
     /* Keep same size */
-    memset(table->vals, NULL, sizeof(Scheme_Object *) * table->size);
-    memset(table->keys, NULL, sizeof(Scheme_Object *) * table->size);
+    memset(table->vals, 0, sizeof(Scheme_Object *) * table->size);
+    memset(table->keys, 0, sizeof(Scheme_Object *) * table->size);
   } else {
     /* Shrink by one step */
     Scheme_Object **ba;

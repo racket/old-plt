@@ -1,7 +1,8 @@
 
 Version 299.106
 Changed certification so that a reference cannot have more
- certificates than its binding
+ certificates than its binding, and lexical context gives
+ syntax-quoted values inactive instead of active certificates
 Added sub-form for require: only
 
 Version 299.105

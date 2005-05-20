@@ -15,7 +15,7 @@
 				  let-values letrec-values
 				  begin begin0 set!
 				  with-continuation-mark
-				  if #%app uncertified
+				  if #%app
 				  define-values define-syntaxes define-values-for-syntax
 				  module #%plain-module-begin require provide 
 				  require-for-syntax require-for-template))
@@ -39,7 +39,6 @@
 	    quote
 	    letrec-syntaxes+values
 	    with-continuation-mark
-	    uncertified
 	    #%app
 	    #%top
 	    #%datum)))

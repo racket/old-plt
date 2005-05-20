@@ -51,12 +51,12 @@
 	  (and c (regexp-match #"[^g]cc$" (path->bytes c)))))
 
       (define gcc-compile-flags (append '("-c" "-O2" "-fPIC")
-					(case (string->symbol (path->string (system-library-subpath)))
+					(case (string->symbol (path->string (system-library-subpath #f)))
 					  [(parisc-hpux) '("-D_HPUX_SOURCE")]
 					  [(ppc-macosx) '("-fno-common" "-DOS_X" )]
 					  [(ppc-darwin) '("-fno-common" "-DOS_X" "-DXONX" )]
 					  [else null])))
-      (define unix-compile-flags (case (string->symbol (path->string (system-library-subpath)))
+      (define unix-compile-flags (case (string->symbol (path->string (system-library-subpath #f)))
 				   [(parisc-hpux) '("-c" "-O2" "-Aa" "-D_HPUX_SOURCE" "+z" "+e")]
 				   [else gcc-compile-flags]))
       (define msvc-compile-flags '("/c" "/MT" "/O2"))

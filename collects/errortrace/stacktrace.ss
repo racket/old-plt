@@ -495,7 +495,7 @@
 			  expr
 			  (annotate-seq expr (syntax body) 
 					annotate trans?)))]
-	     
+
 	     ;; Wrap whole application, plus subexpressions
 	     [(#%app . body)
 	      (cond

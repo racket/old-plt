@@ -27,7 +27,7 @@
 
       (define (get-unix-linker)
 	(or (getenv "MZSCHEME_DYNEXT_LINKER")
-	    (let ([s (case (string->symbol (path->string (system-library-subpath)))
+	    (let ([s (case (string->symbol (path->string (system-library-subpath #f)))
 		       [(rs6k-aix ppc-macosx ppc-darwin) "cc"]
 		       [else "ld"])])
 	      (find-executable-path s s))))
@@ -97,7 +97,7 @@
           (if (current-use-mzdyn) (s) null)))
 
       (define (get-unix-link-flags)
-	(case (string->symbol (path->string (system-library-subpath)))
+	(case (string->symbol (path->string (system-library-subpath #f)))
 	  [(sparc-solaris i386-solaris) (list "-G")]
 	  [(sparc-sunos4) (list "-Bdynamic")]
 	  [(i386-freebsd-2.x) (list "-Bshareable")]

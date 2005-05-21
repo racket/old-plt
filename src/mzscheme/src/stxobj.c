@@ -1434,7 +1434,7 @@ Scheme_Object *scheme_stx_add_inactive_certs(Scheme_Object *o, Scheme_Object *ce
 {
   if (!INACTIVE_CERTS((Scheme_Stx *)o)) {
     /* Lift inactive certs*/
-    Scheme_Cert *icerts;
+    Scheme_Cert *icerts = NULL;
     o = stx_activate_certs(o, &icerts);
     if (icerts)
       o = add_certs(o, icerts, NULL, 0);  

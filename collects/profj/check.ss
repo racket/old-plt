@@ -1984,8 +1984,14 @@
                   (if (eq? level 'beginner)
                       (beginner-method-access-error name (id-src name))
                       (let ((rec (if static? (send type-recs get-class-record c-class) this)))
-                        (if (null? rec) null
-                            (get-method-records name-string rec))))))))))
+                        (cond 
+                          ((and (null? rec) (dynamic?) (lookup-var-in-env name-string env)) =>
+                           (lambda (var-type)
+                             (if (eq? 'dynamic (var-type-type var-type))
+                                 (list (make-method-contract (string-append name-string "~f") #f #f))
+                                 null)))
+                          ((null? rec) null)
+                          (else (get-method-records name-string rec)))))))))))
       
       (when (null? methods)
         (let* ((rec (if exp-type 

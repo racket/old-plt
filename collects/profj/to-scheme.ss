@@ -1957,7 +1957,8 @@
               (cond
                 ((method-contract? method-record)
                  (create-syntax #f `((c:contract ,(type->contract method-record) 
-                                                 ,(build-identifier (java-name->scheme (method-contract-name method-record))))
+                                                 ,(build-identifier (java-name->scheme (method-contract-name method-record)))
+                                                 'java 'java)
                                      ,@args) (build-src src)))
                 ((or static? (memq 'private (method-record-modifiers method-record)))
                  (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))

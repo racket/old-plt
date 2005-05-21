@@ -584,10 +584,10 @@
   ;module-has-binding raises an exception when variable is not defined in mod-ref
   (define (module-has-binding? mod-ref variable fail)
     (let ((var (string->symbol (java-name->scheme variable))))
-      (or (memq? var (scheme-record-provides mod-ref))
+      (or (memq var (scheme-record-provides mod-ref))
           (let ((old-namespace (current-namespace)))
            (current-namespace (make-namespace))
-           (namespace-require (generate-require-spec (scheme-record-name mod-ref)
+           (namespace-require (generate-require-spec (java-name->scheme (scheme-record-name mod-ref))
                                                      (scheme-record-path mod-ref)))
            (begin
              (namespace-variable-value var #t  (lambda () 

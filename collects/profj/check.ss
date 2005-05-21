@@ -1578,6 +1578,7 @@
                                                                              (make-ref-type (if (pair? name) (car name) name) 
                                                                                             (list "scheme"))
                                                                              src)))
+                         (set-id-string! (field-access-field acc) (java-name->scheme fname))
                          (make-dynamic-val #f))))))))
            (cond 
              ((field-record? record)
@@ -1647,7 +1648,7 @@
               (add-required c-class (scheme-record-name class-rec) 
                             (cons "scheme" (scheme-record-path class-rec)) type-recs)
               (set-field-access-access! acc (make-var-access #t #t #t 'public (scheme-record-name class-rec)))
-              (make-type/env record (type/env-e obj-type/env)))
+              (make-type/env record (if obj (type/env-e obj-type/env) env)))
              (else 
               (error 'internal-error "field-access given unknown form of field information")))))
         ((local-access? acc) 
@@ -1901,7 +1902,10 @@
                                                                         (string->symbol name-string)
                                                                         (make-ref-type name (list "scheme"))
                                                                         src)))
-                       (list (make-method-contract name-string #f #f)))))
+                       (cond
+                         ((name? name) (set-id-string! (name-id name) (java-name->scheme name-string)))
+                         ((id? name) (set-id-string! name (java-name->scheme name-string))))
+                       (list (make-method-contract (java-name->scheme name-string) #f #f)))))
                   ;Teaching languages
                   (if (and (= (length (access-name expr)) 1)
                            (with-handlers ((exn:fail:syntax? (lambda (exn) #f)))
@@ -3174,6 +3178,7 @@
   ;implicit import error
   ;class-lookup-error: string src -> void
   (define (class-lookup-error class src)
+    (if (path? class) (set! class (path->string class)))
     (raise-error (string->symbol class)
                  (format "Implicit import of class ~a failed as this class does not exist at the specified location"
                          class)

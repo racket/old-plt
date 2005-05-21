@@ -42,9 +42,10 @@
                        ((and local? (not (to-file))) name)
                        (else `(file ,(path->string (build-path dir name)))))))
            (make-name (lambda ()
-                        (if (or (not local?) profj-lib? htdch-lib? (to-file))
-                            (string-append name ".ss")
-                            (string->symbol name)))))
+                        (let ((n (if scheme? (java-name->scheme name) name)))
+                          (if (or (not local?) profj-lib? htdch-lib? (to-file))
+                              (string-append n ".ss")
+                              (string->symbol n))))))
       (if scheme?
           (list (syn `(prefix ,(string->symbol
                                 (apply string-append
@@ -232,7 +233,7 @@
                                 loc type-recs level caller-src add-to-env))
                 (append (class-record-parents record) (class-record-ifaces record)))
            ))
-        ((and (scheme-ok?) (dir-path-scheme? in-dir) (check-scheme-file-exists? class dir))
+        ((and (dynamic?) (dir-path-scheme? in-dir) (check-scheme-file-exists? class dir))
          (send type-recs add-to-records class-name (make-scheme-record class (cdr path) dir null))
          (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f #t)))
         (class-exists?
@@ -281,8 +282,8 @@
     
   ;check-scheme-file-exists? string path -> bool
   (define (check-scheme-file-exists? name path)
-    (or (file-exists? (build-path path (string-append name ".ss")))
-        (file-exists? (build-path path (string-append name ".scm")))))
+    (or (file-exists? (build-path path (string-append (java-name->scheme name) ".ss")))
+        (file-exists? (build-path path (string-append (java-name->scheme name) ".scm")))))
   
   (define (create-scheme-type-rec mod-name req-path) 'scheme-types)
     
@@ -326,7 +327,7 @@
   (define (find-directory path fail)
     (cond
       ((null? path) (make-dir-path (build-path 'same) #f))
-      ((and (scheme-ok?) (equal? (car path) "scheme"))
+      ((and (dynamic?) (equal? (car path) "scheme"))
        (cond
          ((null? (cdr path)) (make-dir-path (build-path 'same) #t))
          ((not (equal? (cadr path) "lib")) 
@@ -359,7 +360,7 @@
 
   ;get-class-list: dir-path -> (list string)
   (define (get-class-list dir)
-    (if (and (scheme-ok?) (dir-path-scheme? dir))
+    (if (and (dynamic?) (dir-path-scheme? dir))
         (filter (lambda (f) (or (equal? (filename-extension f) #".ss")
                                 (equal? (filename-extension f) #".scm")))
                 (directory-list (dir-path-path dir)))

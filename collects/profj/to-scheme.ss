@@ -1611,7 +1611,8 @@
          ((boolean) 'boolean?)
          ((char) 'char?)
          ((string) `(c:is-a?/c ,(if (send (types) require-prefix '("String" "java" "lang") (lambda () #f))
-                                    'java.lang.String 'String)))))
+                                    'java.lang.String 'String)))
+         ((dynamic) 'c:any/c)))
       ((ref-type? type) 
        (let ((class-name (cons (ref-type-class/iface type) (ref-type-path type))))
        `(c:is-a?/c 
@@ -1823,7 +1824,7 @@
               (else
                (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
       (if (dynamic-val? type)
-          (make-syntax #f `(contract ,(type->contract (dynamic-val-type type)) ,result 'java 'java) source)
+          (make-syntax #f `(c:contract ,(type->contract (dynamic-val-type type)) ,result 'java 'java) source)
           result)))
 
   ;translate-access: (U field-access local-access) type src -> syntax
@@ -1955,8 +1956,8 @@
              ((not expr)
               (cond
                 ((method-contract? method-record)
-                 (create-syntax #f `((contract ,(type->contract method-record) 
-                                               ,(java-name->scheme (method-contract-name method-record)))
+                 (create-syntax #f `((c:contract ,(type->contract method-record) 
+                                                 ,(build-identifier (java-name->scheme (method-contract-name method-record))))
                                      ,@args) (build-src src)))
                 ((or static? (memq 'private (method-record-modifiers method-record)))
                  (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))

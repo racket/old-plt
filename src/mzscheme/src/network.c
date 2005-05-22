@@ -2368,7 +2368,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
         tcp_t s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
         if (s != INVALID_SOCKET) {
 	  int status, inprogress;
-	  if (!src_address
+	  if ((!src_address && (argc < 4))
 	      || !bind(s, (struct sockaddr *)&tcp_connect_src_addr, sizeof(tcp_connect_src_addr))) {
 #ifdef USE_WINSOCK_TCP
 	    unsigned long ioarg = 1;

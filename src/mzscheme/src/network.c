@@ -2220,7 +2220,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
   char * volatile address = "", * volatile src_address, * volatile errmsg = "";
   unsigned short origid, id, src_origid, src_id;
-  int errpart = 0, errid = 0;
+  int errpart = 0, errid = 0, no_local_spec;
   Scheme_Object *bs, *src_bs;
 #ifdef USE_SOCKETS_TCP
   GC_CAN_IGNORE tcp_address tcp_connect_dest_addr, tcp_connect_src_addr;
@@ -2237,8 +2237,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     if (!SCHEME_CHAR_STRINGP(argv[2]) && !SCHEME_FALSEP(argv[2]))
       scheme_wrong_type("tcp-connect", "string or #f", 2, argc, argv);
   if (argc > 3)
-    if (!CHECK_PORT_ID(argv[3]))
-      scheme_wrong_type("tcp-connect", PORT_ID_TYPE, 3, argc, argv);
+    if (SCHEME_TRUEP(argv[3]) && !CHECK_PORT_ID(argv[3]))
+      scheme_wrong_type("tcp-connect", PORT_ID_TYPE " or #f", 3, argc, argv);
 
 #ifdef USE_TCP
   TCP_INIT("tcp-connect");
@@ -2257,9 +2257,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   } else
     src_address = NULL;
    
-  if (argc > 3)
+  if ((argc > 3) && SCHEME_TRUEP(argv[3])) {
+    no_local_spec = 0;
     src_origid = (unsigned short)SCHEME_INT_VAL(argv[3]);
-  else {
+  } else {
+    no_local_spec = 1;
     src_origid = 0;
     if (src_address) {
       scheme_arg_mismatch("tcp-connect",
@@ -2368,7 +2370,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
         tcp_t s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
         if (s != INVALID_SOCKET) {
 	  int status, inprogress;
-	  if ((!src_address && (argc < 4))
+	  if (no_local_spec
 	      || !bind(s, (struct sockaddr *)&tcp_connect_src_addr, sizeof(tcp_connect_src_addr))) {
 #ifdef USE_WINSOCK_TCP
 	    unsigned long ioarg = 1;

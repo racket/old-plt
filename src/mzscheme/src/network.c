@@ -255,13 +255,13 @@ void scheme_init_network(Scheme_Env *env)
   scheme_add_global_constant("tcp-connect", 
 			     scheme_make_prim_w_arity2(tcp_connect,
 						       "tcp-connect", 
-						       2, 2,
+						       2, 4,
 						       2, 2), 
 			     env);
   scheme_add_global_constant("tcp-connect/enable-break", 
 			     scheme_make_prim_w_arity2(tcp_connect_break,
 						       "tcp-connect/enable-break", 
-						       2, 2,
+						       2, 4,
 						       2, 2), 
 			     env);
   scheme_add_global_constant("tcp-listen", 
@@ -440,6 +440,8 @@ void scheme_init_network(Scheme_Env *env)
 #define PORT_ID_TYPE "exact integer in [1, 65535]"
 #define CHECK_PORT_ID(obj) (SCHEME_INTP(obj) && (SCHEME_INT_VAL(obj) >= 1) && (SCHEME_INT_VAL(obj) <= 65535))
 
+#define PORT_DEFAULT_ID_TYPE "exact integer in [0, 65535]"
+#define CHECK_PORT_DEFAULT_ID(obj) (SCHEME_INTP(obj) && (SCHEME_INT_VAL(obj) >= 0) && (SCHEME_INT_VAL(obj) <= 65535))
 
 #ifdef USE_TCP
 
@@ -2219,12 +2221,12 @@ static void closesocket_w_decrement(tcp_t s)
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
-  char * volatile address = "", * volatile errmsg = "";
-  unsigned short origid, id;
+  char * volatile address = "", * volatile src_address, * volatile errmsg = "";
+  unsigned short origid, id, src_origid, src_id;
   int errpart = 0, errid = 0;
-  Scheme_Object *bs;
+  Scheme_Object *bs, *src_bs;
 #ifdef USE_SOCKETS_TCP
-  GC_CAN_IGNORE tcp_address tcp_connect_dest_addr;
+  GC_CAN_IGNORE tcp_address tcp_connect_dest_addr, tcp_connect_src_addr;
 # ifndef PROTOENT_IS_INT
   struct protoent *proto;
 # endif
@@ -2234,6 +2236,12 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     scheme_wrong_type("tcp-connect", "string", 0, argc, argv);
   if (!CHECK_PORT_ID(argv[1]))
     scheme_wrong_type("tcp-connect", PORT_ID_TYPE, 1, argc, argv);
+  if (argc > 2)
+    if (!SCHEME_CHAR_STRINGP(argv[2]) && !SCHEME_FALSEP(argv[2]))
+      scheme_wrong_type("tcp-connect", "string or #f", 2, argc, argv);
+  if (argc > 3)
+    if (!CHECK_PORT_DEFAULT_ID(argv[3]))
+      scheme_wrong_type("tcp-connect", PORT_DEFAULT_ID_TYPE, 3, argc, argv);
 
 #ifdef USE_TCP
   TCP_INIT("tcp-connect");
@@ -2246,12 +2254,24 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   address = SCHEME_BYTE_STR_VAL(bs);
   origid = (unsigned short)SCHEME_INT_VAL(argv[1]);
 
+  if ((argc > 2) && SCHEME_TRUEP(argv[2])) {
+    src_bs = scheme_char_string_to_byte_string(argv[2]);
+    src_address = SCHEME_BYTE_STR_VAL(src_bs);
+  } else
+    src_address = NULL;
+   
+  if (argc > 3)
+    src_origid = (unsigned short)SCHEME_INT_VAL(argv[3]);
+  else
+    src_origid = 0;
+
   scheme_security_check_network("tcp-connect", address, origid, 1);
   scheme_custodian_check_available(NULL, "tcp-connect", "network");
 
 #ifdef USE_TCP
   /* Set id in network order: */
   id = htons(origid);
+  src_id = htons(src_origid);
 #endif
 
 #ifdef USE_MAC_TCP
@@ -2259,8 +2279,9 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     TCPiopbX *xpb;
     TCPiopb *pb;
     Scheme_Tcp *data;
-    int errNo;
+    int errNo, srchost;
     struct hostInfo *dest_host;
+    struct hostInfo *src_host;
     Scheme_Object *v[2];
     
     dest_host = MALLOC_ONE_ATOMIC(struct hostInfo);
@@ -2269,9 +2290,20 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       errmsg = "; host not found";
       goto tcp_error;
     }
+    if (src_address) {
+      src_host = MALLOC_ONE_ATOMIC(struct hostInfo);
+      if ((errNo = tcp_addr(src_address, src_host))) {
+      errpart = 2;
+      errmsg = "; local host not found";
+      goto tcp_error;
+      }
+      srchost = src_host->addr[0];
+    } else
+      srchost = 0;
+  
 
     if ((errNo = mac_tcp_make(&xpb, &pb, &data))) {
-      errpart = 2;
+      errpart = 3;
       goto tcp_error;
     }
 
@@ -2285,15 +2317,15 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     pb->csParam.open.commandTimeoutValue = 0;
     pb->csParam.open.remoteHost = dest_host->addr[0];
     pb->csParam.open.remotePort = id;
-    pb->csParam.open.localHost = 0;
-    pb->csParam.open.localPort = 0;
+    pb->csParam.open.localHost = srchost;
+    pb->csParam.open.localPort = src_id;
     pb->csParam.open.dontFrag = 0;
     pb->csParam.open.timeToLive = 0;
     pb->csParam.open.security = 0;
     pb->csParam.open.optionCnt = 0;
 
     if ((errNo = mzPBControlAsync((ParamBlockRec*)pb))) {
-      errpart = 3;
+      errpart = 4;
       goto tcp_close_and_error;
     }
     
@@ -2302,7 +2334,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     END_ESCAPEABLE();
     
     if (data->tcp.state != SOCK_STATE_CONNECTED) {
-      errpart = 4;
+      errpart = 5;
       errNo = pb->ioResult;
       goto tcp_close_and_error;
     }
@@ -2324,105 +2356,116 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 
 #ifdef USE_SOCKETS_TCP
   if (scheme_get_host_address(address, id, &tcp_connect_dest_addr)) {
+    if (scheme_get_host_address(src_address, src_id, &tcp_connect_src_addr)) {
 #ifndef PROTOENT_IS_INT
-    proto = getprotobyname("tcp");
-    if (proto)
+      proto = getprotobyname("tcp");
+      if (proto)
 #endif
-    {
-      tcp_t s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
-      if (s != INVALID_SOCKET) {
-	int status, inprogress;
+      {
+        tcp_t s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
+        if (s != INVALID_SOCKET) {
+	  int status, inprogress;
+	  if (!bind(s, (struct sockaddr *)&tcp_connect_src_addr, sizeof(tcp_connect_src_addr))) {
 #ifdef USE_WINSOCK_TCP
-	unsigned long ioarg = 1;
-	ioctlsocket(s, FIONBIO, &ioarg);
+	    unsigned long ioarg = 1;
+	    ioctlsocket(s, FIONBIO, &ioarg);
 #else
-	int size = TCP_SOCKSENDBUF_SIZE;
-	fcntl(s, F_SETFL, MZ_NONBLOCKING);
+	    int size = TCP_SOCKSENDBUF_SIZE;
+	    fcntl(s, F_SETFL, MZ_NONBLOCKING);
 # ifndef CANT_SET_SOCKET_BUFSIZE
-	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
+	    setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
 # endif
 #endif
-	status = connect(s, (struct sockaddr *)&tcp_connect_dest_addr, sizeof(tcp_connect_dest_addr));
+	    status = connect(s, (struct sockaddr *)&tcp_connect_dest_addr, sizeof(tcp_connect_dest_addr));
 #ifdef USE_UNIX_SOCKETS_TCP
-	if (status)
-	  status = errno;
-	if (status == EINTR)
-	  status = EINPROGRESS;
+	    if (status)
+	      status = errno;
+	    if (status == EINTR)
+	      status = EINPROGRESS;
 	
-	inprogress = (status == EINPROGRESS);
+	    inprogress = (status == EINPROGRESS);
 #endif
 #ifdef USE_WINSOCK_TCP
-	if (status)
-	  status = WSAGetLastError();
+	    if (status)
+	      status = WSAGetLastError();
 
-	inprogress = (status == WSAEWOULDBLOCK);
-	errno = status;
+	    inprogress = (status == WSAEWOULDBLOCK);
+	    errno = status;
 #endif
 
-	scheme_file_open_count++;
-	
-	if (inprogress) {
-	  tcp_t *sptr;
+	    scheme_file_open_count++;
+	    
+	    if (inprogress) {
+	      tcp_t *sptr;
 
-	  sptr = (tcp_t *)scheme_malloc_atomic(sizeof(tcp_t));
-	  *sptr = s;
+	      sptr = (tcp_t *)scheme_malloc_atomic(sizeof(tcp_t));
+	      *sptr = s;
 
-          BEGIN_ESCAPEABLE(closesocket_w_decrement, s);
-	  scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)sptr, (float)0.0);
-	  END_ESCAPEABLE();
+	      BEGIN_ESCAPEABLE(closesocket_w_decrement, s);
+	      scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)sptr, (float)0.0);
+	      END_ESCAPEABLE();
 
-	  /* Check whether connect succeeded, or get error: */
-	  {
-	    int so_len = sizeof(status);
-	    if (getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&status, &so_len) != 0) {
-	      status = SOCK_ERRNO();
-	    }
-	    errno = status; /* for error reporting, below */
-	  }
-
-#ifdef USE_WINSOCK_TCP
-	  if (scheme_stupid_windows_machine > 0) {
-	    /* getsockopt() seems not to work in Windows 95, so use the
-	       result from select(), which seems to reliably detect an error condition */
-	    if (!status) {
-	      if (tcp_check_connect((Scheme_Object *)sptr) == -1) {
-		status = 1;
-		errno = WSAECONNREFUSED; /* guess! */
+	      /* Check whether connect succeeded, or get error: */
+	      {
+	        int so_len = sizeof(status);
+	        if (getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&status, &so_len) != 0) {
+	          status = SOCK_ERRNO();
+	        }
+	        errno = status; /* for error reporting, below */
 	      }
+
+#ifdef USE_WINSOCK_TCP
+	      if (scheme_stupid_windows_machine > 0) {
+	        /* getsockopt() seems not to work in Windows 95, so use the
+	           result from select(), which seems to reliably detect an error condition */
+	        if (!status) {
+	          if (tcp_check_connect((Scheme_Object *)sptr) == -1) {
+		    status = 1;
+		    errno = WSAECONNREFUSED; /* guess! */
+	          }
+	        }
+	      }
+#endif
 	    }
-	  }
-#endif
-	}
 	
-	if (!status) {
-	  Scheme_Object *v[2];
-	  Scheme_Tcp *tcp;
+	    if (!status) {
+	      Scheme_Object *v[2];
+	      Scheme_Tcp *tcp;
 
-	  tcp = make_tcp_port_data(s, 2);
-	  
-	  v[0] = make_tcp_input_port(tcp, address);
-	  v[1] = make_tcp_output_port(tcp, address);
-	  
-	  REGISTER_SOCKET(s);
+	      tcp = make_tcp_port_data(s, 2);
+	      
+	      v[0] = make_tcp_input_port(tcp, address);
+	      v[1] = make_tcp_output_port(tcp, address);
+	      
+	      REGISTER_SOCKET(s);
 
-	  return scheme_values(2, v);
-	} else {
-	  errid = errno;
-	  closesocket(s);
-	  --scheme_file_open_count;
+	      return scheme_values(2, v);
+	    } else {
+	      errid = errno;
+	      closesocket(s);
+	      --scheme_file_open_count;
+	      errpart = 6;
+	    }
+          } else {
+	    errpart = 5;
+	    errid = SOCK_ERRNO();
+	  }
+        } else {
 	  errpart = 4;
-	}
-      } else {
-	errpart = 3;
-	errid = SOCK_ERRNO();
+	  errid = SOCK_ERRNO();
+        }
       }
-    }
 #ifndef PROTOENT_IS_INT
-    else {
-      errpart = 2;
-      errid = SOCK_ERRNO();
-    }
+      else {
+        errpart = 3;
+        errid = SOCK_ERRNO();
+      }
 #endif
+    } else {
+      errpart = 2;
+      errid = 0;
+      errmsg = "; local host not found";
+    } 
   } else {
     errpart = 1;
     errid = 0;
@@ -2471,7 +2514,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     reuse = SCHEME_TRUEP(argv[2]);
   if (argc > 3) {
     if (!SCHEME_CHAR_STRINGP(argv[3]) && !SCHEME_FALSEP(argv[3]))
-      scheme_wrong_type("tcp-connect", "string or #f", 3, argc, argv);
+      scheme_wrong_type("tcp-listen", "string or #f", 3, argc, argv);
   }
     
 #ifdef USE_TCP

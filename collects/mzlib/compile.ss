@@ -50,5 +50,6 @@
 		       (unless ok?
 			 (with-handlers ([void void])
 			   (delete-file dest)))))))))
-	 (lambda () (close-input-port in))))])))
+	 (lambda () (close-input-port in))))
+      dest])))
 

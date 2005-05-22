@@ -440,9 +440,6 @@ void scheme_init_network(Scheme_Env *env)
 #define PORT_ID_TYPE "exact integer in [1, 65535]"
 #define CHECK_PORT_ID(obj) (SCHEME_INTP(obj) && (SCHEME_INT_VAL(obj) >= 1) && (SCHEME_INT_VAL(obj) <= 65535))
 
-#define PORT_DEFAULT_ID_TYPE "exact integer in [0, 65535]"
-#define CHECK_PORT_DEFAULT_ID(obj) (SCHEME_INTP(obj) && (SCHEME_INT_VAL(obj) >= 0) && (SCHEME_INT_VAL(obj) <= 65535))
-
 #ifdef USE_TCP
 
 #ifdef USE_SOCKETS_TCP
@@ -2240,8 +2237,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     if (!SCHEME_CHAR_STRINGP(argv[2]) && !SCHEME_FALSEP(argv[2]))
       scheme_wrong_type("tcp-connect", "string or #f", 2, argc, argv);
   if (argc > 3)
-    if (!CHECK_PORT_DEFAULT_ID(argv[3]))
-      scheme_wrong_type("tcp-connect", PORT_DEFAULT_ID_TYPE, 3, argc, argv);
+    if (!CHECK_PORT_ID(argv[3]))
+      scheme_wrong_type("tcp-connect", PORT_ID_TYPE, 3, argc, argv);
 
 #ifdef USE_TCP
   TCP_INIT("tcp-connect");
@@ -2262,8 +2259,14 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
    
   if (argc > 3)
     src_origid = (unsigned short)SCHEME_INT_VAL(argv[3]);
-  else
+  else {
     src_origid = 0;
+    if (src_address) {
+      scheme_arg_mismatch("tcp-connect",
+			  "no local port number supplied when local hostname was supplied: ",
+			  argv[2]);
+    }
+  }
 
   scheme_security_check_network("tcp-connect", address, origid, 1);
   scheme_custodian_check_available(NULL, "tcp-connect", "network");
@@ -2365,7 +2368,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
         tcp_t s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
         if (s != INVALID_SOCKET) {
 	  int status, inprogress;
-	  if (!bind(s, (struct sockaddr *)&tcp_connect_src_addr, sizeof(tcp_connect_src_addr))) {
+	  if (!src_address
+	      || !bind(s, (struct sockaddr *)&tcp_connect_src_addr, sizeof(tcp_connect_src_addr))) {
 #ifdef USE_WINSOCK_TCP
 	    unsigned long ioarg = 1;
 	    ioctlsocket(s, FIONBIO, &ioarg);

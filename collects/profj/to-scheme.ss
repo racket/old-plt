@@ -16,7 +16,7 @@
   ;NOTE! Abstract classes are treated no differently than any class.
   
   ;Parameters for information about each class
-  (define class-name (make-parameter #f))
+  (define class-name (make-parameter "interactions"))
   (define loc (make-parameter #f))
   (define interactions? (make-parameter #f))
   (define class-override-table (make-parameter null))
@@ -1762,13 +1762,13 @@
                    ((is-char? left-type)
                     (make-syntax #f `(char->integer ,left) #f))
                    ((and (dynamic-val? type) (not (memq op '(== != & ^ or && oror))))
-                    (create-syntax #f `(c:contract number? ,left 'java 'java) left))
+                    (create-syntax #f `(c:contract number? ,left (quote ,(string->symbol (class-name))) '|infered contract|) left))
                    (else left)))
            (right (cond
                     ((is-char? right-type)
                      (make-syntax #f `(char->integer ,right) #f))
                     ((and (dynamic-val? type) (not (memq op '(== != & ^ or && oror))))
-                     (create-syntax #f `(c:contract number? ,right 'java 'java) right))
+                     (create-syntax #f `(c:contract number? ,right (quote ,(string->symbol (class-name))) '|infered contract|) right))
                     (else right)))
            (result
             (case op
@@ -1824,7 +1824,8 @@
               (else
                (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
       (if (dynamic-val? type)
-          (make-syntax #f `(c:contract ,(type->contract (dynamic-val-type type)) ,result 'java 'java) source)
+          (make-syntax #f `(c:contract ,(type->contract (dynamic-val-type type)) ,result 
+                                       (quote ,(string->symbol (class-name))) '|infered contract|) source)
           result)))
 
   ;translate-access: (U field-access local-access) type src -> syntax
@@ -1836,7 +1837,7 @@
          (if (dynamic-val? type)
              (make-syntax #f
                           `(c:contract ,(type->contract (dynamic-val-type type))
-                                       ,var 'scheme 'java)
+                                       ,var (quote ,(string->symbol (class-name))) '|infered contract|)
                           (build-src (id-src (local-access-name name))))
              var)))
       ((field-access? name)
@@ -1852,7 +1853,7 @@
                 (make-syntax #f
                              `(c:contract ,(type->contract (dynamic-val-type type))
                                           ,(translate-id (build-static-name field-string (var-access-class access)) field-src)
-                                          'scheme 'java)
+                                          (quote ,(string->symbol (class-name))) '|infered contract|)
                              (build-src field-src))
                 (translate-id (build-var-name (build-static-name field-string (var-access-class access)))
                               field-src)))
@@ -1958,7 +1959,7 @@
                 ((method-contract? method-record)
                  (create-syntax #f `((c:contract ,(type->contract method-record) 
                                                  ,(build-identifier (java-name->scheme (method-contract-name method-record)))
-                                                 'java 'java)
+                                                 (quote ,(string->symbol (class-name))) '|infered contract|)
                                      ,@args) (build-src src)))
                 ((or static? (memq 'private (method-record-modifiers method-record)))
                  (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))

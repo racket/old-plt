@@ -50,6 +50,7 @@
      "Ian Barland, "
      "Biep Durieux, "
      "Tim Hanson, "
+     "Chihiro Kuraya, "
      "Philippe Meunier, "
      "Jens Axel Søgaard, "
      "Francisco Solsona, "

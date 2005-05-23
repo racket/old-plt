@@ -160,7 +160,8 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
       && table_key
       && (font->GetFamily() != wxSYMBOL)
       && (current_bk_mode == wxTRANSPARENT)
-      && Colour) {
+      && Colour
+      && scheme_current_thread) {
     int i;
     unsigned int *s = (unsigned int *)text;
     wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
@@ -712,6 +713,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   double *widths;
   int use_cgctx = (always_use_atsu 
 		   && ((smoothing != wxSMOOTHING_PARTIAL) || (scale_x != scale_y)));
+  int use_cache = (qd_spacing && scheme_current_thread);
   int *glyphs;
   FontInfo fontInfo;
 	
@@ -821,7 +823,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     k->smoothing = (char)smoothing;
   }
 
-  if (qd_spacing) {
+  if (use_cache) {
     /* Get all cached sizes */
     double r = 0;
     int i, all = 1, wc, di;
@@ -882,7 +884,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
      whether it's ok to release a style that was provided to a
      text-layout object. */
 
-  if (qd_spacing) {
+  if (use_cache) {
     atomic_timeout_t old;
 
     old = pre_scheme();
@@ -1010,7 +1012,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     } else
       one_ulen = ulen;
 
-    if (qd_spacing) {
+    if (use_cache) {
       if (widths[delta] >= 0) {
 	one_res = widths[delta];
 	layout = layouts[delta];
@@ -1042,7 +1044,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	ATSUStyle *style_array;
 	UniCharCount *ulen_array;
 
-	if (qd_spacing) {
+	if (use_cache) {
 	  uca = (UniCharArrayPtr)malloc(one_ulen * sizeof(UniChar) + sizeof(ATSUStyle) + sizeof(UniCharCount));
 	  memcpy(uca, unicode XFORM_OK_PLUS delta, one_ulen * sizeof(UniChar));
 	  style_array = (ATSUStyle *)((char *)uca XFORM_OK_PLUS (one_ulen * sizeof(UniChar)));
@@ -1144,9 +1146,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       if (one_res < 0)
 	one_res = 0;
 
-      if (qd_spacing)
+      if (use_cache)
 	widths[delta] = one_res;
-    } else if (qd_spacing)
+    } else if (use_cache)
       widths[delta] = -1.0; /* inidicates that we don't need to re-hash */
     if (!use_cgctx && !just_meas) {
       one_res = one_res / scale_y;
@@ -1255,7 +1257,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       start_y -= one_res * sin(angle);
     }
 
-    if (qd_spacing) {
+    if (use_cache) {
       if (need_size) {
 	ItemCount n;
 	ATSLayoutRecord *info;
@@ -1293,6 +1295,10 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	layouts[delta] = layout;
       }
       layout = NULL;
+    } else if (qd_spacing) {
+      if (layout)
+	ATSUDisposeTextLayout(layout);
+      layout = NULL;
     }
 
     delta += one_ulen;
@@ -1316,7 +1322,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     }
   }
 
-  if (qd_spacing) {
+  if (use_cache) {
     /* Record collected widths. (We can't record these during the
        drawing loop because it might trigger a GC, which might try to
        draw a GC bitmap, etc. */

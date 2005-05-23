@@ -864,7 +864,7 @@ wxCursor::wxCursor(int cursor_type) : wxBitmap()
 	Pixmap mask;
 	pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, xlib_spinning_bits, 32, 32);
 	mask = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, xlib_spinning_mask_bits, 32, 32);
-	Xcursor->x_cursor = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, mask, &black, &black, 2, 2);
+	Xcursor->x_cursor = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, mask, &black, &white, 2, 2);
 	XFreePixmap(wxAPP_DISPLAY, pixmap);
 	XFreePixmap(wxAPP_DISPLAY, mask);
       }

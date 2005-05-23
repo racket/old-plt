@@ -2,6 +2,11 @@
   (require (lib "contract.ss")
            (lib "match.ss"))
   
+  ;; this file contains functions to check whether a given host is responding to HTTP requests,
+  ;; specifically to a "HEAD ~a HTTP/1.0" request, where ~a is supplied by the caller.
+  
+  ;; the original code was Paul Graunke's, refactored & encontracted by John Clements
+  
   
   (define (poke-result? result)
     (match result
@@ -71,6 +76,7 @@
              (let-values ([(in out) (tcp-connect server-name server-port)])
                (fprintf out "HEAD ~a HTTP/1.0\r\n" path)
                (fprintf out "Host: ~a\r\n\r\n" server-name) ; what the jiminy cricket does this line do;?
+               (flush-output out) ;; now required for all TCP ports
                (let ([line (read-line in)])
                  (if (regexp-match OK-REGEXP line)
                      (channel-put result-channel '(ok))

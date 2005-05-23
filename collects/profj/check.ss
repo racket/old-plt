@@ -1758,19 +1758,6 @@
     (let ((obj-src (expr-src obj))
           (name (string->symbol fname)))
       (cond
-        ((and (dynamic-val? obj-type) (dynamic-val-type obj-type))
-         (field-lookup fname (dynamic-val-type obj-type) obj src level type-recs))
-        ((dynamic-val? obj-type)
-         (let ((field-c (make-dynamic-val fname #t #t #f)))
-           (set-dynamic-val-type! (make-unknown-ref null (list field-c)))
-           field-c))
-        ((unknown-ref? obj-type)
-         (cond
-           ((field-contract-lookup fname (unknown-ref-access obj-type)) => (lambda (x) x))
-           (else
-            (let ((field-c (make-dynamic-val fname #t #t #f)))
-              (set-unknown-ref-access! obj-type (cons field-c (unknown-ref-access obj-type)))
-              field-c))))
         ((reference-type? obj-type)
          (let ((obj-record (get-record (send type-recs get-class-record obj-type #f
                                              ((get-importer type-recs) obj-type type-recs level obj-src))

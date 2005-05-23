@@ -1635,6 +1635,23 @@
       ((not type) 'c:any/c)
       ))
   
+  ;class-rec->contract: class-record -> sexp
+  (define (class-rec->contract class-rec)
+    `(c:object-contract
+      ,@(map field-rec->contract (class-record-fields class-rec))
+      ,@(map method-rec->contract (class-record-methods class-rec))))
+  
+  ;field-rec->contract: field-record -> sexp
+  (define (field-rec->contract field-rec)
+    `(field ,(build-identifier (string-append (field-record-name field-rec) "~f"))
+            ,(type->contract (field-record-type field-rec))))
+  
+  ;method-rec->contract: method-record -> sexp
+  (define (method-rec->contract method-rec)
+    `(,(build-identifier (java-name->scheme (method-record-name method-rec)))
+      (c:-> ,@(map (type->contract (method-record-atypes method-rec)))
+            ,(type->contract (method-record-rtype method-rec)))))
+    
   ;------------------------------------------------------------------------------------------------------------------------
   ;translate-expression
   ;translates a Java expression into a Scheme expression.

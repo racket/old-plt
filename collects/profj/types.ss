@@ -7,7 +7,7 @@
            "ast.ss")
   
   (provide (all-defined-except sort number-assign-conversions remove-dups meth-member?
-                               variable-member? generate-require-spec))
+                               generate-require-spec))
       
   ;; symbol-type = 'null | 'string | 'boolean | 'char | 'byte | 'short | 'int
   ;;             | 'long | 'float | 'double | 'void | 'dynamic
@@ -628,36 +628,7 @@
                                               (string-append remainder "-" (string (char-downcase char))))))))
       (else name)))
 
-  ;variable-member? (list dynamic-val) symbol -> dynamic-val
-  (define (variable-member? known-vars lookup)
-    (and (not (null? known-vars))
-         (or (and (eq? (car (car known-vars)) lookup)
-                  (car known-vars))
-             (variable-member? (cdr known-vars) lookup))))
-
-  ;field-contract-lookup string (list dynamic-val) -> (U #f dynamic-val)
-  (define (field-contract-lookup name fields)
-    (and (not (null? fields))
-         (or (and (equal? (car (car fields)) name) 
-                  (car fields))
-             (field-contract-lookup name (cdr fields)))))
-
-  ;get-method-contracts: string unknown-ref -> (list method-contract)
-  (define (get-method-contracts name ref)
-    (letrec ((methods (list (unknown-ref-access ref)))
-             (lookup
-              (lambda (ms)
-                (and (not (null? ms))
-                     (or (and (equal? (method-contract-name (car ms)) name)
-                              (car ms))
-                         (lookup name (cdr ms)))))))
-      (cond
-        ((lookup methods) => (lambda (x) x))
-        (else 
-         (let ((mc (make-method-contract name (make-dynamic-val 'method-return #t #f #f) #f)))
-           (set-unknown-ref-access! ref (cons mc (unknown-ref-access ref)))
-           (list mc))))))
-         
+  
                   
 ;                                          
 ;             ;                ;;          

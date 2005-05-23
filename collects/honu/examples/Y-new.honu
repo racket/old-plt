@@ -3,7 +3,9 @@ int -> int fix(<int -> int> -> int -> int f) {
   g (new Y(f = g));
 }
 
-struct Y(T -> int -> int g) : T { }
+struct Y : T {
+  init T -> int -> int g;
+}
 
 int factorialor(int -> int factorial) (int x) {
   if(x == 0) 1

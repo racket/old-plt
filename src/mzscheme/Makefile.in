@@ -25,7 +25,7 @@ FOREIGN_OBJS = $(FOREIGN_OBJ) $(FOREIGN_DIR)/gcc/libffi/src/*.@LTO@ $(FOREIGN_DI
 FOREIGN_LIB = $(FOREIGN_OBJ) ../foreign/gcc/libffi/libffi@FOREIGN_CONVENIENCE@.la
 FOREIGN_OBJSLIB = @FOREIGN_OBJSLIB@
 # Dependency always uses FOREIGN_LIB, but linker uses FOREIGN_OBJSLIB. The
-#  FOREIGN_OBJSLIB expansion has to many "*"s to be a valid make target,
+#  FOREIGN_OBJSLIB expansion has too many "*"s to be a valid make target,
 #  while FOREIGN_LIB is not always acceptable to the linker.
 # The foreign build always uses libtool, so that's why we use .la instead of @LTA@
 #  in FOREIGN_LIB.
@@ -59,7 +59,7 @@ mzschemelib:
 
 libguile:
 	$(MAKE) mzschemelib
-	cd guile; make
+	cd guile; $(MAKE)
 
 dynlib:
 	cd src; $(MAKE) mzheaders
@@ -92,7 +92,7 @@ gc.@LIBSFX@:
 
 # Compilation of the foreign libraries (this compiles all of them)
 foreign-stuff:
-	cd $(FOREIGN_DIR); make all
+	cd $(FOREIGN_DIR); $(MAKE) all
 
 foreign-nothing:
 	echo no foreign

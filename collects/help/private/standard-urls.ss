@@ -39,14 +39,14 @@
 
   (define (make-docs-plt-url manual-name)
     (format "http://download.plt-scheme.org/doc/~a/bundles/~a-doc.plt"
-            (if (cvs-or-nightly-build?)
+            (if (repos-or-nightly-build?)
                 "pre-release"
                 (version))
             manual-name))
   
   (define (make-docs-html-url manual-name)
     (format "http://download.plt-scheme.org/doc/~a/html/~a/index.htm" 
-            (if (cvs-or-nightly-build?)
+            (if (repos-or-nightly-build?)
                 "pre-release"
                 (version))
             manual-name))

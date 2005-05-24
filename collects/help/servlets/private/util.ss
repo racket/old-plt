@@ -12,7 +12,7 @@
   (provide get-pref/default
            get-bool-pref/default
            put-prefs
-           cvs-or-nightly-build?
+           repos-or-nightly-build?
            search-height-default
            search-bg-default
            search-text-default
@@ -68,7 +68,7 @@
   (define (color-highlight . s)
     (apply color-with *the-highlight-color* s))
 
-  (define (cvs-or-nightly-build?)
+  (define (repos-or-nightly-build?)
     (or (directory-exists? (build-path (collection-path "help") "CVS"))
         (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
           (collection-path "cvs-time-stamp"))))

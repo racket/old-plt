@@ -258,9 +258,9 @@
          (append 
           
           (list "<H1>Installed Manuals</H1>")
-          (if (cvs-or-nightly-build?)
+          (if (repos-or-nightly-build?)
               (list 
-               "<b>CVS:</b> <a mzscheme=\""
+               "<b>Subversion:</b> <a mzscheme=\""
                (to-string/escape-quotes 
                 `((dynamic-require '(lib "refresh-manuals.ss" "help") 'refresh-manuals)))
                "\">"
@@ -390,7 +390,7 @@
                 
                 
               name
-              (if (and (cvs-or-nightly-build?)
+              (if (and (repos-or-nightly-build?)
                        (file-exists? (build-path doc-path index-file)))
                   (string-append 
                    "<BR>&nbsp;&nbsp;"

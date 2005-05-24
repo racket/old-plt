@@ -260,7 +260,7 @@
           (list "<H1>Installed Manuals</H1>")
           (if (repos-or-nightly-build?)
               (list 
-               "<b>Subversion:</b> <a mzscheme=\""
+               "<b>DEVEL:</b> <a mzscheme=\""
                (to-string/escape-quotes 
                 `((dynamic-require '(lib "refresh-manuals.ss" "help") 'refresh-manuals)))
                "\">"

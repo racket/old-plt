@@ -31,7 +31,7 @@
            (for-each
             (lambda (collection)
               (when (and (directory-exists? (build-path collection-path-dir collection))
-                         (not (bytes=? (path->bytes collection) #"CVS")))
+                         (not (member (path->bytes collection) '(#"CVS" #".svn"))))
                 (hash-table-put! colls collection #t)))
             (directory-list collection-path-dir))))
        (current-library-collection-paths))

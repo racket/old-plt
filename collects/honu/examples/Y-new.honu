@@ -4,7 +4,7 @@ int -> int fix(<int -> int> -> int -> int f) {
 }
 
 struct Y : T {
-  init T -> int -> int g;
+  init T -> int -> int f;
 }
 
 int factorialor(int -> int factorial) (int x) {

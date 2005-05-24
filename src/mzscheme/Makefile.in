@@ -57,10 +57,6 @@ mzschemelib:
 	$(MAKE) @FOREIGNTARGET@
 	$(MAKE) mzlibrary 
 
-libguile:
-	$(MAKE) mzschemelib
-	cd guile; $(MAKE)
-
 dynlib:
 	cd src; $(MAKE) mzheaders
 	cd dynsrc; $(MAKE) dynlib 

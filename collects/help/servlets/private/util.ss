@@ -68,10 +68,13 @@
   (define (color-highlight . s)
     (apply color-with *the-highlight-color* s))
 
-  (define (repos-or-nightly-build?)
-    (or (directory-exists? (build-path (collection-path "help") "CVS"))
-        (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
-          (collection-path "cvs-time-stamp"))))
+  (define repos-or-nightly-build?
+    (let ([helpdir (collection-path "help")])
+      (lambda ()
+        (or (directory-exists? (build-path helpdir ".svn"))
+            (directory-exists? (build-path helpdir "CVS"))
+            (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
+              (collection-path "cvs-time-stamp"))))))
   
   (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\> #\+))
   

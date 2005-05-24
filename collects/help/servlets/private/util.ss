@@ -74,7 +74,7 @@
         (or (directory-exists? (build-path helpdir ".svn"))
             (directory-exists? (build-path helpdir "CVS"))
             (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
-              (collection-path "cvs-time-stamp"))))))
+              (collection-path "repos-time-stamp"))))))
   
   (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\> #\+))
   

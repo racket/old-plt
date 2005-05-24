@@ -1,4 +1,5 @@
 (require
+ "utils.ss"
  (lib "etc.ss")
  (lib "class.ss")
  (lib "mred.ss" "mred")
@@ -7,19 +8,6 @@
  (lib "private/aligned-pasteboard/aligned-editor-container.ss" "mrlib"))
 
 (printf "running tests for snip-lib.ss~n")
-  
-;; test: (lambda (a?) ((a? a? . -> . boolean?) a? a? . -> . (void))
-;; tests to see if the expression is true and prints and error if it's not
-(define-syntax test
-  (syntax-rules (identity)
-    ((_ test actual expected)
-     (let ([result
-            (with-handlers
-                ([exn? identity])
-              actual)])
-       (print
-        (and (not (exn? result))
-             (test result expected)))))))
   
 ;;snip-min-width: ((is-a?/c snip%) . -> . number?)
 ;;the width of a snip in the given pasteboard
@@ -36,14 +24,14 @@
   (send es1 resize 20 20)
   (sleep/yield 1)
   (test
-   equal?
+   =
    (snip-min-width es1)
    20)
   
   (send es1 resize 200 90)
   (sleep/yield 1)
   (test
-   equal?
+   =
    (snip-min-width es1)
    200)
   
@@ -65,14 +53,14 @@
   (send es1 resize 20 20)
   (sleep/yield 1)
   (test
-   equal?
+   =
    (snip-min-height es1)
    20)
   
   (send es1 resize 200 90)
   (sleep/yield 1)
   (test
-   equal?
+   =
    (snip-min-height es1)
    90)
   
@@ -210,4 +198,4 @@
   
   (send frame show false)
   )
-(printf "tests done~n")
+(tests-done)

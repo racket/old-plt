@@ -1,8 +1,8 @@
 (require
+ "utils.ss"
  (lib "etc.ss")
  (lib "list.ss")
  (lib "match.ss")
- (lib "devel.ss" "mike")
  (lib "private/aligned-pasteboard/alignment.ss" "mrlib"))
 
 ;; los-equal? ((listof rect?) (listof rect?) . -> . boolean?)
@@ -248,3 +248,5 @@
  (list
   (make-rect (make-dim 0 26 false) (make-dim 0 13 false))
   (make-rect (make-dim 0 53 false) (make-dim 13 24 false))))
+
+(tests-done)

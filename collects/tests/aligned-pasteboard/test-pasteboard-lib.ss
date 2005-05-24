@@ -1,4 +1,5 @@
 (require
+ "utils.ss"
  (lib "etc.ss")
  (lib "class.ss")
  (lib "mred.ss" "mred")
@@ -21,15 +22,15 @@
   (send pb1 insert es2)
   (send pb2 insert es3)
   
-  (equal?
+  (test equal?
    (pasteboard-root pb3)
    pb1)
   
-  (equal?
+  (test equal?
    (pasteboard-root pb2)
    pb1)
   
-  (equal?
+  (test equal?
    (pasteboard-root pb1)
    pb1)
   )
@@ -47,15 +48,15 @@
   (send pb2 insert es1)
   (send pb2 insert es3)
   
-  (equal?
+  (test equal?
    (pasteboard-root pb3)
    pb2)
   
-  (equal?
+  (test equal?
    (pasteboard-root pb2)
    pb2)
   
-  (equal?
+  (test equal?
    (pasteboard-root pb1)
    pb2)
   )
@@ -75,15 +76,15 @@
   (send pb1 insert es2)
   (send pb2 insert es3)
   
-  (equal?
+  (test equal?
    (pasteboard-parent pb1)
    canvas)
   
-  (equal?
+  (test equal?
    (pasteboard-parent pb2)
    es2)
   
-  (equal?
+  (test equal?
    (pasteboard-parent pb3)
    es3)
   )
@@ -101,15 +102,16 @@
   (send pb1 insert es2)
   (send pb1 insert es3)
   
-  (equal?
+  (test equal?
    (pasteboard-parent pb1)
    canvas)
   
-  (equal?
+  (test equal?
    (pasteboard-parent pb2)
    es2)
   
-  (equal?
+  (test equal?
    (pasteboard-parent pb3)
    es3)
   )
+(tests-done)

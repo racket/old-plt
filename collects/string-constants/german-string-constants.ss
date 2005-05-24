@@ -21,7 +21,7 @@
  (warning "Warnung")
  (error "Fehler")
  (close "Schließen") ;; as in, close an open window
- (stop "Stop")   
+ (stop "Stop")
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
  (are-you-sure-delete? "Sind Sie sicher, dass Sie ~a löschen wollen?") ;; ~a is a filename or directory name
  (ignore "Ignorieren")
@@ -220,7 +220,7 @@
  (plt:hd:refresh-downloading "~a herunterladen")
  (plt:hd:refresh-installing "~a installieren")
  (plt:hd:refresh-progress "Fortschritt beim Herunterladen von PLT-Handbuch")
- (plt:hd:refresh-done "Aktualisierung der Handbücher aus CVS abgeschlossen")
+ (plt:hd:refresh-done "Aktualisierung der Handbücher aus SVN abgeschlossen")
  (plt:hd:refresh-installation-log "Installations-Protokoll")
  (plt:hd:refresh-stopped "PLT-Handbuch-Aktualisierung gestoppt")
  (plt:hd:refreshing-manuals "Handbücher aktualisieren")

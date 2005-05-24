@@ -12,7 +12,8 @@
     (build-path top-dir "compiled" "native" (system-library-subpath)))
 
   (define (build-library lib)
-    (when (and (directory-exists? lib) (not (equal? "CVS" (path->string lib))))
+    (when (and (directory-exists? lib)
+               (not (member (path->string lib) '("CVS" ".svn"))))
       (let* ([libname (cond
                        [(assoc (path->string lib) dir->libname) => cadr]
                        [else (error 'plot-preinstaller

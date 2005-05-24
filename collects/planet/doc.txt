@@ -216,7 +216,7 @@ Make sure that all source files, documentation, etc. that you want to
 be a part of the package are in a single directory and its
 subdirectories. Furthermore make sure that nothing else, e.g. unneeded
 backup files, is in that directory (with the exception that the
-subdirectories and files CVS creates are allowed).
+subdirectories and files CVS or Subversion creates are allowed).
 
 For instance, in the following directory tree, my-app/ is set up
 appropriately:

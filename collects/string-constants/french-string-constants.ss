@@ -321,7 +321,7 @@
   (plt:hd:refresh-downloading "Téléchargement de ~a")
   (plt:hd:refresh-installing "Installation de la nouvelle version de ~a")
   (plt:hd:refresh-progress "Progrès du téléchargement des manuels")
-  (plt:hd:refresh-done "Fin du téléchargement des manuels par CVS")
+  (plt:hd:refresh-done "Fin du téléchargement des manuels par SVN")
   (plt:hd:refresh-installation-log "Journal de l'installation")
   (plt:hd:refresh-stopped "Téléchargement des manuels stoppé")
   (plt:hd:refreshing-manuals "Retéléchargement des manuels")

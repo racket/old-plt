@@ -321,7 +321,7 @@ please adhere to these guidelines:
  (plt:hd:refresh-downloading "Downloading ~a")
  (plt:hd:refresh-installing "Installing ~a")
  (plt:hd:refresh-progress "PLT manual download progress")
- (plt:hd:refresh-done "Done refreshing CVS manuals")
+ (plt:hd:refresh-done "Done refreshing SVN manuals")
  (plt:hd:refresh-installation-log "Installation log")
  (plt:hd:refresh-stopped "PLT manuals refresh stopped")
  (plt:hd:refreshing-manuals "Re-downloading Manuals")

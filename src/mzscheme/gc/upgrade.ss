@@ -25,6 +25,7 @@
 (hash-table-for-each old (lambda (k v)
 			   (let ([b (path->bytes k)])
 			     (when (or (regexp-match #rx#"CVS" b)
+				       (regexp-match #rx#"[.]svn" b)
 				       (regexp-match #rx#"upgrade[.]ss$" b)
 				       (regexp-match #rx#"gc[.]h$" b))
 			       (hash-table-remove! old k)))))

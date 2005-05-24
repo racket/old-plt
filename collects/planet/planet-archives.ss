@@ -7,7 +7,11 @@
   (define (repository-tree)
     (define (id x) x)
     (filter-tree-by-pattern
-     (directory->tree (CACHE-DIR) (lambda (x) (not (regexp-match ".*/CVS$" (path->string x)))) 4)
+     (directory->tree (CACHE-DIR)
+                      (lambda (x)
+                        (not (regexp-match #rx"/(CVS|[.]svn)$"
+                                           (path->string x))))
+                      4)
      (list id id id string->number string->number)))
   
   ;; get-installed-planet-dirs : -> listof path[absolute, dir]

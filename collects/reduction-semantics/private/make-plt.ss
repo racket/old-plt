@@ -12,7 +12,7 @@
           (printf "including ~s~n" x))
         ans)))
 
-  (define bad-dirs '("CVS"))
+  (define bad-dirs '("CVS" ".svn"))
   (define bad-files '(".DS_Store" "reduction-semantics.plt"))
 
   (pack (build-path "collects" "reduction-semantics" "reduction-semantics.plt")

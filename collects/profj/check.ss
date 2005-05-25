@@ -269,12 +269,14 @@
                      (check-interactions-types p level loc type-recs)) prog))
         ((var-init? prog) 
          (let* ((name (id-string (field-name prog)))
-                (check-env (remove-var-from-env name env)))
+                (check-env (remove-var-from-env name env))
+                (type (type-spec-to-type (field-type-spec prog) #f level type-recs)))
+           (set-field-type! prog type)
            (check-var-init (var-init-init prog)
                            (lambda (e env) 
                              (check-expr e env level type-recs c-class #f #t #t #f))
                            check-env
-                           (type-spec-to-type (field-type prog) #f level type-recs)
+                           type
                            (string->symbol name)
                            type-recs)))
         ((var-decl? prog) (void))
@@ -398,7 +400,7 @@
               ((field? member)
                (let ((static? (memq 'static (map modifier-kind (field-modifiers member))))
                      (name (id-string (field-name member)))
-                     (type (type-spec-to-type (field-type member) c-class level type-recs)))
+                     (type (field-type member) #;(type-spec-to-type (field-type-spec member) c-class level type-recs)))
                  (if (var-init? member)
                      (check-var-init (var-init-init member)
                                      (lambda (e env) 
@@ -726,7 +728,7 @@
       (else
        (build-method-env (cdr parms)
                          (add-var-to-env (id-string (field-name (car parms)))
-                                         (type-spec-to-type (field-type (car parms)) c-class level type-recs)
+                                         (field-type (car parms)) #;(type-spec-to-type (field-type-spec (car parms)) c-class level type-recs)
                                          (if (memq 'final (field-modifiers (car parms)))
                                              final-parm
                                              parm)
@@ -1082,8 +1084,9 @@
            (name (id-string (field-name local)))
            (in-env? (lookup-var-in-env name env))
            (sym-name (string->symbol name))
-           (type (type-spec-to-type (field-type local) c-class level type-recs))
+           (type (type-spec-to-type (field-type-spec local) c-class level type-recs))
            (new-env (lambda (extend-env) (add-var-to-env name type method-var extend-env))))
+      (set-field-type! local type)
       (when (and in-env? (not (properties-field? (var-type-properties in-env?))))
         (illegal-redefinition (field-name local) (field-src local)))
       (if is-var-init?
@@ -1100,7 +1103,7 @@
               (if (null? catches)
                   new-env
                   (let* ((catch (car catches))
-                         (type (field-type (catch-cond catch))))
+                         (type (field-type-spec (catch-cond catch))))
                     (unless (and (ref-type? type)
                                  (is-eq-subclass? type throw-type type-recs))
                       (catch-error type (field-src (catch-cond catch))))
@@ -1113,7 +1116,7 @@
                     (if (and in-env? (not (properties-field? (var-type-properties in-env?))))
                         (illegal-redefinition (field-name field) (field-src field))
                         (check-s (catch-body catch)
-                                 (add-var-to-env name (field-type field) parm env)))))
+                                 (add-var-to-env name (field-type-spec field) parm env)))))
                 catches)
       (when finally (check-s finally env)
         body-res)))

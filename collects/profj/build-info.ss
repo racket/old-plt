@@ -764,9 +764,9 @@
                    (length (method-parms (car members))))
                 (andmap type=?
                         (method-record-atypes member-record)
-                        (map (lambda (t)
-                               (type-spec-to-type t (method-record-class member-record)  level type-recs))
-                             (map field-type (method-parms (car members)))))
+                        ;(map (lambda (t)
+                               ;(type-spec-to-type t (method-record-class member-record)  level type-recs))
+                             (map field-type-spec (method-parms (car members))));)
                 (type=? (method-record-rtype member-record)
                         (type-spec-to-type (method-type (car members)) (method-record-class member-record) level type-recs)))
            (car members)
@@ -795,8 +795,8 @@
                                  #f)
                    (method-error 'repeated 
                              (method-name m)
-                             (map (lambda (t)
-                                    (type-spec-to-type (field-type t) class level type-recs))
+                             (map field-type #;(lambda (t)
+                                                 (type-spec-to-type (field-type-spec t) class level type-recs))
                                   (method-parms m))
                              (car class)
                              (method-src m)
@@ -815,7 +815,7 @@
                                  #f)
                    (method-error 'ctor-ret-value 
                                  (method-name m)
-                                 (map (lambda (t) (type-spec-to-type (field-type t) class level type-recs))
+                                 (map field-type #;(lambda (t) (type-spec-to-type (field-type-spec t) class level type-recs))
                                       (method-parms m))
                                  (car class)
                                  (method-src m)
@@ -834,7 +834,7 @@
                                  #f)
                    (method-error 'class-name
                                  (method-name m)
-                                 (map (lambda (t) (type-spec-to-type (field-type t) class level type-recs))
+                                 (map field-type #;(lambda (t) (type-spec-to-type (field-type-spec t) class level type-recs))
                                       (method-parms m))
                                  (car class)
                                  (method-src m)
@@ -909,8 +909,8 @@
                                  #f)
                    (method-error 'conflict
                                  (method-name method)
-                                 (map (lambda (t)
-                                        (type-spec-to-type (field-type t) class level type-recs))
+                                 (map field-type #;(lambda (t)
+                                                     (type-spec-to-type (field-type-spec t) class level type-recs))
                                       (method-parms method))
                                  (car class)
                                  (method-src method)
@@ -954,8 +954,8 @@
                    (class (method-record-class (car methods))))
                (method-error 'illegal-abstract 
                              (method-name method) 
-                             (map (lambda (t)
-                                    (type-spec-to-type (field-type t) class level type-recs))
+                             (map field-type #;(lambda (t)
+                                                 (type-spec-to-type (field-type-spec t) class level type-recs))
                                   (method-parms method)) 
                              (car class)
                              (method-src method)
@@ -1000,17 +1000,19 @@
   
   ;; process-field: field (string list) type-records symbol -> field-record
   (define (process-field field cname type-recs level)
+    (set-field-type! field (type-spec-to-type (field-type-spec field) cname level type-recs))
     (make-field-record (id-string (field-name field)) 
                        (check-field-modifiers level (field-modifiers field))
                        (var-init? field)
                        cname 
-                       (type-spec-to-type (field-type field) cname level type-recs)))
+                       (field-type field)))
                   
   ;; process-method: method (list method-record) (list string) type-records symbol -> method-record  
   (define (process-method method inherited-methods cname type-recs level . args)
     (let* ((name (id-string (method-name method)))
            (parms (map (lambda (p)
-                         (type-spec-to-type (field-type p) cname level type-recs))
+                         (set-field-type! p (type-spec-to-type (field-type-spec p) cname level type-recs))
+                         (field-type p))
                        (method-parms method)))
            (mods (if (null? args) (method-modifiers method) (cons (car args) (method-modifiers method))))
            (ret (type-spec-to-type (method-type method) cname level type-recs))

@@ -251,9 +251,9 @@
 
       (VariableDeclaratorId
        [(IDENTIFIER)
-	(make-var-decl (make-id $1 (build-src 1)) null (make-type-spec #f 0 (build-src 1)) (build-src 1))]
+	(make-var-decl (make-id $1 (build-src 1)) null (make-type-spec #f 0 (build-src 1)) #f (build-src 1))]
        [(IDENTIFIER Dims)
-	(make-var-decl (make-id $1 (build-src 1)) null (make-type-spec #f $2 (build-src 2)) (build-src 2))])
+	(make-var-decl (make-id $1 (build-src 1)) null (make-type-spec #f $2 (build-src 2)) #f (build-src 2))])
 			
       (VariableInitializer
        [(Expression) $1]
@@ -479,9 +479,10 @@
                               ((var-decl? d) d)
                               (else (var-init-var-decl d))))
                       (new-decl (make-var-decl (var-decl-name decl)
-                                                   `(final)
-                                                   (var-decl-type decl)
-                                                   (var-decl-src decl))))
+                                               `(final)
+                                               (var-decl-type-spec decl)
+                                               #f
+                                               (var-decl-src decl))))
                                  
                  (cond
                    ((var-decl? d) new-decl)

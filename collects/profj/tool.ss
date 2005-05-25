@@ -376,7 +376,7 @@
                                 (val-editor (caddr example))
                                 (val (parse-expression (open-input-text-editor val-editor) val-editor level)))
                            (compile-interactions-ast
-                            (make-var-init (make-var-decl name null type #f) val #f)
+                            (make-var-init (make-var-decl name null type #f) val #f #f)
                             val-editor level type-recs)))
                        contents)
                   (process-extras (cdr extras) type-recs))))

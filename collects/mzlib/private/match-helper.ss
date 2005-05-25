@@ -55,7 +55,7 @@
     (define pred-index 2)
     (define super-type-index 5)
     (define (failure-thunk)
-      (match:syntax-err #'struct-name 
+      (match:syntax-err struct-name 
                         "not a defined structure"))
     (define (local-val sn) (syntax-local-value sn failure-thunk))
     (define (handle-acc-list l)

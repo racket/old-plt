@@ -227,7 +227,7 @@
  (plt:hd:refresh-installing "Installerer ~a")
  (plt:hd:refresh-clearing-indicies "Renser forgemte indekser")
  (plt:hd:refresh-progress "PLT-manualhentningsfremskridt")
- (plt:hd:refresh-done "Færdig med at opdatere SVN-manualer")
+;; should not mention `SVN' (plt:hd:refresh-done "Færdig med at opdatere SVN-manualer")
  (plt:hd:refresh-installation-log "Installationslog")
  (plt:hd:refresh-stopped "Opdatering af PLT-manualer stoppet")
  (plt:hd:refreshing-manuals "Genhenter manualer")

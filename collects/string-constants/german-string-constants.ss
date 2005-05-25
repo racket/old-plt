@@ -220,7 +220,7 @@
  (plt:hd:refresh-downloading "~a herunterladen")
  (plt:hd:refresh-installing "~a installieren")
  (plt:hd:refresh-progress "Fortschritt beim Herunterladen von PLT-Handbuch")
- (plt:hd:refresh-done "Aktualisierung der Handbücher aus SVN abgeschlossen")
+;; should not mention `SVN' (plt:hd:refresh-done "Aktualisierung der Handbücher aus SVN abgeschlossen")
  (plt:hd:refresh-installation-log "Installations-Protokoll")
  (plt:hd:refresh-stopped "PLT-Handbuch-Aktualisierung gestoppt")
  (plt:hd:refreshing-manuals "Handbücher aktualisieren")

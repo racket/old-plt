@@ -230,7 +230,7 @@
  (plt:hd:refresh-downloading "Bajando ~a")
  (plt:hd:refresh-installing "Instalando ~a")
  (plt:hd:refresh-progress "Progreso de la descarga del manual del PLT")
- (plt:hd:refresh-done "Refresco de los manuales via SVN terminado")
+;; should not mention `SVN' (plt:hd:refresh-done "Refresco de los manuales via SVN terminado")
  (plt:hd:refresh-installation-log "Bitácora de instalación")
  (plt:hd:refresh-stopped "Refresco de manuales del PLT detenido")
  (plt:hd:refresh-clearing-indicies "Eliminando índices guardados")

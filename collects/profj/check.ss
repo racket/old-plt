@@ -400,7 +400,9 @@
               ((field? member)
                (let ((static? (memq 'static (map modifier-kind (field-modifiers member))))
                      (name (id-string (field-name member)))
-                     (type (field-type member) #;(type-spec-to-type (field-type-spec member) c-class level type-recs)))
+                     (type (field-type member)))
+                 (when (ref-type? type)
+                   (add-required c-class (ref-type-class/iface type) (ref-type-path type) type-recs))
                  (if (var-init? member)
                      (check-var-init (var-init-init member)
                                      (lambda (e env) 
@@ -692,6 +694,8 @@
            (return (if ctor? 
                        'void
                        (type-spec-to-type (method-type method) c-class level type-recs))))
+      (when (ref-type? return)
+        (add-required c-class (ref-type-class/iface return) (ref-type-path return) type-recs))
       (when iface? (set! mods (cons 'abstract mods)))
       (when (memq 'native mods)
         (send type-recs add-req (make-req (string-append (car c-class) "-native-methods") (cdr c-class))))
@@ -711,14 +715,8 @@
                                                      (name->type n c-class (name-src n) level type-recs))
                                                    (method-throws method))
                                               (build-method-env (method-parms method) env level c-class type-recs))
-                             level
-                             type-recs
-                             c-class
-                             ctor?
-                             static?
-                             #f
-                             #f
-                             #f)
+                             level type-recs c-class
+                             ctor? static? #f #f #f)
             ))))
   
   ;build-method-env: (list field) env symbol (list string) type-records-> env
@@ -726,9 +724,12 @@
     (cond
       ((null? parms) env)
       (else
+       (when (ref-type? (field-type (car parms)))
+         (add-required c-class (ref-type-class/iface (field-type (car parms)))
+                       (ref-type-path (field-type (car parms))) type-recs))
        (build-method-env (cdr parms)
                          (add-var-to-env (id-string (field-name (car parms)))
-                                         (field-type (car parms)) #;(type-spec-to-type (field-type-spec (car parms)) c-class level type-recs)
+                                         (field-type (car parms))
                                          (if (memq 'final (field-modifiers (car parms)))
                                              final-parm
                                              parm)
@@ -1018,7 +1019,8 @@
         ((and (dynamic-val? exp-type) (dynamic-val-type exp-type))
          =>
          (lambda (t) (check-throw t src env interact? type-recs)))
-        ((dynamic-val? exp-type) (set-dynamic-val-type! throw-type))
+        ((dynamic-val? exp-type) 
+         (set-dynamic-val-type! exp-type throw-type))
         ((or (not (ref-type? exp-type))
              (not (is-eq-subclass? exp-type throw-type type-recs)))
          (throw-error 'not-throwable exp-type src))
@@ -1087,6 +1089,8 @@
            (type (type-spec-to-type (field-type-spec local) c-class level type-recs))
            (new-env (lambda (extend-env) (add-var-to-env name type method-var extend-env))))
       (set-field-type! local type)
+      (when (ref-type? type)
+        (add-required c-class (ref-type-class/iface type) (ref-type-path type) type-recs))
       (when (and in-env? (not (properties-field? (var-type-properties in-env?))))
         (illegal-redefinition (field-name local) (field-src local)))
       (if is-var-init?

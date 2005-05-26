@@ -834,7 +834,7 @@
                  `(void)
                  `(define/public (,define-name ,@list-of-args)
                     ,(coerce-value `(send wrapped-obj ,call-name 
-                                          ,@(map (lambda (arg type) (coerce-value arg type from-dynamic?))
+                                          ,@(map (lambda (arg type) (coerce-value arg type (not from-dynamic?)))
                                                  list-of-args (method-record-atypes method)))
                                    (method-record-rtype method)
                                    from-dynamic?)))))
@@ -1735,7 +1735,7 @@
           `(c:object-contract (field ,(build-identifier (string-append (field-contract-name (unknown-ref-access type)) "~f"))
                                      ,(type->contract (field-contract-type (unknown-ref-access type)) from-dynamic?))))))
       ((method-contract? type)
-       `(c:-> ,@(map (lambda (a) (type->contract a (not from-dynamic?))) (method-contract-args type))
+       `(c:-> ,@(map (lambda (a) (type->contract a from-dynamic?)) (method-contract-args type))
               ,(type->contract (method-contract-return type) from-dynamic?)))
       ((not type) 'c:any/c)
       ))
@@ -1743,20 +1743,20 @@
   ;class-rec->contract: class-record boolean -> sexp
   (define (class-rec->contract class-rec from-dynamic?)
     `(c:object-contract
-      ,@(map (lambda (f) (field-rec->contract f from-dynamic?))
+      ,@(map (lambda (f) (field-rec->contract f #t))
              (filter (lambda (f) (not (or (private? (field-record-modifiers f))
                                           (type=? (field-record-type f)
                                                   (make-ref-type (car (class-record-name class-rec))
                                                                  (cdr (class-record-name class-rec)))))))
                      (class-record-fields class-rec)))
-      ,@(map (lambda (m) (method-rec->contract m from-dynamic? #t)) 
+      ,@(map (lambda (m) (method-rec->contract m #t #t)) 
              (filter (lambda (m) (not (or (private? (method-record-modifiers m)) 
                                           (method-record-override m)
                                           (eq? (method-record-rtype m) 'ctor))))
                      (class-record-methods class-rec)))
-      ,@(if from-dynamic? 
+      ,@(if (not from-dynamic?)
             (map 
-             (lambda (m) (method-rec->contract m from-dynamic? #f))
+             (lambda (m) (method-rec->contract m #t #f))
              (refine-method-list (filter (lambda (m) (not (or (private? (method-record-modifiers m))
                                                               (equal? (mangle-method-name (method-record-name m) 
                                                                                           (method-record-atypes m))
@@ -1776,7 +1776,7 @@
            (build-identifier (mangle-method-name (method-record-name method-rec)
                                                  (method-record-atypes method-rec)))
            (build-identifier (java-name->scheme (method-record-name method-rec))))
-      (c:-> ,@(map (lambda (m) (type->contract m (not from-dynamic?))) (method-record-atypes method-rec))
+      (c:-> ,@(map (lambda (m) (type->contract m from-dynamic?)) (method-record-atypes method-rec))
             ,(type->contract (method-record-rtype method-rec) from-dynamic?))))
     
   ;------------------------------------------------------------------------------------------------------------------------

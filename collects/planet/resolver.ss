@@ -240,6 +240,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
     (define (pkg name maj lo hi path) (make-pkg-spec name maj lo hi path stx))
     (match spec
       [(? string?)            (pkg spec #f #f #f '())]
+      [((? string? path) ...) (pkg (last path) #f 0 #f (drop-last path))]
       [((? string? path) ... (? number? maj)) (pkg (last path) maj 0 #f (drop-last path))]
       [((? string? path) ... (? number? maj) min-spec)
        (let ((pkg (lambda (min max) (pkg (last path) maj min max (drop-last path)))))
